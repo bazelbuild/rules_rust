@@ -50,7 +50,7 @@ rust_repositories()
 ## rust_library
 
 ```python
-rust_library(name, srcs, deps, data, crate_features, rustc_flags)
+rust_library(name, srcs, crate_root, deps, data, crate_features, rustc_flags)
 ```
 
 <table class="table table-condensed table-bordered table-params">
