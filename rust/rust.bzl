@@ -596,18 +596,18 @@ _rust_common_attrs = {
 
 _rust_toolchain_attrs = {
     "_rustc": attr.label(
-        default = Label("@io_bazel_rules_rust//rust:rustc"),
+        default = Label("//rust:rustc"),
         executable = True,
         single_file = True,
     ),
     "_rustc_lib": attr.label(
-        default = Label("@io_bazel_rules_rust//rust:rustc_lib"),
+        default = Label("//rust:rustc_lib"),
     ),
     "_rustlib": attr.label(
-        default = Label("@io_bazel_rules_rust//rust:rustlib"),
+        default = Label("//rust:rustlib"),
     ),
     "_rustdoc": attr.label(
-        default = Label("@io_bazel_rules_rust//rust:rustdoc"),
+        default = Label("//rust:rustdoc"),
         executable = True,
         single_file = True,
     ),
