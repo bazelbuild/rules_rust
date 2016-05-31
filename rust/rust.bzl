@@ -167,12 +167,18 @@ def _get_features_flags(features):
     features_flags += ["--cfg feature=\\\"%s\\\"" % feature]
   return features_flags
 
+def get_dirname(short_path):
+  return short_path[0:short_path.rfind('/')]
+
 def _rust_toolchain(ctx):
   return struct(
       rustc_path = ctx.file._rustc.path,
       rustc_lib_path = ctx.files._rustc_lib[0].dirname,
+      rustc_lib_short_path = get_dirname(ctx.files._rustc_lib[0].short_path),
       rustlib_path = ctx.files._rustlib[0].dirname,
-      rustdoc_path = ctx.file._rustdoc.path)
+      rustlib_short_path = get_dirname(ctx.files._rustlib[0].short_path),
+      rustdoc_path = ctx.file._rustdoc.path,
+      rustdoc_short_path = ctx.file._rustdoc.short_path)
 
 def _build_rustc_command(ctx, crate_name, crate_type, src, output_dir,
                          depinfo, rust_flags=[]):
@@ -556,10 +562,10 @@ def _rust_doc_test_impl(ctx):
       ["set -e\n"] +
       depinfo.setup_cmd +
       [
-          "LD_LIBRARY_PATH=%s" % toolchain.rustc_lib_path,
-          "DYLD_LIBRARY_PATH=%s" % toolchain.rustc_lib_path,
-          toolchain.rustdoc_path,
-          "-L all=%s" % toolchain.rustlib_path,
+          "LD_LIBRARY_PATH=%s" % toolchain.rustc_lib_short_path,
+          "DYLD_LIBRARY_PATH=%s" % toolchain.rustc_lib_short_path,
+          toolchain.rustdoc_short_path,
+          "-L all=%s" % toolchain.rustlib_short_path,
           lib_rs.path,
       ] +
       depinfo.search_flags +
