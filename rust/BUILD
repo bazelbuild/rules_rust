@@ -1,9 +1,11 @@
 package(default_visibility = ["//visibility:public"])
 
-filegroup(
-    name = "srcs",
-    srcs = glob(["**"]),
-    visibility = ["//tools:__pkg__"],
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
+
+skylark_doc(
+    name = "rust-docs",
+    srcs = ["rust.bzl"],
+    format = "html",
 )
 
 config_setting(
