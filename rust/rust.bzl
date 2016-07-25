@@ -617,6 +617,9 @@ _rust_toolchain_attrs = {
         executable = True,
         single_file = True,
     ),
+    "_cc_wrapper": attr.label(
+        default = Label("@local_config_cc//:cc_wrapper")
+    ),
 }
 
 _rust_library_attrs = _rust_common_attrs + {
