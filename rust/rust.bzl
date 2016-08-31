@@ -300,7 +300,8 @@ def _rust_library_impl(ctx):
       depinfo.transitive_libs +
       [ctx.file._rustc] +
       ctx.files._rustc_lib +
-      ctx.files._rustlib)
+      ctx.files._rustlib +
+      ctx.files._crosstool)
 
   ctx.action(
       inputs = compile_inputs,
@@ -617,8 +618,8 @@ _rust_toolchain_attrs = {
         executable = True,
         single_file = True,
     ),
-    "_cc_wrapper": attr.label(
-        default = Label("@local_config_cc//:cc_wrapper")
+    "_crosstool": attr.label(
+        default = Label("//tools/defaults:crosstool")
     ),
 }
 
