@@ -353,7 +353,8 @@ def _rust_binary_impl(ctx):
       depinfo.transitive_libs +
       [ctx.file._rustc] +
       ctx.files._rustc_lib +
-      ctx.files._rustlib)
+      ctx.files._rustlib +
+      ctx.files._crosstool)
 
   ctx.action(
       inputs = compile_inputs,
@@ -414,7 +415,8 @@ def _rust_test_common(ctx, test_binary):
                     depinfo.transitive_libs +
                     [ctx.file._rustc] +
                     ctx.files._rustc_lib +
-                    ctx.files._rustlib)
+                    ctx.files._rustlib +
+                    ctx.files._crosstool)
 
   ctx.action(
       inputs = compile_inputs,
