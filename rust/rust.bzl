@@ -596,7 +596,7 @@ _rust_common_attrs = {
     ),
     "data": attr.label_list(
         allow_files = True,
-        cfg = DATA_CFG,
+        cfg = "data",
     ),
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
@@ -607,6 +607,7 @@ _rust_toolchain_attrs = {
     "_rustc": attr.label(
         default = Label("//rust:rustc"),
         executable = True,
+        cfg = "host",
         single_file = True,
     ),
     "_rustc_lib": attr.label(
@@ -618,6 +619,7 @@ _rust_toolchain_attrs = {
     "_rustdoc": attr.label(
         default = Label("//rust:rustdoc"),
         executable = True,
+        cfg = "host",
         single_file = True,
     ),
     "_crosstool": attr.label(
