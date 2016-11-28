@@ -4,7 +4,7 @@ load(
     "@//rust:rust.bzl",
     "rust_binary",
     "rust_doc",
-    "rust_doc_test"
+    "rust_doc_test",
 )
 
 rust_binary(
