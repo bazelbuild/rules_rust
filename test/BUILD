@@ -16,18 +16,18 @@ rule_test(
         "rust_lib": "/libhello_lib.rlib$",
         "transitive_libs": "^\\[\\]$"
     },
-    rule = "//examples/hello_lib:hello_lib",
+    rule = "@examples//hello_lib:hello_lib",
 )
 
 rule_test(
     name = "hello_world_rule_test",
     generates = ["hello_world"],
-    rule = "//examples/hello_world:hello_world",
+    rule = "@examples//hello_world:hello_world",
 )
 
 rule_test(
     name = "greeting_rule_test",
     generates = ["libhello_lib.rlib"],
-    rule = "//examples/hello_lib:hello_lib",
+    rule = "@examples//hello_lib:hello_lib",
 )
 
