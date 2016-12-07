@@ -5,7 +5,9 @@ load(
     "rust_test",
 )
 load(
-    "@bazel_tools//tools/build_rules:test_rules.bzl",
+    # TODO(katre): Remove the fork of test_rules when the fixed version is released.
+    #"@bazel_tools//tools/build_rules:test_rules.bzl",
+    ":test_rules.bzl",
     "rule_test",
 )
 
