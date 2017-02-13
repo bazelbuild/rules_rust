@@ -15,6 +15,13 @@ load("//rust:rust.bzl", "rust_repositories")
 
 rust_repositories()
 
+new_git_repository(
+    name = "libc",
+    remote = "https://github.com/rust-lang/libc",
+    tag = "0.2.20",
+    build_file = "libc.BUILD",
+)
+
 # Used for documenting Rust rules.
 git_repository(
     name = "io_bazel_rules_sass",
