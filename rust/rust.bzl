@@ -24,10 +24,14 @@ To use the Rust rules, add the following to your `WORKSPACE` file to add the
 external repositories for the Rust toolchain:
 
 ```python
-git_repository(
+http_archive(
     name = "io_bazel_rules_rust",
-    remote = "https://github.com/bazelbuild/rules_rust.git",
-    tag = "0.0.5",
+    sha256 = "aa7ad550e2960143835c6a7d3bbc29e313aedf89ea879e5465e97f5d6a19e7f5",
+    strip_prefix = "rules_rust-0.0.5",
+    urls = [
+        "http://bazel-mirror.storage.googleapis.com/github.com/bazelbuild/rules_rust/archive/0.0.5.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/archive/0.0.5.tar.gz",
+    ],
 )
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_repositories")
 
