@@ -6,11 +6,13 @@ cc_library(
     name = "native_matrix",
     srcs = ["src/matrix.c"],
     hdrs = ["src/matrix.h"],
+    copts = ["-std=c99"],
 )
 
 cc_test(
     name = "native_matrix_test",
     srcs = ["src/matrix_test.c"],
+    copts = ["-std=c99"],
     deps = [
         ":native_matrix",
     ],
@@ -25,7 +27,7 @@ rust_library(
     ],
     deps = [
         ":native_matrix",
-        "@libc//:libc"
+        "@libc//:libc",
     ],
 )
 
