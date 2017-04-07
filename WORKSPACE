@@ -11,8 +11,7 @@ local_repository(
 )
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
-load("//rust:rust.bzl", "rust_repositories")
-
+load("//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 
 new_git_repository(
