@@ -211,8 +211,8 @@ def _rust_toolchain(ctx):
       rustc_path = ctx.file._rustc.path,
       rustc_lib_path = ctx.files._rustc_lib[0].dirname,
       rustc_lib_short_path = _get_dirname(ctx.files._rustc_lib[0].short_path),
-      rustlib_path = ctx.files._rustlib[0].dirname,
-      rustlib_short_path = _get_dirname(ctx.files._rustlib[0].short_path),
+      rust_lib_path = ctx.files._rust_lib[0].dirname,
+      rust_lib_short_path = _get_dirname(ctx.files._rust_lib[0].short_path),
       rustdoc_path = ctx.file._rustdoc.path,
       rustdoc_short_path = ctx.file._rustdoc.short_path)
 
@@ -266,7 +266,7 @@ def _build_rustc_command(ctx, crate_name, crate_type, src, output_dir,
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
-          "-L all=%s" % toolchain.rustlib_path,
+          "-L all=%s" % toolchain.rust_lib_path,
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
       ] +
@@ -336,7 +336,7 @@ def _rust_library_impl(ctx):
       depinfo.transitive_libs +
       [ctx.file._rustc] +
       ctx.files._rustc_lib +
-      ctx.files._rustlib +
+      ctx.files._rust_lib +
       ctx.files._crosstool)
 
   ctx.action(
@@ -389,7 +389,7 @@ def _rust_binary_impl(ctx):
       depinfo.transitive_libs +
       [ctx.file._rustc] +
       ctx.files._rustc_lib +
-      ctx.files._rustlib +
+      ctx.files._rust_lib +
       ctx.files._crosstool)
 
   ctx.action(
@@ -451,7 +451,7 @@ def _rust_test_common(ctx, test_binary):
                     depinfo.transitive_libs +
                     [ctx.file._rustc] +
                     ctx.files._rustc_lib +
-                    ctx.files._rustlib +
+                    ctx.files._rust_lib +
                     ctx.files._crosstool)
 
   ctx.action(
@@ -538,7 +538,7 @@ def _rust_doc_impl(ctx):
           toolchain.rustdoc_path,
           lib_rs.path,
           "--crate-name %s" % target.name,
-          "-L all=%s" % toolchain.rustlib_path,
+          "-L all=%s" % toolchain.rust_lib_path,
           "-o %s" % docs_dir,
       ] +
       doc_flags +
@@ -560,7 +560,7 @@ def _rust_doc_impl(ctx):
                     depinfo.libs +
                     [ctx.file._rustdoc] +
                     ctx.files._rustc_lib +
-                    ctx.files._rustlib)
+                    ctx.files._rust_lib)
 
   ctx.action(
       inputs = rustdoc_inputs,
@@ -604,7 +604,7 @@ def _rust_doc_test_impl(ctx):
           "LD_LIBRARY_PATH=%s" % toolchain.rustc_lib_short_path,
           "DYLD_LIBRARY_PATH=%s" % toolchain.rustc_lib_short_path,
           toolchain.rustdoc_short_path,
-          "-L all=%s" % toolchain.rustlib_short_path,
+          "-L all=%s" % toolchain.rust_lib_short_path,
           lib_rs.path,
       ] +
       depinfo.search_flags +
@@ -619,7 +619,7 @@ def _rust_doc_test_impl(ctx):
                      depinfo.transitive_libs +
                      [ctx.file._rustdoc] +
                      ctx.files._rustc_lib +
-                     ctx.files._rustlib)
+                     ctx.files._rust_lib)
 
   runfiles = ctx.runfiles(files = doc_test_inputs, collect_data = True)
   return struct(runfiles = runfiles)
@@ -649,8 +649,8 @@ _rust_toolchain_attrs = {
     "_rustc_lib": attr.label(
         default = Label("//rust:rustc_lib"),
     ),
-    "_rustlib": attr.label(
-        default = Label("//rust:rustlib"),
+    "_rust_lib": attr.label(
+        default = Label("//rust:rust_lib"),
     ),
     "_rustdoc": attr.label(
         default = Label("//rust:rustdoc"),
