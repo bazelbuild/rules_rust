@@ -60,6 +60,8 @@ LIBRARY_CRATE_TYPES = [
     "staticlib",
 ]
 
+# TODO: Consider supporting platform via alternative Bazel mechanisms
+# e.g. config_setting
 LIBRARY_AND_PLATFORM_TO_EXTENSION = {
     ("dylib", "linux"): ".so",
     ("dylib", "darwin"): ".dylib",
