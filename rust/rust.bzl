@@ -103,15 +103,27 @@ def _relative(src_path, dest_path):
 
   return relative_path
 
-def _create_setup_cmd(lib, deps_dir, in_runfiles):
+def _hashed_lib_path(lib):
+  """Generates a hashed path for an rlib"""
+  hash_value= repr(hash(lib.path))
+  split_basename = lib.basename.split('.', 2)
+  return split_basename[0] + '-' + hash_value + '.' + split_basename[1]
+
+def _create_setup_cmd(lib, deps_dir, in_runfiles, hash_path=True):
   """
   Helper function to construct a command for symlinking a library into the
   deps directory.
+
+  It unique-ifies provided libs unless hash_path is set to false. This is
+  necessary for native libs.
   """
   lib_path = lib.short_path if in_runfiles else lib.path
+  destination_path = lib.basename
+  if hash_path:
+    destination_path = _hashed_lib_path(lib)
   return (
       "ln -sf " + _relative(deps_dir, lib_path) + " " +
-      deps_dir + "/" + lib.basename + "\n"
+      deps_dir + "/" + destination_path + "\n"
   )
 
 def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
@@ -147,6 +159,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
   libs = set()
   transitive_libs = set()
   symlinked_libs = set()
+  unique_symlinked_libs = set()
   link_flags = []
   for dep in deps:
     if hasattr(dep, "rust_lib"):
@@ -156,7 +169,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       symlinked_libs += [dep.rust_lib] + dep.transitive_libs
       link_flags += [(
           "--extern " + dep.label.name + "=" +
-          deps_dir + "/" + dep.rust_lib.basename
+          deps_dir + "/" + _hashed_lib_path(dep.rust_lib)
       )]
       has_rlib = True
 
@@ -169,7 +182,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       native_libs = A_FILETYPE.filter(dep.cc.libs)
       libs += native_libs
       transitive_libs += native_libs
-      symlinked_libs += native_libs
+      unique_symlinked_libs += native_libs
       link_flags += ["-l static=" + dep.label.name]
       has_native = True
 
@@ -179,6 +192,9 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
 
   for symlinked_lib in symlinked_libs:
     setup_cmd += [_create_setup_cmd(symlinked_lib, deps_dir, in_runfiles)]
+
+  for unique_symlinked_lib in unique_symlinked_libs:
+    setup_cmd += [_create_setup_cmd(unique_symlinked_lib, deps_dir, in_runfiles, hash_path=False)]
 
   search_flags = []
   if has_rlib:
@@ -263,6 +279,7 @@ def _build_rustc_command(ctx, crate_name, crate_type, src, output_dir,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
           "-C opt-level=3",
+          "-C metadata=%s" % repr(hash(src.path)),
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
