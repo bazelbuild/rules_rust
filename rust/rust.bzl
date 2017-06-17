@@ -114,6 +114,15 @@ def _create_setup_cmd(lib, deps_dir, in_runfiles):
       deps_dir + "/" + lib.basename + "\n"
   )
 
+def _out_dir_setup_cmd(out_dir_tar):
+  if out_dir_tar:
+    return [
+        "mkdir ./out_dir/\n",
+        "tar -xzf %s -C ./out_dir\n" % out_dir_tar.path,
+    ]
+  else:
+     return []
+
 def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
                 in_runfiles=False):
   """
@@ -261,6 +270,9 @@ def _rust_library_impl(ctx):
       toolchain.rust_lib +
       toolchain.crosstool_files)
 
+  if ctx.file.out_dir_tar:
+    compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
+
   ctx.action(
       inputs = compile_inputs,
       outputs = [rust_lib],
@@ -315,6 +327,9 @@ def _rust_binary_impl(ctx):
       toolchain.rustc_lib +
       toolchain.rust_lib +
       toolchain.crosstool_files)
+
+  if ctx.file.out_dir_tar:
+    compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
 
   ctx.action(
       inputs = compile_inputs,
@@ -384,6 +399,9 @@ def _rust_test_common(ctx, test_binary):
                     toolchain.rust_lib +
                     toolchain.crosstool_files)
 
+  if ctx.file.out_dir_tar:
+    compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
+
   ctx.action(
       inputs = compile_inputs,
       outputs = [test_binary],
@@ -412,7 +430,7 @@ def _rust_bench_test_impl(ctx):
   ctx.file_action(
       output = rust_bench_test,
       content = " ".join([
-          "#!/bin/bash\n",
+          "#!/usr/bin/env bash\n",
           "set -e\n",
           "%s --bench\n" % test_binary.short_path]),
       executable = True)
@@ -500,6 +518,7 @@ def _rust_doc_test_impl(ctx):
                         allow_cc_deps=False,
                         in_runfiles=True)
 
+
   # Construct rustdoc test command, which will be written to a shell script
   # to be executed to run the test.
   toolchain = _find_toolchain(ctx)
@@ -532,6 +551,13 @@ _rust_common_attrs = {
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
     "rustc_flags": attr.string_list(),
+    "out_dir_tar": attr.label(
+        allow_files = [
+            ".tar",
+            ".tar.gz",
+        ],
+        single_file = True,
+    ),
 }
 
 _rust_library_attrs = {

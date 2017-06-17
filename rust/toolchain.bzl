@@ -29,9 +29,11 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   return " ".join(
       ["set -e;"] +
       depinfo.setup_cmd +
+      _out_dir_setup_cmd(ctx.file.out_dir_tar) +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
+          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rustc.path,
           src.path,
           "--crate-name %s" % crate_name,
@@ -58,11 +60,13 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
   docs_dir = rust_doc_zip.dirname + "/_rust_docs"
   return " ".join(
       ["set -e;"] +
-      depinfo.setup_cmd + [
+      depinfo.setup_cmd +
+      _out_dir_setup_cmd(ctx.file.out_dir_tar) + [
           "rm -rf %s;" % docs_dir,
           "mkdir %s;" % docs_dir,
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
+          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rust_doc.path,
           lib_rs.path,
           "--crate-name %s" % target.name,
@@ -91,9 +95,11 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       ["#!/bin/bash\n"] +
       ["set -e\n"] +
       depinfo.setup_cmd +
+      _out_dir_setup_cmd(ctx.file.out_dir_tar) +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
+          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rust_doc.path,
       ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           lib_rs.path,
@@ -132,6 +138,15 @@ def _get_files(input):
     if hasattr(i, "files"):
       files += [f for f in i.files]
   return files
+
+def _out_dir_setup_cmd(out_dir_tar):
+  if out_dir_tar:
+    return [
+        "mkdir ./out_dir/\n",
+        "tar -xzf %s -C ./out_dir\n" % out_dir_tar.path,
+    ]
+  else:
+     return []
 
 # The rust_toolchain rule definition and implementation.
 
