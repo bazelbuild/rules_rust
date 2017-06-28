@@ -64,6 +64,58 @@ filegroup(
 )
 """
 
+# This defines the default toolchain separately from the actual repositories, so that the remote
+# repositories will only be downloaded if they are actually used.
+DEFAULT_TOOLCHAINS = """
+load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+toolchain(
+    name = "rust-linux-x86_64",
+    exec_compatible_with = [
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    target_compatible_with = [
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    toolchain = ":rust-linux-x86_64_impl",
+    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
+)
+
+rust_toolchain(
+    name = "rust-linux-x86_64_impl",
+    rust_doc = "@rust_linux_x86_64//:rustdoc",
+    rust_lib = ["@rust_linux_x86_64//:rust_lib"],
+    rustc = "@rust_linux_x86_64//:rustc",
+    rustc_lib = ["@rust_linux_x86_64//:rustc_lib"],
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "rust-darwin-x86_64",
+    exec_compatible_with = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    target_compatible_with = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    toolchain = ":rust-darwin-x86_64_impl",
+    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
+)
+
+rust_toolchain(
+    name = "rust-darwin-x86_64_impl",
+    rust_doc = "@rust_darwin_x86_64//:rustdoc",
+    rust_lib = ["@rust_darwin_x86_64//:rust_lib"],
+    rustc = "@rust_darwin_x86_64//:rustc",
+    rustc_lib = ["@rust_darwin_x86_64//:rustc_lib"],
+    visibility = ["//visibility:public"],
+)
+"""
+
 # Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
   native.new_http_archive(
@@ -81,3 +133,13 @@ def rust_repositories():
       sha256 = "38606e464b31a778ffa7d25d490a9ac53b472102bad8445b52e125f63726ac64",
       build_file_content = RUST_DARWIN_BUILD_FILE,
   )
+
+  native.new_local_repository(
+      name = "rust_default_toolchains",
+      path = ".",
+      build_file_content = DEFAULT_TOOLCHAINS)
+
+  # Register toolchains
+  native.register_toolchains(
+      "@rust_default_toolchains//:rust-linux-x86_64",
+      "@rust_default_toolchains//:rust-darwin-x86_64")
