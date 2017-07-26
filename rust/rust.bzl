@@ -144,9 +144,9 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
   has_rlib = False
   has_native = False
 
-  libs = set()
-  transitive_libs = set()
-  symlinked_libs = set()
+  libs = depset()
+  transitive_libs = depset()
+  symlinked_libs = depset()
   link_flags = []
   for dep in deps:
     if hasattr(dep, "rust_lib"):
@@ -349,7 +349,7 @@ def _rust_library_impl(ctx):
                           % (ctx.label.name, len(ctx.files.srcs))))
 
   return struct(
-      files = set([rust_lib]),
+      files = depset([rust_lib]),
       crate_type = crate_type,
       crate_root = lib_rs,
       rust_srcs = ctx.files.srcs,
