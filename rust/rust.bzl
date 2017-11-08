@@ -373,6 +373,7 @@ def _rust_test_common(ctx, test_binary):
                              rust_flags = ["--test"])
 
   compile_inputs = (target.srcs +
+		    ctx.files.data +
                     depinfo.libs +
                     depinfo.transitive_libs +
                     [toolchain.rustc] +
@@ -394,6 +395,9 @@ def _rust_test_impl(ctx):
   Implementation for rust_test Skylark rule.
   """
   _rust_test_common(ctx, ctx.outputs.executable)
+
+  runfiles = ctx.runfiles(files = ctx.files.data, collect_data = True)
+  return struct(runfiles = runfiles)
 
 def _rust_bench_test_impl(ctx):
   """Implementation for the rust_bench_test Skylark rule."""
