@@ -49,11 +49,13 @@ rust_repositories()
   [Cargo](https://crates.io/).
 """
 
-load(":toolchain.bzl", "build_rustc_command", "build_rustdoc_command", "build_rustdoc_test_command")
+load(":toolchain.bzl", "build_rustc_command", "build_rustdoc_command",
+    "build_rustdoc_test_command", "relative_path")
 
 RUST_FILETYPE = FileType([".rs"])
 
 A_FILETYPE = FileType([".a"])
+SO_FILETYPE = FileType([".so"])
 
 LIBRARY_CRATE_TYPES = [
     "lib",
@@ -70,38 +72,10 @@ HTML_MD_FILETYPE = FileType([
 
 CSS_FILETYPE = FileType([".css"])
 
-def _path_parts(path):
-  """Takes a path and returns a list of its parts with all "." elements removed.
-
-  The main use case of this function is if one of the inputs to _relative()
-  is a relative path, such as "./foo".
-
-  Args:
-    path_parts: A list containing parts of a path.
-
-  Returns:
-    Returns a list containing the path parts with all "." elements removed.
-  """
-  path_parts = path.split("/")
-  return [part for part in path_parts if part != "."]
-
-def _relative(src_path, dest_path):
-  """Returns the relative path from src_path to dest_path."""
-  src_parts = _path_parts(src_path)
-  dest_parts = _path_parts(dest_path)
-  n = 0
-  done = False
-  for src_part, dest_part in zip(src_parts, dest_parts):
-    if src_part != dest_part:
-      break
-    n += 1
-
-  relative_path = ""
-  for i in range(n, len(src_parts)):
-    relative_path += "../"
-  relative_path += "/".join(dest_parts[n:])
-
-  return relative_path
+def _get_lib_name(lib):
+  """ Returns the name of a library artifact, eg. libabc.a -> abc"""
+  libname, ext = lib.basename.split(".", 2)
+  return libname[3:]
 
 def _create_setup_cmd(lib, deps_dir, in_runfiles):
   """
@@ -110,7 +84,7 @@ def _create_setup_cmd(lib, deps_dir, in_runfiles):
   """
   lib_path = lib.short_path if in_runfiles else lib.path
   return (
-      "ln -sf " + _relative(deps_dir, lib_path) + " " +
+      "ln -sf " + relative_path(deps_dir, lib_path) + " " +
       deps_dir + "/" + lib.basename + "\n"
   )
 
@@ -134,6 +108,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
     Returns a struct containing the following fields:
       libs:
       transitive_libs:
+      transitive_dylibs:
       setup_cmd:
       search_flags:
       link_flags:
@@ -142,53 +117,62 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
   setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
 
   has_rlib = False
-  has_native = False
 
   libs = depset()
   transitive_libs = depset()
-  symlinked_libs = depset()
+  transitive_dylibs = depset(order="topological") # Dylib link flag ordering matters.
+  transitive_staticlibs = depset()
   link_flags = []
   for dep in deps:
     if hasattr(dep, "rust_lib"):
       # This dependency is a rust_library
       libs += [dep.rust_lib]
       transitive_libs += [dep.rust_lib] + dep.transitive_libs
-      symlinked_libs += [dep.rust_lib] + dep.transitive_libs
       link_flags += [(
           "--extern " + dep.label.name + "=" +
           deps_dir + "/" + dep.rust_lib.basename
       )]
       has_rlib = True
 
+      transitive_dylibs += dep.transitive_dylibs
+      transitive_staticlibs += A_FILETYPE.filter(dep.transitive_libs)
+
     elif hasattr(dep, "cc"):
+      # This dependency is a cc_library
       if not allow_cc_deps:
         fail("Only rust_library, rust_binary, and rust_test targets can " +
              "depend on cc_library")
 
-      # This dependency is a cc_library
-      native_libs = A_FILETYPE.filter(dep.cc.libs)
-      libs += native_libs
-      transitive_libs += native_libs
-      symlinked_libs += native_libs
-      link_flags += ["-l static=" + dep.label.name]
-      has_native = True
+      static_libs = A_FILETYPE.filter(dep.cc.libs)
+      dynamic_libs = SO_FILETYPE.filter(dep.cc.libs)
+
+      libs += static_libs + dynamic_libs
+
+      transitive_libs += static_libs + dynamic_libs
+      transitive_dylibs += dynamic_libs
+      transitive_staticlibs += static_libs
 
     else:
       fail("rust_library, rust_binary and rust_test targets can only depend " +
            "on rust_library or cc_library targets.")
 
-  for symlinked_lib in symlinked_libs:
-    setup_cmd += [_create_setup_cmd(symlinked_lib, deps_dir, in_runfiles)]
+  link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
+  link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
+
+  # Create symlinks to all transitive libs in our deps_dir.
+  for transitive_lib in transitive_libs:
+    setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
 
   search_flags = []
   if has_rlib:
     search_flags += ["-L dependency=%s" % deps_dir]
-  if has_native:
+  if transitive_dylibs or transitive_staticlibs:
     search_flags += ["-L native=%s" % deps_dir]
 
   return struct(
       libs = list(libs),
       transitive_libs = list(transitive_libs),
+      transitive_dylibs = transitive_dylibs,
       setup_cmd = setup_cmd,
       search_flags = search_flags,
       link_flags = link_flags)
@@ -277,6 +261,7 @@ def _rust_library_impl(ctx):
       rust_srcs = ctx.files.srcs,
       rust_deps = ctx.attr.deps,
       transitive_libs = depinfo.transitive_libs,
+      transitive_dylibs = depinfo.transitive_dylibs,
       rust_lib = rust_lib)
 
 def _rust_binary_impl(ctx):
@@ -325,9 +310,14 @@ def _rust_binary_impl(ctx):
       progress_message = ("Compiling Rust binary %s (%d files)"
                           % (ctx.label.name, len(ctx.files.srcs))))
 
+  runfiles = ctx.runfiles(
+      files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
+      collect_data = True)
+
   return struct(rust_srcs = ctx.files.srcs,
                 crate_root = main_rs,
-                rust_deps = ctx.attr.deps)
+                rust_deps = ctx.attr.deps,
+                runfiles = runfiles)
 
 def _rust_test_common(ctx, test_binary):
   """Builds a Rust test binary.
@@ -373,6 +363,7 @@ def _rust_test_common(ctx, test_binary):
                              rust_flags = ["--test"])
 
   compile_inputs = (target.srcs +
+                    ctx.files.data +
                     depinfo.libs +
                     depinfo.transitive_libs +
                     [toolchain.rustc] +
@@ -388,19 +379,26 @@ def _rust_test_common(ctx, test_binary):
       use_default_shell_env = True,
       progress_message = ("Compiling Rust test %s (%d files)"
                           % (ctx.label.name, len(target.srcs))))
+  return depinfo
 
 def _rust_test_impl(ctx):
   """
   Implementation for rust_test Skylark rule.
   """
-  _rust_test_common(ctx, ctx.outputs.executable)
+  depinfo = _rust_test_common(ctx, ctx.outputs.executable)
+
+  runfiles = ctx.runfiles(
+      files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
+      collect_data = True)
+
+  return struct(runfiles = runfiles)
 
 def _rust_bench_test_impl(ctx):
   """Implementation for the rust_bench_test Skylark rule."""
   rust_bench_test = ctx.outputs.executable
   test_binary = ctx.new_file(ctx.configuration.bin_dir,
                              "%s_bin" % rust_bench_test.basename)
-  _rust_test_common(ctx, test_binary)
+  depinfo = _rust_test_common(ctx, test_binary)
 
   ctx.file_action(
       output = rust_bench_test,
@@ -410,7 +408,10 @@ def _rust_bench_test_impl(ctx):
           "%s --bench\n" % test_binary.short_path]),
       executable = True)
 
-  runfiles = ctx.runfiles(files = [test_binary], collect_data = True)
+  runfiles = ctx.runfiles(
+      files = depinfo.transitive_dylibs.to_list() + [test_binary], 
+      collect_data = True)
+
   return struct(runfiles = runfiles)
 
 def _build_rustdoc_flags(ctx):

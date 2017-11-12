@@ -18,7 +18,7 @@ use std::ptr;
 
 /// Wrapper around pointer to FFI Matrix struct.
 pub struct Matrix {
-    pub matrix: *mut ffi::Matrix,
+    matrix: *mut ffi::Matrix,
 }
 
 /// Wrapper around low-level FFI Matrix API.
@@ -38,7 +38,7 @@ impl Matrix {
         let mut data_copy: Vec<u64> = vec![0; data.len()];
         data_copy.clone_from_slice(data);
         unsafe {
-            let mut matrix: *mut ffi::Matrix = ffi::matrix_new(rows, cols, data_copy.as_ptr());
+            let matrix: *mut ffi::Matrix = ffi::matrix_new(rows, cols, data_copy.as_ptr());
             if matrix.is_null() {
                 panic!("Failed to allocate Matrix.");
             }

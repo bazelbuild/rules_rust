@@ -23,11 +23,15 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   if ar_str.find("libtool", 0) != -1:
     ar = "/usr/bin/ar"
 
+  rpaths = _compute_rpaths(ctx.bin_dir, output_dir, depinfo)
+
   # Construct features flags
   features_flags = _get_features_flags(ctx.attr.crate_features)
 
   return " ".join(
       ["set -e;"] +
+      # If TMPDIR is set but not created, rustc will die.
+      ["if [[ -v TMPDIR ]]; then mkdir -p $TMPDIR; fi;"] +
       depinfo.setup_cmd +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
@@ -36,16 +40,17 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
-          "-C opt-level=3",
+          "--codegen opt-level=3",  # @TODO Might not want to do -o3 on tests
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
-      ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
       ] +
+      [ "--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
       features_flags +
       rust_flags +
+      ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
       depinfo.search_flags +
       depinfo.link_flags +
       ctx.attr.rustc_flags)
@@ -101,6 +106,22 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       depinfo.search_flags +
       depinfo.link_flags)
 
+# @TODO(review) How should this be done? cc_* logic seems much more involved.
+# 1. cc has all solibs under bazel-bin/_solib_[architecture]/, and more complicated rpath determination.
+#    https://github.com/bazelbuild/bazel/blob/58fd82def9ac853c18c25af1f7d7eaed7b2c6ca4/src/main/java/com/google/devtools/build/lib/rules/cpp/CppLinkActionBuilder.java#L1577
+# 2. cc sets both RUNPATH and RPATH in certain circumstances.
+def _compute_rpaths(bin_dir, output_dir, depinfo):
+  """
+  Determine the artifact's rpath relative to the bazel root.
+  """
+  if not depinfo.transitive_dylibs:
+    return []
+
+  # Multiple dylibs can be present in the same directory, so deduplicate them.
+  dirs = depset([dylib.dirname for dylib in depinfo.transitive_dylibs.to_list()])
+
+  return ["$ORIGIN/" + relative_path(output_dir, libdir) for libdir in dirs.to_list()]
+
 def _get_features_flags(features):
   """
   Constructs a string containing the feature flags from the features specified
@@ -132,6 +153,39 @@ def _get_files(input):
     if hasattr(i, "files"):
       files += [f for f in i.files]
   return files
+
+def _path_parts(path):
+  """Takes a path and returns a list of its parts with all "." elements removed.
+
+  The main use case of this function is if one of the inputs to _relative()
+  is a relative path, such as "./foo".
+
+  Args:
+    path_parts: A list containing parts of a path.
+
+  Returns:
+    Returns a list containing the path parts with all "." elements removed.
+  """
+  path_parts = path.split("/")
+  return [part for part in path_parts if part != "."]
+
+def relative_path(src_path, dest_path):
+  """Returns the relative path from src_path to dest_path."""
+  src_parts = _path_parts(src_path)
+  dest_parts = _path_parts(dest_path)
+  n = 0
+  done = False
+  for src_part, dest_part in zip(src_parts, dest_parts):
+    if src_part != dest_part:
+      break
+    n += 1
+
+  relative_path = ""
+  for i in range(n, len(src_parts)):
+    relative_path += "../"
+  relative_path += "/".join(dest_parts[n:])
+
+  return relative_path
 
 # The rust_toolchain rule definition and implementation.
 
