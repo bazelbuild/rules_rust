@@ -88,7 +88,7 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
   Constructs the rustdocc command used to test the current target.
   """
   return " ".join(
-      ["#!/bin/bash\n"] +
+      ["#!/usr/bin/env bash\n"] +
       ["set -e\n"] +
       depinfo.setup_cmd +
       [
