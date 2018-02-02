@@ -6,7 +6,6 @@ pub fn get_runfiles_dir() -> io::Result<PathBuf> {
     let mut path = std::env::current_exe()?;
     println!("--current_exe: {:?}", path);
 
-    let mut name = path.file_name().unwrap().to_owned();
     let mut parent_path = path.clone();
     for idx in 0..2 {
       parent_path.pop();
@@ -15,10 +14,14 @@ pub fn get_runfiles_dir() -> io::Result<PathBuf> {
       }
     }
 
-    name.push(".runfiles");
-
     path.pop();
-    path.push(name);
+    if cfg!(target_os = "macos") {
+      path.push("data");
+    } else {
+      let mut name = path.file_name().unwrap().to_owned();
+      name.push(".runfiles");
+      path.push(name);
+    }
 
     Ok(path)
 }
