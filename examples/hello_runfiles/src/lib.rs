@@ -7,7 +7,6 @@ pub fn get_runfiles_dir() -> io::Result<PathBuf> {
 
     if cfg!(target_os = "macos") {
       path.pop();
-      path.push("data");
     } else {
       let mut name = path.file_name().unwrap().to_owned();
       name.push(".runfiles");
@@ -32,7 +31,7 @@ mod test {
         let runfiles = get_runfiles_dir().unwrap();
 
         let mut f = if cfg!(target_os = "macos") {
-          File::open(runfiles.join("sample.txt")).unwrap()
+          File::open(runfiles.join("data/sample.txt")).unwrap()
         } else {
           File::open(runfiles.join("examples/hello_runfiles/data/sample.txt")).unwrap()
         };
