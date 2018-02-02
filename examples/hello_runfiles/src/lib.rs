@@ -5,11 +5,15 @@ use std::path::PathBuf;
 pub fn get_runfiles_dir() -> io::Result<PathBuf> {
     let mut path = std::env::current_exe()?;
 
-    let mut name = path.file_name().unwrap().to_owned();
-    name.push(".runfiles");
-
-    path.pop();
-    path.push(name);
+    if cfg!(target_os = "macos") {
+      path.pop();
+      path.push("data");
+    } else {
+      let mut name = path.file_name().unwrap().to_owned();
+      name.push(".runfiles");
+      path.pop();
+      path.push(name);
+    }
 
     Ok(path)
 }
@@ -27,7 +31,11 @@ mod test {
     fn test_can_read_data_from_runfiles() {
         let runfiles = get_runfiles_dir().unwrap();
 
-        let mut f = File::open(runfiles.join("examples/hello_runfiles/data/sample.txt")).unwrap();
+        let mut f = if cfg!(target_os = "macos") {
+          File::open(runfiles.join("sample.txt")).unwrap()
+        } else {
+          File::open(runfiles.join("examples/hello_runfiles/data/sample.txt")).unwrap()
+        };
         let mut buffer = String::new();
 
         f.read_to_string(&mut buffer).unwrap();
