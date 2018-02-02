@@ -325,12 +325,9 @@ def _rust_binary_impl(ctx):
       progress_message = ("Compiling Rust binary %s (%d files)"
                           % (ctx.label.name, len(ctx.files.srcs))))
 
-  runfiles = ctx.runfiles(files = ctx.files.data, collect_data = True)
-
   return struct(rust_srcs = ctx.files.srcs,
                 crate_root = main_rs,
-                rust_deps = ctx.attr.deps,
-                runfiles = runfiles)
+                rust_deps = ctx.attr.deps)
 
 def _rust_test_common(ctx, test_binary):
   """Builds a Rust test binary.
@@ -376,7 +373,6 @@ def _rust_test_common(ctx, test_binary):
                              rust_flags = ["--test"])
 
   compile_inputs = (target.srcs +
-                    ctx.files.data +
                     depinfo.libs +
                     depinfo.transitive_libs +
                     [toolchain.rustc] +
@@ -398,9 +394,6 @@ def _rust_test_impl(ctx):
   Implementation for rust_test Skylark rule.
   """
   _rust_test_common(ctx, ctx.outputs.executable)
-
-  runfiles = ctx.runfiles(files = ctx.files.data, collect_data = True)
-  return struct(runfiles = runfiles)
 
 def _rust_bench_test_impl(ctx):
   """Implementation for the rust_bench_test Skylark rule."""
