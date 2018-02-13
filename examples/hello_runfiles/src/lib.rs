@@ -6,18 +6,16 @@ pub fn get_runfiles_dir() -> io::Result<PathBuf> {
     let mut path = std::env::current_exe()?;
 
     if cfg!(target_os = "macos") {
-      path.pop();
-      path.push("data");
+        path.pop();
     } else {
-      let mut name = path.file_name().unwrap().to_owned();
-      name.push(".runfiles");
-      path.pop();
-      path.push(name);
+        let mut name = path.file_name().unwrap().to_owned();
+        name.push(".runfiles");
+        path.pop();
+        path.push(name);
     }
 
     Ok(path)
 }
-
 
 #[cfg(test)]
 mod test {
@@ -32,9 +30,9 @@ mod test {
         let runfiles = get_runfiles_dir().unwrap();
 
         let mut f = if cfg!(target_os = "macos") {
-          File::open(runfiles.join("sample.txt")).unwrap()
+            File::open(runfiles.join("data/sample.txt")).unwrap()
         } else {
-          File::open(runfiles.join("examples/hello_runfiles/data/sample.txt")).unwrap()
+            File::open(runfiles.join("examples/hello_runfiles/data/sample.txt")).unwrap()
         };
         let mut buffer = String::new();
 
