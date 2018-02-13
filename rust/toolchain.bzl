@@ -60,13 +60,11 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
   docs_dir = rust_doc_zip.dirname + "/_rust_docs"
   return " ".join(
       ["set -e;"] +
-      depinfo.setup_cmd +
-      _out_dir_setup_cmd(ctx.file.out_dir_tar) + [
+      depinfo.setup_cmd + [
           "rm -rf %s;" % docs_dir,
           "mkdir %s;" % docs_dir,
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
-          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rust_doc.path,
           lib_rs.path,
           "--crate-name %s" % target.name,

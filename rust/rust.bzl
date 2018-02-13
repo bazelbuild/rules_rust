@@ -606,6 +606,11 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
+
+    Many library crates in the Rust ecosystem require sources to be provided
+    to them in the form of an OUT_DIR argument. This argument can be used to
+    supply the contents of this directory.
 
 Example:
   Suppose you have the following directory structure for a simple Rust library
@@ -711,6 +716,11 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
+
+    Many library crates in the Rust ecosystem require sources to be provided
+    to them in the form of an OUT_DIR argument. This argument can be used to
+    supply the contents of this directory.
 
 Example:
   Suppose you have the following directory structure for a Rust project with a
@@ -837,6 +847,11 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
+
+    Many library crates in the Rust ecosystem require sources to be provided
+    to them in the form of an OUT_DIR argument. This argument can be used to
+    supply the contents of this directory.
 
 Examples:
   Suppose you have the following directory structure for a Rust library crate
