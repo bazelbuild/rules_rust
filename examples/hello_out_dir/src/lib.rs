@@ -1,3 +1,17 @@
+#[allow(dead_code)]
+struct Demo {
+    secret_number: i64,
+}
+
+impl Demo {
+    #[allow(dead_code)]
+    pub fn new() -> Demo {
+        Demo {
+            secret_number: include!(concat!(env!("OUT_DIR"), "/body.rs")),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     #[test]

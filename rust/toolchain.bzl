@@ -93,11 +93,9 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       ["#!/bin/bash\n"] +
       ["set -e\n"] +
       depinfo.setup_cmd +
-      _out_dir_setup_cmd(ctx.file.out_dir_tar) +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
-          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rust_doc.path,
       ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           lib_rs.path,
