@@ -103,7 +103,6 @@ def _relative(src_path, dest_path):
 
   return relative_path
 
-
 def _create_setup_cmd(lib, deps_dir, in_runfiles):
   """
   Helper function to construct a command for symlinking a library into the
