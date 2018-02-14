@@ -41,6 +41,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
           "-C opt-level=3",
+          # Disambiguate this crate from similarly named ones
           "-C metadata=%s" % repr(hash(src.path)),
           "-C extra-filename='%s'" % extra_filename,
           "--codegen ar=%s" % ar,
