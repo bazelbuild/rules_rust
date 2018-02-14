@@ -24,6 +24,7 @@ These build rules are used for building [Rust][rust] projects with Bazel.
 To use the Rust rules, add the following to your `WORKSPACE` file to add the
 external repositories for the Rust toolchain:
 
+#### Bazel <= 0.6.1
 ```python
 http_archive(
     name = "io_bazel_rules_rust",
@@ -34,10 +35,13 @@ http_archive(
         "https://github.com/bazelbuild/rules_rust/archive/0.0.5.tar.gz",
     ],
 )
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_repositories")
+load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
 ```
+#### Bazel Latest
+
+The master branch should always be current with the latest bazel, as such you can pin to a recent commit on master.
 
 <a name="roadmap"></a>
 ## Roadmap
