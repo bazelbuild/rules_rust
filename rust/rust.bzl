@@ -109,21 +109,14 @@ def _hashed_lib_path(lib):
   split_basename = lib.basename.split('.', 2)
   return split_basename[0] + '-' + hash_value + '.' + split_basename[1]
 
-def _create_setup_cmd(lib, deps_dir, in_runfiles, hash_path=True):
+def _create_setup_cmd(lib, deps_dir, in_runfiles):
   """
   Helper function to construct a command for symlinking a library into the
   deps directory.
-
-  It unique-ifies provided libs unless hash_path is set to false. This is
-  necessary for native libs.
   """
   lib_path = lib.short_path if in_runfiles else lib.path
-  destination_path = lib.basename
-  if hash_path:
-    destination_path = _hashed_lib_path(lib)
   return (
-      "ln -sf " + _relative(deps_dir, lib_path) + " " +
-      deps_dir + "/" + destination_path + "\n"
+      "ln -sf " + _relative(deps_dir, lib_path)
   )
 
 def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
@@ -182,7 +175,6 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       native_libs = A_FILETYPE.filter(dep.cc.libs)
       libs += native_libs
       transitive_libs += native_libs
-      unique_symlinked_libs += native_libs
       link_flags += ["-l static=" + dep.label.name]
       has_native = True
 
@@ -192,9 +184,6 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
 
   for symlinked_lib in symlinked_libs:
     setup_cmd += [_create_setup_cmd(symlinked_lib, deps_dir, in_runfiles)]
-
-  for unique_symlinked_lib in unique_symlinked_libs:
-    setup_cmd += [_create_setup_cmd(unique_symlinked_lib, deps_dir, in_runfiles, hash_path=False)]
 
   search_flags = []
   if has_rlib:
@@ -221,6 +210,19 @@ def _get_features_flags(features):
 
 def _get_dirname(short_path):
   return short_path[0:short_path.rfind('/')]
+
+def _pick_rlib_output(name, srcs):
+  """
+  Generates a uniqueified output specification object.
+
+  The output rlib uses the name of the rule and a hash of the source file paths.
+  """
+  # TODO(acmcarther): Use the toolchain to guarantee uniqueness by platform.
+  srcs_concat = "".join([src.path for src in srcs])
+  srcs_path_hash = hash(srcs_concat)
+  return {
+      "rust_lib": "lib%{name}-{%srcs_path_hash}.rlib",
+  },
 
 def _rust_toolchain(ctx):
   return struct(
@@ -328,6 +330,8 @@ def _rust_library_impl(ctx):
 
   # Output library
   rust_lib = ctx.outputs.rust_lib
+  if crate_type in ("lib", "rlib"):
+
   output_dir = rust_lib.dirname
 
   # Dependencies
@@ -690,9 +694,7 @@ rust_library = rule(
                  _rust_library_attrs.items() +
                  _rust_toolchain_attrs.items()),
     fragments = ["cpp"],
-    outputs = {
-        "rust_lib": "lib%{name}.rlib",
-    },
+    outputs = _pick_rlib_output
 )
 """Builds a Rust library crate.
 
