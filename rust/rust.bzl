@@ -193,16 +193,15 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       search_flags = search_flags,
       link_flags = link_flags)
 
-def _pick_rlib_output(name, srcs):
+def _generate_library_outputs(name, srcs):
   """
   Generates a uniqueified output specification object.
 
-  The output rlib uses the name of the rule and a hash of the source file paths.
+  The output lib name uses the name of the rule and a hash of the source file paths.
   """
   # TODO(acmcarther): Use the toolchain to guarantee uniqueness by platform.
-  srcs_concat = "".join([src for src in srcs])
+  srcs_concat = "".join(srcs)
   rlib_hash = repr(hash(srcs_concat))
-  # TODO(acmcarther): Use the toolchain to guarantee uniqueness by platform.
   return {
       "rust_lib": "lib%{name}-" + rlib_hash + ".rlib",
   }
@@ -562,7 +561,7 @@ rust_library = rule(
     attrs = dict(_rust_common_attrs.items() +
                  _rust_library_attrs.items()),
     host_fragments = ["cpp"],
-    outputs = _pick_rlib_output,
+    outputs = _generate_library_outputs,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
 )
 
