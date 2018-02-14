@@ -15,7 +15,7 @@ rule_test(
     name ="hello_lib_rule_test",
     generates = ["libhello_lib.rlib"],
     provides = {
-        "rust_lib": "/libhello_lib.rlib>\\?$",
+        "rust_lib": "/libhello_lib--59710031.rlib>\\?$",
         "transitive_libs": "^\\[\\]$"
     },
     rule = "@examples//hello_lib:hello_lib",
@@ -29,7 +29,7 @@ rule_test(
 
 rule_test(
     name = "greeting_rule_test",
-    generates = ["libhello_lib.rlib"],
+    generates = ["libhello_lib--59710031.rlib"],
     rule = "@examples//hello_lib:hello_lib",
 )
 
