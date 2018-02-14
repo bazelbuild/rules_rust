@@ -13,7 +13,7 @@ load(
 
 rule_test(
     name ="hello_lib_rule_test",
-    generates = ["libhello_lib.rlib"],
+    generates = ["libhello_lib--59710031.rlib"],
     provides = {
         "rust_lib": "/libhello_lib--59710031.rlib>\\?$",
         "transitive_libs": "^\\[\\]$"
