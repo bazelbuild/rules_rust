@@ -31,7 +31,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   return " ".join(
       ["set -e;"] +
       # If TMPDIR is set but not created, rustc will die.
-      ["if [[ -v TMPDIR ]]; then mkdir -p $TMPDIR; fi;"] +
+      ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] +
       depinfo.setup_cmd +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
