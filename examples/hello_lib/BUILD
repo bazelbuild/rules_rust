@@ -25,6 +25,24 @@ rust_library(
     crate_type = "dylib",
 )
 
+rust_library(
+    name = "hello_cdylib",
+    srcs = [
+        "src/greeter.rs",
+        "src/lib.rs",
+    ],
+    crate_type = "cdylib",
+)
+
+rust_library(
+    name = "hello_staticlib",
+    srcs = [
+        "src/greeter.rs",
+        "src/lib.rs",
+    ],
+    crate_type = "staticlib",
+)
+
 rust_test(
     name = "hello_lib_test",
     deps = [":hello_lib"],

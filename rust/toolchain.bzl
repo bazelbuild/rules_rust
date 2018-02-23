@@ -143,7 +143,6 @@ def _rust_toolchain_impl(ctx):
       rust_lib = _get_files(ctx.attr.rust_lib),
       staticlib_ext = ctx.attr.staticlib_ext,
       dylib_ext = ctx.attr.dylib_ext,
-      binary_ext = ctx.attr.binary_ext,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -156,7 +155,6 @@ rust_toolchain = rule(
         "rust_lib": attr.label_list(allow_files = True),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
-        "binary_ext": attr.string(default = ""),
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),

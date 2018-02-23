@@ -55,13 +55,6 @@ RUST_FILETYPE = FileType([".rs"])
 
 A_FILETYPE = FileType([".a"])
 
-LIBRARY_CRATE_TYPES = [
-    "lib",
-    "rlib",
-    "dylib",
-    "staticlib",
-]
-
 # Used by rust_doc
 HTML_MD_FILETYPE = FileType([
     ".html",
@@ -205,6 +198,27 @@ def _find_crate_root_src(srcs, file_names=["lib.rs"]):
       return src
   fail("No %s source file found." % " or ".join(file_names), "srcs")
 
+def _determine_lib_name(name, crate_type, toolchain):
+  extension = None
+  if crate_type in ("dylib", "cdylib"):
+    extension = toolchain.dylib_ext
+  elif crate_type == "staticlib":
+    extension = toolchain.staticlib_ext
+  elif crate_type in ("rlib", "lib", "proc-macro"):
+    # All platforms produce 'rlib' here
+    extension = ".rlib"
+  elif crate_type == "bin":
+    fail("crate_type of 'bin' was detected. Please compile this crate as a " +
+         "rust_binary.")
+
+  if not extension:
+    fail(("Unknown crate_type: %s. If this is a cargo-supported crate type, "
+         + "please file an issue!") % crate_type)
+
+
+  return "lib{name}{extension}".format(name=name,
+                                       extension=extension)
+
 def _crate_root_src(ctx, file_names=["lib.rs"]):
   if ctx.file.crate_root == None:
     return _find_crate_root_src(ctx.files.srcs, file_names)
@@ -219,28 +233,14 @@ def _rust_library_impl(ctx):
   # Find lib.rs
   lib_rs = _crate_root_src(ctx)
 
-  # Validate crate_type
-  crate_type = ""
-  if ctx.attr.crate_type != "":
-    if ctx.attr.crate_type not in LIBRARY_CRATE_TYPES:
-      fail("Invalid crate_type for rust_library. Allowed crate types are: %s"
-           % " ".join(LIBRARY_CRATE_TYPES), "crate_type")
-    crate_type += ctx.attr.crate_type
-  else:
-    crate_type += "lib"
-
+  # Find toolchain
   toolchain = _find_toolchain(ctx)
 
-  crate_type = ctx.attr.crate_type or "rlib"
-
-  extension = ".rlib"
-  if crate_type == "dylib" or crate_type == "cdylib":
-    extension = toolchain.dylib_ext
-  elif crate_type == "staticlib":
-    extension = toolchain.staticlib_ext
-
   # Output library
-  rust_lib = ctx.actions.declare_file("lib{name}{extension}".format(name=ctx.label.name, extension=extension))
+  rust_lib_name = _determine_lib_name(ctx.attr.name,
+                                      ctx.attr.crate_type,
+                                      toolchain);
+  rust_lib = ctx.actions.declare_file(rust_lib_name)
   output_dir = rust_lib.dirname
 
   # Dependencies
@@ -254,7 +254,7 @@ def _rust_library_impl(ctx):
       ctx = ctx,
       toolchain = toolchain,
       crate_name = ctx.label.name,
-      crate_type = crate_type,
+      crate_type = ctx.attr.crate_type,
       src = lib_rs,
       output_dir = output_dir,
       depinfo = depinfo)
@@ -281,7 +281,7 @@ def _rust_library_impl(ctx):
 
   return struct(
       files = depset([rust_lib]),
-      crate_type = crate_type,
+      crate_type = ctx.attr.crate_type,
       crate_root = lib_rs,
       rust_srcs = ctx.files.srcs,
       rust_deps = ctx.attr.deps,
@@ -544,7 +544,7 @@ _rust_common_attrs = {
 }
 
 _rust_library_attrs = {
-    "crate_type": attr.string(),
+    "crate_type": attr.string(default = "rlib"),
 }
 
 rust_library = rule(
