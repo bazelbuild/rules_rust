@@ -208,8 +208,8 @@ def _determine_lib_name(name, crate_type, toolchain):
     # All platforms produce 'rlib' here
     extension = ".rlib"
   elif crate_type == "bin":
-    fail("crate_type of 'bin' was detected. Please compile this crate as a " +
-         "rust_binary.")
+    fail("crate_type of 'bin' was detected in a rust_library. Please compile "
+         + "this crate as a rust_binary instead.")
 
   if not extension:
     fail(("Unknown crate_type: %s. If this is a cargo-supported crate type, "
@@ -570,6 +570,10 @@ Args:
 
     If `crate_root` is not set, then this rule will look for a `lib.rs` file or
     the single file in `srcs` if `srcs` contains only one file.
+  crate_type: The type of linkage to use for building this library. Options
+    include "lib", "rlib", "dylib", "cdylib", "staticlib", and "proc-macro"
+
+    The exact output file will depend on the toolchain used.
   deps: List of other libraries to be linked to this library target.
 
     These can be either other `rust_library` targets or `cc_library` targets if

@@ -58,7 +58,7 @@ The master branch should always be current with the latest bazel, as such you ca
 ## rust_library
 
 ```python
-rust_library(name, srcs, crate_root, deps, data, crate_features, rustc_flags)
+rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rustc_flags)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -112,7 +112,24 @@ rust_library(name, srcs, crate_root, deps, data, crate_features, rustc_flags)
           if <code>srcs</code> contains only one file.
         </p>
       </td>
-    </td>
+    </tr>
+    <tr>
+      <td><code>crate_type</code></td>
+      <td>
+        <code>String, optional</code>
+        <p>
+          The type of crate to be produced during library compilation. This
+          list closely matches Cargo's own notion of crate-type, and the
+          available options are "lib", "rlib", "dylib", "cdylib", "staticlib",
+          and "proc-macro".
+        </p>
+        <p>
+          The exact output depends on the selected toolchain but generally will
+          match what Cargo would do. If binary compilation is desired, use
+          <code>rust_binary</code> instead of the "bin" crate type.
+        </p>
+      </td>
+    </tr>
     <tr>
       <td><code>deps</code></td>
       <td>
