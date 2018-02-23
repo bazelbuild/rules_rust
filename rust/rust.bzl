@@ -204,7 +204,7 @@ def _determine_lib_name(name, crate_type, toolchain):
     extension = toolchain.dylib_ext
   elif crate_type == "staticlib":
     extension = toolchain.staticlib_ext
-  elif crate_type in ("rlib", "lib"):
+  elif crate_type in ("lib", "rlib"):
     # All platforms produce 'rlib' here
     extension = ".rlib"
   elif crate_type == "bin":
