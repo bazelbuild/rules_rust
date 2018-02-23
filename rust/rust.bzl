@@ -200,11 +200,11 @@ def _find_crate_root_src(srcs, file_names=["lib.rs"]):
 
 def _determine_lib_name(name, crate_type, toolchain):
   extension = None
-  if crate_type in ("dylib", "cdylib"):
+  if crate_type in ("dylib", "cdylib", "proc-macro"):
     extension = toolchain.dylib_ext
   elif crate_type == "staticlib":
     extension = toolchain.staticlib_ext
-  elif crate_type in ("rlib", "lib", "proc-macro"):
+  elif crate_type in ("rlib", "lib"):
     # All platforms produce 'rlib' here
     extension = ".rlib"
   elif crate_type == "bin":
