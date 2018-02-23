@@ -62,29 +62,6 @@ LIBRARY_CRATE_TYPES = [
     "staticlib",
 ]
 
-# TODO: Consider supporting platform via alternative Bazel mechanisms
-# e.g. config_setting
-LIBRARY_AND_PLATFORM_TO_EXTENSION = {
-    ("dylib", "linux"): ".so",
-    ("dylib", "darwin"): ".dylib",
-    ("dylib", "windows"): ".dll",
-    ("cdylib", "linux"): ".so",
-    ("cdylib", "darwin"): ".dylib",
-    ("cdylib", "windows"): ".dll",
-    ("staticlib", "linux"): ".a",
-    ("staticlib", "darwin"): ".a",
-    ("staticlib", "windows"): ".lib",
-    ("bin", "linux"): "",
-    ("bin", "darwin"): "",
-    ("bin", "windows"): ".exe",
-    ("lib", "linux"): ".rlib",
-    ("lib", "darwin"): ".rlib",
-    ("lib", "windows"): ".rlib",
-    ("rlib", "linux"): ".rlib",
-    ("rlib", "darwin"): ".rlib",
-    ("rlib", "windows"): ".rlib",
-}
-
 # Used by rust_doc
 HTML_MD_FILETYPE = FileType([
     ".html",
@@ -228,20 +205,6 @@ def _find_crate_root_src(srcs, file_names=["lib.rs"]):
       return src
   fail("No %s source file found." % " or ".join(file_names), "srcs")
 
-def _get_crate_type_and_target_outputs(name, crate_type, platform):
-  crate_type = crate_type or "rlib"
-  platform = platform or "linux"
-  extension = LIBRARY_AND_PLATFORM_TO_EXTENSION[crate_type, platform]
-
-  if crate_type == "bin":
-    return {
-        "rust_lib": "%{{name}}{}".format(extension)
-    }
-  else:
-    return {
-        "rust_lib": "lib%{{name}}{}".format(extension)
-    }
-
 def _crate_root_src(ctx, file_names=["lib.rs"]):
   if ctx.file.crate_root == None:
     return _find_crate_root_src(ctx.files.srcs, file_names)
@@ -266,8 +229,18 @@ def _rust_library_impl(ctx):
   else:
     crate_type += "lib"
 
+  toolchain = _find_toolchain(ctx)
+
+  crate_type = ctx.attr.crate_type or "rlib"
+
+  extension = ".rlib"
+  if crate_type == "dylib" or crate_type == "cdylib":
+    extension = toolchain.dylib_ext
+  elif crate_type == "staticlib":
+    extension = toolchain.staticlib_ext
+
   # Output library
-  rust_lib = ctx.outputs.rust_lib
+  rust_lib = ctx.actions.declare_file("lib{name}{extension}".format(name=ctx.label.name, extension=extension))
   output_dir = rust_lib.dirname
 
   # Dependencies
@@ -277,7 +250,6 @@ def _rust_library_impl(ctx):
                         allow_cc_deps=True)
 
   # Build rustc command
-  toolchain = _find_toolchain(ctx)
   cmd = build_rustc_command(
       ctx = ctx,
       toolchain = toolchain,
@@ -573,7 +545,6 @@ _rust_common_attrs = {
 
 _rust_library_attrs = {
     "crate_type": attr.string(),
-    "platform": attr.string(),
 }
 
 rust_library = rule(
@@ -581,7 +552,6 @@ rust_library = rule(
     attrs = dict(_rust_common_attrs.items() +
                  _rust_library_attrs.items()),
     host_fragments = ["cpp"],
-    outputs = _get_crate_type_and_target_outputs,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
 )
 
