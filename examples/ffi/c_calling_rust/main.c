@@ -7,4 +7,3 @@ int main(int argc, char** argv) {
   assert(my_favorite_number() == 4);
   return 0;
 }
-

@@ -17,4 +17,3 @@ cc_test(
     srcs = ["main.c"],
     deps = [":wrapper"]
 )
-
