@@ -186,19 +186,6 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       search_flags = search_flags,
       link_flags = link_flags)
 
-def _generate_library_outputs(name, srcs):
-  """
-  Generates a uniqueified output specification object.
-
-  The output lib name uses the name of the rule and a hash of the source file paths.
-  """
-  # TODO(acmcarther): Use the toolchain to guarantee uniqueness by platform.
-  srcs_concat = "".join(srcs)
-  rlib_hash = repr(hash(srcs_concat))
-  return {
-      "rust_lib": "lib%{name}-" + rlib_hash + ".rlib",
-  }
-
 def _find_toolchain(ctx):
   return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
 
