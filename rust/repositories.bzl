@@ -89,6 +89,8 @@ rust_toolchain(
     rust_lib = ["@rust_linux_x86_64//:rust_lib"],
     rustc = "@rust_linux_x86_64//:rustc",
     rustc_lib = ["@rust_linux_x86_64//:rustc_lib"],
+    staticlib_ext = ".a",
+    dylib_ext = ".so",
     visibility = ["//visibility:public"],
 )
 
@@ -112,6 +114,8 @@ rust_toolchain(
     rust_lib = ["@rust_darwin_x86_64//:rust_lib"],
     rustc = "@rust_darwin_x86_64//:rustc",
     rustc_lib = ["@rust_darwin_x86_64//:rustc_lib"],
+    staticlib_ext = ".a",
+    dylib_ext = ".dylib",
     visibility = ["//visibility:public"],
 )
 """
