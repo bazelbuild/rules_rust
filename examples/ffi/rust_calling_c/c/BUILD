@@ -1,9 +1,10 @@
+package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
+
 cc_library(
     name = "native_matrix",
     srcs = ["matrix.c"],
     hdrs = ["matrix.h"],
     copts = ["-std=c99"],
-    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -21,7 +22,6 @@ cc_library(
     name = "native_matrix_so",
     srcs = [":libnative_matrix_so.so"],
     hdrs = ["matrix.h"],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
