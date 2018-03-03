@@ -54,9 +54,6 @@ load(":toolchain.bzl", "build_rustc_command", "build_rustdoc_command",
 
 RUST_FILETYPE = FileType([".rs"])
 
-A_FILETYPE = FileType([".a"])
-SO_FILETYPE = FileType([".so"])
-
 # Used by rust_doc
 HTML_MD_FILETYPE = FileType([
     ".html",
@@ -81,7 +78,8 @@ def _create_setup_cmd(lib, deps_dir, in_runfiles):
       deps_dir + "/" + lib.basename + "\n"
   )
 
-def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
+def _setup_deps(deps, name, working_dir, toolchain,
+                allow_cc_deps=False,
                 in_runfiles=False):
   """
   Walks through dependencies and constructs the necessary commands for linking
@@ -111,6 +109,9 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
 
   has_rlib = False
 
+  staticlib_filetype = FileType([toolchain.staticlib_ext])
+  dylib_filetype = FileType([toolchain.dylib_ext])
+
   libs = depset()
   transitive_libs = depset()
   transitive_dylibs = depset(order="topological") # Dylib link flag ordering matters.
@@ -128,7 +129,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       has_rlib = True
 
       transitive_dylibs += dep.transitive_dylibs
-      transitive_staticlibs += A_FILETYPE.filter(dep.transitive_libs)
+      transitive_staticlibs += staticlib_filetype.filter(dep.transitive_libs)
 
     elif hasattr(dep, "cc"):
       # This dependency is a cc_library
@@ -136,8 +137,8 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
         fail("Only rust_library, rust_binary, and rust_test targets can " +
              "depend on cc_library")
 
-      static_libs = A_FILETYPE.filter(dep.cc.libs)
-      dynamic_libs = SO_FILETYPE.filter(dep.cc.libs)
+      static_libs = staticlib_filetype.filter(dep.cc.libs)
+      dynamic_libs = dylib_filetype.filter(dep.cc.libs)
 
       libs += static_libs + dynamic_libs
 
@@ -171,6 +172,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       link_flags = link_flags)
 
 def _find_toolchain(ctx):
+  """Finds the first rust toolchain that is configured."""
   return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
 
 def _find_crate_root_src(srcs, file_names=["lib.rs"]):
@@ -231,6 +233,7 @@ def _rust_library_impl(ctx):
   depinfo = _setup_deps(ctx.attr.deps,
                         ctx.label.name,
                         output_dir,
+                        toolchain,
                         allow_cc_deps=True)
 
   # Build rustc command
@@ -283,14 +286,15 @@ def _rust_binary_impl(ctx):
   rust_binary = ctx.outputs.executable
   output_dir = rust_binary.dirname
 
+  toolchain = _find_toolchain(ctx)
   # Dependencies
   depinfo = _setup_deps(ctx.attr.deps,
                         ctx.label.name,
                         output_dir,
+                        toolchain,
                         allow_cc_deps=False)
 
   # Build rustc command.
-  toolchain = _find_toolchain(ctx)
   cmd = build_rustc_command(ctx = ctx,
                              toolchain = toolchain,
                              crate_name = ctx.label.name,
@@ -355,13 +359,15 @@ def _rust_test_common(ctx, test_binary):
                     crate_root = _crate_root_src(ctx),
                     crate_type = "lib")
 
+  toolchain = _find_toolchain(ctx)
+
   # Get information about dependencies
   depinfo = _setup_deps(target.deps,
                         target.name,
                         output_dir,
+                        toolchain,
                         allow_cc_deps=True)
 
-  toolchain = _find_toolchain(ctx)
   cmd = build_rustc_command(ctx = ctx,
                              toolchain = toolchain,
                              crate_name = test_binary.basename,
@@ -454,18 +460,20 @@ def _rust_doc_impl(ctx):
   lib_rs = (_find_crate_root_src(target.srcs, ["lib.rs", "main.rs"])
             if target.crate_root == None else target.crate_root)
 
+  toolchain = _find_toolchain(ctx)
+
   # Get information about dependencies
   output_dir = rust_doc_zip.dirname
   depinfo = _setup_deps(target.deps,
                         target.name,
                         output_dir,
+                        toolchain,
                         allow_cc_deps=False)
 
   # Rustdoc flags.
   doc_flags = _build_rustdoc_flags(ctx)
 
   # Build rustdoc command.
-  toolchain = _find_toolchain(ctx)
   doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags)
 
   # Rustdoc action
@@ -498,17 +506,20 @@ def _rust_doc_test_impl(ctx):
   lib_rs = (_find_crate_root_src(target.srcs, ["lib.rs", "main.rs"])
             if target.crate_root == None else target.crate_root)
 
+  toolchain = _find_toolchain(ctx)
+
   # Get information about dependencies
   output_dir = rust_doc_test.dirname
+  working_dir="."
   depinfo = _setup_deps(target.deps,
                         target.name,
-                        working_dir=".",
+                        working_dir,
+                        toolchain,
                         allow_cc_deps=False,
                         in_runfiles=True)
 
   # Construct rustdoc test command, which will be written to a shell script
   # to be executed to run the test.
-  toolchain = _find_toolchain(ctx)
   doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs)
 
   ctx.file_action(output = rust_doc_test,
