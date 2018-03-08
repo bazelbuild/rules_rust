@@ -160,7 +160,8 @@ rust_library(name, srcs, crate_root, deps, data, crate_features, rustc_flags, ou
         <p>
           A prepared .tar.gz file to be unpacked and supplied to
           <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
-          used by Rust sources for outputs of code generation.
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
         </p>
       </td>
     </tr>
@@ -342,7 +343,8 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
         <p>
           A prepared .tar.gz file to be unpacked and supplied to
           <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
-          used by Rust sources for outputs of code generation.
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
         </p>
       </td>
     </tr>
@@ -544,7 +546,8 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
         <p>
           A prepared .tar.gz file to be unpacked and supplied to
           <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
-          used by Rust sources for outputs of code generation.
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
         </p>
       </td>
     </tr>
@@ -784,6 +787,18 @@ easy to use a custom Rust toolchain, such as a nightly release.
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>out_dir_tar</code></td>
+      <td>
+        <code>A single compressed tar or tar.gz file</code>
+        <p>
+          A prepared .tar.gz file to be unpacked and supplied to
+          <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
+        </p>
       </td>
     </tr>
   </tbody>
