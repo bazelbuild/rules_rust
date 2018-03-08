@@ -6,7 +6,7 @@ ZIP_PATH = "/usr/bin/zip"
 
 # Utility methods that use the toolchain provider.
 def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
-                         depinfo, rust_flags=[]):
+                         depinfo, output_hash=None, rust_flags=[]):
   """
   Constructs the rustc command used to build the current target.
   """
@@ -26,6 +26,10 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   # Construct features flags
   features_flags = _get_features_flags(ctx.attr.crate_features)
 
+  extra_filename = ""
+  if output_hash:
+    extra_filename = "-%s" % output_hash
+
   return " ".join(
       ["set -e;"] +
       depinfo.setup_cmd +
@@ -39,6 +43,9 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
           "-C opt-level=3",
+          # Disambiguate this crate from similarly named ones
+          "-C metadata=%s" % extra_filename,
+          "-C extra-filename='%s'" % extra_filename,
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
@@ -90,7 +97,7 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
   Constructs the rustdocc command used to test the current target.
   """
   return " ".join(
-      ["#!/bin/bash\n"] +
+      ["#!/usr/bin/env bash\n"] +
       ["set -e\n"] +
       depinfo.setup_cmd +
       [
@@ -152,6 +159,8 @@ def _rust_toolchain_impl(ctx):
       rust_doc = _get_first_file(ctx.attr.rust_doc),
       rustc_lib = _get_files(ctx.attr.rustc_lib),
       rust_lib = _get_files(ctx.attr.rust_lib),
+      staticlib_ext = ctx.attr.staticlib_ext,
+      dylib_ext = ctx.attr.dylib_ext,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -162,6 +171,8 @@ rust_toolchain = rule(
         "rust_doc": attr.label(allow_files = True),
         "rustc_lib": attr.label_list(allow_files = True),
         "rust_lib": attr.label_list(allow_files = True),
+        "staticlib_ext": attr.string(mandatory = True),
+        "dylib_ext": attr.string(mandatory = True),
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),
