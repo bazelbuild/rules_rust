@@ -7,9 +7,17 @@ load(
     "rust_doc_test",
 )
 
+genrule(
+    name = "message",
+    srcs = [],
+    outs = ["message.string"],
+    cmd = "echo 'hi from genrule' > \"$@\"",
+)
+
 rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
+    data = [":message"],
     deps = ["@examples//hello_lib"],
 )
 

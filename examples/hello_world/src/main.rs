@@ -16,7 +16,11 @@ extern crate hello_lib;
 
 use hello_lib::greeter;
 
+// Include the message generated at compile-time.
+const MSG: &str = include_str!(concat!(env!("BAZEL_GENFILES_DIR"),
+    "/external/examples/hello_world/message.string"));
+
 fn main() {
     let hello = greeter::Greeter::new("Hello");
-    hello.greet("world");
+    hello.greet(MSG);
 }
