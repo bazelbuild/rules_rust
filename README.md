@@ -1,4 +1,4 @@
-[![Build status](https://badge.buildkite.com/76523cc666caab9ca91c2a08d9ac8f84af28cb25a92f387293.svg)](https://buildkite.com/bazel/rustlang-rules-rust-postsubmit?branch=master)
+[![Build status](https://badge.buildkite.com/76523cc666caab9ca91c2a08d9ac8f84af28cb25a92f387293.svg?branch=master)](https://buildkite.com/bazel/rustlang-rules-rust-postsubmit?branch=master)
 
 # Rust Rules
 
@@ -30,16 +30,18 @@ external repositories for the Rust toolchain:
 ```python
 http_archive(
     name = "io_bazel_rules_rust",
-    sha256 = "aa7ad550e2960143835c6a7d3bbc29e313aedf89ea879e5465e97f5d6a19e7f5",
-    strip_prefix = "rules_rust-0.0.5",
+    sha256 = "615639cfd5459fec4b8a5751112be808ab25ba647c4c1953d29bb554ef865da7",
+    strip_prefix = "rules_rust-0.0.6",
     urls = [
-        "http://bazel-mirror.storage.googleapis.com/github.com/bazelbuild/rules_rust/archive/0.0.5.tar.gz",
-        "https://github.com/bazelbuild/rules_rust/archive/0.0.5.tar.gz",
+        "http://bazel-mirror.storage.googleapis.com/github.com/bazelbuild/rules_rust/archive/0.0.6.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/archive/0.0.6.tar.gz",
     ],
 )
+
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
+
 ```
 #### Bazel Latest
 
@@ -60,7 +62,7 @@ The master branch should always be current with the latest bazel, as such you ca
 ## rust_library
 
 ```python
-rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rustc_flags)
+rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rustc_flags, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -176,6 +178,18 @@ rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rus
         <p>List of compiler flags passed to <code>rustc</code>.</p>
       </td>
     </tr>
+    <tr>
+      <td><code>out_dir_tar</code></td>
+      <td>
+        <code>A single compressed tar or tar.gz file</code>
+        <p>
+          A prepared .tar.gz file to be unpacked and supplied to
+          <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
+        </p>
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -249,7 +263,7 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 ## rust_binary
 
 ```
-rust_binary(name, srcs, deps, data, crate_features, rustc_flags)
+rust_binary(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -347,6 +361,18 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags)
         <p>List of compiler flags passed to <code>rustc</code>.</p>
       </td>
     </tr>
+    <tr>
+      <td><code>out_dir_tar</code></td>
+      <td>
+        <code>A single compressed tar or tar.gz file</code>
+        <p>
+          A prepared .tar.gz file to be unpacked and supplied to
+          <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
+        </p>
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -440,7 +466,7 @@ Hello world
 ## rust_test
 
 ```python
-rust_test(name, srcs, deps, data, crate_features, rustc_flags)
+rust_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -536,6 +562,18 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags)
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>out_dir_tar</code></td>
+      <td>
+        <code>A single compressed tar or tar.gz file</code>
+        <p>
+          A prepared .tar.gz file to be unpacked and supplied to
+          <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
+        </p>
       </td>
     </tr>
   </tbody>
@@ -669,7 +707,7 @@ Run the test with `bazel build //hello_lib:hello_lib_test`.
 ## rust\_bench\_test
 
 ```python
-rust_bench_test(name, srcs, deps, data, crate_features, rustc_flags)
+rust_bench_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
 ```
 
 **Warning**: This rule is currently experimental. [Rust Benchmark
@@ -774,6 +812,18 @@ easy to use a custom Rust toolchain, such as a nightly release.
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>out_dir_tar</code></td>
+      <td>
+        <code>A single compressed tar or tar.gz file</code>
+        <p>
+          A prepared .tar.gz file to be unpacked and supplied to
+          <code>rustc</code> as an "OUT_DIR" environment variable. Commonly
+          used by Rust sources for outputs of code generation. Crates accept
+          only a single out dir tar to retain parity with Cargo.
+        </p>
       </td>
     </tr>
   </tbody>

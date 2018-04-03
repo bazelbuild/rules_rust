@@ -6,7 +6,7 @@ ZIP_PATH = "/usr/bin/zip"
 
 # Utility methods that use the toolchain provider.
 def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
-                         depinfo, rust_flags=[]):
+                         depinfo, output_hash=None, rust_flags=[]):
   """
   Constructs the rustc command used to build the current target.
   """
@@ -28,19 +28,28 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   # Construct features flags
   features_flags = _get_features_flags(ctx.attr.crate_features)
 
+  extra_filename = ""
+  if output_hash:
+    extra_filename = "-%s" % output_hash
+
   return " ".join(
       ["set -e;"] +
       # If TMPDIR is set but not created, rustc will die.
       ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] +
       depinfo.setup_cmd +
+      _out_dir_setup_cmd(ctx.file.out_dir_tar) +
       [
           "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
           "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
+          "OUT_DIR=$(pwd)/out_dir",
           toolchain.rustc.path,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
           "--codegen opt-level=3",  # @TODO Might not want to do -o3 on tests
+          # Disambiguate this crate from similarly named ones
+          "--codegen metadata=%s" % extra_filename,
+          "--codegen extra-filename='%s'" % extra_filename,
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
@@ -186,6 +195,15 @@ def relative_path(src_path, dest_path):
   relative_path += "/".join(dest_parts[n:])
 
   return relative_path
+
+def _out_dir_setup_cmd(out_dir_tar):
+  if out_dir_tar:
+    return [
+        "mkdir ./out_dir/\n",
+        "tar -xzf %s -C ./out_dir\n" % out_dir_tar.path,
+    ]
+  else:
+     return []
 
 # The rust_toolchain rule definition and implementation.
 

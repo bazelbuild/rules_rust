@@ -124,17 +124,17 @@ rust_toolchain(
 def rust_repositories():
   native.new_http_archive(
       name = "rust_linux_x86_64",
-      url = "https://static.rust-lang.org/dist/rust-1.20.0-x86_64-unknown-linux-gnu.tar.gz",
-      strip_prefix = "rust-1.20.0-x86_64-unknown-linux-gnu",
-      sha256 = "ca1cf3aed73ff03d065a7d3e57ecca92228d35dc36d9274a6597441319f18eb8",
+      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-unknown-linux-gnu.tar.gz",
+      strip_prefix = "rust-1.24.1-x86_64-unknown-linux-gnu",
+      sha256 = "4567e7f6e5e0be96e9a5a7f5149b5452828ab6a386099caca7931544f45d5327",
       build_file_content = RUST_LINUX_BUILD_FILE,
   )
 
   native.new_http_archive(
       name = "rust_darwin_x86_64",
-      url = "https://static.rust-lang.org/dist/rust-1.20.0-x86_64-apple-darwin.tar.gz",
-      strip_prefix = "rust-1.20.0-x86_64-apple-darwin",
-      sha256 = "fa1fb8896d5e327cbe6deeb50e6e9a3346de629f2e6bcbd8c10f19f3e2ed67d5",
+      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-apple-darwin.tar.gz",
+      strip_prefix = "rust-1.24.1-x86_64-apple-darwin",
+      sha256 = "9d4aacdb5849977ea619d399903c9378163bd9c76ea11dac5ef6eca27849f501",
       build_file_content = RUST_DARWIN_BUILD_FILE,
   )
 
