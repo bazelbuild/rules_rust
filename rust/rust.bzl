@@ -63,6 +63,20 @@ HTML_MD_FILETYPE = FileType([
 
 CSS_FILETYPE = FileType([".css"])
 
+def _native_lib_name(artifact):
+  """Takes a native library artifact and produces its library name.
+
+  For example, this transforms a native artifact "path/to/libfoo.a" into a
+  string, "foo" which can be linked with -lfoo.
+
+  Args:
+    artifact: The native artifact from dep.cc.libs.
+
+  Returns:
+    Returns a string representation of the library name of the given artifact.
+  """
+  return artifact.basename[3:-(len(artifact.extension) + 1)]
+
 def _path_parts(path):
   """Takes a path and returns a list of its parts with all "." elements removed.
 
@@ -137,30 +151,30 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       libs:
       transitive_libs:
       setup_cmd:
-      search_flags:
-      link_flags:
+      rust_search_flags:
+      rust_link_flags:
+      native_search_flags:
+      native_link_flags:
   """
   deps_dir = working_dir + "/" + name + ".deps"
   setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
 
-  has_rlib = False
-  has_native = False
-
   libs = depset()
   transitive_libs = depset()
   symlinked_libs = depset()
-  link_flags = []
+  rust_link_flags = []
+  native_link_flags = []
   for dep in deps:
     if hasattr(dep, "rust_lib"):
       # This dependency is a rust_library
       libs += [dep.rust_lib]
       transitive_libs += [dep.rust_lib] + dep.transitive_libs
       symlinked_libs += [dep.rust_lib] + dep.transitive_libs
-      link_flags += [(
+      rust_link_flags += [(
           "--extern " + dep.label.name + "=" +
           deps_dir + "/" + dep.rust_lib.basename
       )]
-      has_rlib = True
+      native_link_flags += dep.native_link_flags
 
     elif hasattr(dep, "cc"):
       if not allow_cc_deps:
@@ -172,8 +186,7 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
       libs += native_libs
       transitive_libs += native_libs
       symlinked_libs += native_libs
-      link_flags += ["-l static=" + dep.label.name]
-      has_native = True
+      native_link_flags += ["-l static={}".format(_native_lib_name(native_lib)) for native_lib in dep.cc.libs]
 
     else:
       fail("rust_library, rust_binary and rust_test targets can only depend " +
@@ -182,18 +195,14 @@ def _setup_deps(deps, name, working_dir, allow_cc_deps=False,
   for symlinked_lib in symlinked_libs:
     setup_cmd += [_create_setup_cmd(symlinked_lib, deps_dir, in_runfiles)]
 
-  search_flags = []
-  if has_rlib:
-    search_flags += ["-L dependency=%s" % deps_dir]
-  if has_native:
-    search_flags += ["-L native=%s" % deps_dir]
-
   return struct(
       libs = list(libs),
       transitive_libs = list(transitive_libs),
       setup_cmd = setup_cmd,
-      search_flags = search_flags,
-      link_flags = link_flags)
+      rust_search_flags = ["-L dependency=%s" % deps_dir],
+      rust_link_flags = rust_link_flags,
+      native_search_flags = ["-L native=%s" % deps_dir],
+      native_link_flags = native_link_flags)
 
 def _find_toolchain(ctx):
   return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
@@ -265,6 +274,8 @@ def _rust_library_impl(ctx):
                         ctx.label.name,
                         output_dir,
                         allow_cc_deps=True)
+  search_flags = depinfo.rust_search_flags
+  link_flags = depinfo.rust_link_flags
 
   # Build rustc command
   cmd = build_rustc_command(
@@ -275,7 +286,9 @@ def _rust_library_impl(ctx):
       src = lib_rs,
       output_dir = output_dir,
       output_hash = output_hash,
-      depinfo = depinfo)
+      depinfo = depinfo,
+      search_flags = search_flags,
+      link_flags = link_flags)
 
   # Compile action.
   compile_inputs = (
@@ -307,7 +320,8 @@ def _rust_library_impl(ctx):
       rust_srcs = ctx.files.srcs,
       rust_deps = ctx.attr.deps,
       transitive_libs = depinfo.transitive_libs,
-      rust_lib = rust_lib)
+      rust_lib = rust_lib,
+      native_link_flags = depinfo.native_link_flags)
 
 def _rust_binary_impl(ctx):
   """Implementation for rust_binary Skylark rule."""
@@ -324,6 +338,8 @@ def _rust_binary_impl(ctx):
                         ctx.label.name,
                         output_dir,
                         allow_cc_deps=True)
+  search_flags = depinfo.rust_search_flags + depinfo.native_search_flags
+  link_flags = depinfo.rust_link_flags + depinfo.native_link_flags
 
   # Build rustc command.
   toolchain = _find_toolchain(ctx)
@@ -333,7 +349,9 @@ def _rust_binary_impl(ctx):
                              crate_type = "bin",
                              src = main_rs,
                              output_dir = output_dir,
-                             depinfo = depinfo)
+                             depinfo = depinfo,
+                             search_flags = search_flags,
+                             link_flags = link_flags)
 
   # Compile action.
   compile_inputs = (
@@ -397,6 +415,8 @@ def _rust_test_common(ctx, test_binary):
                         target.name,
                         output_dir,
                         allow_cc_deps=True)
+  search_flags = depinfo.rust_search_flags + depinfo.native_search_flags
+  link_flags = depinfo.rust_link_flags + depinfo.native_link_flags
 
   toolchain = _find_toolchain(ctx)
   cmd = build_rustc_command(ctx = ctx,
@@ -406,6 +426,8 @@ def _rust_test_common(ctx, test_binary):
                              src = target.crate_root,
                              output_dir = output_dir,
                              depinfo = depinfo,
+                             search_flags = search_flags,
+                             link_flags = link_flags,
                              rust_flags = ["--test"])
 
   compile_inputs = (target.srcs +
@@ -490,13 +512,18 @@ def _rust_doc_impl(ctx):
                         target.name,
                         output_dir,
                         allow_cc_deps=False)
+  search_flags = depinfo.rust_search_flags
+  link_flags = depinfo.rust_link_flags
 
   # Rustdoc flags.
   doc_flags = _build_rustdoc_flags(ctx)
 
   # Build rustdoc command.
   toolchain = _find_toolchain(ctx)
-  doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags)
+  doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs,
+                                  target, doc_flags,
+                                  search_flags = search_flags,
+                                  link_flags = link_flags)
 
   # Rustdoc action
   rustdoc_inputs = (target.srcs +
@@ -535,12 +562,16 @@ def _rust_doc_test_impl(ctx):
                         working_dir=".",
                         allow_cc_deps=False,
                         in_runfiles=True)
+  search_flags = depinfo.rust_search_flags + depinfo.native_search_flags
+  link_flags = depinfo.rust_link_flags + depinfo.native_link_flags
 
 
   # Construct rustdoc test command, which will be written to a shell script
   # to be executed to run the test.
   toolchain = _find_toolchain(ctx)
-  doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs)
+  doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs,
+                                            search_flags = search_flags,
+                                            link_flags = link_flags)
 
   ctx.file_action(output = rust_doc_test,
                   content = doc_test_cmd,

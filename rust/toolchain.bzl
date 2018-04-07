@@ -6,7 +6,8 @@ ZIP_PATH = "/usr/bin/zip"
 
 # Utility methods that use the toolchain provider.
 def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
-                         depinfo, output_hash=None, rust_flags=[]):
+                         depinfo, output_hash=None, rust_flags=[],
+                         search_flags=[], link_flags=[]):
   """
   Constructs the rustc command used to build the current target.
   """
@@ -49,17 +50,19 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
+          "--codegen link-args='%s'" % ' '.join(cpp_fragment.mostly_static_link_options([], False)),
       ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
       ] +
       features_flags +
       rust_flags +
-      depinfo.search_flags +
-      depinfo.link_flags +
+      search_flags +
+      link_flags +
       ctx.attr.rustc_flags)
 
-def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags):
+def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
+                          doc_flags, search_flags=[], link_flags=[]):
   """
   Constructs the rustdocc command used to build the current target.
   """
@@ -79,8 +82,8 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
           "-o %s" % docs_dir,
       ] +
       doc_flags +
-      depinfo.search_flags +
-      depinfo.link_flags + [
+      search_flags +
+      link_flags + [
           "&&",
           "(cd %s" % docs_dir,
           "&&",
@@ -92,7 +95,8 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
           "mv %s/%s %s" % (docs_dir, rust_doc_zip.basename, rust_doc_zip.path),
       ])
 
-def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
+def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs, search_flags=[],
+                               link_flags=[]):
   """
   Constructs the rustdocc command used to test the current target.
   """
@@ -107,8 +111,8 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           lib_rs.path,
       ] +
-      depinfo.search_flags +
-      depinfo.link_flags)
+      search_flags +
+      link_flags)
 
 def _get_features_flags(features):
   """
