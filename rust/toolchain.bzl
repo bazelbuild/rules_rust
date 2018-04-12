@@ -23,7 +23,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   if ar_str.find("libtool", 0) != -1:
     ar = "/usr/bin/ar"
 
-  rpaths = _compute_rpaths(ctx.bin_dir, output_dir, depinfo)
+  rpaths = _compute_rpaths(toolchain, ctx.bin_dir, output_dir, depinfo)
 
   # Construct features flags
   features_flags = _get_features_flags(ctx.attr.crate_features)
@@ -119,11 +119,16 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
 # 1. cc has all solibs under bazel-bin/_solib_[architecture]/, and more complicated rpath determination.
 #    https://github.com/bazelbuild/bazel/blob/58fd82def9ac853c18c25af1f7d7eaed7b2c6ca4/src/main/java/com/google/devtools/build/lib/rules/cpp/CppLinkActionBuilder.java#L1577
 # 2. cc sets both RUNPATH and RPATH in certain circumstances.
-def _compute_rpaths(bin_dir, output_dir, depinfo):
+def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
   """
   Determine the artifact's rpath relative to the bazel root.
   """
   if not depinfo.transitive_dylibs:
+    return []
+
+  if toolchain.os != 'linux':
+    print("Runtime linking is not supported on {}, but found {}".format(
+            toolchain.os, depinfo.transitive_dylibs))
     return []
 
   # Multiple dylibs can be present in the same directory, so deduplicate them.
@@ -215,6 +220,7 @@ def _rust_toolchain_impl(ctx):
       rust_lib = _get_files(ctx.attr.rust_lib),
       staticlib_ext = ctx.attr.staticlib_ext,
       dylib_ext = ctx.attr.dylib_ext,
+      os = ctx.attr.os,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -227,6 +233,7 @@ rust_toolchain = rule(
         "rust_lib": attr.label_list(allow_files = True),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
+        "os": attr.string(mandatory = True),
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),

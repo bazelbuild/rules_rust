@@ -15,12 +15,13 @@ platforms:
     - "..."
     - "@examples//..."
   macos:
-    targets: &targets
+    build_targets:
+    - "..."
+    - "@examples//..."
+    test_targets:
     - "--" # Hack for https://github.com/bazelbuild/continuous-integration/pull/245
     - "..."
-    # Skip tests for dylib support on osx, since it's not yet supported.
     - "@examples//..."
+    # Skip tests for dylib support on osx, since it's not yet supported.
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-    build_targets: *targets
-    test_targets: *targets
