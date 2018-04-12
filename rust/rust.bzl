@@ -323,7 +323,7 @@ def _rust_binary_impl(ctx):
   depinfo = _setup_deps(ctx.attr.deps,
                         ctx.label.name,
                         output_dir,
-                        allow_cc_deps=False)
+                        allow_cc_deps=True)
 
   # Build rustc command.
   toolchain = _find_toolchain(ctx)
