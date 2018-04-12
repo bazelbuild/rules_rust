@@ -20,7 +20,7 @@ platforms:
     - "..."
     # Skip tests for dylib support on osx, since it's not yet supported.
     - "@examples//..."
-    - "-@examples//ffi/rust_calling_c/matrix_dylib_test"
-    - "-@examples//ffi/rust_calling_c/matrix_dynamically_linked"
+    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+    - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
     build_targets: *targets
     test_targets: *targets
