@@ -50,7 +50,8 @@ rust_repositories()
 """
 
 load(":toolchain.bzl", "build_rustc_command", "build_rustdoc_command",
-    "build_rustdoc_test_command", "relative_path")
+    "build_rustdoc_test_command")
+load(":utils.bzl", "relative_path")
 
 RUST_FILETYPE = FileType([".rs"])
 
@@ -63,8 +64,10 @@ HTML_MD_FILETYPE = FileType([
 CSS_FILETYPE = FileType([".css"])
 
 def _get_lib_name(lib):
-  """ Returns the name of a library artifact, eg. libabc.a -> abc"""
+  """Returns the name of a library artifact, eg. libabc.a -> abc"""
   libname, ext = lib.basename.split(".", 2)
+  if not libname.startswith("lib"):
+    fail("Expected {} to start with 'lib' prefix.".format(lib))
   return libname[3:]
 
 def _create_setup_cmd(lib, deps_dir, in_runfiles):
@@ -433,9 +436,6 @@ def _rust_test_impl(ctx):
       files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
       collect_data = True)
 
-  return struct(runfiles = runfiles)
-
-  runfiles = ctx.runfiles(files = ctx.files.data, collect_data = True)
   return struct(runfiles = runfiles)
 
 def _rust_bench_test_impl(ctx):

@@ -2,6 +2,8 @@
 Toolchain rules used by Rust.
 """
 
+load(":utils.bzl", "relative_path")
+
 ZIP_PATH = "/usr/bin/zip"
 
 # Utility methods that use the toolchain provider.
@@ -115,10 +117,6 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       depinfo.search_flags +
       depinfo.link_flags)
 
-# @TODO(review) How should this be done? cc_* logic seems much more involved.
-# 1. cc has all solibs under bazel-bin/_solib_[architecture]/, and more complicated rpath determination.
-#    https://github.com/bazelbuild/bazel/blob/58fd82def9ac853c18c25af1f7d7eaed7b2c6ca4/src/main/java/com/google/devtools/build/lib/rules/cpp/CppLinkActionBuilder.java#L1577
-# 2. cc sets both RUNPATH and RPATH in certain circumstances.
 def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
   """
   Determine the artifact's rpath relative to the bazel root.
@@ -127,7 +125,7 @@ def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
     return []
 
   if toolchain.os != 'linux':
-    print("Runtime linking is not supported on {}, but found {}".format(
+    fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.os, depinfo.transitive_dylibs))
     return []
 
@@ -167,39 +165,6 @@ def _get_files(input):
     if hasattr(i, "files"):
       files += [f for f in i.files]
   return files
-
-def _path_parts(path):
-  """Takes a path and returns a list of its parts with all "." elements removed.
-
-  The main use case of this function is if one of the inputs to _relative()
-  is a relative path, such as "./foo".
-
-  Args:
-    path_parts: A list containing parts of a path.
-
-  Returns:
-    Returns a list containing the path parts with all "." elements removed.
-  """
-  path_parts = path.split("/")
-  return [part for part in path_parts if part != "."]
-
-def relative_path(src_path, dest_path):
-  """Returns the relative path from src_path to dest_path."""
-  src_parts = _path_parts(src_path)
-  dest_parts = _path_parts(dest_path)
-  n = 0
-  done = False
-  for src_part, dest_part in zip(src_parts, dest_parts):
-    if src_part != dest_part:
-      break
-    n += 1
-
-  relative_path = ""
-  for i in range(n, len(src_parts)):
-    relative_path += "../"
-  relative_path += "/".join(dest_parts[n:])
-
-  return relative_path
 
 def _out_dir_setup_cmd(out_dir_tar):
   if out_dir_tar:
