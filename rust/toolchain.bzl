@@ -58,7 +58,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
       ] +
-      [ "--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
+      ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
       features_flags +
       rust_flags +
       ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
@@ -68,7 +68,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
 
 def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags):
   """
-  Constructs the rustdocc command used to build the current target.
+  Constructs the rustdoc command used to build the current target.
   """
 
   docs_dir = rust_doc_zip.dirname + "/_rust_docs"
@@ -119,20 +119,16 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
 
 def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
   """
-  Determine the artifact's rpath relative to the bazel root.
+  Determine the artifact's rpaths relative to the bazel root.
   """
-  if not depinfo.transitive_dylibs:
-    return []
-
   if toolchain.os != 'linux':
     fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.os, depinfo.transitive_dylibs))
     return []
 
   # Multiple dylibs can be present in the same directory, so deduplicate them.
-  dirs = depset([dylib.dirname for dylib in depinfo.transitive_dylibs.to_list()])
-
-  return ["$ORIGIN/" + relative_path(output_dir, libdir) for libdir in dirs.to_list()]
+  return depset(["$ORIGIN/" + relative_path(output_dir, dylib.dirname)
+                    for dylib in depinfo.transitive_dylibs])
 
 def _get_features_flags(features):
   """

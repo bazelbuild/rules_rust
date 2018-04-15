@@ -109,9 +109,10 @@ def _setup_deps(deps, name, working_dir, toolchain,
 
   Returns:
     Returns a struct containing the following fields:
-      libs:
-      transitive_libs:
+      transitive_rlibs:
       transitive_dylibs:
+      transitive_staticlibs:
+      transitive_libs: All transitive dependencies, not filtered by type.
       setup_cmd:
       search_flags:
       link_flags:
@@ -119,44 +120,30 @@ def _setup_deps(deps, name, working_dir, toolchain,
   deps_dir = working_dir + "/" + name + ".deps"
   setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
 
-  has_rlib = False
-
   staticlib_filetype = FileType([toolchain.staticlib_ext])
   dylib_filetype = FileType([toolchain.dylib_ext])
 
-  libs = depset()
-  transitive_libs = depset()
-  transitive_dylibs = depset(order="topological") # Dylib link flag ordering matters.
-  transitive_staticlibs = depset()
   link_flags = []
+  transitive_rlibs = depset()
+  transitive_dylibs = depset(order="topological") # dylib link flag ordering matters.
+  transitive_staticlibs = depset()
   for dep in deps:
     if hasattr(dep, "rust_lib"):
       # This dependency is a rust_library
-      libs += [dep.rust_lib]
-      transitive_libs += [dep.rust_lib] + dep.transitive_libs
-      link_flags += [(
-          "--extern " + dep.label.name + "=" +
-          deps_dir + "/" + dep.rust_lib.basename
-      )]
-      has_rlib = True
-
+      transitive_rlibs += [dep.rust_lib]
+      transitive_rlibs += dep.transitive_rlibs
       transitive_dylibs += dep.transitive_dylibs
-      transitive_staticlibs += staticlib_filetype.filter(dep.transitive_libs)
+      transitive_staticlibs += dep.transitive_staticlibs
 
+      link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + dep.rust_lib.basename]
     elif hasattr(dep, "cc"):
       # This dependency is a cc_library
       if not allow_cc_deps:
         fail("Only rust_library, rust_binary, and rust_test targets can " +
              "depend on cc_library")
 
-      static_libs = staticlib_filetype.filter(dep.cc.libs)
-      dynamic_libs = dylib_filetype.filter(dep.cc.libs)
-
-      libs += static_libs + dynamic_libs
-
-      transitive_libs += static_libs + dynamic_libs
-      transitive_dylibs += dynamic_libs
-      transitive_staticlibs += static_libs
+      transitive_dylibs += dylib_filetype.filter(dep.cc.libs)
+      transitive_staticlibs += staticlib_filetype.filter(dep.cc.libs)
 
     else:
       fail("rust_library, rust_binary and rust_test targets can only depend " +
@@ -165,20 +152,22 @@ def _setup_deps(deps, name, working_dir, toolchain,
   link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
   link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
 
-  # Create symlinks to all transitive libs in our deps_dir.
-  for transitive_lib in transitive_libs:
-    setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
-
   search_flags = []
-  if has_rlib:
+  if transitive_rlibs:
     search_flags += ["-L dependency=%s" % deps_dir]
   if transitive_dylibs or transitive_staticlibs:
     search_flags += ["-L native=%s" % deps_dir]
 
+  # Create symlinks pointing to each transitive lib in deps_dir.
+  transitive_libs = transitive_rlibs + transitive_staticlibs + transitive_dylibs
+  for transitive_lib in transitive_libs:
+    setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
+
   return struct(
-      libs = list(libs),
       transitive_libs = list(transitive_libs),
+      transitive_rlibs = transitive_rlibs,
       transitive_dylibs = transitive_dylibs,
+      transitive_staticlibs = transitive_staticlibs,
       setup_cmd = setup_cmd,
       search_flags = search_flags,
       link_flags = link_flags)
@@ -271,7 +260,6 @@ def _rust_library_impl(ctx):
   compile_inputs = (
       ctx.files.srcs +
       ctx.files.data +
-      depinfo.libs +
       depinfo.transitive_libs +
       [toolchain.rustc] +
       toolchain.rustc_lib +
@@ -296,8 +284,9 @@ def _rust_library_impl(ctx):
       crate_root = lib_rs,
       rust_srcs = ctx.files.srcs,
       rust_deps = ctx.attr.deps,
-      transitive_libs = depinfo.transitive_libs,
+      transitive_rlibs = depinfo.transitive_rlibs,
       transitive_dylibs = depinfo.transitive_dylibs,
+      transitive_staticlibs = depinfo.transitive_staticlibs,
       rust_lib = rust_lib)
 
 def _rust_binary_impl(ctx):
@@ -331,7 +320,6 @@ def _rust_binary_impl(ctx):
   compile_inputs = (
       ctx.files.srcs +
       ctx.files.data +
-      depinfo.libs +
       depinfo.transitive_libs +
       [toolchain.rustc] +
       toolchain.rustc_lib +
@@ -406,7 +394,6 @@ def _rust_test_common(ctx, test_binary):
 
   compile_inputs = (target.srcs +
                     ctx.files.data +
-                    depinfo.libs +
                     depinfo.transitive_libs +
                     [toolchain.rustc] +
                     toolchain.rustc_lib +
@@ -454,7 +441,7 @@ def _rust_bench_test_impl(ctx):
       executable = True)
 
   runfiles = ctx.runfiles(
-      files = depinfo.transitive_dylibs.to_list() + [test_binary], 
+      files = depinfo.transitive_dylibs.to_list() + [test_binary],
       collect_data = True)
 
   return struct(runfiles = runfiles)
@@ -505,7 +492,7 @@ def _rust_doc_impl(ctx):
 
   # Rustdoc action
   rustdoc_inputs = (target.srcs +
-                    depinfo.libs +
+                    depinfo.transitive_libs +
                     [toolchain.rust_doc] +
                     toolchain.rustc_lib +
                     toolchain.rust_lib)
@@ -555,7 +542,6 @@ def _rust_doc_test_impl(ctx):
                   executable = True)
 
   doc_test_inputs = (target.srcs +
-                     depinfo.libs +
                      depinfo.transitive_libs +
                     [toolchain.rust_doc] +
                     toolchain.rustc_lib +
