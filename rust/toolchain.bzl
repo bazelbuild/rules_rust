@@ -119,12 +119,14 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
 
 def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
   """
-  Determine the artifact's rpaths relative to the bazel root.
+  Determine the artifact's rpaths relative to the bazel root
+  for runtime linking of shared libraries.
   """
+  if not depinfo.transitive_dylibs:
+    return []
   if toolchain.os != 'linux':
     fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.os, depinfo.transitive_dylibs))
-    return []
 
   # Multiple dylibs can be present in the same directory, so deduplicate them.
   return depset(["$ORIGIN/" + relative_path(output_dir, dylib.dirname)
