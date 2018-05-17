@@ -64,6 +64,39 @@ filegroup(
 )
 """
 
+RUST_FREEBSD_BUILD_FILE = """
+filegroup(
+    name = "rustc",
+    srcs = ["rustc/bin/rustc"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "rustc_lib",
+    srcs = glob(["rustc/lib/*.so"]),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "rustdoc",
+    srcs = ["rustc/bin/rustdoc"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "rust_lib",
+    srcs = glob([
+        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.rlib",
+        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.so",
+        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.a",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.rlib",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.so",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.a",
+    ]),
+    visibility = ["//visibility:public"],
+)
+"""
+
 # This defines the default toolchain separately from the actual repositories, so that the remote
 # repositories will only be downloaded if they are actually used.
 DEFAULT_TOOLCHAINS = """
@@ -118,6 +151,31 @@ rust_toolchain(
     dylib_ext = ".dylib",
     visibility = ["//visibility:public"],
 )
+
+toolchain(
+    name = "rust-freebsd-x86_64",
+    exec_compatible_with = [
+        "@bazel_tools//platforms:freebsd",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    target_compatible_with = [
+        "@bazel_tools//platforms:freebsd",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    toolchain = ":rust-freebsd-x86_64_impl",
+    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
+)
+
+rust_toolchain(
+    name = "rust-freebsd-x86_64_impl",
+    rust_doc = "@rust_freebsd_x86_64//:rustdoc",
+    rust_lib = ["@rust_freebsd_x86_64//:rust_lib"],
+    rustc = "@rust_freebsd_x86_64//:rustc",
+    rustc_lib = ["@rust_freebsd_x86_64//:rustc_lib"],
+    staticlib_ext = ".a",
+    dylib_ext = ".so",
+    visibility = ["//visibility:public"],
+)
 """
 
 # Eventually with better toolchain hosting options we could load only one of these, not both.
@@ -138,6 +196,14 @@ def rust_repositories():
       build_file_content = RUST_DARWIN_BUILD_FILE,
   )
 
+  native.new_http_archive(
+      name = "rust_freebsd_x86_64",
+      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-unknown-freebsd.tar.gz",
+      strip_prefix = "rust-1.24.1-x86_64-unknown-freebsd",
+      sha256 = "a33af1434186a42b3156060f0343f4816f9df5ec253c199d1be59fd42ed1e304",
+      build_file_content = RUST_FREEBSD_BUILD_FILE,
+  )
+
   native.new_local_repository(
       name = "rust_default_toolchains",
       path = ".",
@@ -146,4 +212,5 @@ def rust_repositories():
   # Register toolchains
   native.register_toolchains(
       "@rust_default_toolchains//:rust-linux-x86_64",
-      "@rust_default_toolchains//:rust-darwin-x86_64")
+      "@rust_default_toolchains//:rust-darwin-x86_64",
+      "@rust_default_toolchains//:rust-freebsd-x86_64")
