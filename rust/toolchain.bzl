@@ -2,6 +2,8 @@
 Toolchain rules used by Rust.
 """
 
+load(":utils.bzl", "relative_path")
+
 ZIP_PATH = "/usr/bin/zip"
 
 # Utility methods that use the toolchain provider.
@@ -23,6 +25,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   if ar_str.find("libtool", 0) != -1:
     ar = "/usr/bin/ar"
 
+  rpaths = _compute_rpaths(toolchain, ctx.bin_dir, output_dir, depinfo)
+
   # Construct features flags
   features_flags = _get_features_flags(ctx.attr.crate_features)
 
@@ -32,6 +36,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
 
   return " ".join(
       ["set -e;"] +
+      # If TMPDIR is set but not created, rustc will die.
+      ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] +
       depinfo.setup_cmd +
       _out_dir_setup_cmd(ctx.file.out_dir_tar) +
       [
@@ -42,26 +48,27 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
-          "-C opt-level=3",
+          "--codegen opt-level=3",  # @TODO Might not want to do -o3 on tests
           # Disambiguate this crate from similarly named ones
-          "-C metadata=%s" % extra_filename,
-          "-C extra-filename='%s'" % extra_filename,
+          "--codegen metadata=%s" % extra_filename,
+          "--codegen extra-filename='%s'" % extra_filename,
           "--codegen ar=%s" % ar,
           "--codegen linker=%s" % cc,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
-      ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
       ] +
+      ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
       features_flags +
       rust_flags +
+      ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
       depinfo.search_flags +
       depinfo.link_flags +
       ctx.attr.rustc_flags)
 
 def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags):
   """
-  Constructs the rustdocc command used to build the current target.
+  Constructs the rustdoc command used to build the current target.
   """
 
   docs_dir = rust_doc_zip.dirname + "/_rust_docs"
@@ -109,6 +116,21 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
       ] +
       depinfo.search_flags +
       depinfo.link_flags)
+
+def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
+  """
+  Determine the artifact's rpaths relative to the bazel root
+  for runtime linking of shared libraries.
+  """
+  if not depinfo.transitive_dylibs:
+    return []
+  if toolchain.os != 'linux':
+    fail("Runtime linking is not supported on {}, but found {}".format(
+            toolchain.os, depinfo.transitive_dylibs))
+
+  # Multiple dylibs can be present in the same directory, so deduplicate them.
+  return depset(["$ORIGIN/" + relative_path(output_dir, dylib.dirname)
+                    for dylib in depinfo.transitive_dylibs])
 
 def _get_features_flags(features):
   """
@@ -161,6 +183,7 @@ def _rust_toolchain_impl(ctx):
       rust_lib = _get_files(ctx.attr.rust_lib),
       staticlib_ext = ctx.attr.staticlib_ext,
       dylib_ext = ctx.attr.dylib_ext,
+      os = ctx.attr.os,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -173,6 +196,7 @@ rust_toolchain = rule(
         "rust_lib": attr.label_list(allow_files = True),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
+        "os": attr.string(mandatory = True),
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),

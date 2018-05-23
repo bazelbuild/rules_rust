@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "matrix/src/matrix.h"
+#include "ffi/rust_calling_c/c/matrix.h"
 
 #include <assert.h>
 #include <stdint.h>

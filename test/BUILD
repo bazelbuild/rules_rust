@@ -16,7 +16,9 @@ rule_test(
     generates = ["libhello_lib--1343350674.rlib"],
     provides = {
         "rust_lib": "/libhello_lib--1343350674.rlib>\\?$",
-        "transitive_libs": "^\\[\\]$",
+        "transitive_rlibs": "^depset(\[\])$",
+        "transitive_dylibs": "^depset(\[\], order = \"topological\")$",
+        "transitive_staticlibs": "^depset(\[\])$",
     },
     rule = "@examples//hello_lib:hello_lib",
 )
