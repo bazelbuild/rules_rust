@@ -604,9 +604,13 @@ impl Greeter {
     pub fn new(greeting: &str) -> Greeter {
         Greeter { greeting: greeting.to_string(), }
     }
+ 
+    pub fn greeting(&self, thing: &str) -> String {
+        return format!("{} {}", &self.greeting, thing);
+    }
 
     pub fn greet(&self, thing: &str) {
-        println!("{} {}", &self.greeting, thing);
+        println!("{}", self.greeting(thing))
     }
 }
 
@@ -617,7 +621,7 @@ mod test {
     #[test]
     fn test_greeting() {
         let hello = Greeter::new("Hi");
-        assert_eq!("Hi Rust", hello.greet("Rust"));
+        assert_eq!("Hi Rust", hello.greeting("Rust"));
     }
 }
 ```
@@ -675,7 +679,7 @@ use hello_lib;
 #[test]
 fn test_greeting() {
     let hello = greeter::Greeter::new("Hello");
-    assert_eq!("Hello world", hello.greet("world"));
+    assert_eq!("Hello world", hello.greeting("world"));
 }
 ```
 
