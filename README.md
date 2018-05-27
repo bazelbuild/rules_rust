@@ -617,7 +617,7 @@ mod test {
     #[test]
     fn test_greeting() {
         let hello = Greeter::new("Hi");
-        assert_eq!("Hi Rust", hello.greeting("Rust"));
+        assert_eq!("Hi Rust", hello.greet("Rust"));
     }
 }
 ```
@@ -675,7 +675,7 @@ use hello_lib;
 #[test]
 fn test_greeting() {
     let hello = greeter::Greeter::new("Hello");
-    assert_eq!("Hello world", hello.greeting("world"));
+    assert_eq!("Hello world", hello.greet("world"));
 }
 ```
 
