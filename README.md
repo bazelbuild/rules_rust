@@ -62,7 +62,7 @@ The master branch should always be current with the latest bazel, as such you ca
 ## rust_library
 
 ```python
-rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rustc_flags, out_dir_tar)
+rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rustc_flags, version, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -179,6 +179,13 @@ rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rus
       </td>
     </tr>
     <tr>
+      <td><code>version</code></td>
+      <td>
+        <code>String, optional</code>
+        <p>Version to inject in the cargo environment variable.</p>
+      </td>
+    </tr>
+    <tr>
       <td><code>out_dir_tar</code></td>
       <td>
         <code>A single compressed tar or tar.gz file</code>
@@ -263,7 +270,7 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 ## rust_binary
 
 ```
-rust_binary(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
+rust_binary(name, srcs, deps, data, crate_features, rustc_flags, version, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -359,6 +366,13 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>version</code></td>
+      <td>
+        <code>String, optional</code>
+        <p>Version to inject in the cargo environment variable.</p>
       </td>
     </tr>
     <tr>
@@ -466,7 +480,7 @@ Hello world
 ## rust_test
 
 ```python
-rust_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
+rust_test(name, srcs, deps, data, crate_features, rustc_flags, version, out_dir_tar)
 ```
 
 <table class="table table-condensed table-bordered table-params">
@@ -562,6 +576,13 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>version</code></td>
+      <td>
+        <code>String, optional</code>
+        <p>Version to inject in the cargo environment variable.</p>
       </td>
     </tr>
     <tr>
