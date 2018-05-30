@@ -14,8 +14,6 @@ def _get_rustc_env(ctx):
   else:
     pre = ""
   return [
-    "CARGO=bazel",  # Bazel is actually performing the build, not cargo
-    "CARGO_MANIFEST_DIR=\"$(basename \"$PWD/%s\")\"" % ctx.build_file_path,
     "CARGO_PKG_VERSION=" + version,
     "CARGO_PKG_VERSION_MAJOR=" + v1,
     "CARGO_PKG_VERSION_MINOR=" + v2,
