@@ -183,37 +183,39 @@ rust_toolchain(
 
 # Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
-  native.new_http_archive(
-      name = "rust_linux_x86_64",
-      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-unknown-linux-gnu.tar.gz",
-      strip_prefix = "rust-1.24.1-x86_64-unknown-linux-gnu",
-      sha256 = "4567e7f6e5e0be96e9a5a7f5149b5452828ab6a386099caca7931544f45d5327",
-      build_file_content = RUST_LINUX_BUILD_FILE,
-  )
+    native.new_http_archive(
+        name = "rust_linux_x86_64",
+        url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-linux-gnu.tar.gz",
+        strip_prefix = "rust-1.26.1-x86_64-unknown-linux-gnu",
+        sha256 = "b7e964bace1286696d511c287b945f3ece476ba77a231f0c31f1867dfa5080e0",
+        build_file_content = RUST_LINUX_BUILD_FILE,
+    )
 
-  native.new_http_archive(
-      name = "rust_darwin_x86_64",
-      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-apple-darwin.tar.gz",
-      strip_prefix = "rust-1.24.1-x86_64-apple-darwin",
-      sha256 = "9d4aacdb5849977ea619d399903c9378163bd9c76ea11dac5ef6eca27849f501",
-      build_file_content = RUST_DARWIN_BUILD_FILE,
-  )
+    native.new_http_archive(
+        name = "rust_darwin_x86_64",
+        url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-apple-darwin.tar.gz",
+        strip_prefix = "rust-1.26.1-x86_64-apple-darwin",
+        sha256 = "ebf898b9fa7e2aafc53682a41f18af5ca6660ebe82dd78f28cd9799fe4dc189a",
+        build_file_content = RUST_DARWIN_BUILD_FILE,
+    )
 
-  native.new_http_archive(
-      name = "rust_freebsd_x86_64",
-      url = "https://static.rust-lang.org/dist/rust-1.24.1-x86_64-unknown-freebsd.tar.gz",
-      strip_prefix = "rust-1.24.1-x86_64-unknown-freebsd",
-      sha256 = "a33af1434186a42b3156060f0343f4816f9df5ec253c199d1be59fd42ed1e304",
-      build_file_content = RUST_FREEBSD_BUILD_FILE,
-  )
+    native.new_http_archive(
+        name = "rust_freebsd_x86_64",
+        url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-freebsd.tar.gz",
+        strip_prefix = "rust-1.26.1-x86_64-unknown-freebsd",
+        sha256 = "910128f60c680e175ae93722272f491c6835f27652f9f3fe415dc0d9c482e204",
+        build_file_content = RUST_FREEBSD_BUILD_FILE,
+    )
 
-  native.new_local_repository(
-      name = "rust_default_toolchains",
-      path = ".",
-      build_file_content = DEFAULT_TOOLCHAINS)
+    native.new_local_repository(
+        name = "rust_default_toolchains",
+        path = ".",
+        build_file_content = DEFAULT_TOOLCHAINS,
+    )
 
-  # Register toolchains
-  native.register_toolchains(
-      "@rust_default_toolchains//:rust-linux-x86_64",
-      "@rust_default_toolchains//:rust-darwin-x86_64",
-      "@rust_default_toolchains//:rust-freebsd-x86_64")
+    # Register toolchains
+    native.register_toolchains(
+        "@rust_default_toolchains//:rust-linux-x86_64",
+        "@rust_default_toolchains//:rust-darwin-x86_64",
+        "@rust_default_toolchains//:rust-freebsd-x86_64",
+    )
