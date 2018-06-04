@@ -1,0 +1,19 @@
+
+[package]
+name = "fake_lib"
+version = "0.0.1"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+protobuf = { version = "1.6.0", features = ["with-bytes"] }
+protobuf-codegen = "1.6.0"
+grpc = "0.4.0"
+grpc-compiler = "0.4.0"
+tls-api = "0.1.19"
+tls-api-stub = "0.1.19"
+
+[raze]
+genmode = "Remote"
+workspace_path = "//proto/raze"
