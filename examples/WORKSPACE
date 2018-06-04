@@ -11,3 +11,6 @@ new_git_repository(
     tag = "0.2.20",
     build_file = "libc.BUILD",
 )
+
+load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+rust_proto_repositories()

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_test")
+
+proto_library(
+    name = "helloworld",
+    srcs = ["helloworld.proto"],
+    deps = ["//proto:common"],
+)
+
+rust_grpc_library(
+    name = "rust",
+    deps = [":helloworld"],
+    visibility = ["//proto/helloworld:__subpackages__"]
+)
+
+rust_test(
+    name = "helloworld_test",
+    srcs = ["helloworld_test.rs"],
+    data = [
+        "//proto/helloworld/greeter_client",
+        "//proto/helloworld/greeter_server",
+    ]
+)
