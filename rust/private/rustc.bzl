@@ -35,6 +35,8 @@ CrateInfo = provider(
     },
 )
 
+CrateInfos = provider(fields = {"crate_infos": "List of CrateInfo providers"})
+
 DepInfo = provider(
     fields = {
         "direct_crates": "depset[CrateInfo]",
@@ -104,6 +106,13 @@ def collect_deps(deps, toolchain):
             transitive_crates += dep[DepInfo].transitive_crates
             transitive_dylibs += dep[DepInfo].transitive_dylibs
             transitive_staticlibs += dep[DepInfo].transitive_staticlibs
+        elif hasattr(dep, "crate_infos"):
+            # This dependency is a rust_*_library
+            direct_crates += dep[CrateInfos].crate_infos
+            transitive_crates += dep[CrateInfos].crate_infos
+            transitive_crates += dep[DepInfo].transitive_crates
+            transitive_dylibs += dep[DepInfo].transitive_dylibs
+            transitive_staticlibs += dep[DepInfo].transitive_staticlibs
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
@@ -111,7 +120,7 @@ def collect_deps(deps, toolchain):
             transitive_dylibs += dylibs
             transitive_staticlibs += staticlibs
         else:
-            fail("rust targets can only depend on rust_library or cc_library targets." + str(dep), "deps")
+            fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
     crate_list = transitive_crates.to_list()
     transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
@@ -182,7 +191,7 @@ def rustc_compile_action(
 
     compile_inputs = (
         crate_info.srcs +
-        ctx.files.data +
+        getattr(ctx.files, "data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.rustc_lib +
@@ -208,9 +217,10 @@ def rustc_compile_action(
     args.add("--emit=dep-info,link")
     args.add("--color", "always")
     args.add("--target", toolchain.target_triple)
-    args.add_all(ctx.attr.crate_features, before_each = "--cfg", format_each = 'feature="%s"')
+    if hasattr(ctx.attr, "crate_features"):
+        args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     args.add_all(rust_flags)
-    args.add_all(ctx.attr.rustc_flags)
+    args.add_all(getattr(ctx.attr, "rustc_flags", []))
 
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
@@ -238,11 +248,11 @@ def rustc_compile_action(
         env = _get_rustc_env(ctx),
         arguments = [args],
         mnemonic = "Rustc",
-        progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(ctx.files.srcs)),
+        progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(crate_info.srcs)),
     )
 
     runfiles = ctx.runfiles(
-        files = dep_info.transitive_dylibs.to_list() + ctx.files.data,
+        files = dep_info.transitive_dylibs.to_list() + getattr(ctx.files, "data", []),
         collect_data = True,
     )
 
@@ -257,6 +267,8 @@ def rustc_compile_action(
     ]
 
 def _create_out_dir_action(ctx):
+    if not hasattr(ctx.file, "out_dir_tar"):
+        return None
     tar_file = ctx.file.out_dir_tar
     if not tar_file:
         return None

@@ -29,6 +29,9 @@ new_git_repository(
     tag = "0.2.20",
 )
 
+load("//proto:repositories.bzl", "rust_proto_repositories")
+rust_proto_repositories()
+
 # Used for documenting Rust rules.
 git_repository(
     name = "io_bazel_rules_sass",
