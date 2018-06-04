@@ -11,6 +11,8 @@
     <li><a href="#rust_benchmark">rust_benchmark</a></li>
     <li><a href="#rust_doc">rust_doc</a></li>
     <li><a href="#rust_doc_test">rust_doc_test</a></li>
+    <li><a href="proto/README.md#rust_proto_library">rust_proto_library</a></li>
+    <li><a href="proto/README.md#rust_grpc_library">rust_grpc_library</a></li>
   </ul>
 </div>
 
