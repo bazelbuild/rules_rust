@@ -77,6 +77,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           "--codegen link-args='%s'" % ' '.join(cpp_fragment.link_options),
           "--out-dir %s" % output_dir,
           "--emit=dep-info,link",
+          "--color always",
       ] +
       ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
       features_flags +
