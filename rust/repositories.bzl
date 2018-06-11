@@ -59,6 +59,9 @@ filegroup(
         "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.rlib",
         "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.so",
         "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.a",
+        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.rlib",
+        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.so",
+        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.a",
     ]),
     visibility = ["//visibility:public"],
 )
@@ -92,6 +95,9 @@ filegroup(
         "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.rlib",
         "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.so",
         "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.a",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.rlib",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.so",
+        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.a",
     ]),
     visibility = ["//visibility:public"],
 )
