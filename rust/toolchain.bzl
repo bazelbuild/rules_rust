@@ -52,6 +52,10 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   extra_filename = ""
   if output_hash:
     extra_filename = "-%s" % output_hash
+    
+  # TODO consider handling 'fastbuild'
+  # opt_level and debug_info combination roughly matches Cargo's "dev" and "release" profiles
+  (opt_level, debug_info) = (0, 2) if ctx.var["COMPILATION_MODE"] == "dbg" else (3, 0)
 
   return " ".join(
       ["set -e;"] +
@@ -68,7 +72,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
-          "--codegen opt-level=3",  # @TODO Might not want to do -o3 on tests
+          "--codegen opt-level=%s" % opt_level,  # @TODO Might not want to do -o3 on tests
+          "--codegen debuginfo=%s" % debug_info,
           # Disambiguate this crate from similarly named ones
           "--codegen metadata=%s" % extra_filename,
           "--codegen extra-filename='%s'" % extra_filename,
