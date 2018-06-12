@@ -25,6 +25,27 @@ def _get_rustc_env(ctx):
     "CARGO_PKG_HOMEPAGE=",
   ]
 
+def _get_comp_mode_codegen_opts(ctx):
+  comp_mode = ctx.var["COMPILATION_MODE"]
+  opt_level = None
+  debug_info = None
+  if comp_mode == "dbg":
+    opt_level = 0
+    debug_info = 2
+  elif comp_mode == "opt":
+    opt_level = 3
+    debug_info = 0
+  elif comp_mode == "fastbuild":
+    opt_level = 0
+    debug_info = 0
+  else:
+    fail("Unrecognized COMPILATION_MODE: %s" % comp_mode)
+
+  return struct(
+    opt_level = opt_level,
+    debug_info = debug_info
+  )
+
 # Utility methods that use the toolchain provider.
 def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
                          depinfo, output_hash=None, rust_flags=[]):
@@ -53,9 +74,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   if output_hash:
     extra_filename = "-%s" % output_hash
     
-  # TODO consider handling 'fastbuild'
-  # opt_level and debug_info combination roughly matches Cargo's "dev" and "release" profiles
-  (opt_level, debug_info) = (0, 2) if ctx.var["COMPILATION_MODE"] == "dbg" else (3, 0)
+  codegen_opts = _get_comp_mode_codegen_opts(ctx)
 
   return " ".join(
       ["set -e;"] +
@@ -72,8 +91,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
-          "--codegen opt-level=%s" % opt_level,  # @TODO Might not want to do -o3 on tests
-          "--codegen debuginfo=%s" % debug_info,
+          "--codegen opt-level=%s" % codegen_opts.opt_level,  # @TODO Might not want to do -o3 on tests
+          "--codegen debuginfo=%s" % codegen_opts.debug_info,
           # Disambiguate this crate from similarly named ones
           "--codegen metadata=%s" % extra_filename,
           "--codegen extra-filename='%s'" % extra_filename,
