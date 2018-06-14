@@ -22,6 +22,8 @@ def _rust_toolchain_impl(ctx):
         rust_lib = _get_files(ctx.attr.rust_lib),
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
+        target_triple = ctx.attr.target_triple,
+        exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
