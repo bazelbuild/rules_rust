@@ -121,6 +121,7 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
             lib_rs.path,
             "--crate-name %s" % target.name,
         ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
+            "--target=" + toolchain.target_triplet,
             "-o %s" % docs_dir,
         ] + doc_flags +
         depinfo.search_flags +
