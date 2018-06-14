@@ -229,6 +229,7 @@ def rustc_compile_action(
             output_dir,
             "--emit=dep-info,link",
             "--color always",
+            "--target=" + toolchain.target_triplet,
         ] +
         ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
         features_flags +
