@@ -83,6 +83,7 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
       features_flags +
       rust_flags +
       ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
+      ["--target=" + toolchain.triplet] +
       depinfo.search_flags +
       depinfo.link_flags +
       ctx.attr.rustc_flags)
@@ -205,6 +206,7 @@ def _rust_toolchain_impl(ctx):
       staticlib_ext = ctx.attr.staticlib_ext,
       dylib_ext = ctx.attr.dylib_ext,
       os = ctx.attr.os,
+      triplet = ctx.attr.triplet,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -218,6 +220,7 @@ rust_toolchain = rule(
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
         "os": attr.string(mandatory = True),
+        "triplet": attr.string(mandatory = True),
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),
