@@ -25,6 +25,13 @@ def _get_rustc_env(ctx):
     "CARGO_PKG_HOMEPAGE=",
   ]
 
+def _get_comp_mode_codegen_opts(ctx, toolchain):
+  comp_mode = ctx.var["COMPILATION_MODE"]
+  if not comp_mode in toolchain.compilation_mode_opts:
+    fail("Unrecognized compilation mode %s for toolchain." % comp_mode)
+  
+  return toolchain.compilation_mode_opts[comp_mode]
+
 # Utility methods that use the toolchain provider.
 def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
                          depinfo, output_hash=None, rust_flags=[]):
@@ -52,6 +59,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
   extra_filename = ""
   if output_hash:
     extra_filename = "-%s" % output_hash
+    
+  codegen_opts = _get_comp_mode_codegen_opts(ctx, toolchain)
 
   return " ".join(
       ["set -e;"] +
@@ -68,7 +77,8 @@ def build_rustc_command(ctx, toolchain, crate_name, crate_type, src, output_dir,
           src.path,
           "--crate-name %s" % crate_name,
           "--crate-type %s" % crate_type,
-          "--codegen opt-level=3",  # @TODO Might not want to do -o3 on tests
+          "--codegen opt-level=%s" % codegen_opts.opt_level,
+          "--codegen debuginfo=%s" % codegen_opts.debug_info,
           # Disambiguate this crate from similarly named ones
           "--codegen metadata=%s" % extra_filename,
           "--codegen extra-filename='%s'" % extra_filename,
@@ -198,6 +208,15 @@ def _out_dir_setup_cmd(out_dir_tar):
 # The rust_toolchain rule definition and implementation.
 
 def _rust_toolchain_impl(ctx):
+  compilation_mode_opts = {}
+  for k, v in ctx.attr.opt_level.items():
+     if not k in ctx.attr.debug_info:
+       fail("Compilation mode %s is not defined in debug_info but is defined opt_level" % k)
+     compilation_mode_opts[k] = struct(opt_level = v, debug_info = ctx.attr.debug_info[k])
+  for k, v in ctx.attr.debug_info.items():
+     if not k in ctx.attr.opt_level:
+       fail("Compilation mode %s is not defined in opt_level but is defined debug_info" % k)
+  
   toolchain = platform_common.ToolchainInfo(
       rustc = _get_first_file(ctx.attr.rustc),
       rust_doc = _get_first_file(ctx.attr.rust_doc),
@@ -207,6 +226,7 @@ def _rust_toolchain_impl(ctx):
       dylib_ext = ctx.attr.dylib_ext,
       os = ctx.attr.os,
       triplet = ctx.attr.triplet,
+      compilation_mode_opts = compilation_mode_opts,
       crosstool_files = ctx.files._crosstool)
   return [toolchain]
 
@@ -224,6 +244,8 @@ rust_toolchain = rule(
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),
+        "opt_level": attr.string_dict(default = {"opt": "3", "dbg": "0", "fastbuild": "0"}),
+        "debug_info": attr.string_dict(default = {"opt": "0", "dbg": "2", "fastbuild": "0"}),
     },
 )
 
