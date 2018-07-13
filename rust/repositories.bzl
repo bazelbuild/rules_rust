@@ -133,6 +133,7 @@ rust_toolchain(
     staticlib_ext = ".a",
     dylib_ext = ".so",
     os = "linux",
+    triplet = "x86_64-unknown-linux-gnu",
     visibility = ["//visibility:public"],
 )
 
@@ -159,6 +160,7 @@ rust_toolchain(
     staticlib_ext = ".a",
     dylib_ext = ".dylib",
     os = "mac os x",
+    triplet = "x86_64-apple-darwin",
     visibility = ["//visibility:public"],
 )
 
@@ -185,6 +187,7 @@ rust_toolchain(
     staticlib_ext = ".a",
     dylib_ext = ".so",
     os = "freebsd",
+    triplet = "x86_64-unknown-freebsd",
     visibility = ["//visibility:public"],
 )
 """
