@@ -1,193 +1,99 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
+load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext")
 
-RUST_DARWIN_BUILD_FILE = """
-filegroup(
+def _generic_build_file(target_triple):
+    system = triple_to_system(target_triple)
+    return """filegroup(
     name = "rustc",
-    srcs = ["rustc/bin/rustc"],
+    srcs = ["rustc/bin/rustc{binary_ext}"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "rustc_lib",
-    srcs = glob(["rustc/lib/*.dylib"]),
+    srcs = glob(["rustc/lib/*.{dylib_ext}"]),
     visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "rustdoc",
-    srcs = ["rustc/bin/rustdoc"],
+    srcs = ["rustc/bin/rustdoc{binary_ext}"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "rust_lib",
     srcs = glob([
-        "rust-std-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/lib/*.rlib",
-        "rust-std-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/lib/*.dylib",
-        "rust-std-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/lib/*.a",
-        "rustc/lib/rustlib/x86_64-apple-darwin/lib/*.rlib",
-        "rustc/lib/rustlib/x86_64-apple-darwin/lib/*.dylib",
-        "rustc/lib/rustlib/x86_64-apple-darwin/lib/*.a",
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.rlib",
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.{dylib_ext}",
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.{staticlib_ext}",
+        "rustc/lib/rustlib/{target_triple}/lib/*.rlib",
+        "rustc/lib/rustlib/{target_triple}/lib/*.{dylib_ext}",
+        "rustc/lib/rustlib/{target_triple}/lib/*.{staticlib_ext}",
     ]),
     visibility = ["//visibility:public"],
 )
-"""
+""".format(
+        binary_ext = system_to_binary_ext(system),
+        staticlib_ext = system_to_staticlib_ext(system),
+        dylib_ext = system_to_dylib_ext(system),
+        target_triple = target_triple,
+    )
 
-RUST_LINUX_BUILD_FILE = """
-filegroup(
-    name = "rustc",
-    srcs = ["rustc/bin/rustc"],
-    visibility = ["//visibility:public"],
+def _BUILD_for_toolchain(name, target_triple):
+    system = triple_to_system(target_triple)
+    constraint_set = triple_to_constraint_set(target_triple)
+
+    constraint_set_strs = []
+    for constraint in constraint_set_strs:
+        constraint_set_strs.append("\"{}\"", constraint)
+
+    constraint_sets_serialized = "[{}]".format(", ".join(constraint_set_strs))
+
+    return """toolchain(
+    name = "{toolchain_name}",
+    exec_compatible_with = {constraint_sets_serialized},
+    target_compatible_with = {constraint_sets_serialized},
+    toolchain = ":{toolchain_name}_impl",
+    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
 )
 
-filegroup(
-    name = "rustc_lib",
-    srcs = glob(["rustc/lib/*.so"]),
+rust_toolchain(
+    name = "{toolchain_name}_impl",
+    rust_doc = "@{toolchain_workspace_name}//:rustdoc",
+    rust_lib = ["@{toolchain_workspace_name}//:rust_lib"],
+    rustc = "@{toolchain_workspace_name}//:rustc",
+    rustc_lib = ["@{toolchain_workspace_name}//:rustc_lib"],
+    staticlib_ext = "{staticlib_ext}",
+    dylib_ext = "{dylib_ext}",
+    os = "{system}",
     visibility = ["//visibility:public"],
 )
+""".format(
+        toolchain_name = name,
+        toolchain_workspace_name = name.replace("-", "_"),
+        staticlib_ext = system_to_staticlib_ext(system),
+        dylib_ext = system_to_dylib_ext(system),
+        system = system,
+        constraint_sets_serialized = constraint_sets_serialized,
+    )
 
-filegroup(
-    name = "rustdoc",
-    srcs = ["rustc/bin/rustdoc"],
-    visibility = ["//visibility:public"],
-)
+def _default_toolchains():
+    all_toolchains = [
+        ("rust-linux-x86_64", "x86_64-unknown-linux-gnu"),
+        ("rust-darwin-x86_64", "x86_64-apple-darwin"),
+        ("rust-freebsd-x86_64", "x86_64-unknown-freebsd"),
+    ]
 
-filegroup(
-    name = "rust_lib",
-    srcs = glob([
-        "rust-std-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.rlib",
-        "rust-std-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.so",
-        "rust-std-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.a",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.rlib",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.so",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/lib/*.a",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.rlib",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.so",
-        "rustc/lib/rustlib/x86_64-unknown-linux-gnu/codegen-backends/*.a",
-    ]),
-    visibility = ["//visibility:public"],
-)
-"""
+    all_toolchain_BUILDs = []
+    for toolchain in all_toolchains:
+        all_toolchain_BUILDs.append(_BUILD_for_toolchain(toolchain[0], toolchain[1]))
 
-RUST_FREEBSD_BUILD_FILE = """
-filegroup(
-    name = "rustc",
-    srcs = ["rustc/bin/rustc"],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "rustc_lib",
-    srcs = glob(["rustc/lib/*.so"]),
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "rustdoc",
-    srcs = ["rustc/bin/rustdoc"],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "rust_lib",
-    srcs = glob([
-        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.rlib",
-        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.so",
-        "rust-std-x86_64-unknown-freebsd/lib/rustlib/x86_64-unknown-freebsd/lib/*.a",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.rlib",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.so",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/lib/*.a",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.rlib",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.so",
-        "rustc/lib/rustlib/x86_64-unknown-freebsd/codegen-backends/*.a",
-    ]),
-    visibility = ["//visibility:public"],
-)
-"""
-
-# This defines the default toolchain separately from the actual repositories, so that the remote
-# repositories will only be downloaded if they are actually used.
-DEFAULT_TOOLCHAINS = """
+    return """
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
-toolchain(
-    name = "rust-linux-x86_64",
-    exec_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    target_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    toolchain = ":rust-linux-x86_64_impl",
-    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
-)
-
-rust_toolchain(
-    name = "rust-linux-x86_64_impl",
-    rust_doc = "@rust_linux_x86_64//:rustdoc",
-    rust_lib = ["@rust_linux_x86_64//:rust_lib"],
-    rustc = "@rust_linux_x86_64//:rustc",
-    rustc_lib = ["@rust_linux_x86_64//:rustc_lib"],
-    staticlib_ext = ".a",
-    dylib_ext = ".so",
-    os = "linux",
-    visibility = ["//visibility:public"],
-)
-
-toolchain(
-    name = "rust-darwin-x86_64",
-    exec_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    target_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    toolchain = ":rust-darwin-x86_64_impl",
-    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
-)
-
-rust_toolchain(
-    name = "rust-darwin-x86_64_impl",
-    rust_doc = "@rust_darwin_x86_64//:rustdoc",
-    rust_lib = ["@rust_darwin_x86_64//:rust_lib"],
-    rustc = "@rust_darwin_x86_64//:rustc",
-    rustc_lib = ["@rust_darwin_x86_64//:rustc_lib"],
-    staticlib_ext = ".a",
-    dylib_ext = ".dylib",
-    os = "mac os x",
-    visibility = ["//visibility:public"],
-)
-
-toolchain(
-    name = "rust-freebsd-x86_64",
-    exec_compatible_with = [
-        "@bazel_tools//platforms:freebsd",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    target_compatible_with = [
-        "@bazel_tools//platforms:freebsd",
-        "@bazel_tools//platforms:x86_64",
-    ],
-    toolchain = ":rust-freebsd-x86_64_impl",
-    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
-)
-
-rust_toolchain(
-    name = "rust-freebsd-x86_64_impl",
-    rust_doc = "@rust_freebsd_x86_64//:rustdoc",
-    rust_lib = ["@rust_freebsd_x86_64//:rust_lib"],
-    rustc = "@rust_freebsd_x86_64//:rustc",
-    rustc_lib = ["@rust_freebsd_x86_64//:rustc_lib"],
-    staticlib_ext = ".a",
-    dylib_ext = ".so",
-    os = "freebsd",
-    visibility = ["//visibility:public"],
-)
-"""
+{all_toolchain_BUILDs}
+""".format(all_toolchain_BUILDs = "\n".join(all_toolchain_BUILDs))
 
 # Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
@@ -196,7 +102,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-linux-gnu.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-linux-gnu",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-linux-gnu") or "",
-        build_file_content = RUST_LINUX_BUILD_FILE,
+        build_file_content = _generic_build_file("x86_64-unknown-linux-gnu"),
     )
 
     native.new_http_archive(
@@ -204,7 +110,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-apple-darwin.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-apple-darwin",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-apple-darwin") or "",
-        build_file_content = RUST_DARWIN_BUILD_FILE,
+        build_file_content = _generic_build_file("x86_64-apple-darwin"),
     )
 
     native.new_http_archive(
@@ -212,13 +118,13 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-freebsd.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-freebsd",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-freebsd") or "",
-        build_file_content = RUST_FREEBSD_BUILD_FILE,
+        build_file_content = _generic_build_file("x86_64-unknown-freebsd"),
     )
 
     native.new_local_repository(
         name = "rust_default_toolchains",
         path = ".",
-        build_file_content = DEFAULT_TOOLCHAINS,
+        build_file_content = _default_toolchains(),
     )
 
     # Register toolchains
