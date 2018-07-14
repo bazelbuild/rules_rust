@@ -45,8 +45,8 @@ def _BUILD_for_toolchain(name, target_triple):
     constraint_set = triple_to_constraint_set(target_triple)
 
     constraint_set_strs = []
-    for constraint in constraint_set_strs:
-        constraint_set_strs.append("\"{}\"", constraint)
+    for constraint in constraint_set:
+        constraint_set_strs.append("\"{}\"".format(constraint))
 
     constraint_sets_serialized = "[{}]".format(", ".join(constraint_set_strs))
 

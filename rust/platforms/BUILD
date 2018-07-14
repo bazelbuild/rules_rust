@@ -17,7 +17,7 @@ SUPPORTED_TRIPLES = [
     "x86_64-unknown-linux-gnu",
 ]
 
-load("@io_bazel_rules_rust//:triple_mappings.bzl", "triple_to_constraint_set")
+load("@io_bazel_rules_rust//rust:triple_mappings.bzl", "triple_to_constraint_set")
 
 [native.platform(
     name = target_triple,
