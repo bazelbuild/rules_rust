@@ -1,7 +1,9 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext")
 
-def _generic_build_file(target_triple):
+def generic_build_file(target_triple):
+    """Emits a BUILD file suitable to the provided target_triple."""
+
     system = triple_to_system(target_triple)
     return """filegroup(
     name = "rustc",
@@ -40,7 +42,9 @@ filegroup(
         target_triple = target_triple,
     )
 
-def _BUILD_for_toolchain(name, target_triple):
+def BUILD_for_toolchain(name, target_triple):
+    """Emits a toolchain declaration for an existing toolchain workspace."""
+
     system = triple_to_system(target_triple)
     constraint_set = triple_to_constraint_set(target_triple)
 
@@ -87,7 +91,7 @@ def _default_toolchains():
 
     all_toolchain_BUILDs = []
     for toolchain in all_toolchains:
-        all_toolchain_BUILDs.append(_BUILD_for_toolchain(toolchain[0], toolchain[1]))
+        all_toolchain_BUILDs.append(BUILD_for_toolchain(toolchain[0], toolchain[1]))
 
     return """
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
@@ -102,7 +106,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-linux-gnu.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-linux-gnu",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-linux-gnu") or "",
-        build_file_content = _generic_build_file("x86_64-unknown-linux-gnu"),
+        build_file_content = generic_build_file("x86_64-unknown-linux-gnu"),
     )
 
     native.new_http_archive(
@@ -110,7 +114,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-apple-darwin.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-apple-darwin",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-apple-darwin") or "",
-        build_file_content = _generic_build_file("x86_64-apple-darwin"),
+        build_file_content = generic_build_file("x86_64-apple-darwin"),
     )
 
     native.new_http_archive(
@@ -118,7 +122,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-freebsd.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-freebsd",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-freebsd") or "",
-        build_file_content = _generic_build_file("x86_64-unknown-freebsd"),
+        build_file_content = generic_build_file("x86_64-unknown-freebsd"),
     )
 
     native.new_local_repository(
