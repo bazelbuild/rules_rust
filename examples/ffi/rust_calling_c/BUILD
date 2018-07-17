@@ -11,7 +11,7 @@ rust_library(
     ],
     deps = [
         "//ffi/rust_calling_c/c:native_matrix",
-        "@libc//:libc",
+        "@libc",
     ],
 )
 
@@ -31,7 +31,7 @@ rust_library(
     ],
     deps = [
         "//ffi/rust_calling_c/c:native_matrix_so",
-        "@libc//:libc",
+        "@libc",
     ],
 )
 
