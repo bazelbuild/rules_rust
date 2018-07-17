@@ -1,7 +1,7 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext")
 
-def generic_build_file(target_triple):
+def BUILD_for_compiler(target_triple):
     """Emits a BUILD file suitable to the provided target_triple."""
 
     system = triple_to_system(target_triple)
@@ -24,7 +24,28 @@ filegroup(
 )
 
 filegroup(
-    name = "rust_lib",
+    name = "rust_lib-{target_triple}",
+    srcs = glob([
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.rlib",
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.{dylib_ext}",
+        "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.{staticlib_ext}",
+        "rustc/lib/rustlib/{target_triple}/lib/*.rlib",
+        "rustc/lib/rustlib/{target_triple}/lib/*.{dylib_ext}",
+        "rustc/lib/rustlib/{target_triple}/lib/*.{staticlib_ext}",
+    ]),
+    visibility = ["//visibility:public"],
+)
+""".format(
+        binary_ext = system_to_binary_ext(system),
+        staticlib_ext = system_to_staticlib_ext(system),
+        dylib_ext = system_to_dylib_ext(system),
+        target_triple = target_triple,
+    )
+
+def BUILD_for_extra_stdlib(target_triple):
+    system = triple_to_system(target_triple)
+    return """filegroup(
+    name = "rust_lib-{target_triple}",
     srcs = glob([
         "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.rlib",
         "rust-std-{target_triple}/lib/rustlib/{target_triple}/lib/*.{dylib_ext}",
@@ -65,12 +86,14 @@ def BUILD_for_toolchain(name, target_triple):
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{toolchain_workspace_name}//:rustdoc",
-    rust_lib = ["@{toolchain_workspace_name}//:rust_lib"],
+    rust_lib = ["@{toolchain_workspace_name}//:rust_lib-{target_triple}"],
     rustc = "@{toolchain_workspace_name}//:rustc",
     rustc_lib = ["@{toolchain_workspace_name}//:rustc_lib"],
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
     os = "{system}",
+    exec_triple = "{exec_triple}"
+    target_triple = "{target_triple}"
     visibility = ["//visibility:public"],
 )
 """.format(
@@ -79,6 +102,8 @@ rust_toolchain(
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
         system = system,
+        exec_triple = target_triple,
+        target_triple = target_triple,
         constraint_sets_serialized = constraint_sets_serialized,
     )
 
@@ -106,7 +131,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-linux-gnu.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-linux-gnu",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-linux-gnu") or "",
-        build_file_content = generic_build_file("x86_64-unknown-linux-gnu"),
+        build_file_content = BUILD_for_compiler("x86_64-unknown-linux-gnu"),
     )
 
     native.new_http_archive(
@@ -114,7 +139,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-apple-darwin.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-apple-darwin",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-apple-darwin") or "",
-        build_file_content = generic_build_file("x86_64-apple-darwin"),
+        build_file_content = BUILD_for_compiler("x86_64-apple-darwin"),
     )
 
     native.new_http_archive(
@@ -122,7 +147,7 @@ def rust_repositories():
         url = "https://static.rust-lang.org/dist/rust-1.26.1-x86_64-unknown-freebsd.tar.gz",
         strip_prefix = "rust-1.26.1-x86_64-unknown-freebsd",
         sha256 = FILE_KEY_TO_SHA.get("rust-1.26.1-x86_64-unknown-freebsd") or "",
-        build_file_content = generic_build_file("x86_64-unknown-freebsd"),
+        build_file_content = BUILD_for_compiler("x86_64-unknown-freebsd"),
     )
 
     native.new_local_repository(

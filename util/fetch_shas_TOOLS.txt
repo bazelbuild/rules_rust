@@ -1,1 +1,3 @@
 rust
+rustc
+rust-std
