@@ -7,7 +7,7 @@ def _sanitize_for_name(some_string):
     return some_string.replace("-", "_").replace(".", "p")
 
 def BUILD_for_compiler(target_triple):
-    """Emits a BUILD file suitable to the provided target_triple."""
+    """Emits a BUILD file the compiler .tar.gz."""
 
     system = triple_to_system(target_triple)
     return """load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
@@ -36,6 +36,8 @@ filegroup(
     )
 
 def BUILD_for_stdlib(target_triple):
+    """Emits a BUILD file the stdlib .tar.gz."""
+
     system = triple_to_system(target_triple)
     return """filegroup(
     name = "rust_lib-{target_triple}",
@@ -54,7 +56,14 @@ def BUILD_for_stdlib(target_triple):
     )
 
 def BUILD_for_toolchain(workspace_name, name, exec_triple, target_triple):
-    """Emits a toolchain declaration for an existing toolchain workspace."""
+    """Emits a toolchain declaration to match an existing compiler and stdlib.
+
+    Args:
+      workspace_name: The name of the workspace that this toolchain resides in
+      name: The name of the toolchain declaration
+      exec_triple: The rust-style target that this compiler runs on
+      target_triple: The rust-style target triple of the tool
+    """
 
     system = triple_to_system(target_triple)
 
@@ -116,8 +125,15 @@ def _check_version_valid(version, iso_date, param_prefix = ""):
     if version not in ("beta", "nightly") and iso_date:
         print("{param_prefix}iso_date is ineffective if an exact version is specified".format(param_prefix = param_prefix))
 
-def produce_tool_suburl(tool_name, target_triple, version, iso_date):
-    """Produces a fully qualified Rust tool name for URL"""
+def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
+    """Produces a fully qualified Rust tool name for URL
+
+    Args:
+      tool_name: The name of the tool per static.rust-lang.org
+      target_triple: The rust-style target triple of the tool
+      version: The version of the tool among "nightly", "beta', or an exact version.
+      iso_date: The date of the tool (or None, if the version is a specific version).
+    """
 
     if iso_date:
         return "{}/{}-{}-{}".format(iso_date, tool_name, version, target_triple)
@@ -125,12 +141,19 @@ def produce_tool_suburl(tool_name, target_triple, version, iso_date):
         return "{}-{}-{}".format(tool_name, version, target_triple)
 
 def produce_tool_path(tool_name, target_triple, version):
-    """Produces a qualified Rust tool name"""
+    """Produces a qualified Rust tool name
+
+    Args:
+      tool_name: The name of the tool per static.rust-lang.org
+      target_triple: The rust-style target triple of the tool
+      version: The version of the tool among "nightly", "beta', or an exact version.
+    """
 
     return "{}-{}-{}".format(tool_name, version, target_triple)
 
 def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
+
     Args:
       ctx: A repository_ctx.
       tool_name: The name of the given tool per the archive naming.
@@ -158,6 +181,14 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
     )
 
 def load_rust_compiler(ctx):
+    """Loads a rust compiler and yields corresponding BUILD for it
+
+    Args:
+      ctx: A repository_ctx.
+    Returns:
+      The BUILD file contents for this compiler and compiler library
+    """
+
     target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
@@ -174,6 +205,15 @@ def load_rust_compiler(ctx):
     return compiler_BUILD
 
 def load_rust_stdlib(ctx, target_triple):
+    """Loads a rust standard library and yields corresponding BUILD for it
+
+    Args:
+      ctx: A repository_ctx.
+      target_triple: The rust-style target triple of the tool
+    Returns:
+      The BUILD file contents for this stdlib, and a toolchain decl to match
+    """
+
     load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
@@ -195,6 +235,8 @@ def load_rust_stdlib(ctx, target_triple):
     return stdlib_BUILD + toolchain_BUILD
 
 def _rust_toolchain_repository_impl(ctx):
+    """The implementation of the rust toolchain repository rule."""
+
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
     BUILD_components = [
@@ -219,6 +261,18 @@ rust_toolchain_repositories = repository_rule(
 )
 
 def rust_repository_set(name, version, exec_triple, extra_stdlib_triples, iso_date = None):
+    """Assembles a remote repository for the given params and yielding the 
+    names of the generated toolchains.
+
+    Args:
+      name: The name of the generated repository
+      version: The version of the tool among "nightly", "beta', or an exact version.
+      iso_date: The date of the tool (or None, if the version is a specific version).
+      exec_triple: The rust-style target that this compiler runs on
+      extra_stdlib_triples: Additional rust-style targets that this set of toolchains
+                            should support.
+    """
+
     rust_toolchain_repositories(
         name = name,
         exec_triple = exec_triple,
@@ -244,6 +298,8 @@ def rust_repository_set(name, version, exec_triple, extra_stdlib_triples, iso_da
 
 # Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
+    """Emits a default set of toolchains for Linux, OSX, and Freebsd"""
+
     all_toolchain_names = []
     all_toolchain_names.extend(rust_repository_set(
         name = "rust_linux_x86_64",
