@@ -1,6 +1,8 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext")
 
+DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
+
 def _sanitize_for_name(some_string):
     """Cleans a tool name for use as a bazel workspace name"""
 
@@ -10,7 +12,8 @@ def BUILD_for_compiler(target_triple):
     """Emits a BUILD file the compiler .tar.gz."""
 
     system = triple_to_system(target_triple)
-    return """load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+    return """
+load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "rustc",
@@ -39,7 +42,8 @@ def BUILD_for_stdlib(target_triple):
     """Emits a BUILD file the stdlib .tar.gz."""
 
     system = triple_to_system(target_triple)
-    return """filegroup(
+    return """
+filegroup(
     name = "rust_lib-{target_triple}",
     srcs = glob([
         "lib/rustlib/{target_triple}/lib/*.rlib",
@@ -154,8 +158,11 @@ def produce_tool_path(tool_name, target_triple, version):
 def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
+    This function sources the tool from the Rust-lang static file server. The index is available
+    at: https://static.rust-lang.org/dist/index.html
+
     Args:
-      ctx: A repository_ctx.
+      ctx: A repository_ctx (no attrs required).
       tool_name: The name of the given tool per the archive naming.
       param_prefix: The name of the versioning param if the repository rule supports multiple tools.
       tool_subdirectory: The subdirectory of the tool files (wo level below the root directory of
@@ -168,6 +175,8 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
 
     _check_version_valid(version, iso_date, param_prefix)
 
+    # N.B. See https://static.rust-lang.org/dist/index.html to find the tool_suburl for a given
+    # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
     url = "https://static.rust-lang.org/dist/{}.tar.gz".format(tool_suburl)
 
@@ -176,11 +185,10 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
         url,
         output = "",
         sha256 = FILE_KEY_TO_SHA.get(tool_suburl) or "",
-        type = "tar.gz",
         stripPrefix = "{}/{}".format(tool_path, tool_subdirectory),
     )
 
-def load_rust_compiler(ctx):
+def _load_rust_compiler(ctx):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
@@ -204,7 +212,7 @@ def load_rust_compiler(ctx):
 
     return compiler_BUILD
 
-def load_rust_stdlib(ctx, target_triple):
+def _load_rust_stdlib(ctx, target_triple):
     """Loads a rust standard library and yields corresponding BUILD for it
 
     Args:
@@ -224,9 +232,13 @@ def load_rust_stdlib(ctx, target_triple):
         version = ctx.attr.version,
     )
 
+    toolchain_prefix = ctx.attr.toolchain_name_prefix or DEFAULT_TOOLCHAIN_NAME_PREFIX
     stdlib_BUILD = BUILD_for_stdlib(target_triple)
     toolchain_BUILD = BUILD_for_toolchain(
-        name = "toolchain_for_{}".format(target_triple),
+        name = "{toolchain_prefix}_{target_triple}".format(
+            toolchain_prefix = toolchain_prefix,
+            target_triple = target_triple,
+        ),
         exec_triple = ctx.attr.exec_triple,
         target_triple = target_triple,
         workspace_name = ctx.attr.name,
@@ -240,12 +252,12 @@ def _rust_toolchain_repository_impl(ctx):
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
     BUILD_components = [
-        load_rust_compiler(ctx),
-        load_rust_stdlib(ctx, ctx.attr.exec_triple),
+        _load_rust_compiler(ctx),
+        _load_rust_stdlib(ctx, ctx.attr.exec_triple),
     ]
 
-    for extra_stdlib_triple in ctx.attr.extra_stdlib_triples:
-        BUILD_components.append(load_rust_stdlib(ctx, extra_stdlib_triple))
+    for extra_stdlib_triple in ctx.attr.extra_target_triples:
+        BUILD_components.append(_load_rust_stdlib(ctx, extra_stdlib_triple))
 
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
@@ -255,12 +267,13 @@ rust_toolchain_repositories = repository_rule(
         "version": attr.string(mandatory = True),
         "iso_date": attr.string(),
         "exec_triple": attr.string(mandatory = True),
-        "extra_stdlib_triples": attr.string_list(),
+        "extra_target_triples": attr.string_list(),
+        "toolchain_name_prefix": attr.string(),
     },
     implementation = _rust_toolchain_repository_impl,
 )
 
-def rust_repository_set(name, version, exec_triple, extra_stdlib_triples, iso_date = None):
+def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_date = None):
     """Assembles a remote repository for the given params and yielding the 
     names of the generated toolchains.
 
@@ -269,27 +282,28 @@ def rust_repository_set(name, version, exec_triple, extra_stdlib_triples, iso_da
       version: The version of the tool among "nightly", "beta', or an exact version.
       iso_date: The date of the tool (or None, if the version is a specific version).
       exec_triple: The rust-style target that this compiler runs on
-      extra_stdlib_triples: Additional rust-style targets that this set of toolchains
+      extra_target_triples: Additional rust-style targets that this set of toolchains
                             should support.
     """
 
     rust_toolchain_repositories(
         name = name,
         exec_triple = exec_triple,
-        extra_stdlib_triples = extra_stdlib_triples,
+        extra_target_triples = extra_target_triples,
         iso_date = iso_date,
+        toolchain_name_prefix = "toolchain_for",
         version = version,
     )
 
-    toolchain_name_tmpl = "@{name}//:toolchain_for_{triple}"
+    toolchain_name_template = "@{name}//:toolchain_for_{triple}"
     toolchain_names = [
-        toolchain_name_tmpl.format(
+        toolchain_name_template.format(
             name = name,
             triple = exec_triple,
         ),
     ]
-    for triple in extra_stdlib_triples:
-        toolchain_names.append(toolchain_name_tmpl.format(
+    for triple in extra_target_triples:
+        toolchain_names.append(toolchain_name_template.format(
             name = name,
             triple = triple,
         ))
@@ -304,21 +318,21 @@ def rust_repositories():
     all_toolchain_names.extend(rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
-        extra_stdlib_triples = [],
+        extra_target_triples = [],
         version = "1.26.1",
     ))
 
     all_toolchain_names.extend(rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
-        extra_stdlib_triples = [],
+        extra_target_triples = [],
         version = "1.26.1",
     ))
 
     all_toolchain_names.extend(rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
-        extra_stdlib_triples = [],
+        extra_target_triples = [],
         version = "1.26.1",
     ))
 
