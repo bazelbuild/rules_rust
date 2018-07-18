@@ -1,6 +1,10 @@
 workspace(name = "io_bazel_rules_rust")
-load("@bazel_tools//tools/build_defs/repo:git.bzl",
-     "git_repository", "new_git_repository")
+
+load(
+    "@bazel_tools//tools/build_defs/repo:git.bzl",
+    "git_repository",
+    "new_git_repository",
+)
 
 local_repository(
     name = "examples",
@@ -14,13 +18,14 @@ local_repository(
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
 load("//rust:repositories.bzl", "rust_repositories")
+
 rust_repositories()
 
 new_git_repository(
     name = "libc",
+    build_file = "//:libc.BUILD",
     remote = "https://github.com/rust-lang/libc",
     tag = "0.2.20",
-    build_file = "//:libc.BUILD",
 )
 
 # Used for documenting Rust rules.

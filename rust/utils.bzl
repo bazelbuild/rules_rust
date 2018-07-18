@@ -17,34 +17,34 @@ Utility functions not specific to the rust toolchain.
 """
 
 def relative_path(src_path, dest_path):
-  """Returns the relative path from src_path to dest_path."""
-  src_parts = _path_parts(src_path)
-  dest_parts = _path_parts(dest_path)
-  n = 0
-  done = False
-  for src_part, dest_part in zip(src_parts, dest_parts):
-    if src_part != dest_part:
-      break
-    n += 1
+    """Returns the relative path from src_path to dest_path."""
+    src_parts = _path_parts(src_path)
+    dest_parts = _path_parts(dest_path)
+    n = 0
+    done = False
+    for src_part, dest_part in zip(src_parts, dest_parts):
+        if src_part != dest_part:
+            break
+        n += 1
 
-  relative_path = ""
-  for i in range(n, len(src_parts)):
-    relative_path += "../"
-  relative_path += "/".join(dest_parts[n:])
+    relative_path = ""
+    for i in range(n, len(src_parts)):
+        relative_path += "../"
+    relative_path += "/".join(dest_parts[n:])
 
-  return relative_path
+    return relative_path
 
 def _path_parts(path):
-  """Takes a path and returns a list of its parts with all "." elements removed.
+    """Takes a path and returns a list of its parts with all "." elements removed.
 
-  The main use case of this function is if one of the inputs to _relative()
-  is a relative path, such as "./foo".
+    The main use case of this function is if one of the inputs to _relative()
+    is a relative path, such as "./foo".
 
-  Args:
-    path_parts: A list containing parts of a path.
+    Args:
+      path_parts: A list containing parts of a path.
 
-  Returns:
-    Returns a list containing the path parts with all "." elements removed.
-  """
-  path_parts = path.split("/")
-  return [part for part in path_parts if part != "."]
+    Returns:
+      Returns a list containing the path parts with all "." elements removed.
+    """
+    path_parts = path.split("/")
+    return [part for part in path_parts if part != "."]
