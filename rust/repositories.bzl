@@ -8,6 +8,25 @@ def _sanitize_for_name(some_string):
 
     return some_string.replace("-", "_").replace(".", "p")
 
+def _check_version_valid(version, iso_date, param_prefix = ""):
+    """Verifies that the provided rust version and iso_date make sense."""
+
+    if not version and iso_date:
+        fail("{param_prefix}iso_date must be paired with a {param_prefix}version".format(param_prefix = param_prefix))
+
+    if version in ("beta", "nightly") and not iso_date:
+        fail("{param_prefix}iso_date must be specified if version is 'beta' or 'nightly'".format(param_prefix = param_prefix))
+
+    if version not in ("beta", "nightly") and iso_date:
+        print("{param_prefix}iso_date is ineffective if an exact version is specified".format(param_prefix = param_prefix))
+
+def serialized_constraint_set_from_triple(target_triple):
+    constraint_set = triple_to_constraint_set(target_triple)
+    constraint_set_strs = []
+    for constraint in constraint_set:
+        constraint_set_strs.append("\"{}\"".format(constraint))
+    return "[{}]".format(", ".join(constraint_set_strs))
+
 def BUILD_for_compiler(target_triple):
     """Emits a BUILD file the compiler .tar.gz."""
 
@@ -59,7 +78,7 @@ filegroup(
         target_triple = target_triple,
     )
 
-def BUILD_for_toolchain(workspace_name, name, exec_triple, target_triple):
+def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -71,27 +90,7 @@ def BUILD_for_toolchain(workspace_name, name, exec_triple, target_triple):
 
     system = triple_to_system(target_triple)
 
-    exec_constraint_set = triple_to_constraint_set(exec_triple)
-    exec_constraint_set_strs = []
-    for constraint in exec_constraint_set:
-        exec_constraint_set_strs.append("\"{}\"".format(constraint))
-    exec_constraint_sets_serialized = "[{}]".format(", ".join(exec_constraint_set_strs))
-
-    target_constraint_set = triple_to_constraint_set(target_triple)
-    target_constraint_set_strs = []
-    for constraint in target_constraint_set:
-        target_constraint_set_strs.append("\"{}\"".format(constraint))
-    target_constraint_sets_serialized = "[{}]".format(", ".join(target_constraint_set_strs))
-
     return """
-toolchain(
-    name = "{toolchain_name}",
-    exec_compatible_with = {exec_constraint_sets_serialized},
-    target_compatible_with = {target_constraint_sets_serialized},
-    toolchain = ":toolchain_for_{target_triple}_impl",
-    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
-)
-
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
@@ -113,21 +112,23 @@ rust_toolchain(
         system = system,
         exec_triple = exec_triple,
         target_triple = target_triple,
-        exec_constraint_sets_serialized = exec_constraint_sets_serialized,
-        target_constraint_sets_serialized = target_constraint_sets_serialized,
     )
 
-def _check_version_valid(version, iso_date, param_prefix = ""):
-    """Verifies that the provided rust version and iso_date make sense."""
-
-    if not version and iso_date:
-        fail("{param_prefix}iso_date must be paired with a {param_prefix}version".format(param_prefix = param_prefix))
-
-    if version in ("beta", "nightly") and not iso_date:
-        fail("{param_prefix}iso_date must be specified if version is 'beta' or 'nightly'".format(param_prefix = param_prefix))
-
-    if version not in ("beta", "nightly") and iso_date:
-        print("{param_prefix}iso_date is ineffective if an exact version is specified".format(param_prefix = param_prefix))
+def BUILD_for_toolchain(name, parent_workspace_name, exec_triple, target_triple):
+    return """
+toolchain(
+    name = "{name}",
+    exec_compatible_with = {exec_constraint_sets_serialized},
+    target_compatible_with = {target_constraint_sets_serialized},
+    toolchain = "@{parent_workspace_name}//:{name}_impl",
+    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
+)
+""".format(
+        name = name,
+        exec_constraint_sets_serialized = serialized_constraint_set_from_triple(exec_triple),
+        target_constraint_sets_serialized = serialized_constraint_set_from_triple(target_triple),
+        parent_workspace_name = parent_workspace_name,
+    )
 
 def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
     """Produces a fully qualified Rust tool name for URL
@@ -234,7 +235,7 @@ def _load_rust_stdlib(ctx, target_triple):
 
     toolchain_prefix = ctx.attr.toolchain_name_prefix or DEFAULT_TOOLCHAIN_NAME_PREFIX
     stdlib_BUILD = BUILD_for_stdlib(target_triple)
-    toolchain_BUILD = BUILD_for_toolchain(
+    toolchain_BUILD = BUILD_for_rust_toolchain(
         name = "{toolchain_prefix}_{target_triple}".format(
             toolchain_prefix = toolchain_prefix,
             target_triple = target_triple,
@@ -262,7 +263,49 @@ def _rust_toolchain_repository_impl(ctx):
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
 
-rust_toolchain_repositories = repository_rule(
+def _rust_toolchain_repository_proxy_impl(ctx):
+    BUILD_components = [
+        BUILD_for_toolchain(
+            name = "{toolchain_prefix}_{target_triple}".format(
+                toolchain_prefix = ctx.attr.toolchain_name_prefix,
+                target_triple = ctx.attr.exec_triple,
+            ),
+            exec_triple = ctx.attr.exec_triple,
+            parent_workspace_name = ctx.attr.parent_workspace_name,
+            target_triple = ctx.attr.exec_triple,
+        ),
+    ]
+
+    for target_triple in ctx.attr.extra_target_triples:
+        BUILD_components.append(BUILD_for_toolchain(
+            name = "{toolchain_prefix}_{target_triple}".format(
+                toolchain_prefix = ctx.attr.toolchain_name_prefix,
+                target_triple = target_triple,
+            ),
+            exec_triple = ctx.attr.exec_triple,
+            parent_workspace_name = ctx.attr.parent_workspace_name,
+            target_triple = target_triple,
+        ))
+
+    ctx.file("WORKSPACE", "")
+    ctx.file("BUILD", "\n".join(BUILD_components))
+
+"""Composes a single workspace containing the toolchain components for compiling on a given
+platform to a series of target platforms.
+
+A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy
+invocation.
+
+Args:
+  name: A unique name for this rule
+  exec_triple: The Rust-style target triple for the compilation platform
+  extra_target_triples: The Rust-style triples for extra compilation targets
+  toolchain_name_prefix: The per-target prefix expected for the rust_toolchain declarations
+  version: The version of the tool among "nightly", "beta', or an exact version.
+  iso_date: The date of the tool (or None, if the version is a specific version).
+"""
+
+rust_toolchain_repository = repository_rule(
     attrs = {
         "version": attr.string(mandatory = True),
         "iso_date": attr.string(),
@@ -273,9 +316,34 @@ rust_toolchain_repositories = repository_rule(
     implementation = _rust_toolchain_repository_impl,
 )
 
+"""Generates a toolchain-bearing repository that declares the toolchains from some other
+rust_toolchain_repository.
+
+Args:
+  name: A unique name for this rule
+  parent_workspace_name: The name of the other rust_toolchain_repository
+  exec_triple: The Rust-style target triple for the compilation platform
+  extra_target_triples: The Rust-style triples for extra compilation targets
+  toolchain_name_prefix: The per-target prefix expected for the rust_toolchain declarations in the
+                         parent workspace.
+"""
+
+rust_toolchain_repository_proxy = repository_rule(
+    attrs = {
+        "parent_workspace_name": attr.string(mandatory = True),
+        "exec_triple": attr.string(mandatory = True),
+        "extra_target_triples": attr.string_list(),
+        "toolchain_name_prefix": attr.string(),
+    },
+    implementation = _rust_toolchain_repository_proxy_impl,
+)
+
 def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_date = None):
-    """Assembles a remote repository for the given params and yielding the 
-    names of the generated toolchains.
+    """Assembles a remote repository for the given toolchain params, produces a proxy repository
+    to contain the toolchain declaration, and registers the toolchains.
+
+    N.B. A "proxy workspace" is needed to allow for registering the toolchain (with constraints)
+    without actually downloading the toolchain.
 
     Args:
       name: The name of the generated repository
@@ -286,7 +354,7 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
                             should support.
     """
 
-    rust_toolchain_repositories(
+    rust_toolchain_repository(
         name = name,
         exec_triple = exec_triple,
         extra_target_triples = extra_target_triples,
@@ -295,46 +363,48 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
         version = version,
     )
 
-    toolchain_name_template = "@{name}//:toolchain_for_{triple}"
-    toolchain_names = [
-        toolchain_name_template.format(
+    rust_toolchain_repository_proxy(
+        name = name + "_toolchains",
+        exec_triple = exec_triple,
+        extra_target_triples = extra_target_triples,
+        parent_workspace_name = name,
+        toolchain_name_prefix = "toolchain_for",
+    )
+
+    toolchain_name_template = "@{name}_toolchains//:toolchain_for_{triple}"
+    all_toolchain_names = [toolchain_name_template.format(
+        name = name,
+        triple = exec_triple,
+    )]
+    for extra_target_triple in extra_target_triples:
+        all_toolchain_names.append(toolchain_name_template.format(
             name = name,
             triple = exec_triple,
-        ),
-    ]
-    for triple in extra_target_triples:
-        toolchain_names.append(toolchain_name_template.format(
-            name = name,
-            triple = triple,
         ))
 
-    return toolchain_names
+    # Register toolchains
+    native.register_toolchains(*all_toolchain_names)
 
 # Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
     """Emits a default set of toolchains for Linux, OSX, and Freebsd"""
-
-    all_toolchain_names = []
-    all_toolchain_names.extend(rust_repository_set(
+    rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
         extra_target_triples = [],
         version = "1.26.1",
-    ))
+    )
 
-    all_toolchain_names.extend(rust_repository_set(
+    rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
         extra_target_triples = [],
         version = "1.26.1",
-    ))
+    )
 
-    all_toolchain_names.extend(rust_repository_set(
+    rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
         extra_target_triples = [],
         version = "1.26.1",
-    ))
-
-    # Register toolchains
-    native.register_toolchains(*all_toolchain_names)
+    )
