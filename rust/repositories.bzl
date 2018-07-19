@@ -368,16 +368,12 @@ def rust_repositories():
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
     other hosts or for additional target triples.
-
-
     """
 
     rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
-        extra_target_triples = [
-            "x86_64-unknown-freebsd",
-        ],
+        extra_target_triples = [],
         version = "1.26.1",
     )
 
