@@ -3,11 +3,6 @@ load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "sy
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def _sanitize_for_name(some_string):
-    """Cleans a tool name for use as a bazel workspace name"""
-
-    return some_string.replace("-", "_").replace(".", "p")
-
 def _check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense."""
 
@@ -252,31 +247,16 @@ def _rust_toolchain_repository_impl(ctx):
 
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    BUILD_components = [
-        _load_rust_compiler(ctx),
-        _load_rust_stdlib(ctx, ctx.attr.exec_triple),
-    ]
-
-    for extra_stdlib_triple in ctx.attr.extra_target_triples:
-        BUILD_components.append(_load_rust_stdlib(ctx, extra_stdlib_triple))
+    BUILD_components = [_load_rust_compiler(ctx)]
+    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
+        BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
 
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
 
 def _rust_toolchain_repository_proxy_impl(ctx):
-    BUILD_components = [
-        BUILD_for_toolchain(
-            name = "{toolchain_prefix}_{target_triple}".format(
-                toolchain_prefix = ctx.attr.toolchain_name_prefix,
-                target_triple = ctx.attr.exec_triple,
-            ),
-            exec_triple = ctx.attr.exec_triple,
-            parent_workspace_name = ctx.attr.parent_workspace_name,
-            target_triple = ctx.attr.exec_triple,
-        ),
-    ]
-
-    for target_triple in ctx.attr.extra_target_triples:
+    BUILD_components = []
+    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
         BUILD_components.append(BUILD_for_toolchain(
             name = "{toolchain_prefix}_{target_triple}".format(
                 toolchain_prefix = ctx.attr.toolchain_name_prefix,
@@ -294,7 +274,8 @@ def _rust_toolchain_repository_proxy_impl(ctx):
 platform to a series of target platforms.
 
 A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy
-invocation.
+invocation to declare its toolchains to Bazel; the indirection allows separating toolchain
+selection from toolchain fetching
 
 Args:
   name: A unique name for this rule
@@ -342,14 +323,14 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
     """Assembles a remote repository for the given toolchain params, produces a proxy repository
     to contain the toolchain declaration, and registers the toolchains.
 
-    N.B. A "proxy workspace" is needed to allow for registering the toolchain (with constraints)
+    N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)
     without actually downloading the toolchain.
 
     Args:
       name: The name of the generated repository
       version: The version of the tool among "nightly", "beta', or an exact version.
       iso_date: The date of the tool (or None, if the version is a specific version).
-      exec_triple: The rust-style target that this compiler runs on
+      exec_triple: The Rust-style target that this compiler runs on
       extra_target_triples: Additional rust-style targets that this set of toolchains
                             should support.
     """
@@ -359,7 +340,7 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
         exec_triple = exec_triple,
         extra_target_triples = extra_target_triples,
         iso_date = iso_date,
-        toolchain_name_prefix = "toolchain_for",
+        toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
         version = version,
     )
 
@@ -368,30 +349,35 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
         exec_triple = exec_triple,
         extra_target_triples = extra_target_triples,
         parent_workspace_name = name,
-        toolchain_name_prefix = "toolchain_for",
+        toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
     )
 
-    toolchain_name_template = "@{name}_toolchains//:toolchain_for_{triple}"
-    all_toolchain_names = [toolchain_name_template.format(
-        name = name,
-        triple = exec_triple,
-    )]
-    for extra_target_triple in extra_target_triples:
-        all_toolchain_names.append(toolchain_name_template.format(
+    all_toolchain_names = []
+    for target_triple in [exec_triple] + extra_target_triples:
+        all_toolchain_names.append("@{name}_toolchains//:{toolchain_name_prefix}_{triple}".format(
             name = name,
-            triple = exec_triple,
+            toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
+            triple = target_triple,
         ))
 
     # Register toolchains
     native.register_toolchains(*all_toolchain_names)
 
-# Eventually with better toolchain hosting options we could load only one of these, not both.
 def rust_repositories():
-    """Emits a default set of toolchains for Linux, OSX, and Freebsd"""
+    """Emits a default set of toolchains for Linux, OSX, and Freebsd
+
+    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
+    other hosts or for additional target triples.
+
+
+    """
+
     rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
-        extra_target_triples = [],
+        extra_target_triples = [
+            "x86_64-unknown-freebsd",
+        ],
         version = "1.26.1",
     )
 
