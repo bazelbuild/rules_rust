@@ -27,6 +27,17 @@ platforms:
   rbe_ubuntu1604:
     test_targets:
     - "--"
-    - "..."
+    - "//test/..."
     - "@examples//..."
+    - "-//test/conflicting_deps:conflicting_deps_test"
     - "-@examples//hello_runfiles:hello_runfiles_test"
+    - "-@examples//ffi/c_calling_rust:main"
+    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+    - "-@examples//ffi/rust_calling_c:matrix_test"
+    - "-@examples//fibonacci:fibonacci_doc_test"
+    - "-@examples//fibonacci:fibonacci_test"
+    - "-@examples//hello_lib:greeting_test"
+    - "-@examples//hello_lib:hello_lib_doc_test"
+    - "-@examples//hello_lib:hello_lib_test"
+    - "-@examples//hello_world:hello_world_doc_test"
+    - "-@examples//hello_out_dir:hello_out_dir_test"
