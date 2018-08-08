@@ -37,7 +37,10 @@ filegroup(
 
 filegroup(
     name = "rustc_lib",
-    srcs = glob(["lib/*{dylib_ext}"]),
+    srcs = glob([
+      "lib/*{dylib_ext}",
+      "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
+    ]),
     visibility = ["//visibility:public"],
 )
 
@@ -50,6 +53,7 @@ filegroup(
         binary_ext = system_to_binary_ext(system),
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
+        target_triple = target_triple,
     )
 
 def BUILD_for_stdlib(target_triple):
