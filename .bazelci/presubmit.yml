@@ -24,3 +24,9 @@ platforms:
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
     build_targets: *targets
     test_targets: *targets
+  rbe_ubuntu1604:
+    test_targets:
+    - "--"
+    - "//test/..."
+    - "@examples//..."
+    - "-//test/conflicting_deps:conflicting_deps_test"
