@@ -5,6 +5,7 @@ load(
     "git_repository",
     "new_git_repository",
 )
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 local_repository(
     name = "examples",
@@ -48,3 +49,12 @@ git_repository(
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 
 skydoc_repositories()
+
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "7938215442cc96b1a16809f4643db14af7d91c3ef1e98d39593bb46862204537",
+    strip_prefix = "bazel-toolchains-809c13c3a96966f63c7a43c586cb4e72589184b6",
+    urls = [
+        "https://github.com/bazelbuild/bazel-toolchains/archive/809c13c3a96966f63c7a43c586cb4e72589184b6.tar.gz",
+    ],
+)
