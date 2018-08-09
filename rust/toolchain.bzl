@@ -124,7 +124,9 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
             "-o %s" % docs_dir,
         ] + doc_flags +
         depinfo.search_flags +
-        depinfo.link_flags + [
+        # rustdoc can't do anything with native link flags, and blows up on them
+        [f for f in depinfo.link_flags if f.startswith("--extern") +
+        [
             "&&",
             "(cd %s" % docs_dir,
             "&&",

@@ -523,7 +523,7 @@ def _rust_doc_impl(ctx):
         target.name,
         output_dir,
         toolchain,
-        allow_cc_deps = False,
+        allow_cc_deps = True,
     )
 
     # Rustdoc flags.
