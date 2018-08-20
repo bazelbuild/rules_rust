@@ -50,7 +50,7 @@ rust_repositories()
 """
 
 load(
-    ":toolchain.bzl",
+    ":rustc.bzl",
     "build_rustc_command",
     "build_rustdoc_command",
     "build_rustdoc_test_command",
