@@ -168,10 +168,10 @@ def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
         ))
 
     # Multiple dylibs can be present in the same directory, so deduplicate them.
-    return depset([
-        "$ORIGIN/" + relative_path(output_dir, dylib.dirname)
-        for dylib in depinfo.transitive_dylibs
-    ])
+    return [
+        "$ORIGIN/" + relative_path(output_dir, lib_dir)
+        for lib_dir in _get_dir_names(depinfo.transitive_dylibs)
+    ]
 
 def _get_features_flags(features):
     """
