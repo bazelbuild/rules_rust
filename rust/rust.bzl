@@ -457,17 +457,17 @@ def _rust_test_impl(ctx):
 
     return struct(runfiles = runfiles)
 
-def _rust_bench_test_impl(ctx):
-    """Implementation for the rust_bench_test Skylark rule."""
-    rust_bench_test = ctx.outputs.executable
+def _rust_benchmark_impl(ctx):
+    """Implementation for the rust_benchmark Skylark rule."""
+    rust_benchmark = ctx.outputs.executable
     test_binary = ctx.new_file(
         ctx.configuration.bin_dir,
-        "{}_bin".format(rust_bench_test.basename),
+        "{}_bin".format(rust_benchmark.basename),
     )
     depinfo = _rust_test_common(ctx, test_binary)
 
     ctx.file_action(
-        output = rust_bench_test,
+        output = rust_benchmark,
         content = "\n".join([
             "#!/usr/bin/env bash",
             "set -e",
@@ -1035,12 +1035,11 @@ Examples:
   Run the test with `bazel build //hello_lib:hello_lib_test`.
 """
 
-rust_bench_test = rule(
-    _rust_bench_test_impl,
+rust_benchmark = rule(
+    _rust_benchmark_impl,
     attrs = _rust_common_attrs,
     executable = True,
     host_fragments = ["cpp"],
-    test = True,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
 )
 
@@ -1133,21 +1132,21 @@ Example:
   }
   ```
 
-  To build the benchmark test, simply add a `rust_bench_test` target:
+  To build the benchmark test, simply add a `rust_benchmark` target:
 
   `fibonacci/BUILD`:
 
   ```python
   package(default_visibility = ["//visibility:public"])
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_bench_test")
+  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
 
   rust_library(
       name = "fibonacci",
       srcs = ["src/lib.rs"],
   )
 
-  rust_bench_test(
+  rust_benchmark(
       name = "fibonacci_bench",
       srcs = ["benches/fibonacci_bench.rs"],
       deps = [":fibonacci"],

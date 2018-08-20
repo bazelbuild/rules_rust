@@ -8,7 +8,7 @@
     <li><a href="#rust_library">rust_library</a></li>
     <li><a href="#rust_binary">rust_binary</a></li>
     <li><a href="#rust_test">rust_test</a></li>
-    <li><a href="#rust_bench_test">rust_bench_test</a></li>
+    <li><a href="#rust_benchmark">rust_benchmark</a></li>
     <li><a href="#rust_doc">rust_doc</a></li>
     <li><a href="#rust_doc_test">rust_doc_test</a></li>
   </ul>
@@ -728,11 +728,11 @@ rust_test(
 
 Run the test with `bazel build //hello_lib:hello_lib_test`.
 
-<a name="rust_bench_test"></a>
+<a name="rust_benchmark"></a>
 ## rust\_bench\_test
 
 ```python
-rust_bench_test(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
+rust_benchmark(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
 ```
 
 **Warning**: This rule is currently experimental. [Rust Benchmark
@@ -904,21 +904,21 @@ fn bench_fibonacci(b: &mut Bencher) {
 }
 ```
 
-To build the benchmark test, simply add a `rust_bench_test` target:
+To build the benchmark test, simply add a `rust_benchmark` target:
 
 `fibonacci/BUILD`:
 
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_bench_test")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
 
 rust_library(
     name = "fibonacci",
     srcs = ["src/lib.rs"],
 )
 
-rust_bench_test(
+rust_benchmark(
     name = "fibonacci_bench",
     srcs = ["benches/fibonacci_bench.rs"],
     deps = [":fibonacci"],
