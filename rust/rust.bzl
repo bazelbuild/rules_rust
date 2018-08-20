@@ -89,7 +89,7 @@ def _out_dir_setup_cmd(out_dir_tar):
     if out_dir_tar:
         return [
             "mkdir ./out_dir/\n",
-            "tar -xzf %s -C ./out_dir\n" % out_dir_tar.path,
+            "tar -xzf {} -C ./out_dir\n".format(out_dir_tar.path),
         ]
     else:
         return []
@@ -162,9 +162,9 @@ def _setup_deps(
 
     search_flags = []
     if transitive_rlibs:
-        search_flags += ["-L dependency=%s" % deps_dir]
+        search_flags += ["-L dependency={}".format(deps_dir)]
     if transitive_dylibs or transitive_staticlibs:
-        search_flags += ["-L native=%s" % deps_dir]
+        search_flags += ["-L native={}".format(deps_dir)]
 
     # Create symlinks pointing to each transitive lib in deps_dir.
     transitive_libs = transitive_rlibs + transitive_staticlibs + transitive_dylibs
@@ -192,7 +192,7 @@ def _find_crate_root_src(srcs, file_names = ["lib.rs"]):
     for src in srcs:
         if src.basename in file_names:
             return src
-    fail("No %s source file found." % " or ".join(file_names), "srcs")
+    fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
 
 def _determine_output_hash(lib_rs):
     return repr(hash(lib_rs.path))
@@ -211,8 +211,8 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
              "this crate as a rust_binary instead.")
 
     if not extension:
-        fail(("Unknown crate_type: %s. If this is a cargo-supported crate type, " +
-              "please file an issue!") % crate_type)
+        fail(("Unknown crate_type: (). If this is a cargo-supported crate type, " +
+              "please file an issue!").format(crate_type))
 
     return "lib{name}-{lib_hash}{extension}".format(
         name = name,
@@ -289,8 +289,8 @@ def _rust_library_impl(ctx):
         mnemonic = "Rustc",
         command = cmd,
         use_default_shell_env = True,
-        progress_message = ("Compiling Rust library %s (%d files)" %
-                            (ctx.label.name, len(ctx.files.srcs))),
+        progress_message = "Compiling Rust library {} ({} files)".format(
+                            ctx.label.name, len(ctx.files.srcs)),
     )
 
     return struct(
@@ -355,8 +355,8 @@ def _rust_binary_impl(ctx):
         mnemonic = "Rustc",
         command = cmd,
         use_default_shell_env = True,
-        progress_message = ("Compiling Rust binary %s (%d files)" %
-                            (ctx.label.name, len(ctx.files.srcs))),
+        progress_message = "Compiling Rust binary {} ({} files)".format(
+                            ctx.label.name, len(ctx.files.srcs)),
     )
 
     runfiles = ctx.runfiles(
@@ -439,8 +439,8 @@ def _rust_test_common(ctx, test_binary):
         mnemonic = "RustcTest",
         command = cmd,
         use_default_shell_env = True,
-        progress_message = ("Compiling Rust test %s (%d files)" %
-                            (ctx.label.name, len(target.srcs))),
+        progress_message = "Compiling Rust test {} ({} files)".format(
+                            ctx.label.name, len(target.srcs)),
     )
     return depinfo
 
@@ -462,16 +462,16 @@ def _rust_bench_test_impl(ctx):
     rust_bench_test = ctx.outputs.executable
     test_binary = ctx.new_file(
         ctx.configuration.bin_dir,
-        "%s_bin" % rust_bench_test.basename,
+        "{}_bin".format(rust_bench_test.basename),
     )
     depinfo = _rust_test_common(ctx, test_binary)
 
     ctx.file_action(
         output = rust_bench_test,
-        content = " ".join([
-            "#!/usr/bin/env bash\n",
-            "set -e\n",
-            "%s --bench\n" % test_binary.short_path,
+        content = "\n".join([
+            "#!/usr/bin/env bash",
+            "set -e",
+            "{} --bench".format(test_binary.short_path),
         ]),
         executable = True,
     )
@@ -487,16 +487,15 @@ def _build_rustdoc_flags(ctx):
     """Collects the rustdoc flags."""
     doc_flags = []
     doc_flags += [
-        "--markdown-css %s" % css.path
+        "--markdown-css {}".format(css.path)
         for css in ctx.files.markdown_css
     ]
     if hasattr(ctx.file, "html_in_header"):
-        doc_flags += ["--html-in-header %s" % ctx.file.html_in_header.path]
+        doc_flags += ["--html-in-header {}".format(ctx.file.html_in_header.path)]
     if hasattr(ctx.file, "html_before_content"):
-        doc_flags += ["--html-before-content %s" %
-                      ctx.file.html_before_content.path]
+        doc_flags += ["--html-before-content {}".format(ctx.file.html_before_content.path)]
     if hasattr(ctx.file, "html_after_content"):
-        doc_flags += ["--html-after-content %s"]
+        doc_flags += ["--html-after-content {}".format(ctx.file.html_after_content.path)]
     return doc_flags
 
 def _rust_doc_impl(ctx):
@@ -543,8 +542,8 @@ def _rust_doc_impl(ctx):
         mnemonic = "Rustdoc",
         command = doc_cmd,
         use_default_shell_env = True,
-        progress_message = ("Generating rustdoc for %s (%d files)" %
-                            (target.name, len(target.srcs))),
+        progress_message = "Generating rustdoc for {} ({} files)".format(
+                            target.name, len(target.srcs)),
     )
 
 def _rust_doc_test_impl(ctx):

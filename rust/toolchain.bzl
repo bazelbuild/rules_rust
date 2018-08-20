@@ -10,11 +10,11 @@ def _rust_toolchain_impl(ctx):
     compilation_mode_opts = {}
     for k, v in ctx.attr.opt_level.items():
         if not k in ctx.attr.debug_info:
-            fail("Compilation mode %s is not defined in debug_info but is defined opt_level" % k)
+            fail("Compilation mode {} is not defined in debug_info but is defined opt_level".format(k))
         compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = v)
     for k, v in ctx.attr.debug_info.items():
         if not k in ctx.attr.opt_level:
-            fail("Compilation mode %s is not defined in opt_level but is defined debug_info" % k)
+            fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
