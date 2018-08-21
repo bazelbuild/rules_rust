@@ -7,9 +7,8 @@ load(
 
 rust_library(
     name = "example_name_conflict",
-    srcs = ["src/lib.rs"],
+    srcs = ["lib.rs"],
     deps = [
-        "//test/conflicting_deps/first_crate/second_crate:example_name_conflict"
+        "//test/conflicting_deps/second_crate:example_name_conflict",
     ],
 )
-

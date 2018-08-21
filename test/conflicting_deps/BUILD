@@ -8,9 +8,9 @@ load(
 
 rust_library(
     name = "conflicting_deps",
-    srcs = ["src/lib.rs"],
+    srcs = ["lib.rs"],
     deps = [
-        "//test/conflicting_deps/first_crate:example_name_conflict"
+        "//test/conflicting_deps/first_crate:example_name_conflict",
     ],
 )
 

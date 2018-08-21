@@ -85,12 +85,14 @@ def setup_deps(
     staticlib_filetype = FileType([toolchain.staticlib_ext])
     dylib_filetype = FileType([toolchain.dylib_ext])
 
+    direct_crates = depset()
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
     for dep in deps:
         if hasattr(dep, "crate_info"):
             # This dependency is a rust_library
+            direct_crates += [dep.crate_info]
             transitive_crates += [dep.crate_info]
             transitive_crates += dep.depinfo.transitive_crates
             transitive_dylibs += dep.depinfo.transitive_dylibs
@@ -121,8 +123,9 @@ def setup_deps(
         search_flags += ["-L native={}".format(deps_dir)]
 
     link_flags = []
+
     # nb. Crates are linked via --extern regardless of their crate_type
-    link_flags += ["--extern " + crate.name + "=" + deps_dir + "/" + crate.output.basename for crate in transitive_crates]
+    link_flags += ["--extern " + crate.name + "=" + deps_dir + "/" + crate.output.basename for crate in direct_crates]
     link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
     link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
 
@@ -223,7 +226,7 @@ def rustc_compile_action(
             crate_info.type,
             "--codegen opt-level=%s" % compilation_mode.opt_level,
             "--codegen debuginfo=%s" % compilation_mode.debug_info,
-            # Disambiguate this crate from similarly named ones
+            # Mangle symbols to disambiguate crates with the same name
             "--codegen metadata=%s" % extra_filename,
             "--codegen extra-filename='%s'" % extra_filename,
             "--codegen ar=%s" % ar,

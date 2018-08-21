@@ -7,6 +7,6 @@ load(
 
 rust_library(
     name = "example_name_conflict",
-    srcs = ["src/lib.rs"],
+    srcs = ["lib.rs"],
     deps = [],
 )
