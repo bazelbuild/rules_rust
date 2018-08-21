@@ -51,11 +51,11 @@ rust_repositories()
 
 load(
     ":rustc.bzl",
-    "rustc_compile_action",
+    "CrateInfo",
     "build_rustdoc_command",
     "build_rustdoc_test_command",
+    "rustc_compile_action",
     _setup_deps = "setup_deps",
-    "CrateInfo",
 )
 load(":utils.bzl", "relative_path")
 
@@ -169,7 +169,7 @@ def _rust_binary_impl(ctx):
             root = _crate_root_src(ctx, ["main.rs"]),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
-            output =  ctx.outputs.executable,
+            output = ctx.outputs.executable,
         ),
     )
 
@@ -185,22 +185,22 @@ def _rust_test_common(ctx, test_binary):
         # the dependency's srcs.
         dep = ctx.attr.deps[0].crate_info
         target = CrateInfo(
-             name = test_binary.basename,
-             type = dep.type,
-             root = dep.root,
-             srcs = dep.srcs,
-             deps = dep.deps,
-             output = test_binary,
+            name = test_binary.basename,
+            type = dep.type,
+            root = dep.root,
+            srcs = dep.srcs,
+            deps = dep.deps,
+            output = test_binary,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
         target = CrateInfo(
-             name = test_binary.basename,
-             type = "lib",
-             root = _crate_root_src(ctx),
-             srcs = ctx.files.srcs,
-             deps = ctx.attr.deps,
-             output = test_binary,
+            name = test_binary.basename,
+            type = "lib",
+            root = _crate_root_src(ctx),
+            srcs = ctx.files.srcs,
+            deps = ctx.attr.deps,
+            output = test_binary,
         )
 
     return rustc_compile_action(
