@@ -174,13 +174,13 @@ def _rust_test_common(ctx, test_binary):
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
-        dep = ctx.attr.deps[0].crate_info
+        crate = ctx.attr.deps[0].crate_info
         target = CrateInfo(
             name = test_binary.basename,
-            type = dep.type,
-            root = dep.root,
-            srcs = dep.srcs,
-            deps = dep.deps,
+            type = crate.type,
+            root = crate.root,
+            srcs = crate.srcs,
+            deps = crate.deps,
             output = test_binary,
         )
     else:
@@ -321,10 +321,9 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    doc_test_cmd = build_rustdoc_test_script(toolchain, depinfo, crate)
     ctx.file_action(
         output = rust_doc_test,
-        content = doc_test_cmd,
+        content = build_rustdoc_test_script(toolchain, depinfo, crate),
         executable = True,
     )
 
