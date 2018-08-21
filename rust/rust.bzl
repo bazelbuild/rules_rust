@@ -53,7 +53,7 @@ load(
     ":rustc.bzl",
     "CrateInfo",
     "build_rustdoc_command",
-    "build_rustdoc_test_command",
+    "build_rustdoc_test_script",
     "rustc_compile_action",
     _setup_deps = "setup_deps",
 )
@@ -267,17 +267,16 @@ def _rust_doc_impl(ctx):
     if not hasattr(ctx.attr.dep, "crate_info"):
         fail("Expected rust library or binary.", "dep")
 
+    crate = ctx.attr.dep.crate_info
     rust_doc_zip = ctx.outputs.rust_doc_zip
-
-    target = ctx.attr.dep.crate_info
 
     toolchain = _find_toolchain(ctx)
 
     # Get information about dependencies
     output_dir = rust_doc_zip.dirname
     depinfo = _setup_deps(
-        target.deps,
-        target.name,
+        crate.deps,
+        crate.name,
         output_dir,
         toolchain,
         allow_cc_deps = True,
@@ -287,11 +286,11 @@ def _rust_doc_impl(ctx):
     doc_flags = _build_rustdoc_flags(ctx)
 
     # Build rustdoc command.
-    doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, target.root, target, doc_flags)
+    doc_cmd = build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags)
 
     # Rustdoc action
     rustdoc_inputs = (
-        target.srcs +
+        crate.srcs +
         depinfo.transitive_libs +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +
@@ -304,10 +303,7 @@ def _rust_doc_impl(ctx):
         mnemonic = "Rustdoc",
         command = doc_cmd,
         use_default_shell_env = True,
-        progress_message = "Generating rustdoc for {} ({} files)".format(
-            target.name,
-            len(target.srcs),
-        ),
+        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
     )
 
 def _rust_doc_test_impl(ctx):
@@ -316,27 +312,25 @@ def _rust_doc_test_impl(ctx):
     if not hasattr(ctx.attr.dep, "crate_info"):
         fail("Expected rust library or binary.", "dep")
 
+    crate = ctx.attr.dep.crate_info
     rust_doc_test = ctx.outputs.executable
-
-    target = ctx.attr.dep.crate_info
 
     toolchain = _find_toolchain(ctx)
 
-    # nb. The working dir is "." when running the test script.
     working_dir = "."
     depinfo = _setup_deps(
         [ctx.attr.dep],
-        target.name,
+        crate.name,
         working_dir,
         toolchain,
+        # @TODO The 1 dep can't be cc_deps, so cc_deps is never used
         allow_cc_deps = False,
         in_runfiles = True,
     )
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, target)
-
+    doc_test_cmd = build_rustdoc_test_script(toolchain, depinfo, crate)
     ctx.file_action(
         output = rust_doc_test,
         content = doc_test_cmd,
@@ -344,7 +338,7 @@ def _rust_doc_test_impl(ctx):
     )
 
     doc_test_inputs = (
-        target.srcs +
+        crate.srcs +
         depinfo.transitive_libs +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +

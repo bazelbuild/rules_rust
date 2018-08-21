@@ -216,13 +216,13 @@ def rustc_compile_action(
         ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] + depinfo.setup_cmd +
         _out_dir_setup_cmd(ctx.file.out_dir_tar) +
         _get_rustc_env(ctx) + [
-            "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
-            "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             "OUT_DIR=$(pwd)/out_dir",
             toolchain.rustc.path,
             crate_info.root.path,
-            "--crate-name %s" % crate_info.name,
-            "--crate-type %s" % crate_info.type,
+            "--crate-name",
+            crate_info.name,
+            "--crate-type",
+            crate_info.type,
             "--codegen opt-level=%s" % codegen_opts.opt_level,
             "--codegen debuginfo=%s" % codegen_opts.debug_info,
             # Disambiguate this crate from similarly named ones
@@ -231,13 +231,13 @@ def rustc_compile_action(
             "--codegen ar=%s" % ar,
             "--codegen linker=%s" % cc,
             "--codegen link-args='%s'" % " ".join(cpp_fragment.link_options),
-            "--out-dir %s" % output_dir,
+            "--out-dir",
+            output_dir,
             "--emit=dep-info,link",
             "--color always",
         ] + ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
         features_flags +
         rust_flags +
-        ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
         depinfo.search_flags +
         depinfo.link_flags +
         ctx.attr.rustc_flags,
@@ -249,11 +249,7 @@ def rustc_compile_action(
         mnemonic = "Rustc",
         command = command,
         use_default_shell_env = True,
-        progress_message = "Compiling Rust {} {} ({} files)".format(
-            crate_info.type,
-            ctx.label.name,
-            len(ctx.files.srcs),
-        ),
+        progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(ctx.files.srcs)),
     )
 
     runfiles = ctx.runfiles(
@@ -273,7 +269,7 @@ def rustc_compile_action(
         runfiles = runfiles,
     )
 
-def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags):
+def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
     """
     Constructs the rustdoc command used to build the current target.
     """
@@ -285,21 +281,22 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
         [
             "rm -rf %s;" % docs_dir,
             "mkdir %s;" % docs_dir,
-            "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
-            "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
+        ] + [
             toolchain.rust_doc.path,
-            lib_rs.path,
-            "--crate-name %s" % target.name,
+            crate.root.path,
+            "--crate-name",
+            crate.name,
+            "--output",
+            docs_dir,
         ] +
-        ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
-        ["-o %s" % docs_dir] +
         doc_flags +
         depinfo.search_flags +
         # rustdoc can't do anything with native link flags, and blows up on them
         [f for f in depinfo.link_flags if f.startswith("--extern")] +
         [
             "&&",
-            "(cd %s" % docs_dir,
+            "(cd",
+            docs_dir,
             "&&",
             ZIP_PATH,
             "-qR",
@@ -310,7 +307,7 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
         ],
     )
 
-def build_rustdoc_test_command(ctx, toolchain, depinfo, crate):
+def build_rustdoc_test_script(toolchain, depinfo, crate):
     """
     Constructs the rustdoc command used to test the current target.
     """
@@ -319,15 +316,12 @@ def build_rustdoc_test_command(ctx, toolchain, depinfo, crate):
         ["set -e\n"] +
         depinfo.setup_cmd +
         [
-            "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
-            "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             toolchain.rust_doc.path,
             "--test",
             crate.root.path,
             "--crate-name",
             crate.name,
         ] +
-        ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
         depinfo.search_flags +
         depinfo.link_flags,
     )
