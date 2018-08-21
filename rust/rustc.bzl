@@ -32,20 +32,161 @@ def _get_comp_mode_codegen_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
+def _get_lib_name(lib):
+    """Returns the name of a library artifact, eg. libabc.a -> abc"""
+    libname, ext = lib.basename.split(".", 2)
+    if not libname.startswith("lib"):
+        fail("Expected {} to start with 'lib' prefix.".format(lib))
+    return libname[3:]
+
+def _create_setup_cmd(lib, deps_dir, in_runfiles):
+    """
+    Helper function to construct a command for symlinking a library into the
+    deps directory.
+    """
+    lib_path = lib.short_path if in_runfiles else lib.path
+    return (
+        "ln -sf " + relative_path(deps_dir, lib_path) + " " +
+        deps_dir + "/" + lib.basename + "\n"
+    )
+
+# @TODO make private again
+def setup_deps(
+        deps,
+        name,
+        working_dir,
+        toolchain,
+        allow_cc_deps = False,
+        in_runfiles = False):
+    """
+    Walks through dependencies and constructs the necessary commands for linking
+    to all the necessary dependencies.
+
+    Args:
+      deps: List of Labels containing deps from ctx.attr.deps.
+      name: Name of the current target.
+      working_dir: The output directory for the current target's outputs.
+      allow_cc_deps: True if the current target is allowed to depend on cc_library
+          targets, false otherwise.
+      in_runfiles: True if the setup commands will be run in a .runfiles
+          directory. In this case, the working dir should be '.', and the deps
+          will be symlinked into the .deps dir from the runfiles tree.
+
+    Returns:
+      Returns a struct containing the following fields:
+        transitive_rlibs:
+        transitive_dylibs:
+        transitive_staticlibs:
+        transitive_libs: All transitive dependencies, not filtered by type.
+        setup_cmd:
+        search_flags:
+        link_flags:
+    """
+    deps_dir = working_dir + "/" + name + ".deps"
+    setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
+
+    staticlib_filetype = FileType([toolchain.staticlib_ext])
+    dylib_filetype = FileType([toolchain.dylib_ext])
+
+    link_flags = []
+    transitive_rlibs = depset()
+    transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
+    transitive_staticlibs = depset()
+    for dep in deps:
+        if hasattr(dep, "rust_lib"):
+            # This dependency is a rust_library
+            transitive_rlibs += [dep.rust_lib]
+            transitive_rlibs += dep.transitive_rlibs
+            transitive_dylibs += dep.transitive_dylibs
+            transitive_staticlibs += dep.transitive_staticlibs
+
+            link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + dep.rust_lib.basename]
+        elif hasattr(dep, "cc"):
+            # This dependency is a cc_library
+            if not allow_cc_deps:
+                fail("Only rust_library, rust_binary, and rust_test targets can " +
+                     "depend on cc_library")
+
+            transitive_dylibs += dylib_filetype.filter(dep.cc.libs)
+            transitive_staticlibs += staticlib_filetype.filter(dep.cc.libs)
+
+        else:
+            fail("rust_library, rust_binary and rust_test targets can only depend " +
+                 "on rust_library or cc_library targets.")
+
+    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
+    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
+
+    search_flags = []
+    if transitive_rlibs:
+        search_flags += ["-L dependency={}".format(deps_dir)]
+    if transitive_dylibs or transitive_staticlibs:
+        search_flags += ["-L native={}".format(deps_dir)]
+
+    # Create symlinks pointing to each transitive lib in deps_dir.
+    transitive_libs = transitive_rlibs + transitive_staticlibs + transitive_dylibs
+    for transitive_lib in transitive_libs:
+        setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
+
+    return struct(
+        link_flags = link_flags,
+        search_flags = search_flags,
+        setup_cmd = setup_cmd,
+        transitive_dylibs = transitive_dylibs,
+        transitive_libs = list(transitive_libs),
+        transitive_rlibs = transitive_rlibs,
+        transitive_staticlibs = transitive_staticlibs,
+    )
+
+_setup_deps = setup_deps
+
 # Utility methods that use the toolchain provider.
 def build_rustc_command(
         ctx,
         toolchain,
+        # CrateInfo
         crate_name,
         crate_type,
-        src,
-        output_dir,
-        depinfo,
+        crate_root,
+        output,
+        crate_srcs = None,
+        crate_deps = None,
+        #
         output_hash = None,
         rust_flags = []):
     """
     Constructs the rustc command used to build the current target.
     """
+    output_dir = output.dirname
+
+    # @TODO refactor into CrateInfo
+    if crate_srcs == None:
+        crate_srcs = ctx.files.srcs
+    if crate_deps == None:
+        crate_deps = ctx.attr.deps
+
+    depinfo = _setup_deps(
+        crate_deps,
+        ctx.label.name,
+        output_dir,
+        toolchain,
+        # @TODO
+        allow_cc_deps = True,
+    )
+
+    # Compile action.
+    compile_inputs = (
+        crate_srcs +
+        ctx.files.data +
+        depinfo.transitive_libs +
+        [toolchain.rustc] +
+        toolchain.rustc_lib +
+        toolchain.rust_lib +
+        toolchain.crosstool_files
+    )
+
+    if ctx.file.out_dir_tar:
+        compile_inputs.append(ctx.file.out_dir_tar)
 
     # Paths to cc (for linker) and ar
     cpp_fragment = ctx.host_fragments.cpp
@@ -71,7 +212,7 @@ def build_rustc_command(
 
     codegen_opts = _get_comp_mode_codegen_opts(ctx, toolchain)
 
-    return " ".join(
+    command = " ".join(
         ["set -e;"] +
         # If TMPDIR is set but not created, rustc will die.
         ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] + depinfo.setup_cmd +
@@ -81,7 +222,7 @@ def build_rustc_command(
             "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             "OUT_DIR=$(pwd)/out_dir",
             toolchain.rustc.path,
-            src.path,
+            crate_root.path,
             "--crate-name %s" % crate_name,
             "--crate-type %s" % crate_type,
             "--codegen opt-level=%s" % codegen_opts.opt_level,
@@ -102,6 +243,41 @@ def build_rustc_command(
         depinfo.search_flags +
         depinfo.link_flags +
         ctx.attr.rustc_flags,
+    )
+
+    ctx.action(
+        inputs = compile_inputs,
+        outputs = [output],
+        mnemonic = "Rustc",
+        command = command,
+        use_default_shell_env = True,
+        progress_message = "Compiling Rust {} {} ({} files)".format(
+            crate_type,
+            ctx.label.name,
+            len(ctx.files.srcs),
+        ),
+    )
+
+    runfiles = ctx.runfiles(
+        files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
+        collect_data = True,
+    )
+
+    return struct(
+        # CrateInfo
+        crate_root = crate_root,
+        crate_type = crate_type,
+        files = depset([output]),
+        rust_lib = output,
+        rust_srcs = ctx.files.srcs,
+        # DepInfo
+        rust_deps = ctx.attr.deps,
+        depinfo = depinfo,
+        transitive_dylibs = depinfo.transitive_dylibs,
+        transitive_rlibs = depinfo.transitive_rlibs,
+        transitive_staticlibs = depinfo.transitive_staticlibs,
+        # ?
+        runfiles = runfiles,
     )
 
 def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags):
@@ -200,4 +376,3 @@ def _out_dir_setup_cmd(out_dir_tar):
         ]
     else:
         return []
-

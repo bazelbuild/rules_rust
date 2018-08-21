@@ -54,6 +54,7 @@ load(
     "build_rustc_command",
     "build_rustdoc_command",
     "build_rustdoc_test_command",
+    _setup_deps = "setup_deps",
 )
 load(":utils.bzl", "relative_path")
 
@@ -67,24 +68,6 @@ HTML_MD_FILETYPE = FileType([
 
 CSS_FILETYPE = FileType([".css"])
 
-def _get_lib_name(lib):
-    """Returns the name of a library artifact, eg. libabc.a -> abc"""
-    libname, ext = lib.basename.split(".", 2)
-    if not libname.startswith("lib"):
-        fail("Expected {} to start with 'lib' prefix.".format(lib))
-    return libname[3:]
-
-def _create_setup_cmd(lib, deps_dir, in_runfiles):
-    """
-    Helper function to construct a command for symlinking a library into the
-    deps directory.
-    """
-    lib_path = lib.short_path if in_runfiles else lib.path
-    return (
-        "ln -sf " + relative_path(deps_dir, lib_path) + " " +
-        deps_dir + "/" + lib.basename + "\n"
-    )
-
 def _out_dir_setup_cmd(out_dir_tar):
     if out_dir_tar:
         return [
@@ -93,93 +76,6 @@ def _out_dir_setup_cmd(out_dir_tar):
         ]
     else:
         return []
-
-def _setup_deps(
-        deps,
-        name,
-        working_dir,
-        toolchain,
-        allow_cc_deps = False,
-        in_runfiles = False):
-    """
-    Walks through dependencies and constructs the necessary commands for linking
-    to all the necessary dependencies.
-
-    Args:
-      deps: List of Labels containing deps from ctx.attr.deps.
-      name: Name of the current target.
-      working_dir: The output directory for the current target's outputs.
-      allow_cc_deps: True if the current target is allowed to depend on cc_library
-          targets, false otherwise.
-      in_runfiles: True if the setup commands will be run in a .runfiles
-          directory. In this case, the working dir should be '.', and the deps
-          will be symlinked into the .deps dir from the runfiles tree.
-
-    Returns:
-      Returns a struct containing the following fields:
-        transitive_rlibs:
-        transitive_dylibs:
-        transitive_staticlibs:
-        transitive_libs: All transitive dependencies, not filtered by type.
-        setup_cmd:
-        search_flags:
-        link_flags:
-    """
-    deps_dir = working_dir + "/" + name + ".deps"
-    setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
-
-    staticlib_filetype = FileType([toolchain.staticlib_ext])
-    dylib_filetype = FileType([toolchain.dylib_ext])
-
-    link_flags = []
-    transitive_rlibs = depset()
-    transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
-    transitive_staticlibs = depset()
-    for dep in deps:
-        if hasattr(dep, "rust_lib"):
-            # This dependency is a rust_library
-            transitive_rlibs += [dep.rust_lib]
-            transitive_rlibs += dep.transitive_rlibs
-            transitive_dylibs += dep.transitive_dylibs
-            transitive_staticlibs += dep.transitive_staticlibs
-
-            link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + dep.rust_lib.basename]
-        elif hasattr(dep, "cc"):
-            # This dependency is a cc_library
-            if not allow_cc_deps:
-                fail("Only rust_library, rust_binary, and rust_test targets can " +
-                     "depend on cc_library")
-
-            transitive_dylibs += dylib_filetype.filter(dep.cc.libs)
-            transitive_staticlibs += staticlib_filetype.filter(dep.cc.libs)
-
-        else:
-            fail("rust_library, rust_binary and rust_test targets can only depend " +
-                 "on rust_library or cc_library targets.")
-
-    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
-    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
-
-    search_flags = []
-    if transitive_rlibs:
-        search_flags += ["-L dependency={}".format(deps_dir)]
-    if transitive_dylibs or transitive_staticlibs:
-        search_flags += ["-L native={}".format(deps_dir)]
-
-    # Create symlinks pointing to each transitive lib in deps_dir.
-    transitive_libs = transitive_rlibs + transitive_staticlibs + transitive_dylibs
-    for transitive_lib in transitive_libs:
-        setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
-
-    return struct(
-        link_flags = link_flags,
-        search_flags = search_flags,
-        setup_cmd = setup_cmd,
-        transitive_dylibs = transitive_dylibs,
-        transitive_libs = list(transitive_libs),
-        transitive_rlibs = transitive_rlibs,
-        transitive_staticlibs = transitive_staticlibs,
-    )
 
 def _find_toolchain(ctx):
     """Finds the first rust toolchain that is configured."""
@@ -248,127 +144,27 @@ def _rust_library_impl(ctx):
         output_hash,
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    output_dir = rust_lib.dirname
 
-    # Dependencies
-    depinfo = _setup_deps(
-        ctx.attr.deps,
-        ctx.label.name,
-        output_dir,
-        toolchain,
-        allow_cc_deps = True,
-    )
-
-    # Build rustc command
-    cmd = build_rustc_command(
-        src = lib_rs,
+    return build_rustc_command(
+        ctx = ctx,
+        toolchain = toolchain,
         crate_name = ctx.label.name,
         crate_type = ctx.attr.crate_type,
-        ctx = ctx,
-        depinfo = depinfo,
-        output_dir = output_dir,
-        output_hash = output_hash,
-        toolchain = toolchain,
-    )
-
-    # Compile action.
-    compile_inputs = (
-        ctx.files.srcs +
-        ctx.files.data +
-        depinfo.transitive_libs + [toolchain.rustc] + toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
-    )
-
-    if ctx.file.out_dir_tar:
-        compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
-
-    ctx.action(
-        inputs = compile_inputs,
-        outputs = [rust_lib],
-        mnemonic = "Rustc",
-        command = cmd,
-        use_default_shell_env = True,
-        progress_message = "Compiling Rust library {} ({} files)".format(
-                            ctx.label.name, len(ctx.files.srcs)),
-    )
-
-    return struct(
         crate_root = lib_rs,
-        crate_type = ctx.attr.crate_type,
-        files = depset([rust_lib]),
-        rust_deps = ctx.attr.deps,
-        rust_lib = rust_lib,
-        rust_srcs = ctx.files.srcs,
-        transitive_dylibs = depinfo.transitive_dylibs,
-        transitive_rlibs = depinfo.transitive_rlibs,
-        transitive_staticlibs = depinfo.transitive_staticlibs,
+        output = rust_lib,
+        output_hash = output_hash,
     )
 
 def _rust_binary_impl(ctx):
     """Implementation for rust_binary Skylark rule."""
 
-    # Find main.rs.
-    main_rs = _crate_root_src(ctx, ["main.rs"])
-
-    # Output binary
-    rust_binary = ctx.outputs.executable
-    output_dir = rust_binary.dirname
-
-    toolchain = _find_toolchain(ctx)
-
-    # Dependencies
-    depinfo = _setup_deps(
-        ctx.attr.deps,
-        ctx.label.name,
-        output_dir,
-        toolchain,
-        allow_cc_deps = True,
-    )
-
-    # Build rustc command.
-    cmd = build_rustc_command(
-        src = main_rs,
+    return build_rustc_command(
+        ctx = ctx,
+        toolchain = _find_toolchain(ctx),
         crate_name = ctx.label.name,
         crate_type = "bin",
-        ctx = ctx,
-        depinfo = depinfo,
-        output_dir = output_dir,
-        toolchain = toolchain,
-    )
-
-    # Compile action.
-    compile_inputs = (
-        ctx.files.srcs +
-        ctx.files.data +
-        depinfo.transitive_libs + [toolchain.rustc] + toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
-    )
-
-    if ctx.file.out_dir_tar:
-        compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
-
-    ctx.action(
-        inputs = compile_inputs,
-        outputs = [rust_binary],
-        mnemonic = "Rustc",
-        command = cmd,
-        use_default_shell_env = True,
-        progress_message = "Compiling Rust binary {} ({} files)".format(
-                            ctx.label.name, len(ctx.files.srcs)),
-    )
-
-    runfiles = ctx.runfiles(
-        files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
-        collect_data = True,
-    )
-
-    return struct(
-        crate_root = main_rs,
-        runfiles = runfiles,
-        rust_deps = ctx.attr.deps,
-        rust_srcs = ctx.files.srcs,
+        crate_root = _crate_root_src(ctx, ["main.rs"]),
+        output = ctx.outputs.executable,
     )
 
 def _rust_test_common(ctx, test_binary):
@@ -378,106 +174,70 @@ def _rust_test_common(ctx, test_binary):
         ctx: The ctx object for the current target.
         test_binary: The File object for the test binary.
     """
-    output_dir = test_binary.dirname
-
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
         dep = ctx.attr.deps[0]
-        crate_type = dep.crate_type if hasattr(dep, "crate_type") else "bin"
+
+        # @TODO target = dep[0][CrateInfo]
         target = struct(
-            name = ctx.label.name,
             srcs = dep.rust_srcs,
             crate_root = dep.crate_root,
-            crate_type = crate_type,
+            crate_type = dep.crate_type if hasattr(dep, "crate_type") else "bin",
             deps = dep.rust_deps,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
         target = struct(
-            name = ctx.label.name,
             srcs = ctx.files.srcs,
             crate_root = _crate_root_src(ctx),
             crate_type = "lib",
             deps = ctx.attr.deps,
         )
 
-    toolchain = _find_toolchain(ctx)
-
-    # Get information about dependencies
-    depinfo = _setup_deps(
-        target.deps,
-        target.name,
-        output_dir,
-        toolchain,
-        allow_cc_deps = True,
-    )
-
-    cmd = build_rustc_command(
-        src = target.crate_root,
+    return build_rustc_command(
+        ctx = ctx,
+        toolchain = _find_toolchain(ctx),
         crate_name = test_binary.basename,
         crate_type = target.crate_type,
-        ctx = ctx,
-        depinfo = depinfo,
-        output_dir = output_dir,
+        crate_root = target.crate_root,
+        output = test_binary,
+        crate_srcs = target.srcs,
+        crate_deps = target.deps,
         rust_flags = ["--test"],
-        toolchain = toolchain,
     )
-
-    compile_inputs = (target.srcs +
-                      ctx.files.data +
-                      depinfo.transitive_libs + [toolchain.rustc] + toolchain.rustc_lib +
-                      toolchain.rust_lib +
-                      toolchain.crosstool_files)
-
-    if ctx.file.out_dir_tar:
-        compile_inputs = compile_inputs + [ctx.file.out_dir_tar]
-
-    ctx.action(
-        inputs = compile_inputs,
-        outputs = [test_binary],
-        mnemonic = "RustcTest",
-        command = cmd,
-        use_default_shell_env = True,
-        progress_message = "Compiling Rust test {} ({} files)".format(
-                            ctx.label.name, len(target.srcs)),
-    )
-    return depinfo
 
 def _rust_test_impl(ctx):
     """
     Implementation for rust_test Skylark rule.
     """
-    depinfo = _rust_test_common(ctx, ctx.outputs.executable)
-
-    runfiles = ctx.runfiles(
-        files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
-        collect_data = True,
-    )
-
-    return struct(runfiles = runfiles)
+    return _rust_test_common(ctx, ctx.outputs.executable)
 
 def _rust_benchmark_impl(ctx):
     """Implementation for the rust_benchmark Skylark rule."""
-    rust_benchmark = ctx.outputs.executable
-    test_binary = ctx.new_file(
-        ctx.configuration.bin_dir,
-        "{}_bin".format(rust_benchmark.basename),
-    )
-    depinfo = _rust_test_common(ctx, test_binary)
 
+    bench_script = ctx.outputs.executable
+
+    # Build the benchmark binary.
+    bench_binary = ctx.new_file(
+        ctx.configuration.bin_dir,
+        "{}_bin".format(bench_script.basename),
+    )
+    metadata = _rust_test_common(ctx, bench_binary)
+
+    # Wrap the benchmark to run it as cargo would.
     ctx.file_action(
-        output = rust_benchmark,
+        output = bench_script,
         content = "\n".join([
             "#!/usr/bin/env bash",
             "set -e",
-            "{} --bench".format(test_binary.short_path),
+            "{} --bench".format(bench_binary.short_path),
         ]),
         executable = True,
     )
 
     runfiles = ctx.runfiles(
-        files = depinfo.transitive_dylibs.to_list() + [test_binary],
+        files = metadata.runfiles + [bench_binary],
         collect_data = True,
     )
 
@@ -543,7 +303,9 @@ def _rust_doc_impl(ctx):
         command = doc_cmd,
         use_default_shell_env = True,
         progress_message = "Generating rustdoc for {} ({} files)".format(
-                            target.name, len(target.srcs)),
+            target.name,
+            len(target.srcs),
+        ),
     )
 
 def _rust_doc_test_impl(ctx):
