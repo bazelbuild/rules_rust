@@ -69,15 +69,6 @@ HTML_MD_FILETYPE = FileType([
 
 CSS_FILETYPE = FileType([".css"])
 
-def _out_dir_setup_cmd(out_dir_tar):
-    if out_dir_tar:
-        return [
-            "mkdir ./out_dir/\n",
-            "tar -xzf {} -C ./out_dir\n".format(out_dir_tar.path),
-        ]
-    else:
-        return []
-
 def _find_toolchain(ctx):
     """Finds the first rust toolchain that is configured."""
     return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
@@ -226,7 +217,7 @@ def _rust_benchmark_impl(ctx):
         ctx.configuration.bin_dir,
         "{}_bin".format(bench_script.basename),
     )
-    metadata = _rust_test_common(ctx, bench_binary)
+    info = _rust_test_common(ctx, bench_binary)
 
     # Wrap the benchmark to run it as cargo would.
     ctx.file_action(
@@ -240,7 +231,7 @@ def _rust_benchmark_impl(ctx):
     )
 
     runfiles = ctx.runfiles(
-        files = metadata.runfiles + [bench_binary],
+        files = info.runfiles + [bench_binary],
         collect_data = True,
     )
 
@@ -339,6 +330,7 @@ def _rust_doc_test_impl(ctx):
 
     doc_test_inputs = (
         crate.srcs +
+        [crate.output] +
         depinfo.transitive_libs +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +

@@ -8,9 +8,9 @@ ZIP_PATH = "/usr/bin/zip"
 
 def _get_rustc_env(ctx):
     version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
-    v1, v2, v3 = version.split(".")
+    v1, v2, v3 = version.split(".", 2)
     if "-" in v3:
-        v3, pre = v3.split("-")
+        v3, pre = v3.split("-", 1)
     else:
         pre = ""
     return [
@@ -25,7 +25,7 @@ def _get_rustc_env(ctx):
         "CARGO_PKG_HOMEPAGE=",
     ]
 
-def _get_comp_mode_codegen_opts(ctx, toolchain):
+def _get_compilation_mode_opts(ctx, toolchain):
     comp_mode = ctx.var["COMPILATION_MODE"]
     if not comp_mode in toolchain.compilation_mode_opts:
         fail("Unrecognized compilation mode %s for toolchain." % comp_mode)
@@ -106,11 +106,11 @@ def setup_deps(
         else:
             fail("rust targets can only depend on rust_library or cc_library targets.")
 
+    transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
+
     # Create symlinks pointing to each transitive lib in deps_dir.
     deps_dir = working_dir + "/" + name + ".deps"
     setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
-
-    transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
     for lib in transitive_libs:
         setup_cmd += [_create_setup_cmd(lib, deps_dir, in_runfiles)]
 
@@ -121,16 +121,17 @@ def setup_deps(
         search_flags += ["-L native={}".format(deps_dir)]
 
     link_flags = []
+    # nb. Crates are linked via --extern regardless of their crate_type
     link_flags += ["--extern " + crate.name + "=" + deps_dir + "/" + crate.output.basename for crate in transitive_crates]
-    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
     link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
+    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
 
     return struct(
         setup_cmd = setup_cmd,
         search_flags = search_flags,
         link_flags = link_flags,
-        transitive_dylibs = transitive_dylibs,
         transitive_crates = transitive_crates,
+        transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
         transitive_libs = list(transitive_libs),
     )
@@ -194,7 +195,7 @@ def rustc_compile_action(
     if ar_str.find("libtool", 0) != -1:
         ar = "/usr/bin/ar"
 
-    rpaths = _compute_rpaths(toolchain, ctx.bin_dir, output_dir, depinfo)
+    rpaths = _compute_rpaths(toolchain, output_dir, depinfo)
 
     # Construct features flags
     features_flags = _get_features_flags(ctx.attr.crate_features)
@@ -203,14 +204,16 @@ def rustc_compile_action(
     if output_hash:
         extra_filename = "-%s" % output_hash
 
-    codegen_opts = _get_comp_mode_codegen_opts(ctx, toolchain)
+    compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
 
     command = " ".join(
         ["set -e;"] +
         # If TMPDIR is set but not created, rustc will die.
-        ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] + depinfo.setup_cmd +
+        ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] +
+        depinfo.setup_cmd +
         _out_dir_setup_cmd(ctx.file.out_dir_tar) +
-        _get_rustc_env(ctx) + [
+        _get_rustc_env(ctx) +
+        [
             "OUT_DIR=$(pwd)/out_dir",
             toolchain.rustc.path,
             crate_info.root.path,
@@ -218,8 +221,8 @@ def rustc_compile_action(
             crate_info.name,
             "--crate-type",
             crate_info.type,
-            "--codegen opt-level=%s" % codegen_opts.opt_level,
-            "--codegen debuginfo=%s" % codegen_opts.debug_info,
+            "--codegen opt-level=%s" % compilation_mode.opt_level,
+            "--codegen debuginfo=%s" % compilation_mode.debug_info,
             # Disambiguate this crate from similarly named ones
             "--codegen metadata=%s" % extra_filename,
             "--codegen extra-filename='%s'" % extra_filename,
@@ -230,7 +233,8 @@ def rustc_compile_action(
             output_dir,
             "--emit=dep-info,link",
             "--color always",
-        ] + ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
+        ] +
+        ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
         features_flags +
         rust_flags +
         depinfo.search_flags +
@@ -317,7 +321,7 @@ def build_rustdoc_test_script(toolchain, depinfo, crate):
         depinfo.link_flags,
     )
 
-def _compute_rpaths(toolchain, bin_dir, output_dir, depinfo):
+def _compute_rpaths(toolchain, output_dir, depinfo):
     """
     Determine the artifact's rpaths relative to the bazel root
     for runtime linking of shared libraries.
