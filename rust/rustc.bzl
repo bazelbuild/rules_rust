@@ -93,14 +93,16 @@ def setup_deps(
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
     for dep in deps:
-        if hasattr(dep, "rust_lib"):
+        if hasattr(dep, "crate_info"):
             # This dependency is a rust_library
-            transitive_rlibs += [dep.rust_lib]
+            rlib = dep.crate_info.output
+
+            transitive_rlibs += [rlib]
             transitive_rlibs += dep.transitive_rlibs
             transitive_dylibs += dep.transitive_dylibs
             transitive_staticlibs += dep.transitive_staticlibs
 
-            link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + dep.rust_lib.basename]
+            link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + rlib.basename]
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             if not allow_cc_deps:
@@ -140,43 +142,40 @@ def setup_deps(
 
 _setup_deps = setup_deps
 
+CrateInfo = provider(
+    fields = [
+        "name",
+        "type",
+        "root",
+        "srcs",
+        "deps",
+        "output",
+    ],
+)
+
 # Utility methods that use the toolchain provider.
 def build_rustc_command(
         ctx,
         toolchain,
-        # CrateInfo
-        crate_name,
-        crate_type,
-        crate_root,
-        output,
-        crate_srcs = None,
-        crate_deps = None,
-        #
+        crate_info,
         output_hash = None,
         rust_flags = []):
     """
     Constructs the rustc command used to build the current target.
     """
-    output_dir = output.dirname
-
-    # @TODO refactor into CrateInfo
-    if crate_srcs == None:
-        crate_srcs = ctx.files.srcs
-    if crate_deps == None:
-        crate_deps = ctx.attr.deps
+    output_dir = crate_info.output.dirname
 
     depinfo = _setup_deps(
-        crate_deps,
-        ctx.label.name,
+        crate_info.deps,
+        crate_info.name,
         output_dir,
         toolchain,
-        # @TODO
         allow_cc_deps = True,
     )
 
     # Compile action.
     compile_inputs = (
-        crate_srcs +
+        crate_info.srcs +
         ctx.files.data +
         depinfo.transitive_libs +
         [toolchain.rustc] +
@@ -222,9 +221,9 @@ def build_rustc_command(
             "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             "OUT_DIR=$(pwd)/out_dir",
             toolchain.rustc.path,
-            crate_root.path,
-            "--crate-name %s" % crate_name,
-            "--crate-type %s" % crate_type,
+            crate_info.root.path,
+            "--crate-name %s" % crate_info.name,
+            "--crate-type %s" % crate_info.type,
             "--codegen opt-level=%s" % codegen_opts.opt_level,
             "--codegen debuginfo=%s" % codegen_opts.debug_info,
             # Disambiguate this crate from similarly named ones
@@ -247,12 +246,12 @@ def build_rustc_command(
 
     ctx.action(
         inputs = compile_inputs,
-        outputs = [output],
+        outputs = [crate_info.output],
         mnemonic = "Rustc",
         command = command,
         use_default_shell_env = True,
         progress_message = "Compiling Rust {} {} ({} files)".format(
-            crate_type,
+            crate_info.type,
             ctx.label.name,
             len(ctx.files.srcs),
         ),
@@ -264,19 +263,14 @@ def build_rustc_command(
     )
 
     return struct(
-        # CrateInfo
-        crate_root = crate_root,
-        crate_type = crate_type,
-        files = depset([output]),
-        rust_lib = output,
-        rust_srcs = ctx.files.srcs,
-        # DepInfo
-        rust_deps = ctx.attr.deps,
+        crate_info = crate_info,
+        # nb. This field is required for cc_library to depend on our output.
+        files = depset([crate_info.output]),
+        # @TODO DepInfo
         depinfo = depinfo,
         transitive_dylibs = depinfo.transitive_dylibs,
         transitive_rlibs = depinfo.transitive_rlibs,
         transitive_staticlibs = depinfo.transitive_staticlibs,
-        # ?
         runfiles = runfiles,
     )
 

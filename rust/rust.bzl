@@ -55,6 +55,7 @@ load(
     "build_rustdoc_command",
     "build_rustdoc_test_command",
     _setup_deps = "setup_deps",
+    "CrateInfo",
 )
 load(":utils.bzl", "relative_path")
 
@@ -117,10 +118,7 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
     )
 
 def _crate_root_src(ctx, file_names = ["lib.rs"]):
-    if ctx.file.crate_root == None:
-        return _find_crate_root_src(ctx.files.srcs, file_names)
-    else:
-        return ctx.file.crate_root
+    return ctx.file.crate_root or _find_crate_root_src(ctx.files.srcs, file_names)
 
 def _rust_library_impl(ctx):
     """
@@ -148,10 +146,14 @@ def _rust_library_impl(ctx):
     return build_rustc_command(
         ctx = ctx,
         toolchain = toolchain,
-        crate_name = ctx.label.name,
-        crate_type = ctx.attr.crate_type,
-        crate_root = lib_rs,
-        output = rust_lib,
+        crate_info = CrateInfo(
+            name = ctx.label.name,
+            type = ctx.attr.crate_type,
+            root = lib_rs,
+            srcs = ctx.files.srcs,
+            deps = ctx.attr.deps,
+            output = rust_lib,
+        ),
         output_hash = output_hash,
     )
 
@@ -161,10 +163,14 @@ def _rust_binary_impl(ctx):
     return build_rustc_command(
         ctx = ctx,
         toolchain = _find_toolchain(ctx),
-        crate_name = ctx.label.name,
-        crate_type = "bin",
-        crate_root = _crate_root_src(ctx, ["main.rs"]),
-        output = ctx.outputs.executable,
+        crate_info = CrateInfo(
+            name = ctx.label.name,
+            type = "bin",
+            root = _crate_root_src(ctx, ["main.rs"]),
+            srcs = ctx.files.srcs,
+            deps = ctx.attr.deps,
+            output =  ctx.outputs.executable,
+        ),
     )
 
 def _rust_test_common(ctx, test_binary):
@@ -177,33 +183,30 @@ def _rust_test_common(ctx, test_binary):
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
-        dep = ctx.attr.deps[0]
-
-        # @TODO target = dep[0][CrateInfo]
-        target = struct(
-            srcs = dep.rust_srcs,
-            crate_root = dep.crate_root,
-            crate_type = dep.crate_type if hasattr(dep, "crate_type") else "bin",
-            deps = dep.rust_deps,
+        dep = ctx.attr.deps[0].crate_info
+        target = CrateInfo(
+             name = test_binary.basename,
+             type = dep.type,
+             root = dep.root,
+             srcs = dep.srcs,
+             deps = dep.deps,
+             output = test_binary,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
-        target = struct(
-            srcs = ctx.files.srcs,
-            crate_root = _crate_root_src(ctx),
-            crate_type = "lib",
-            deps = ctx.attr.deps,
+        target = CrateInfo(
+             name = test_binary.basename,
+             type = "lib",
+             root = _crate_root_src(ctx),
+             srcs = ctx.files.srcs,
+             deps = ctx.attr.deps,
+             output = test_binary,
         )
 
     return build_rustc_command(
         ctx = ctx,
         toolchain = _find_toolchain(ctx),
-        crate_name = test_binary.basename,
-        crate_type = target.crate_type,
-        crate_root = target.crate_root,
-        output = test_binary,
-        crate_srcs = target.srcs,
-        crate_deps = target.deps,
+        crate_info = target,
         rust_flags = ["--test"],
     )
 
@@ -265,9 +268,9 @@ def _rust_doc_impl(ctx):
     # Gather attributes about the rust_library target to generated rustdocs for.
     target = struct(
         name = ctx.label.name,
-        srcs = ctx.attr.dep.rust_srcs,
-        crate_root = ctx.attr.dep.crate_root,
-        deps = ctx.attr.dep.rust_deps,
+        srcs = ctx.attr.dep.crate_info.srcs,
+        crate_root = ctx.attr.dep.crate_info.root,
+        deps = ctx.attr.dep.crate_info.deps,
     )
 
     # Find lib.rs
@@ -315,9 +318,9 @@ def _rust_doc_test_impl(ctx):
     # Gather attributes about the rust_library target to generated rustdocs for.
     target = struct(
         name = ctx.label.name,
-        srcs = ctx.attr.dep.rust_srcs,
-        crate_root = ctx.attr.dep.crate_root,
-        deps = ctx.attr.dep.rust_deps,
+        srcs = ctx.attr.dep.crate_info.srcs,
+        crate_root = ctx.attr.dep.crate_info.root,
+        deps = ctx.attr.dep.crate_info.deps,
     )
 
     # Find lib.rs
