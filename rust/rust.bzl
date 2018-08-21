@@ -265,16 +265,8 @@ def _rust_doc_impl(ctx):
     """Implementation of the rust_doc rule."""
     rust_doc_zip = ctx.outputs.rust_doc_zip
 
-    # Gather attributes about the rust_library target to generated rustdocs for.
-    target = struct(
-        name = ctx.label.name,
-        srcs = ctx.attr.dep.crate_info.srcs,
-        crate_root = ctx.attr.dep.crate_info.root,
-        deps = ctx.attr.dep.crate_info.deps,
-    )
-
-    # Find lib.rs
-    lib_rs = (_find_crate_root_src(target.srcs, ["lib.rs", "main.rs"]) if target.crate_root == None else target.crate_root)
+    target = ctx.attr.dep.crate_info
+    crate_root = target.root
 
     toolchain = _find_toolchain(ctx)
 
@@ -292,12 +284,16 @@ def _rust_doc_impl(ctx):
     doc_flags = _build_rustdoc_flags(ctx)
 
     # Build rustdoc command.
-    doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target, doc_flags)
+    doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, crate_root, target, doc_flags)
 
     # Rustdoc action
-    rustdoc_inputs = (target.srcs +
-                      depinfo.transitive_libs + [toolchain.rust_doc] + toolchain.rustc_lib +
-                      toolchain.rust_lib)
+    rustdoc_inputs = (
+        target.srcs +
+        depinfo.transitive_libs +
+        [toolchain.rust_doc] +
+        toolchain.rustc_lib +
+        toolchain.rust_lib
+    )
 
     ctx.action(
         inputs = rustdoc_inputs,
