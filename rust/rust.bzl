@@ -51,7 +51,7 @@ rust_repositories()
 
 load(
     ":rustc.bzl",
-    "build_rustc_command",
+    "rustc_compile_action",
     "build_rustdoc_command",
     "build_rustdoc_test_command",
     _setup_deps = "setup_deps",
@@ -143,7 +143,7 @@ def _rust_library_impl(ctx):
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
-    return build_rustc_command(
+    return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_info = CrateInfo(
@@ -160,7 +160,7 @@ def _rust_library_impl(ctx):
 def _rust_binary_impl(ctx):
     """Implementation for rust_binary Skylark rule."""
 
-    return build_rustc_command(
+    return rustc_compile_action(
         ctx = ctx,
         toolchain = _find_toolchain(ctx),
         crate_info = CrateInfo(
@@ -203,7 +203,7 @@ def _rust_test_common(ctx, test_binary):
              output = test_binary,
         )
 
-    return build_rustc_command(
+    return rustc_compile_action(
         ctx = ctx,
         toolchain = _find_toolchain(ctx),
         crate_info = target,

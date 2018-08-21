@@ -154,7 +154,7 @@ CrateInfo = provider(
 )
 
 # Utility methods that use the toolchain provider.
-def build_rustc_command(
+def rustc_compile_action(
         ctx,
         toolchain,
         crate_info,
@@ -173,7 +173,6 @@ def build_rustc_command(
         allow_cc_deps = True,
     )
 
-    # Compile action.
     compile_inputs = (
         crate_info.srcs +
         ctx.files.data +
