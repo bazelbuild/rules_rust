@@ -24,7 +24,7 @@ impl Greeter {
     /// # Examples
     ///
     /// ```
-    /// use hello_lib::greeter;
+    /// use hello_lib::greeter::Greeter;
     ///
     /// let greeter = Greeter::new("Hello");
     /// ```
@@ -37,7 +37,7 @@ impl Greeter {
     /// # Examples
     ///
     /// ```
-    /// use hello_lib::greeter;
+    /// use hello_lib::greeter::Greeter;
     ///
     /// let greeter = Greeter::new("Hello");
     /// let greeting = greeter.greeting("World");
@@ -51,7 +51,7 @@ impl Greeter {
     /// # Examples
     ///
     /// ```
-    /// use hello_lib::greeter;
+    /// use hello_lib::greeter::Greeter;
     ///
     /// let greeter = Greeter::new("Hello");
     /// greeter.greet("World");

@@ -17,8 +17,3 @@ rust_doc(
     name = "hello_world_doc",
     dep = ":hello_world",
 )
-
-rust_doc_test(
-    name = "hello_world_doc_test",
-    dep = ":hello_world",
-)

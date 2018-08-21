@@ -17,7 +17,7 @@
 /// # Examples
 ///
 /// ```
-/// fibonacci::fibonacci(5)
+/// assert_eq!(fibonacci::fibonacci(5), 5)
 /// ```
 pub fn fibonacci(n: u64) -> u64 {
     if n < 2 {

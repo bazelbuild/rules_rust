@@ -281,7 +281,8 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
     docs_dir = rust_doc_zip.dirname + "/_rust_docs"
     return " ".join(
         ["set -e;"] +
-        depinfo.setup_cmd + [
+        depinfo.setup_cmd +
+        [
             "rm -rf %s;" % docs_dir,
             "mkdir %s;" % docs_dir,
             "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
@@ -289,9 +290,10 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
             toolchain.rust_doc.path,
             lib_rs.path,
             "--crate-name %s" % target.name,
-        ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
-            "-o %s" % docs_dir,
-        ] + doc_flags +
+        ] +
+        ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
+        ["-o %s" % docs_dir] +
+        doc_flags +
         depinfo.search_flags +
         # rustdoc can't do anything with native link flags, and blows up on them
         [f for f in depinfo.link_flags if f.startswith("--extern")] +
@@ -308,18 +310,25 @@ def build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, lib_rs, target,
         ],
     )
 
-def build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs):
+def build_rustdoc_test_command(ctx, toolchain, depinfo, crate):
     """
-    Constructs the rustdocc command used to test the current target.
+    Constructs the rustdoc command used to test the current target.
     """
     return " ".join(
-        ["#!/usr/bin/env bash\n"] + ["set -e\n"] + depinfo.setup_cmd + [
+        ["#!/usr/bin/env bash\n"] +
+        ["set -e\n"] +
+        depinfo.setup_cmd +
+        [
             "LD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             "DYLD_LIBRARY_PATH=%s" % _get_path_str(_get_dir_names(toolchain.rustc_lib)),
             toolchain.rust_doc.path,
-        ] + ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] + [
-            lib_rs.path,
-        ] + depinfo.search_flags +
+            "--test",
+            crate.root.path,
+            "--crate-name",
+            crate.name,
+        ] +
+        ["-L all=%s" % dir for dir in _get_dir_names(toolchain.rust_lib)] +
+        depinfo.search_flags +
         depinfo.link_flags,
     )
 

@@ -263,10 +263,13 @@ def _build_rustdoc_flags(ctx):
 
 def _rust_doc_impl(ctx):
     """Implementation of the rust_doc rule."""
+
+    if not hasattr(ctx.attr.dep, "crate_info"):
+        fail("Expected rust library or binary.", "dep")
+
     rust_doc_zip = ctx.outputs.rust_doc_zip
 
     target = ctx.attr.dep.crate_info
-    crate_root = target.root
 
     toolchain = _find_toolchain(ctx)
 
@@ -284,7 +287,7 @@ def _rust_doc_impl(ctx):
     doc_flags = _build_rustdoc_flags(ctx)
 
     # Build rustdoc command.
-    doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, crate_root, target, doc_flags)
+    doc_cmd = build_rustdoc_command(ctx, toolchain, rust_doc_zip, depinfo, target.root, target, doc_flags)
 
     # Rustdoc action
     rustdoc_inputs = (
@@ -309,26 +312,20 @@ def _rust_doc_impl(ctx):
 
 def _rust_doc_test_impl(ctx):
     """Implementation for the rust_doc_test rule."""
+
+    if not hasattr(ctx.attr.dep, "crate_info"):
+        fail("Expected rust library or binary.", "dep")
+
     rust_doc_test = ctx.outputs.executable
 
-    # Gather attributes about the rust_library target to generated rustdocs for.
-    target = struct(
-        name = ctx.label.name,
-        srcs = ctx.attr.dep.crate_info.srcs,
-        crate_root = ctx.attr.dep.crate_info.root,
-        deps = ctx.attr.dep.crate_info.deps,
-    )
-
-    # Find lib.rs
-    lib_rs = (_find_crate_root_src(target.srcs, ["lib.rs", "main.rs"]) if target.crate_root == None else target.crate_root)
+    target = ctx.attr.dep.crate_info
 
     toolchain = _find_toolchain(ctx)
 
-    # Get information about dependencies
-    output_dir = rust_doc_test.dirname
+    # nb. The working dir is "." when running the test script.
     working_dir = "."
     depinfo = _setup_deps(
-        target.deps,
+        [ctx.attr.dep],
         target.name,
         working_dir,
         toolchain,
@@ -338,7 +335,7 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, lib_rs)
+    doc_test_cmd = build_rustdoc_test_command(ctx, toolchain, depinfo, target)
 
     ctx.file_action(
         output = rust_doc_test,
@@ -346,9 +343,13 @@ def _rust_doc_test_impl(ctx):
         executable = True,
     )
 
-    doc_test_inputs = (target.srcs +
-                       depinfo.transitive_libs + [toolchain.rust_doc] + toolchain.rustc_lib +
-                       toolchain.rust_lib)
+    doc_test_inputs = (
+        target.srcs +
+        depinfo.transitive_libs +
+        [toolchain.rust_doc] +
+        toolchain.rustc_lib +
+        toolchain.rust_lib
+    )
 
     runfiles = ctx.runfiles(files = doc_test_inputs, collect_data = True)
     return struct(runfiles = runfiles)
