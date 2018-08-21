@@ -5,21 +5,13 @@ load(
     "rust_test",
 )
 load(
-    # TODO(katre): Remove the fork of test_rules when the fixed version is released.
     "@bazel_tools//tools/build_rules:test_rules.bzl",
-    # ":test_rules.bzl",
     "rule_test",
 )
 
 rule_test(
     name = "hello_lib_rule_test",
     generates = ["libhello_lib--1343350674.rlib"],
-    provides = {
-        #"crate_info": "/libhello_lib--1343350674.rlib>\\?$",
-        # "depinfo": "^depset(\[\])$",
-        # "transitive_dylibs": "^depset(\[\], order = \"topological\")$",
-        # "transitive_staticlibs": "^depset(\[\])$",
-    },
     rule = "@examples//hello_lib:hello_lib",
 )
 
