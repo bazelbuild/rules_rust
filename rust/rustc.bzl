@@ -74,7 +74,7 @@ def setup_deps(
 
     Returns:
       Returns a struct containing the following fields:
-        transitive_rlibs:
+        transitive_crates:
         transitive_dylibs:
         transitive_staticlibs:
         transitive_libs: All transitive dependencies, not filtered by type.
@@ -82,27 +82,19 @@ def setup_deps(
         search_flags:
         link_flags:
     """
-    deps_dir = working_dir + "/" + name + ".deps"
-    setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
-
     staticlib_filetype = FileType([toolchain.staticlib_ext])
     dylib_filetype = FileType([toolchain.dylib_ext])
 
-    link_flags = []
-    transitive_rlibs = depset()
+    transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
     for dep in deps:
         if hasattr(dep, "crate_info"):
             # This dependency is a rust_library
-            rlib = dep.crate_info.output
-
-            transitive_rlibs += [rlib]
-            transitive_rlibs += dep.transitive_rlibs
-            transitive_dylibs += dep.transitive_dylibs
-            transitive_staticlibs += dep.transitive_staticlibs
-
-            link_flags += ["--extern " + dep.label.name + "=" + deps_dir + "/" + rlib.basename]
+            transitive_crates += [dep.crate_info]
+            transitive_crates += dep.depinfo.transitive_crates
+            transitive_dylibs += dep.depinfo.transitive_dylibs
+            transitive_staticlibs += dep.depinfo.transitive_staticlibs
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             if not allow_cc_deps:
@@ -111,33 +103,36 @@ def setup_deps(
 
             transitive_dylibs += dylib_filetype.filter(dep.cc.libs)
             transitive_staticlibs += staticlib_filetype.filter(dep.cc.libs)
-
         else:
-            fail("rust_library, rust_binary and rust_test targets can only depend " +
-                 "on rust_library or cc_library targets.")
+            fail("rust targets can only depend on rust_library or cc_library targets.")
 
-    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
-    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
+    # Create symlinks pointing to each transitive lib in deps_dir.
+    deps_dir = working_dir + "/" + name + ".deps"
+    setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
+
+    transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
+    for lib in transitive_libs:
+        setup_cmd += [_create_setup_cmd(lib, deps_dir, in_runfiles)]
 
     search_flags = []
-    if transitive_rlibs:
+    if transitive_crates:
         search_flags += ["-L dependency={}".format(deps_dir)]
     if transitive_dylibs or transitive_staticlibs:
         search_flags += ["-L native={}".format(deps_dir)]
 
-    # Create symlinks pointing to each transitive lib in deps_dir.
-    transitive_libs = transitive_rlibs + transitive_staticlibs + transitive_dylibs
-    for transitive_lib in transitive_libs:
-        setup_cmd += [_create_setup_cmd(transitive_lib, deps_dir, in_runfiles)]
+    link_flags = []
+    link_flags += ["--extern " + crate.name + "=" + deps_dir + "/" + crate.output.basename for crate in transitive_crates]
+    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
+    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
 
     return struct(
-        link_flags = link_flags,
-        search_flags = search_flags,
         setup_cmd = setup_cmd,
+        search_flags = search_flags,
+        link_flags = link_flags,
         transitive_dylibs = transitive_dylibs,
-        transitive_libs = list(transitive_libs),
-        transitive_rlibs = transitive_rlibs,
+        transitive_crates = transitive_crates,
         transitive_staticlibs = transitive_staticlibs,
+        transitive_libs = list(transitive_libs),
     )
 
 _setup_deps = setup_deps
@@ -261,11 +256,7 @@ def rustc_compile_action(
         crate_info = crate_info,
         # nb. This field is required for cc_library to depend on our output.
         files = depset([crate_info.output]),
-        # @TODO DepInfo
         depinfo = depinfo,
-        transitive_dylibs = depinfo.transitive_dylibs,
-        transitive_rlibs = depinfo.transitive_rlibs,
-        transitive_staticlibs = depinfo.transitive_staticlibs,
         runfiles = runfiles,
     )
 
