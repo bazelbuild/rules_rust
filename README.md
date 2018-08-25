@@ -50,7 +50,6 @@ The master branch should always be current with the latest bazel, as such you ca
 <a name="roadmap"></a>
 ## Roadmap
 
-* Add `rust_toolchain` rule to make it easy to use a custom Rust toolchain.
 * Add tool for taking `Cargo.toml` and generating a `WORKSPACE` file with
   workspace rules for pulling external dependencies.
 * Improve expressiveness of features and support for [Cargo's feature

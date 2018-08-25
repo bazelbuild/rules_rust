@@ -16,6 +16,10 @@
 Utility functions not specific to the rust toolchain.
 """
 
+def find_toolchain(ctx):
+    """Finds the first rust toolchain that is configured."""
+    return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
+
 def relative_path(src_path, dest_path):
     """Returns the relative path from src_path to dest_path."""
     src_parts = _path_parts(src_path)

@@ -1,8 +1,8 @@
 """
-Rules for interfacing with the rust toolchain: rustc and rustdoc.
+Rules for interfacing with rustc.
 """
 
-load(":utils.bzl", "relative_path")
+load(":utils.bzl", "find_toolchain", "relative_path")
 
 CrateInfo = provider(
     fields = {
@@ -14,8 +14,6 @@ CrateInfo = provider(
         "output": "File: The output File that will be produced, depends on crate type.",
     },
 )
-
-_ZIP_PATH = "/usr/bin/zip"
 
 def _get_rustc_env(ctx):
     version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
@@ -61,7 +59,6 @@ def _symlink_dep_cmd(lib, deps_dir, in_runfiles):
         deps_dir + "/" + lib.basename + "\n"
     )
 
-# @TODO make private again
 def setup_deps(
         deps,
         name,
@@ -93,9 +90,6 @@ def setup_deps(
         link_search_flags:
         link_flags:
     """
-    staticlib_filetype = FileType([toolchain.staticlib_ext])
-    dylib_filetype = FileType([toolchain.dylib_ext])
-
     direct_crates = depset()
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
@@ -114,8 +108,8 @@ def setup_deps(
                 fail("Only rust_library, rust_binary, and rust_test targets can " +
                      "depend on cc_library")
 
-            transitive_dylibs += dylib_filetype.filter(dep.cc.libs)
-            transitive_staticlibs += staticlib_filetype.filter(dep.cc.libs)
+            transitive_dylibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
+            transitive_staticlibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
         else:
             fail("rust targets can only depend on rust_library or cc_library targets.")
 
@@ -150,9 +144,6 @@ def setup_deps(
         transitive_libs = list(transitive_libs),
     )
 
-_setup_deps = setup_deps
-
-# Utility methods that use the toolchain provider.
 def rustc_compile_action(
         ctx,
         toolchain,
@@ -164,7 +155,7 @@ def rustc_compile_action(
     """
     output_dir = crate_info.output.dirname
 
-    depinfo = _setup_deps(
+    depinfo = setup_deps(
         crate_info.deps,
         crate_info.name,
         output_dir,
@@ -265,63 +256,6 @@ def rustc_compile_action(
         files = depset([crate_info.output]),
         depinfo = depinfo,
         runfiles = runfiles,
-    )
-
-def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
-    """
-    Constructs the rustdoc command used to build documentation for `crate`.
-    """
-
-    docs_dir = rust_doc_zip.dirname + "/_rust_docs"
-    return " ".join(
-        ["set -e;"] +
-        depinfo.setup_cmd +
-        [
-            "rm -rf %s;" % docs_dir,
-            "mkdir %s;" % docs_dir,
-        ] + [
-            toolchain.rust_doc.path,
-            crate.root.path,
-            "--crate-name",
-            crate.name,
-            "--output",
-            docs_dir,
-        ] +
-        doc_flags +
-        depinfo.link_search_flags +
-        # rustdoc can't do anything with native link flags, and blows up on them
-        [f for f in depinfo.link_flags if f.startswith("--extern")] +
-        [
-            "&&",
-            "(cd",
-            docs_dir,
-            "&&",
-            _ZIP_PATH,
-            "-qR",
-            rust_doc_zip.basename,
-            "$(find . -type f) )",
-            "&&",
-            "mv %s/%s %s" % (docs_dir, rust_doc_zip.basename, rust_doc_zip.path),
-        ],
-    )
-
-def build_rustdoc_test_script(toolchain, depinfo, crate):
-    """
-    Constructs the rustdoc script used to test `crate`.
-    """
-    return " ".join(
-        ["#!/usr/bin/env bash\n"] +
-        ["set -e\n"] +
-        depinfo.setup_cmd +
-        [
-            toolchain.rust_doc.path,
-            "--test",
-            crate.root.path,
-            "--crate-name",
-            crate.name,
-        ] +
-        depinfo.link_search_flags +
-        depinfo.link_flags,
     )
 
 def _compute_rpaths(toolchain, output_dir, depinfo):

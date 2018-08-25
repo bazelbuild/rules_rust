@@ -6,5 +6,4 @@ exports_files([
     "rust.bzl",
     "toolchain.bzl",
     "triple_mappings.bzl",
-    "utils.bzl",
 ])
