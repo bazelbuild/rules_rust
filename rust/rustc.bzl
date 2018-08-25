@@ -1,23 +1,34 @@
 """
-Toolchain rules used by Rust.
+Rules for interfacing with the rust toolchain: rustc and rustdoc.
 """
 
 load(":utils.bzl", "relative_path")
 
-ZIP_PATH = "/usr/bin/zip"
+CrateInfo = provider(
+    fields = {
+        "name": "str: The name of this crate.",
+        "type": "str: The type of this crate. eg. lib or bin",
+        "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        "srcs": "List[File]: All source Files that are part of the crate.",
+        "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
+        "output": "File: The output File that will be produced, depends on crate type.",
+    },
+)
+
+_ZIP_PATH = "/usr/bin/zip"
 
 def _get_rustc_env(ctx):
     version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
-    v1, v2, v3 = version.split(".", 2)
-    if "-" in v3:
-        v3, pre = v3.split("-", 1)
+    major, minor, patch = version.split(".", 2)
+    if "-" in patch:
+        patch, pre = patch.split("-", 1)
     else:
         pre = ""
     return [
         "CARGO_PKG_VERSION=" + version,
-        "CARGO_PKG_VERSION_MAJOR=" + v1,
-        "CARGO_PKG_VERSION_MINOR=" + v2,
-        "CARGO_PKG_VERSION_PATCH=" + v3,
+        "CARGO_PKG_VERSION_MAJOR=" + major,
+        "CARGO_PKG_VERSION_MINOR=" + minor,
+        "CARGO_PKG_VERSION_PATCH=" + patch,
         "CARGO_PKG_VERSION_PRE=" + pre,
         "CARGO_PKG_AUTHORS=",
         "CARGO_PKG_NAME=" + ctx.label.name,
@@ -39,7 +50,7 @@ def _get_lib_name(lib):
         fail("Expected {} to start with 'lib' prefix.".format(lib))
     return libname[3:]
 
-def _create_setup_cmd(lib, deps_dir, in_runfiles):
+def _symlink_dep_cmd(lib, deps_dir, in_runfiles):
     """
     Helper function to construct a command for symlinking a library into the
     deps directory.
@@ -79,7 +90,7 @@ def setup_deps(
         transitive_staticlibs:
         transitive_libs: All transitive dependencies, not filtered by type.
         setup_cmd:
-        search_flags:
+        link_search_flags:
         link_flags:
     """
     staticlib_filetype = FileType([toolchain.staticlib_ext])
@@ -114,13 +125,13 @@ def setup_deps(
     deps_dir = working_dir + "/" + name + ".deps"
     setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
     for lib in transitive_libs:
-        setup_cmd += [_create_setup_cmd(lib, deps_dir, in_runfiles)]
+        setup_cmd += [_symlink_dep_cmd(lib, deps_dir, in_runfiles)]
 
-    search_flags = []
+    link_search_flags = []
     if transitive_crates:
-        search_flags += ["-L dependency={}".format(deps_dir)]
+        link_search_flags += ["-L dependency={}".format(deps_dir)]
     if transitive_dylibs or transitive_staticlibs:
-        search_flags += ["-L native={}".format(deps_dir)]
+        link_search_flags += ["-L native={}".format(deps_dir)]
 
     link_flags = []
 
@@ -131,7 +142,7 @@ def setup_deps(
 
     return struct(
         setup_cmd = setup_cmd,
-        search_flags = search_flags,
+        link_search_flags = link_search_flags,
         link_flags = link_flags,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
@@ -140,17 +151,6 @@ def setup_deps(
     )
 
 _setup_deps = setup_deps
-
-CrateInfo = provider(
-    fields = [
-        "name",
-        "type",
-        "root",
-        "srcs",
-        "deps",
-        "output",
-    ],
-)
 
 # Utility methods that use the toolchain provider.
 def rustc_compile_action(
@@ -240,7 +240,7 @@ def rustc_compile_action(
         ["--codegen link-arg='-Wl,-rpath={}'".format(rpath) for rpath in rpaths] +
         features_flags +
         rust_flags +
-        depinfo.search_flags +
+        depinfo.link_search_flags +
         depinfo.link_flags +
         ctx.attr.rustc_flags,
     )
@@ -269,7 +269,7 @@ def rustc_compile_action(
 
 def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
     """
-    Constructs the rustdoc command used to build the current target.
+    Constructs the rustdoc command used to build documentation for `crate`.
     """
 
     docs_dir = rust_doc_zip.dirname + "/_rust_docs"
@@ -288,7 +288,7 @@ def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
             docs_dir,
         ] +
         doc_flags +
-        depinfo.search_flags +
+        depinfo.link_search_flags +
         # rustdoc can't do anything with native link flags, and blows up on them
         [f for f in depinfo.link_flags if f.startswith("--extern")] +
         [
@@ -296,7 +296,7 @@ def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
             "(cd",
             docs_dir,
             "&&",
-            ZIP_PATH,
+            _ZIP_PATH,
             "-qR",
             rust_doc_zip.basename,
             "$(find . -type f) )",
@@ -307,7 +307,7 @@ def build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
 
 def build_rustdoc_test_script(toolchain, depinfo, crate):
     """
-    Constructs the rustdoc command used to test the current target.
+    Constructs the rustdoc script used to test `crate`.
     """
     return " ".join(
         ["#!/usr/bin/env bash\n"] +
@@ -320,7 +320,7 @@ def build_rustdoc_test_script(toolchain, depinfo, crate):
             "--crate-name",
             crate.name,
         ] +
-        depinfo.search_flags +
+        depinfo.link_search_flags +
         depinfo.link_flags,
     )
 

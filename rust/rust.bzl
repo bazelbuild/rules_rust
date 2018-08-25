@@ -174,13 +174,13 @@ def _rust_test_common(ctx, test_binary):
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
-        crate = ctx.attr.deps[0].crate_info
+        parent_crate = ctx.attr.deps[0].crate_info
         target = CrateInfo(
             name = test_binary.basename,
-            type = crate.type,
-            root = crate.root,
-            srcs = crate.srcs,
-            deps = crate.deps,
+            type = parent_crate.type,
+            root = parent_crate.root,
+            srcs = parent_crate.srcs,
+            deps = parent_crate.deps,
             output = test_binary,
         )
     else:
