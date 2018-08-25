@@ -2,7 +2,7 @@
 Rules for interfacing with rustc.
 """
 
-load(":utils.bzl", "find_toolchain", "relative_path")
+load(":private/utils.bzl", "find_toolchain", "relative_path")
 
 CrateInfo = provider(
     fields = {

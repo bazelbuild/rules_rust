@@ -16,8 +16,8 @@
 Implementations of rules rust.
 """
 
-load(":rustc.bzl", "CrateInfo", "rustc_compile_action")
-load(":utils.bzl", "find_toolchain", "relative_path")
+load(":private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load(":private/utils.bzl", "find_toolchain", "relative_path")
 
 def _find_crate_root_src(srcs, file_names = ["lib.rs"]):
     """Finds the source file for the crate root."""

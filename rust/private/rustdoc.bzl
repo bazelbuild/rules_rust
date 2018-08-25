@@ -2,8 +2,8 @@
 Rules for interfacing with rustdoc.
 """
 
-load(":rustc.bzl", "setup_deps")
-load(":utils.bzl", "find_toolchain")
+load(":private/rustc.bzl", "setup_deps")
+load(":private/utils.bzl", "find_toolchain")
 
 _ZIP_PATH = "/usr/bin/zip"
 
