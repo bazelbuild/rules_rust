@@ -22,7 +22,6 @@ pub fn get_runfiles_dir() -> io::Result<PathBuf> {
 mod test {
     use super::*;
 
-    use std::io;
     use std::io::prelude::*;
     use std::fs::File;
 

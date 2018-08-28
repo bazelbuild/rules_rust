@@ -12,6 +12,8 @@ rust_library(
 cc_library(
     name = "wrapper",
     srcs = [":rusty"],
+    # We could link dynamically by setting crate_type to cdylib
+    linkstatic = True,
 )
 
 cc_test(

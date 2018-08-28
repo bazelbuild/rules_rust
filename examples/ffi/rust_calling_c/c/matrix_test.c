@@ -24,7 +24,7 @@ void matrix_print(const Matrix* m) {
     for (size_t j = 0; j < m->cols; ++j) {
       uint64_t val = 0;
       matrix_at(m, i, j, &val);
-      printf("%llu ", val);
+      printf("%lu ", val);
     }
     printf("\n");
   }
