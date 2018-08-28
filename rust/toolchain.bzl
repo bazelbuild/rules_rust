@@ -3,8 +3,7 @@ The rust_toolchain rule definition and implementation.
 """
 
 def _get_files(labels):
-    return  [f for l in labels for f in getattr(l, "files", [])]
-
+    return [f for l in labels for f in getattr(l, "files", [])]
 
 def _rust_toolchain_impl(ctx):
     compilation_mode_opts = {}
