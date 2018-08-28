@@ -25,7 +25,6 @@ def _rust_doc_impl(ctx):
         crate.name,
         output_dir,
         toolchain,
-        allow_cc_deps = True,
     )
 
     # Rustdoc flags.
@@ -122,8 +121,6 @@ def _rust_doc_test_impl(ctx):
         crate.name,
         working_dir,
         toolchain,
-        # @TODO The 1 dep can't be cc_deps, so cc_deps is never used
-        allow_cc_deps = False,
         in_runfiles = True,
     )
 

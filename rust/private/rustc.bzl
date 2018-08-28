@@ -64,7 +64,6 @@ def setup_deps(
         name,
         working_dir,
         toolchain,
-        allow_cc_deps = False,
         in_runfiles = False):
     """
     Walks through dependencies and constructs the necessary commands for linking
@@ -74,8 +73,6 @@ def setup_deps(
       deps: List of Labels containing deps from ctx.attr.deps.
       name: Name of the current target.
       working_dir: The output directory for the current target's outputs.
-      allow_cc_deps: True if the current target is allowed to depend on cc_library
-          targets, false otherwise.
       in_runfiles: True if the setup commands will be run in a .runfiles
           directory. In this case, the working dir should be '.', and the deps
           will be symlinked into the .deps dir from the runfiles tree.
@@ -104,10 +101,6 @@ def setup_deps(
             transitive_staticlibs += dep.depinfo.transitive_staticlibs
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
-            if not allow_cc_deps:
-                fail("Only rust_library, rust_binary, and rust_test targets can " +
-                     "depend on cc_library")
-
             transitive_dylibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
             transitive_staticlibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
         else:
@@ -160,7 +153,6 @@ def rustc_compile_action(
         crate_info.name,
         output_dir,
         toolchain,
-        allow_cc_deps = True,
     )
 
     compile_inputs = (
