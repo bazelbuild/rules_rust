@@ -1,6 +1,16 @@
-"""
-Rules for interfacing with rustdoc.
-"""
+# Copyright 2018 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load(":private/rustc.bzl", "setup_deps")
 load(":private/utils.bzl", "find_toolchain")
@@ -8,8 +18,6 @@ load(":private/utils.bzl", "find_toolchain")
 _ZIP_PATH = "/usr/bin/zip"
 
 def _rust_doc_impl(ctx):
-    """Implementation of the rust_doc rule."""
-
     if not hasattr(ctx.attr.dep, "crate_info"):
         fail("Expected rust library or binary.", "dep")
 
@@ -18,7 +26,6 @@ def _rust_doc_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    # Get information about dependencies
     output_dir = rust_doc_zip.dirname
     depinfo = setup_deps(
         crate.deps,
@@ -27,13 +34,6 @@ def _rust_doc_impl(ctx):
         toolchain,
     )
 
-    # Rustdoc flags.
-    doc_flags = _build_rustdoc_flags(ctx)
-
-    # Build rustdoc command.
-    doc_cmd = _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags)
-
-    # Rustdoc action
     rustdoc_inputs = (
         crate.srcs +
         depinfo.transitive_libs +
@@ -42,6 +42,8 @@ def _rust_doc_impl(ctx):
         toolchain.rust_lib
     )
 
+    doc_flags = _collect_rustdoc_flags(ctx)
+    doc_cmd = _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags)
     ctx.action(
         inputs = rustdoc_inputs,
         outputs = [rust_doc_zip],
@@ -51,8 +53,7 @@ def _rust_doc_impl(ctx):
         progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
     )
 
-def _build_rustdoc_flags(ctx):
-    """Collects the rustdoc flags."""
+def _collect_rustdoc_flags(ctx):
     doc_flags = []
     doc_flags += [
         "--markdown-css {}".format(css.path)
@@ -105,8 +106,6 @@ def _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
     )
 
 def _rust_doc_test_impl(ctx):
-    """Implementation for the rust_doc_test rule."""
-
     if not hasattr(ctx.attr.dep, "crate_info"):
         fail("Expected rust library or binary.", "dep")
 

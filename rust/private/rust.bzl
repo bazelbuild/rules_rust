@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Implementations of rules rust.
-"""
-
 load(":private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load(":private/utils.bzl", "find_toolchain", "relative_path")
 
@@ -45,7 +41,7 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
              "this crate as a rust_binary instead.")
 
     if not extension:
-        fail(("Unknown crate_type: (). If this is a cargo-supported crate type, " +
+        fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
               "please file an issue!").format(crate_type))
 
     return "lib{name}-{lib_hash}{extension}".format(
@@ -58,20 +54,14 @@ def _crate_root_src(ctx, file_names = ["lib.rs"]):
     return ctx.file.crate_root or _find_crate_root_src(ctx.files.srcs, file_names)
 
 def _rust_library_impl(ctx):
-    """
-    Implementation for rust_library Skylark rule.
-    """
-
     # Find lib.rs
     lib_rs = _crate_root_src(ctx)
 
-    # Find toolchain
     toolchain = find_toolchain(ctx)
 
     # Determine unique hash for this rlib
     output_hash = _determine_output_hash(lib_rs)
 
-    # Output library
     rust_lib_name = _determine_lib_name(
         ctx.attr.name,
         ctx.attr.crate_type,
@@ -95,8 +85,6 @@ def _rust_library_impl(ctx):
     )
 
 def _rust_binary_impl(ctx):
-    """Implementation for rust_binary Skylark rule."""
-
     return rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
@@ -111,7 +99,8 @@ def _rust_binary_impl(ctx):
     )
 
 def _rust_test_common(ctx, test_binary):
-    """Builds a Rust test binary.
+    """
+    Builds a Rust test binary.
 
     Args:
         ctx: The ctx object for the current target.
@@ -148,17 +137,12 @@ def _rust_test_common(ctx, test_binary):
     )
 
 def _rust_test_impl(ctx):
-    """
-    Implementation for rust_test Skylark rule.
-    """
     return _rust_test_common(ctx, ctx.outputs.executable)
 
 def _rust_benchmark_impl(ctx):
-    """Implementation for the rust_benchmark Skylark rule."""
-
     bench_script = ctx.outputs.executable
 
-    # Build the benchmark binary.
+    # Build the underlying benchmark binary.
     bench_binary = ctx.new_file(
         ctx.configuration.bin_dir,
         "{}_bin".format(bench_script.basename),
