@@ -7,3 +7,7 @@ exports_files([
     "toolchain.bzl",
     "triple_mappings.bzl",
 ])
+
+toolchain_type(
+    name = "toolchain",
+)
