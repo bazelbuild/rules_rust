@@ -11,11 +11,11 @@ rust_binary(
     name = "hello_runfiles",
     srcs = ["src/main.rs"],
     data = ["data/sample.txt"],
-    deps = ["@io_bazel_rules_rust//tools:runfiles"],
+    deps = ["@io_bazel_rules_rust//tools/runfiles"],
 )
 
 rust_test(
     name = "hello_runfiles_test",
     data = ["data/sample.txt"],
-    deps = ["@io_bazel_rules_rust//tools:runfiles"],
+    deps = ["@io_bazel_rules_rust//tools/runfiles"],
 )

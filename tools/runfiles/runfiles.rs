@@ -112,7 +112,7 @@ mod test {
         let r = Runfiles::create().unwrap();
 
         let mut f = File::open(r.rlocation("examples/hello_runfiles/data/sample.txt")).unwrap();
-
+        
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();
 
