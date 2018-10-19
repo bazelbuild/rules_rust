@@ -1,5 +1,3 @@
-package(default_visibility = ["//visibility:private"])
-
 load("@//rust:rust.bzl", "rust_library", "rust_test", "rust_binary")
 
 rust_library(
