@@ -1,2 +1,8 @@
+# vim
 *.swp
+
+# bazel
 /bazel-*
+
+# rustfmt
+*.rs.bk

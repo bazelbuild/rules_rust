@@ -7,7 +7,7 @@
 //!       rust_binary(
 //!           name = "my_binary",
 //!           ...
-//!           data = ["@my_workspace//path/to/my/data.txt"],
+//!           data = ["//path/to/my/data.txt"],
 //!           deps = ["@io_bazel_rules_rust//tools/runfiles"],
 //!       )
 //!     ```
@@ -21,12 +21,14 @@
 //!
 //! 3.  Create a Runfiles object and use rlocation to look up runfile paths:
 //!     ```ignore -- This doesn't work under rust_doc_test because argv[0] is not what we expect.
+//!
 //!     use runfiles::Runfiles;
 //!
 //!     let r = Runfiles::create().unwrap();
 //!     let path = r.rlocation("my_workspace/path/to/my/data.txt");
 //!
-//!     // let f = File::open(path);
+//!     let f = File::open(path).unwrap();
+//!     // ...
 //!     ```
 
 use std::io;
@@ -116,7 +118,9 @@ mod test {
     fn test_can_read_data_from_runfiles() {
         let r = Runfiles::create().unwrap();
 
-        let mut f = File::open(r.rlocation("examples/hello_runfiles/data/sample.txt")).unwrap();
+        let mut f = File::open(r.rlocation(
+            "io_bazel_rules_rust/tools/runfiles/data/sample.txt",
+        )).unwrap();
 
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();
