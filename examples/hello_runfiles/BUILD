@@ -7,20 +7,15 @@ load(
     "rust_test",
 )
 
-rust_library(
-    name = "runfiles",
-    srcs = ["src/lib.rs"],
-)
-
 rust_binary(
     name = "hello_runfiles",
     srcs = ["src/main.rs"],
     data = ["data/sample.txt"],
-    deps = [":runfiles"],
+    deps = ["@io_bazel_rules_rust//tools:runfiles"],
 )
 
 rust_test(
     name = "hello_runfiles_test",
     data = ["data/sample.txt"],
-    deps = [":runfiles"],
+    deps = ["@io_bazel_rules_rust//tools:runfiles"],
 )
