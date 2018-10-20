@@ -1,7 +1,35 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
-load(":triple_mappings.bzl", "triple_to_system", "triple_to_constraint_set", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext")
+load(":triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
+
+def rust_repositories():
+    """Emits a default set of toolchains for Linux, OSX, and Freebsd
+
+    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
+    other hosts or for additional target triples.
+    """
+
+    rust_repository_set(
+        name = "rust_linux_x86_64",
+        exec_triple = "x86_64-unknown-linux-gnu",
+        extra_target_triples = [],
+        version = "1.27.2",
+    )
+
+    rust_repository_set(
+        name = "rust_darwin_x86_64",
+        exec_triple = "x86_64-apple-darwin",
+        extra_target_triples = [],
+        version = "1.27.2",
+    )
+
+    rust_repository_set(
+        name = "rust_freebsd_x86_64",
+        exec_triple = "x86_64-unknown-freebsd",
+        extra_target_triples = [],
+        version = "1.27.2",
+    )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense."""
@@ -366,31 +394,3 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
 
     # Register toolchains
     native.register_toolchains(*all_toolchain_names)
-
-def rust_repositories():
-    """Emits a default set of toolchains for Linux, OSX, and Freebsd
-
-    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
-    other hosts or for additional target triples.
-    """
-
-    rust_repository_set(
-        name = "rust_linux_x86_64",
-        exec_triple = "x86_64-unknown-linux-gnu",
-        extra_target_triples = [],
-        version = "1.26.1",
-    )
-
-    rust_repository_set(
-        name = "rust_darwin_x86_64",
-        exec_triple = "x86_64-apple-darwin",
-        extra_target_triples = [],
-        version = "1.26.1",
-    )
-
-    rust_repository_set(
-        name = "rust_freebsd_x86_64",
-        exec_triple = "x86_64-unknown-freebsd",
-        extra_target_triples = [],
-        version = "1.26.1",
-    )

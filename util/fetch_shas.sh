@@ -46,6 +46,4 @@ emit_bzl_file_contents() {
   echo "}"
 }
 
-#echo "$(enumerate_keys)[@]"
-
 echo "$(emit_bzl_file_contents $(enumerate_keys))" > ./rust/known_shas.bzl
