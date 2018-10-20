@@ -225,6 +225,7 @@ def rustc_compile_action(
             "--codegen ar=%s" % ar,
             "--codegen linker=%s" % cc,
             "--codegen link-args='%s'" % " ".join(cpp_fragment.link_options),
+            "--remap-path-prefix {}={}".format("$(pwd)", "__bazel_redacted_pwd"),
             "--out-dir",
             output_dir,
             "--emit=dep-info,link",
