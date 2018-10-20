@@ -66,9 +66,8 @@ impl Runfiles {
 /// Returns the .runfiles directory for the currently executing binary.
 fn find_runfiles_dir() -> io::Result<PathBuf> {
     let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
-    let exec_path = PathBuf::from(&exec_path);
 
-    let mut binary_path = exec_path;
+    let mut binary_path = PathBuf::from(&exec_path);
     loop {
         // Check for our neighboring $binary.runfiles directory.
         let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
@@ -94,10 +93,10 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
             }
         }
 
-        // Follow symlinks and keep looking.
         if !fs::symlink_metadata(&binary_path)?.file_type().is_symlink() {
             break;
         }
+        // Follow symlinks and keep looking.
         binary_path = binary_path.read_link()?;
         if binary_path.is_relative() {
             binary_path = env::current_dir()?.join(binary_path)
