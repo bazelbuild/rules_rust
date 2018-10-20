@@ -15,15 +15,6 @@
 load(":private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load(":private/utils.bzl", "find_toolchain", "relative_path")
 
-def _find_crate_root_src(srcs, file_names = ["lib.rs"]):
-    """Finds the source file for the crate root."""
-    if len(srcs) == 1:
-        return srcs[0]
-    for src in srcs:
-        if src.basename in file_names:
-            return src
-    fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
-
 def _determine_output_hash(lib_rs):
     return repr(hash(lib_rs.path))
 
@@ -50,8 +41,21 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
         extension = extension,
     )
 
-def _crate_root_src(ctx, file_names = ["lib.rs"]):
-    return ctx.file.crate_root or _find_crate_root_src(ctx.files.srcs, file_names)
+def _crate_root_src(ctx, file_name = "lib.rs"):
+    """Finds the source file for the crate root."""
+    srcs = ctx.files.srcs
+    name_to_file = {f.basename: f for f in srcs}
+
+    crate_root = (
+        ctx.file.crate_root or
+        (srcs[0] if len(srcs) == 1 else None) or
+        name_to_file.get(file_name) or
+        name_to_file.get(ctx.attr.name + ".rs")
+    )
+    if not crate_root:
+        file_names = [file_name, ctx.attr.name + ".rs"]
+        fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
+    return crate_root
 
 def _rust_library_impl(ctx):
     # Find lib.rs
@@ -91,7 +95,7 @@ def _rust_binary_impl(ctx):
         crate_info = CrateInfo(
             name = ctx.label.name,
             type = "bin",
-            root = _crate_root_src(ctx, ["main.rs"]),
+            root = _crate_root_src(ctx, "main.rs"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             output = ctx.outputs.executable,

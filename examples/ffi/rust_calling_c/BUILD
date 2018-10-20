@@ -6,7 +6,6 @@ rust_library(
     name = "matrix",
     srcs = [
         "src/ffi.rs",
-        "src/lib.rs",
         "src/matrix.rs",
     ],
     deps = [
@@ -31,9 +30,9 @@ rust_library(
     name = "matrix_dynamically_linked",
     srcs = [
         "src/ffi.rs",
-        "src/lib.rs",
         "src/matrix.rs",
     ],
+    crate_root = "src/matrix.rs",
     deps = [
         "//ffi/rust_calling_c/c:native_matrix_so",
         "@libc",
