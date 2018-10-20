@@ -94,7 +94,7 @@ rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rus
         library.</p>
         <p>
           If <code>srcs</code> contains more than one file, then there must be
-          a file either named <code>lib.rs</code>. Otherwise,
+          a file either named <code>lib.rs</code> or <code>${name}.rs</code>. Otherwise,
           <code>crate_root</code> must be set to the source file that is the
           root of the crate to be passed to <code>rustc</code> to build this
           crate.
@@ -111,8 +111,8 @@ rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rus
         </p>
         <p>
           If <code>crate_root</code> is not set, then this rule will look for
-          a <code>lib.rs</code> file or the single file in <code>srcs</code>
-          if <code>srcs</code> contains only one file.
+          a <code>lib.rs</code> file, or the single file in <code>srcs</code>
+          if <code>srcs</code> contains only one file, or a <code>${name}.rs</code> file.
         </p>
       </td>
     </tr>
@@ -302,7 +302,7 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags, version, out_di
         binary.</p>
         <p>
           If <code>srcs</code> contains more than one file, then there must be
-          a file either named <code>main.rs</code>. Otherwise,
+          a file either named <code>main.rs</code> or <code>${name}.rs</code>. Otherwise,
           <code>crate_root</code> must be set to the source file that is the
           root of the crate to be passed to <code>rustc</code> to build this
           crate.
@@ -319,8 +319,8 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags, version, out_di
         </p>
         <p>
           If <code>crate_root</code> is not set, then this rule will look for
-          a <code>main.rs</code> file or the single file in <code>srcs</code>
-          if <code>srcs</code> contains only one file.
+          a <code>main.rs</code> file, or the single file in <code>srcs</code>
+          if <code>srcs</code> contains only one file, or a <code>${name}.rs</code> file.
         </p>
       </td>
     </td>
@@ -512,7 +512,7 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags, version, out_dir_
         library.</p>
         <p>
           If <code>srcs</code> contains more than one file, then there must be
-          a file either named <code>lib.rs</code>. Otherwise,
+          a file either named <code>lib.rs</code> or <code>${name}.rs</code>. Otherwise,
           <code>crate_root</code> must be set to the source file that is the
           root of the crate to be passed to <code>rustc</code> to build this
           crate.
@@ -529,8 +529,8 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags, version, out_dir_
         </p>
         <p>
           If <code>crate_root</code> is not set, then this rule will look for
-          a <code>lib.rs</code> file or the single file in <code>srcs</code>
-          if <code>srcs</code> contains only one file.
+          a <code>lib.rs</code> file, or the single file in <code>srcs</code>
+          if <code>srcs</code> contains only one file, or a <code>${name}.rs</code> file.
         </p>
       </td>
     </td>
@@ -728,7 +728,7 @@ rust_test(
 Run the test with `bazel build //hello_lib:hello_lib_test`.
 
 <a name="rust_benchmark"></a>
-## rust\_bench\_test
+## rust\_benchmark
 
 ```python
 rust_benchmark(name, srcs, deps, data, crate_features, rustc_flags, out_dir_tar)
@@ -773,7 +773,7 @@ easy to use a custom Rust toolchain, such as a nightly release.
         library.</p>
         <p>
           If <code>srcs</code> contains more than one file, then there must be
-          a file either named <code>lib.rs</code>. Otherwise,
+          a file either named <code>lib.rs</code> or <code>${name}.rs</code>. Otherwise,
           <code>crate_root</code> must be set to the source file that is the
           root of the crate to be passed to <code>rustc</code> to build this
           crate.
@@ -790,8 +790,8 @@ easy to use a custom Rust toolchain, such as a nightly release.
         </p>
         <p>
           If <code>crate_root</code> is not set, then this rule will look for
-          a <code>lib.rs</code> file or the single file in <code>srcs</code>
-          if <code>srcs</code> contains only one file.
+          a <code>lib.rs</code> file, or the single file in <code>srcs</code>
+          if <code>srcs</code> contains only one file, or a <code>${name}.rs</code> file.
         </p>
       </td>
     </td>
