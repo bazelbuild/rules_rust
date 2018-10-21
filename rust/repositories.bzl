@@ -206,7 +206,8 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
     # N.B. See https://static.rust-lang.org/dist/index.html to find the tool_suburl for a given
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    url = "https://static.rust-lang.org/dist/{}.tar.gz".format(tool_suburl)
+    static_rust = ctx.os.environ["STATIC_RUST_URL"] if "STATIC_RUST_URL" in ctx.os.environ else "https://static.rust-lang.org"
+    url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
     ctx.download_and_extract(
