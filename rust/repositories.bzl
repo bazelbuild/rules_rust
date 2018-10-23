@@ -1,5 +1,5 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
-load(":triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
+load(":platform/triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 

@@ -5,7 +5,6 @@ exports_files([
     "repositories.bzl",
     "rust.bzl",
     "toolchain.bzl",
-    "triple_mappings.bzl",
 ])
 
 toolchain_type(
