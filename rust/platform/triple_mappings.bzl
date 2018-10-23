@@ -63,7 +63,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "emscripten": ".js",
 }
 
-def _cpu_arch_to_constraints(cpu_arch):
+def cpu_arch_to_constraints(cpu_arch):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     if not plat_suffix:
@@ -71,14 +71,14 @@ def _cpu_arch_to_constraints(cpu_arch):
 
     return ["@bazel_tools//platforms:{}".format(plat_suffix)]
 
-def _vendor_to_constraints(vendor):
+def vendor_to_constraints(vendor):
     # TODO(acmcarther): Review:
     #
     # My current understanding is that vendors can't have a material impact on
     # constraint sets.
     return []
 
-def _system_to_constraints(system):
+def system_to_constraints(system):
     sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
 
     if not sys_suffix:
@@ -86,7 +86,7 @@ def _system_to_constraints(system):
 
     return ["@bazel_tools//platforms:{}".format(sys_suffix)]
 
-def _abi_to_constraints(abi):
+def abi_to_constraints(abi):
     # TODO(acmcarther): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
     return []
@@ -121,9 +121,9 @@ def triple_to_constraint_set(triple):
         abi = component_parts[3]
 
     constraint_set = []
-    constraint_set += _cpu_arch_to_constraints(cpu_arch)
-    constraint_set += _vendor_to_constraints(vendor)
-    constraint_set += _system_to_constraints(system)
-    constraint_set += _abi_to_constraints(abi)
+    constraint_set += cpu_arch_to_constraints(cpu_arch)
+    constraint_set += vendor_to_constraints(vendor)
+    constraint_set += system_to_constraints(system)
+    constraint_set += abi_to_constraints(abi)
 
     return constraint_set

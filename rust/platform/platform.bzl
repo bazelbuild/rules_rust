@@ -1,4 +1,9 @@
-load(":triple_mappings.bzl", "triple_to_constraint_set")
+load(
+    ":triple_mappings.bzl",
+    "cpu_arch_to_constraints",
+    "system_to_constraints",
+    "triple_to_constraint_set",
+)
 
 # All T1 Platforms should be supported
 #
@@ -32,9 +37,44 @@ _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-unknown-freebsd",
 ]
 
-def declare_config_settings():
-    all_supported_triples = _T1_PLATFORM_TRIPLES + _SUPPORTED_T2_PLATFORM_TRIPLES
+_SUPPORTED_CPU_ARCH = [
+    "x86_64",
+    "powerpc",
+    "aarch64",
+    "arm",
+    "i686",
+    "s390x",
+]
 
+_SUPPORTED_SYSTEMS = [
+    "android",
+    "freebsd",
+    "darwin",
+    "ios",
+    "linux",
+    "windows",
+]
+
+def declare_config_settings():
+    for cpu_arch in _SUPPORTED_CPU_ARCH:
+        native.config_setting(
+            name = cpu_arch,
+            constraint_values = cpu_arch_to_constraints(cpu_arch),
+        )
+
+    for system in _SUPPORTED_SYSTEMS:
+        native.config_setting(
+            name = system,
+            constraint_values = system_to_constraints(system),
+        )
+
+    # Add alias for OSX to "darwin" to match what users will be expecting.
+    native.alias(
+        name = "osx",
+        actual = ":darwin",
+    )
+
+    all_supported_triples = _T1_PLATFORM_TRIPLES + _SUPPORTED_T2_PLATFORM_TRIPLES
     for triple in all_supported_triples:
         native.config_setting(
             name = triple,

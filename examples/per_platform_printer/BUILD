@@ -21,10 +21,10 @@ rust_library(
         "lib.rs",
         "print_generic.rs",
     ] + select({
-        "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+        "@io_bazel_rules_rust//rust/platform:linux": [
             ":print_linux.rs",
         ],
-        "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin": [
+        "@io_bazel_rules_rust//rust/platform:osx": [
             ":print_osx.rs",
         ],
     }),
