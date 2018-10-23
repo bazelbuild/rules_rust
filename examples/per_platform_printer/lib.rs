@@ -6,7 +6,6 @@ mod print_linux;
 #[cfg(target_os="macos")]
 mod print_osx;
 
-
 pub fn print() -> Vec<String> {
   let mut outs = Vec::new();
 
