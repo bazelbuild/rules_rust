@@ -5,20 +5,19 @@ load(
     "triple_to_constraint_set",
 )
 
-# All T1 Platforms should be supported
-#
-# TODO: Review: How to handle stdlib variants? There doesn't appear to be a way to distinguish between them based on the constraint values available in @bazel_tools//platforms
-#
-# Without a resolution to this issue, we'll need to enable only one of each
-_T1_PLATFORM_TRIPLES = [
+# All T1 Platforms should be supported, but aren't, see inline notes.
+_SUPPORTED_T1_PLATFORM_TRIPLES = [
     "i686-apple-darwin",
     "i686-pc-windows-gnu",
-    #"i686-pc-windows-msvc",
     "i686-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "x86_64-pc-windows-gnu",
-    #"x86_64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
+    # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
+    # and others using existing @bazel_tools//platforms config_values
+    #
+    #"i686-pc-windows-msvc",
+    #"x86_64-pc-windows-msvc",
 ]
 
 # Some T2 Platforms are supported, provided we have mappings to @bazel_tools//platforms entries.
@@ -74,7 +73,7 @@ def declare_config_settings():
         actual = ":darwin",
     )
 
-    all_supported_triples = _T1_PLATFORM_TRIPLES + _SUPPORTED_T2_PLATFORM_TRIPLES
+    all_supported_triples = _SUPPORTED_T1_PLATFORM_TRIPLES + _SUPPORTED_T2_PLATFORM_TRIPLES
     for triple in all_supported_triples:
         native.config_setting(
             name = triple,
