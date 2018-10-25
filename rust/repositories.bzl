@@ -187,7 +187,8 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
     This function sources the tool from the Rust-lang static file server. The index is available
-    at: https://static.rust-lang.org/dist/index.html
+    at: https://static.rust-lang.org/dist/index.html (or the path specified by
+    "${RUST_STATIC_URL}/dist/index.html" if the RUST_STATIC_URL envinronment variable is set).
 
     Args:
       ctx: A repository_ctx (no attrs required).
