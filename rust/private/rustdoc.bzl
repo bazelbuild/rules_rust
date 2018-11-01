@@ -17,12 +17,12 @@ load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_impl(ctx):
     if CrateInfo not in ctx.attr.dep:
-        fail("Expected rust library or binary.", "dep")
-
-    toolchain = find_toolchain(ctx)
+        fail("Expected rust_library or rust_binary.", "dep")
 
     crate = ctx.attr.dep[CrateInfo]
     dep_info = ctx.attr.dep[DepInfo]
+
+    toolchain = find_toolchain(ctx)
 
     rustdoc_inputs = (
         crate.srcs +
@@ -37,6 +37,8 @@ def _rust_doc_impl(ctx):
     args.add(crate.root.path)
     args.add("--crate-name", crate.name)
     args.add("--output", output_dir)
+
+    # nb. rustdoc can't do anything with native link flags; we must omit them.
     args.add_all(dep_info.transitive_crates, before_each = "--extern", map_each = _crate_to_link_flag)
     args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
     if ctx.file.html_in_header:
@@ -46,7 +48,6 @@ def _rust_doc_impl(ctx):
     if ctx.file.html_after_content:
         args.add("--html-after-content", ctx.file.html_after_content)
 
-    # nb. rustdoc can't do anything with native link flags; we must omit them.
     ctx.actions.run(
         executable = toolchain.rust_doc,
         inputs = rustdoc_inputs,
@@ -56,9 +57,8 @@ def _rust_doc_impl(ctx):
         progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
     )
 
-    # nb. This rule does nothing without a single-file output, though the directory should've sufficed.
+    # This rule does nothing without a single-file output, though the directory should've sufficed.
     _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
-
 
 def _crate_to_link_flag(crate_info):
     return "{}={}".format(crate_info.name, crate_info.output.path)
