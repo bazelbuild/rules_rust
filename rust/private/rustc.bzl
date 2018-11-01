@@ -67,7 +67,7 @@ def _get_rustc_env(ctx):
 def _get_compilation_mode_opts(ctx, toolchain):
     comp_mode = ctx.var["COMPILATION_MODE"]
     if not comp_mode in toolchain.compilation_mode_opts:
-        fail("Unrecognized compilation mode %s for toolchain." % comp_mode)
+        fail("Unrecognized compilation mode {} for toolchain.".format(comp_mode))
 
     return toolchain.compilation_mode_opts[comp_mode]
 
