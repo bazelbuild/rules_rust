@@ -219,7 +219,8 @@ def rustc_compile_action(
 
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = crate_to_link_flag)
-    args.add_all(dep_info.transitive_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
+    indirect_crates = depset([crate for crate in dep_info.transitive_crates if crate not in dep_info.direct_crates])
+    args.add_all(indirect_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
