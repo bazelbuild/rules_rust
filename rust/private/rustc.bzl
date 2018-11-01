@@ -186,21 +186,20 @@ def rustc_compile_action(
     args.add("--crate-name", crate_info.name)
     args.add("--crate-type", crate_info.type)
 
+    # Mangle symbols to disambiguate crates with the same name
+    extra_filename = "-{}".format(output_hash) if output_hash else ""
+    args.add("--codegen", "metadata={}".format(extra_filename))
+    args.add("--out-dir", output_dir)
+    args.add("--codegen", "extra-filename={}".format(extra_filename))
+
     compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen", "opt-level=" + compilation_mode.opt_level)
     args.add("--codegen", "debuginfo=" + compilation_mode.debug_info)
 
-    # Mangle symbols to disambiguate crates with the same name
-    extra_filename = "-{}".format(output_hash) if output_hash else ""
-    args.add("--codegen", "metadata={}".format(extra_filename))
-
-    args.add("--out-dir", output_dir)
-    args.add("--codegen", "extra-filename={}".format(extra_filename))
-
     args.add("--emit=dep-info,link")
     args.add("--color", "always")
     args.add("--target", toolchain.target_triple)
-    args.add_all(_get_features_flags(ctx.attr.crate_features))
+    args.add_all(ctx.attr.crate_features, before_each = "--cfg", format_each = "feature=%s")
     args.add_all(rust_flags)
     args.add_all(ctx.attr.rustc_flags)
 
@@ -208,19 +207,16 @@ def rustc_compile_action(
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
     ld, link_options = _get_linker_stuff(ctx, rpaths)
     args.add("--codegen", "linker=" + ld)
-    args.add("--codegen", "link-args={}".format(" ".join(link_options)))
+    args.add_joined("--codegen", link_options, join_with = " ", format_joined = "link-args=%s")
 
     native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
-    native_link_dirs = [lib.dirname for lib in native_libs]
-    args.add_all(native_link_dirs, uniquify = True, format_each = "-Lnative=%s")
+    args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = _get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = _get_lib_name, format_each = "-lstatic=%s")
 
-    rust_link_dirs = [crate.output.dirname for crate in dep_info.transitive_crates]
-    args.add_all(rust_link_dirs, uniquify = True, format_each = "-Ldependency=%s")
-
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = _crate_to_link_flag)
+    args.add_all(dep_info.transitive_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
@@ -271,9 +267,6 @@ def _create_out_dir_action(ctx):
     )
     return out_dir
 
-def _crate_to_link_flag(crate_info):
-    return "{}={}".format(crate_info.name, crate_info.output.path)
-
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """
     Determine the artifact's rpaths relative to the bazel root
@@ -293,21 +286,17 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
         for lib_dir in _get_dir_names(dep_info.transitive_dylibs)
     ])
 
-def _get_features_flags(features):
-    """
-    Constructs a string containing the feature flags from the features specified
-    in the features attribute.
-    """
-    features_flags = []
-    for feature in features:
-        features_flags += ["--cfg feature=\\\"%s\\\"" % feature]
-    return features_flags
-
 def _get_dir_names(files):
     dirs = {}
     for f in files:
         dirs[f.dirname] = None
     return dirs.keys()
 
-def _get_path_str(dirs):
-    return ":".join(dirs)
+def _crate_to_link_flag(crate_info):
+    return "{}={}".format(crate_info.name, crate_info.output.path)
+
+def _get_dirname(file):
+    return file.dirname
+
+def _get_crate_dirname(crate):
+    return crate.output.dirname
