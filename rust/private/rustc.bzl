@@ -123,6 +123,38 @@ def setup_deps(deps, toolchain):
         transitive_libs = list(transitive_libs),
     )
 
+def _get_linker_stuff(ctx, rpaths):
+    if (len(BAZEL_VERSION) == 0 or
+        versions.is_at_least("0.18.0", BAZEL_VERSION)):
+        user_link_flags = ctx.fragments.cpp.linkopts
+    else:
+        user_link_flags = depset(ctx.fragments.cpp.linkopts)
+
+    cc_toolchain = find_cpp_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    link_variables = cc_common.create_link_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        is_linking_dynamic_library = False,
+        runtime_library_search_directories = rpaths,
+        user_link_flags = user_link_flags,
+    )
+    link_options = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        variables = link_variables,
+    )
+    ld = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+    )
+
+    return ld, link_options
+
 def rustc_compile_action(
         ctx,
         toolchain,
@@ -149,58 +181,6 @@ def rustc_compile_action(
         toolchain.crosstool_files
     )
 
-    rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.18.0", BAZEL_VERSION)):
-        user_link_flags = ctx.fragments.cpp.linkopts
-    else:
-        user_link_flags = depset(ctx.fragments.cpp.linkopts)
-
-    # Paths to cc (for linker) and ar
-    cc_toolchain = find_cpp_toolchain(ctx)
-    feature_configuration = cc_common.configure_features(
-        cc_toolchain = cc_toolchain,
-        requested_features = ctx.features,
-        unsupported_features = ctx.disabled_features,
-    )
-    ld = cc_common.get_tool_for_action(
-        feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
-    )
-    link_variables = cc_common.create_link_variables(
-        feature_configuration = feature_configuration,
-        cc_toolchain = cc_toolchain,
-        is_linking_dynamic_library = False,
-        runtime_library_search_directories = rpaths,
-        user_link_flags = user_link_flags,
-    )
-    link_options = cc_common.get_memory_inefficient_command_line(
-        feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
-        variables = link_variables,
-    )
-
-    extra_filename = ""
-    if output_hash:
-        extra_filename = "-%s" % output_hash
-
-    env = _get_rustc_env(ctx)
-    out_dir_tar = ctx.file.out_dir_tar
-    if out_dir_tar:
-        out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir") #, sibling=)
-        ctx.actions.run_shell(
-            # TODO: Remove /bin/tar usage
-            command = "mkdir {dir} && /bin/tar -xzf {tar} -C {dir}".format(tar=out_dir_tar.path, dir=out_dir.path),
-            inputs = [out_dir_tar],
-            outputs = [out_dir],
-            use_default_shell_env = True, # For tar and it's dependencies.
-        )
-        compile_inputs.append(out_dir)
-
-        #TODO: This probably breaks on OSX; find some other PWD variant.
-        env["OUT_DIR"] = "/proc/self/cwd/" + out_dir.path
-
     args = ctx.actions.args()
     args.add(crate_info.root)
     args.add("--crate-name", crate_info.name)
@@ -211,40 +191,52 @@ def rustc_compile_action(
     args.add("--codegen", "debuginfo=" + compilation_mode.debug_info)
 
     # Mangle symbols to disambiguate crates with the same name
-    args.add("--codegen", "metadata=" + extra_filename)
-    args.add("--codegen", "extra-filename={}".format(extra_filename))
-    args.add("--codegen", "linker=" + ld)
-    args.add("--codegen", "link-args={}".format(" ".join(link_options)))
-    # TODO: This one must be $PWD
-    # args.add("--remap-path-prefix", "{}={}".format("$(pwd)", "__bazel_redacted_pwd"))
+    extra_filename = "-{}".format(output_hash) if output_hash else ""
+    args.add("--codegen", "metadata={}".format(extra_filename))
+
     args.add("--out-dir", output_dir)
+    args.add("--codegen", "extra-filename={}".format(extra_filename))
+
     args.add("--emit=dep-info,link")
     args.add("--color", "always")
-    args.add("--target=" + toolchain.target_triple)
-
+    args.add("--target", toolchain.target_triple)
     args.add_all(_get_features_flags(ctx.attr.crate_features))
     args.add_all(rust_flags)
     args.add_all(ctx.attr.rustc_flags)
 
-    # Native link flags
-    native_libs = depset(transitive=[dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
+    # Link!
+    rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+    ld, link_options = _get_linker_stuff(ctx, rpaths)
+    args.add("--codegen", "linker=" + ld)
+    args.add("--codegen", "link-args={}".format(" ".join(link_options)))
+
+    native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
     native_link_dirs = [lib.dirname for lib in native_libs]
     args.add_all(native_link_dirs, uniquify = True, format_each = "-Lnative=%s")
-    args.add_all(dep_info.transitive_dylibs, map_each=_get_lib_name, format_each="-ldylib=%s")
-    args.add_all(dep_info.transitive_staticlibs, map_each=_get_lib_name, format_each="-lstatic=%s")
+    args.add_all(dep_info.transitive_dylibs, map_each = _get_lib_name, format_each = "-ldylib=%s")
+    args.add_all(dep_info.transitive_staticlibs, map_each = _get_lib_name, format_each = "-lstatic=%s")
 
-    # Rust link flags
     rust_link_dirs = [crate.output.dirname for crate in dep_info.transitive_crates]
     args.add_all(rust_link_dirs, uniquify = True, format_each = "-Ldependency=%s")
+
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = _crate_to_link_flag)
 
-    ctx.actions.run(
-        executable = toolchain.rustc,
+    # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
+    out_dir = _create_out_dir_action(ctx)
+    if out_dir:
+        compile_inputs.append(out_dir)
+        out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
+    else:
+        out_dir_env = ""
+    command = '{}{} "$@" --remap-path-prefix "$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
+
+    ctx.actions.run_shell(
+        command = command,
         inputs = compile_inputs,
         outputs = [crate_info.output],
+        env = _get_rustc_env(ctx),
         arguments = [args],
-        env = env,
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(ctx.files.srcs)),
     )
@@ -263,6 +255,21 @@ def rustc_compile_action(
             runfiles = runfiles,
         ),
     ]
+
+def _create_out_dir_action(ctx):
+    tar_file = ctx.file.out_dir_tar
+    if not tar_file:
+        return None
+
+    out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
+    ctx.actions.run_shell(
+        # TODO: Remove /bin/tar usage
+        command = "mkdir {dir} && /bin/tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
+        inputs = [tar_file],
+        outputs = [out_dir],
+        use_default_shell_env = True,  # For tar and gzip (tar's dependency)
+    )
+    return out_dir
 
 def _crate_to_link_flag(crate_info):
     return "{}={}".format(crate_info.name, crate_info.output.path)
