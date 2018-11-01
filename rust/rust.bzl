@@ -22,6 +22,9 @@ load(
 load(
     ":private/rustdoc.bzl",
     _rust_doc = "rust_doc",
+)
+load(
+    ":private/rustdoc_test.bzl",
     _rust_doc_test = "rust_doc_test",
 )
 
