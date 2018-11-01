@@ -38,8 +38,6 @@ CrateInfo = provider(
 DepInfo = provider(
     fields = {
         "direct_crates": "",
-        "link_search_flags": "",
-        "link_flags": "",
         "transitive_crates": "",
         "transitive_dylibs": "",
         "transitive_staticlibs": "",
@@ -80,7 +78,7 @@ def _get_lib_name(lib):
         fail("Expected {} to start with 'lib' prefix.".format(lib))
     return libname[3:]
 
-def setup_deps(deps, toolchain):
+def collect_deps(deps, toolchain):
     """
     Walks through dependencies and constructs the necessary commands for linking
     to all the necessary dependencies.
@@ -166,7 +164,7 @@ def rustc_compile_action(
     """
     output_dir = crate_info.output.dirname
 
-    dep_info = setup_deps(
+    dep_info = collect_deps(
         crate_info.deps,
         toolchain,
     )
