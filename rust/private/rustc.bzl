@@ -216,10 +216,7 @@ def rustc_compile_action(
     args.add("--codegen", "linker=" + ld)
     args.add_joined("--codegen", link_options, join_with = " ", format_joined = "link-args=%s")
 
-    native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
-    args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
-    args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
-    args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
+    add_native_link_flags(args, dep_info)
 
     add_crate_link_flags(args, dep_info)
 
@@ -297,9 +294,6 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def _get_dirname(file):
-    return file.dirname
-
 def add_crate_link_flags(args, dep_info):
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
@@ -310,3 +304,13 @@ def _crate_to_link_flag(crate_info):
 
 def _get_crate_dirname(crate):
     return crate.output.dirname
+
+def add_native_link_flags(args, dep_info):
+    native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
+    args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
+    args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
+    args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
+
+
+def _get_dirname(file):
+    return file.dirname
