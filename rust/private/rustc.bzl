@@ -37,10 +37,10 @@ CrateInfo = provider(
 
 DepInfo = provider(
     fields = {
-        "direct_crates": "",
-        "transitive_crates": "",
-        "transitive_dylibs": "",
-        "transitive_staticlibs": "",
+        "direct_crates": "depset[CrateInfo]",
+        "transitive_crates": "depset[CrateInfo]",
+        "transitive_dylibs": "depset[File]",
+        "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
     },
 )
@@ -80,12 +80,11 @@ def _get_lib_name(lib):
 
 def collect_deps(deps, toolchain):
     """
-    Walks through dependencies and constructs the necessary commands for linking
-    to all the necessary dependencies.
+    Walks through dependencies and collects the transitive dependencies.
 
     Args:
-      deps: List of Labels containing deps from ctx.attr.deps.
-      name: Name of the current target.
+      deps: List[Label]: The deps from ctx.attr.deps.
+      name: str: Name of the current target.
 
     Returns:
       Returns a DepInfo provider.
@@ -104,8 +103,13 @@ def collect_deps(deps, toolchain):
             transitive_staticlibs += dep[DepInfo].transitive_staticlibs
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
-            transitive_dylibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
-            transitive_staticlibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
+            dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
+            staticlibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
+            if not dylibs and not staticlibs:
+                fail("Did not find ususable library outputs in {}".format(dep))
+
+            transitive_dylibs += dylibs
+            transitive_staticlibs += staticlibs
         else:
             fail("rust targets can only depend on rust_library or cc_library targets." + str(dep), "deps")
 
@@ -113,8 +117,6 @@ def collect_deps(deps, toolchain):
 
     return DepInfo(
         direct_crates = direct_crates,
-        # link_search_flags = link_search_flags,
-        # link_flags = link_flags,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
