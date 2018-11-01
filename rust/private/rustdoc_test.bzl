@@ -86,6 +86,7 @@ set -e;
         rust_doc = toolchain.rust_doc.path,
         crate_root = crate.root.path,
         crate_name = crate.name,
+        # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
         link_flags = " ".join(link_search_flags + link_flags),
     )
 
