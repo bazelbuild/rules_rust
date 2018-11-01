@@ -55,17 +55,20 @@ def _rust_doc_test_impl(ctx):
     )
     return struct(runfiles = runfiles)
 
+def dirname(path_str):
+    return "/".join(path_str.split("/")[:-1])
+
 def _build_rustdoc_test_script(toolchain, dep_info, crate):
     """ Constructs the rustdoc script used to test `crate`. """
 
     d = dep_info
 
     # nb. Paths must be constructed wrt runfiles, so we construct relative link flags for doctest.
-    # TODO: These are wrong now.
     link_search_flags = []
-    link_search_flags += ["-Ldependency={}".format(c.output.short_path) for c in d.transitive_crates]
-    link_search_flags += ["-Lnative={}".format(lib.short_path) for lib in d.transitive_dylibs]
-    link_search_flags += ["-Lnative={}".format(lib.short_path) for lib in d.transitive_staticlibs]
+
+    link_search_flags += ["-Ldependency={}".format(dirname(c.output.short_path)) for c in d.transitive_crates]
+    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_dylibs]
+    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_staticlibs]
 
     link_flags = []
     link_flags += ["--extern " + c.name + "=" + c.output.short_path for c in d.direct_crates]
