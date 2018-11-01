@@ -37,13 +37,13 @@ CrateInfo = provider(
 
 DepInfo = provider(
     fields = {
-        "setup_cmd": "setup_cmd",
-        "link_search_flags": "link_search_flags",
-        "link_flags": "link_flags",
-        "transitive_crates": "transitive_crates",
-        "transitive_dylibs": "transitive_dylibs",
-        "transitive_staticlibs": "transitive_staticlibs",
-        "transitive_libs": "list(transitive_libs)",
+        "setup_cmd": "",
+        "link_search_flags": "",
+        "link_flags": "",
+        "transitive_crates": "",
+        "transitive_dylibs": "",
+        "transitive_staticlibs": "",
+        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
     },
 )
 
@@ -110,14 +110,7 @@ def setup_deps(
           will be symlinked into the .deps dir from the runfiles tree.
 
     Returns:
-      Returns a struct containing the following fields:
-        transitive_crates:
-        transitive_dylibs:
-        transitive_staticlibs:
-        transitive_libs: All transitive dependencies, not filtered by type.
-        setup_cmd:
-        link_search_flags:
-        link_flags:
+      Returns a DepInfo provider.
     """
     direct_crates = depset()
     transitive_crates = depset()

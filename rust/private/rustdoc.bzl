@@ -12,97 +12,67 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "setup_deps", "CrateInfo")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "setup_deps")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
-
-_ZIP_PATH = "/usr/bin/zip"
 
 def _rust_doc_impl(ctx):
     if CrateInfo not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
-    crate = ctx.attr.dep[CrateInfo]
-    rust_doc_zip = ctx.outputs.rust_doc_zip
-
     toolchain = find_toolchain(ctx)
 
-    output_dir = rust_doc_zip.dirname ## different output dir
-    dep_info = setup_deps(
-        crate.deps,
-        crate.name,
-        output_dir,
-        toolchain,
-    )
+    crate = ctx.attr.dep[CrateInfo]
+    dep_info = ctx.attr.dep[DepInfo]
 
     rustdoc_inputs = (
         crate.srcs +
-        dep_info.transitive_libs +
+        [c.output for c in dep_info.transitive_crates] +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +
         toolchain.rust_lib
     )
 
-    doc_flags = _collect_rustdoc_flags(ctx)
-    doc_cmd = _build_rustdoc_command(toolchain, rust_doc_zip, dep_info, crate, doc_flags)
-    ctx.action(
+    output_dir = ctx.actions.declare_directory(ctx.label.name)
+    args = ctx.actions.args()
+    args.add(crate.root.path)
+    args.add("--crate-name", crate.name)
+    args.add("--output", output_dir)
+    args.add_all(dep_info.transitive_crates, before_each = "--extern", map_each = _crate_to_link_flag)
+    args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
+    if ctx.file.html_in_header:
+        args.add("--html-in-header", ctx.file.html_in_header)
+    if ctx.file.html_before_content:
+        args.add("--html-before-content", ctx.file.html_before_content)
+    if ctx.file.html_after_content:
+        args.add("--html-after-content", ctx.file.html_after_content)
+
+    # nb. rustdoc can't do anything with native link flags; we must omit them.
+    ctx.actions.run(
+        executable = toolchain.rust_doc,
         inputs = rustdoc_inputs,
-        outputs = [rust_doc_zip],
+        outputs = [output_dir],
+        arguments = [args],
         mnemonic = "Rustdoc",
-        command = doc_cmd,
-        use_default_shell_env = True,
         progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
     )
 
-def _collect_rustdoc_flags(ctx):
-    doc_flags = []
-    doc_flags += [
-        "--markdown-css {}".format(css.path)
-        for css in ctx.files.markdown_css
-    ]
-    if hasattr(ctx.file, "html_in_header"):
-        doc_flags += ["--html-in-header {}".format(ctx.file.html_in_header.path)]
-    if hasattr(ctx.file, "html_before_content"):
-        doc_flags += ["--html-before-content {}".format(ctx.file.html_before_content.path)]
-    if hasattr(ctx.file, "html_after_content"):
-        doc_flags += ["--html-after-content {}".format(ctx.file.html_after_content.path)]
-    return doc_flags
+    # nb. This rule does nothing without a single-file output, though the directory should've sufficed.
+    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
 
-def _build_rustdoc_command(toolchain, rust_doc_zip, dep_info, crate, doc_flags):
-    """
-    Constructs the rustdoc command used to build documentation for `crate`.
-    """
+def _crate_to_link_flag(crate_info):
+    return "{}={}".format(crate_info.name, crate_info.output.path)
 
-    docs_dir = rust_doc_zip.dirname + "/_rust_docs"
-    return " ".join(
-        ["set -e;"] +
-        dep_info.setup_cmd +
-        [
-            "rm -rf %s;" % docs_dir,
-            "mkdir %s;" % docs_dir,
-        ] + [
-            toolchain.rust_doc.path,
-            crate.root.path,
-            "--crate-name",
-            crate.name,
-            "--output",
-            docs_dir,
-        ] +
-        doc_flags +
-        dep_info.link_search_flags +
-        # rustdoc can't do anything with native link flags, and blows up on them
-        [f for f in dep_info.link_flags if f.startswith("--extern")] +
-        [
-            "&&",
-            "(cd",
-            docs_dir,
-            "&&",
-            _ZIP_PATH,
-            "-qR",
-            rust_doc_zip.basename,
-            "$(find . -type f) )",
-            "&&",
-            "mv %s/%s %s" % (docs_dir, rust_doc_zip.basename, rust_doc_zip.path),
-        ],
+def _zip_action(ctx, input_dir, output_zip):
+    args = ctx.actions.args()
+
+    # Create but not compress.
+    args.add("c", output_zip)
+    args.add_all([input_dir], expand_directories = True)
+    ctx.actions.run(
+        executable = ctx.executable._zipper,
+        inputs = [input_dir],
+        outputs = [output_zip],
+        arguments = [args],
     )
 
 def _rust_doc_test_impl(ctx):
@@ -164,13 +134,14 @@ def _build_rustdoc_test_script(toolchain, dep_info, crate):
 
 _rust_doc_common_attrs = {
     "dep": attr.label(mandatory = True),
+    "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "host", executable = True),
 }
 
 _rust_doc_attrs = {
     "markdown_css": attr.label_list(allow_files = [".css"]),
-    "html_in_header": attr.label(allow_files = [".html", ".md"]),
-    "html_before_content": attr.label(allow_files = [".html", ".md"]),
-    "html_after_content": attr.label(allow_files = [".html", ".md"]),
+    "html_in_header": attr.label(allow_files = [".html", ".md"], single_file = True),
+    "html_before_content": attr.label(allow_files = [".html", ".md"], single_file = True),
+    "html_after_content": attr.label(allow_files = [".html", ".md"], single_file = True),
 }
 
 rust_doc = rule(
@@ -178,7 +149,7 @@ rust_doc = rule(
     attrs = dict(_rust_doc_common_attrs.items() +
                  _rust_doc_attrs.items()),
     outputs = {
-        "rust_doc_zip": "%{name}-docs.zip",
+        "rust_doc_zip": "%{name}.zip",
     },
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
 )
