@@ -38,6 +38,7 @@ CrateInfo = provider(
 DepInfo = provider(
     fields = {
         "direct_crates": "depset[CrateInfo]",
+        "indirect_crates": "depset[CrateInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
@@ -116,10 +117,13 @@ def collect_deps(deps, toolchain):
         else:
             fail("rust targets can only depend on rust_library or cc_library targets." + str(dep), "deps")
 
-    transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
+    crate_list = transitive_crates.to_list()
+    transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
+    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates])
 
     return DepInfo(
         direct_crates = direct_crates,
+        indirect_crates = indirect_crates,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
@@ -217,10 +221,7 @@ def rustc_compile_action(
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
-    # nb. Crates are linked via --extern regardless of their crate_type
-    args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = crate_to_link_flag)
-    indirect_crates = depset([crate for crate in dep_info.transitive_crates if crate not in dep_info.direct_crates])
-    args.add_all(indirect_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
+    add_crate_link_flags(args, dep_info)
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
@@ -296,11 +297,16 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def crate_to_link_flag(crate_info):
-    return "{}={}".format(crate_info.name, crate_info.output.path)
-
 def _get_dirname(file):
     return file.dirname
+
+def add_crate_link_flags(args, dep_info):
+    # nb. Crates are linked via --extern regardless of their crate_type
+    args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
+    args.add_all(dep_info.indirect_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
+
+def _crate_to_link_flag(crate_info):
+    return ["--extern", "{}={}".format(crate_info.name, crate_info.output.path)]
 
 def _get_crate_dirname(crate):
     return crate.output.dirname

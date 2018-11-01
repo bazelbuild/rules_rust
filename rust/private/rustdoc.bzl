@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "crate_to_link_flag")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_impl(ctx):
@@ -39,7 +39,8 @@ def _rust_doc_impl(ctx):
     args.add("--output", output_dir)
 
     # nb. rustdoc can't do anything with native link flags; we must omit them.
-    args.add_all(dep_info.transitive_crates, before_each = "--extern", map_each = crate_to_link_flag)
+    add_crate_link_flags(args, dep_info)
+
     args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
     if ctx.file.html_in_header:
         args.add("--html-in-header", ctx.file.html_in_header)
