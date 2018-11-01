@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load(":private/rustc.bzl", "setup_deps")
-load(":private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "setup_deps", "CrateInfo")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 _ZIP_PATH = "/usr/bin/zip"
 
 def _rust_doc_impl(ctx):
-    if not hasattr(ctx.attr.dep, "crate_info"):
+    if CrateInfo not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
-    crate = ctx.attr.dep.crate_info
+    crate = ctx.attr.dep[CrateInfo]
     rust_doc_zip = ctx.outputs.rust_doc_zip
 
     toolchain = find_toolchain(ctx)
 
-    output_dir = rust_doc_zip.dirname
-    depinfo = setup_deps(
+    output_dir = rust_doc_zip.dirname ## different output dir
+    dep_info = setup_deps(
         crate.deps,
         crate.name,
         output_dir,
@@ -36,14 +36,14 @@ def _rust_doc_impl(ctx):
 
     rustdoc_inputs = (
         crate.srcs +
-        depinfo.transitive_libs +
+        dep_info.transitive_libs +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +
         toolchain.rust_lib
     )
 
     doc_flags = _collect_rustdoc_flags(ctx)
-    doc_cmd = _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags)
+    doc_cmd = _build_rustdoc_command(toolchain, rust_doc_zip, dep_info, crate, doc_flags)
     ctx.action(
         inputs = rustdoc_inputs,
         outputs = [rust_doc_zip],
@@ -67,7 +67,7 @@ def _collect_rustdoc_flags(ctx):
         doc_flags += ["--html-after-content {}".format(ctx.file.html_after_content.path)]
     return doc_flags
 
-def _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
+def _build_rustdoc_command(toolchain, rust_doc_zip, dep_info, crate, doc_flags):
     """
     Constructs the rustdoc command used to build documentation for `crate`.
     """
@@ -75,7 +75,7 @@ def _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
     docs_dir = rust_doc_zip.dirname + "/_rust_docs"
     return " ".join(
         ["set -e;"] +
-        depinfo.setup_cmd +
+        dep_info.setup_cmd +
         [
             "rm -rf %s;" % docs_dir,
             "mkdir %s;" % docs_dir,
@@ -88,9 +88,9 @@ def _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
             docs_dir,
         ] +
         doc_flags +
-        depinfo.link_search_flags +
+        dep_info.link_search_flags +
         # rustdoc can't do anything with native link flags, and blows up on them
-        [f for f in depinfo.link_flags if f.startswith("--extern")] +
+        [f for f in dep_info.link_flags if f.startswith("--extern")] +
         [
             "&&",
             "(cd",
@@ -106,16 +106,16 @@ def _build_rustdoc_command(toolchain, rust_doc_zip, depinfo, crate, doc_flags):
     )
 
 def _rust_doc_test_impl(ctx):
-    if not hasattr(ctx.attr.dep, "crate_info"):
+    if CrateInfo not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
-    crate = ctx.attr.dep.crate_info
+    crate = ctx.attr.dep[CrateInfo]
     rust_doc_test = ctx.outputs.executable
 
     toolchain = find_toolchain(ctx)
 
     working_dir = "."
-    depinfo = setup_deps(
+    dep_info = setup_deps(
         [ctx.attr.dep],
         crate.name,
         working_dir,
@@ -127,14 +127,14 @@ def _rust_doc_test_impl(ctx):
     # to be executed to run the test.
     ctx.file_action(
         output = rust_doc_test,
-        content = _build_rustdoc_test_script(toolchain, depinfo, crate),
+        content = _build_rustdoc_test_script(toolchain, dep_info, crate),
         executable = True,
     )
 
     doc_test_inputs = (
         crate.srcs +
         [crate.output] +
-        depinfo.transitive_libs +
+        dep_info.transitive_libs +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +
         toolchain.rust_lib
@@ -143,14 +143,14 @@ def _rust_doc_test_impl(ctx):
     runfiles = ctx.runfiles(files = doc_test_inputs, collect_data = True)
     return struct(runfiles = runfiles)
 
-def _build_rustdoc_test_script(toolchain, depinfo, crate):
+def _build_rustdoc_test_script(toolchain, dep_info, crate):
     """
     Constructs the rustdoc script used to test `crate`.
     """
     return " ".join(
         ["#!/usr/bin/env bash\n"] +
         ["set -e\n"] +
-        depinfo.setup_cmd +
+        dep_info.setup_cmd +
         [
             toolchain.rust_doc.path,
             "--test",
@@ -158,8 +158,8 @@ def _build_rustdoc_test_script(toolchain, depinfo, crate):
             "--crate-name",
             crate.name,
         ] +
-        depinfo.link_search_flags +
-        depinfo.link_flags,
+        dep_info.link_search_flags +
+        dep_info.link_flags,
     )
 
 _rust_doc_common_attrs = {

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load(":private/utils.bzl", "find_toolchain", "relative_path")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "relative_path")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -32,6 +32,18 @@ CrateInfo = provider(
         "srcs": "List[File]: All source Files that are part of the crate.",
         "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
         "output": "File: The output File that will be produced, depends on crate type.",
+    },
+)
+
+DepInfo = provider(
+    fields = {
+        "setup_cmd": "setup_cmd",
+        "link_search_flags": "link_search_flags",
+        "link_flags": "link_flags",
+        "transitive_crates": "transitive_crates",
+        "transitive_dylibs": "transitive_dylibs",
+        "transitive_staticlibs": "transitive_staticlibs",
+        "transitive_libs": "list(transitive_libs)",
     },
 )
 
@@ -112,19 +124,19 @@ def setup_deps(
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
     for dep in deps:
-        if hasattr(dep, "crate_info"):
+        if CrateInfo in dep:
             # This dependency is a rust_library
-            direct_crates += [dep.crate_info]
-            transitive_crates += [dep.crate_info]
-            transitive_crates += dep.depinfo.transitive_crates
-            transitive_dylibs += dep.depinfo.transitive_dylibs
-            transitive_staticlibs += dep.depinfo.transitive_staticlibs
+            direct_crates += [dep[CrateInfo]]
+            transitive_crates += [dep[CrateInfo]]
+            transitive_crates += dep[DepInfo].transitive_crates
+            transitive_dylibs += dep[DepInfo].transitive_dylibs
+            transitive_staticlibs += dep[DepInfo].transitive_staticlibs
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             transitive_dylibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
             transitive_staticlibs += [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
         else:
-            fail("rust targets can only depend on rust_library or cc_library targets.")
+            fail("rust targets can only depend on rust_library or cc_library targets." + str(dep), "deps")
 
     transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
 
@@ -147,7 +159,7 @@ def setup_deps(
     link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
     link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
 
-    return struct(
+    return DepInfo(
         setup_cmd = setup_cmd,
         link_search_flags = link_search_flags,
         link_flags = link_flags,
@@ -168,7 +180,7 @@ def rustc_compile_action(
     """
     output_dir = crate_info.output.dirname
 
-    depinfo = setup_deps(
+    dep_info = setup_deps(
         crate_info.deps,
         crate_info.name,
         output_dir,
@@ -178,7 +190,7 @@ def rustc_compile_action(
     compile_inputs = (
         crate_info.srcs +
         ctx.files.data +
-        depinfo.transitive_libs +
+        dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.rustc_lib +
         toolchain.rust_lib +
@@ -188,7 +200,7 @@ def rustc_compile_action(
     if ctx.file.out_dir_tar:
         compile_inputs.append(ctx.file.out_dir_tar)
 
-    rpaths = _compute_rpaths(toolchain, output_dir, depinfo)
+    rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
 
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.18.0", BAZEL_VERSION)):
@@ -234,7 +246,7 @@ def rustc_compile_action(
         ["set -e;"] +
         # If TMPDIR is set but not created, rustc will die.
         ['if [ ! -z "${TMPDIR+x}" ]; then mkdir -p $TMPDIR; fi;'] +
-        depinfo.setup_cmd +
+        dep_info.setup_cmd +
         _out_dir_setup_cmd(ctx.file.out_dir_tar) +
         _get_rustc_env(ctx) +
         [
@@ -261,8 +273,8 @@ def rustc_compile_action(
         ] +
         features_flags +
         rust_flags +
-        depinfo.link_search_flags +
-        depinfo.link_flags +
+        dep_info.link_search_flags +
+        dep_info.link_flags +
         ctx.attr.rustc_flags,
     )
 
@@ -276,35 +288,37 @@ def rustc_compile_action(
     )
 
     runfiles = ctx.runfiles(
-        files = depinfo.transitive_dylibs.to_list() + ctx.files.data,
+        files = dep_info.transitive_dylibs.to_list() + ctx.files.data,
         collect_data = True,
     )
 
-    return struct(
-        crate_info = crate_info,
-        # nb. This field is required for cc_library to depend on our output.
-        files = depset([crate_info.output]),
-        depinfo = depinfo,
-        runfiles = runfiles,
-    )
+    return [
+        crate_info,
+        dep_info,
+        DefaultInfo(
+            # nb. This field is required for cc_library to depend on our output.
+            files = depset([crate_info.output]),
+            runfiles = runfiles,
+        ),
+    ]
 
-def _compute_rpaths(toolchain, output_dir, depinfo):
+def _compute_rpaths(toolchain, output_dir, dep_info):
     """
     Determine the artifact's rpaths relative to the bazel root
     for runtime linking of shared libraries.
     """
-    if not depinfo.transitive_dylibs:
+    if not dep_info.transitive_dylibs:
         return depset([])
     if toolchain.os != "linux":
         fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.os,
-            depinfo.transitive_dylibs,
+            dep_info.transitive_dylibs,
         ))
 
     # Multiple dylibs can be present in the same directory, so deduplicate them.
     return depset([
         relative_path(output_dir, lib_dir)
-        for lib_dir in _get_dir_names(depinfo.transitive_dylibs)
+        for lib_dir in _get_dir_names(dep_info.transitive_dylibs)
     ])
 
 def _get_features_flags(features):

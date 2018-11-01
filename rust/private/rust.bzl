@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load(":private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load(":private/utils.bzl", "find_toolchain", "relative_path")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "relative_path")
 
 def _determine_output_hash(lib_rs):
     return repr(hash(lib_rs.path))
@@ -113,7 +113,7 @@ def _rust_test_common(ctx, test_binary):
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
-        parent_crate = ctx.attr.deps[0].crate_info
+        parent_crate = ctx.attr.deps[0][CrateInfo]
         target = CrateInfo(
             name = test_binary.basename,
             type = parent_crate.type,
