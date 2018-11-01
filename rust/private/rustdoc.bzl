@@ -59,6 +59,7 @@ def _rust_doc_impl(ctx):
     # nb. This rule does nothing without a single-file output, though the directory should've sufficed.
     _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
 
+
 def _crate_to_link_flag(crate_info):
     return "{}={}".format(crate_info.name, crate_info.output.path)
 
