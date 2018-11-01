@@ -71,12 +71,15 @@ def _get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def _get_lib_name(lib):
+# def get_lib_name(lib: File) -> str:
+def get_lib_name(lib):
     """Returns the name of a library artifact, eg. libabc.a -> abc"""
     libname, ext = lib.basename.split(".", 2)
-    if not libname.startswith("lib"):
-        fail("Expected {} to start with 'lib' prefix.".format(lib))
-    return libname[3:]
+
+    if libname.startswith("lib"):
+        return libname[3:]
+    else:
+        return libname
 
 def collect_deps(deps, toolchain):
     """
@@ -187,14 +190,14 @@ def rustc_compile_action(
     args.add("--crate-type", crate_info.type)
 
     # Mangle symbols to disambiguate crates with the same name
-    extra_filename = "-{}".format(output_hash) if output_hash else ""
-    args.add("--codegen", "metadata={}".format(extra_filename))
+    extra_filename = "-" + output_hash if output_hash else ""
+    args.add("--codegen", "metadata=" + extra_filename)
     args.add("--out-dir", output_dir)
-    args.add("--codegen", "extra-filename={}".format(extra_filename))
+    args.add("--codegen", "extra-filename=" + extra_filename)
 
     compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
-    args.add("--codegen", "opt-level=" + compilation_mode.opt_level)
-    args.add("--codegen", "debuginfo=" + compilation_mode.debug_info)
+    args.add("--codegen", "opt-level={}".format(compilation_mode.opt_level))
+    args.add("--codegen", "debuginfo={}".format(compilation_mode.debug_info))
 
     args.add("--emit=dep-info,link")
     args.add("--color", "always")
@@ -211,11 +214,11 @@ def rustc_compile_action(
 
     native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
     args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
-    args.add_all(dep_info.transitive_dylibs, map_each = _get_lib_name, format_each = "-ldylib=%s")
-    args.add_all(dep_info.transitive_staticlibs, map_each = _get_lib_name, format_each = "-lstatic=%s")
+    args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
+    args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
     # nb. Crates are linked via --extern regardless of their crate_type
-    args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = _crate_to_link_flag)
+    args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = crate_to_link_flag)
     args.add_all(dep_info.transitive_crates, map_each = _get_crate_dirname, uniquify = True, format_each = "-Ldependency=%s")
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
@@ -292,7 +295,7 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def _crate_to_link_flag(crate_info):
+def crate_to_link_flag(crate_info):
     return "{}={}".format(crate_info.name, crate_info.output.path)
 
 def _get_dirname(file):

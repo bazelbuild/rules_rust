@@ -15,6 +15,8 @@
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "relative_path")
 
+# TODO(marco): Separate each rule into its own file.
+
 def _determine_output_hash(lib_rs):
     return repr(hash(lib_rs.path))
 

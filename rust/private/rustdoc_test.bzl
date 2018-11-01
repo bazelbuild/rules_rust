@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "collect_deps")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "collect_deps", "get_lib_name")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_test_impl(ctx):
@@ -69,8 +69,8 @@ def _build_rustdoc_test_script(toolchain, dep_info, crate):
 
     link_flags = []
     link_flags += ["--extern " + c.name + "=" + c.output.short_path for c in d.direct_crates]
-    link_flags += ["-ldylib=" + _get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
-    link_flags += ["-lstatic=" + _get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]
+    link_flags += ["-ldylib=" + get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
+    link_flags += ["-lstatic=" + get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]
 
     return """\
 #!/usr/bin/env bash
@@ -85,14 +85,6 @@ set -e;
         crate_name = crate.name,
         link_flags = " ".join(link_search_flags + link_flags),
     )
-
-# def _get_lib_name(lib: File) -> str:
-def _get_lib_name(lib):
-    """Returns the name of a library artifact, eg. libabc.a -> abc"""
-    libname, ext = lib.basename.split(".", 2)
-    if not libname.startswith("lib"):
-        fail("Expected {} to start with 'lib' prefix.".format(lib))
-    return libname[3:]
 
 rust_doc_test = rule(
     _rust_doc_test_impl,

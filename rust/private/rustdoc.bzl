@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "crate_to_link_flag")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_impl(ctx):
@@ -39,7 +39,7 @@ def _rust_doc_impl(ctx):
     args.add("--output", output_dir)
 
     # nb. rustdoc can't do anything with native link flags; we must omit them.
-    args.add_all(dep_info.transitive_crates, before_each = "--extern", map_each = _crate_to_link_flag)
+    args.add_all(dep_info.transitive_crates, before_each = "--extern", map_each = crate_to_link_flag)
     args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
     if ctx.file.html_in_header:
         args.add("--html-in-header", ctx.file.html_in_header)
@@ -59,9 +59,6 @@ def _rust_doc_impl(ctx):
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
     _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
-
-def _crate_to_link_flag(crate_info):
-    return "{}={}".format(crate_info.name, crate_info.output.path)
 
 def _zip_action(ctx, input_dir, output_zip):
     args = ctx.actions.args()
