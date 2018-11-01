@@ -85,70 +85,85 @@ def _rust_doc_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    working_dir = "."
     dep_info = setup_deps(
         [ctx.attr.dep],
-        crate.name,
-        working_dir,
         toolchain,
-        in_runfiles = True,
     )
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
+    # This script is essentially re-compiling the crate, and needs both compile and runtime inputs.
     ctx.file_action(
         output = rust_doc_test,
         content = _build_rustdoc_test_script(toolchain, dep_info, crate),
         executable = True,
     )
 
-    doc_test_inputs = (
+    compile_inputs = (
         crate.srcs +
         [crate.output] +
         dep_info.transitive_libs +
         [toolchain.rust_doc] +
+        [toolchain.rustc] + # Not sure
         toolchain.rustc_lib +
-        toolchain.rust_lib
+        toolchain.rust_lib +
+        toolchain.crosstool_files
     )
 
-    runfiles = ctx.runfiles(files = doc_test_inputs, collect_data = True)
+    runfiles = ctx.runfiles(
+        files = compile_inputs,
+        collect_data = True
+    )
     return struct(runfiles = runfiles)
 
-def _build_rustdoc_test_script(toolchain, dep_info, crate):
-    """
-    Constructs the rustdoc script used to test `crate`.
-    """
-    return " ".join(
-        ["#!/usr/bin/env bash\n"] +
-        ["set -e\n"] +
-        dep_info.setup_cmd +
-        [
-            toolchain.rust_doc.path,
-            "--test",
-            crate.root.path,
-            "--crate-name",
-            crate.name,
-        ] +
-        dep_info.link_search_flags +
-        dep_info.link_flags,
-    )
+def _build_rustdoc_test_script(toolchain, dep_info, crate_info):
+    """ Constructs the rustdoc script used to test `crate`. """
 
-_rust_doc_common_attrs = {
-    "dep": attr.label(mandatory = True),
-    "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "host", executable = True),
-}
+    d = dep_info
 
-_rust_doc_attrs = {
-    "markdown_css": attr.label_list(allow_files = [".css"]),
-    "html_in_header": attr.label(allow_files = [".html", ".md"], single_file = True),
-    "html_before_content": attr.label(allow_files = [".html", ".md"], single_file = True),
-    "html_after_content": attr.label(allow_files = [".html", ".md"], single_file = True),
-}
+    # nb. Paths must be constructed wrt runfiles, so we construct relative link flags for doctest.
+    link_search_flags = []
+    link_search_flags += ["-Ldependency={}".format(crate.output.short_path) for crate in d.transitive_crates]
+    link_search_flags += ["-Lnative={}".format(lib.short_path) for lib in d.transitive_dylibs]
+    link_search_flags += ["-Lnative={}".format(lib.short_path) for lib in d.transitive_staticlibs]
+
+    link_flags = []
+    link_flags += ["--extern " + crate.name + "=" + crate.output.short_path for crate in d.direct_crates]
+    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
+    link_flags += ["-l static=" + _get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]
+
+
+    return """\
+#!/usr/bin/env bash
+set -e;
+
+{rust_doc} --test {crate_root} \\
+    --crate-name {crate_name} \\
+    {link_flags}
+""".format(
+        rust_doc=toolchain.rust_doc.path,
+        crate_root=crate_info.root.path,
+        crate_name=crate_info.name,
+        link_flags = " ".join(link_search_flags + link_flags),
+   )
+
+def _get_lib_name(lib):
+    """Returns the name of a library artifact, eg. libabc.a -> abc"""
+    libname, ext = lib.basename.split(".", 2)
+    if not libname.startswith("lib"):
+        fail("Expected {} to start with 'lib' prefix.".format(lib))
+    return libname[3:]
 
 rust_doc = rule(
     _rust_doc_impl,
-    attrs = dict(_rust_doc_common_attrs.items() +
-                 _rust_doc_attrs.items()),
+    attrs = {
+        "dep": attr.label(mandatory = True),
+        "markdown_css": attr.label_list(allow_files = [".css"]),
+        "html_in_header": attr.label(allow_files = [".html", ".md"], single_file = True),
+        "html_before_content": attr.label(allow_files = [".html", ".md"], single_file = True),
+        "html_after_content": attr.label(allow_files = [".html", ".md"], single_file = True),
+        "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "host", executable = True),
+    },
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
@@ -208,7 +223,9 @@ Example:
 
 rust_doc_test = rule(
     _rust_doc_test_impl,
-    attrs = _rust_doc_common_attrs,
+    attrs = {
+        "dep": attr.label(mandatory = True),
+    },
     executable = True,
     test = True,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],

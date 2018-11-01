@@ -38,7 +38,6 @@ CrateInfo = provider(
 DepInfo = provider(
     fields = {
         "direct_crates": "",
-        "setup_cmd": "",
         "link_search_flags": "",
         "link_flags": "",
         "transitive_crates": "",
@@ -81,23 +80,7 @@ def _get_lib_name(lib):
         fail("Expected {} to start with 'lib' prefix.".format(lib))
     return libname[3:]
 
-def _symlink_dep_cmd(lib, deps_dir, in_runfiles):
-    """
-    Helper function to construct a command for symlinking a library into the
-    deps directory.
-    """
-    lib_path = lib.short_path if in_runfiles else lib.path
-    return (
-        "ln -sf " + relative_path(deps_dir, lib_path) + " " +
-        deps_dir + "/" + lib.basename + "\n"
-    )
-
-def setup_deps(
-        deps,
-        name,
-        working_dir,
-        toolchain,
-        in_runfiles = False):
+def setup_deps(deps, toolchain):
     """
     Walks through dependencies and constructs the necessary commands for linking
     to all the necessary dependencies.
@@ -105,10 +88,6 @@ def setup_deps(
     Args:
       deps: List of Labels containing deps from ctx.attr.deps.
       name: Name of the current target.
-      working_dir: The output directory for the current target's outputs.
-      in_runfiles: True if the setup commands will be run in a .runfiles
-          directory. In this case, the working dir should be '.', and the deps
-          will be symlinked into the .deps dir from the runfiles tree.
 
     Returns:
       Returns a DepInfo provider.
@@ -134,30 +113,10 @@ def setup_deps(
 
     transitive_libs = depset([c.output for c in transitive_crates]) + transitive_staticlibs + transitive_dylibs
 
-    # Create symlinks pointing to each transitive lib in deps_dir.
-    deps_dir = working_dir + "/" + name + ".deps"
-    setup_cmd = ["rm -rf " + deps_dir + "; mkdir " + deps_dir + "\n"]
-    for lib in transitive_libs:
-        setup_cmd += [_symlink_dep_cmd(lib, deps_dir, in_runfiles)]
-
-    link_search_flags = []
-    if transitive_crates:
-        link_search_flags += ["-L dependency={}".format(deps_dir)]
-    if transitive_dylibs or transitive_staticlibs:
-        link_search_flags += ["-L native={}".format(deps_dir)]
-
-    link_flags = []
-
-    # nb. Crates are linked via --extern regardless of their crate_type
-    link_flags += ["--extern " + crate.name + "=" + deps_dir + "/" + crate.output.basename for crate in direct_crates]
-    link_flags += ["-l dylib=" + _get_lib_name(lib) for lib in transitive_dylibs.to_list()]
-    link_flags += ["-l static=" + _get_lib_name(lib) for lib in transitive_staticlibs.to_list()]
-
     return DepInfo(
         direct_crates = direct_crates,
-        setup_cmd = setup_cmd,
-        link_search_flags = link_search_flags,
-        link_flags = link_flags,
+        # link_search_flags = link_search_flags,
+        # link_flags = link_flags,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
@@ -177,8 +136,6 @@ def rustc_compile_action(
 
     dep_info = setup_deps(
         crate_info.deps,
-        crate_info.name,
-        output_dir,
         toolchain,
     )
 
@@ -218,7 +175,7 @@ def rustc_compile_action(
         runtime_library_search_directories = rpaths,
         user_link_flags = user_link_flags,
     )
-    cc_link_options = cc_common.get_memory_inefficient_command_line(
+    link_options = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
@@ -231,19 +188,18 @@ def rustc_compile_action(
     env = _get_rustc_env(ctx)
     out_dir_tar = ctx.file.out_dir_tar
     if out_dir_tar:
-        # genfile?
         out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir") #, sibling=)
         ctx.actions.run_shell(
             # TODO: Remove /bin/tar usage
             command = "mkdir {dir} && /bin/tar -xzf {tar} -C {dir}".format(tar=out_dir_tar.path, dir=out_dir.path),
-            ### && OUT_DIR=$(pwd)/ ... rustc
             inputs = [out_dir_tar],
             outputs = [out_dir],
             use_default_shell_env = True, # For tar and it's dependencies.
         )
         compile_inputs.append(out_dir)
 
-        env["OUT_DIR"] = "/proc/self/cwd/" + out_dir.path #TODO: This probably breaks on OSX; find some other PWD variant.
+        #TODO: This probably breaks on OSX; find some other PWD variant.
+        env["OUT_DIR"] = "/proc/self/cwd/" + out_dir.path
 
     args = ctx.actions.args()
     args.add(crate_info.root)
@@ -258,8 +214,8 @@ def rustc_compile_action(
     args.add("--codegen", "metadata=" + extra_filename)
     args.add("--codegen", "extra-filename={}".format(extra_filename))
     args.add("--codegen", "linker=" + ld)
-    args.add("--codegen", "link-args={}".format(" ".join(cc_link_options)))
-    # TODO: How get PWD?
+    args.add("--codegen", "link-args={}".format(" ".join(link_options)))
+    # TODO: This one must be $PWD
     # args.add("--remap-path-prefix", "{}={}".format("$(pwd)", "__bazel_redacted_pwd"))
     args.add("--out-dir", output_dir)
     args.add("--emit=dep-info,link")
@@ -278,9 +234,9 @@ def rustc_compile_action(
     args.add_all(dep_info.transitive_staticlibs, map_each=_get_lib_name, format_each="-lstatic=%s")
 
     # Rust link flags
-    # nb. transitive
     rust_link_dirs = [crate.output.dirname for crate in dep_info.transitive_crates]
     args.add_all(rust_link_dirs, uniquify = True, format_each = "-Ldependency=%s")
+    # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, before_each = "--extern", map_each = _crate_to_link_flag)
 
     ctx.actions.run(
@@ -348,12 +304,3 @@ def _get_dir_names(files):
 
 def _get_path_str(dirs):
     return ":".join(dirs)
-
-def _out_dir_setup_cmd(out_dir_tar):
-    if out_dir_tar:
-        return [
-            "mkdir ./out_dir/\n",
-            "tar -xzf %s -C ./out_dir\n" % out_dir_tar.path,
-        ]
-    else:
-        return []
