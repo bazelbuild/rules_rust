@@ -72,7 +72,6 @@ def _get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-# def get_lib_name(lib: File) -> str:
 def get_lib_name(lib):
     """Returns the name of a library artifact, eg. libabc.a -> abc"""
     libname, ext = lib.basename.split(".", 2)
@@ -109,9 +108,6 @@ def collect_deps(deps, toolchain):
             # This dependency is a cc_library
             dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
             staticlibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
-            if not dylibs and not staticlibs:
-                fail("Did not find ususable library outputs in {}".format(dep))
-
             transitive_dylibs += dylibs
             transitive_staticlibs += staticlibs
         else:
@@ -130,7 +126,7 @@ def collect_deps(deps, toolchain):
         transitive_libs = list(transitive_libs),
     )
 
-def _get_linker_stuff(ctx, rpaths):
+def _get_linker_and_args(ctx, rpaths):
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.18.0", BAZEL_VERSION)):
         user_link_flags = ctx.fragments.cpp.linkopts
@@ -150,7 +146,7 @@ def _get_linker_stuff(ctx, rpaths):
         runtime_library_search_directories = rpaths,
         user_link_flags = user_link_flags,
     )
-    link_options = cc_common.get_memory_inefficient_command_line(
+    link_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
@@ -160,7 +156,7 @@ def _get_linker_stuff(ctx, rpaths):
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
     )
 
-    return ld, link_options
+    return ld, link_args
 
 def rustc_compile_action(
         ctx,
@@ -212,9 +208,9 @@ def rustc_compile_action(
 
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-    ld, link_options = _get_linker_stuff(ctx, rpaths)
+    ld, link_args = _get_linker_and_args(ctx, rpaths)
     args.add("--codegen", "linker=" + ld)
-    args.add_joined("--codegen", link_options, join_with = " ", format_joined = "link-args=%s")
+    args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
     add_native_link_flags(args, dep_info)
 
@@ -261,11 +257,11 @@ def _create_out_dir_action(ctx):
 
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     ctx.actions.run_shell(
-        # TODO: Remove /bin/tar usage
-        command = "mkdir {dir} && /bin/tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
+        # TODO: Remove system tar usage
+        command = "mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
         inputs = [tar_file],
         outputs = [out_dir],
-        use_default_shell_env = True,  # For tar and gzip (tar's dependency)
+        use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
     )
     return out_dir
 
@@ -310,7 +306,6 @@ def add_native_link_flags(args, dep_info):
     args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
-
 
 def _get_dirname(file):
     return file.dirname
