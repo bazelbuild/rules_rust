@@ -17,3 +17,8 @@ tls-api-stub = "0.1.19"
 [raze]
 genmode = "Remote"
 workspace_path = "//proto/raze"
+
+[raze.crates.lazy_static.'1.1.0']
+additional_flags = [
+  "--cfg=lazy_static_heap_impl",
+]
