@@ -14,7 +14,7 @@ rust_library(
         "src/greeter.rs",
         "src/lib.rs",
     ],
-    rustc_flags = ["--cap-lints allow"],
+    rustc_flags = ["--cap-lints=allow"],
     crate_features = ["default"],
 )
 
