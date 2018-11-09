@@ -14,3 +14,13 @@ new_git_repository(
 
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 rust_proto_repositories()
+
+http_archive(
+    name = "bazel_skylib",
+    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz",
+    sha256 = "b5f6abe419da897b7901f90cbab08af958b97a8f3575b0d3dd062ac7ce78541f",
+    strip_prefix = "bazel-skylib-0.5.0"
+)
+
+load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+bazel_version(name = "bazel_version")
