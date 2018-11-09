@@ -9,8 +9,8 @@ proto_library(
 
 rust_grpc_library(
     name = "helloworld_proto",
+    visibility = ["//proto/helloworld:__subpackages__"],
     deps = [":helloworld"],
-    visibility = ["//proto/helloworld:__subpackages__"]
 )
 
 rust_test(
@@ -19,5 +19,6 @@ rust_test(
     data = [
         "//proto/helloworld/greeter_client",
         "//proto/helloworld/greeter_server",
-    ]
+    ],
+    deps = ["@io_bazel_rules_rust//tools/runfiles"],
 )

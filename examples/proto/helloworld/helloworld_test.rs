@@ -13,26 +13,14 @@
 // limitations under the License.
 
 // Integration tests for the greeter client/server
-use std::process::{Command, Child, Stdio};
-use std::io::BufReader;
-use std::str::FromStr;
+extern crate runfiles;
+
 use std::io::BufRead;
+use std::io::BufReader;
+use std::process::{Child, Command, Stdio};
+use std::str::FromStr;
 
-/// Returns the .runfiles directory for the currently executing binary.
-fn get_runfiles_dir() -> String {
-    let mut path = std::env::current_exe().unwrap();
-
-    if cfg!(target_os = "macos") {
-        path.pop();
-    } else {
-        let mut name = path.file_name().unwrap().to_owned();
-        name.push(".runfiles");
-        path.pop();
-        path.push(name);
-    }
-
-    path.into_os_string().into_string().unwrap()
-}
+use runfiles::Runfiles;
 
 struct ServerInfo {
     process: Child,
@@ -41,28 +29,31 @@ struct ServerInfo {
 
 macro_rules! assert_contains {
     ($s: expr, $e: expr) => {
-        assert!($s.find($e).is_some(), format!("'{}' not found in '{}'", $e, $s));
-    }
+        assert!(
+            $s.find($e).is_some(),
+            format!("'{}' not found in '{}'", $e, $s)
+        );
+    };
 }
 
 impl ServerInfo {
     fn new() -> ServerInfo {
-        let mut c = Command::new(format!(
-            "{}/examples/proto/helloworld/greeter_server/greeter_server",
-            get_runfiles_dir()
-        )).arg("0")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("Unable to start server");
+        let r = Runfiles::create().unwrap();
+        let mut c =
+            Command::new(r.rlocation("examples/proto/helloworld/greeter_server/greeter_server"))
+                .arg("0")
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect("Unable to start server");
         let mut port: u16 = 0;
         {
             let mut stdout = BufReader::new(c.stdout.as_mut().expect("Failed to open stdout"));
             let port_prefix = "greeter server started on port ";
             while port == 0 {
                 let mut line = String::new();
-                stdout.read_line(&mut line).expect(
-                    "Waiting for server startup",
-                );
+                stdout
+                    .read_line(&mut line)
+                    .expect("Waiting for server startup");
                 line = line.trim().to_owned();
                 if line.starts_with(port_prefix) {
                     port = u16::from_str(&line[port_prefix.len()..]).expect(&format!(
@@ -80,10 +71,10 @@ impl ServerInfo {
     }
 
     fn run_client_impl(&self, arg: Option<String>) -> String {
-        let mut cmd0 = Command::new(format!(
-            "{}/examples/proto/helloworld/greeter_client/greeter_client",
-            get_runfiles_dir()
-        ));
+        let r = Runfiles::create().unwrap();
+
+        let mut cmd0 =
+            Command::new(r.rlocation("examples/proto/helloworld/greeter_client/greeter_client"));
         let cmd = cmd0.arg(format!("-p={}", self.port));
 
         let output = if let Some(s) = arg { cmd.arg(s) } else { cmd }
@@ -104,9 +95,9 @@ impl ServerInfo {
         let mut reader =
             BufReader::new(self.process.stdout.as_mut().expect("Failed to open stdout"));
         let mut line = String::new();
-        reader.read_line(&mut line).expect(
-            "Failed to read line from the server",
-        );
+        reader
+            .read_line(&mut line)
+            .expect("Failed to read line from the server");
         assert_contains!(line, log);
     }
 
@@ -114,7 +105,6 @@ impl ServerInfo {
         self.process.kill().unwrap();
     }
 }
-
 
 #[test]
 fn test_client_server() {
