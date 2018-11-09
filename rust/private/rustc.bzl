@@ -208,7 +208,7 @@ def rustc_compile_action(
     args.add("--emit=dep-info,link")
     args.add("--color", "always")
     args.add("--target", toolchain.target_triple)
-    args.add_all(ctx.attr.crate_features, before_each = "--cfg", format_each = "feature=%s")
+    args.add_all(ctx.attr.crate_features, before_each = "--cfg", format_each = "feature=\"%s\"")
     args.add_all(rust_flags)
     args.add_all(ctx.attr.rustc_flags)
 
