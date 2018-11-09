@@ -34,15 +34,15 @@ rust_library(
     crate_type = "lib",
     srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__bytes__0_4_9//:bytes",
-        "@raze__futures__0_1_23//:futures",
+        "@raze__bytes__0_4_10//:bytes",
+        "@raze__futures__0_1_25//:futures",
         "@raze__futures_cpupool__0_1_8//:futures_cpupool",
-        "@raze__log__0_4_4//:log",
+        "@raze__log__0_4_6//:log",
         "@raze__net2__0_2_33//:net2",
         "@raze__tls_api__0_1_20//:tls_api",
         "@raze__tls_api_stub__0_1_20//:tls_api_stub",
         "@raze__tokio_core__0_1_17//:tokio_core",
-        "@raze__tokio_io__0_1_8//:tokio_io",
+        "@raze__tokio_io__0_1_10//:tokio_io",
         "@raze__tokio_timer__0_1_2//:tokio_timer",
         "@raze__tokio_tls_api__0_1_20//:tokio_tls_api",
         "@raze__tokio_uds__0_1_7//:tokio_uds",
@@ -50,7 +50,7 @@ rust_library(
         "@raze__void__1_0_2//:void",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.6.1",
     crate_features = [

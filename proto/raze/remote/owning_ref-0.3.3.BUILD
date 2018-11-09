@@ -33,7 +33,7 @@ rust_library(
         "@raze__stable_deref_trait__1_1_1//:stable_deref_trait",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.3.3",
     crate_features = [

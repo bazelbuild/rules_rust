@@ -32,13 +32,13 @@ rust_library(
     crate_type = "lib",
     srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__futures__0_1_23//:futures",
+        "@raze__futures__0_1_25//:futures",
         "@raze__tls_api__0_1_20//:tls_api",
         "@raze__tokio_core__0_1_17//:tokio_core",
-        "@raze__tokio_io__0_1_8//:tokio_io",
+        "@raze__tokio_io__0_1_10//:tokio_io",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.1.20",
     crate_features = [

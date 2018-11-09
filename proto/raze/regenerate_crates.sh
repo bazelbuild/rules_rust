@@ -16,7 +16,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 rm -fr remote
 # Now run cargo generate-lockfile && cargo raze
-cargo generate-lockfile && cargo raze
+if ${CARGO_GENERATE_LOCKFILE:=true}; then
+  cargo generate-lockfile
+fi
+cargo raze
 
 # We need to update the build file path.
 sed -i.bak 's|//proto|@io_bazel_rules_rust//proto|g' "crates.bzl"

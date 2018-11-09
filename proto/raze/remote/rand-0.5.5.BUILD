@@ -37,10 +37,10 @@ rust_library(
     srcs = glob(["**/*.rs"]),
     deps = [
         "@raze__libc__0_2_43//:libc",
-        "@raze__rand_core__0_2_1//:rand_core",
+        "@raze__rand_core__0_2_2//:rand_core",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.5.5",
     crate_features = [

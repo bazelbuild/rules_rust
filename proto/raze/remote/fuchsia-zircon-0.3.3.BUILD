@@ -34,7 +34,7 @@ rust_library(
         "@raze__fuchsia_zircon_sys__0_3_3//:fuchsia_zircon_sys",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.3.3",
     crate_features = [

@@ -32,10 +32,10 @@ rust_library(
     crate_type = "lib",
     srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__bytes__0_4_9//:bytes",
+        "@raze__bytes__0_4_10//:bytes",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "1.6.0",
     crate_features = [

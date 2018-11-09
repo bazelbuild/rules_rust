@@ -34,7 +34,7 @@ rust_library(
         "@raze__unreachable__1_0_0//:unreachable",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.6.5",
     crate_features = [

@@ -38,7 +38,7 @@ rust_library(
         "@raze__winapi__0_2_8//:winapi",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.2.2",
     crate_features = [

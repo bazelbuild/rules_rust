@@ -34,7 +34,7 @@ rust_library(
         "@raze__void__1_0_2//:void",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.1.20",
     crate_features = [

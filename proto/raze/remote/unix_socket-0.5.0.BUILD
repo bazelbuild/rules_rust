@@ -30,11 +30,11 @@ rust_library(
     crate_type = "lib",
     srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__cfg_if__0_1_5//:cfg_if",
+        "@raze__cfg_if__0_1_6//:cfg_if",
         "@raze__libc__0_2_43//:libc",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.5.0",
     crate_features = [

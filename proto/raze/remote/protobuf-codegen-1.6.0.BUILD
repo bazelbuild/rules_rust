@@ -35,7 +35,7 @@ rust_binary(
         "@raze__protobuf__1_6_0//:protobuf",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "1.6.0",
     crate_features = [
@@ -52,7 +52,7 @@ rust_library(
         "@raze__protobuf__1_6_0//:protobuf",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "1.6.0",
     crate_features = [
@@ -71,7 +71,7 @@ rust_binary(
         "@raze__protobuf__1_6_0//:protobuf",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "1.6.0",
     crate_features = [

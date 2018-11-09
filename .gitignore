@@ -9,5 +9,4 @@
 *.rs.bk
 
 # protobuf cargo-raze files
-/proto/raze/Cargo.lock
 /proto/raze/target

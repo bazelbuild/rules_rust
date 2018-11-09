@@ -34,7 +34,7 @@ rust_library(
         "@raze__protobuf_codegen__1_6_0//:protobuf_codegen",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.4.0",
     crate_features = [
@@ -54,7 +54,7 @@ rust_binary(
         "@raze__protobuf_codegen__1_6_0//:protobuf_codegen",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.4.0",
     crate_features = [

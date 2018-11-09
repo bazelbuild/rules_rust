@@ -34,7 +34,7 @@ rust_library(
         "@raze__nodrop__0_1_12//:nodrop",
     ],
     rustc_flags = [
-        "--cap-lints allow",
+        "--cap-lints=allow",
     ],
     version = "0.4.7",
     crate_features = [
