@@ -8,7 +8,7 @@ proto_library(
 )
 
 rust_grpc_library(
-    name = "rust",
+    name = "helloworld_proto",
     deps = [":helloworld"],
     visibility = ["//proto/helloworld:__subpackages__"]
 )

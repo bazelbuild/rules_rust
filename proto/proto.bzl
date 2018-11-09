@@ -35,6 +35,8 @@ rust_proto_repositories()
 load(
     "//proto:toolchain.bzl",
     "rust_proto_toolchain",
+    "PROTO_COMPILE_DEPS",
+    "GRPC_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
 )
 load("//rust:private/rustc.bzl", "CrateInfo", "CrateInfos", "DepInfo", "rustc_compile_action")
@@ -65,12 +67,13 @@ def _gen_lib(ctx, grpc, deps, srcs, lib):
     )
 
 def _expand_provider(lst, provider):
-    return [el[provider] for el in lst if provider in el]
+    return [getattr(el, provider) for el in lst if hasattr(el, provider)]
 
-def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps, grpc, output_dir, compile_deps):
+def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps, grpc, compile_deps):
     # Create all the source in a specific folder
     toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
-
+    output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
+    
     # Generate the proto stubs
     srcs = _generate_proto(
         ctx,
@@ -113,91 +116,26 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps,
     )
     return [result[0], result[1]]
 
-def _rust_aspect_impl(target, ctx, grpc):
-    """Implementation of the aspect that we apply on all proto_library
-    that depends on a rust_(proto|grpc)_library.
-
-    This aspect creates the rust stubs from the descriptor sets generated
-    from the proto_library, then a lib.rs and compile the whole crates.
-
-    Args:
-        target: the target the aspect is applied to.
-        ctx: the aspect context.
-        grpc: wether to build for gRPC or for protobuf.
-    """
-    toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
-    output_dir = "%s.%s.rust" % (target.label.name, "grpc" if grpc else "proto")
-    compile_deps = toolchain.grpc_compile_deps if grpc else toolchain.proto_compile_deps
+def _rust_protogrpc_library_impl(ctx, grpc):
+    """Implementation of the rust_(proto|grpc)_library."""
+    proto = _expand_provider(ctx.attr.deps, "proto")
+    rust_srcs = depset(transitive = [p.transitive_sources for p in proto]).to_list()
     return _rust_proto_compile(
-        target.proto.direct_sources,
-        target.proto.transitive_descriptor_sets,
-        target.proto.transitive_imports,
-        target.label.name,
+        rust_srcs,
+        depset(transitive = [p.transitive_descriptor_sets for p in proto]),
+        depset(transitive = [p.transitive_imports for p in proto]),
+        ctx.label.name,
         ctx,
-        ctx.rule.attr.deps,
+        [],
         grpc,
-        output_dir,
-        compile_deps
+        ctx.attr.rust_deps,
     )
-
-# Proto aspect
-def _rust_proto_aspect_impl(target, ctx):
-    return _rust_aspect_impl(target, ctx, False)
-
-_rust_proto_aspect = aspect(
-    _rust_proto_aspect_impl,
-    attr_aspects = ["deps"],
-    host_fragments = ["cpp"],
-    fragments = ["cpp"],
-    attrs = {
-        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
-    },
-    toolchains = [
-        "@io_bazel_rules_rust//proto:toolchain",
-        "@io_bazel_rules_rust//rust:toolchain",
-    ],
-)
-
-# gRPC aspect
-def _rust_grpc_aspect_impl(target, ctx):
-    return _rust_aspect_impl(target, ctx, True)
-
-_rust_grpc_aspect = aspect(
-    _rust_grpc_aspect_impl,
-    attr_aspects = ["deps"],
-    host_fragments = ["cpp"],
-    fragments = ["cpp"],
-    attrs = {
-        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
-    },
-    toolchains = [
-        "@io_bazel_rules_rust//proto:toolchain",
-        "@io_bazel_rules_rust//rust:toolchain",
-    ],
-)
 
 def _rust_proto_library_impl(ctx):
-    """Implementation of the rust_(proto|grpc)_library."""
+    return _rust_protogrpc_library_impl(ctx, False)
 
-    # Everything should be done by the aspect we just need to rexpose the correct
-    # providers.
-    depinfos = _expand_provider(ctx.attr.deps, DepInfo)
-    crate_infos = _expand_provider(ctx.attr.deps, CrateInfo)
-    files = [d.output for d in crate_infos]
-    depinfo = DepInfo(
-        direct_crates=depset(crate_infos),
-        indirect_crates=depset(transitive=[d.indirect_crates for d in depinfos]),
-        transitive_crates=depset(transitive=[d.transitive_crates for d in depinfos]),
-        transitive_dylibs=depset(transitive=[d.transitive_dylibs for d in depinfos]),
-        transitive_staticlibs=depset(transitive=[d.transitive_staticlibs for d in depinfos]),
-        transitive_libs=depset(transitive=[d.transitive_libs for d in depinfos]),
-    )
-    # We return a rust_libs that can be used by rust_library
-    return [
-        CrateInfos(crate_infos=crate_infos),
-        depinfo,
-        DefaultInfo(files = depset(files))
-    ]
+def _rust_grpc_library_impl(ctx):
+    return _rust_protogrpc_library_impl(ctx, True)
 
 rust_proto_library = rule(
     _rust_proto_library_impl,
@@ -205,9 +143,12 @@ rust_proto_library = rule(
         "deps": attr.label_list(
             mandatory = True,
             providers = ["proto"],
-            aspects = [_rust_proto_aspect],
         ),
+        "rust_deps": attr.label_list(default = PROTO_COMPILE_DEPS),
+        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
     },
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
     toolchains = [
         "@io_bazel_rules_rust//proto:toolchain",
         "@io_bazel_rules_rust//rust:toolchain",
@@ -246,14 +187,17 @@ rust_binary(
 """
 
 rust_grpc_library = rule(
-    _rust_proto_library_impl,
+    _rust_grpc_library_impl,
     attrs = {
         "deps": attr.label_list(
             mandatory = True,
             providers = ["proto"],
-            aspects = [_rust_grpc_aspect],
         ),
+        "rust_deps": attr.label_list(default = GRPC_COMPILE_DEPS),
+        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
     },
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
     toolchains = [
         "@io_bazel_rules_rust//proto:toolchain",
         "@io_bazel_rules_rust//rust:toolchain",

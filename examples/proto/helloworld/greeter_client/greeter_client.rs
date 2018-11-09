@@ -13,12 +13,12 @@
 // limitations under the License.
 
 extern crate grpc;
-extern crate helloworld;
+extern crate helloworld_proto;
 
 use std::env;
 use std::str::FromStr;
 
-use helloworld::*;
+use helloworld_proto::*;
 
 fn parse_args() -> (String, u16) {
     let mut name = "world".to_owned();

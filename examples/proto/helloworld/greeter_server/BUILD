@@ -6,6 +6,6 @@ rust_binary(
     srcs = ["greeter_server.rs"],
     visibility = ["//proto:__subpackages__"],
     deps = [
-        "//proto/helloworld:rust",
+        "//proto/helloworld:helloworld_proto",
     ] + GRPC_COMPILE_DEPS,
 )
