@@ -300,7 +300,7 @@ def add_crate_link_flags(args, dep_info):
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
     args.add_all(
-        depset(transitive=[dep_info.indirect_crates, dep_info.direct_crates]),
+        dep_info.transitive_crates,
         map_each = _get_crate_dirname,
         uniquify = True,
         format_each = "-Ldependency=%s")
