@@ -1,4 +1,6 @@
-pub fn world() -> String { "world".to_owned() }
+pub fn world() -> String {
+    "world".to_owned()
+}
 
 #[cfg(test)]
 mod test {

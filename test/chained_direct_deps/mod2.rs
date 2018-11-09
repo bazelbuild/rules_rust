@@ -8,7 +8,6 @@ pub fn default_greeter() -> String {
     greeter(&mod1::world())
 }
 
-
 #[cfg(test)]
 mod test {
     #[test]
