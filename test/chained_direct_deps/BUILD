@@ -19,7 +19,7 @@ rust_library(
     name = "mod3",
     srcs = ["mod3.rs"],
     deps = [
-        "mod2",
+        ":mod2",
         ":mod1",
     ],
 )
