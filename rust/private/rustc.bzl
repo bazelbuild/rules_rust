@@ -166,6 +166,12 @@ def rustc_compile_action(
         rust_flags = []):
     """
     Constructs the rustc command used to build the current target.
+
+    Returns:
+      List[Provider]: A list of the following providers:
+                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
+                     - DepInfo: The transitive dependencies of this crate.
+                     - DefaultInfo: The output file for this crate, and its runfiles.
     """
     output_dir = crate_info.output.dirname
 
