@@ -29,6 +29,12 @@ load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 rust_proto_repositories()
 ```
 
+This will load crate dependencies of protobuf that are generated using
+[cargo raze](https://github.com/google/cargo-raze) inside the rules_rust
+repository. However, using those dependencies might conflict with other uses
+of [cargo raze](https://github.com/google/cargo-raze). If you need to change
+those dependencies, please see the [dedicated section below](#custom-deps).
+
 <a name="rust_proto_library"></a>
 ## rust_proto_library
 
@@ -156,4 +162,59 @@ rust_binary(
     srcs = ["my_service.rs"],
     deps = [":rust"] + GRPC_COMPILE_DEPS,
 )
+```
+
+<a name="custom-deps">
+## Customizing dependencies
+
+Those rules dependents on the [`protobuf`](https://crates.io/protobuf) and
+the [`grpc`](https://crates.io/grpc) crates in addition to the [protobuf
+compiler](https://github.com/google/protobuf). To do so the
+`rust_proto_repositories` import the given crates using file generated with
+[`cargo raze`](https://github.com/google/cargo-raze).
+
+If you want to either change the protobuf and gRPC rust compilers, or to
+simply use [`cargo raze`](https://github.com/google/cargo-raze) in a more
+complex scenario (with more dependencies), you must redefine those
+dependencies.
+
+To do this, once you imported the good dependencies (see our [Cargo.toml]
+(raze/Cargo.toml) file to see the default dependencies), you need to point
+to the correct toolchain, to do so you can create a BUILD file with the
+toolchain definition, for example:
+
+```python
+load("@io_bazel_rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
+
+toolchain(
+    name = "toolchain",
+    toolchain = ":toolchain-impl",
+    toolchain_type = "@io_bazel_rules_rust//proto:toolchain",
+)
+
+rust_proto_toolchain(
+    name = "toolchain-impl",
+    # Path to the protobuf compiler.
+    protoc = "@com_google_protobuf//:protoc",
+    # Compile-time dependencies for gRPC crates.
+    grpc_compile_deps = [
+      "//remote:protobuf",
+      "//remote:grpc",
+      "//remote:tls_api",
+      "//remote:tls_api_stub",
+    ]
+    # Protobuf compiler plugin to generate rust gRPC stubs.
+    grpc_plugin = "//remote:cargo_bin_protoc_gen_rust_grpc",
+    # Compile-time dependencies for protobuf crates.
+    proto_compile_deps = ["//remote:protobuf"],
+    # Protobuf compiler plugin to generate rust protobuf stubs.
+    proto_plugin = "//remote:cargo_bin_protoc_gen_rust",
+)
+```
+
+Finally, now that you have your own toolchain, you need to register it by
+inserting the following statement in your `WORKSPACE` file:
+
+```python
+register_toolchains(["//package:toolchain"])
 ```

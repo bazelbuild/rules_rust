@@ -22,3 +22,9 @@ workspace_path = "//proto/raze"
 additional_flags = [
   "--cfg=lazy_static_heap_impl",
 ]
+
+[raze.crates.protobuf-codegen.'1.6.0']
+extra_aliased_targets = ["cargo_bin_protoc_gen_rust"]
+
+[raze.crates.grpc-compiler.'0.4.0']
+extra_aliased_targets = ["cargo_bin_protoc_gen_rust_grpc"]

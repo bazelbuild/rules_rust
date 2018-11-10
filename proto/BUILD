@@ -4,12 +4,12 @@ load(":toolchain.bzl", "rust_proto_toolchain")
 
 alias(
     name = "protoc_gen_rust",
-    actual = "@raze__protobuf_codegen__1_6_0//:cargo_bin_protoc_gen_rust",
+    actual = "//proto/raze:cargo_bin_protoc_gen_rust",
 )
 
 alias(
     name = "protoc_gen_rust_grpc",
-    actual = "@raze__grpc_compiler__0_4_0//:cargo_bin_protoc_gen_rust_grpc",
+    actual = "//proto/raze:cargo_bin_protoc_gen_rust_grpc",
 )
 
 toolchain_type(name = "toolchain")

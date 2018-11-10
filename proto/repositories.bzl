@@ -13,11 +13,12 @@
 # limitations under the License.
 
 load("//proto/raze:crates.bzl", _crate_deps="raze_fetch_remote_crates")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def rust_proto_repositories():
   """Declare dependencies needed for proto compilation."""
   if not native.existing_rule("com_google_protobuf"):
-    native.http_archive(
+    http_archive(
       name="com_google_protobuf",
       urls=["https://github.com/google/protobuf/archive/v3.5.1.zip"],
       strip_prefix="protobuf-3.5.1",
