@@ -38,12 +38,10 @@ load(
     "PROTO_COMPILE_DEPS",
     "GRPC_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
+    _file_stem = "file_stem",
 )
 load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "rustc_compile_action")
 load("//rust:private/utils.bzl", "find_toolchain")
-
-def _basename(f):
-    return f.basename[:-len(f.extension) - 1]
 
 def _gen_lib(ctx, grpc, deps, srcs, lib):
     """Generate a lib.rs file for the crates."""
@@ -55,11 +53,11 @@ def _gen_lib(ctx, grpc, deps, srcs, lib):
         content.append("extern crate %s;" % dep.label.name)
         content.append("pub use %s::*;" % dep.label.name)
     for f in srcs:
-        content.append("pub mod %s;" % _basename(f))
-        content.append("pub use %s::*;" % _basename(f))
+        content.append("pub mod %s;" % _file_stem(f))
+        content.append("pub use %s::*;" % _file_stem(f))
         if grpc:
-            content.append("pub mod %s_grpc;" % _basename(f))
-            content.append("pub use %s_grpc::*;" % _basename(f))
+            content.append("pub mod %s_grpc;" % _file_stem(f))
+            content.append("pub use %s_grpc::*;" % _file_stem(f))
     ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):

@@ -14,6 +14,9 @@
 
 """Toolchain for compiling rust stubs from protobug and gRPC."""
 
+def file_stem(f):
+    return f.basename[:-len(f.extension) - 1]
+
 def _strip_external_prefix(path):
     return path.split("/", 2)[2] if path.startswith("../") else path
 
@@ -39,7 +42,6 @@ def rust_generate_proto(
 
     Returns: the list of generate stubs ([File])
     """
-    outs = []
     tools = [
         proto_toolchain.protoc,
         proto_toolchain.proto_plugin,
@@ -47,22 +49,22 @@ def rust_generate_proto(
     executable = proto_toolchain.protoc
     args = ctx.actions.args()
 
-    for i in inputs:
-        path = "%s/%s" % (output_dir, i.basename[:-len(".proto")])
-        f = ctx.actions.declare_file(path + ".rs")
-        output_directory = f.dirname
-        outs.append(f)
-        if grpc:
-            f = ctx.actions.declare_file(path + "_grpc.rs")
-            args.add(f.path)
-            outs.append(f)
+    if not inputs:
+        fail("Protobuf compilation requested without inputs!")
+    paths = ["%s/%s" % (output_dir, file_stem(i)) for i in inputs]
+    outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
+    output_directory = outs[0].dirname
 
     if grpc:
+        # Add grpc stubs to the list of outputs
+        outs.extend([ctx.actions.declare_file(path + "_grpc.rs") for path in paths])
+        # gRPC stubs is generated only if a service is defined in the proto,
+        # so we create an empty grpc module in the other case.
         tools.append(proto_toolchain.grpc_plugin)
         tools.append(ctx.executable._optional_output_wrapper)
         args.add_all([
             "--",
-            executable.path,
+            proto_toolchain.protoc.path,
             "--plugin=protoc-gen-grpc-rust=" + proto_toolchain.grpc_plugin.path,
             "--grpc-rust_out=" + output_directory,
         ])
@@ -79,8 +81,15 @@ def rust_generate_proto(
         format_joined = "--descriptor_set_in=%s",
     )
 
-    # For proto, they need to be requested with their absolute name to be compatible
-    # with the descriptor_set passed by proto_library.
+    # For proto, they need to be requested with their absolute name to be
+    # compatible with the descriptor_set passed by proto_library.
+    # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
+    # compiler would generate a file descriptor with the path
+    # `package/file.proto`. Since we compile from the proto descriptor, we need
+    # to pass the list of descriptors and the list of path to compile.
+    # For the precedent example, the file (noted `f`) would have
+    # `f.short_path` returns `external/repo1/package/file.proto`,
+    # _strip_external_prefix would convert it back to `package/file.proto`.
     args.add_all([_strip_external_prefix(f.short_path) for f in inputs])
     ctx.actions.run(
         inputs = depset(
@@ -119,7 +128,7 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
     "@io_bazel_rules_rust//proto/raze:tls_api",
     "@io_bazel_rules_rust//proto/raze:tls_api_stub",
 ]
-"""Default dependencies needed to compiler gRPC stubs."""
+"""Default dependencies needed to compile gRPC stubs."""
 
 rust_proto_toolchain = rule(
     _rust_proto_toolchain_impl,
@@ -187,7 +196,7 @@ Example:
       "@bazel_tools//platforms:cpuX",
     ],
     toolchain = ":rust_proto_impl")
-  rust_toolchain(
+  rust_proto_toolchain(
     name="rust_proto_impl",
     grpc_plugin="@rust_grpc//:grpc_plugin",
     grpc_compile_deps=["@rust_grpc//:grpc_deps"])
