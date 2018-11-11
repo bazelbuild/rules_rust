@@ -35,8 +35,6 @@ CrateInfo = provider(
     },
 )
 
-CrateInfos = provider(fields = {"crate_infos": "List of CrateInfo providers"})
-
 DepInfo = provider(
     fields = {
         "direct_crates": "depset[CrateInfo]",
@@ -103,13 +101,6 @@ def collect_deps(deps, toolchain):
             # This dependency is a rust_library
             direct_crates += [dep[CrateInfo]]
             transitive_crates += [dep[CrateInfo]]
-            transitive_crates += dep[DepInfo].transitive_crates
-            transitive_dylibs += dep[DepInfo].transitive_dylibs
-            transitive_staticlibs += dep[DepInfo].transitive_staticlibs
-        elif hasattr(dep, "crate_infos"):
-            # This dependency is a rust_*_library
-            direct_crates += dep[CrateInfos].crate_infos
-            transitive_crates += dep[CrateInfos].crate_infos
             transitive_crates += dep[DepInfo].transitive_crates
             transitive_dylibs += dep[DepInfo].transitive_dylibs
             transitive_staticlibs += dep[DepInfo].transitive_staticlibs

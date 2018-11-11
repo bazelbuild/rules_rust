@@ -39,7 +39,7 @@ load(
     "GRPC_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
 )
-load("//rust:private/rustc.bzl", "CrateInfo", "CrateInfos", "DepInfo", "rustc_compile_action")
+load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "rustc_compile_action")
 load("//rust:private/utils.bzl", "find_toolchain")
 
 def _basename(f):
