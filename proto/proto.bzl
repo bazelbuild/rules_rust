@@ -60,16 +60,12 @@ def _gen_lib(ctx, grpc, deps, srcs, lib):
         if grpc:
             content.append("pub mod %s_grpc;" % _basename(f))
             content.append("pub use %s_grpc::*;" % _basename(f))
-    ctx.actions.write(
-        lib,
-        "\n".join(content),
-        False,
-    )
+    ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):
     return [getattr(el, provider) for el in lst if hasattr(el, provider)]
 
-def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps, grpc, compile_deps):
+def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
     # Create all the source in a specific folder
     toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
@@ -87,15 +83,8 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps,
 
     # and lib.rs
     lib_rs = ctx.actions.declare_file("%s/lib.rs" % output_dir)
-    _gen_lib(ctx, grpc, deps, inputs, lib_rs)
+    _gen_lib(ctx, grpc, [], inputs, lib_rs)
     srcs.append(lib_rs)
-
-    # Collect dependencies
-    direct_deps = [
-        dep
-        for dep in deps
-        if CrateInfo in dep
-    ]
 
     # And simulate rust_library behavior
     output_hash = repr(hash(lib_rs.path))
@@ -109,12 +98,12 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, deps,
             type = "rlib",
             root = lib_rs,
             srcs = srcs,
-            deps = direct_deps + compile_deps,
+            deps = compile_deps,
             output = rust_lib,
         ),
         output_hash = output_hash,
     )
-    return [result[0], result[1]]
+    return result
 
 def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
@@ -126,7 +115,6 @@ def _rust_protogrpc_library_impl(ctx, grpc):
         depset(transitive = [p.transitive_imports for p in proto]),
         ctx.label.name,
         ctx,
-        [],
         grpc,
         ctx.attr.rust_deps,
     )

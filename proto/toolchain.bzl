@@ -197,7 +197,7 @@ Example:
   rust_toolchain(
     name="rust_proto_impl",
     grpc_plugin="@rust_grpc//:grpc_plugin",
-    grpc_compilee_deps=["@rust_grpc//:grpc_deps"])
+    grpc_compile_deps=["@rust_grpc//:grpc_deps"])
   ```
 
   Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass

@@ -167,7 +167,7 @@ rust_binary(
 <a name="custom-deps">
 ## Customizing dependencies
 
-Those rules dependents on the [`protobuf`](https://crates.io/protobuf) and
+These rules depends on the [`protobuf`](https://crates.io/protobuf) and
 the [`grpc`](https://crates.io/grpc) crates in addition to the [protobuf
 compiler](https://github.com/google/protobuf). To do so the
 `rust_proto_repositories` import the given crates using file generated with
@@ -178,10 +178,10 @@ simply use [`cargo raze`](https://github.com/google/cargo-raze) in a more
 complex scenario (with more dependencies), you must redefine those
 dependencies.
 
-To do this, once you imported the good dependencies (see our [Cargo.toml]
-(raze/Cargo.toml) file to see the default dependencies), you need to point
-to the correct toolchain, to do so you can create a BUILD file with the
-toolchain definition, for example:
+To do this, once you imported th needed dependencies (see our
+[Cargo.toml](raze/Cargo.toml) file to see the default dependencies), you
+need to point to the correct toolchain, to do so you can create a BUILD
+file with the toolchain definition, for example:
 
 ```python
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
@@ -198,17 +198,17 @@ rust_proto_toolchain(
     protoc = "@com_google_protobuf//:protoc",
     # Compile-time dependencies for gRPC crates.
     grpc_compile_deps = [
-      "//remote:protobuf",
-      "//remote:grpc",
-      "//remote:tls_api",
-      "//remote:tls_api_stub",
+      "//cargo_raze/remote:protobuf",
+      "//cargo_raze/remote:grpc",
+      "//cargo_raze/remote:tls_api",
+      "//cargo_raze/remote:tls_api_stub",
     ]
     # Protobuf compiler plugin to generate rust gRPC stubs.
-    grpc_plugin = "//remote:cargo_bin_protoc_gen_rust_grpc",
+    grpc_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust_grpc",
     # Compile-time dependencies for protobuf crates.
-    proto_compile_deps = ["//remote:protobuf"],
+    proto_compile_deps = ["//cargo_raze/remote:protobuf"],
     # Protobuf compiler plugin to generate rust protobuf stubs.
-    proto_plugin = "//remote:cargo_bin_protoc_gen_rust",
+    proto_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust",
 )
 ```
 

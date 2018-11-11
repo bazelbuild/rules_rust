@@ -267,9 +267,7 @@ def rustc_compile_action(
     ]
 
 def _create_out_dir_action(ctx):
-    if not hasattr(ctx.file, "out_dir_tar"):
-        return None
-    tar_file = ctx.file.out_dir_tar
+    tar_file = getattr(ctx.file, "out_dir_tar", None)
     if not tar_file:
         return None
 
