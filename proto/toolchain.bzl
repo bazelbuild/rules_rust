@@ -57,11 +57,13 @@ def rust_generate_proto(
 
     if grpc:
         # Add grpc stubs to the list of outputs
-        outs.extend([ctx.actions.declare_file(path + "_grpc.rs") for path in paths])
+        grpc_files = [ctx.actions.declare_file(path + "_grpc.rs") for path in paths]
+        outs.extend(grpc_files)
         # gRPC stubs is generated only if a service is defined in the proto,
         # so we create an empty grpc module in the other case.
         tools.append(proto_toolchain.grpc_plugin)
         tools.append(ctx.executable._optional_output_wrapper)
+        args.add_all([f.path for f in grpc_files])
         args.add_all([
             "--",
             proto_toolchain.protoc.path,
