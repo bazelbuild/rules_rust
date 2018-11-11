@@ -164,8 +164,7 @@ rust_binary(
 )
 ```
 
-<a name="custom-deps">
-## Customizing dependencies
+## <a name="custom-deps">Customizing dependencies
 
 These rules depends on the [`protobuf`](https://crates.io/protobuf) and
 the [`grpc`](https://crates.io/grpc) crates in addition to the [protobuf
