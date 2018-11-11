@@ -31,6 +31,7 @@ platforms:
     - "@examples//..."
     - "-//test/conflicting_deps:conflicting_deps_test"
     # rust_doc_test is likely not fully sandboxed
+    - "-//test/chained_direct_deps:mod3_doc_test"
     - "-@examples//fibonacci:fibonacci_doc_test"
     - "-@examples//hello_lib:hello_lib_doc_test"
     - "-//tools/runfiles:runfiles_doc_test"
