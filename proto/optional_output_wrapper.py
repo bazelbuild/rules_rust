@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/python
 # Copyright 2018 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,26 @@
 # Optional outputs are not available in Skylark :(
 # Syntax: $0 output1 output2 ... -- program  [arg1...argn]
 
-optional_outputs=()
+import os
+import sys
+import subprocess
 
-while [ "${1-}" != "" -a  "${1-}" != "--" ]; do
-  optional_outputs+=("$1")
-  shift 1
-done
+def usage():
+  exit("Usage: %s [optional_output1...optional_outputN] -- program [arg1...argn]" % sys.argv[0])
 
-if (( "$#" < 2 )); then
-  echo "Usage: $0 [optional_output1...optional_outputN] -- program [arg1...argn]" >&2
-  exit 1
-fi
+args = sys.argv
+try:
+  split_at = args.index("--")
+except ValueError:
+  usage()
+optional_outputs = args[1:split_at]
+wrapped_program_args = args[split_at + 1 :]
+if len(wrapped_program_args) < 1:
+  usage()
 
-shift 1
+subprocess.check_call(wrapped_program_args)
 
-"$@" || exit $?
-for f in "${optional_outputs[@]}"; do
-  if [ ! -f "$f" ]; then
-    touch "$f"
-  fi
-done
+for f in optional_outputs:
+  if not os.path.exists(f):
+    # Create f if it does not exists.
+    open(f, "a").close()

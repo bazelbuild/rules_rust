@@ -59,14 +59,14 @@ def rust_generate_proto(
 
     if grpc:
         tools.append(proto_toolchain.grpc_plugin)
-        tools.append(proto_toolchain.optional_output_wrapper)
+        tools.append(ctx.executable._optional_output_wrapper)
         args.add_all([
             "--",
             executable.path,
             "--plugin=protoc-gen-grpc-rust=" + proto_toolchain.grpc_plugin.path,
             "--grpc-rust_out=" + output_directory,
         ])
-        executable = proto_toolchain.optional_output_wrapper
+        executable = ctx.executable._optional_output_wrapper
 
     args.add_all([
         "--plugin=protoc-gen-rust=" + proto_toolchain.proto_plugin.path,
@@ -84,13 +84,14 @@ def rust_generate_proto(
     args.add_all([_strip_external_prefix(f.short_path) for f in inputs])
     ctx.actions.run(
         inputs = depset(
-            tools + inputs,
+            inputs,
             transitive = [
                 transitive_descriptor_sets,
                 imports,
             ],
         ),
         outputs = outs,
+        tools = tools,
         progress_message = "Generating Rust protobuf stubs",
         mnemonic = "RustProtocGen",
         executable = executable,
@@ -105,7 +106,6 @@ def _rust_proto_toolchain_impl(ctx):
         proto_compile_deps = ctx.attr.proto_compile_deps,
         grpc_plugin = ctx.file.grpc_plugin,
         grpc_compile_deps = ctx.attr.grpc_compile_deps,
-        optional_output_wrapper = ctx.executable._optional_output_wrapper,
     )
     return [toolchain]
 
@@ -134,13 +134,6 @@ rust_proto_toolchain = rule(
             cfg = "host",
             default = Label(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust",
-            ),
-        ),
-        "_optional_output_wrapper": attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label(
-                "@io_bazel_rules_rust//proto:optional_output_wrapper",
             ),
         ),
         "grpc_plugin": attr.label(

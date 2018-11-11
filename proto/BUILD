@@ -14,9 +14,9 @@ alias(
 
 toolchain_type(name = "toolchain")
 
-sh_binary(
+py_binary(
     name = "optional_output_wrapper",
-    srcs = ["optional_output_wrapper.sh"],
+    srcs = ["optional_output_wrapper.py"],
 )
 
 toolchain(

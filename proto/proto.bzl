@@ -134,6 +134,13 @@ rust_proto_library = rule(
         ),
         "rust_deps": attr.label_list(default = PROTO_COMPILE_DEPS),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label(
+                "@io_bazel_rules_rust//proto:optional_output_wrapper",
+            ),
+        ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -183,6 +190,13 @@ rust_grpc_library = rule(
         ),
         "rust_deps": attr.label_list(default = GRPC_COMPILE_DEPS),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label(
+                "@io_bazel_rules_rust//proto:optional_output_wrapper",
+            ),
+        ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
