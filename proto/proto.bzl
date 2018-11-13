@@ -151,8 +151,8 @@ rust_proto_library = rule(
 
 Args:
   name: name of the target.
-  deps: list of proto_compile dependencies that will be built. One
-    crate for each proto_compile will be created with the corresponding
+  deps: list of proto_library dependencies that will be built. One
+    crate for each proto_library will be created with the corresponding
     stubs.
 
 Example:
@@ -161,7 +161,7 @@ Example:
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_proto_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
-proto_compile(
+proto_library(
     name = "my_proto",
     srcs = ["my.proto"]
 )
@@ -207,8 +207,8 @@ rust_grpc_library = rule(
 
 Args:
   name: name of the target.
-  deps: list of proto_compile dependencies that will be built. One
-    crate for each proto_compile will be created with the corresponding
+  deps: list of proto_library dependencies that will be built. One
+    crate for each proto_library will be created with the corresponding
     gRPC stubs.
 
 Example:
@@ -217,7 +217,7 @@ Example:
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
-proto_compile(
+proto_library(
     name = "my_proto",
     srcs = ["my.proto"]
 )

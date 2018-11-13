@@ -67,8 +67,8 @@ Builds a Rust library crate from a set of proto_library-s.
       <td>
         <code>List of labels, required</code>
         <p>
-            list of <code>proto_compile</code> dependencies that will be built. One
-            crate for each <code>proto_compile</code> will be created with the corresponding
+            list of <code>proto_library</code> dependencies that will be built. One
+            crate for each <code>proto_library</code> will be created with the corresponding
             stubs.
         </p>
       </td>
@@ -82,7 +82,7 @@ Builds a Rust library crate from a set of proto_library-s.
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_proto_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
-proto_compile(
+proto_library(
     name = "my_proto",
     srcs = ["my.proto"]
 )
@@ -132,8 +132,8 @@ Builds a Rust library crate from a set of proto_library-s suitable for gRPC.
       <td>
         <code>List of labels, required</code>
         <p>
-            list of <code>proto_compile</code> dependencies that will be built. One
-            crate for each <code>proto_compile</code> will be created with the corresponding
+            list of <code>proto_library</code> dependencies that will be built. One
+            crate for each <code>proto_library</code> will be created with the corresponding
             gRPC stubs.
         </p>
       </td>
@@ -147,7 +147,7 @@ Builds a Rust library crate from a set of proto_library-s suitable for gRPC.
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
-proto_compile(
+proto_library(
     name = "my_proto",
     srcs = ["my.proto"]
 )
