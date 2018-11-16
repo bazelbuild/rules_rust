@@ -265,7 +265,7 @@ def _create_out_dir_action(ctx):
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     ctx.actions.run_shell(
         # TODO: Remove system tar usage
-        command = "mkdir -p {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
+        command = "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
         inputs = [tar_file],
         outputs = [out_dir],
         use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
