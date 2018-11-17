@@ -180,6 +180,16 @@ rust_library(name, srcs, crate_root, crate_type, deps, data, crate_features, rus
       </td>
     </tr>
     <tr>
+      <td><code>link_flags</code></td>
+      <td>
+        <code>List of strings, optional</code>
+        <p>
+          List of link flags passed to <code>rustc</code>, those link flags
+          propagate in downstream dependencies.
+        </p>
+      </td>
+    </tr>
+    <tr>
       <td><code>version</code></td>
       <td>
         <code>String, optional</code>
@@ -367,6 +377,16 @@ rust_binary(name, srcs, deps, data, crate_features, rustc_flags, version, out_di
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>link_flags</code></td>
+      <td>
+        <code>List of strings, optional</code>
+        <p>
+          List of link flags passed to <code>rustc</code>, those link flags
+          propagate in downstream dependencies.
+        </p>
       </td>
     </tr>
     <tr>
@@ -577,6 +597,16 @@ rust_test(name, srcs, deps, data, crate_features, rustc_flags, version, out_dir_
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>link_flags</code></td>
+      <td>
+        <code>List of strings, optional</code>
+        <p>
+          List of link flags passed to <code>rustc</code>, those link flags
+          propagate in downstream dependencies.
+        </p>
       </td>
     </tr>
     <tr>
@@ -838,6 +868,16 @@ easy to use a custom Rust toolchain, such as a nightly release.
       <td>
         <code>List of strings, optional</code>
         <p>List of compiler flags passed to <code>rustc</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>link_flags</code></td>
+      <td>
+        <code>List of strings, optional</code>
+        <p>
+          List of link flags passed to <code>rustc</code>, those link flags
+          propagate in downstream dependencies.
+        </p>
       </td>
     </tr>
     <tr>

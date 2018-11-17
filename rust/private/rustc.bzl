@@ -43,6 +43,7 @@ DepInfo = provider(
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
+        "link_flags": "depset[string]: transitive list of link flags carried by the crate.",
     },
 )
 
@@ -81,7 +82,7 @@ def get_lib_name(lib):
     else:
         return libname
 
-def collect_deps(deps, toolchain):
+def collect_deps(deps, toolchain, link_flags=[]):
     """
     Walks through dependencies and collects the transitive dependencies.
 
@@ -96,6 +97,7 @@ def collect_deps(deps, toolchain):
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
+    transitive_linkflags = []
     for dep in deps:
         if CrateInfo in dep:
             # This dependency is a rust_library
@@ -104,6 +106,7 @@ def collect_deps(deps, toolchain):
             transitive_crates += dep[DepInfo].transitive_crates
             transitive_dylibs += dep[DepInfo].transitive_dylibs
             transitive_staticlibs += dep[DepInfo].transitive_staticlibs
+            transitive_linkflags.append(dep[DepInfo].link_flags)
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
@@ -116,6 +119,7 @@ def collect_deps(deps, toolchain):
     crate_list = transitive_crates.to_list()
     transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
     indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates])
+    link_flags = depset(direct=link_flags, transitive=transitive_linkflags, order="topological")
 
     return DepInfo(
         direct_crates = direct_crates,
@@ -124,14 +128,15 @@ def collect_deps(deps, toolchain):
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
         transitive_libs = list(transitive_libs),
+        link_flags = link_flags,
     )
 
-def _get_linker_and_args(ctx, rpaths):
+def _get_linker_and_args(ctx, rpaths, extra_link_flags):
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.18.0", BAZEL_VERSION)):
-        user_link_flags = ctx.fragments.cpp.linkopts
+        user_link_flags = ctx.fragments.cpp.linkopts + extra_link_flags.to_list()
     else:
-        user_link_flags = depset(ctx.fragments.cpp.linkopts)
+        user_link_flags = depset(direct=ctx.fragments.cpp.linkopts, transitive=[extra_link_flags])
 
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
@@ -178,6 +183,7 @@ def rustc_compile_action(
     dep_info = collect_deps(
         crate_info.deps,
         toolchain,
+        getattr(ctx.attr, "link_flags", []),
     )
 
     compile_inputs = (
@@ -215,7 +221,7 @@ def rustc_compile_action(
 
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-    ld, link_args = _get_linker_and_args(ctx, rpaths)
+    ld, link_args = _get_linker_and_args(ctx, rpaths, dep_info.link_flags)
     args.add("--codegen", "linker=" + ld)
     args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 

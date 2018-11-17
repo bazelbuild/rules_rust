@@ -186,6 +186,7 @@ _rust_common_attrs = {
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
     "rustc_flags": attr.string_list(),
+    "link_flags": attr.string_list(),
     "version": attr.string(default = "0.0.0"),
     "out_dir_tar": attr.label(
         allow_files = [
@@ -245,6 +246,8 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  link_flags: List of link flags passed to `rustc`, this list is also applied
+  to downstream dependencies.
   version: a version to inject in the cargo environment variable.
   out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
 
@@ -357,6 +360,8 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  link_flags: List of link flags passed to `rustc`, this list is also applied
+  to downstream dependencies.
   version: a version to inject in the cargo environment variable.
   out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
 
@@ -490,6 +495,8 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  link_flags: List of link flags passed to `rustc`, this list is also applied
+  to downstream dependencies.
   out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
 
     Many library crates in the Rust ecosystem require sources to be provided
@@ -668,6 +675,8 @@ Args:
     configuration option. The features listed here will be passed to `rustc`
     with `--cfg feature="${feature_name}"` flags.
   rustc_flags: List of compiler flags passed to `rustc`.
+  link_flags: List of link flags passed to `rustc`, this list is also applied
+  to downstream dependencies.
 
 Example:
   Suppose you have the following directory structure for a Rust project with a
