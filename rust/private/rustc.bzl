@@ -92,6 +92,8 @@ def collect_deps(deps, toolchain):
     Returns:
       Returns a DepInfo provider.
     """
+
+    # TODO: Fix depset union (https://docs.bazel.build/versions/master/skylark/depsets.html)
     direct_crates = depset()
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
@@ -115,6 +117,8 @@ def collect_deps(deps, toolchain):
 
     crate_list = transitive_crates.to_list()
     transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
+
+    # TODO: Avoid depset flattening.
     indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates.to_list()])
 
     return DepInfo(
