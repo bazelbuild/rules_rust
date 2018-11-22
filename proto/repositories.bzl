@@ -12,22 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//proto/raze:crates.bzl", _crate_deps="raze_fetch_remote_crates")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//proto/raze:crates.bzl", _crate_deps = "raze_fetch_remote_crates")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 def rust_proto_repositories():
-  """Declare dependencies needed for proto compilation."""
-  if not native.existing_rule("com_google_protobuf"):
-    http_archive(
-      name="com_google_protobuf",
-      urls=["https://github.com/google/protobuf/archive/v3.5.1.zip"],
-      strip_prefix="protobuf-3.5.1",
-      sha256="1f8b9b202e9a4e467ff0b0f25facb1642727cdf5e69092038f15b37c75b99e45",
-    )
+    """Declare dependencies needed for proto compilation."""
+    if not native.existing_rule("com_google_protobuf"):
+        git_repository(
+            name = "com_google_protobuf",
+            remote = "https://github.com/protocolbuffers/protobuf.git",
+            commit = "7b28271a61a3da0a37f6fda399b0c4c86464e5b3",  # 2018-11-16
+        )
 
-  _crate_deps()
-  
-  # Register toolchains
-  native.register_toolchains(
-      "@io_bazel_rules_rust//proto:default-proto-toolchain",
-  )
+    _crate_deps()
+
+    # Register toolchains
+    native.register_toolchains(
+        "@io_bazel_rules_rust//proto:default-proto-toolchain",
+    )

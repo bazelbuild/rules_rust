@@ -30,23 +30,29 @@ new_git_repository(
 )
 
 load("//proto:repositories.bzl", "rust_proto_repositories")
+
 rust_proto_repositories()
 
 # Used for documenting Rust rules.
-git_repository(
+http_archive(
     name = "io_bazel_rules_sass",
-    remote = "https://github.com/bazelbuild/rules_sass.git",
-    tag = "0.0.3",
+    sha256 = "76ae498b9a96fa029f026f8358ed44b93c934dde4691a798cb3a4137c307b7dc",
+    strip_prefix = "rules_sass-1.15.1",
+    url = "https://github.com/bazelbuild/rules_sass/archive/1.15.1.zip",
 )
 
-load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+
+rules_sass_dependencies()
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 
 sass_repositories()
 
 git_repository(
     name = "io_bazel_skydoc",
+    commit = "9bbdf62c03b5c3fed231604f78d3976f47753d79",  # 2018-11-20
     remote = "https://github.com/bazelbuild/skydoc.git",
-    tag = "0.1.4",
 )
 
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
@@ -65,10 +71,11 @@ http_archive(
 
 http_archive(
     name = "bazel_skylib",
-    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz",
     sha256 = "b5f6abe419da897b7901f90cbab08af958b97a8f3575b0d3dd062ac7ce78541f",
-    strip_prefix = "bazel-skylib-0.5.0"
+    strip_prefix = "bazel-skylib-0.5.0",
+    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz",
 )
 
 load(":workspace.bzl", "bazel_version")
+
 bazel_version(name = "bazel_version")

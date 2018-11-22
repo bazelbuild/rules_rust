@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "relative_path")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "relative_path")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -115,7 +115,7 @@ def collect_deps(deps, toolchain):
 
     crate_list = transitive_crates.to_list()
     transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
-    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates])
+    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates.to_list()])
 
     return DepInfo(
         direct_crates = direct_crates,
@@ -123,7 +123,7 @@ def collect_deps(deps, toolchain):
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
-        transitive_libs = list(transitive_libs),
+        transitive_libs = transitive_libs.to_list(),
     )
 
 def _get_linker_and_args(ctx, rpaths):
@@ -304,7 +304,8 @@ def add_crate_link_flags(args, dep_info):
         dep_info.transitive_crates,
         map_each = _get_crate_dirname,
         uniquify = True,
-        format_each = "-Ldependency=%s")
+        format_each = "-Ldependency=%s",
+    )
 
 def _crate_to_link_flag(crate_info):
     return ["--extern", "{}={}".format(crate_info.name, crate_info.output.path)]

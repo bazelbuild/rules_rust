@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "relative_path")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -149,21 +149,21 @@ def _rust_benchmark_impl(ctx):
     bench_script = ctx.outputs.executable
 
     # Build the underlying benchmark binary.
-    bench_binary = ctx.new_file(
-        ctx.configuration.bin_dir,
+    bench_binary = ctx.actions.declare_file(
         "{}_bin".format(bench_script.basename),
+        sibling = ctx.configuration.bin_dir,
     )
     info = _rust_test_common(ctx, bench_binary)
 
     # Wrap the benchmark to run it as cargo would.
-    ctx.file_action(
+    ctx.actions.write(
         output = bench_script,
         content = "\n".join([
             "#!/usr/bin/env bash",
             "set -e",
             "{} --bench".format(bench_binary.short_path),
         ]),
-        executable = True,
+        is_executable = True,
     )
 
     runfiles = ctx.runfiles(
@@ -176,23 +176,20 @@ def _rust_benchmark_impl(ctx):
 _rust_common_attrs = {
     "srcs": attr.label_list(allow_files = [".rs"]),
     "crate_root": attr.label(
-        allow_files = [".rs"],
-        single_file = True,
+        allow_single_file = [".rs"],
     ),
     "data": attr.label_list(
         allow_files = True,
-        cfg = "data",
     ),
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
     "rustc_flags": attr.string_list(),
     "version": attr.string(default = "0.0.0"),
     "out_dir_tar": attr.label(
-        allow_files = [
+        allow_single_file = [
             ".tar",
             ".tar.gz",
         ],
-        single_file = True,
     ),
     "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
 }

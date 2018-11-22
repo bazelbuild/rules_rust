@@ -34,13 +34,12 @@ rust_proto_repositories()
 
 load(
     "//proto:toolchain.bzl",
-    "rust_proto_toolchain",
-    "PROTO_COMPILE_DEPS",
     "GRPC_COMPILE_DEPS",
-    _generate_proto = "rust_generate_proto",
+    "PROTO_COMPILE_DEPS",
     _file_stem = "file_stem",
+    _generate_proto = "rust_generate_proto",
 )
-load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "rustc_compile_action")
+load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("//rust:private/utils.bzl", "find_toolchain")
 
 def _gen_lib(ctx, grpc, deps, srcs, lib):
@@ -67,7 +66,7 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc,
     # Create all the source in a specific folder
     toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
-    
+
     # Generate the proto stubs
     srcs = _generate_proto(
         ctx,
@@ -87,7 +86,10 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc,
     # And simulate rust_library behavior
     output_hash = repr(hash(lib_rs.path))
     rust_lib = ctx.actions.declare_file("%s/lib%s-%s.rlib" % (
-        output_dir, crate_name, output_hash))
+        output_dir,
+        crate_name,
+        output_hash,
+    ))
     result = rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),

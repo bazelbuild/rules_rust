@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "collect_deps", "get_lib_name")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "get_lib_name")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_test_impl(ctx):
@@ -28,10 +28,10 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    ctx.file_action(
+    ctx.actions.write(
         output = rust_doc_test,
         content = _build_rustdoc_test_script(toolchain, dep_info, crate),
-        executable = True,
+        is_executable = True,
     )
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
@@ -91,7 +91,7 @@ set -e;
 rust_doc_test = rule(
     _rust_doc_test_impl,
     attrs = {
-        "dep": attr.label(mandatory = True, providers=[CrateInfo]),
+        "dep": attr.label(mandatory = True, providers = [CrateInfo]),
     },
     executable = True,
     test = True,
