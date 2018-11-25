@@ -13,15 +13,17 @@
 # limitations under the License.
 
 load("//proto/raze:crates.bzl", _crate_deps = "raze_fetch_remote_crates")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def rust_proto_repositories():
     """Declare dependencies needed for proto compilation."""
     if not native.existing_rule("com_google_protobuf"):
-        git_repository(
+        http_archive(
             name = "com_google_protobuf",
-            remote = "https://github.com/protocolbuffers/protobuf.git",
-            commit = "7b28271a61a3da0a37f6fda399b0c4c86464e5b3",  # 2018-11-16
+            # commit 7b28271a61a3da0a37f6fda399b0c4c86464e5b3 is from 2018-11-16
+            urls = ["https://github.com/protocolbuffers/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.tar.gz"],
+            strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
+            sha256 = "9dac7d7cf6e2c88bf92915f9338a26950531c00c05bf86764ab978344b69a45a",
         )
 
     _crate_deps()
