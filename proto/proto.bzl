@@ -42,15 +42,68 @@ load(
 load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("//rust:private/utils.bzl", "find_toolchain")
 
-def _gen_lib(ctx, grpc, deps, srcs, lib):
+RustProtoProvider = provider(
+    fields = {
+        "proto_sources": "List[string]: list of source paths of protos",
+        "transitive_proto_sources": "depset[string]",
+    },
+)
+
+def _compute_proto_source_path(file, source_root_attr = ""):
+    """Take the short path of file and make it suitable for protoc."""
+    # For proto, they need to be requested with their absolute name to be
+    # compatible with the descriptor_set passed by proto_library.
+    # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
+    # compiler would generate a file descriptor with the path
+    # `package/file.proto`. Since we compile from the proto descriptor, we need
+    # to pass the list of descriptors and the list of path to compile.
+    # For the precedent example, the file (noted `f`) would have
+    # `f.short_path` returns `external/repo1/package/file.proto`.
+    # In addition, proto_library can provide a proto_source_path to change the base
+    # path, which should a be a prefix.
+    path = file.short_path
+
+    # Strip external prefix.
+    path = path.split("/", 2)[2] if path.startswith("../") else path
+
+    # Strip source_root.
+    if path.startswith(source_root_attr):
+        return path[len(source_root_attr):]
+    else:
+        return path
+
+def _rust_proto_aspect_impl(target, ctx):
+    if not hasattr(target, "proto"):
+        return None
+    source_root = ctx.rule.attr.proto_source_root
+    if source_root and source_root[-1:0] != "/":
+        source_root += "/"
+
+    sources = [
+        _compute_proto_source_path(f, source_root)
+        for f in target.proto.direct_sources
+    ]
+    transitive_sources = [
+        f[RustProtoProvider].transitive_proto_sources
+        for f in ctx.rule.attr.deps
+        if RustProtoProvider in f
+    ]
+    return RustProtoProvider(
+        proto_sources = sources,
+        transitive_proto_sources = depset(transitive = transitive_sources, direct = sources),
+    )
+
+_rust_proto_aspect = aspect(
+    _rust_proto_aspect_impl,
+    attr_aspects = ["deps"],
+)
+
+def _gen_lib(ctx, grpc, srcs, lib):
     """Generate a lib.rs file for the crates."""
     content = ["extern crate protobuf;"]
     if grpc:
         content.append("extern crate grpc;")
         content.append("extern crate tls_api;")
-    for dep in deps:
-        content.append("extern crate %s;" % dep.label.name)
-        content.append("pub use %s::*;" % dep.label.name)
     for f in srcs:
         content.append("pub mod %s;" % _file_stem(f))
         content.append("pub use %s::*;" % _file_stem(f))
@@ -62,7 +115,7 @@ def _gen_lib(ctx, grpc, deps, srcs, lib):
 def _expand_provider(lst, provider):
     return [getattr(el, provider) for el in lst if hasattr(el, provider)]
 
-def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
+def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
     # Create all the source in a specific folder
     toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
@@ -71,7 +124,7 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc,
     srcs = _generate_proto(
         ctx,
         descriptor_sets,
-        inputs = inputs,
+        protos = protos,
         imports = imports,
         output_dir = output_dir,
         proto_toolchain = toolchain,
@@ -80,7 +133,7 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc,
 
     # and lib.rs
     lib_rs = ctx.actions.declare_file("%s/lib.rs" % output_dir)
-    _gen_lib(ctx, grpc, [], inputs, lib_rs)
+    _gen_lib(ctx, grpc, protos, lib_rs)
     srcs.append(lib_rs)
 
     # And simulate rust_library behavior
@@ -108,9 +161,15 @@ def _rust_proto_compile(inputs, descriptor_sets, imports, crate_name, ctx, grpc,
 def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
     proto = _expand_provider(ctx.attr.deps, "proto")
-    rust_srcs = depset(transitive = [p.transitive_sources for p in proto]).to_list()
+    transitive_sources = [
+        f[RustProtoProvider].transitive_proto_sources
+        for f in ctx.attr.deps
+        if RustProtoProvider in f
+    ]
+
+    srcs = depset(transitive = transitive_sources)
     return _rust_proto_compile(
-        rust_srcs,
+        srcs,
         depset(transitive = [p.transitive_descriptor_sets for p in proto]),
         depset(transitive = [p.transitive_imports for p in proto]),
         ctx.label.name,
@@ -131,6 +190,7 @@ rust_proto_library = rule(
         "deps": attr.label_list(
             mandatory = True,
             providers = ["proto"],
+            aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(default = PROTO_COMPILE_DEPS),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -187,6 +247,7 @@ rust_grpc_library = rule(
         "deps": attr.label_list(
             mandatory = True,
             providers = ["proto"],
+            aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(default = GRPC_COMPILE_DEPS),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
