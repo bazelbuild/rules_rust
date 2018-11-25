@@ -49,7 +49,7 @@ RustProtoProvider = provider(
     },
 )
 
-def _compute_proto_source_path(file, source_root_attr = ""):
+def _compute_proto_source_path(file, source_root_attr):
     """Take the short path of file and make it suitable for protoc."""
     # For proto, they need to be requested with their absolute name to be
     # compatible with the descriptor_set passed by proto_library.
@@ -76,7 +76,7 @@ def _rust_proto_aspect_impl(target, ctx):
     if not hasattr(target, "proto"):
         return None
     source_root = ctx.rule.attr.proto_source_root
-    if source_root and source_root[-1:0] != "/":
+    if source_root and source_root[-1] != "/":
         source_root += "/"
 
     sources = [

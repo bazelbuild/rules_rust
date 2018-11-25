@@ -15,7 +15,7 @@
 """Toolchain for compiling rust stubs from protobug and gRPC."""
 
 def file_stem(f):
-    basename = f.rsplit("/", 2)[-1:][0]
+    basename = f.rsplit("/", 2)[-1]
     return basename.rsplit(".", 2)[0]
 
 def rust_generate_proto(
