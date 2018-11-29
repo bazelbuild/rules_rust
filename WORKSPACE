@@ -17,6 +17,13 @@ local_repository(
     path = "docs",
 )
 
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "eb5c57e4c12e68c0c20bc774bfbc60a568e800d025557bc4ea022c6479acc867",
+    strip_prefix = "bazel-skylib-0.6.0",
+    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz",
+)
+
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
 load("//rust:repositories.bzl", "rust_repositories")
 
@@ -36,9 +43,9 @@ rust_proto_repositories()
 # Used for documenting Rust rules.
 http_archive(
     name = "io_bazel_rules_sass",
-    sha256 = "76ae498b9a96fa029f026f8358ed44b93c934dde4691a798cb3a4137c307b7dc",
-    strip_prefix = "rules_sass-1.15.1",
-    url = "https://github.com/bazelbuild/rules_sass/archive/1.15.1.zip",
+    sha256 = "894d7928df8da85e263d743c8434d4c10ab0a3f0708fed0d53394e688e3faf70",
+    strip_prefix = "rules_sass-8ccf4f1c351928b55d5dddf3672e3667f6978d60",
+    url = "https://github.com/bazelbuild/rules_sass/archive/8ccf4f1c351928b55d5dddf3672e3667f6978d60.zip",
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
@@ -67,13 +74,6 @@ http_archive(
         "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/bc0091adceaf4642192a8dcfc46e3ae3e4560ea7.tar.gz",
         "https://github.com/bazelbuild/bazel-toolchains/archive/bc0091adceaf4642192a8dcfc46e3ae3e4560ea7.tar.gz",
     ],
-)
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "b5f6abe419da897b7901f90cbab08af958b97a8f3575b0d3dd062ac7ce78541f",
-    strip_prefix = "bazel-skylib-0.5.0",
-    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz",
 )
 
 load(":workspace.bzl", "bazel_version")

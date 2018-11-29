@@ -94,7 +94,7 @@ def collect_deps(deps, toolchain):
     """
 
     # TODO: Fix depset union (https://docs.bazel.build/versions/master/skylark/depsets.html)
-    direct_crates = depset()
+    direct_crates = []
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
@@ -116,13 +116,15 @@ def collect_deps(deps, toolchain):
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
     crate_list = transitive_crates.to_list()
-    transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
+    transitive_libs = depset(
+        [c.output for c in crate_list],
+        transitive = [transitive_staticlibs, transitive_dylibs],
+    )
 
-    # TODO: Avoid depset flattening.
-    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates.to_list()])
+    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates])
 
     return DepInfo(
-        direct_crates = direct_crates,
+        direct_crates = depset(direct_crates),
         indirect_crates = indirect_crates,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
