@@ -102,16 +102,16 @@ def collect_deps(deps, toolchain):
         if CrateInfo in dep:
             # This dependency is a rust_library
             direct_crates += [dep[CrateInfo]]
-            transitive_crates += [dep[CrateInfo]]
-            transitive_crates += dep[DepInfo].transitive_crates
-            transitive_dylibs += dep[DepInfo].transitive_dylibs
-            transitive_staticlibs += dep[DepInfo].transitive_staticlibs
+            transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])
+            transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
+            transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
             dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
             staticlibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
-            transitive_dylibs += dylibs
-            transitive_staticlibs += staticlibs
+            transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 

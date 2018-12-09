@@ -18,6 +18,7 @@ def _rust_toolchain_impl(ctx):
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
+        # TODO: Why are these attrs a list?
         rustc_lib = _get_files(ctx.attr.rustc_lib),
         rust_lib = _get_files(ctx.attr.rust_lib),
         staticlib_ext = ctx.attr.staticlib_ext,
