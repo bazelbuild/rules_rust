@@ -26,7 +26,7 @@ def _rust_doc_impl(ctx):
 
     rustdoc_inputs = (
         crate.srcs +
-        [c.output for c in dep_info.transitive_crates] +
+        [c.output for c in dep_info.transitive_crates.to_list()] +
         [toolchain.rust_doc] +
         toolchain.rustc_lib +
         toolchain.rust_lib

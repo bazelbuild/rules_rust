@@ -108,8 +108,8 @@ def collect_deps(deps, toolchain):
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
-            dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
-            staticlibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
+            dylibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
+            staticlibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
             transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         else:
@@ -294,7 +294,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     # Multiple dylibs can be present in the same directory, so deduplicate them.
     return depset([
         relative_path(output_dir, lib_dir)
-        for lib_dir in _get_dir_names(dep_info.transitive_dylibs)
+        for lib_dir in _get_dir_names(dep_info.transitive_dylibs.to_list())
     ])
 
 def _get_dir_names(files):

@@ -49,7 +49,7 @@ def rust_generate_proto(
 
     if not protos:
         fail("Protobuf compilation requested without inputs!")
-    paths = ["%s/%s" % (output_dir, file_stem(i)) for i in protos]
+    paths = ["%s/%s" % (output_dir, file_stem(i)) for i in protos.to_list()]
     outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
     output_directory = outs[0].dirname
 

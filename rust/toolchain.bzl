@@ -18,9 +18,8 @@ def _rust_toolchain_impl(ctx):
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
-        # TODO: Why are these attrs a list?
-        rustc_lib = _get_files(ctx.attr.rustc_lib),
-        rust_lib = _get_files(ctx.attr.rust_lib),
+        rustc_lib = ctx.attr.rustc_lib.files.to_list(),
+        rust_lib = ctx.attr.rust_lib.files.to_list(),
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
         target_triple = ctx.attr.target_triple,
@@ -36,8 +35,8 @@ rust_toolchain = rule(
     attrs = {
         "rustc": attr.label(allow_single_file = True),
         "rust_doc": attr.label(allow_single_file = True),
-        "rustc_lib": attr.label_list(allow_files = True),
-        "rust_lib": attr.label_list(allow_files = True),
+        "rustc_lib": attr.label(),
+        "rust_lib": attr.label(),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
         "os": attr.string(mandatory = True),
@@ -92,8 +91,8 @@ Example:
   rust_toolchain(
     name = "rust_cpuX_impl",
     rustc = "@rust_cpuX//:rustc",
-    rustc_lib = ["@rust_cpuX//:rustc_lib"],
-    rust_lib = ["@rust_cpuX//:rust_lib"],
+    rustc_lib = "@rust_cpuX//:rustc_lib",
+    rust_lib = "@rust_cpuX//:rust_lib",
     rust_doc = "@rust_cpuX//:rustdoc",
     staticlib_ext = ".a",
     dylib_ext = ".so",

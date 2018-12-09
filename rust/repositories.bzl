@@ -121,9 +121,9 @@ def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple):
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
-    rust_lib = ["@{workspace_name}//:rust_lib-{target_triple}"],
+    rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
-    rustc_lib = ["@{workspace_name}//:rustc_lib"],
+    rustc_lib = "@{workspace_name}//:rustc_lib",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
     os = "{system}",

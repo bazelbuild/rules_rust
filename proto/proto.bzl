@@ -51,6 +51,7 @@ RustProtoProvider = provider(
 
 def _compute_proto_source_path(file, source_root_attr):
     """Take the short path of file and make it suitable for protoc."""
+
     # For proto, they need to be requested with their absolute name to be
     # compatible with the descriptor_set passed by proto_library.
     # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
@@ -104,7 +105,7 @@ def _gen_lib(ctx, grpc, srcs, lib):
     if grpc:
         content.append("extern crate grpc;")
         content.append("extern crate tls_api;")
-    for f in srcs:
+    for f in srcs.to_list():
         content.append("pub mod %s;" % _file_stem(f))
         content.append("pub use %s::*;" % _file_stem(f))
         if grpc:
