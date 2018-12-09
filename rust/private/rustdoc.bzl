@@ -24,12 +24,14 @@ def _rust_doc_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    rustdoc_inputs = (
+    rustdoc_inputs = depset(
         crate.srcs +
         [c.output for c in dep_info.transitive_crates.to_list()] +
-        [toolchain.rust_doc] +
-        toolchain.rustc_lib +
-        toolchain.rust_lib
+        [toolchain.rust_doc],
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+        ],
     )
 
     output_dir = ctx.actions.declare_directory(ctx.label.name)

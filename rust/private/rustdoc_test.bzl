@@ -35,19 +35,21 @@ def _rust_doc_test_impl(ctx):
     )
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
-    compile_inputs = (
+    compile_inputs = depset(
         crate.srcs +
         [crate.output] +
         dep_info.transitive_libs +
         [toolchain.rust_doc] +
         [toolchain.rustc] +
-        toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
+        toolchain.crosstool_files,
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+        ],
     )
 
     runfiles = ctx.runfiles(
-        files = compile_inputs,
+        files = compile_inputs.to_list(),
         collect_data = True,
     )
     return struct(runfiles = runfiles)

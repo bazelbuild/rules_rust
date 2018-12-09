@@ -186,14 +186,16 @@ def rustc_compile_action(
         toolchain,
     )
 
-    compile_inputs = (
+    compile_inputs = depset(
         crate_info.srcs +
         getattr(ctx.files, "data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
-        toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
+        toolchain.crosstool_files,
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+        ],
     )
 
     args = ctx.actions.args()
@@ -232,7 +234,7 @@ def rustc_compile_action(
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
     if out_dir:
-        compile_inputs.append(out_dir)
+        compile_inputs = depset([out_dir], transitive = [compile_inputs])
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
     else:
         out_dir_env = ""
