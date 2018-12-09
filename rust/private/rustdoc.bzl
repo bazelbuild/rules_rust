@@ -36,7 +36,7 @@ def _rust_doc_impl(ctx):
     args = ctx.actions.args()
     args.add(crate.root.path)
     args.add("--crate-name", crate.name)
-    args.add("--output", output_dir)
+    args.add("--output", output_dir.path)
 
     # nb. rustdoc can't do anything with native link flags; we must omit them.
     add_crate_link_flags(args, dep_info)
