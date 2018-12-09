@@ -38,7 +38,6 @@ CrateInfo = provider(
 DepInfo = provider(
     fields = {
         "direct_crates": "depset[CrateInfo]",
-        "indirect_crates": "depset[CrateInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
@@ -115,17 +114,13 @@ def collect_deps(deps, toolchain):
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
-    crate_list = transitive_crates.to_list()
     transitive_libs = depset(
-        [c.output for c in crate_list],
+        [c.output for c in transitive_crates.to_list()],
         transitive = [transitive_staticlibs, transitive_dylibs],
     )
 
-    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates])
-
     return DepInfo(
         direct_crates = depset(direct_crates),
-        indirect_crates = indirect_crates,
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
