@@ -196,22 +196,22 @@ def rustc_compile_action(
 
     args = ctx.actions.args()
     args.add(crate_info.root)
-    args.add("--crate-name", crate_info.name)
-    args.add("--crate-type", crate_info.type)
+    args.add("--crate-name=" + crate_info.name)
+    args.add("--crate-type=" + crate_info.type)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
-    args.add("--codegen", "metadata=" + extra_filename)
-    args.add("--out-dir", output_dir)
-    args.add("--codegen", "extra-filename=" + extra_filename)
+    args.add("--codegen=metadata=" + extra_filename)
+    args.add("--out-dir=" + output_dir)
+    args.add("--codegen=extra-filename=" + extra_filename)
 
     compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
-    args.add("--codegen", "opt-level={}".format(compilation_mode.opt_level))
-    args.add("--codegen", "debuginfo={}".format(compilation_mode.debug_info))
+    args.add("--codegen=opt-level=" + compilation_mode.opt_level)
+    args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     args.add("--emit=dep-info,link")
-    args.add("--color", "always")
-    args.add("--target", toolchain.target_triple)
+    args.add("--color=always")
+    args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     args.add_all(rust_flags)
@@ -221,7 +221,7 @@ def rustc_compile_action(
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
     ld, link_args = _get_linker_and_args(ctx, rpaths)
-    args.add("--codegen", "linker=" + ld)
+    args.add("--codegen=linker=" + ld)
     args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
     add_native_link_flags(args, dep_info)
@@ -235,7 +235,7 @@ def rustc_compile_action(
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
     else:
         out_dir_env = ""
-    command = '{}{} "$@" --remap-path-prefix "$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
+    command = '{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
 
     ctx.actions.run_shell(
         command = command,
