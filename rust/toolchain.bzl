@@ -2,9 +2,6 @@
 The rust_toolchain rule definition and implementation.
 """
 
-def _get_files(labels):
-    return [f for l in labels for f in getattr(l, "files", [])]
-
 def _rust_toolchain_impl(ctx):
     compilation_mode_opts = {}
     for k, v in ctx.attr.opt_level.items():
@@ -18,13 +15,14 @@ def _rust_toolchain_impl(ctx):
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
-        rustc_lib = _get_files(ctx.attr.rustc_lib),
-        rust_lib = _get_files(ctx.attr.rust_lib),
+        rustc_lib = ctx.attr.rustc_lib,
+        rust_lib = ctx.attr.rust_lib,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
+        default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
     )
@@ -33,13 +31,27 @@ def _rust_toolchain_impl(ctx):
 rust_toolchain = rule(
     _rust_toolchain_impl,
     attrs = {
-        "rustc": attr.label(allow_single_file = True),
-        "rust_doc": attr.label(allow_single_file = True),
-        "rustc_lib": attr.label_list(allow_files = True),
-        "rust_lib": attr.label_list(allow_files = True),
+        "rustc": attr.label(
+            doc = "The rustc executable.",
+            allow_single_file = True,
+        ),
+        "rust_doc": attr.label(
+            doc = "The rustdoc executable.",
+            allow_single_file = True,
+        ),
+        "rustc_lib": attr.label(
+            doc = "Libraries used by rustc at runtime.",
+        ),
+        "rust_lib": attr.label(
+            doc = "The rust standard library.",
+        ),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
         "os": attr.string(mandatory = True),
+        "default_edition": attr.string(
+            doc = "The edition to use for rust_* rules that don't specify an edition.",
+            default = "2015",
+        ),
         "exec_triple": attr.string(),
         "target_triple": attr.string(),
         "_crosstool": attr.label(
@@ -91,8 +103,8 @@ Example:
   rust_toolchain(
     name = "rust_cpuX_impl",
     rustc = "@rust_cpuX//:rustc",
-    rustc_lib = ["@rust_cpuX//:rustc_lib"],
-    rust_lib = ["@rust_cpuX//:rust_lib"],
+    rustc_lib = "@rust_cpuX//:rustc_lib",
+    rust_lib = "@rust_cpuX//:rust_lib",
     rust_doc = "@rust_cpuX//:rustdoc",
     staticlib_ext = ".a",
     dylib_ext = ".so",

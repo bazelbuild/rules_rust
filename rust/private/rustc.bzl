@@ -32,13 +32,13 @@ CrateInfo = provider(
         "srcs": "List[File]: All source Files that are part of the crate.",
         "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
         "output": "File: The output File that will be produced, depends on crate type.",
+        "edition": "str: The edition of this crate.",
     },
 )
 
 DepInfo = provider(
     fields = {
         "direct_crates": "depset[CrateInfo]",
-        "indirect_crates": "depset[CrateInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
@@ -94,7 +94,7 @@ def collect_deps(deps, toolchain):
     """
 
     # TODO: Fix depset union (https://docs.bazel.build/versions/master/skylark/depsets.html)
-    direct_crates = depset()
+    direct_crates = []
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
@@ -102,28 +102,26 @@ def collect_deps(deps, toolchain):
         if CrateInfo in dep:
             # This dependency is a rust_library
             direct_crates += [dep[CrateInfo]]
-            transitive_crates += [dep[CrateInfo]]
-            transitive_crates += dep[DepInfo].transitive_crates
-            transitive_dylibs += dep[DepInfo].transitive_dylibs
-            transitive_staticlibs += dep[DepInfo].transitive_staticlibs
+            transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])
+            transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
+            transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])
         elif hasattr(dep, "cc"):
             # This dependency is a cc_library
-            dylibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.dylib_ext)]
-            staticlibs = [l for l in dep.cc.libs if l.basename.endswith(toolchain.staticlib_ext)]
-            transitive_dylibs += dylibs
-            transitive_staticlibs += staticlibs
+            dylibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
+            staticlibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
+            transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
-    crate_list = transitive_crates.to_list()
-    transitive_libs = depset([c.output for c in crate_list]) + transitive_staticlibs + transitive_dylibs
-
-    # TODO: Avoid depset flattening.
-    indirect_crates = depset([crate for crate in crate_list if crate not in direct_crates.to_list()])
+    transitive_libs = depset(
+        [c.output for c in transitive_crates.to_list()],
+        transitive = [transitive_staticlibs, transitive_dylibs],
+    )
 
     return DepInfo(
-        direct_crates = direct_crates,
-        indirect_crates = indirect_crates,
+        direct_crates = depset(direct_crates),
         transitive_crates = transitive_crates,
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
@@ -184,43 +182,46 @@ def rustc_compile_action(
         toolchain,
     )
 
-    compile_inputs = (
+    compile_inputs = depset(
         crate_info.srcs +
         getattr(ctx.files, "data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
-        toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
+        toolchain.crosstool_files,
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+        ],
     )
 
     args = ctx.actions.args()
     args.add(crate_info.root)
-    args.add("--crate-name", crate_info.name)
-    args.add("--crate-type", crate_info.type)
+    args.add("--crate-name=" + crate_info.name)
+    args.add("--crate-type=" + crate_info.type)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
-    args.add("--codegen", "metadata=" + extra_filename)
-    args.add("--out-dir", output_dir)
-    args.add("--codegen", "extra-filename=" + extra_filename)
+    args.add("--codegen=metadata=" + extra_filename)
+    args.add("--out-dir=" + output_dir)
+    args.add("--codegen=extra-filename=" + extra_filename)
 
     compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
-    args.add("--codegen", "opt-level={}".format(compilation_mode.opt_level))
-    args.add("--codegen", "debuginfo={}".format(compilation_mode.debug_info))
+    args.add("--codegen=opt-level=" + compilation_mode.opt_level)
+    args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     args.add("--emit=dep-info,link")
-    args.add("--color", "always")
-    args.add("--target", toolchain.target_triple)
+    args.add("--color=always")
+    args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     args.add_all(rust_flags)
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
+    add_edition_flags(args, crate_info)
 
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
     ld, link_args = _get_linker_and_args(ctx, rpaths)
-    args.add("--codegen", "linker=" + ld)
+    args.add("--codegen=linker=" + ld)
     args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
     add_native_link_flags(args, dep_info)
@@ -230,11 +231,11 @@ def rustc_compile_action(
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
     if out_dir:
-        compile_inputs.append(out_dir)
+        compile_inputs = depset([out_dir], transitive = [compile_inputs])
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
     else:
         out_dir_env = ""
-    command = '{}{} "$@" --remap-path-prefix "$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
+    command = '{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
 
     ctx.actions.run_shell(
         command = command,
@@ -260,6 +261,10 @@ def rustc_compile_action(
             runfiles = runfiles,
         ),
     ]
+
+def add_edition_flags(args, crate):
+    if crate.edition != "2015":
+        args.add("--edition={}".format(crate.edition))
 
 def _create_out_dir_action(ctx):
     tar_file = getattr(ctx.file, "out_dir_tar", None)
@@ -292,7 +297,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     # Multiple dylibs can be present in the same directory, so deduplicate them.
     return depset([
         relative_path(output_dir, lib_dir)
-        for lib_dir in _get_dir_names(dep_info.transitive_dylibs)
+        for lib_dir in _get_dir_names(dep_info.transitive_dylibs.to_list())
     ])
 
 def _get_dir_names(files):

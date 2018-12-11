@@ -1,5 +1,5 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
-load(":platform/triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
@@ -10,25 +10,27 @@ def rust_repositories():
     other hosts or for additional target triples.
     """
 
+    RUST_VERSION = "1.31.0"
+
     rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
@@ -121,9 +123,9 @@ def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple):
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
-    rust_lib = ["@{workspace_name}//:rust_lib-{target_triple}"],
+    rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
-    rustc_lib = ["@{workspace_name}//:rustc_lib"],
+    rustc_lib = "@{workspace_name}//:rustc_lib",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
     os = "{system}",

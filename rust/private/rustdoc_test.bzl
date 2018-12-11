@@ -35,19 +35,21 @@ def _rust_doc_test_impl(ctx):
     )
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
-    compile_inputs = (
+    compile_inputs = depset(
         crate.srcs +
         [crate.output] +
         dep_info.transitive_libs +
         [toolchain.rust_doc] +
         [toolchain.rustc] +
-        toolchain.rustc_lib +
-        toolchain.rust_lib +
-        toolchain.crosstool_files
+        toolchain.crosstool_files,
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+        ],
     )
 
     runfiles = ctx.runfiles(
-        files = compile_inputs,
+        files = compile_inputs.to_list(),
         collect_data = True,
     )
     return struct(runfiles = runfiles)
@@ -64,28 +66,34 @@ def _build_rustdoc_test_script(toolchain, dep_info, crate):
     link_flags = []
     link_search_flags = []
 
-    link_flags += ["--extern " + crate.name + "=" + crate.output.short_path]
-    link_flags += ["--extern " + c.name + "=" + c.output.short_path for c in d.direct_crates]
-    link_search_flags += ["-Ldependency={}".format(dirname(c.output.short_path)) for c in d.transitive_crates]
+    link_flags += ["--extern=" + crate.name + "=" + crate.output.short_path]
+    link_flags += ["--extern=" + c.name + "=" + c.output.short_path for c in d.direct_crates.to_list()]
+    link_search_flags += ["-Ldependency={}".format(dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
     link_flags += ["-ldylib=" + get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
-    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_dylibs]
+    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_dylibs.to_list()]
     link_flags += ["-lstatic=" + get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]
-    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_staticlibs]
+    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_staticlibs.to_list()]
+
+    edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
+
+    flags = link_search_flags + link_flags + edition_flags
 
     return """\
 #!/usr/bin/env bash
+
 set -e;
 
-{rust_doc} --test {crate_root} \\
-    --crate-name {crate_name} \\
-    {link_flags}
+{rust_doc} --test \\
+    {crate_root} \\
+    --crate-name={crate_name} \\
+    {flags}
 """.format(
         rust_doc = toolchain.rust_doc.path,
         crate_root = crate.root.path,
         crate_name = crate.name,
         # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
-        link_flags = " ".join(link_search_flags + link_flags),
+        flags = " \\\n    ".join(flags),
     )
 
 rust_doc_test = rule(

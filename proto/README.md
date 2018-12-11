@@ -166,8 +166,8 @@ rust_binary(
 
 ## <a name="custom-deps">Customizing dependencies
 
-These rules depends on the [`protobuf`](https://crates.io/protobuf) and
-the [`grpc`](https://crates.io/grpc) crates in addition to the [protobuf
+These rules depends on the [`protobuf`](https://crates.io/crates/protobuf) and
+the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
 compiler](https://github.com/google/protobuf). To do so the
 `rust_proto_repositories` import the given crates using file generated with
 [`cargo raze`](https://github.com/google/cargo-raze).

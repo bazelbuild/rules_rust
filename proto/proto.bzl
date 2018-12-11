@@ -51,6 +51,7 @@ RustProtoProvider = provider(
 
 def _compute_proto_source_path(file, source_root_attr):
     """Take the short path of file and make it suitable for protoc."""
+
     # For proto, they need to be requested with their absolute name to be
     # compatible with the descriptor_set passed by proto_library.
     # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
@@ -104,7 +105,7 @@ def _gen_lib(ctx, grpc, srcs, lib):
     if grpc:
         content.append("extern crate grpc;")
         content.append("extern crate tls_api;")
-    for f in srcs:
+    for f in srcs.to_list():
         content.append("pub mod %s;" % _file_stem(f))
         content.append("pub use %s::*;" % _file_stem(f))
         if grpc:
@@ -117,7 +118,7 @@ def _expand_provider(lst, provider):
 
 def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
     # Create all the source in a specific folder
-    toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
+    proto_toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
 
     # Generate the proto stubs
@@ -127,7 +128,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         protos = protos,
         imports = imports,
         output_dir = output_dir,
-        proto_toolchain = toolchain,
+        proto_toolchain = proto_toolchain,
         grpc = grpc,
     )
 
@@ -153,6 +154,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
             srcs = srcs,
             deps = compile_deps,
             output = rust_lib,
+            edition = proto_toolchain.edition,
         ),
         output_hash = output_hash,
     )
