@@ -100,14 +100,14 @@ def rust_generate_proto(
     return outs
 
 def _rust_proto_toolchain_impl(ctx):
-    toolchain = platform_common.ToolchainInfo(
+    return platform_common.ToolchainInfo(
         protoc = ctx.executable.protoc,
         proto_plugin = ctx.file.proto_plugin,
         proto_compile_deps = ctx.attr.proto_compile_deps,
         grpc_plugin = ctx.file.grpc_plugin,
         grpc_compile_deps = ctx.attr.grpc_compile_deps,
+        edition = ctx.attr.edition,
     )
-    return [toolchain]
 
 PROTO_COMPILE_DEPS = [
     "@io_bazel_rules_rust//proto/raze:protobuf",
@@ -125,11 +125,13 @@ rust_proto_toolchain = rule(
     _rust_proto_toolchain_impl,
     attrs = {
         "protoc": attr.label(
+            doc = "The protobuf compiler executable.",
             executable = True,
             cfg = "host",
             default = Label("@com_google_protobuf//:protoc"),
         ),
         "proto_plugin": attr.label(
+            doc = "The protoc plugin used to generate rust sources.",
             allow_single_file = True,
             cfg = "host",
             default = Label(
@@ -137,11 +139,16 @@ rust_proto_toolchain = rule(
             ),
         ),
         "grpc_plugin": attr.label(
+            doc = "The protoc plugin used to generate grpc rust sources.",
             allow_single_file = True,
             cfg = "host",
             default = Label(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
             ),
+        ),
+        "edition": attr.string(
+            doc = "The edition used by the generated rust source.",
+            default = "2015",
         ),
         "proto_compile_deps": attr.label_list(
             allow_files = True,

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rust_doc_impl(ctx):
@@ -39,6 +39,7 @@ def _rust_doc_impl(ctx):
     args.add(crate.root.path)
     args.add("--crate-name", crate.name)
     args.add("--output", output_dir.path)
+    add_edition_flags(args, crate)
 
     # nb. rustdoc can't do anything with native link flags; we must omit them.
     add_crate_link_flags(args, dep_info)
@@ -79,7 +80,10 @@ def _zip_action(ctx, input_dir, output_zip):
 rust_doc = rule(
     _rust_doc_impl,
     attrs = {
-        "dep": attr.label(mandatory = True),
+        "dep": attr.label(
+            doc = "The crate to generate documentation for.",
+            mandatory = True,
+        ),
         "markdown_css": attr.label_list(allow_files = [".css"]),
         "html_in_header": attr.label(allow_single_file = [".html", ".md"]),
         "html_before_content": attr.label(allow_single_file = [".html", ".md"]),

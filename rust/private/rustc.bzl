@@ -32,6 +32,7 @@ CrateInfo = provider(
         "srcs": "List[File]: All source Files that are part of the crate.",
         "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
         "output": "File: The output File that will be produced, depends on crate type.",
+        "edition": "str: The edition of this crate.",
     },
 )
 
@@ -214,8 +215,8 @@ def rustc_compile_action(
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     args.add_all(rust_flags)
-    args.add("--edition", _get_edition(ctx, toolchain))
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
+    add_edition_flags(args, crate_info)
 
     # Link!
     rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
@@ -261,11 +262,9 @@ def rustc_compile_action(
         ),
     ]
 
-def _get_edition(ctx, toolchain):
-    if getattr(ctx.attr, "edition"):
-        return ctx.attr.edition
-    else:
-        return toolchain.default_edition
+def add_edition_flags(args, crate):
+    if crate.edition != "2015":
+        args.add("--edition={}".format(crate.edition))
 
 def _create_out_dir_action(ctx):
     tar_file = getattr(ctx.file, "out_dir_tar", None)

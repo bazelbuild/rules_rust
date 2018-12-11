@@ -43,6 +43,12 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
         extension = extension,
     )
 
+def _get_edition(ctx, toolchain):
+    if getattr(ctx.attr, "edition"):
+        return ctx.attr.edition
+    else:
+        return toolchain.default_edition
+
 def _crate_root_src(ctx, file_name = "lib.rs"):
     """Finds the source file for the crate root."""
     srcs = ctx.files.srcs
@@ -86,14 +92,17 @@ def _rust_library_impl(ctx):
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             output = rust_lib,
+            edition = _get_edition(ctx, toolchain),
         ),
         output_hash = output_hash,
     )
 
 def _rust_binary_impl(ctx):
+    toolchain = find_toolchain(ctx)
+
     return rustc_compile_action(
         ctx = ctx,
-        toolchain = find_toolchain(ctx),
+        toolchain = toolchain,
         crate_info = CrateInfo(
             name = ctx.label.name,
             type = "bin",
@@ -101,6 +110,7 @@ def _rust_binary_impl(ctx):
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             output = ctx.outputs.executable,
+            edition = _get_edition(ctx, toolchain),
         ),
     )
 
@@ -112,6 +122,8 @@ def _rust_test_common(ctx, test_binary):
         ctx: The ctx object for the current target.
         test_binary: The File object for the test binary.
     """
+    toolchain = find_toolchain(ctx)
+
     if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         # Target has a single dependency but no srcs. Build the test binary using
         # the dependency's srcs.
@@ -123,6 +135,7 @@ def _rust_test_common(ctx, test_binary):
             srcs = parent_crate.srcs,
             deps = parent_crate.deps,
             output = test_binary,
+            edition = parent_crate.edition,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -133,11 +146,12 @@ def _rust_test_common(ctx, test_binary):
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             output = test_binary,
+            edition = _get_edition(ctx, toolchain),
         )
 
     return rustc_compile_action(
         ctx = ctx,
-        toolchain = find_toolchain(ctx),
+        toolchain = toolchain,
         crate_info = target,
         rust_flags = ["--test"],
     )
@@ -184,7 +198,7 @@ _rust_common_attrs = {
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
     "edition": attr.string(
-        doc="The rust edition to use for this crate.",
+        doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
     ),
     "rustc_flags": attr.string_list(),
     "version": attr.string(default = "0.0.0"),
