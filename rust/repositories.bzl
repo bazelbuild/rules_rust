@@ -10,25 +10,27 @@ def rust_repositories():
     other hosts or for additional target triples.
     """
 
+    RUST_VERSION = "1.31.0"
+
     rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
         extra_target_triples = [],
-        version = "1.27.2",
+        version = RUST_VERSION,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
