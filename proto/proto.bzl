@@ -190,6 +190,10 @@ rust_proto_library = rule(
     _rust_proto_library_impl,
     attrs = {
         "deps": attr.label_list(
+            doc = """
+                List of proto_library dependencies that will be built.
+                One crate for each proto_library will be created with the corresponding stubs.
+            """,
             mandatory = True,
             providers = ["proto"],
             aspects = [_rust_proto_aspect],
@@ -210,14 +214,8 @@ rust_proto_library = rule(
         "@io_bazel_rules_rust//proto:toolchain",
         "@io_bazel_rules_rust//rust:toolchain",
     ],
-)
-"""Builds a Rust library crate from a set of proto_library-s.
-
-Args:
-  name: name of the target.
-  deps: list of proto_library dependencies that will be built. One
-    crate for each proto_library will be created with the corresponding
-    stubs.
+    doc = """
+Builds a Rust library crate from a set of `proto_library`s.
 
 Example:
 
@@ -241,12 +239,17 @@ rust_binary(
     deps = [":rust"] + PROTO_COMPILE_DEPS,
 )
 ```
-"""
+""",
+)
 
 rust_grpc_library = rule(
     _rust_grpc_library_impl,
     attrs = {
         "deps": attr.label_list(
+            doc = """
+                List of proto_library dependencies that will be built.
+                One crate for each proto_library will be created with the corresponding gRPC stubs.
+            """,
             mandatory = True,
             providers = ["proto"],
             aspects = [_rust_proto_aspect],
@@ -267,14 +270,8 @@ rust_grpc_library = rule(
         "@io_bazel_rules_rust//proto:toolchain",
         "@io_bazel_rules_rust//rust:toolchain",
     ],
-)
-"""Builds a Rust library crate from a set of proto_library-s suitable for gRPC.
-
-Args:
-  name: name of the target.
-  deps: list of proto_library dependencies that will be built. One
-    crate for each proto_library will be created with the corresponding
-    gRPC stubs.
+    doc = """
+Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 
 Example:
 
@@ -298,4 +295,5 @@ rust_binary(
     deps = [":rust"] + GRPC_COMPILE_DEPS,
 )
 ```
-"""
+""",
+)

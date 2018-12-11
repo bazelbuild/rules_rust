@@ -187,22 +187,80 @@ def _rust_benchmark_impl(ctx):
 
     return struct(runfiles = runfiles)
 
+def _tidy(doc_string):
+    """Tidy excess whitespace in docstrings to not break index.md"""
+    return "\n".join([line.strip() for line in doc_string.splitlines()])
+
 _rust_common_attrs = {
-    "srcs": attr.label_list(allow_files = [".rs"]),
+    # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
+    # "name": attr.string(
+    #     doc = "This name will also be used as the name of the crate built by this rule.",
+    # `),
+    "srcs": attr.label_list(
+        doc = _tidy("""
+            List of Rust `.rs` source files used to build the library.
+
+            If `srcs` contains more than one file, then there must be a file either
+            named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
+            is the root of the crate to be passed to rustc to build this crate.
+        """),
+        allow_files = [".rs"],
+    ),
     "crate_root": attr.label(
+        doc = _tidy("""
+            The file that will be passed to `rustc` to be used for building this crate.
+
+            If `crate_root` is not set, then this rule will look for a `lib.rs` file (or `main.rs` for rust_binary)
+            or the single file in `srcs` if `srcs` contains only one file.
+        """),
         allow_single_file = [".rs"],
     ),
     "data": attr.label_list(
+        doc = _tidy("""
+            List of files used by this rule at runtime.
+
+            This attribute can be used to specify any data files that are embedded into
+            the library, such as via the
+            [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
+            macro.
+        """),
         allow_files = True,
     ),
-    "deps": attr.label_list(),
-    "crate_features": attr.string_list(),
+    "deps": attr.label_list(
+        doc = _tidy("""
+            List of other libraries to be linked to this library target.
+
+            These can be either other `rust_library` targets or `cc_library` targets if
+            linking a native library.
+        """),
+    ),
+    "crate_features": attr.string_list(
+        doc = _tidy("""
+            List of features to enable for this crate.
+
+            Features are defined in the code using the `#[cfg(feature = "foo")]`
+            configuration option. The features listed here will be passed to `rustc`
+            with `--cfg feature="${feature_name}"` flags.
+        """),
+    ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
     ),
-    "rustc_flags": attr.string_list(),
-    "version": attr.string(default = "0.0.0"),
+    "rustc_flags": attr.string_list(
+        doc = "List of compiler flags passed to `rustc`.",
+    ),
+    "version": attr.string(
+        doc = "A version to inject in the cargo environment variable.",
+        default = "0.0.0",
+    ),
     "out_dir_tar": attr.label(
+        doc = _tidy("""
+            An optional tar or tar.gz file unpacked and passed as OUT_DIR.
+
+            Many library crates in the Rust ecosystem require sources to be provided
+            to them in the form of an OUT_DIR argument. This argument can be used to
+            supply the contents of this directory.
+        """),
         allow_single_file = [
             ".tar",
             ".tar.gz",
@@ -212,7 +270,15 @@ _rust_common_attrs = {
 }
 
 _rust_library_attrs = {
-    "crate_type": attr.string(default = "rlib"),
+    "crate_type": attr.string(
+        doc = _tidy("""
+            The type of linkage to use for building this library.
+            Options include "lib", "rlib", "dylib", "cdylib", "staticlib", and "proc-macro".
+
+            The exact output file will depend on the toolchain used.
+        """),
+        default = "rlib",
+    ),
 }
 
 rust_library = rule(
@@ -222,115 +288,71 @@ rust_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
-)
-
-"""Builds a Rust library crate.
-
-Args:
-  name: This name will also be used as the name of the library crate built by
-    this rule.
-  srcs: List of Rust `.rs` source files used to build the library.
-
-    If `srcs` contains more than one file, then there must be a file either
-    named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
-    is the root of the crate to be passed to rustc to build this crate.
-  crate_root: The file that will be passed to `rustc` to be used for building
-    this crate.
-
-    If `crate_root` is not set, then this rule will look for a `lib.rs` file or
-    the single file in `srcs` if `srcs` contains only one file.
-  crate_type: The type of linkage to use for building this library. Options
-    include "lib", "rlib", "dylib", "cdylib", "staticlib", and "proc-macro"
-
-    The exact output file will depend on the toolchain used.
-  deps: List of other libraries to be linked to this library target.
-
-    These can be either other `rust_library` targets or `cc_library` targets if
-    linking a native library.
-  data: List of files used by this rule at runtime.
-
-    This attribute can be used to specify any data files that are embedded into
-    the library, such as via the
-    [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
-    macro.
-  crate_features: List of features to enable for this crate.
-
-    Features are defined in the code using the `#[cfg(feature = "foo")]`
-    configuration option. The features listed here will be passed to `rustc`
-    with `--cfg feature="${feature_name}"` flags.
-  rustc_flags: List of compiler flags passed to `rustc`.
-  version: a version to inject in the cargo environment variable.
-  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
-
-    Many library crates in the Rust ecosystem require sources to be provided
-    to them in the form of an OUT_DIR argument. This argument can be used to
-    supply the contents of this directory.
+    doc = """
+Builds a Rust library crate.
 
 Example:
-  Suppose you have the following directory structure for a simple Rust library
-  crate:
 
-  ```
-  [workspace]/
-      WORKSPACE
-      hello_lib/
-          BUILD
-          src/
-              greeter.rs
-              lib.rs
-  ```
+Suppose you have the following directory structure for a simple Rust library crate:
 
-  `hello_lib/src/greeter.rs`:
+```
+[workspace]/
+    WORKSPACE
+    hello_lib/
+        BUILD
+        src/
+            greeter.rs
+            lib.rs
+```
 
-  ```rust
-  pub struct Greeter {
-      greeting: String,
-  }
+`hello_lib/src/greeter.rs`:
+```rust
+pub struct Greeter {
+    greeting: String,
+}
 
-  impl Greeter {
-      pub fn new(greeting: &str) -> Greeter {
-          Greeter { greeting: greeting.to_string(), }
-      }
+impl Greeter {
+    pub fn new(greeting: &str) -> Greeter {
+        Greeter { greeting: greeting.to_string(), }
+    }
 
-      pub fn greet(&self, thing: &str) {
-          println!("{} {}", &self.greeting, thing);
-      }
-  }
-  ```
+    pub fn greet(&self, thing: &str) {
+        println!("{} {}", &self.greeting, thing);
+    }
+}
+```
 
-  `hello_lib/src/lib.rs`:
+`hello_lib/src/lib.rs`:
 
+```rust
+pub mod greeter;
+```
 
-  ```rust
-  pub mod greeter;
-  ```
+`hello_lib/BUILD`:
+```python
+package(default_visibility = ["//visibility:public"])
 
-  `hello_lib/BUILD`:
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
-  ```python
-  package(default_visibility = ["//visibility:public"])
+rust_library(
+    name = "hello_lib",
+    srcs = [
+        "src/greeter.rs",
+        "src/lib.rs",
+    ],
+)
+```
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
-
-  rust_library(
-      name = "hello_lib",
-      srcs = [
-          "src/greeter.rs",
-          "src/lib.rs",
-      ],
-  )
-  ```
-
-  Build the library:
-
-  ```
-  $ bazel build //hello_lib
-  INFO: Found 1 target...
-  Target //examples/rust/hello_lib:hello_lib up-to-date:
-    bazel-bin/examples/rust/hello_lib/libhello_lib.rlib
-  INFO: Elapsed time: 1.245s, Critical Path: 1.01s
-  ```
-"""
+Build the library:
+```
+$ bazel build //hello_lib
+INFO: Found 1 target...
+Target //examples/rust/hello_lib:hello_lib up-to-date:
+  bazel-bin/examples/rust/hello_lib/libhello_lib.rlib
+INFO: Elapsed time: 1.245s, Critical Path: 1.01s
+```
+""",
+)
 
 rust_binary = rule(
     _rust_binary_impl,
@@ -339,130 +361,91 @@ rust_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
-)
-
-"""Builds a Rust binary crate.
-
-Args:
-  name: This name will also be used as the name of the binary crate built by
-    this rule.
-  srcs: List of Rust `.rs` source files used to build the library.
-
-    If `srcs` contains more than one file, then there must be a file either
-    named `main.rs`. Otherwise, `crate_root` must be set to the source file that
-    is the root of the crate to be passed to rustc to build this crate.
-  crate_root: The file that will be passed to `rustc` to be used for building
-    this crate.
-
-    If `crate_root` is not set, then this rule will look for a `bin.rs` file or
-    the single file in `srcs` if `srcs` contains only one file.
-  deps: List of other libraries to be linked to this library target.
-
-    These must be `rust_library` targets.
-  data: List of files used by this rule at runtime.
-
-    This attribute can be used to specify any data files that are embedded into
-    the library, such as via the
-    [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
-    macro.
-  crate_features: List of features to enable for this crate.
-
-    Features are defined in the code using the `#[cfg(feature = "foo")]`
-    configuration option. The features listed here will be passed to `rustc`
-    with `--cfg feature="${feature_name}"` flags.
-  rustc_flags: List of compiler flags passed to `rustc`.
-  version: a version to inject in the cargo environment variable.
-  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
-
-    Many library crates in the Rust ecosystem require sources to be provided
-    to them in the form of an OUT_DIR argument. This argument can be used to
-    supply the contents of this directory.
+    doc = """
+Builds a Rust binary crate.
 
 Example:
-  Suppose you have the following directory structure for a Rust project with a
-  library crate, `hello_lib`, and a binary crate, `hello_world` that uses the
-  `hello_lib` library:
 
-  ```
-  [workspace]/
-      WORKSPACE
-      hello_lib/
-          BUILD
-          src/
-              lib.rs
-      hello_world/
-          BUILD
-          src/
-              main.rs
-  ```
+Suppose you have the following directory structure for a Rust project with a
+library crate, `hello_lib`, and a binary crate, `hello_world` that uses the
+`hello_lib` library:
 
-  `hello_lib/src/lib.rs`:
+```
+[workspace]/
+    WORKSPACE
+    hello_lib/
+        BUILD
+        src/
+            lib.rs
+    hello_world/
+        BUILD
+        src/
+            main.rs
+```
 
-  ```rust
-  pub struct Greeter {
-      greeting: String,
-  }
+`hello_lib/src/lib.rs`:
+```rust
+pub struct Greeter {
+    greeting: String,
+}
 
-  impl Greeter {
-      pub fn new(greeting: &str) -> Greeter {
-          Greeter { greeting: greeting.to_string(), }
-      }
+impl Greeter {
+    pub fn new(greeting: &str) -> Greeter {
+        Greeter { greeting: greeting.to_string(), }
+    }
 
-      pub fn greet(&self, thing: &str) {
-          println!("{} {}", &self.greeting, thing);
-      }
-  }
-  ```
+    pub fn greet(&self, thing: &str) {
+        println!("{} {}", &self.greeting, thing);
+    }
+}
+```
 
-  `hello_lib/BUILD`:
+`hello_lib/BUILD`:
+```python
+package(default_visibility = ["//visibility:public"])
 
-  ```python
-  package(default_visibility = ["//visibility:public"])
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+```
 
-  rust_library(
-      name = "hello_lib",
-      srcs = ["src/lib.rs"],
-  )
-  ```
+`hello_world/src/main.rs`:
+```rust
+extern crate hello_lib;
 
-  `hello_world/src/main.rs`:
+fn main() {
+    let hello = hello_lib::Greeter::new("Hello");
+    hello.greet("world");
+}
+```
 
-  ```rust
-  extern crate hello_lib;
+`hello_world/BUILD`:
+```python
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
-  fn main() {
-      let hello = hello_lib::Greeter::new("Hello");
-      hello.greet("world");
-  }
-  ```
+rust_binary(
+    name = "hello_world",
+    srcs = ["src/main.rs"],
+    deps = ["//hello_lib"],
+)
+```
 
-  `hello_world/BUILD`:
+Build and run `hello_world`:
+```
+$ bazel run //hello_world
+INFO: Found 1 target...
+Target //examples/rust/hello_world:hello_world up-to-date:
+  bazel-bin/examples/rust/hello_world/hello_world
+INFO: Elapsed time: 1.308s, Critical Path: 1.22s
 
-  ```python
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
-
-  rust_binary(
-      name = "hello_world",
-      srcs = ["src/main.rs"],
-      deps = ["//hello_lib"],
-  )
-  ```
-
-  Build and run `hello_world`:
-
-  ```
-  $ bazel run //hello_world
-  INFO: Found 1 target...
-  Target //examples/rust/hello_world:hello_world up-to-date:
-    bazel-bin/examples/rust/hello_world/hello_world
-  INFO: Elapsed time: 1.308s, Critical Path: 1.22s
-
-  INFO: Running command line: bazel-bin/examples/rust/hello_world/hello_world
-  Hello world
-  ```
-"""
+INFO: Running command line: bazel-bin/examples/rust/hello_world/hello_world
+Hello world
+```
+""",
+)
 
 rust_test = rule(
     _rust_test_impl,
@@ -472,167 +455,130 @@ rust_test = rule(
     host_fragments = ["cpp"],
     test = True,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
-)
-
-"""Builds a Rust test crate.
-
-Args:
-  name: This name will also be used as the name of the binary crate built by
-    this rule.
-  srcs: List of Rust `.rs` source files used to build the test.
-
-    If `srcs` contains more than one file, then there must be a file either
-    named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
-    is the root of the crate to be passed to rustc to build this crate.
-  crate_root: The file that will be passed to `rustc` to be used for building
-    this crate.
-
-    If `crate_root` is not set, then this rule will look for a `lib.rs` file or
-    the single file in `srcs` if `srcs` contains only one file.
-  deps: List of other libraries to be linked to this library target.
-
-    These must be `rust_library` targets.
-  data: List of files used by this rule at runtime.
-
-    This attribute can be used to specify any data files that are embedded into
-    the library, such as via the
-    [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
-    macro.
-  crate_features: List of features to enable for this crate.
-
-    Features are defined in the code using the `#[cfg(feature = "foo")]`
-    configuration option. The features listed here will be passed to `rustc`
-    with `--cfg feature="${feature_name}"` flags.
-  rustc_flags: List of compiler flags passed to `rustc`.
-  out_dir_tar: An optional tar or tar.gz file unpacked and passed as OUT_DIR.
-
-    Many library crates in the Rust ecosystem require sources to be provided
-    to them in the form of an OUT_DIR argument. This argument can be used to
-    supply the contents of this directory.
+    doc = """
+Builds a Rust test crate.
 
 Examples:
-  Suppose you have the following directory structure for a Rust library crate
-  with unit test code in the library sources:
 
-  ```
-  [workspace]/
-      WORKSPACE
-      hello_lib/
-          BUILD
-          src/
-              lib.rs
-  ```
+Suppose you have the following directory structure for a Rust library crate
+with unit test code in the library sources:
 
-  `hello_lib/src/lib.rs`:
+```
+[workspace]/
+    WORKSPACE
+    hello_lib/
+        BUILD
+        src/
+            lib.rs
+```
 
-  ```rust
-  pub struct Greeter {
-      greeting: String,
-  }
+`hello_lib/src/lib.rs`:
+```rust
+pub struct Greeter {
+    greeting: String,
+}
 
-  impl Greeter {
-      pub fn new(greeting: &str) -> Greeter {
-          Greeter { greeting: greeting.to_string(), }
-      }
+impl Greeter {
+    pub fn new(greeting: &str) -> Greeter {
+        Greeter { greeting: greeting.to_string(), }
+    }
 
-      pub fn greet(&self, thing: &str) {
-          println!("{} {}", &self.greeting, thing);
-      }
-  }
+    pub fn greet(&self, thing: &str) {
+        println!("{} {}", &self.greeting, thing);
+    }
+}
 
-  #[cfg(test)]
-  mod test {
-      use super::Greeter;
+#[cfg(test)]
+mod test {
+    use super::Greeter;
 
-      #[test]
-      fn test_greeting() {
-          let hello = Greeter::new("Hi");
-          assert_eq!("Hi Rust", hello.greeting("Rust"));
-      }
-  }
-  ```
+    #[test]
+    fn test_greeting() {
+        let hello = Greeter::new("Hi");
+        assert_eq!("Hi Rust", hello.greeting("Rust"));
+    }
+}
+```
 
-  To build and run the tests, simply add a `rust_test` rule with no `srcs` and
-  only depends on the `hello_lib` `rust_library` target:
+To build and run the tests, simply add a `rust_test` rule with no `srcs` and
+only depends on the `hello_lib` `rust_library` target:
 
-  `hello_lib/BUILD`:
+`hello_lib/BUILD`:
+```python
+package(default_visibility = ["//visibility:public"])
 
-  ```python
-  package(default_visibility = ["//visibility:public"])
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
 
-  rust_library(
-      name = "hello_lib",
-      srcs = ["src/lib.rs"],
-  )
+rust_test(
+    name = "hello_lib_test",
+    deps = [":hello_lib"],
+)
+```
 
-  rust_test(
-      name = "hello_lib_test",
-      deps = [":hello_lib"],
-  )
-  ```
+Run the test with `bazel build //hello_lib:hello_lib_test`.
 
-  Run the test with `bazel build //hello_lib:hello_lib_test`.
+### Example: `test` directory
 
-  ### Example: `test` directory
+Integration tests that live in the [`tests` directory][int-tests], they are
+essentially built as separate crates. Suppose you have the following directory
+structure where `greeting.rs` is an integration test for the `hello_lib`
+library crate:
 
-  Integration tests that live in the [`tests` directory][int-tests], they are
-  essentially built as separate crates. Suppose you have the following directory
-  structure where `greeting.rs` is an integration test for the `hello_lib`
-  library crate:
+[int-tests]: http://doc.rust-lang.org/book/testing.html#the-tests-directory
 
-  [int-tests]: http://doc.rust-lang.org/book/testing.html#the-tests-directory
+```
+[workspace]/
+    WORKSPACE
+    hello_lib/
+        BUILD
+        src/
+            lib.rs
+        tests/
+            greeting.rs
+```
 
-  ```
-  [workspace]/
-      WORKSPACE
-      hello_lib/
-          BUILD
-          src/
-              lib.rs
-          tests/
-              greeting.rs
-  ```
+`hello_lib/tests/greeting.rs`:
+```rust
+extern crate hello_lib;
 
-  `hello_lib/tests/greeting.rs`:
+use hello_lib;
 
-  ```rust
-  extern crate hello_lib;
+#[test]
+fn test_greeting() {
+    let hello = greeter::Greeter::new("Hello");
+    assert_eq!("Hello world", hello.greeting("world"));
+}
+```
 
-  use hello_lib;
+To build the `greeting.rs` integration test, simply add a `rust_test` target
+with `greeting.rs` in `srcs` and a dependency on the `hello_lib` target:
 
-  #[test]
-  fn test_greeting() {
-      let hello = greeter::Greeter::new("Hello");
-      assert_eq!("Hello world", hello.greeting("world"));
-  }
-  ```
+`hello_lib/BUILD`:
+```python
+package(default_visibility = ["//visibility:public"])
 
-  To build the `greeting.rs` integration test, simply add a `rust_test` target
-  with `greeting.rs` in `srcs` and a dependency on the `hello_lib` target:
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
-  `hello_lib/BUILD`:
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
 
-  ```python
-  package(default_visibility = ["//visibility:public"])
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+```
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
-
-  rust_library(
-      name = "hello_lib",
-      srcs = ["src/lib.rs"],
-  )
-
-  rust_test(
-      name = "greeting_test",
-      srcs = ["tests/greeting.rs"],
-      deps = [":hello_lib"],
-  )
-  ```
-
-  Run the test with `bazel build //hello_lib:hello_lib_test`.
-"""
+Run the test with `bazel build //hello_lib:hello_lib_test`.
+""",
+)
 
 rust_benchmark = rule(
     _rust_benchmark_impl,
@@ -641,117 +587,84 @@ rust_benchmark = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
-)
-
-"""Builds a Rust benchmark test.
+    doc = """
+Builds a Rust benchmark test.
 
 **Warning**: This rule is currently experimental. [Rust Benchmark
 tests][rust-bench] require the `Bencher` interface in the unstable `libtest`
 crate, which is behind the `test` unstable feature gate. As a result, using
-this rule would require using a nightly binary release of Rust. A
-`rust_toolchain` rule will be added in the [near future](#roadmap) to make it
-easy to use a custom Rust toolchain, such as a nightly release.
+this rule would require using a nightly binary release of Rust.
 
 [rust-bench]: https://doc.rust-lang.org/book/benchmark-tests.html
 
-Args:
-  name: This name will also be used as the name of the binary crate built by
-    this rule.
-  srcs: List of Rust `.rs` source files used to build the test.
-
-    If `srcs` contains more than one file, then there must be a file either
-    named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
-    is the root of the crate to be passed to rustc to build this crate.
-  crate_root: The file that will be passed to `rustc` to be used for building
-    this crate.
-
-    If `crate_root` is not set, then this rule will look for a `lib.rs` file or
-    the single file in `srcs` if `srcs` contains only one file.
-  deps: List of other libraries to be linked to this library target.
-
-    These must be `rust_library` targets.
-  data: List of files used by this rule at runtime.
-
-    This attribute can be used to specify any data files that are embedded into
-    the library, such as via the
-    [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
-    macro.
-  crate_features: List of features to enable for this crate.
-
-    Features are defined in the code using the `#[cfg(feature = "foo")]`
-    configuration option. The features listed here will be passed to `rustc`
-    with `--cfg feature="${feature_name}"` flags.
-  rustc_flags: List of compiler flags passed to `rustc`.
-
 Example:
-  Suppose you have the following directory structure for a Rust project with a
-  library crate, `fibonacci` with benchmarks under the `benches/` directory:
 
-  ```
-  [workspace]/
-      WORKSPACE
-      fibonacci/
-          BUILD
-          src/
-              lib.rs
-          benches/
-              fibonacci_bench.rs
-  ```
+Suppose you have the following directory structure for a Rust project with a
+library crate, `fibonacci` with benchmarks under the `benches/` directory:
 
-  `fibonacci/src/lib.rs`:
+```
+[workspace]/
+  WORKSPACE
+  fibonacci/
+      BUILD
+      src/
+          lib.rs
+      benches/
+          fibonacci_bench.rs
+```
 
-  ```rust
-  pub fn fibonacci(n: u64) -> u64 {
-      if n < 2 {
-          return n;
-      }
-      let mut n1: u64 = 0;
-      let mut n2: u64 = 1;
-      for _ in 1..n {
-          let sum = n1 + n2;
-          n1 = n2;
-          n2 = sum;
-      }
-      n2
-  }
-  ```
+`fibonacci/src/lib.rs`:
+```rust
+pub fn fibonacci(n: u64) -> u64 {
+    if n < 2 {
+        return n;
+    }
+    let mut n1: u64 = 0;
+    let mut n2: u64 = 1;
+    for _ in 1..n {
+        let sum = n1 + n2;
+        n1 = n2;
+        n2 = sum;
+    }
+    n2
+}
+```
 
-  `fibonacci/benches/fibonacci_bench.rs`:
+`fibonacci/benches/fibonacci_bench.rs`:
+```rust
+#![feature(test)]
 
-  ```rust
-  #![feature(test)]
+extern crate test;
+extern crate fibonacci;
 
-  extern crate test;
-  extern crate fibonacci;
+use test::Bencher;
 
-  use test::Bencher;
+#[bench]
+fn bench_fibonacci(b: &mut Bencher) {
+    b.iter(|| fibonacci::fibonacci(40));
+}
+```
 
-  #[bench]
-  fn bench_fibonacci(b: &mut Bencher) {
-      b.iter(|| fibonacci::fibonacci(40));
-  }
-  ```
+To build the benchmark test, add a `rust_benchmark` target:
 
-  To build the benchmark test, simply add a `rust_benchmark` target:
+`fibonacci/BUILD`:\
+```python
+package(default_visibility = ["//visibility:public"])
 
-  `fibonacci/BUILD`:
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
 
-  ```python
-  package(default_visibility = ["//visibility:public"])
+rust_library(
+  name = "fibonacci",
+  srcs = ["src/lib.rs"],
+)
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
+rust_benchmark(
+  name = "fibonacci_bench",
+  srcs = ["benches/fibonacci_bench.rs"],
+  deps = [":fibonacci"],
+)
+```
 
-  rust_library(
-      name = "fibonacci",
-      srcs = ["src/lib.rs"],
-  )
-
-  rust_benchmark(
-      name = "fibonacci_bench",
-      srcs = ["benches/fibonacci_bench.rs"],
-      deps = [":fibonacci"],
-  )
-  ```
-
-  Run the benchmark test using: `bazel build //fibonacci:fibonacci_bench`.
-"""
+Run the benchmark test using: `bazel run //fibonacci:fibonacci_bench`.
+""",
+)

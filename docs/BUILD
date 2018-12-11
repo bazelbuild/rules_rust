@@ -15,6 +15,7 @@ stardoc(
         "rust_doc_test",
         "rust_toolchain",
         "rust_proto_toolchain",
+        "rust_proto_library",
     ],
     deps = [
         "@io_bazel_rules_rust//proto:rules",

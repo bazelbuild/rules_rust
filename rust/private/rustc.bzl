@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "relative_path")
-
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
