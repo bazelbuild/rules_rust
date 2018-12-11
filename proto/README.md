@@ -211,9 +211,37 @@ rust_proto_toolchain(
 )
 ```
 
-Finally, now that you have your own toolchain, you need to register it by
+Now that you have your own toolchain, you need to register it by
 inserting the following statement in your `WORKSPACE` file:
 
 ```python
 register_toolchains(["//package:toolchain"])
 ```
+
+Finally, you might want to set the `rust_deps` attribute in
+`rust_proto_library` and `rust_grpc_library` to change the compile-time
+dependencies:
+
+```python
+rust_proto_library(
+    ...
+    rust_deps = ["//cargo_raze/remote:protobuf"],
+    ...
+)
+
+rust_grpc_library(
+    ...
+    rust_deps = [
+        "//cargo_raze/remote:protobuf",
+        "//cargo_raze/remote:grpc",
+        "//cargo_raze/remote:tls_api",
+        "//cargo_raze/remote:tls_api_stub",
+    ],
+    ...
+)
+```
+
+__Note__: Ideally, we would inject those dependencies from the toolchain,
+but due to [bazelbuild/bazel#6889](https://github.com/bazelbuild/bazel/issues/6889)
+all dependencies added via the toolchain ends-up being in the wrong
+configuration.

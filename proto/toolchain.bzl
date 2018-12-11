@@ -103,9 +103,7 @@ def _rust_proto_toolchain_impl(ctx):
     toolchain = platform_common.ToolchainInfo(
         protoc = ctx.executable.protoc,
         proto_plugin = ctx.file.proto_plugin,
-        proto_compile_deps = ctx.attr.proto_compile_deps,
         grpc_plugin = ctx.file.grpc_plugin,
-        grpc_compile_deps = ctx.attr.grpc_compile_deps,
     )
     return [toolchain]
 
@@ -121,6 +119,9 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
 ]
 """Default dependencies needed to compile gRPC stubs."""
 
+# TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
+# proto_compile_deps and grpc_compile_deps and remove them from the
+# rust_proto_library and grpc_proto_library.
 rust_proto_toolchain = rule(
     _rust_proto_toolchain_impl,
     attrs = {
@@ -143,16 +144,6 @@ rust_proto_toolchain = rule(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
             ),
         ),
-        "proto_compile_deps": attr.label_list(
-            allow_files = True,
-            cfg = "target",
-            default = [Label(l) for l in PROTO_COMPILE_DEPS],
-        ),
-        "grpc_compile_deps": attr.label_list(
-            allow_files = True,
-            cfg = "target",
-            default = [Label(l) for l in GRPC_COMPILE_DEPS],
-        ),
     },
 )
 
@@ -169,8 +160,6 @@ Args:
   optional_output_wrapper: An executable
   grpc_plugin: The location of the Rust protobuf compiler pugin to generate
     gRPC stubs.
-  proto_compile_deps: dependencies for rust compilation of protobuf stubs.
-  grpc_compile_deps: dependencies for rust compilation of gRPC stubs.
 
 Example:
   Suppose a new nicer gRPC plugin has came out. Using this new plugin can be
