@@ -1,4 +1,4 @@
-load("@//rust:rust.bzl", "rust_library", "rust_test", "rust_binary")
+load("@//rust:rust.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_library(
     name = "rusty",

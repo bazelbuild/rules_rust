@@ -40,31 +40,26 @@ load("//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
-# Used for documenting Rust rules.
-http_archive(
-    name = "io_bazel_rules_sass",
-    sha256 = "894d7928df8da85e263d743c8434d4c10ab0a3f0708fed0d53394e688e3faf70",
-    strip_prefix = "rules_sass-8ccf4f1c351928b55d5dddf3672e3667f6978d60",
-    url = "https://github.com/bazelbuild/rules_sass/archive/8ccf4f1c351928b55d5dddf3672e3667f6978d60.zip",
-)
-
-load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
-
-rules_sass_dependencies()
-
-load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
-
-sass_repositories()
-
+# Stardoc and its dependencies
 git_repository(
     name = "io_bazel_skydoc",
-    commit = "9bbdf62c03b5c3fed231604f78d3976f47753d79",  # 2018-11-20
     remote = "https://github.com/bazelbuild/skydoc.git",
+    tag = "0.2.0",
 )
 
-load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
-
+load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
 skydoc_repositories()
+
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+rules_sass_dependencies()
+
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+node_repositories()
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
+sass_repositories()
+# --- end stardoc
+
 
 http_archive(
     name = "bazel_toolchains",

@@ -32,15 +32,15 @@ rust_toolchain = rule(
     _rust_toolchain_impl,
     attrs = {
         "rustc": attr.label(
-            doc = "The rustc executable.",
+            doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
         ),
         "rust_doc": attr.label(
-            doc = "The rustdoc executable.",
+            doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
         ),
         "rustc_lib": attr.label(
-            doc = "Libraries used by rustc at runtime.",
+            doc = "The libraries used by rustc during compilation.",
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
@@ -68,53 +68,46 @@ rust_toolchain = rule(
             "fastbuild": "0",
         }),
     },
-)
+    doc = """
+Declares a Rust toolchain for use.
 
-"""Declares a Rust toolchain for use.
-
-This is used when porting the rust_rules to a new platform.
-
-Args:
-  name: The name of the toolchain instance.
-  rustc: The location of the `rustc` binary. Can be a direct source or a filegroup containing one
-      item.
-  rustdoc: The location of the `rustdoc` binary. Can be a direct source or a filegroup containing
-      one item.
-  rustc_lib: The libraries used by rustc.
-  rust_lib: The libraries used by rustc.
+This is for declaring a custom toolchain, eg. for configuring a particular version of rust or supporting a new platform.
 
 Example:
-  Suppose the core rust team has ported the compiler to a new target CPU, called `cpuX`. This
-  support can be used in Bazel by defining a new toolchain definition and declaration:
-  ```
-  load('@io_bazel_rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
-  toolchain(
-    name = "rust_cpuX",
-    exec_compatible_with = [
-      "@bazel_tools//platforms:cpuX",
-    ],
-    target_compatible_with = [
-      "@bazel_tools//platforms:cpuX",
-    ],
-    toolchain = ":rust_cpuX_impl",
-  )
+Suppose the core rust team has ported the compiler to a new target CPU, called `cpuX`. This
+support can be used in Bazel by defining a new toolchain definition and declaration:
 
-  rust_toolchain(
-    name = "rust_cpuX_impl",
-    rustc = "@rust_cpuX//:rustc",
-    rustc_lib = "@rust_cpuX//:rustc_lib",
-    rust_lib = "@rust_cpuX//:rust_lib",
-    rust_doc = "@rust_cpuX//:rustdoc",
-    staticlib_ext = ".a",
-    dylib_ext = ".so",
-    os = "linux",
-  )
-  ```
+```python
+load('@io_bazel_rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
-  Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass
-  it to the "--extra_toolchains" flag for Bazel, and it will be used.
+rust_toolchain(
+  name = "rust_cpuX_impl",
+  rustc = "@rust_cpuX//:rustc",
+  rustc_lib = "@rust_cpuX//:rustc_lib",
+  rust_lib = "@rust_cpuX//:rust_lib",
+  rust_doc = "@rust_cpuX//:rustdoc",
+  staticlib_ext = ".a",
+  dylib_ext = ".so",
+  os = "linux",
+)
 
-  See @io_bazel_rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository
-  with the actual binaries and libraries.
-"""
+toolchain(
+  name = "rust_cpuX",
+  exec_compatible_with = [
+    "@bazel_tools//platforms:cpuX",
+  ],
+  target_compatible_with = [
+    "@bazel_tools//platforms:cpuX",
+  ],
+  toolchain = ":rust_cpuX_impl",
+)
+```
+
+Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass
+it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
+
+See @io_bazel_rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository
+with the actual binaries and libraries.
+""",
+)

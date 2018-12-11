@@ -1,3 +1,5 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
@@ -9,4 +11,9 @@ exports_files([
 
 toolchain_type(
     name = "toolchain",
+)
+
+bzl_library(
+    name = "rules",
+    srcs = glob(["**/*.bzl"]),
 )

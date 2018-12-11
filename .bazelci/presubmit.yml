@@ -1,29 +1,26 @@
 ---
+default_targets: &default_targets
+- "..."
+- "@docs//..."
+- "@examples//..."
 platforms:
   ubuntu1404:
-    build_targets:
-    - "..."
-    - "@examples//..."
-    test_targets:
-    - "..."
-    - "@examples//..."
+    build_targets: *default_targets
+    test_targets: *default_targets
   ubuntu1604:
-    build_targets:
-    - "..."
-    - "@examples//..."
-    test_targets:
-    - "..."
-    - "@examples//..."
+    build_targets: *default_targets
+    test_targets: *default_targets
   macos:
-    targets: &targets
-    - "--" # Hack for https://github.com/bazelbuild/continuous-integration/pull/245
+    osx_targets: &osx_targets
+    - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
     - "..."
+    - "@docs//..."
     - "@examples//..."
     # Skip tests for dylib support on osx, since we don't support it yet.
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-    build_targets: *targets
-    test_targets: *targets
+    build_targets: *osx_targets
+    test_targets: *osx_targets
   rbe_ubuntu1604:
     test_targets:
     - "--"
