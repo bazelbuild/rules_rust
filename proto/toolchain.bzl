@@ -125,13 +125,13 @@ rust_proto_toolchain = rule(
     _rust_proto_toolchain_impl,
     attrs = {
         "protoc": attr.label(
-            doc = "The protobuf compiler executable.",
+            doc = "The location of the `protoc` binary. It should be an executable target.",
             executable = True,
             cfg = "host",
             default = Label("@com_google_protobuf//:protoc"),
         ),
         "proto_plugin": attr.label(
-            doc = "The protoc plugin used to generate rust sources.",
+            doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
             allow_single_file = True,
             cfg = "host",
             default = Label(
@@ -139,7 +139,7 @@ rust_proto_toolchain = rule(
             ),
         ),
         "grpc_plugin": attr.label(
-            doc = "The protoc plugin used to generate grpc rust sources.",
+            doc = "The location of the Rust protobuf compiler pugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "host",
             default = Label(
@@ -151,57 +151,54 @@ rust_proto_toolchain = rule(
             default = "2015",
         ),
         "proto_compile_deps": attr.label_list(
+            doc = "The compile-time dependencies for the generated protobuf stubs.",
             allow_files = True,
             cfg = "target",
             default = [Label(l) for l in PROTO_COMPILE_DEPS],
         ),
         "grpc_compile_deps": attr.label_list(
+            doc = "The compile-time dependencies for the generated gRPC stubs.",
             allow_files = True,
             cfg = "target",
             default = [Label(l) for l in GRPC_COMPILE_DEPS],
         ),
     },
-)
-
-"""Declares a Rust Proto toolchain for use.
+    doc =
+        """
+Declares a Rust Proto toolchain for use.
 
 This is used to configure proto compilation and can be used to set different
 protobuf compiler plugin.
 
-Args:
-  name: The name of the toolchain instance.
-  protoc: The location of the `protoc` binary. It should be an executable
-    target.
-  proto_plugin: The location of the Rust protobuf compiler plugin.
-  optional_output_wrapper: An executable
-  grpc_plugin: The location of the Rust protobuf compiler pugin to generate
-    gRPC stubs.
-  proto_compile_deps: dependencies for rust compilation of protobuf stubs.
-  grpc_compile_deps: dependencies for rust compilation of gRPC stubs.
-
 Example:
-  Suppose a new nicer gRPC plugin has came out. Using this new plugin can be
-  used in Bazel by defining a new toolchain definition and declaration:
-  ```
-  load('@io_bazel_rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
 
-  toolchain(
+Suppose a new nicer gRPC plugin has came out. The new plugin can be
+used in Bazel by defining a new toolchain definition and declaration:
+
+```python
+load('@io_bazel_rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
+
+rust_proto_toolchain(
+   name="rust_proto_impl",
+   grpc_plugin="@rust_grpc//:grpc_plugin",
+   grpc_compile_deps=["@rust_grpc//:grpc_deps"],
+)
+
+toolchain(
     name="rust_proto",
     exec_compatible_with = [
-      "@bazel_tools//platforms:cpuX",
+        "@bazel_tools//platforms:cpuX",
     ],
     target_compatible_with = [
-      "@bazel_tools//platforms:cpuX",
+        "@bazel_tools//platforms:cpuX",
     ],
-    toolchain = ":rust_proto_impl")
-  rust_proto_toolchain(
-    name="rust_proto_impl",
-    grpc_plugin="@rust_grpc//:grpc_plugin",
-    grpc_compile_deps=["@rust_grpc//:grpc_deps"])
-  ```
+    toolchain = ":rust_proto_impl",
+)
+```
 
-  Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass
-  it to the "--extra_toolchains" flag for Bazel, and it will be used.
+Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass
+it to the "--extra_toolchains" flag for Bazel, and it will be used.
 
-  See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
-"""
+See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
+""",
+)

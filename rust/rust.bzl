@@ -29,19 +29,19 @@ load(
 )
 
 rust_library = _rust_library
-""" See :private/rust.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
 
 rust_binary = _rust_binary
-""" See :private/rust.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
 
 rust_test = _rust_test
-""" See :private/rust.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
 
 rust_benchmark = _rust_benchmark
-""" See :private/rust.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
 
 rust_doc = _rust_doc
-""" See :private/rustdoc.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description. """
 
 rust_doc_test = _rust_doc_test
-""" See :private/rustdoc.bzl for a complete description. """
+""" See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description. """
