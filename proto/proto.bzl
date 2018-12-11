@@ -194,6 +194,10 @@ rust_proto_library = rule(
             aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(default = PROTO_COMPILE_DEPS),
+        "edition": attr.string(
+            doc = "The edition used by the generated source files.",
+            default = "2015",
+        ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(
             executable = True,
@@ -251,6 +255,10 @@ rust_grpc_library = rule(
             aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(default = GRPC_COMPILE_DEPS),
+        "edition": attr.string(
+            doc = "The edition used by the generated source files.",
+            default = "2015",
+        ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(
             executable = True,

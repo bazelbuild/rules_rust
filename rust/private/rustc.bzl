@@ -214,6 +214,7 @@ def rustc_compile_action(
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     args.add_all(rust_flags)
+    args.add("--edition", _get_edition(ctx, toolchain))
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
 
     # Link!
@@ -259,6 +260,12 @@ def rustc_compile_action(
             runfiles = runfiles,
         ),
     ]
+
+def _get_edition(ctx, toolchain):
+    if getattr(ctx.attr, "edition"):
+        return ctx.attr.edition
+    else:
+        return toolchain.default_edition
 
 def _create_out_dir_action(ctx):
     tar_file = getattr(ctx.file, "out_dir_tar", None)

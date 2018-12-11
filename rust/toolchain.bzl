@@ -22,6 +22,7 @@ def _rust_toolchain_impl(ctx):
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
+        default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
     )
@@ -47,6 +48,10 @@ rust_toolchain = rule(
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
         "os": attr.string(mandatory = True),
+        "default_edition": attr.string(
+            doc = "The edition to use for rust_* rules that don't specify an edition.",
+            default = "2015",
+        ),
         "exec_triple": attr.string(),
         "target_triple": attr.string(),
         "_crosstool": attr.label(

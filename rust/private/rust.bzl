@@ -183,6 +183,9 @@ _rust_common_attrs = {
     ),
     "deps": attr.label_list(),
     "crate_features": attr.string_list(),
+    "edition": attr.string(
+        doc="The rust edition to use for this crate.",
+    ),
     "rustc_flags": attr.string_list(),
     "version": attr.string(default = "0.0.0"),
     "out_dir_tar": attr.label(

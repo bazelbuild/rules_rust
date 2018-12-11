@@ -1,5 +1,3 @@
-extern crate runfiles;
-
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -13,6 +11,5 @@ fn main() {
     let mut buffer = String::new();
     f.read_to_string(&mut buffer).unwrap();
 
-    assert_eq!(buffer.len(), 427);
-    println!("This program's source is:\n```\n{}\n```", buffer);
+    println!("This program's source is {} characters long.", buffer.len());
 }
