@@ -198,7 +198,10 @@ rust_proto_library = rule(
             providers = ["proto"],
             aspects = [_rust_proto_aspect],
         ),
-        "rust_deps": attr.label_list(default = PROTO_COMPILE_DEPS),
+        "rust_deps": attr.label_list(
+            doc = "The crates the generated library depends on.",
+            default = PROTO_COMPILE_DEPS,
+        ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(
             executable = True,
@@ -254,7 +257,10 @@ rust_grpc_library = rule(
             providers = ["proto"],
             aspects = [_rust_proto_aspect],
         ),
-        "rust_deps": attr.label_list(default = GRPC_COMPILE_DEPS),
+        "rust_deps": attr.label_list(
+            doc = "The crates the generated library depends on.",
+            default = GRPC_COMPILE_DEPS
+        ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(
             executable = True,
