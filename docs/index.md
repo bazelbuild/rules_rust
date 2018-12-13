@@ -358,6 +358,80 @@ Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation t
 </table>
 
 
+<a name="#rust_grpc_library"></a>
+## rust_grpc_library
+
+<pre>
+rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>)
+</pre>
+
+
+Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
+
+Example:
+
+```
+load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
+load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
+
+proto_library(
+    name = "my_proto",
+    srcs = ["my.proto"]
+)
+
+rust_grpc_library(
+    name = "rust",
+    deps = [":my_proto"],
+)
+
+rust_binary(
+    name = "my_service",
+    srcs = ["my_service.rs"],
+    deps = [":rust"] + GRPC_COMPILE_DEPS,
+)
+```
+
+
+### Attributes
+
+<table class="params-table">
+  <colgroup>
+    <col class="col-param" />
+    <col class="col-description" />
+  </colgroup>
+  <tbody>
+    <tr id="rust_grpc_library-name">
+      <td><code>name</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#name">Name</a>; required
+        <p>
+          A unique name for this target.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_grpc_library-deps">
+      <td><code>deps</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a>; required
+        <p>
+          List of proto_library dependencies that will be built.
+                One crate for each proto_library will be created with the corresponding gRPC stubs.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_grpc_library-rust_deps">
+      <td><code>rust_deps</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a>; optional
+        <p>
+          The crates the generated library depends on.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
 <a name="#rust_library"></a>
 ## rust_library
 
@@ -632,6 +706,9 @@ rust_binary(
       <td><code>rust_deps</code></td>
       <td>
         <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a>; optional
+        <p>
+          The crates the generated library depends on.
+        </p>
       </td>
     </tr>
   </tbody>
