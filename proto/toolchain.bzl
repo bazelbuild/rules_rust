@@ -103,11 +103,9 @@ def _rust_proto_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(
         protoc = ctx.executable.protoc,
         proto_plugin = ctx.file.proto_plugin,
-        proto_compile_deps = ctx.attr.proto_compile_deps,
         grpc_plugin = ctx.file.grpc_plugin,
-        grpc_compile_deps = ctx.attr.grpc_compile_deps,
         edition = ctx.attr.edition,
-    )
+   )
 
 PROTO_COMPILE_DEPS = [
     "@io_bazel_rules_rust//proto/raze:protobuf",
@@ -121,6 +119,9 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
 ]
 """Default dependencies needed to compile gRPC stubs."""
 
+# TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
+# proto_compile_deps and grpc_compile_deps and remove them from the
+# rust_proto_library and grpc_proto_library.
 rust_proto_toolchain = rule(
     _rust_proto_toolchain_impl,
     attrs = {
@@ -139,7 +140,7 @@ rust_proto_toolchain = rule(
             ),
         ),
         "grpc_plugin": attr.label(
-            doc = "The location of the Rust protobuf compiler pugin to generate rust gRPC stubs.",
+            doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "host",
             default = Label(
