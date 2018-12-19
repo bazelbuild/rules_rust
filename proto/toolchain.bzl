@@ -151,18 +151,6 @@ rust_proto_toolchain = rule(
             doc = "The edition used by the generated rust source.",
             default = "2015",
         ),
-        "proto_compile_deps": attr.label_list(
-            doc = "The compile-time dependencies for the generated protobuf stubs.",
-            allow_files = True,
-            cfg = "target",
-            default = [Label(l) for l in PROTO_COMPILE_DEPS],
-        ),
-        "grpc_compile_deps": attr.label_list(
-            doc = "The compile-time dependencies for the generated gRPC stubs.",
-            allow_files = True,
-            cfg = "target",
-            default = [Label(l) for l in GRPC_COMPILE_DEPS],
-        ),
     },
     doc =
         """
