@@ -28,10 +28,6 @@ toolchain(
 
 rust_proto_toolchain(name = "default-proto-toolchain-impl")
 
-#exports_files([
-#    "toolchain.bzl",
-#])
-
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
