@@ -36,8 +36,8 @@ load(
     "//proto:toolchain.bzl",
     "GRPC_COMPILE_DEPS",
     "PROTO_COMPILE_DEPS",
-    _file_stem = "file_stem",
     _generate_proto = "rust_generate_proto",
+    _generated_file_stem = "generated_file_stem",
 )
 load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("//rust:private/utils.bzl", "find_toolchain")
@@ -106,11 +106,11 @@ def _gen_lib(ctx, grpc, srcs, lib):
         content.append("extern crate grpc;")
         content.append("extern crate tls_api;")
     for f in srcs.to_list():
-        content.append("pub mod %s;" % _file_stem(f))
-        content.append("pub use %s::*;" % _file_stem(f))
+        content.append("pub mod %s;" % _generated_file_stem(f))
+        content.append("pub use %s::*;" % _generated_file_stem(f))
         if grpc:
-            content.append("pub mod %s_grpc;" % _file_stem(f))
-            content.append("pub use %s_grpc::*;" % _file_stem(f))
+            content.append("pub mod %s_grpc;" % _generated_file_stem(f))
+            content.append("pub use %s_grpc::*;" % _generated_file_stem(f))
     ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):

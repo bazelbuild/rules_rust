@@ -14,8 +14,9 @@
 
 """Toolchain for compiling rust stubs from protobug and gRPC."""
 
-def file_stem(f):
+def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
+    basename = basename.replace("-", "_")
     return basename.rsplit(".", 2)[0]
 
 def rust_generate_proto(
@@ -49,7 +50,7 @@ def rust_generate_proto(
 
     if not protos:
         fail("Protobuf compilation requested without inputs!")
-    paths = ["%s/%s" % (output_dir, file_stem(i)) for i in protos.to_list()]
+    paths = ["%s/%s" % (output_dir, generated_file_stem(i)) for i in protos.to_list()]
     outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
     output_directory = outs[0].dirname
 
