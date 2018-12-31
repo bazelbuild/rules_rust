@@ -60,17 +60,8 @@ rust_proto_toolchain(
     name = "toolchain-impl",
     # Path to the protobuf compiler.
     protoc = "@com_google_protobuf//:protoc",
-    # Compile-time dependencies for gRPC crates.
-    grpc_compile_deps = [
-      "//cargo_raze/remote:protobuf",
-      "//cargo_raze/remote:grpc",
-      "//cargo_raze/remote:tls_api",
-      "//cargo_raze/remote:tls_api_stub",
-    ],
     # Protobuf compiler plugin to generate rust gRPC stubs.
     grpc_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust_grpc",
-    # Compile-time dependencies for protobuf crates.
-    proto_compile_deps = ["//cargo_raze/remote:protobuf"],
     # Protobuf compiler plugin to generate rust protobuf stubs.
     proto_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust",
 )
@@ -86,7 +77,7 @@ Now that you have your own toolchain, you need to register it by
 inserting the following statement in your `WORKSPACE` file:
 
 ```python
-register_toolchains(["//package:toolchain"])
+register_toolchains("//package:toolchain")
 ```
 
 Finally, you might want to set the `rust_deps` attribute in
