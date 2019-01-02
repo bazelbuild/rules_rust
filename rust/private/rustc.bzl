@@ -235,7 +235,30 @@ def rustc_compile_action(
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
     else:
         out_dir_env = ""
-    command = '{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(out_dir_env, toolchain.rustc.path)
+
+    # Similar awkward construction to prepend execroot to the crate-root to set `CARGO_MANIFEST_DIR`
+    #
+    # See https://github.com/google/cargo-raze/issues/71#issuecomment-433225853 for the rationale as
+    # to why
+    #
+    # In brief:
+    #
+    # Certain rust build processes expect to find files from the environment variable
+    # `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera, asakuma.
+    #
+    # The compiler and by extension proc-macros see the current working directory as the Bazel exec
+    # root. Therefore, in order to fix this without an upstream code change, we have to set
+    # `$CARGO_MANIFEST_DIR`.
+    #
+    # As such we attempt to infer `$CARGO_MANIFEST_DIR`.
+    # Inference cannot be derived from `attr.crate_root`, as this points at a source file which may or
+    # may not follow the `src/lib.rs` convention. As such we use `ctx.build_file_path` mapped into the
+    # `exec_root`. Since we cannot (seemingly) get the `exec_root` from skylark, we cheat a little
+    # and use `$(pwd)` which resolves the `exec_root` at action execution time.
+    package_dir = ctx.build_file_path[:ctx.build_file_path.rfind("/")]
+    manifest_dir_env = "CARGO_MANIFEST_DIR=$(pwd)/{} ".format(package_dir)
+    command = '{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(
+           manifest_dir_env, out_dir_env, toolchain.rustc.path)
 
     ctx.actions.run_shell(
         command = command,
