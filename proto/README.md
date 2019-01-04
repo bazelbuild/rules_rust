@@ -48,7 +48,7 @@ simply use [`cargo raze`](https://github.com/google/cargo-raze) in a more
 complex scenario (with more dependencies), you must redefine those
 dependencies.
 
-To do this, once you imported th needed dependencies (see our
+To do this, once you've imported the needed dependencies (see our
 [Cargo.toml](raze/Cargo.toml) file to see the default dependencies), you
 need to point to the correct toolchain, to do so you can create a BUILD
 file with the toolchain definition, for example:
