@@ -44,7 +44,7 @@ rust_proto_repositories()
 git_repository(
     name = "io_bazel_skydoc",
     remote = "https://github.com/bazelbuild/skydoc.git",
-    tag = "0.2.0",
+    commit = "82fdbfe797c6591d8732df0c0389a2b1c3e50992",  # 2018-12-12
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
