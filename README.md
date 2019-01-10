@@ -37,8 +37,6 @@ with an overview [here](proto/README.md).
 
 To use the Rust rules, add the following to your `WORKSPACE` file to add the external repositories for the Rust toolchain:
 
-The rules are under active development, as such the lastest commit on the master branch should be used.
-
 ```python
 http_archive(
     name = "io_bazel_rules_rust",
@@ -51,11 +49,12 @@ http_archive(
 )
 
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
-
 rust_repositories()
 
+load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+bazel_version(name = "bazel_version")
 ```
-nb. `master` currently requires Bazel >= 0.17.0 to work.
+The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 0.17.0.
 
 ### External Dependencies
 
