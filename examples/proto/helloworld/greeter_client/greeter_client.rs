@@ -35,7 +35,7 @@ fn parse_args() -> (String, u16) {
 
 fn main() {
     let (name, port) = parse_args();
-    let client = GreeterClient::new_plain("::1", port, Default::default()).unwrap();
+    let client = GreeterClient::new_plain("localhost", port, Default::default()).unwrap();
     let mut req = HelloRequest::new();
     req.set_name(name);
     let resp = client.say_hello(grpc::RequestOptions::new(), req);
