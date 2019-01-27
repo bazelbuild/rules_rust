@@ -157,7 +157,7 @@ def raze_fetch_remote_crates():
         type = "tar.gz",
         sha256 = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2",
         strip_prefix = "libloading-0.5.0",
-        build_file = Label("//bindgen/raze/remote:libloading-0.5.0.BUILD")
+        build_file = Label("//bindgen/raze:libloading.BUILD")
     )
 
     _new_http_archive(

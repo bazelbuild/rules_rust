@@ -64,7 +64,8 @@ genrule(
         + " export OUT_DIR=$$PWD/bindgen_out_dir_outputs;"
         + " export BINARY_PATH=\"$$PWD/$(location :bindgen_build_script)\";"
         + " export OUT_TAR=$$PWD/$@;"
-        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && tar -czf $$OUT_TAR -C $$OUT_DIR .)"
+        + " export PATH=$$PATH:/bin/;"
+        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && /bin/tar -czf $$OUT_TAR -C $$OUT_DIR .)"
 )
 
 rust_binary(

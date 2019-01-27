@@ -53,7 +53,6 @@ cc_library(
     )
 
     # TODO(marco):
-    #  1. Vendor bindgen with raze...
     #  2. Make rustfmt optional
     raze_fetch_remote_crates()
     maybe(
@@ -62,11 +61,6 @@ cc_library(
         path = "/home/marco/.cargo",
         build_file_content = """
 package(default_visibility = ["//visibility:public"])
-
-sh_binary(
-    name = "bindgen",
-    srcs = ["bin/bindgen"],
-)
 
 sh_binary(
     name = "rustfmt",

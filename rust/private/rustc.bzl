@@ -258,7 +258,10 @@ def rustc_compile_action(
     package_dir = ctx.build_file_path[:ctx.build_file_path.rfind("/")]
     manifest_dir_env = "CARGO_MANIFEST_DIR=$(pwd)/{} ".format(package_dir)
     command = '{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(
-           manifest_dir_env, out_dir_env, toolchain.rustc.path)
+        manifest_dir_env,
+        out_dir_env,
+        toolchain.rustc.path,
+    )
 
     ctx.actions.run_shell(
         command = command,
@@ -297,7 +300,7 @@ def _create_out_dir_action(ctx):
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     ctx.actions.run_shell(
         # TODO: Remove system tar usage
-        command = "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
+        command = "rm -fr {dir} && mkdir {dir} && env PATH=$PATH:/bin tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
         inputs = [tar_file],
         outputs = [out_dir],
         use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
