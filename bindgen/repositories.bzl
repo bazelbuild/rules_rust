@@ -30,6 +30,7 @@ def rust_bindgen_repositories():
     native.register_toolchains("@io_bazel_rules_rust//bindgen:example-bindgen-toolchain")
 
 def _linux_rust_bindgen_repositories():
+    # Releases @ http://releases.llvm.org/download.html
     maybe(
         http_archive,
         name = "clang",
