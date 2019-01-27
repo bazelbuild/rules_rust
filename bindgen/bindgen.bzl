@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
 def rust_bindgen_library(name, header, cc_lib, **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library."""
+
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
@@ -29,46 +29,7 @@ def rust_bindgen_library(name, header, cc_lib, **kwargs):
         deps = [cc_lib],
     )
 
-def _rust_bindgen_toolchain(ctx):
-    return platform_common.ToolchainInfo(
-        bindgen = ctx.executable.bindgen,
-        clang = ctx.executable.clang,
-        libclang = ctx.attr.libclang,
-        libstdcxx = ctx.attr.libstdcxx,
-        rustfmt = ctx.executable.rustfmt,
-    )
-
-rust_bindgen_toolchain = rule(
-    _rust_bindgen_toolchain,
-    attrs = {
-        "bindgen": attr.label(
-            doc = "The label of a `bindgen` executable.",
-            executable = True,
-            cfg = "host",
-        ),
-        "rustfmt": attr.label(
-            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
-            executable = True,
-            cfg = "host",
-            mandatory = False,
-        ),
-        "clang": attr.label(
-            doc = "The label of a `clang` executable.",
-            executable = True,
-            cfg = "host",
-        ),
-        "libclang": attr.label(
-            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
-            providers = ["cc"],
-        ),
-        "libstdcxx": attr.label(
-            doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
-            providers = ["cc"],
-        ),
-    },
-)
-
-def _rust_bindgen(ctx):
+def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
     header = ctx.file.header
@@ -90,6 +51,7 @@ def _rust_bindgen(ctx):
 
     output = ctx.outputs.out
 
+    # libclang should only have 1 output file
     libclang_dir = libclang.cc.libs.to_list()[0].dirname
     include_directories = depset(
         [f.dirname for f in cc_lib.cc.transitive_headers],
@@ -140,7 +102,7 @@ def _rust_bindgen(ctx):
         )
 
 rust_bindgen = rule(
-    _rust_bindgen,
+    _rust_bindgen_impl,
     doc = "Generates a rust source file from a cc_library and a header.",
     attrs = {
         "header": attr.label(
@@ -162,4 +124,44 @@ rust_bindgen = rule(
     toolchains = [
         "@io_bazel_rules_rust//bindgen:bindgen_toolchain",
     ],
+)
+
+def _rust_bindgen_toolchain_impl(ctx):
+    return platform_common.ToolchainInfo(
+        bindgen = ctx.executable.bindgen,
+        clang = ctx.executable.clang,
+        libclang = ctx.attr.libclang,
+        libstdcxx = ctx.attr.libstdcxx,
+        rustfmt = ctx.executable.rustfmt,
+    )
+
+rust_bindgen_toolchain = rule(
+    _rust_bindgen_toolchain_impl,
+    doc = "The tools required for the `rust_bindgen` rule.",
+    attrs = {
+        "bindgen": attr.label(
+            doc = "The label of a `bindgen` executable.",
+            executable = True,
+            cfg = "host",
+        ),
+        "rustfmt": attr.label(
+            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
+            executable = True,
+            cfg = "host",
+            mandatory = False,
+        ),
+        "clang": attr.label(
+            doc = "The label of a `clang` executable.",
+            executable = True,
+            cfg = "host",
+        ),
+        "libclang": attr.label(
+            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            providers = ["cc"],
+        ),
+        "libstdcxx": attr.label(
+            doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
+            providers = ["cc"],
+        ),
+    },
 )
