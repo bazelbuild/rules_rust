@@ -20,12 +20,16 @@ def maybe(workspace_rule, **kwargs):
         workspace_rule(**kwargs)
 
 def rust_bindgen_repositories():
-    # nb. The bindgen rule should work on any platform.
-    _linux_rust_bindgen_repositories()
-
-def _linux_rust_bindgen_repositories():
     """Declare dependencies needed for bindgen."""
 
+    # nb. The bindgen rule itself should work on any platform.
+    _linux_rust_bindgen_repositories()
+
+    raze_fetch_remote_crates()
+
+    native.register_toolchains("@io_bazel_rules_rust//bindgen:example-bindgen-toolchain")
+
+def _linux_rust_bindgen_repositories():
     maybe(
         http_archive,
         name = "clang",
@@ -35,41 +39,10 @@ def _linux_rust_bindgen_repositories():
         build_file = "@//bindgen:clang.BUILD",
     )
 
-    # TODO: We should be able to pull libstdc++ out of the cc_toolchain eventually.
+    # TODO: We should be able to pull libstdc++ from the cc_toolchain eventually.
     maybe(
         native.new_local_repository,
         name = "local_linux",
         path = "/usr/lib/x86_64-linux-gnu",
-        build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-cc_library(
-    name = "libstdc++",
-    srcs = [
-        "libstdc++.so.6",
-    ],
-)
-""",
-    )
-
-    # TODO(marco):
-    #  2. Make rustfmt optional
-    raze_fetch_remote_crates()
-    maybe(
-        native.new_local_repository,
-        name = "local_cargo",
-        path = "/home/marco/.cargo",
-        build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-sh_binary(
-    name = "rustfmt",
-    srcs = ["bin/rustfmt"],
-)
-""",
-    )
-
-    # Register toolchains
-    native.register_toolchains(
-        "@io_bazel_rules_rust//bindgen:example-bindgen-toolchain",
+        build_file= "@//bindgen:local_linux.BUILD"
     )

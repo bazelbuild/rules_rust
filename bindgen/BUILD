@@ -10,7 +10,6 @@ rust_bindgen_toolchain(
     clang = "@clang//:clang",
     libclang = "@clang//:libclang.so",
     libstdcxx = "@local_linux//:libstdc++",
-    rustfmt = "@local_cargo//:rustfmt",
 )
 
 toolchain(

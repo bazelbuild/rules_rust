@@ -54,6 +54,7 @@ rust_bindgen_toolchain = rule(
         "rustfmt": attr.label(
             executable = True,
             cfg = "host",
+            mandatory = False,
         ),
     },
 )
@@ -89,7 +90,10 @@ def _rust_bindgen(ctx):
         [f.dirname for f in cc_lib.cc.transitive_headers]
     )
 
-    unformatted = ctx.actions.declare_file(output.basename + ".unformatted")
+    if rustfmt:
+        unformatted = ctx.actions.declare_file(output.basename + ".unformatted")
+    else:
+        unformatted = output
 
     args = ctx.actions.args()
     args.add_all(bindgen_args)
@@ -121,12 +125,13 @@ def _rust_bindgen(ctx):
         tools=[clang],
     )
 
-    ctx.actions.run_shell(
-        inputs=depset([rustfmt, unformatted]),
-        outputs=[output],
-        command="{} --emit stdout --quiet {} > {}".format(rustfmt.path, unformatted.path, output.path),
-        tools=[rustfmt],
-    )
+    if rustfmt:
+        ctx.actions.run_shell(
+            inputs=depset([rustfmt, unformatted]),
+            outputs=[output],
+            command="{} --emit stdout --quiet {} > {}".format(rustfmt.path, unformatted.path, output.path),
+            tools=[rustfmt],
+        )
 
 rust_bindgen = rule(
     _rust_bindgen,
