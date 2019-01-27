@@ -37,9 +37,9 @@ def _rust_bindgen_impl(ctx):
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
     toolchain = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
-    bindgen = toolchain.bindgen
-    rustfmt = toolchain.rustfmt
-    clang = toolchain.clang
+    bindgen_bin = toolchain.bindgen
+    rustfmt_bin = toolchain.rustfmt
+    clang_bin = toolchain.clang
     libclang = toolchain.libclang
 
     # TODO: This should not need to be explicitly provided, see below TODO.
@@ -57,30 +57,30 @@ def _rust_bindgen_impl(ctx):
         [f.dirname for f in cc_lib.cc.transitive_headers],
     )
 
-    if rustfmt:
-        unformatted = ctx.actions.declare_file(output.basename + ".unformatted")
+    if rustfmt_bin:
+        unformatted_output = ctx.actions.declare_file(output.basename + ".unformatted")
     else:
-        unformatted = output
+        unformatted_output = output
 
     args = ctx.actions.args()
     args.add_all(bindgen_args)
     args.add(header.path)
-    args.add("--output", unformatted.path)
+    args.add("--output", unformatted_output.path)
     args.add("--")
     args.add_all(include_directories, before_each = "-I")
     args.add_all(clang_args)
     ctx.actions.run(
-        executable = bindgen,
+        executable = bindgen_bin,
         inputs = depset(
             [header],
             transitive = [cc_lib.cc.transitive_headers, libclang.cc.libs, libstdcxx.cc.libs],
         ),
-        outputs = [unformatted],
+        outputs = [unformatted_output],
         mnemonic = "RustBindgen",
         progress_message = "Generating bindings for {}..".format(header.path),
         env = {
             "RUST_BACKTRACE": "1",
-            "CLANG_PATH": clang.path,
+            "CLANG_PATH": clang_bin.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
             "LIBCLANG_PATH": libclang_dir,
             # TODO: If libclang were built by bazel from source w/ properly specified dependencies, it
@@ -90,15 +90,15 @@ def _rust_bindgen_impl(ctx):
             "LD_LIBRARY_PATH": ":".join([f.dirname for f in libstdcxx.cc.libs]),
         },
         arguments = [args],
-        tools = [clang],
+        tools = [clang_bin],
     )
 
-    if rustfmt:
+    if rustfmt_bin:
         ctx.actions.run_shell(
-            inputs = depset([rustfmt, unformatted]),
+            inputs = depset([rustfmt_bin, unformatted_output]),
             outputs = [output],
-            command = "{} --emit stdout --quiet {} > {}".format(rustfmt.path, unformatted.path, output.path),
-            tools = [rustfmt],
+            command = "{} --emit stdout --quiet {} > {}".format(rustfmt_bin.path, unformatted_output.path, output.path),
+            tools = [rustfmt_bin],
         )
 
 rust_bindgen = rule(
