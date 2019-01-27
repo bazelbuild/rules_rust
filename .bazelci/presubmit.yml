@@ -1,8 +1,11 @@
 ---
 default_targets: &default_targets
+- "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
 - "..."
 - "@docs//..."
 - "@examples//..."
+# Bindgen currently only has a working toolchain for 18.04
+- "-@examples//ffi/rust_calling_c/simple/..."
 platforms:
   ubuntu1404:
     build_targets: *default_targets
@@ -12,16 +15,20 @@ platforms:
     test_targets: *default_targets
   ubuntu1804:
     build_targets: *default_targets
-    test_targets: *default_targets
+    test_targets:
+      - "..."
+      - "@docs//..."
+      - "@examples//..."
   macos:
     osx_targets: &osx_targets
-    - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+    - "--"
     - "..."
     - "@docs//..."
     - "@examples//..."
     # Skip tests for dylib support on osx, since we don't support it yet.
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
+    - "-@examples//ffi/rust_calling_c/simple/..."
     build_targets: *osx_targets
     test_targets: *osx_targets
   rbe_ubuntu1604:
@@ -35,3 +42,4 @@ platforms:
     - "-@examples//fibonacci:fibonacci_doc_test"
     - "-@examples//hello_lib:hello_lib_doc_test"
     - "-//tools/runfiles:runfiles_doc_test"
+    - "-@examples//ffi/rust_calling_c/simple/..."
