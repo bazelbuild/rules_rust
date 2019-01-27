@@ -45,5 +45,5 @@ def _linux_rust_bindgen_repositories():
         native.new_local_repository,
         name = "local_linux",
         path = "/usr/lib/x86_64-linux-gnu",
-        build_file= "@//bindgen:local_linux.BUILD"
+        build_file = "@//bindgen:local_linux.BUILD",
     )

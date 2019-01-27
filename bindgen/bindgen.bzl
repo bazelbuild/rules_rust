@@ -25,7 +25,7 @@ def rust_bindgen_library(name, header, cc_lib, bindgen_flags = []):
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        deps = [cc_lib]
+        deps = [cc_lib],
     )
 
 def _rust_bindgen_toolchain(ctx):
@@ -66,6 +66,7 @@ def _rust_bindgen(ctx):
     rustfmt = bt.rustfmt
     clang = bt.clang
     libclang = bt.libclang
+
     # TODO: This should not need to be explicitly provided, see below TODO.
     libstdcxx = bt.libstdcxx
 
@@ -87,7 +88,7 @@ def _rust_bindgen(ctx):
 
     libclang_dir = libclang.cc.libs.to_list()[0].dirname
     include_directories = depset(
-        [f.dirname for f in cc_lib.cc.transitive_headers]
+        [f.dirname for f in cc_lib.cc.transitive_headers],
     )
 
     if rustfmt:
@@ -100,18 +101,18 @@ def _rust_bindgen(ctx):
     args.add(header.path)
     args.add("--output", unformatted.path)
     args.add("--")
-    args.add_all(include_directories, before_each="-I")
+    args.add_all(include_directories, before_each = "-I")
     args.add_all(clang_args)
     ctx.actions.run(
-        executable=bindgen,
-        inputs=depset(
+        executable = bindgen,
+        inputs = depset(
             [header],
-            transitive=[cc_lib.cc.transitive_headers, libclang.cc.libs, libstdcxx.cc.libs],
+            transitive = [cc_lib.cc.transitive_headers, libclang.cc.libs, libstdcxx.cc.libs],
         ),
-        outputs=[unformatted],
-        mnemonic="RustBindgen",
-        progress_message="Generating bindings for {}..".format(header.path),
-        env={
+        outputs = [unformatted],
+        mnemonic = "RustBindgen",
+        progress_message = "Generating bindings for {}..".format(header.path),
+        env = {
             "RUST_BACKTRACE": "1",
             "CLANG_PATH": clang.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
@@ -121,16 +122,16 @@ def _rust_bindgen(ctx):
             #       have a direct dependency on libstdc++.so
             "LD_LIBRARY_PATH": ":".join([f.dirname for f in libstdcxx.cc.libs]),
         },
-        arguments=[args],
-        tools=[clang],
+        arguments = [args],
+        tools = [clang],
     )
 
     if rustfmt:
         ctx.actions.run_shell(
-            inputs=depset([rustfmt, unformatted]),
-            outputs=[output],
-            command="{} --emit stdout --quiet {} > {}".format(rustfmt.path, unformatted.path, output.path),
-            tools=[rustfmt],
+            inputs = depset([rustfmt, unformatted]),
+            outputs = [output],
+            command = "{} --emit stdout --quiet {} > {}".format(rustfmt.path, unformatted.path, output.path),
+            tools = [rustfmt],
         )
 
 rust_bindgen = rule(
