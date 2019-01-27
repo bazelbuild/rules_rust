@@ -40,6 +40,10 @@ load("//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
+load("//bindgen:repositories.bzl", "rust_bindgen_repositories")
+
+rust_bindgen_repositories()
+
 # Stardoc and its dependencies
 git_repository(
     name = "io_bazel_skydoc",
