@@ -17,3 +17,8 @@ rust_binary(
     srcs = ["main.rs"],
     deps = [":simple_bindgen"],
 )
+
+rust_test(
+    name = "simple_test",
+    deps = [":simple_example"],
+)
