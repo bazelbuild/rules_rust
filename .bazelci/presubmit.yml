@@ -10,6 +10,9 @@ platforms:
   ubuntu1604:
     build_targets: *default_targets
     test_targets: *default_targets
+  ubuntu1804:
+    build_targets: *default_targets
+    test_targets: *default_targets
   macos:
     osx_targets: &osx_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
