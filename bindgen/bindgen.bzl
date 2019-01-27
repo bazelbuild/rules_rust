@@ -15,12 +15,13 @@
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
-def rust_bindgen_library(name, header, cc_lib, bindgen_flags = []):
+def rust_bindgen_library(name, header, cc_lib, **kwargs):
+    """Generates a rust source file for `header`, and builds a rust_library."""
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
         cc_lib = cc_lib,
-        bindgen_flags = bindgen_flags,
+        **kwargs
     )
     rust_library(
         name = name,
@@ -41,48 +42,51 @@ rust_bindgen_toolchain = rule(
     _rust_bindgen_toolchain,
     attrs = {
         "bindgen": attr.label(
-            doc = "The location of a `bindgen` executable.",
+            doc = "The label of a `bindgen` executable.",
             executable = True,
             cfg = "host",
         ),
-        "clang": attr.label(
-            executable = True,
-            cfg = "host",
-        ),
-        "libclang": attr.label(),
-        "libstdcxx": attr.label(),
         "rustfmt": attr.label(
+            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
             executable = True,
             cfg = "host",
             mandatory = False,
+        ),
+        "clang": attr.label(
+            doc = "The label of a `clang` executable.",
+            executable = True,
+            cfg = "host",
+        ),
+        "libclang": attr.label(
+            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            providers = ["cc"],
+        ),
+        "libstdcxx": attr.label(
+            doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
+            providers = ["cc"],
         ),
     },
 )
 
 def _rust_bindgen(ctx):
-    bt = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
-
-    bindgen = bt.bindgen
-    rustfmt = bt.rustfmt
-    clang = bt.clang
-    libclang = bt.libclang
-
-    # TODO: This should not need to be explicitly provided, see below TODO.
-    libstdcxx = bt.libstdcxx
-
-    cc_toolchain = find_cpp_toolchain(ctx)
-
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
-    if not hasattr(cc_lib, "cc"):
-        fail("{} is not a cc_library".format(cc_lib))
     header = ctx.file.header
     if header not in cc_lib.cc.transitive_headers:
-        fail("Header {} is not in {}'s transitive closure of headers.".format(ctx.attr.header, cc_lib))
+        fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
-    # rustfmt is not in the usual place, so bindgen would fail to find it
+    toolchain = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
+    bindgen = toolchain.bindgen
+    rustfmt = toolchain.rustfmt
+    clang = toolchain.clang
+    libclang = toolchain.libclang
+
+    # TODO: This should not need to be explicitly provided, see below TODO.
+    libstdcxx = toolchain.libstdcxx
+
+    # rustfmt is not where bindgen expects to find it, so we format manually
     bindgen_args = ["--no-rustfmt-bindings"] + ctx.attr.bindgen_flags
-    clang_args = []
+    clang_args = ctx.attr.clang_flags
 
     output = ctx.outputs.out
 
@@ -117,9 +121,10 @@ def _rust_bindgen(ctx):
             "CLANG_PATH": clang.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
             "LIBCLANG_PATH": libclang_dir,
-            # TODO: If libclang were built by bazel w/ properly specified dependencies, it
+            # TODO: If libclang were built by bazel from source w/ properly specified dependencies, it
             #       would have the correct rpaths and not require this nor would this rule
             #       have a direct dependency on libstdc++.so
+            #       This is unnecessary if the system libstdc++ suffices, which may not always be the case.
             "LD_LIBRARY_PATH": ":".join([f.dirname for f in libstdcxx.cc.libs]),
         },
         arguments = [args],
@@ -136,36 +141,25 @@ def _rust_bindgen(ctx):
 
 rust_bindgen = rule(
     _rust_bindgen,
+    doc = "Generates a rust source file from a cc_library and a header.",
     attrs = {
-        "header": attr.label(allow_single_file = True),
-        "cc_lib": attr.label(),
-        # An instance of cc_toolchain, used to find the standard library headers.
-        "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
-        "libstdcxx": attr.label(),
-        "bindgen_flags": attr.string_list(),
+        "header": attr.label(
+            doc = "The .h file to generate bindings for.",
+            allow_single_file = True,
+        ),
+        "cc_lib": attr.label(
+            doc = "The cc_library that contains the .h file. This is used to find the transitive includes.",
+            providers = ["cc"],
+        ),
+        "bindgen_flags": attr.string_list(
+            doc = "Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.",
+        ),
+        "clang_flags": attr.string_list(
+            doc = "Flags to pass directly to the clang executable.",
+        ),
     },
-    fragments = ["cpp"],
     outputs = {"out": "%{name}.rs"},
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
         "@io_bazel_rules_rust//bindgen:bindgen_toolchain",
     ],
 )
-
-"""
-Generates a rust file from a cc_library and one of it's headers.
-
-TODO: Update docs for configuring toolchain.
-
-and then use it as follows:
-
-```python
-load("@io_bazel_rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
-
-rust_bindgen_library(
-    name = "example_ffi",
-    cc_lib = "//example:lib",
-    header = "//example:api.h",
-)
-```
-"""
