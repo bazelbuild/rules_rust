@@ -8,6 +8,9 @@ cc_library(
 
 rust_bindgen_library(
     name = "simple_bindgen",
+    bindgen_flags = [
+        "--whitelist-var=SIMPLE_.*",
+    ],
     cc_lib = ":simple",
     header = "simple.h",
 )

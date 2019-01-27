@@ -1,11 +1,11 @@
 fn main() {
-    println!("The value is {}!", simple_bindgen::VALUE);
+    println!("The value is {}!", simple_bindgen::SIMPLE_VALUE);
 }
 
 #[cfg(test)]
 mod test {
     #[test]
     fn do_the_test() {
-        assert_eq!(43, simple_bindgen::VALUE);
+        assert_eq!(43, simple_bindgen::SIMPLE_VALUE);
     }
 }

@@ -1,2 +1,3 @@
+#include <stdint.h>
 
-const int VALUE = 43;
+const int64_t SIMPLE_VALUE = 43;
