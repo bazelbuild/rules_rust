@@ -25,6 +25,18 @@ def rust_bindgen_repositories():
     # nb. The bindgen rule itself should work on any platform.
     _linux_rust_bindgen_repositories()
 
+    # This overrides the BUILD file raze generates for libloading with a handwritten one.
+    # TODO: Tidier to implement https://github.com/google/cargo-raze/issues/58
+    maybe(
+        http_archive,
+        name = "raze__libloading__0_5_0",
+        url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/libloading/libloading-0.5.0.crate",
+        type = "tar.gz",
+        sha256 = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2",
+        strip_prefix = "libloading-0.5.0",
+        # TODO: This is a manual patch, need https://github.com/google/cargo-raze/issues/58
+        build_file = Label("//bindgen/raze:libloading.BUILD")
+    )
     raze_fetch_remote_crates()
 
     native.register_toolchains("@io_bazel_rules_rust//bindgen:example-bindgen-toolchain")

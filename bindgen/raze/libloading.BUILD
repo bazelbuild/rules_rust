@@ -5,8 +5,6 @@ cargo-raze crate build file.
 - Libloading has a CC dep that needs to be built.
 """
 
-package(default_visibility = ["//visibility:public"])
-
 licenses([
     "notice",  # "ISC"
 ])
@@ -20,24 +18,17 @@ load(
 )
 
 cc_library(
-    name = "global_whatever",
-    srcs = [
-        "src/os/unix/global_static.c",
-    ],
+    name = "global_static",
+    srcs = ["src/os/unix/global_static.c"],
     copts = ["-fPIC"],
 )
 
 rust_library(
     name = "libloading",
     srcs = glob(["**/*.rs"]),
-    crate_features = [
-    ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    deps = [
-        ":global_whatever",
-    ],
+    rustc_flags = ["--cap-lints=allow"],
+    deps = [":global_static"],
+    visibility = ["//visibility:public"],
 )
