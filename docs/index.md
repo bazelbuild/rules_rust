@@ -53,7 +53,7 @@ load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 rust_library(
     name = "hello_lib",
     srcs = ["src/lib.rs"],
-)
+)   
 ```
 
 `hello_world/src/main.rs`:
