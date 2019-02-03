@@ -1248,4 +1248,76 @@ with the actual binaries and libraries.
   </tbody>
 </table>
 
+<a name="#rust_bindgen_toolchain"></a>
+## rust_bindgen_toolchain
 
+<pre>
+rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>, <a href="#rust_bindgen_toolchain-rustfmt">rustfmt</a>)
+</pre>
+
+The tools required for the `rust_bindgen` rule.
+
+### Attributes
+
+<table class="params-table">
+  <colgroup>
+    <col class="col-param" />
+    <col class="col-description" />
+  </colgroup>
+  <tbody>
+    <tr id="rust_bindgen_toolchain-name">
+      <td><code>name</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#name">Name</a>; required
+        <p>
+          A unique name for this target.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_bindgen_toolchain-bindgen">
+      <td><code>bindgen</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">Label</a>; optional
+        <p>
+          The label of a `bindgen` executable.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_bindgen_toolchain-clang">
+      <td><code>clang</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">Label</a>; optional
+        <p>
+          The label of a `clang` executable.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_bindgen_toolchain-libclang">
+      <td><code>libclang</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">Label</a>; optional
+        <p>
+          A cc_library that provides bindgen's runtime dependency on libclang.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_bindgen_toolchain-libstdcxx">
+      <td><code>libstdcxx</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">Label</a>; optional
+        <p>
+          A cc_library that satisfies libclang's libstdc++ dependency.
+        </p>
+      </td>
+    </tr>
+    <tr id="rust_bindgen_toolchain-rustfmt">
+      <td><code>rustfmt</code></td>
+      <td>
+        <a href="https://bazel.build/docs/build-ref.html#labels">Label</a>; optional
+        <p>
+          The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
