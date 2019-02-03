@@ -25,23 +25,20 @@ http_archive(
 )
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
-load("//rust:repositories.bzl", "rust_repositories")
-
+load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 
 new_git_repository(
     name = "libc",
-    build_file = "//:libc.BUILD",
+    build_file = "@io_bazel_rules_rust//:libc.BUILD",
     remote = "https://github.com/rust-lang/libc",
     tag = "0.2.20",
 )
 
-load("//proto:repositories.bzl", "rust_proto_repositories")
-
+load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 rust_proto_repositories()
 
-load("//bindgen:repositories.bzl", "rust_bindgen_repositories")
-
+load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 rust_bindgen_repositories()
 
 # Stardoc and its dependencies
@@ -75,6 +72,5 @@ http_archive(
     ],
 )
 
-load(":workspace.bzl", "bazel_version")
-
+load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
 bazel_version(name = "bazel_version")
