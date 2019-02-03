@@ -25,6 +25,11 @@ def rust_bindgen_repositories():
     # nb. The bindgen rule itself should work on any platform.
     _linux_rust_bindgen_repositories()
 
+    maybe(
+        _local_libstdcpp,
+        name = "local_libstdcpp",
+    )
+
     # This overrides the BUILD file raze generates for libloading with a handwritten one.
     # TODO: Tidier to implement https://github.com/google/cargo-raze/issues/58
     maybe(
@@ -52,9 +57,16 @@ def _linux_rust_bindgen_repositories():
         build_file = "@//bindgen:clang.BUILD",
     )
 
-    maybe(
-        native.new_local_repository,
-        name = "local_linux",
-        path = "/usr/lib/x86_64-linux-gnu",
-        build_file = "@//bindgen:local_linux.BUILD",
-    )
+def _local_libstdcpp_impl(repository_ctx):
+    if repository_ctx.os.name == "linux":
+        # Basically the same as `native.new_local_repository`, but we're not allowed to call that here..
+        repository_ctx.template("BUILD.bazel", Label("@//bindgen:local_linux.BUILD"))
+        repository_ctx.symlink("/usr/lib/x86_64-linux-gnu/libstdc++.so.6", "libstdc++.so.6")
+    else:
+        # TODO: Support examples for other OS.
+        repository_ctx.file("BUILD", "")
+
+
+_local_libstdcpp = repository_rule(
+    implementation = _local_libstdcpp_impl,
+)

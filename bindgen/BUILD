@@ -16,7 +16,7 @@ rust_bindgen_toolchain(
     bindgen = "//bindgen/raze:cargo_bin_bindgen",
     clang = "@bindgen_clang//:clang",
     libclang = "@bindgen_clang//:libclang.so",
-    libstdcxx = "@local_linux//:libstdc++",
+    libstdcxx = "@local_libstdcpp//:libstdc++",
 )
 
 toolchain(
