@@ -17,9 +17,13 @@ stardoc(
         "rust_proto_toolchain",
         "rust_proto_library",
         "rust_grpc_library",
+        "rust_bindgen_toolchain",
+        "rust_bindgen",
+        "rust_bindgen_library",
     ],
     deps = [
-        "@io_bazel_rules_rust//proto:rules",
         "@io_bazel_rules_rust//rust:rules",
+        "@io_bazel_rules_rust//proto:rules",
+        "@io_bazel_rules_rust//bindgen:rules",
     ],
 )

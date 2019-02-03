@@ -19,6 +19,11 @@ load("@io_bazel_rules_rust//proto:toolchain.bzl", _rust_proto_toolchain = "rust_
 #     _rust_library = "rust_library",
 #     _rust_test = "rust_test",
 # )
+# load("@io_bazel_rules_rust//bindgen:bindgen.bzl",
+#     _rust_bindgen_toolchain = "rust_bindgen_toolchain",
+#     _rust_bindgen = "rust_bindgen",
+#     _rust_bindgen_library = "rust_bindgen_library",
+# )
 #
 # rust_library = _rust_library
 # rust_binary = _rust_binary
@@ -29,6 +34,11 @@ load("@io_bazel_rules_rust//proto:toolchain.bzl", _rust_proto_toolchain = "rust_
 # # rust_benchmark = _rust_benchmark
 # rust_proto_library = _rust_proto_library
 # rust_grpc_library = _rust_grpc_library
+#
+# rust_bindgen_toolchain = _rust_bindgen_toolchain
+# # TODO: Macro documentation doesn't seem to work.
+# # rust_bindgen = _rust_bindgen
+# rust_bindgen_library = _rust_bindgen_library
 
 # TODO(stardoc): This aliasing isn't mentioned in the docs, but generated documentation is broken without it.
 rust_toolchain = _rust_toolchain
