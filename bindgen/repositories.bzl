@@ -52,7 +52,6 @@ def _linux_rust_bindgen_repositories():
         build_file = "@//bindgen:clang.BUILD",
     )
 
-    # TODO: We should be able to locate libstdc++ via cc_toolchain eventually.
     maybe(
         native.new_local_repository,
         name = "local_linux",

@@ -54,7 +54,12 @@ def _rust_bindgen_impl(ctx):
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
 
-    # TODO: This should not need to be explicitly provided, see below TODO.
+    # TODO: This rule shouldn't need to depend on libstdc++
+    #  This rule requires an explicit dependency on a libstdc++ because
+    #    1. It is a runtime dependency of libclang.so
+    #    2. We cannot locate it in the cc_toolchain yet
+    #  Depending on how libclang.so was compiled, it may try to locate its libstdc++ dependency
+    #  in a way that makes our handling here unnecessary (eg. system /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
     libstdcxx = toolchain.libstdcxx
 
     # rustfmt is not where bindgen expects to find it, so we format manually
@@ -95,10 +100,6 @@ def _rust_bindgen_impl(ctx):
             "CLANG_PATH": clang_bin.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
             "LIBCLANG_PATH": libclang_dir,
-            # TODO: If libclang were built by bazel from source w/ properly specified dependencies, it
-            #       would have the correct rpaths and not require this nor would this rule
-            #       have a direct dependency on libstdc++.so
-            #       This is unnecessary if the system libstdc++ suffices, which may not always be the case.
             "LD_LIBRARY_PATH": ":".join([f.dirname for f in libstdcxx.cc.libs]),
         },
         arguments = [args],
