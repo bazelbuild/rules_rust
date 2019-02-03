@@ -29,35 +29,39 @@ load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 rust_proto_repositories()
 ```
 
+[raze]: https://github.com/google/cargo-raze
+
 This will load crate dependencies of protobuf that are generated using
-[cargo raze](https://github.com/google/cargo-raze) inside the rules_rust
+[cargo raze][raze] inside the rules_rust
 repository. However, using those dependencies might conflict with other uses
-of [cargo raze](https://github.com/google/cargo-raze). If you need to change
+of [cargo raze][raze]. If you need to change
 those dependencies, please see the [dedicated section below](#custom-deps).
+
+For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
 
 ## <a name="custom-deps">Customizing dependencies
 
 These rules depends on the [`protobuf`](https://crates.io/crates/protobuf) and
 the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
-compiler](https://github.com/google/protobuf). To do so the
-`rust_proto_repositories` import the given crates using file generated with
-[`cargo raze`](https://github.com/google/cargo-raze).
+compiler](https://github.com/google/protobuf). To obtain these crates,
+`rust_proto_repositories` imports the given crates using BUILD files generated with
+[`cargo raze`][raze].
 
 If you want to either change the protobuf and gRPC rust compilers, or to
-simply use [`cargo raze`](https://github.com/google/cargo-raze) in a more
+simply use [`cargo raze`][raze] in a more
 complex scenario (with more dependencies), you must redefine those
 dependencies.
 
 To do this, once you've imported the needed dependencies (see our
 [Cargo.toml](raze/Cargo.toml) file to see the default dependencies), you
-need to point to the correct toolchain, to do so you can create a BUILD
-file with the toolchain definition, for example:
+need to create your own toolchain. To do so you can create a BUILD
+file with your toolchain definition, for example:
 
 ```python
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
 
 rust_proto_toolchain(
-    name = "toolchain-impl",
+    name = "proto-toolchain-impl",
     # Path to the protobuf compiler.
     protoc = "@com_google_protobuf//:protoc",
     # Protobuf compiler plugin to generate rust gRPC stubs.
@@ -67,8 +71,8 @@ rust_proto_toolchain(
 )
 
 toolchain(
-    name = "toolchain",
-    toolchain = ":toolchain-impl",
+    name = "proto-toolchain",
+    toolchain = ":proto-toolchain-impl",
     toolchain_type = "@io_bazel_rules_rust//proto:toolchain",
 )
 ```
@@ -77,7 +81,7 @@ Now that you have your own toolchain, you need to register it by
 inserting the following statement in your `WORKSPACE` file:
 
 ```python
-register_toolchains("//package:toolchain")
+register_toolchains("//my/toolchains:proto-toolchain")
 ```
 
 Finally, you might want to set the `rust_deps` attribute in
