@@ -14,19 +14,31 @@
 
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
-def rust_bindgen_library(name, header, cc_lib, **kwargs):
-    """Generates a rust source file for `header`, and builds a rust_library."""
+def rust_bindgen_library(
+        name,
+        header,
+        cc_lib,
+        bindgen_flags = None,
+        clang_flags = None,
+        **kwargs):
+    """
+    Generates a rust source file for `header`, and builds a rust_library.
+
+    `kwargs` are passed directly to the rust_library.
+    """
 
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
         cc_lib = cc_lib,
-        **kwargs
+        bindgen_flags = bindgen_flags or [],
+        clang_flags = clang_flags or [],
     )
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
         deps = [cc_lib],
+        **kwargs
     )
 
 def _rust_bindgen_impl(ctx):
