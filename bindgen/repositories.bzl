@@ -45,7 +45,7 @@ def _linux_rust_bindgen_repositories():
     # Releases @ http://releases.llvm.org/download.html
     maybe(
         http_archive,
-        name = "clang",
+        name = "bindgen_clang",
         urls = ["http://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz"],
         strip_prefix = "clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-18.04",
         sha256 = "e74ce06d99ed9ce42898e22d2a966f71ae785bdf4edbded93e628d696858921a",
