@@ -57,15 +57,32 @@ def _linux_rust_bindgen_repositories():
         build_file = "@//bindgen:clang.BUILD",
     )
 
-def _local_libstdcpp_impl(repository_ctx):
-    if repository_ctx.os.name == "linux":
-        # Basically the same as `native.new_local_repository`, but we're not allowed to call that here..
-        repository_ctx.template("BUILD.bazel", Label("@//bindgen:local_linux.BUILD"))
-        repository_ctx.symlink("/usr/lib/x86_64-linux-gnu/libstdc++.so.6", "libstdc++.so.6")
-    else:
-        # TODO: Support examples for other OS.
-        repository_ctx.file("BUILD", "")
+LIBSTDCPP_LINUX = """
+cc_library(
+  name = "libstdc++",
+  srcs = ["libstdc++.so.6"],
+  visibility = ["//visibility:public"]
+)
+"""
 
+LIBSTDCPP_MAC = """
+cc_library(
+    name = "libstdc++",
+    srcs = ["libstdc++.6.dylib"],
+    visibility = ["//visibility:public"]
+)
+"""
+
+def _local_libstdcpp_impl(repository_ctx):
+    os = repository_ctx.os.name.lower()
+    if os == "linux":
+        repository_ctx.symlink("/usr/lib/x86_64-linux-gnu/libstdc++.so.6", "libstdc++.so.6")
+        repository_ctx.file("BUILD.bazel", LIBSTDCPP_LINUX)
+    elif os.startswith("mac"):
+        repository_ctx.symlink("/usr/lib/libstdc++.6.dylib", "libstdc++.6.dylib")
+        repository_ctx.file("BUILD.bazel", LIBSTDCPP_MAC)
+    else:
+        fail(os + " is not supported.")
 
 _local_libstdcpp = repository_rule(
     implementation = _local_libstdcpp_impl,
