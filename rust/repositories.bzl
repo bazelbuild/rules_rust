@@ -107,7 +107,7 @@ filegroup(
         target_triple = target_triple,
     )
 
-def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple):
+def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple, default_edition = "2015"):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -129,6 +129,7 @@ rust_toolchain(
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
     os = "{system}",
+    default_edition = "{default_edition}",
     exec_triple = "{exec_triple}",
     target_triple = "{target_triple}",
     visibility = ["//visibility:public"],
@@ -139,6 +140,7 @@ rust_toolchain(
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
         system = system,
+        default_edition = default_edition,
         exec_triple = exec_triple,
         target_triple = target_triple,
     )
