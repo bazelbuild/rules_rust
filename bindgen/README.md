@@ -16,7 +16,7 @@ These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings t
 [rust]: http://www.rust-lang.org/
 [bindgen]: https://github.com/rust-lang/rust-bindgen
 
-See the [bindgen example](../examples/ffi/rust_calling_c/simple/BUILD:9) for a more complete example of use.
+See the [bindgen example](../examples/ffi/rust_calling_c/simple/BUILD#L9) for a more complete example of use.
 
 ### Setup
 
@@ -28,7 +28,7 @@ load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositorie
 
 rust_bindgen_repositories()
 ```
-This makes the default toolchain defined in @io_bazel_rules_rust available, it is defined [here](./BUILD).
+This makes the default toolchain defined in [`@io_bazel_rules_rust`](./BUILD) available.
 
 [raze]: https://github.com/google/cargo-raze
 
@@ -38,7 +38,7 @@ repository. However, using those dependencies might conflict with other uses
 of [cargo raze][raze]. If you need to change
 those dependencies, please see the [dedicated section below](#custom-deps).
 
-For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
+For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
 
 ## <a name="custom-deps">Customizing dependencies
 
