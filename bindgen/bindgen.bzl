@@ -73,6 +73,7 @@ def _rust_bindgen_impl(ctx):
         [f.dirname for f in cc_lib.cc.transitive_headers],
     )
 
+    # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
     if rustfmt_bin:
         unformatted_output = ctx.actions.declare_file(output.basename + ".unformatted")
     else:
@@ -169,10 +170,12 @@ rust_bindgen_toolchain = rule(
         ),
         "libclang": attr.label(
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            cfg = "host",
             providers = ["cc"],
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
+            cfg = "host",
             providers = ["cc"],
         ),
     },
