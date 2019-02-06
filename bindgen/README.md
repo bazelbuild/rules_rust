@@ -11,7 +11,7 @@
 
 ## Overview
 
-These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings to C (and some C++) ilbraries.
+These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings to C (and some C++) libraries.
 
 [rust]: http://www.rust-lang.org/
 [bindgen]: https://github.com/rust-lang/rust-bindgen
