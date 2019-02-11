@@ -69,9 +69,9 @@ def _rust_bindgen_impl(ctx):
 
     # libclang should only have 1 output file
     libclang_dir = libclang.cc.libs.to_list()[0].dirname
-    include_directories = depset(
-        [f.dirname for f in cc_lib.cc.transitive_headers],
-    )
+    include_directories = cc_lib.cc.include_directories
+    quote_include_directories = cc_lib.cc.quote_include_directories
+    system_include_directories = cc_lib.cc.system_include_directories
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
     if rustfmt_bin:
@@ -85,6 +85,8 @@ def _rust_bindgen_impl(ctx):
     args.add("--output", unformatted_output.path)
     args.add("--")
     args.add_all(include_directories, before_each = "-I")
+    args.add_all(quote_include_directories, before_each = "-iquote")
+    args.add_all(system_include_directories, before_each = "-isystem")
     args.add_all(clang_args)
     ctx.actions.run(
         executable = bindgen_bin,
