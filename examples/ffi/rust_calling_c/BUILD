@@ -1,6 +1,6 @@
 package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
 
-load("@//rust:rust.bzl", "rust_library", "rust_test", "rust_binary", "rust_doc")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test", "rust_binary", "rust_doc")
 
 rust_library(
     name = "matrix",

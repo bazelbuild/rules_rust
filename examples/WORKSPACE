@@ -3,27 +3,44 @@ workspace(name = "examples")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-local_repository(name = "io_bazel_rules_rust", path = "..")
+local_repository(
+    name = "io_bazel_rules_rust",
+    path = "..",
+)
 
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+
 rust_repositories()
 
-new_git_repository(
+http_archive(
     name = "libc",
-    remote = "https://github.com/rust-lang/libc",
-    tag = "0.2.20",
-    build_file = "libc.BUILD",
+    build_file = "@//:libc.BUILD",
+    sha256 = "1ac4c2ac6ed5a8fb9020c166bc63316205f1dc78d4b964ad31f4f21eb73f0c6d",
+    strip_prefix = "libc-0.2.20",
+    urls = [
+        "https://mirror.bazel.build/github.com/rust-lang/libc/archive/0.2.20.zip",
+        "https://github.com/rust-lang/libc/archive/0.2.20.zip",
+    ],
 )
 
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+
 rust_proto_repositories()
 
 http_archive(
     name = "bazel_skylib",
-    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz",
-    sha256 = "b5f6abe419da897b7901f90cbab08af958b97a8f3575b0d3dd062ac7ce78541f",
-    strip_prefix = "bazel-skylib-0.5.0"
+    sha256 = "eb5c57e4c12e68c0c20bc774bfbc60a568e800d025557bc4ea022c6479acc867",
+    strip_prefix = "bazel-skylib-0.6.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz",
+    ],
 )
 
+load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+
+rust_bindgen_repositories()
+
 load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+
 bazel_version(name = "bazel_version")
