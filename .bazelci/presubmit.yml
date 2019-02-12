@@ -6,7 +6,7 @@ default_targets: &default_targets
 - "@examples//..."
 # Bindgen currently only has a working toolchain for 18.04
 - "-@examples//ffi/rust_calling_c/simple/..."
-platforms:
+tasks:
   ubuntu1404:
     build_targets: *default_targets
     test_targets: *default_targets
@@ -43,3 +43,7 @@ platforms:
     - "-@examples//hello_lib:hello_lib_doc_test"
     - "-//tools/runfiles:runfiles_doc_test"
     - "-@examples//ffi/rust_calling_c/simple/..."
+  examples:
+    platform: ubuntu1804
+    working_directory: examples
+    test_targets: //...
