@@ -44,6 +44,7 @@ tasks:
     - "-//tools/runfiles:runfiles_doc_test"
     - "-@examples//ffi/rust_calling_c/simple/..."
   examples:
+    name: Examples
     platform: ubuntu1804
     working_directory: examples
     test_targets: //...
