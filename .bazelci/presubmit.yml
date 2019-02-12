@@ -47,4 +47,5 @@ tasks:
     name: Examples
     platform: ubuntu1804
     working_directory: examples
-    test_targets: //...
+    test_targets:
+    - //...
