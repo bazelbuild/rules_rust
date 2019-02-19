@@ -7,6 +7,12 @@ load(
 )
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+git_repository(
+    name = "io_bazel",
+    commit = "62c7aa4f281e61353fdc17513f9b1bf46dd3c597",
+    remote = "https://github.com/bazelbuild/bazel.git",
+)
+
 local_repository(
     name = "examples",
     path = "examples",
@@ -26,6 +32,7 @@ http_archive(
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+
 rust_repositories()
 
 new_git_repository(
@@ -36,31 +43,36 @@ new_git_repository(
 )
 
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+
 rust_proto_repositories()
 
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+
 rust_bindgen_repositories()
 
 # Stardoc and its dependencies
 git_repository(
     name = "io_bazel_skydoc",
-    remote = "https://github.com/bazelbuild/skydoc.git",
     commit = "82fdbfe797c6591d8732df0c0389a2b1c3e50992",  # 2018-12-12
+    remote = "https://github.com/bazelbuild/skydoc.git",
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
+
 skydoc_repositories()
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+
 rules_sass_dependencies()
 
 load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+
 node_repositories()
 
 load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
+
 sass_repositories()
 # --- end stardoc
-
 
 http_archive(
     name = "bazel_toolchains",
@@ -73,4 +85,5 @@ http_archive(
 )
 
 load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+
 bazel_version(name = "bazel_version")
