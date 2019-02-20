@@ -42,10 +42,10 @@ load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositorie
 rust_bindgen_repositories()
 
 # Stardoc and its dependencies
-git_repository(
+http_archive(
     name = "io_bazel_skydoc",
-    remote = "https://github.com/bazelbuild/skydoc.git",
-    commit = "82fdbfe797c6591d8732df0c0389a2b1c3e50992",  # 2018-12-12
+    url = "https://github.com/bazelbuild/skydoc/archive/0a008878383c51c41db24b313980de19996a6438.zip",
+    strip_prefix = "skydoc-0a008878383c51c41db24b313980de19996a6438",
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
