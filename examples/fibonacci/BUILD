@@ -14,7 +14,7 @@ rust_library(
 
 rust_test(
     name = "fibonacci_test",
-    deps = [":fibonacci"],
+    crate = ":fibonacci",
 )
 
 rust_benchmark(

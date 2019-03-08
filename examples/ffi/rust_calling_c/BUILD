@@ -16,7 +16,7 @@ rust_library(
 
 rust_test(
     name = "matrix_test",
-    deps = [":matrix"],
+    crate = ":matrix",
 )
 
 rust_doc(
@@ -41,7 +41,7 @@ rust_library(
 
 rust_test(
     name = "matrix_dylib_test",
-    deps = [":matrix_dynamically_linked"],
+    crate = ":matrix_dynamically_linked",
 )
 
 rust_doc(

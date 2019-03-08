@@ -27,17 +27,17 @@ rust_library(
 
 rust_test(
     name = "mod1_test",
-    deps = [":mod1"],
+    crate = ":mod1",
 )
 
 rust_test(
     name = "mod2_test",
-    deps = [":mod2"],
+    crate = ":mod2",
 )
 
 rust_test(
     name = "mod3_test",
-    deps = [":mod3"],
+    crate = ":mod3",
 )
 
 rust_doc_test(

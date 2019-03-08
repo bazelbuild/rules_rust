@@ -47,7 +47,7 @@ rust_library(
 
 rust_test(
     name = "hello_lib_test",
-    deps = [":hello_lib"],
+    crate = ":hello_lib",
 )
 
 rust_test(

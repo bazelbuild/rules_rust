@@ -15,6 +15,34 @@
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
+_OLD_INLINE_TEST_CRATE_MSG = """
+--------------------------------------------------------------------------------
+Testing crates with inline `#[cfg(test)]` attributes is now handled with the
+`crate` attribute in `rust_test`:
+
+This means you should migrate from:
+
+```
+rust_test(
+    name = "{name}",
+    deps = ["{dep}"],
+    ...
+)
+```
+
+to the following:
+```
+rust_test(
+    name = "{name}",
+    crate = "{dep}",
+    ...
+```
+
+See https://github.com/bazelbuild/rules_rust/pull/203 for more details
+--------------------------------------------------------------------------------
+
+"""
+
 # TODO(marco): Separate each rule into its own file.
 
 def _determine_output_hash(lib_rs):
@@ -124,19 +152,26 @@ def _rust_test_common(ctx, test_binary):
     """
     toolchain = find_toolchain(ctx)
 
-    if len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
-        # Target has a single dependency but no srcs. Build the test binary using
-        # the dependency's srcs.
-        parent_crate = ctx.attr.deps[0][CrateInfo]
+    if ctx.attr.crate:
+        # Target is building the crate in `test` config
+        # Build the test binary using the dependency's srcs.
+        crate = ctx.attr.crate[CrateInfo]
         target = CrateInfo(
             name = test_binary.basename,
-            type = parent_crate.type,
-            root = parent_crate.root,
-            srcs = parent_crate.srcs,
-            deps = parent_crate.deps,
+            type = crate.type,
+            root = crate.root,
+            srcs = crate.srcs + ctx.files.srcs,
+            deps = crate.deps + ctx.attr.deps,
             output = test_binary,
-            edition = parent_crate.edition,
+            edition = crate.edition,
         )
+    elif len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
+        dep = ctx.attr.deps[0].label
+        msg = _OLD_INLINE_TEST_CRATE_MSG.format(
+                name=test_binary.basename,
+                dep=dep if ctx.label.package != dep.package else ":" + dep.name
+              )
+        fail(msg)
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
         target = CrateInfo(
@@ -278,6 +313,18 @@ _rust_library_attrs = {
             The exact output file will depend on the toolchain used.
         """),
         default = "rlib",
+    ),
+}
+
+_rust_test_attrs = {
+    "crate": attr.label(
+        mandatory = False,
+        doc = _tidy("""
+            Target inline tests declared in the given crate
+
+            These tests are typically those that would be held out under
+            `#[cfg(test)]` declarations.
+        """),
     ),
 }
 
@@ -459,7 +506,8 @@ Hello world
 
 rust_test = rule(
     _rust_test_impl,
-    attrs = _rust_common_attrs,
+    attrs = dict(_rust_common_attrs.items() +
+                 _rust_test_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -531,6 +579,18 @@ rust_test(
 ```
 
 Run the test with `bazel build //hello_lib:hello_lib_test`.
+
+To run a crate or lib with the `#[cfg(test)]` configuration, handling inline
+tests, you should specify the crate directly like so.
+
+```
+rust_test(
+    name = "hello_lib_test",
+    crate = ":hello_lib",
+    # You may add other deps that are specific to the test configuration
+    deps = ["//some/dev/dep"],
+)
+```
 
 ### Example: `test` directory
 

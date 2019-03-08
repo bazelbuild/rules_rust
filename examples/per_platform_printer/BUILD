@@ -32,5 +32,5 @@ rust_library(
 
 rust_test(
     name = "printer_test",
-    deps = [":printer"],
+    crate = ":printer",
 )

@@ -23,5 +23,5 @@ rust_binary(
 
 rust_test(
     name = "simple_test",
-    deps = [":simple_example"],
+    crate = ":simple_example",
 )

@@ -16,7 +16,5 @@ rust_library(
 
 rust_test(
     name = "conflicting_deps_test",
-    deps = [
-        ":conflicting_deps",
-    ],
+    crate = ":conflicting_deps",
 )
