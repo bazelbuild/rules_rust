@@ -354,9 +354,18 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 """,
 )
 
+_rust_binary_attrs = {
+    "linker_script": attr.label(
+        doc = _tidy("""
+            Link script to forward into linker via rustc options.
+        """),
+        allow_single_file = True,
+    ),
+}
+
 rust_binary = rule(
     _rust_binary_impl,
-    attrs = _rust_common_attrs,
+    attrs = dict(_rust_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],

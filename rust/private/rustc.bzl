@@ -182,12 +182,16 @@ def rustc_compile_action(
         toolchain,
     )
 
+    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") \
+            else None
+
     compile_inputs = depset(
         crate_info.srcs +
         getattr(ctx.files, "data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
-        toolchain.crosstool_files,
+        toolchain.crosstool_files +
+        ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
@@ -214,6 +218,8 @@ def rustc_compile_action(
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
+    if hasattr(ctx.attr, "linker_script") and linker_script != None:
+        args.add(linker_script.path, format = "--codegen=link-arg=-T%s")
     args.add_all(rust_flags)
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
     add_edition_flags(args, crate_info)
