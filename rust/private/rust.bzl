@@ -359,6 +359,7 @@ _rust_binary_attrs = {
         doc = _tidy("""
             Link script to forward into linker via rustc options.
         """),
+        cfg = "host",
         allow_single_file = True,
     ),
 }
