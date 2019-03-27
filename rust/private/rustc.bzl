@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "relative_path")
+load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -106,10 +107,13 @@ def collect_deps(deps, toolchain):
             transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
             transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])
-        elif hasattr(dep, "cc"):
+        elif CcInfo in dep:
             # This dependency is a cc_library
-            dylibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
-            staticlibs = [l for l in dep.cc.libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
+
+            # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
+            libs = get_libs_for_static_executable(dep)
+            dylibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
+            staticlibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
             transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         else:
@@ -182,8 +186,7 @@ def rustc_compile_action(
         toolchain,
     )
 
-    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") \
-            else None
+    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
 
     compile_inputs = depset(
         crate_info.srcs +

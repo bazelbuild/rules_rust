@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 
 def rust_bindgen_library(
         name,
@@ -44,7 +45,7 @@ def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
     header = ctx.file.header
-    if header not in cc_lib.cc.transitive_headers:
+    if header not in cc_lib[CcInfo].compilation_context.headers:
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
     toolchain = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
@@ -68,10 +69,10 @@ def _rust_bindgen_impl(ctx):
     output = ctx.outputs.out
 
     # libclang should only have 1 output file
-    libclang_dir = libclang.cc.libs.to_list()[0].dirname
-    include_directories = cc_lib.cc.include_directories
-    quote_include_directories = cc_lib.cc.quote_include_directories
-    system_include_directories = cc_lib.cc.system_include_directories
+    libclang_dir = get_libs_for_static_executable(libclang).to_list()[0].dirname
+    include_directories = cc_lib[CcInfo].compilation_context.includes.to_list()
+    quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes.to_list()
+    system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
     if rustfmt_bin:
@@ -92,7 +93,11 @@ def _rust_bindgen_impl(ctx):
         executable = bindgen_bin,
         inputs = depset(
             [header],
-            transitive = [cc_lib.cc.transitive_headers, libclang.cc.libs, libstdcxx.cc.libs],
+            transitive = [
+                cc_lib[CcInfo].compilation_context.headers,
+                get_libs_for_static_executable(libclang),
+                get_libs_for_static_executable(libstdcxx),
+            ],
         ),
         outputs = [unformatted_output],
         mnemonic = "RustBindgen",
@@ -102,7 +107,7 @@ def _rust_bindgen_impl(ctx):
             "CLANG_PATH": clang_bin.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
             "LIBCLANG_PATH": libclang_dir,
-            "LD_LIBRARY_PATH": ":".join([f.dirname for f in libstdcxx.cc.libs]),
+            "LD_LIBRARY_PATH": ":".join([f.dirname for f in get_libs_for_static_executable(libstdcxx)]),
         },
         arguments = [args],
         tools = [clang_bin],
@@ -126,7 +131,7 @@ rust_bindgen = rule(
         ),
         "cc_lib": attr.label(
             doc = "The cc_library that contains the .h file. This is used to find the transitive includes.",
-            providers = ["cc"],
+            providers = [CcInfo],
         ),
         "bindgen_flags": attr.string_list(
             doc = "Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.",
@@ -173,12 +178,12 @@ rust_bindgen_toolchain = rule(
         "libclang": attr.label(
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
             cfg = "host",
-            providers = ["cc"],
+            providers = [CcInfo],
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
             cfg = "host",
-            providers = ["cc"],
+            providers = [CcInfo],
         ),
     },
 )
