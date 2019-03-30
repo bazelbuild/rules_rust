@@ -1,28 +1,24 @@
 """
-Utility functions that replace old C++ Starlark API using the new API.
-See migration instructions in https://github.com/bazelbuild/bazel/issues/7036
-
-Pasted from https://gist.github.com/oquenchil/7e2c2bd761aa1341b458cc25608da50c
+Part of --incompatible_disable_legacy_cc_provider migration (https://github.com/bazelbuild/bazel/issues/7036)
 """
 
 def get_libs_for_static_executable(dep):
     """
-    Finds the libraries used for linking an executable statically.
-    This replaces the old API dep.cc.libs
+    This replaces dep.cc.libs, which found the libraries 
+    used for linking a static executable.
+    
     Args:
-      dep: Target
+      dep: A cc_library target.
     Returns:
-      A list of File instances, these are the libraries used for linking.
+      A depset[File]
     """
     libraries_to_link = dep[CcInfo].linking_context.libraries_to_link
-    libs = []
-    for library_to_link in libraries_to_link:
-        if library_to_link.static_library != None:
-            libs.append(library_to_link.static_library)
-        elif library_to_link.pic_static_library != None:
-            libs.append(library_to_link.pic_static_library)
-        elif library_to_link.interface_library != None:
-            libs.append(library_to_link.interface_library)
-        elif library_to_link.dynamic_library != None:
-            libs.append(library_to_link.dynamic_library)
-    return depset(libs)
+    return depset([_get_preferred_artifact(lib) for lib in libraries_to_link])
+
+def _get_preferred_artifact(library_to_link):
+    return (
+        library_to_link.static_library or
+        library_to_link.pic_static_library or
+        library_to_link.interface_library or
+        library_to_link.dynamic_library
+    )
