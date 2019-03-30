@@ -74,7 +74,7 @@ def _compute_proto_source_path(file, source_root_attr):
         return path
 
 def _rust_proto_aspect_impl(target, ctx):
-    if not hasattr(target, "proto"):
+    if ProtoInfo not in target:
         return None
     source_root = ctx.rule.attr.proto_source_root
     if source_root and source_root[-1] != "/":
@@ -82,7 +82,7 @@ def _rust_proto_aspect_impl(target, ctx):
 
     sources = [
         _compute_proto_source_path(f, source_root)
-        for f in target.proto.direct_sources
+        for f in target[ProtoInfo]direct_sources
     ]
     transitive_sources = [
         f[RustProtoProvider].transitive_proto_sources
@@ -195,7 +195,7 @@ rust_proto_library = rule(
                 One crate for each proto_library will be created with the corresponding stubs.
             """,
             mandatory = True,
-            providers = ["proto"],
+            providers = [ProtoInfo],
             aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(
