@@ -82,7 +82,7 @@ def _rust_proto_aspect_impl(target, ctx):
 
     sources = [
         _compute_proto_source_path(f, source_root)
-        for f in target[ProtoInfo]direct_sources
+        for f in target[ProtoInfo].direct_sources
     ]
     transitive_sources = [
         f[RustProtoProvider].transitive_proto_sources
