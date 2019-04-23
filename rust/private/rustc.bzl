@@ -194,6 +194,7 @@ def rustc_compile_action(
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
+        ctx.files._cc_toolchain +
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
