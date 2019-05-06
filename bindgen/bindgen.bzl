@@ -45,7 +45,8 @@ def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
     header = ctx.file.header
-    if header not in cc_lib[CcInfo].compilation_context.headers:
+    cc_header_list = ctx.attr.cc_lib[CcInfo].compilation_context.headers.to_list()
+    if header not in cc_header_list:
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
     toolchain = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
