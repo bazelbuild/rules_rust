@@ -188,6 +188,9 @@ def rustc_compile_action(
 
     linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
 
+    # TODO wait for CcToolchainInfo.all_files to be available
+    toolchain_depset = depset(ctx.files._cc_toolchain)
+
     compile_inputs = depset(
         crate_info.srcs +
         getattr(ctx.files, "data", []) +
@@ -198,8 +201,8 @@ def rustc_compile_action(
         transitive = [
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
-            # TODO wait for CcToolchainInfo.all_files to be available
-        ] + ctx.files._cc_toolchain,
+            toolchain_depset
+        ],
     )
 
     args = ctx.actions.args()
