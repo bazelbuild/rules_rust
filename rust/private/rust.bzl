@@ -334,7 +334,10 @@ rust_library = rule(
                  _rust_library_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [
+        "@io_bazel_rules_rust//rust:toolchain",
+        "@bazel_tools//tools/cpp:toolchain_type"
+    ],
     doc = """
 Builds a Rust library crate.
 
@@ -417,7 +420,10 @@ rust_binary = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [
+        "@io_bazel_rules_rust//rust:toolchain",
+        "@bazel_tools//tools/cpp:toolchain_type"
+    ],
     doc = """
 Builds a Rust binary crate.
 
@@ -512,7 +518,10 @@ rust_test = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     test = True,
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [
+        "@io_bazel_rules_rust//rust:toolchain",
+        "@bazel_tools//tools/cpp:toolchain_type"
+    ],
     doc = """
 Builds a Rust test crate.
 
@@ -656,7 +665,10 @@ rust_benchmark = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [
+        "@io_bazel_rules_rust//rust:toolchain",
+        "@bazel_tools//tools/cpp:toolchain_type"
+    ],
     doc = """
 Builds a Rust benchmark test.
 
