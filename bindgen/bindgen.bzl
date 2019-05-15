@@ -108,7 +108,7 @@ def _rust_bindgen_impl(ctx):
             "CLANG_PATH": clang_bin.path,
             # Bindgen loads libclang at runtime, which also needs libstdc++, so we setup LD_LIBRARY_PATH
             "LIBCLANG_PATH": libclang_dir,
-            "LD_LIBRARY_PATH": ":".join([f.dirname for f in get_libs_for_static_executable(libstdcxx)]),
+            "LD_LIBRARY_PATH": ":".join([f.dirname for f in get_libs_for_static_executable(libstdcxx).to_list()]),
         },
         arguments = [args],
         tools = [clang_bin],
