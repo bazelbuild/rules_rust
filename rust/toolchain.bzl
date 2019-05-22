@@ -22,6 +22,7 @@ def _rust_toolchain_impl(ctx):
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
+        target_arch = ctx.attr.target_triple.split("-")[0],
         default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,

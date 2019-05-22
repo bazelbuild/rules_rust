@@ -47,7 +47,7 @@ DepInfo = provider(
     },
 )
 
-def _get_rustc_env(ctx):
+def _get_rustc_env(ctx, toolchain):
     version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
     major, minor, patch = version.split(".", 2)
     if "-" in patch:
@@ -64,6 +64,8 @@ def _get_rustc_env(ctx):
         "CARGO_PKG_NAME": ctx.label.name,
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
+        "CARGO_CFG_TARGET_OS": toolchain.os,
+        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
     }
 
 def _get_compilation_mode_opts(ctx, toolchain):
@@ -291,7 +293,7 @@ def rustc_compile_action(
         command = command,
         inputs = compile_inputs,
         outputs = [crate_info.output],
-        env = _get_rustc_env(ctx),
+        env = _get_rustc_env(ctx, toolchain),
         arguments = [args],
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(crate_info.srcs)),
