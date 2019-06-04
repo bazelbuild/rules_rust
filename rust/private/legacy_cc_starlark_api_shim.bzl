@@ -4,15 +4,21 @@ Part of --incompatible_disable_legacy_cc_provider migration (https://github.com/
 
 def get_libs_for_static_executable(dep):
     """
-    This replaces dep.cc.libs, which found the libraries 
+    This replaces dep.cc.libs, which found the libraries
     used for linking a static executable.
-    
+
     Args:
       dep: A cc_library target.
     Returns:
       A depset[File]
     """
     libraries_to_link = dep[CcInfo].linking_context.libraries_to_link
+
+    # Remove `if` line once Bazel 0.27 is used
+    # (https://github.com/bazelbuild/bazel/issues/8118)
+    if type(libraries_to_link) == type(depset()):
+        libraries_to_link = libraries_to_link.to_list()
+
     return depset([_get_preferred_artifact(lib) for lib in libraries_to_link])
 
 def _get_preferred_artifact(library_to_link):
