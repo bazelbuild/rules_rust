@@ -44,46 +44,16 @@ load("//rust:private/utils.bzl", "find_toolchain")
 
 RustProtoProvider = provider(
     fields = {
-        "proto_sources": "List[string]: list of source paths of protos",
-        "transitive_proto_sources": "depset[string]",
+        "proto_sources": "List[File]: list of source paths of protos",
+        "transitive_proto_sources": "depset[File]",
     },
 )
-
-def _compute_proto_source_path(file, source_root_attr):
-    """Take the short path of file and make it suitable for protoc."""
-
-    # For proto, they need to be requested with their absolute name to be
-    # compatible with the descriptor_set passed by proto_library.
-    # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
-    # compiler would generate a file descriptor with the path
-    # `package/file.proto`. Since we compile from the proto descriptor, we need
-    # to pass the list of descriptors and the list of path to compile.
-    # For the precedent example, the file (noted `f`) would have
-    # `f.short_path` returns `external/repo1/package/file.proto`.
-    # In addition, proto_library can provide a proto_source_path to change the base
-    # path, which should a be a prefix.
-    path = file.short_path
-
-    # Strip external prefix.
-    path = path.split("/", 2)[2] if path.startswith("../") else path
-
-    # Strip source_root.
-    if path.startswith(source_root_attr):
-        return path[len(source_root_attr):]
-    else:
-        return path
 
 def _rust_proto_aspect_impl(target, ctx):
     if ProtoInfo not in target:
         return None
-    source_root = ctx.rule.attr.proto_source_root
-    if source_root and source_root[-1] != "/":
-        source_root += "/"
 
-    sources = [
-        _compute_proto_source_path(f, source_root)
-        for f in target[ProtoInfo].direct_sources
-    ]
+    sources = target[ProtoInfo].direct_sources
     transitive_sources = [
         f[RustProtoProvider].transitive_proto_sources
         for f in ctx.rule.attr.deps

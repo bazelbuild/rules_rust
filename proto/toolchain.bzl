@@ -15,9 +15,12 @@
 """Toolchain for compiling rust stubs from protobug and gRPC."""
 
 def generated_file_stem(f):
-    basename = f.rsplit("/", 2)[-1]
+    basename = f.short_path.rsplit("/", 2)[-1]
     basename = basename.replace("-", "_")
     return basename.rsplit(".", 2)[0]
+
+def _to_basename(a):
+  return a.basename
 
 def rust_generate_proto(
         ctx,
@@ -83,7 +86,7 @@ def rust_generate_proto(
         format_joined = "--descriptor_set_in=%s",
     )
 
-    args.add_all(protos)
+    args.add_all(imports, map_each = _to_basename)
     ctx.actions.run(
         inputs = depset(
             transitive = [
