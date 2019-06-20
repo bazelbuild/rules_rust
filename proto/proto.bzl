@@ -83,9 +83,6 @@ def _gen_lib(ctx, grpc, srcs, lib):
             content.append("pub use %s_grpc::*;" % _generated_file_stem(f))
     ctx.actions.write(lib, "\n".join(content))
 
-def _expand_provider(lst, provider):
-    return [getattr(el, provider) for el in lst if hasattr(el, provider)]
-
 def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
     # Create all the source in a specific folder
     proto_toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
@@ -132,7 +129,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
 
 def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
-    proto = _expand_provider(ctx.attr.deps, "proto")
+    proto = [d[ProtoInfo] for d in ctx.attr.deps if d[ProtoInfo]]
     transitive_sources = [
         f[RustProtoProvider].transitive_proto_sources
         for f in ctx.attr.deps
@@ -230,7 +227,7 @@ rust_grpc_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
-            default = GRPC_COMPILE_DEPS
+            default = GRPC_COMPILE_DEPS,
         ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(
