@@ -10,7 +10,7 @@ def rust_repositories():
     other hosts or for additional target triples.
     """
 
-    RUST_VERSION = "1.33.0"
+    RUST_VERSION = "1.35.0"
 
     rust_repository_set(
         name = "rust_linux_x86_64",
