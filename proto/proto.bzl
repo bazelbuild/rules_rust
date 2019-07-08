@@ -52,6 +52,10 @@ RustProtoProvider = provider(
 def _compute_proto_source_path(file, source_root_attr):
     """Take the short path of file and make it suitable for protoc."""
 
+    virtual_imports = "/_virtual_imports/"
+    if virtual_imports in file.path:
+        return file.path.split(virtual_imports)[1].split("/", 1)[1]
+
     # For proto, they need to be requested with their absolute name to be
     # compatible with the descriptor_set passed by proto_library.
     # I.e. if you compile a protobuf at @repo1//package:file.proto, the proto
@@ -260,7 +264,7 @@ rust_grpc_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
-            default = GRPC_COMPILE_DEPS
+            default = GRPC_COMPILE_DEPS,
         ),
         "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
         "_optional_output_wrapper": attr.label(

@@ -106,7 +106,7 @@ def _rust_proto_toolchain_impl(ctx):
         proto_plugin = ctx.file.proto_plugin,
         grpc_plugin = ctx.file.grpc_plugin,
         edition = ctx.attr.edition,
-   )
+    )
 
 PROTO_COMPILE_DEPS = [
     "@io_bazel_rules_rust//proto/raze:protobuf",
