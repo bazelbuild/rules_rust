@@ -121,7 +121,7 @@ def _gen_lib(ctx, grpc, srcs, lib):
     ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):
-    return [getattr(el, provider) for el in lst if hasattr(el, provider)]
+    return [el[provider] for el in lst if provider in el]
 
 def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
     # Create all the source in a specific folder
@@ -169,7 +169,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
 
 def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
-    proto = _expand_provider(ctx.attr.deps, "proto")
+    proto = _expand_provider(ctx.attr.deps, ProtoInfo)
     transitive_sources = [
         f[RustProtoProvider].transitive_proto_sources
         for f in ctx.attr.deps
@@ -262,7 +262,7 @@ rust_grpc_library = rule(
                 One crate for each proto_library will be created with the corresponding gRPC stubs.
             """,
             mandatory = True,
-            providers = ["proto"],
+            providers = [ProtoInfo],
             aspects = [_rust_proto_aspect],
         ),
         "rust_deps": attr.label_list(
