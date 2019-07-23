@@ -146,7 +146,7 @@ def _get_linker_and_args(ctx, rpaths):
         "ctx": ctx,
     } if len(BAZEL_VERSION) == 0 or versions.is_at_least(
         "0.25.0", BAZEL_VERSION
-    ) else None
+    ) else {}
     feature_configuration = cc_common.configure_features(
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
