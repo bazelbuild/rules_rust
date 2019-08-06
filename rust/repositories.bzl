@@ -93,11 +93,14 @@ def BUILD_for_stdlib(target_triple):
     return """
 filegroup(
     name = "rust_lib-{target_triple}",
-    srcs = glob([
-        "lib/rustlib/{target_triple}/lib/*.rlib",
-        "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
-        "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
-    ]),
+    srcs = glob(
+        [
+            "lib/rustlib/{target_triple}/lib/*.rlib",
+            "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
+            "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
+        ],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )
 """.format(
