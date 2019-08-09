@@ -83,7 +83,12 @@ def _compute_proto_source_path(file, source_root_attr):
 def _rust_proto_aspect_impl(target, ctx):
     if ProtoInfo not in target:
         return None
-    source_root = ctx.rule.attr.proto_source_root
+
+    if hasattr(ctx.rule.attr, "proto_source_root"):
+        source_root = ctx.rule.attr.proto_source_root
+    else:
+        source_root = ""
+
     if source_root and source_root[-1] != "/":
         source_root += "/"
 
