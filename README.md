@@ -65,19 +65,6 @@ bazel_version(name = "bazel_version")
 ```
 The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 0.26.0.
 
-## Example
-
-Here's an example to build a Hello World:
-
-```python
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
-
-rust_binary(
-    name = "rs",
-    srcs = ["hello.rs"],
-)
-```
-
 ### External Dependencies
 
 Currently the most common approach to managing external dependencies is using 
