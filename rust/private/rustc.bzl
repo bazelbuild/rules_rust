@@ -177,16 +177,53 @@ def _get_linker_and_args(ctx, rpaths):
 
     return ld, link_args, link_env
 
-def _make_args(
-    ctx,
-    crate_info,
-    output_hash,
-    toolchain,
-    linker_script,
-    rust_flags,
-    dep_info,
-):
+def rustc_compile_action(
+        ctx,
+        toolchain,
+        crate_info,
+        output_hash = None,
+        rust_flags = []):
+    """
+    Constructs the rustc command used to build the current target.
+
+    Returns:
+      List[Provider]: A list of the following providers:
+                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
+                     - DepInfo: The transitive dependencies of this crate.
+                     - DefaultInfo: The output file for this crate, and its runfiles.
+    """
     output_dir = crate_info.output.dirname
+
+    dep_info = collect_deps(
+        crate_info.deps,
+        toolchain,
+    )
+
+    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
+
+    cc_toolchain = find_cpp_toolchain(ctx)
+
+    if (len(BAZEL_VERSION) == 0 or
+        versions.is_at_least("0.25.0", BAZEL_VERSION)):
+        linker_depset = find_cpp_toolchain(ctx).all_files
+    else:
+        linker_depset = depset(ctx.files._cc_toolchain)
+
+    compile_inputs = depset(
+        crate_info.srcs +
+        getattr(ctx.files, "data", []) +
+        dep_info.transitive_libs +
+        [toolchain.rustc] +
+        toolchain.crosstool_files +
+        ([] if linker_script == None else [linker_script]),
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+            linker_depset,
+        ],
+    )
+
+    env = _get_rustc_env(ctx, toolchain)
 
     args = ctx.actions.args()
     args.add(crate_info.root)
@@ -221,61 +258,13 @@ def _make_args(
     if toolchain.target_arch != "wasm32":
         rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
         ld, link_args, link_env = _get_linker_and_args(ctx, rpaths)
+        env.update(link_env)
         args.add("--codegen=linker=" + ld)
         args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
     add_native_link_flags(args, dep_info)
 
     add_crate_link_flags(args, dep_info)
-
-    return args
-
-def rustc_compile_action(
-        ctx,
-        toolchain,
-        crate_info,
-        output_hash = None,
-        rust_flags = []):
-    """
-    Constructs the rustc command used to build the current target.
-
-    Returns:
-      List[Provider]: A list of the following providers:
-                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
-                     - DepInfo: The transitive dependencies of this crate.
-                     - DefaultInfo: The output file for this crate, and its runfiles.
-    """
-
-    dep_info = collect_deps(
-        crate_info.deps,
-        toolchain,
-    )
-
-    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
-
-    cc_toolchain = find_cpp_toolchain(ctx)
-
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.25.0", BAZEL_VERSION)):
-        linker_depset = find_cpp_toolchain(ctx).all_files
-    else:
-        linker_depset = depset(ctx.files._cc_toolchain)
-
-    compile_inputs = depset(
-        crate_info.srcs +
-        getattr(ctx.files, "data", []) +
-        dep_info.transitive_libs +
-        [toolchain.rustc] +
-        toolchain.crosstool_files +
-        ([] if linker_script == None else [linker_script]),
-        transitive = [
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
-            linker_depset,
-        ],
-    )
-
-    args = _make_args(ctx, crate_info, output_hash, toolchain, linker_script, rust_flags, dep_info)
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
     out_dir = _create_out_dir_action(ctx)
@@ -311,9 +300,6 @@ def rustc_compile_action(
         out_dir_env,
         toolchain.rustc.path,
     )
-
-    env = _get_rustc_env(ctx, toolchain)
-    env.update(link_env)
 
     ctx.actions.run_shell(
         command = command,
