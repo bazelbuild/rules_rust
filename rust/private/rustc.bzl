@@ -165,12 +165,17 @@ def _get_linker_and_args(ctx, rpaths):
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
     )
+    link_env = cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        variables = link_variables,
+    )
     ld = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
     )
 
-    return ld, link_args
+    return ld, link_args, link_env
 
 def _make_args(
     ctx,
@@ -215,13 +220,13 @@ def _make_args(
     # linker since it won't understand.
     if toolchain.target_arch != "wasm32":
         rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args = _get_linker_and_args(ctx, rpaths)
+        ld, link_args, link_env = _get_linker_and_args(ctx, rpaths)
         args.add("--codegen=linker=" + ld)
         args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-    add_crate_link_flags(args, dep_info)
-
     add_native_link_flags(args, dep_info)
+
+    add_crate_link_flags(args, dep_info)
 
     return args
 
@@ -307,11 +312,14 @@ def rustc_compile_action(
         toolchain.rustc.path,
     )
 
+    env = _get_rustc_env(ctx, toolchain)
+    env.update(link_env)
+
     ctx.actions.run_shell(
         command = command,
         inputs = compile_inputs,
         outputs = [crate_info.output],
-        env = _get_rustc_env(ctx, toolchain),
+        env = env,
         arguments = [args],
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(crate_info.srcs)),
