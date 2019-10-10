@@ -40,6 +40,8 @@ tasks:
     - "-@examples//hello_lib:hello_lib_doc_test"
     - "-//tools/runfiles:runfiles_doc_test"
     - "-@examples//ffi/rust_calling_c/simple/..."
+    # See https://github.com/bazelbuild/bazel/issues/9987
+    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
   examples:
     name: Examples
     platform: ubuntu1804
