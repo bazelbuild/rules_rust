@@ -1,6 +1,6 @@
 def _wasm_transition(settings, attr):
     if attr.crate_type == "proc-macro":
-        return {"//command_line_option:platforms": "@bazel_tools//platforms:host_platform"}
+        return {"//command_line_option:platforms": "@local_config_platform//:host"}
     else:
         return settings
 
