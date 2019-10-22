@@ -15,21 +15,21 @@ def rust_repositories():
     rust_repository_set(
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
-        extra_target_triples = [],
+        extra_target_triples = ["wasm32-unknown-unknown"],
         version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
-        extra_target_triples = [],
+        extra_target_triples = ["wasm32-unknown-unknown"],
         version = RUST_VERSION,
     )
 
     rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
-        extra_target_triples = [],
+        extra_target_triples = ["wasm32-unknown-unknown"],
         version = RUST_VERSION,
     )
 
@@ -293,8 +293,6 @@ def _rust_toolchain_repository_impl(ctx):
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
 
-    BUILD_components.append(_load_rust_stdlib(ctx, "wasm32-unknown-unknown"))
-
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
 
@@ -310,15 +308,6 @@ def _rust_toolchain_repository_proxy_impl(ctx):
             parent_workspace_name = ctx.attr.parent_workspace_name,
             target_triple = target_triple,
         ))
-
-    BUILD_components.append(BUILD_for_toolchain(
-        name = "{toolchain_prefix}_wasm32-unknown-unknown".format(
-            toolchain_prefix = ctx.attr.toolchain_name_prefix,
-        ),
-        exec_triple = ctx.attr.exec_triple,
-        parent_workspace_name = ctx.attr.parent_workspace_name,
-        target_triple = "wasm32-unknown-unknown",
-    ))
 
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
@@ -406,7 +395,7 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_da
     )
 
     all_toolchain_names = []
-    for target_triple in [exec_triple, "wasm32-unknown-unknown"] + extra_target_triples:
+    for target_triple in [exec_triple] + extra_target_triples:
         all_toolchain_names.append("@{name}_toolchains//:{toolchain_name_prefix}_{triple}".format(
             name = name,
             toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
