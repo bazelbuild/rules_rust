@@ -14,13 +14,13 @@ _SUPPORTED_T1_PLATFORM_TRIPLES = [
     "x86_64-pc-windows-gnu",
     "x86_64-unknown-linux-gnu",
     # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
-    # and others using existing @bazel_tools//platforms config_values
+    # and others using existing @platforms// config_values
     #
     #"i686-pc-windows-msvc",
     #"x86_64-pc-windows-msvc",
 ]
 
-# Some T2 Platforms are supported, provided we have mappings to @bazel_tools//platforms entries.
+# Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
 # See @io_bazel_rules_rust//rust/platform:triple_mappings.bzl for the complete list.
 _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-ios",

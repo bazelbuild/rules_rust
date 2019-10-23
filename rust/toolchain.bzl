@@ -96,10 +96,10 @@ rust_toolchain(
 toolchain(
   name = "rust_cpuX",
   exec_compatible_with = [
-    "@bazel_tools//platforms:cpuX",
+    "@platforms//cpu:cpuX",
   ],
   target_compatible_with = [
-    "@bazel_tools//platforms:cpuX",
+    "@platforms//cpu:cpuX",
   ],
   toolchain = ":rust_cpuX_impl",
 )

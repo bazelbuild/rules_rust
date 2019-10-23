@@ -177,10 +177,10 @@ rust_proto_toolchain(
 toolchain(
     name="rust_proto",
     exec_compatible_with = [
-        "@bazel_tools//platforms:cpuX",
+        "@platforms//cpu:cpuX",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:cpuX",
+        "@platforms//cpu:cpuX",
     ],
     toolchain = ":rust_proto_impl",
 )

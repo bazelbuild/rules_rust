@@ -1,4 +1,4 @@
-# CPUs that map to a "@bazel_tools//platforms entry
+# CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "x86_64": "x86_64",
     "powerpc": "ppc",
@@ -19,7 +19,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "mipsel": None,
 }
 
-# Systems that map to a "@bazel_tools//platforms entry
+# Systems that map to a "@platforms//os entry
 _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "freebsd": "freebsd",
     "linux": "linux",
@@ -69,7 +69,7 @@ def cpu_arch_to_constraints(cpu_arch):
     if not plat_suffix:
         fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
 
-    return ["@bazel_tools//platforms:{}".format(plat_suffix)]
+    return ["@platforms//cpu:{}".format(plat_suffix)]
 
 def vendor_to_constraints(vendor):
     # TODO(acmcarther): Review:
@@ -84,7 +84,7 @@ def system_to_constraints(system):
     if not sys_suffix:
         fail("System \"{}\" is not supported by rules_rust".format(sys_suffix))
 
-    return ["@bazel_tools//platforms:{}".format(sys_suffix)]
+    return ["@platforms//os:{}".format(sys_suffix)]
 
 def abi_to_constraints(abi):
     # TODO(acmcarther): Implement when C++ toolchain is more mature and we
