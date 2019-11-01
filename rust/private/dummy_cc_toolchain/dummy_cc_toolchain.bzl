@@ -5,4 +5,3 @@ dummy_cc_toolchain = rule(
     implementation = _dummy_cc_toolchain_impl,
     attrs = {},
 )
-

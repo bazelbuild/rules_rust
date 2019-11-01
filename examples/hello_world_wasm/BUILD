@@ -4,12 +4,10 @@ load(
     "@io_bazel_rules_rust//rust:rust.bzl",
     "rust_binary",
 )
-
 load(
     "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
     "rust_wasm_bindgen",
 )
-
 load(
     "@build_bazel_rules_nodejs//:defs.bzl",
     "jasmine_node_test",
@@ -24,7 +22,7 @@ rust_binary(
 
 rust_wasm_bindgen(
     name = "hello_world_wasm_bindgen",
-    wasm_file = ":hello_world_wasm"
+    wasm_file = ":hello_world_wasm",
 )
 
 jasmine_node_test(

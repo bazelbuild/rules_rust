@@ -8,8 +8,8 @@ load(
 
 rust_library(
     name = "inline",
-    edition = "2018",
     srcs = ["src/lib.rs"],
+    edition = "2018",
 )
 
 rust_test(

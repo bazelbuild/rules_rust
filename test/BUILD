@@ -1,7 +1,7 @@
 load(
     "//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
 load(

@@ -19,6 +19,6 @@ rust_binary(
 
 rust_test(
     name = "hello_out_dir_test",
-    out_dir_tar = ":repacked_srcs.tar.gz",
     crate = ":hello_out_dir",
+    out_dir_tar = ":repacked_srcs.tar.gz",
 )

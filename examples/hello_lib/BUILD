@@ -2,10 +2,10 @@ package(default_visibility = ["//visibility:public"])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
-    "rust_test",
     "rust_doc",
     "rust_doc_test",
+    "rust_library",
+    "rust_test",
 )
 
 rust_library(
@@ -14,8 +14,8 @@ rust_library(
         "src/greeter.rs",
         "src/lib.rs",
     ],
-    rustc_flags = ["--cap-lints=allow"],
     crate_features = ["default"],
+    rustc_flags = ["--cap-lints=allow"],
 )
 
 rust_library(

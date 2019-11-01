@@ -50,11 +50,11 @@ def _rust_wasm_bindgen_impl(ctx):
         typescript = struct(
             declarations = depset([
                 ctx.outputs.typescript_bindings,
-                ctx.outputs.bindgen_typescript_bindings
+                ctx.outputs.bindgen_typescript_bindings,
             ]),
             transitive_declarations = depset([
                 ctx.outputs.typescript_bindings,
-                ctx.outputs.bindgen_typescript_bindings
+                ctx.outputs.bindgen_typescript_bindings,
             ]),
             type_blacklisted_declarations = depset(),
             es5_sources = depset([ctx.outputs.javascript_bindings]),

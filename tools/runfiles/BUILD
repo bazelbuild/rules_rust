@@ -13,8 +13,8 @@ rust_library(
 
 rust_test(
     name = "runfiles_test",
-    data = ["data/sample.txt"],
     crate = ":runfiles",
+    data = ["data/sample.txt"],
 )
 
 rust_doc_test(

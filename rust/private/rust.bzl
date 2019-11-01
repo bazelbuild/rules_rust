@@ -174,9 +174,9 @@ def _rust_test_common(ctx, test_binary):
     elif len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
         dep = ctx.attr.deps[0].label
         msg = _OLD_INLINE_TEST_CRATE_MSG.format(
-                name=test_binary.basename,
-                dep=dep if ctx.label.package != dep.package else ":" + dep.name
-              )
+            name = test_binary.basename,
+            dep = dep if ctx.label.package != dep.package else ":" + dep.name,
+        )
         fail(msg)
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -346,7 +346,7 @@ rust_library = rule(
     cfg = wasm_transition,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type"
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """
 Builds a Rust library crate.
@@ -432,7 +432,7 @@ rust_binary = rule(
     host_fragments = ["cpp"],
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type"
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """
 Builds a Rust binary crate.
@@ -530,7 +530,7 @@ rust_test = rule(
     test = True,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type"
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """
 Builds a Rust test crate.
@@ -677,7 +677,7 @@ rust_benchmark = rule(
     host_fragments = ["cpp"],
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type"
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """
 Builds a Rust benchmark test.

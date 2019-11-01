@@ -22,8 +22,8 @@ stardoc(
         "rust_bindgen_library",
     ],
     deps = [
-        "@io_bazel_rules_rust//rust:rules",
-        "@io_bazel_rules_rust//proto:rules",
         "@io_bazel_rules_rust//bindgen:rules",
+        "@io_bazel_rules_rust//proto:rules",
+        "@io_bazel_rules_rust//rust:rules",
     ],
 )

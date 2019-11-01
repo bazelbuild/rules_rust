@@ -8,13 +8,13 @@ load(
 
 rust_library(
     name = "inline",
-    edition = "2018",
     srcs = ["src/lib.rs"],
+    edition = "2018",
 )
 
 rust_test(
     name = "inline_test",
-    crate = ":inline",
     srcs = ["src/extra.rs"],
+    crate = ":inline",
     deps = ["//test/inline_test_with_deps/dep"],
 )

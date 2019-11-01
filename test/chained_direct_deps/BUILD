@@ -1,8 +1,8 @@
 load(
     "//rust:rust.bzl",
+    "rust_doc_test",
     "rust_library",
     "rust_test",
-    "rust_doc_test",
 )
 
 rust_library(
@@ -20,8 +20,8 @@ rust_library(
     name = "mod3",
     srcs = ["mod3.rs"],
     deps = [
-        ":mod2",
         ":mod1",
+        ":mod2",
     ],
 )
 

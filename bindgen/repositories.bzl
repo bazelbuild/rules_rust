@@ -40,7 +40,7 @@ def rust_bindgen_repositories():
         sha256 = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2",
         strip_prefix = "libloading-0.5.0",
         # TODO: This is a manual patch, need https://github.com/google/cargo-raze/issues/58
-        build_file = Label("//bindgen/raze:libloading.BUILD")
+        build_file = Label("//bindgen/raze:libloading.BUILD"),
     )
     raze_fetch_remote_crates()
 

@@ -145,7 +145,8 @@ def _get_linker_and_args(ctx, rpaths):
     kwargs = {
         "ctx": ctx,
     } if len(BAZEL_VERSION) == 0 or versions.is_at_least(
-        "0.25.0", BAZEL_VERSION
+        "0.25.0",
+        BAZEL_VERSION,
     ) else {}
     feature_configuration = cc_common.configure_features(
         cc_toolchain = cc_toolchain,
@@ -250,8 +251,9 @@ def rustc_compile_action(
 
     # Gets the paths to the folders containing the standard library (or libcore)
     rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
+
     # Tell Rustc where to find the standard library
-    args.add_all(rust_lib_paths, before_each = "-L", format_each="%s")
+    args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
 
     args.add_all(rust_flags)
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
@@ -328,7 +330,7 @@ def rustc_compile_action(
             # nb. This field is required for cc_library to depend on our output.
             files = depset([crate_info.output]),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" else None
+            executable = crate_info.output if crate_info.type == "bin" else None,
         ),
     ]
 

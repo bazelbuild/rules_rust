@@ -82,12 +82,12 @@ def declare_config_settings():
 
     native.constraint_value(
         name = "wasm32",
-        constraint_setting = "@platforms//cpu"
+        constraint_setting = "@platforms//cpu",
     )
 
     native.platform(
         name = "wasm",
         constraint_values = [
             "@io_bazel_rules_rust//rust/platform:wasm32",
-        ]
+        ],
     )
