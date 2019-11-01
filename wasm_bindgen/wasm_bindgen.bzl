@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
-load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 load("@io_bazel_rules_rust//rust:private/transitions.bzl", "wasm_bindgen_transition")
 
 def _rust_wasm_bindgen_impl(ctx):
@@ -59,8 +57,8 @@ def _rust_wasm_bindgen_impl(ctx):
             type_blacklisted_declarations = depset(),
             es5_sources = depset([ctx.outputs.javascript_bindings]),
             es6_sources = depset([ctx.outputs.javascript_bindings]),
-            transitive_es5_sources = depset(depset([ctx.outputs.javascript_bindings])),
-            transitive_es6_sources = depset(depset([ctx.outputs.javascript_bindings])),
+            transitive_es5_sources = depset(depset([ctx.outputs.javascript_bindings]).to_list()),
+            transitive_es6_sources = depset(depset([ctx.outputs.javascript_bindings]).to_list()),
         ),
     )
 

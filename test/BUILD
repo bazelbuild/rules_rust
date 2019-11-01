@@ -1,10 +1,4 @@
 load(
-    "//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
-load(
     "@bazel_tools//tools/build_rules:test_rules.bzl",
     "rule_test",
 )
