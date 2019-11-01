@@ -1,3 +1,4 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_proto_library")
 
 proto_library(

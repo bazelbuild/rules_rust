@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
 package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
 
 cc_library(
