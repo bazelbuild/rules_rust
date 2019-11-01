@@ -14,17 +14,41 @@
 
 load("//proto/raze:crates.bzl", _crate_deps = "raze_fetch_remote_crates")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 def rust_proto_repositories():
     """Declare dependencies needed for proto compilation."""
-    if not native.existing_rule("com_google_protobuf"):
-        http_archive(
-            name = "com_google_protobuf",
-            # commit 7b28271a61a3da0a37f6fda399b0c4c86464e5b3 is from 2018-11-16
-            urls = ["https://github.com/protocolbuffers/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.tar.gz"],
-            strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
-            sha256 = "9dac7d7cf6e2c88bf92915f9338a26950531c00c05bf86764ab978344b69a45a",
-        )
+    maybe(
+        http_archive,
+        name = "com_google_protobuf",
+        sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
+        strip_prefix = "protobuf-3.10.0",
+        urls = [
+            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
+        ],
+    )
+
+    maybe(
+        http_archive,
+        name = "six",
+        build_file = "@com_google_protobuf//:third_party/six.BUILD",
+        sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
+        urls = [
+            "https://pypi.python.org/packages/source/s/six/six-1.12.0.tar.gz",
+        ],
+    )
+
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+        strip_prefix = "zlib-1.2.11",
+        urls = [
+            "https://zlib.net/zlib-1.2.11.tar.gz",
+        ],
+    )
 
     _crate_deps()
 
