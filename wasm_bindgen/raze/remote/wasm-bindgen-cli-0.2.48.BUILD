@@ -3,33 +3,39 @@ cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
 package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//wasm_bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//wasm_bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+    "notice",  # "MIT,Apache-2.0"
 ])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
-
 
 rust_binary(
     # Prefix bin name to disambiguate from (probable) collision with lib name
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_wasm_bindgen",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
     crate_root = "src/bin/wasm-bindgen.rs",
     edition = "2018",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.2.48",
     deps = [
         "@raze__curl__0_4_22//:curl",
         "@raze__docopt__1_1_0//:docopt",
@@ -43,12 +49,6 @@ rust_binary(
         "@raze__walrus__0_8_0//:walrus",
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "0.2.48",
-    crate_features = [
     ],
 )
 
@@ -57,9 +57,15 @@ rust_binary(
     # Prefix bin name to disambiguate from (probable) collision with lib name
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_wasm_bindgen_test_runner",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
     crate_root = "src/bin/wasm-bindgen-test-runner/main.rs",
     edition = "2018",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.2.48",
     deps = [
         "@raze__curl__0_4_22//:curl",
         "@raze__docopt__1_1_0//:docopt",
@@ -73,12 +79,6 @@ rust_binary(
         "@raze__walrus__0_8_0//:walrus",
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "0.2.48",
-    crate_features = [
     ],
 )
 
@@ -86,9 +86,15 @@ rust_binary(
     # Prefix bin name to disambiguate from (probable) collision with lib name
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_wasm2es6js",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
     crate_root = "src/bin/wasm2es6js.rs",
     edition = "2018",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.2.48",
     deps = [
         "@raze__curl__0_4_22//:curl",
         "@raze__docopt__1_1_0//:docopt",
@@ -103,11 +109,4 @@ rust_binary(
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
     ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "0.2.48",
-    crate_features = [
-    ],
 )
-

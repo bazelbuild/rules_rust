@@ -3,77 +3,92 @@ cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
 package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
 ])
 
 licenses([
-  "notice", # "BSD-3-Clause"
+    "notice",  # "BSD-3-Clause"
 ])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
 
 rust_binary(
     name = "bindgen_build_script",
     srcs = glob(["**/*.rs"]),
-    crate_root = "build.rs",
-    edition = "2015",
-    deps = [
+    crate_features = [
+        "default",
+        "env_logger",
+        "log",
+        "logging",
     ],
+    crate_root = "build.rs",
+    data = glob(["*"]),
+    edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    crate_features = [
-      "default",
-      "env_logger",
-      "log",
-      "logging",
-    ],
-    data = glob(["*"]),
     version = "0.40.0",
     visibility = ["//visibility:private"],
+    deps = [
+    ],
 )
 
 genrule(
     name = "bindgen_build_script_executor",
-    srcs = glob(["*", "**/*.rs"]),
+    srcs = glob([
+        "*",
+        "**/*.rs",
+    ]),
     outs = ["bindgen_out_dir_outputs.tar.gz"],
-    tools = [
-      ":bindgen_build_script",
-    ],
+    cmd = "mkdir -p bindgen_out_dir_outputs/;" +
+          " (export CARGO_MANIFEST_DIR=\"$$PWD/$$(dirname $(location :Cargo.toml))\";" +
+          # TODO(acmcarther): This needs to be revisited as part of the cross compilation story.
+          #                   See also: https://github.com/google/cargo-raze/pull/54
+          " export TARGET='x86_64-unknown-linux-gnu';" +
+          " export RUST_BACKTRACE=1;" +
+          " export CARGO_FEATURE_DEFAULT=1;" +
+          " export CARGO_FEATURE_ENV_LOGGER=1;" +
+          " export CARGO_FEATURE_LOG=1;" +
+          " export CARGO_FEATURE_LOGGING=1;" +
+          " export OUT_DIR=$$PWD/bindgen_out_dir_outputs;" +
+          " export BINARY_PATH=\"$$PWD/$(location :bindgen_build_script)\";" +
+          " export OUT_TAR=$$PWD/$@;" +
+          " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && tar -czf $$OUT_TAR -C $$OUT_DIR .)",
     local = 1,
-    cmd = "mkdir -p bindgen_out_dir_outputs/;"
-        + " (export CARGO_MANIFEST_DIR=\"$$PWD/$$(dirname $(location :Cargo.toml))\";"
-        # TODO(acmcarther): This needs to be revisited as part of the cross compilation story.
-        #                   See also: https://github.com/google/cargo-raze/pull/54
-        + " export TARGET='x86_64-unknown-linux-gnu';"
-        + " export RUST_BACKTRACE=1;"
-        + " export CARGO_FEATURE_DEFAULT=1;"
-        + " export CARGO_FEATURE_ENV_LOGGER=1;"
-        + " export CARGO_FEATURE_LOG=1;"
-        + " export CARGO_FEATURE_LOGGING=1;"
-        + " export OUT_DIR=$$PWD/bindgen_out_dir_outputs;"
-        + " export BINARY_PATH=\"$$PWD/$(location :bindgen_build_script)\";"
-        + " export OUT_TAR=$$PWD/$@;"
-        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && tar -czf $$OUT_TAR -C $$OUT_DIR .)"
+    tools = [
+        ":bindgen_build_script",
+    ],
 )
 
 rust_binary(
     # Prefix bin name to disambiguate from (probable) collision with lib name
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_bindgen",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "env_logger",
+        "log",
+        "logging",
+    ],
     crate_root = "src/main.rs",
     edition = "2015",
-    srcs = glob(["**/*.rs"]),
+    out_dir_tar = ":bindgen_build_script_executor",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.40.0",
     deps = [
         # Binaries get an implicit dependency on their lib
         ":bindgen",
@@ -91,26 +106,25 @@ rust_binary(
         "@raze__regex__1_1_0//:regex",
         "@raze__which__1_0_5//:which",
     ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    out_dir_tar = ":bindgen_build_script_executor",
-    version = "0.40.0",
+)
+
+rust_library(
+    name = "bindgen",
+    srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
         "env_logger",
         "log",
         "logging",
     ],
-)
-
-
-rust_library(
-    name = "bindgen",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
-    srcs = glob(["**/*.rs"]),
+    out_dir_tar = ":bindgen_build_script_executor",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.40.0",
     deps = [
         "@raze__bitflags__1_0_4//:bitflags",
         "@raze__cexpr__0_2_3//:cexpr",
@@ -126,16 +140,4 @@ rust_library(
         "@raze__regex__1_1_0//:regex",
         "@raze__which__1_0_5//:which",
     ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    out_dir_tar = ":bindgen_build_script_executor",
-    version = "0.40.0",
-    crate_features = [
-        "default",
-        "env_logger",
-        "log",
-        "logging",
-    ],
 )
-

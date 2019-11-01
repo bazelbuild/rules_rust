@@ -3,25 +3,25 @@ cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
 package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+    "notice",  # "MIT,Apache-2.0"
 ])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
-
 
 # Unsupported target "custom_default_format" with type "example" omitted
 # Unsupported target "custom_format" with type "example" omitted
@@ -31,24 +31,24 @@ load(
 
 rust_library(
     name = "env_logger",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "regex",
+    ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.5.13",
     deps = [
         "@raze__atty__0_2_11//:atty",
         "@raze__humantime__1_2_0//:humantime",
         "@raze__log__0_4_6//:log",
         "@raze__regex__1_1_0//:regex",
         "@raze__termcolor__1_0_4//:termcolor",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "0.5.13",
-    crate_features = [
-        "default",
-        "regex",
     ],
 )
 

@@ -3,25 +3,25 @@ cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
 package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+    "notice",  # "MIT,Apache-2.0"
 ])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
-
 
 # Unsupported target "backtrack" with type "test" omitted
 # Unsupported target "backtrack-bytes" with type "test" omitted
@@ -36,24 +36,24 @@ load(
 
 rust_library(
     name = "regex",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "use_std",
+    ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "1.1.0",
     deps = [
         "@raze__aho_corasick__0_6_9//:aho_corasick",
         "@raze__memchr__2_1_3//:memchr",
         "@raze__regex_syntax__0_6_5//:regex_syntax",
         "@raze__thread_local__0_3_6//:thread_local",
         "@raze__utf8_ranges__1_0_2//:utf8_ranges",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "1.1.0",
-    crate_features = [
-        "default",
-        "use_std",
     ],
 )
 

@@ -3,25 +3,25 @@ cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
 package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//wasm_bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//wasm_bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+    "notice",  # "MIT,Apache-2.0"
 ])
 
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
-
 
 # Unsupported target "database" with type "example" omitted
 # Unsupported target "git-http-backend" with type "example" omitted
@@ -32,10 +32,16 @@ load(
 
 rust_library(
     name = "rouille",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
-    srcs = glob(["**/*.rs"]),
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "3.0.0",
     deps = [
         "@raze__base64__0_9_3//:base64",
         "@raze__chrono__0_4_7//:chrono",
@@ -52,12 +58,6 @@ rust_library(
         "@raze__time__0_1_42//:time",
         "@raze__tiny_http__0_6_2//:tiny_http",
         "@raze__url__1_7_2//:url",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    version = "3.0.0",
-    crate_features = [
     ],
 )
 

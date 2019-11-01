@@ -29,6 +29,6 @@ rust_library(
     crate_root = "src/lib.rs",
     crate_type = "lib",
     rustc_flags = ["--cap-lints=allow"],
-    deps = [":global_static"],
     visibility = ["//visibility:public"],
+    deps = [":global_static"],
 )
