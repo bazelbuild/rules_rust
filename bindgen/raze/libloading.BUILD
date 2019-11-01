@@ -5,6 +5,8 @@ cargo-raze crate build file.
 - Libloading has a CC dep that needs to be built.
 """
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 licenses([
     "notice",  # "ISC"
 ])
