@@ -44,6 +44,7 @@ DepInfo = provider(
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
+        "linkopts": "list[string]",
     },
 )
 
@@ -101,6 +102,7 @@ def collect_deps(deps, toolchain):
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
+    linkopts = []
     for dep in deps:
         if CrateInfo in dep:
             # This dependency is a rust_library
@@ -114,10 +116,20 @@ def collect_deps(deps, toolchain):
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
             libs = get_libs_for_static_executable(dep)
+            # TODO: This is changing the order of linker inputs, it shouldn't.
+            # In more sophisticated scenarios we need to retain the relative
+            # order of static/shared libraries. Imagine following libs:
+            #   libs = [ liba.a, libb.so, libc.a ]
+            # Ideally this will get converted into the following linker command
+            # line:
+            #   -la -lb -lc
+            # But the current implementation produces:
+            #    -la -lc -b
             dylibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
             staticlibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
             transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
+            linkopts.extend(dep[CcInfo].linking_context.user_link_flags)
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
@@ -132,6 +144,7 @@ def collect_deps(deps, toolchain):
         transitive_dylibs = transitive_dylibs,
         transitive_staticlibs = transitive_staticlibs,
         transitive_libs = transitive_libs.to_list(),
+        linkopts = linkopts,
     )
 
 def _get_linker_and_args(ctx, rpaths):
@@ -399,6 +412,7 @@ def add_native_link_flags(args, dep_info):
     args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
+    args.add_all(dep_info.linkopts, uniquify = False)
 
 def _get_dirname(file):
     return file.dirname
