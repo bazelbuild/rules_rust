@@ -16,29 +16,11 @@ def rust_repositories():
 
     maybe(
         http_archive,
-        name = "bazel_skylib",
-        strip_prefix = "bazel-skylib-1.0.2",
-        url = "https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.zip",
-        type = "zip",
-        sha256 = "64ad2728ccdd2044216e4cec7815918b7bb3bb28c95b7e9d951f9d4eccb07625",
-    )
-
-    maybe(
-        http_archive,
         name = "rules_cc",
         url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.zip",
         sha256 = "8c7e8bf24a2bf515713445199a677ee2336e1c487fa1da41037c6026de04bbc3",
         strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
         type = "zip",
-    )
-
-    maybe(
-        http_archive,
-        name = "rules_python",
-        strip_prefix = "rules_python-0.0.1",
-        type = "zip",
-        url = "https://github.com/bazelbuild/rules_python/archive/0.0.1.zip",
-        sha256 = "f73c0cf51c32c7aaeaf02669ed03b32d12f2d92e1b05699eb938a75f35a210f4",
     )
 
     rust_repository_set(

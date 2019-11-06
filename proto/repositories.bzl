@@ -31,6 +31,24 @@ def rust_proto_repositories():
 
     maybe(
         http_archive,
+        name = "rules_python",
+        strip_prefix = "rules_python-0.0.1",
+        type = "zip",
+        url = "https://github.com/bazelbuild/rules_python/archive/0.0.1.zip",
+        sha256 = "f73c0cf51c32c7aaeaf02669ed03b32d12f2d92e1b05699eb938a75f35a210f4",
+    )
+
+    maybe(
+        http_archive,
+        name = "bazel_skylib",
+        strip_prefix = "bazel-skylib-1.0.2",
+        url = "https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.zip",
+        type = "zip",
+        sha256 = "64ad2728ccdd2044216e4cec7815918b7bb3bb28c95b7e9d951f9d4eccb07625",
+    )
+
+    maybe(
+        http_archive,
         name = "six",
         build_file = "@com_google_protobuf//:third_party/six.BUILD",
         sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
