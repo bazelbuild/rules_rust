@@ -35,16 +35,20 @@ rust_toolchain = rule(
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
+            cfg = "target",
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
+            cfg = "target",
         ),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
@@ -57,6 +61,7 @@ rust_toolchain = rule(
         "target_triple": attr.string(),
         "_crosstool": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            cfg = "exec",
         ),
         "opt_level": attr.string_dict(default = {
             "opt": "3",
