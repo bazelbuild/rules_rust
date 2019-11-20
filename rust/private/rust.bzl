@@ -14,7 +14,7 @@
 
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
-load("@io_bazel_rules_rust//rust:private/transitions.bzl", "wasm_transition")
+load("@io_bazel_rules_rust//rust:private/transitions.bzl", "proc_macro_host_transition")
 
 _OLD_INLINE_TEST_CRATE_MSG = """
 --------------------------------------------------------------------------------
@@ -343,7 +343,7 @@ rust_library = rule(
                  _rust_library_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    cfg = wasm_transition,
+    cfg = proc_macro_host_transition,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
