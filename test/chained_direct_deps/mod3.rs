@@ -17,12 +17,12 @@ pub fn greet_default() {
 /// # Examples
 ///
 /// ```rust
-/// # assert!(
+/// assert!(
 ///   mod3::am_i_the_world("world") == true
-/// #);
-/// # assert!(
+/// );
+/// assert!(
 ///   mod3::am_i_the_world("myself") == false
-/// #);
+/// );
 /// ```
 pub fn am_i_the_world(me: &str) -> bool {
     return me == mod1::world();

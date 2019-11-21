@@ -12,7 +12,7 @@ def rust_repositories():
     other hosts or for additional target triples.
     """
 
-    RUST_VERSION = "1.35.0"
+    RUST_VERSION = "1.39.0"
 
     maybe(
         http_archive,
