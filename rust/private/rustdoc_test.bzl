@@ -67,7 +67,7 @@ def _build_rustdoc_test_script(toolchain, dep_info, crate):
     link_search_flags = []
 
     link_flags += ["--extern=" + crate.name + "=" + crate.output.short_path]
-    link_flags += ["--extern=" + c.name + "=" + c.output.short_path for c in d.direct_crates.to_list()]
+    link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
     link_search_flags += ["-Ldependency={}".format(dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
     link_flags += ["-ldylib=" + get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]

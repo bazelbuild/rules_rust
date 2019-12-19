@@ -32,9 +32,17 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "srcs": "List[File]: All source Files that are part of the crate.",
         "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
+        "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "output": "File: The output File that will be produced, depends on crate type.",
         "edition": "str: The edition of this crate.",
     },
+)
+
+AliasableDep = provider(
+    fields = {
+        "name": "str",
+        "dep": "CrateInfo",
+    }
 )
 
 DepInfo = provider(
@@ -84,7 +92,7 @@ def get_lib_name(lib):
     else:
         return libname
 
-def collect_deps(deps, toolchain):
+def collect_deps(deps, aliases, toolchain):
     """
     Walks through dependencies and collects the transitive dependencies.
 
@@ -101,10 +109,17 @@ def collect_deps(deps, toolchain):
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
+
+    aliases = {k.label: v for k,v in aliases.items()}
     for dep in deps:
         if CrateInfo in dep:
             # This dependency is a rust_library
-            direct_crates += [dep[CrateInfo]]
+            direct_dep = dep[CrateInfo]
+            aliasable_dep = AliasableDep(
+                name = aliases.get(dep.label, direct_dep.name),
+                dep = direct_dep,
+            )
+            direct_crates += [aliasable_dep]
             transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])
             transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
             transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
@@ -197,6 +212,7 @@ def rustc_compile_action(
 
     dep_info = collect_deps(
         crate_info.deps,
+        crate_info.aliases,
         toolchain,
     )
 
@@ -389,7 +405,7 @@ def add_crate_link_flags(args, dep_info):
     )
 
 def _crate_to_link_flag(crate_info):
-    return ["--extern", "{}={}".format(crate_info.name, crate_info.output.path)]
+    return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
 
 def _get_crate_dirname(crate):
     return crate.output.dirname

@@ -120,6 +120,7 @@ def _rust_library_impl(ctx):
             root = lib_rs,
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            aliases = ctx.attr.aliases,
             output = rust_lib,
             edition = _get_edition(ctx, toolchain),
         ),
@@ -143,6 +144,7 @@ def _rust_binary_impl(ctx):
             root = _crate_root_src(ctx, "main.rs"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            aliases = ctx.attr.aliases,
             output = output,
             edition = _get_edition(ctx, toolchain),
         ),
@@ -168,6 +170,7 @@ def _rust_test_common(ctx, test_binary):
             root = crate.root,
             srcs = crate.srcs + ctx.files.srcs,
             deps = crate.deps + ctx.attr.deps,
+            aliases = ctx.attr.aliases,
             output = test_binary,
             edition = crate.edition,
         )
@@ -186,6 +189,7 @@ def _rust_test_common(ctx, test_binary):
             root = _crate_root_src(ctx),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            aliases = ctx.attr.aliases,
             output = test_binary,
             edition = _get_edition(ctx, toolchain),
         )
@@ -273,6 +277,13 @@ _rust_common_attrs = {
 
             These can be either other `rust_library` targets or `cc_library` targets if
             linking a native library.
+        """),
+    ),
+    "aliases": attr.label_keyed_string_dict(
+        doc = _tidy("""
+            Remap crates to a new name or moniker for linkage to this target
+
+            These are other `rust_library` targets and will be presented as the new name given.
         """),
     ),
     "crate_features": attr.string_list(
