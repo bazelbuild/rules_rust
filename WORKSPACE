@@ -46,18 +46,24 @@ rust_wasm_bindgen_repositories()
 
 # Stardoc and its dependencies
 http_archive(
-    name = "io_bazel_skydoc",
-    url = "https://github.com/bazelbuild/skydoc/archive/cca509af50a0776a4ed745575534b38bd131753c.zip",
-    strip_prefix = "skydoc-cca509af50a0776a4ed745575534b38bd131753c",
+    name = "io_bazel_stardoc",
+    urls = [
+        "https://github.com/bazelbuild/stardoc/archive/f13e3cac7022bd8bdd32233d1dae95a56df01a51.zip",
+    ],
+    sha256 = "d698a413eaaf473c27d57654e4726ddfaab3e29280294ae2d8e11c4cb6f29b5e",
+    strip_prefix = "stardoc-f13e3cac7022bd8bdd32233d1dae95a56df01a51",
 )
 
-load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
-skydoc_repositories()
+load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
+stardoc_repositories()
 
-load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
-rules_sass_dependencies()
+http_archive(
+    name = "build_bazel_rules_nodejs",
+    sha256 = "e1a0d6eb40ec89f61a13a028e7113aa3630247253bcb1406281b627e44395145",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/1.0.1/rules_nodejs-1.0.1.tar.gz"],
+)
 
-load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories", "npm_install")
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
 node_repositories()
 
 # Dependencies for the @examples//hello_world_wasm example.
@@ -67,10 +73,11 @@ npm_install(
     package_lock_json = "//:package-lock.json",
 )
 
-load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
-sass_repositories()
-# --- end stardoc
+# Install all Bazel dependencies needed for npm packages that supply Bazel rules
+load("@npm//:install_bazel_dependencies.bzl", "install_bazel_dependencies")
 
+install_bazel_dependencies()
+# --- end stardoc
 
 http_archive(
     name = "bazel_toolchains",

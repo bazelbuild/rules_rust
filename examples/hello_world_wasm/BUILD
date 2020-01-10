@@ -8,10 +8,8 @@ load(
     "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
     "rust_wasm_bindgen",
 )
-load(
-    "@build_bazel_rules_nodejs//:defs.bzl",
-    "jasmine_node_test",
-)
+
+load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
 
 rust_binary(
     name = "hello_world_wasm",
