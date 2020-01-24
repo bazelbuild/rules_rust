@@ -202,7 +202,7 @@ def produce_tool_path(tool_name, target_triple, version):
 
     return "{}-{}-{}".format(tool_name, version, target_triple)
 
-def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple):
+def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple, sha256=""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
     This function sources the tool from the Rust-lang static file server. The index is available
@@ -233,7 +233,7 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
     ctx.download_and_extract(
         url,
         output = "",
-        sha256 = FILE_KEY_TO_SHA.get(tool_suburl) or "",
+        sha256 = FILE_KEY_TO_SHA.get(tool_suburl) or sha256,
         stripPrefix = "{}/{}".format(tool_path, tool_subdirectory),
     )
 
