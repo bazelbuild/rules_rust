@@ -67,7 +67,7 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
               "please file an issue!").format(crate_type))
 
     return "lib{name}-{lib_hash}{extension}".format(
-        name = name,
+        name = name.replace("-", "_"),
         lib_hash = lib_hash,
         extension = extension,
     )
@@ -133,7 +133,7 @@ def _rust_binary_impl(ctx):
     if (toolchain.target_arch == "wasm32"):
         output = ctx.actions.declare_file(ctx.label.name + ".wasm")
     else:
-        output = ctx.actions.declare_file(ctx.label.name)
+        output = ctx.actions.declare_file(ctx.label.name.replace("-", "_"))
 
     return rustc_compile_action(
         ctx = ctx,

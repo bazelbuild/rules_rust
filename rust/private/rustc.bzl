@@ -244,7 +244,7 @@ def rustc_compile_action(
 
     args = ctx.actions.args()
     args.add(crate_info.root)
-    args.add("--crate-name=" + crate_info.name)
+    args.add("--crate-name=" + crate_info.name.replace("-", "_"))
     args.add("--crate-type=" + crate_info.type)
 
     # Mangle symbols to disambiguate crates with the same name
@@ -405,7 +405,7 @@ def add_crate_link_flags(args, dep_info):
     )
 
 def _crate_to_link_flag(crate_info):
-    return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
+    return ["--extern", "{}={}".format(crate_info.name.replace("-", "_"), crate_info.dep.output.path)]
 
 def _get_crate_dirname(crate):
     return crate.output.dirname
