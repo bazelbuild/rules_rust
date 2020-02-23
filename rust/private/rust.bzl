@@ -66,8 +66,9 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
         fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
               "please file an issue!").format(crate_type))
 
+    crate_name = name.replace("-", "_")
     return "lib{name}-{lib_hash}{extension}".format(
-        name = name.replace("-", "_"),
+        name = crate_name,
         lib_hash = lib_hash,
         extension = extension,
     )
@@ -110,12 +111,13 @@ def _rust_library_impl(ctx):
         output_hash,
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
+    crate_name = ctx.label.name.replace("-", "_")
 
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_info = CrateInfo(
-            name = ctx.label.name,
+            name = crate_name,
             type = ctx.attr.crate_type,
             root = lib_rs,
             srcs = ctx.files.srcs,
@@ -129,17 +131,18 @@ def _rust_library_impl(ctx):
 
 def _rust_binary_impl(ctx):
     toolchain = find_toolchain(ctx)
+    crate_name = ctx.label.name.replace("-", "_")
 
     if (toolchain.target_arch == "wasm32"):
-        output = ctx.actions.declare_file(ctx.label.name + ".wasm")
+        output = ctx.actions.declare_file(crate_name + ".wasm")
     else:
-        output = ctx.actions.declare_file(ctx.label.name.replace("-", "_"))
+        output = ctx.actions.declare_file(crate_name)
 
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_info = CrateInfo(
-            name = ctx.label.name,
+            name = crate_name,
             type = "bin",
             root = _crate_root_src(ctx, "main.rs"),
             srcs = ctx.files.srcs,
