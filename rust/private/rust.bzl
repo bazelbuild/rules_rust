@@ -66,9 +66,8 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
         fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
               "please file an issue!").format(crate_type))
 
-    crate_name = name.replace("-", "_")
     return "lib{name}-{lib_hash}{extension}".format(
-        name = crate_name,
+        name = name,
         lib_hash = lib_hash,
         extension = extension,
     )
@@ -104,14 +103,14 @@ def _rust_library_impl(ctx):
     # Determine unique hash for this rlib
     output_hash = _determine_output_hash(lib_rs)
 
+    crate_name = ctx.label.name.replace("-", "_")
     rust_lib_name = _determine_lib_name(
-        ctx.attr.name,
+        crate_name,
         ctx.attr.crate_type,
         toolchain,
         output_hash,
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    crate_name = ctx.label.name.replace("-", "_")
 
     return rustc_compile_action(
         ctx = ctx,
