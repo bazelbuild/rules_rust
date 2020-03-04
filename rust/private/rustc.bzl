@@ -325,6 +325,11 @@ def rustc_compile_action(
         toolchain.rustc.path,
     )
 
+    if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
+        formatted_version = " v{}".format(ctx.attr.version)
+    else:
+        formatted_version = ""
+
     ctx.actions.run_shell(
         command = command,
         inputs = compile_inputs,
@@ -332,7 +337,9 @@ def rustc_compile_action(
         env = env,
         arguments = [args],
         mnemonic = "Rustc",
-        progress_message = "Compiling Rust {} {} ({} files)".format(crate_info.type, ctx.label.name, len(crate_info.srcs)),
+        progress_message = "Compiling Rust {} {}{} ({} files)".format(
+            crate_info.type, ctx.label.name, formatted_version, len(crate_info.srcs)
+        ),
     )
     runfiles = ctx.runfiles(
         files = dep_info.transitive_dylibs.to_list() + getattr(ctx.files, "data", []),
