@@ -321,6 +321,9 @@ _rust_common_attrs = {
         ],
     ),
     "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+    "_whitelist_function_transition": attr.label(
+        default = "//tools/whitelists/function_transition_whitelist",
+    ),
 }
 
 _rust_library_attrs = {
@@ -332,9 +335,6 @@ _rust_library_attrs = {
             The exact output file will depend on the toolchain used.
         """),
         default = "rlib",
-    ),
-    "_whitelist_function_transition": attr.label(
-        default = "//tools/whitelists/function_transition_whitelist",
     ),
 }
 
@@ -443,6 +443,7 @@ rust_binary = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = proc_macro_host_transition,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -540,6 +541,7 @@ rust_test = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = proc_macro_host_transition,
     test = True,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
@@ -688,6 +690,7 @@ rust_benchmark = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = proc_macro_host_transition,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",

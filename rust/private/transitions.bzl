@@ -1,5 +1,5 @@
 def _proc_macro_host_transition(settings, attr):
-    if attr.crate_type == "proc-macro":
+    if hasattr(attr, "crate_type") and attr.crate_type == "proc-macro":
         return {"//command_line_option:platforms": "@local_config_platform//:host"}
     else:
         return settings
