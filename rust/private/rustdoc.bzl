@@ -38,6 +38,7 @@ def _rust_doc_impl(ctx):
     args = ctx.actions.args()
     args.add(crate.root.path)
     args.add("--crate-name", crate.name)
+    args.add("--crate-type", crate.type)
     args.add("--output", output_dir.path)
     add_edition_flags(args, crate)
 
