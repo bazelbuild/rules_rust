@@ -421,7 +421,7 @@ rust_toolchain_repository_proxy = repository_rule(
     implementation = _rust_toolchain_repository_proxy_impl,
 )
 
-def rust_repository_set(name, version, exec_triple, extra_target_triples, iso_date = None, rustfmt_version = None):
+def rust_repository_set(name, version, exec_triple, extra_target_triples = [], iso_date = None, rustfmt_version = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository
     to contain the toolchain declaration, and registers the toolchains.
 
