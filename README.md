@@ -75,6 +75,27 @@ bazel_version(name = "bazel_version")
 ```
 The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 0.26.0.
 
+### Specifying Rust version
+
+To build with a particular version of the Rust compiler, pass that version to `rust_repositories`:
+
+```python
+rust_repositories(version = "1.42.0")
+```
+
+As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
+
+```python
+rust_repositories(version = "nightly", iso_date = "2020-04-19")
+```
+
+Similarly, `rustfmt_version` may also be configured:
+
+```python
+rust_repositories(rustfmt_version = "1.4.8")
+```
+
+
 ### External Dependencies
 
 Currently the most common approach to managing external dependencies is using 

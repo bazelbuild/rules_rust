@@ -5,15 +5,17 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def rust_repositories():
+def rust_repositories(version="1.39.0", iso_date=None, rustfmt_version="1.4.8"):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
     other hosts or for additional target triples.
-    """
 
-    RUST_VERSION = "1.39.0"
-    RUSTFMT_VERSION = "1.4.8"
+    Args:
+      version: The version of Rust. Either "nightly", "beta", or an exact version.
+      rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
+      iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
+    """
 
     maybe(
         http_archive,
@@ -28,24 +30,27 @@ def rust_repositories():
         name = "rust_linux_x86_64",
         exec_triple = "x86_64-unknown-linux-gnu",
         extra_target_triples = ["wasm32-unknown-unknown"],
-        version = RUST_VERSION,
-        rustfmt_version = RUSTFMT_VERSION,
+        version = version,
+        iso_date = iso_date,
+        rustfmt_version = rustfmt_version,
     )
 
     rust_repository_set(
         name = "rust_darwin_x86_64",
         exec_triple = "x86_64-apple-darwin",
         extra_target_triples = ["wasm32-unknown-unknown"],
-        version = RUST_VERSION,
-        rustfmt_version = RUSTFMT_VERSION,
+        version = version,
+        iso_date = iso_date,
+        rustfmt_version = rustfmt_version,
     )
 
     rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
         extra_target_triples = ["wasm32-unknown-unknown"],
-        version = RUST_VERSION,
-        rustfmt_version = RUSTFMT_VERSION,
+        version = version,
+        iso_date = iso_date,
+        rustfmt_version = rustfmt_version,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
@@ -269,9 +274,15 @@ def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version
 
 def _load_rustfmt(ctx):
     target_triple = ctx.attr.exec_triple
+
+    if ctx.attr.rustfmt_version in ("beta", "nightly"):
+        iso_date = ctx.attr.iso_date
+    else:
+        iso_date = None
+
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         param_prefix = "rustfmt_",
         target_triple = target_triple,
         tool_name = "rustfmt",
