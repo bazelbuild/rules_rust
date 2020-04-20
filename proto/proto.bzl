@@ -35,14 +35,15 @@ rust_proto_repositories()
 """
 
 load(
-    "//proto:toolchain.bzl",
+    "@io_bazel_rules_rust//proto:toolchain.bzl",
     "GRPC_COMPILE_DEPS",
     "PROTO_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/transitions.bzl", "proc_macro_host_transition")
 
 RustProtoProvider = provider(
     fields = {
@@ -225,7 +226,11 @@ rust_proto_library = rule(
                 "@io_bazel_rules_rust//proto:optional_output_wrapper",
             ),
         ),
+        "_whitelist_function_transition": attr.label(
+            default = "//tools/whitelists/function_transition_whitelist",
+        ),
     },
+    cfg = proc_macro_host_transition,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -285,7 +290,11 @@ rust_grpc_library = rule(
                 "@io_bazel_rules_rust//proto:optional_output_wrapper",
             ),
         ),
+        "_whitelist_function_transition": attr.label(
+            default = "//tools/whitelists/function_transition_whitelist",
+        ),
     },
+    cfg = proc_macro_host_transition,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
