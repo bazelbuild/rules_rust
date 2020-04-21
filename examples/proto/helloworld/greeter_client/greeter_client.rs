@@ -15,6 +15,7 @@
 extern crate grpc;
 extern crate helloworld_proto;
 
+use grpc::ClientStubExt;
 use std::env;
 use std::str::FromStr;
 

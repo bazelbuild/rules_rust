@@ -422,15 +422,6 @@ def raze_fetch_remote_crates():
     )
 
     _new_http_archive(
-        name = "raze__log__0_3_9",
-        url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/log/log-0.3.9.crate",
-        type = "tar.gz",
-        sha256 = "e19e8d5c34a3e0e2223db8e060f9e8264aeeb5c5fc64a4ee9965c062211c024b",
-        strip_prefix = "log-0.3.9",
-        build_file = Label("//wasm_bindgen/raze/remote:log-0.3.9.BUILD"),
-    )
-
-    _new_http_archive(
         name = "raze__log__0_4_6",
         url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/log/log-0.4.6.crate",
         type = "tar.gz",

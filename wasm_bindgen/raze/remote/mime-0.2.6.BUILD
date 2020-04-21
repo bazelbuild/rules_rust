@@ -36,6 +36,6 @@ rust_library(
     ],
     version = "0.2.6",
     deps = [
-        "@raze__log__0_3_9//:log",
+        "@raze__log__0_4_6//:log",
     ],
 )
