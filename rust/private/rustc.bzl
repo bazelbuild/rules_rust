@@ -346,6 +346,8 @@ def rustc_compile_action(
         collect_data = True,
     )
 
+    always_out_binary = getattr(ctx.attr, "always_out_binary")
+
     return [
         crate_info,
         dep_info,
@@ -353,7 +355,7 @@ def rustc_compile_action(
             # nb. This field is required for cc_library to depend on our output.
             files = depset([crate_info.output]),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" else None,
+            executable = crate_info.output if crate_info.type == "bin" or always_out_binary else None,
         ),
     ]
 
