@@ -345,8 +345,10 @@ def rustc_compile_action(
         files = dep_info.transitive_dylibs.to_list() + getattr(ctx.files, "data", []),
         collect_data = True,
     )
-
-    always_out_binary = getattr(ctx.attr, "always_out_binary")
+    
+    out_binary = False
+    if hasattr(ctx.attr, "out_binary"):
+        out_binary = getattr(ctx.attr, "out_binary")
 
     return [
         crate_info,
@@ -355,7 +357,7 @@ def rustc_compile_action(
             # nb. This field is required for cc_library to depend on our output.
             files = depset([crate_info.output]),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" or always_out_binary else None,
+            executable = crate_info.output if crate_info.type == "bin" or out_binary else None,
         ),
     ]
 
