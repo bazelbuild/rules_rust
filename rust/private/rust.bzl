@@ -81,18 +81,28 @@ def _get_edition(ctx, toolchain):
 def _crate_root_src(ctx, file_name = "lib.rs"):
     """Finds the source file for the crate root."""
     srcs = ctx.files.srcs
-    name_to_file = {f.basename: f for f in srcs}
 
     crate_root = (
         ctx.file.crate_root or
         (srcs[0] if len(srcs) == 1 else None) or
-        name_to_file.get(file_name) or
-        name_to_file.get(ctx.attr.name + ".rs")
+        _shortest_src_with_basename(srcs, file_name) or
+        _shortest_src_with_basename(srcs, ctx.attr.name + ".rs")
     )
     if not crate_root:
         file_names = [file_name, ctx.attr.name + ".rs"]
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
+
+def _shortest_src_with_basename(srcs, basename):
+    """
+    Finds the shortest among the paths in srcs that match the desired basename.
+    """
+    shortest = None
+    for f in srcs:
+        if f.basename == basename:
+            if not shortest or len(f.dirname) < len(shortest.dirname):
+                shortest = f
+    return shortest
 
 def _rust_library_impl(ctx):
     # Find lib.rs
