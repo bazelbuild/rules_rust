@@ -97,8 +97,12 @@ def _shortest_src_with_basename(srcs, basename):
     """
     Finds the shortest among the paths in srcs that match the desired basename.
     """
-    files = sorted([f for f in srcs if f.basename == basename], lambda f: len(f.dirname)])
-    return files[0] if len(files) else None
+    shortest = None
+    for f in srcs:
+        if f.basename == basename:
+            if not shortest or len(f.dirname) < len(shortest.dirname):
+                shortest = f
+    return shortest
 
 def _rust_library_impl(ctx):
     # Find lib.rs
