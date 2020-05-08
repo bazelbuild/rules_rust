@@ -313,6 +313,14 @@ _rust_common_attrs = {
     "rustc_flags": attr.string_list(
         doc = "List of compiler flags passed to `rustc`.",
     ),
+    "rustc_env": attr.string_list(
+        doc = _tidy("""
+            List of environment variables passed to `rustc`.
+
+            This should have a similar effect to the `cargo:rustc-env=VAR=VALUE`
+            declaration which can be emitted from build scripts.
+        """),
+    ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",

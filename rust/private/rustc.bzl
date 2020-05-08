@@ -62,7 +62,8 @@ def _get_rustc_env(ctx, toolchain):
         patch, pre = patch.split("-", 1)
     else:
         pre = ""
-    return {
+
+    env = {
         "CARGO_PKG_VERSION": version,
         "CARGO_PKG_VERSION_MAJOR": major,
         "CARGO_PKG_VERSION_MINOR": minor,
@@ -75,6 +76,14 @@ def _get_rustc_env(ctx, toolchain):
         "CARGO_CFG_TARGET_OS": toolchain.os,
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
     }
+
+    # Add any additional explicitly passed environment variables.
+    extra_envs = []
+    for kv in getattr(ctx.attr, "rustc_env", []):
+      k, v = kv.split("=")
+      extra_envs.append([k, v])
+    env.update(extra_envs)
+    return env
 
 def _get_compilation_mode_opts(ctx, toolchain):
     comp_mode = ctx.var["COMPILATION_MODE"]

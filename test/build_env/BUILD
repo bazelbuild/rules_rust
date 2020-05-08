@@ -6,7 +6,12 @@ load(
 )
 
 rust_test(
-    name = "conflicting_deps_test",
+    name = "environment_variable_test",
     srcs = ["tests/manifest_dir.rs"],
     data = ["src/manifest_dir_file.txt"],
+
+    rustc_env = [
+        "ARBITRARY_ENV1=Value1",
+        "ARBITRARY_ENV2=Value2",
+    ],
 )
