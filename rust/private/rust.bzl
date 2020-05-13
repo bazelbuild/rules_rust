@@ -330,6 +330,20 @@ _rust_common_attrs = {
             ".tar.gz",
         ],
     ),
+    "build_script_output": attr.label(
+        doc = _tidy("""
+            An optional file containing the stdout results of the a build script.
+
+            These typically take the form of multiple lines formatted with
+            the syntax "cargo:COMMAND=VALUE"
+
+            See https://doc.rust-lang.org/cargo/reference/build-scripts.html#outputs-of-the-build-script for additional contet.
+
+            WARNING: Currently only "cargo:rustc-env" and "cargo:rustc-cfg" are
+                     supported.
+        """),
+        allow_single_file = True,
+    ),
     "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
 }
 

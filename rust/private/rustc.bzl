@@ -275,6 +275,33 @@ def rustc_compile_action(
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
     add_edition_flags(args, crate_info)
 
+    # Process Build Script Output
+    #
+    # The output of the build script is parsed in intermediate files.
+    # Since Bazel does not enable extracting the contents of intermediate files
+    # during rule execution (we'd prefer to load the values into Starlark variables),
+    # these actions produce snippets of bash which load the values during the
+    # invocation of rustc.
+
+    # Input: cargo:rustc-env=...
+    # Output: build_script_env, a bash snippet which loads all environment variables.
+    build_script_env_action = _create_build_script_env_action(ctx)
+    if build_script_env_action:
+        compile_inputs = depset([build_script_env_action], transitive = [compile_inputs])
+        build_script_env = "env $(cat {}) ".format(build_script_env_action.path)
+    else:
+        build_script_env = ""
+
+    # Input: cargo:rustc-cfg=...
+    # Output: build_script_cfg, a list of "--cfg = ..." arguments.
+    build_script_cfg_action = _create_build_script_cfg_action(ctx)
+    if build_script_cfg_action:
+        compile_inputs = depset([build_script_cfg_action], transitive = [compile_inputs])
+        build_script_cfg = "$(cat {}) ".format(build_script_cfg_action.path)
+    else:
+        build_script_cfg = ""
+
+
     # Link!
 
     # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
@@ -319,10 +346,12 @@ def rustc_compile_action(
     # and use `$(pwd)` which resolves the `exec_root` at action execution time.
     package_dir = ctx.build_file_path[:ctx.build_file_path.rfind("/")]
     manifest_dir_env = "CARGO_MANIFEST_DIR=$(pwd)/{} ".format(package_dir)
-    command = '{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd'.format(
+    command = '{}{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd {}'.format(
         manifest_dir_env,
         out_dir_env,
+        build_script_env,
         toolchain.rustc.path,
+        build_script_cfg,
     )
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
@@ -375,6 +404,34 @@ def _create_out_dir_action(ctx):
         use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
     )
     return out_dir
+
+def _create_build_script_env_action(ctx):
+    build_script_output = getattr(ctx.file, "build_script_output", None)
+    if not build_script_output:
+        return None
+
+    out_env = ctx.actions.declare_file(ctx.label.name + ".buildrs_env")
+    ctx.actions.run_shell(
+        command = "grep '^cargo:rustc-env=' {buildrs_out} | sed 's/^cargo:rustc-env=//' > {buildrs_env}".format(buildrs_out = build_script_output.path, buildrs_env = out_env.path),
+        inputs = [build_script_output],
+        outputs = [out_env],
+        use_default_shell_env = True,
+    )
+    return out_env
+
+def _create_build_script_cfg_action(ctx):
+    build_script_output = getattr(ctx.file, "build_script_output", None)
+    if not build_script_output:
+        return None
+
+    out_cfg = ctx.actions.declare_file(ctx.label.name + ".buildrs_cfg")
+    ctx.actions.run_shell(
+        command = "grep '^cargo:rustc-cfg=' {buildrs_out} | sed 's/^cargo:rustc-cfg=/--cfg /' > {buildrs_cfg}".format(buildrs_out = build_script_output.path, buildrs_cfg = out_cfg.path),
+        inputs = [build_script_output],
+        outputs = [out_cfg],
+        use_default_shell_env = True,
+    )
+    return out_cfg
 
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """

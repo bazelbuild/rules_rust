@@ -1,0 +1,4 @@
+cargo:rustc-env=SECRET1=VALUE1
+cargo:rustc-env=SECRET2=VALUE2
+cargo:rustc-cfg=foo
+cargo:rustc-cfg=bar
