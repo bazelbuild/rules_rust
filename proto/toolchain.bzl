@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Toolchain for compiling rust stubs from protobug and gRPC."""
+"""Toolchain for compiling rust stubs from protobuf and gRPC."""
 
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
