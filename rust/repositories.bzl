@@ -5,7 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def rust_repositories(version="1.39.0", iso_date=None, rustfmt_version="1.4.8"):
+def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.4.8"):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
@@ -237,7 +237,7 @@ def produce_tool_path(tool_name, target_triple, version):
 
     return "{}-{}-{}".format(tool_name, version, target_triple)
 
-def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple, sha256=""):
+def load_arbitrary_tool(ctx, tool_name, param_prefix, tool_subdirectory, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
     This function sources the tool from the Rust-lang static file server. The index is available
@@ -346,6 +346,7 @@ def _load_rust_stdlib(ctx, target_triple):
         exec_triple = ctx.attr.exec_triple,
         target_triple = target_triple,
         workspace_name = ctx.attr.name,
+        default_edition = ctx.attr.edition,
     )
 
     return stdlib_BUILD + toolchain_BUILD
@@ -391,11 +392,13 @@ selection from toolchain fetching
 
 Args:
   name: A unique name for this rule
+  version: The version of the tool among "nightly", "beta', or an exact version.
+  rustfmt_version: The version of rustfmt to be associated with the toolchain.
+  iso_date: The date of the tool (or None, if the version is a specific version).
   exec_triple: The Rust-style target triple for the compilation platform
   extra_target_triples: The Rust-style triples for extra compilation targets
   toolchain_name_prefix: The per-target prefix expected for the rust_toolchain declarations
-  version: The version of the tool among "nightly", "beta', or an exact version.
-  iso_date: The date of the tool (or None, if the version is a specific version).
+  edition: The rust edition to be used by default (2015 (default) or 2018)
 """
 
 rust_toolchain_repository = repository_rule(
@@ -406,6 +409,7 @@ rust_toolchain_repository = repository_rule(
         "exec_triple": attr.string(mandatory = True),
         "extra_target_triples": attr.string_list(),
         "toolchain_name_prefix": attr.string(),
+        "edition": attr.string(default = "2015"),
     },
     implementation = _rust_toolchain_repository_impl,
 )
@@ -432,7 +436,14 @@ rust_toolchain_repository_proxy = repository_rule(
     implementation = _rust_toolchain_repository_proxy_impl,
 )
 
-def rust_repository_set(name, version, exec_triple, extra_target_triples = [], iso_date = None, rustfmt_version = None):
+def rust_repository_set(
+        name,
+        version,
+        exec_triple,
+        extra_target_triples = [],
+        iso_date = None,
+        rustfmt_version = None,
+        edition = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -446,6 +457,8 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples = [], i
       exec_triple: The Rust-style target that this compiler runs on
       extra_target_triples: Additional rust-style targets that this set of toolchains
                             should support.
+      rustfmt_version: The version of rustfmt to be associated with the toolchain.
+      edition: The rust edition to be used by default (2015 (default) or 2018)
     """
 
     rust_toolchain_repository(
@@ -456,6 +469,7 @@ def rust_repository_set(name, version, exec_triple, extra_target_triples = [], i
         toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
         version = version,
         rustfmt_version = rustfmt_version,
+        edition = edition,
     )
 
     rust_toolchain_repository_proxy(
