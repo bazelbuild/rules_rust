@@ -118,9 +118,7 @@ def collect_deps(deps, aliases, toolchain):
     transitive_crates = depset()
     transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
     transitive_staticlibs = depset()
-    flags = []
-    out_dirs = []
-    rustc_env = []
+    build_info = None
 
     aliases = {k.label: v for k,v in aliases.items()}
     for dep in deps:
@@ -146,9 +144,9 @@ def collect_deps(deps, aliases, toolchain):
             transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         elif BuildInfo in dep:
-            out_dirs.append(dep[BuildInfo].out_dir)
-            rustc_env.append(dep[BuildInfo].rustc_env)
-            flags.append(dep[BuildInfo].flags)
+            if build_info:
+                fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
+            build_info = dep[BuildInfo]
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
@@ -165,9 +163,7 @@ def collect_deps(deps, aliases, toolchain):
             transitive_staticlibs = transitive_staticlibs,
             transitive_libs = transitive_libs.to_list(),
         ),
-        out_dirs,
-        rustc_env,
-        flags
+        build_info
     )
 
 def _get_linker_and_args(ctx, rpaths):
@@ -231,7 +227,7 @@ def rustc_compile_action(
     """
     output_dir = crate_info.output.dirname
 
-    dep_info, out_dirs, rustc_env, flags = collect_deps(
+    dep_info, build_info = collect_deps(
         crate_info.deps,
         crate_info.aliases,
         toolchain,
@@ -253,8 +249,7 @@ def rustc_compile_action(
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
-        rustc_env +
-        flags +
+        ([build_info.rustc_env, build_info.flags] if build_info else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
@@ -314,7 +309,7 @@ def rustc_compile_action(
     add_crate_link_flags(args, dep_info)
 
     # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
-    out_dir = _create_out_dir_action(ctx, out_dirs)
+    out_dir = _create_out_dir_action(ctx, build_info.out_dir if build_info else None)
     if out_dir:
         compile_inputs = depset([out_dir], transitive = [compile_inputs])
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
@@ -358,13 +353,12 @@ def rustc_compile_action(
         dst = crate_info.output.path
         if src != dst:
             maybe_rename = " && /bin/mv {src} {dst}".format(src=src, dst=dst)
-    build_config_env = "".join(["export $(cat %s);" % e.path for e in rustc_env]) if rustc_env else ""
     command = '{}{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd{}{}'.format(
-        build_config_env,
+        ("export $(cat %s);" % build_info.rustc_env.path) if build_info else "",
         manifest_dir_env,
         out_dir_env,
         toolchain.rustc.path,
-        "".join([" $(cat '%s')" % f.path for f in flags]),
+        (" $(cat '%s')" % build_info.flags.path) if build_info else "",
         maybe_rename,
     )
 
@@ -418,23 +412,19 @@ def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
 
-def _create_out_dir_action(ctx, out_dirs=[]):
+def _create_out_dir_action(ctx, build_info_out_dir=None):
     tar_file = getattr(ctx.file, "out_dir_tar", None)
     if not tar_file:
-        if not out_dirs:
-            return None
-        if len(out_dirs) == 1:
-            return out_dirs[0]
-
+        return build_info_out_dir
     else:
         out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
         ctx.actions.run_shell(
             # TODO: Remove system tar usage
             command = ";".join([
                 "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path)] + [
-                    "pushd {dir}; cp -fr {in_dir}; popd {dir}".format(dir=out_dir.path, in_dir=od) for od in out_dirs
-                ]),
-            inputs = [tar_file]+out_dirs,
+                    "pushd {dir}; cp -fr {in_dir}; popd {dir}".format(dir=out_dir.path, in_dir=build_info_out_dir.path)
+                    ] if build_info_out_dir else []),
+            inputs = [tar_file]+(build_info_out_dir or []),
             outputs = [out_dir],
             use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
         )
