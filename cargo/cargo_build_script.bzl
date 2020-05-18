@@ -13,7 +13,7 @@ def _build_script_impl(ctx):
         "OUT_DIR": out_dir.path,
         "BINARY_PATH": ctx.executable.script.path,
     }
-    
+
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
@@ -29,10 +29,10 @@ def _build_script_impl(ctx):
 
     return [
         BuildInfo(
-            out_dir=out_dir,
-            rustc_env=env_out,
-            flags=flags_out,
-        )
+            out_dir = out_dir,
+            rustc_env = env_out,
+            flags = flags_out,
+        ),
     ]
 
 cargo_build_script_run = rule(
@@ -43,7 +43,7 @@ cargo_build_script_run = rule(
             allow_files = True,
             mandatory = True,
             cfg = "host",
-            doc = "The binary script to run, generally a rust_binary target. "
+            doc = "The binary script to run, generally a rust_binary target. ",
         ),
         "crate_features": attr.string_list(doc = "The list of rust features that the build script should consider activated."),
         "srcs": attr.label_list(allow_files = True, doc = "A list of files the scripts needs to access, generally the sources of the crate for which the build script is working"),

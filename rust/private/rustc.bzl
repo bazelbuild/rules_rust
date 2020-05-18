@@ -44,14 +44,14 @@ BuildInfo = provider(
         "flags": """File: file containing additional flags to pass to rustc""",
         "out_dir": """File: directory containing the result of a build script""",
         "rustc_env": """File: file containing additional environment variables to set for rustc.""",
-    }
+    },
 )
 
 AliasableDep = provider(
     fields = {
         "name": "str",
         "dep": "CrateInfo",
-    }
+    },
 )
 
 DepInfo = provider(
@@ -120,7 +120,7 @@ def collect_deps(deps, aliases, toolchain):
     transitive_staticlibs = depset()
     build_info = None
 
-    aliases = {k.label: v for k,v in aliases.items()}
+    aliases = {k.label: v for k, v in aliases.items()}
     for dep in deps:
         if CrateInfo in dep:
             # This dependency is a rust_library
@@ -163,7 +163,7 @@ def collect_deps(deps, aliases, toolchain):
             transitive_staticlibs = transitive_staticlibs,
             transitive_libs = transitive_libs.to_list(),
         ),
-        build_info
+        build_info,
     )
 
 def _get_linker_and_args(ctx, rpaths):
@@ -385,7 +385,10 @@ def rustc_compile_action(
         arguments = [args],
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {}{} ({} files)".format(
-            crate_info.type, ctx.label.name, formatted_version, len(crate_info.srcs)
+            crate_info.type,
+            ctx.label.name,
+            formatted_version,
+            len(crate_info.srcs),
         ),
     )
     runfiles = ctx.runfiles(
@@ -412,7 +415,7 @@ def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
 
-def _create_out_dir_action(ctx, build_info_out_dir=None):
+def _create_out_dir_action(ctx, build_info_out_dir = None):
     tar_file = getattr(ctx.file, "out_dir_tar", None)
     if not tar_file:
         return build_info_out_dir
@@ -421,10 +424,11 @@ def _create_out_dir_action(ctx, build_info_out_dir=None):
         ctx.actions.run_shell(
             # TODO: Remove system tar usage
             command = ";".join([
-                "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path)] + [
-                    "pushd {dir}; cp -fr {in_dir}; popd {dir}".format(dir=out_dir.path, in_dir=build_info_out_dir.path)
-                    ] if build_info_out_dir else []),
-            inputs = [tar_file]+(build_info_out_dir or []),
+                "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
+            ] + [
+                "pushd {dir}; cp -fr {in_dir}; popd {dir}".format(dir = out_dir.path, in_dir = build_info_out_dir.path),
+            ] if build_info_out_dir else []),
+            inputs = [tar_file] + (build_info_out_dir or []),
             outputs = [out_dir],
             use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
         )

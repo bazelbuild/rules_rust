@@ -1,4 +1,4 @@
-load("//rust:rust.bzl", "rust_library", "rust_binary", "rust_test")
+load("//rust:rust.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_library(
     name = "cargo_build_script_output_parser",
@@ -13,6 +13,6 @@ rust_test(
 rust_binary(
     name = "cargo_build_script_runner",
     srcs = ["bin.rs"],
-    deps = [":cargo_build_script_output_parser"],
     visibility = ["//visibility:public"],
+    deps = [":cargo_build_script_output_parser"],
 )
