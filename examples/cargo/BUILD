@@ -16,7 +16,6 @@ rust_binary(
 
 cargo_build_script_run(
     name = "build_script_run",
-    srcs = ["lib.rs"],
     crate_features = ["bleh"],
     script = ":build_script",
 )
