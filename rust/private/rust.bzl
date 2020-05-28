@@ -307,6 +307,9 @@ _rust_common_attrs = {
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
         """),
     ),
+    "cfg_flags": attr.string_list(
+        doc = "List of source configuration flags passed to `rustc`. Use cfg_opts to pass var=val pairs.",
+    ),
     "crate_features": attr.string_list(
         doc = _tidy("""
             List of features to enable for this crate.
