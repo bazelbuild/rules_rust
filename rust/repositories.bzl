@@ -89,8 +89,8 @@ filegroup(
     name = "rustc_lib",
     srcs = glob(
         [
-        "lib/*{dylib_ext}",
-        "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
+            "lib/*{dylib_ext}",
+            "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
         ],
         allow_empty = True,
     ),
