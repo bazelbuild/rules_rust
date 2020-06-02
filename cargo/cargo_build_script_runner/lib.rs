@@ -53,7 +53,16 @@ impl BuildScriptOutput {
             "cargo:rustc-cfg" => BuildScriptOutput::Cfg(param),
             "cargo:rustc-flags" => BuildScriptOutput::Flags(param),
             "cargo:rustc-env" => BuildScriptOutput::Env(param),
-            _ => BuildScriptOutput::None,
+            "cargo:rerun-if-changed" | "cargo:rerun-if-env-changed" =>
+                // Ignored because Bazel will re-run if those change all the time.
+                BuildScriptOutput::None,
+            _ => {
+                // Not yet supported:
+                // cargo:KEY=VALUE — Metadata, used by links scripts.
+                // cargo:rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
+                eprintln!("Warning: build script returned unsupported directive `{}`", split[0]);
+                BuildScriptOutput::None
+            },
         }
     }
 
