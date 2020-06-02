@@ -6,25 +6,20 @@ load(
 )
 load(
     "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
-    "cargo_build_script_run",
+    "cargo_build_script",
 )
 
-rust_binary(
+cargo_build_script(
     name = "build_script",
     srcs = ["build_script.rs"],
     data = ["test.txt"],
-)
-
-cargo_build_script_run(
-    name = "build_script_run",
     crate_features = ["bleh"],
-    script = ":build_script",
 )
 
 rust_library(
     name = "lib",
     srcs = ["lib.rs"],
-    deps = [":build_script_run"],
+    deps = [":build_script"],
 )
 
 rust_test(
