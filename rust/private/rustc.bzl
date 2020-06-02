@@ -425,9 +425,11 @@ def _create_out_dir_action(ctx, build_info_out_dir = None):
             # TODO: Remove system tar usage
             command = ";".join([
                 "rm -fr {dir} && mkdir {dir} && tar -xzf {tar} -C {dir}".format(tar = tar_file.path, dir = out_dir.path),
-            ] + [
-                "pushd {dir}; cp -fr {in_dir}; popd {dir}".format(dir = out_dir.path, in_dir = build_info_out_dir.path),
-            ] if build_info_out_dir else []),
+            ] + (
+                ["pushd {dir}; cp -fr {in_dir}; popd".format(dir = out_dir.path, in_dir = build_info_out_dir.path)
+                ] if build_info_out_dir else []
+            )),
+            progress_message = "Creating OUT_DIR = %s" % out_dir.path,
             inputs = [tar_file] + (build_info_out_dir or []),
             outputs = [out_dir],
             use_default_shell_env = True,  # Sets PATH for tar and gzip (tar's dependency)
