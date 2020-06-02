@@ -25,7 +25,6 @@ cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=--cfg=blah="bleh"
 cargo:rustc-flags=--cfg=data="{}"
 cargo:rustc-cfg=foobar"#, std::str::from_utf8(&data).unwrap());
-    assert!(true);
     let mut file = File::create(format!("{}/hello.world.txt", out_dir)).unwrap();
     file.write_all(b"Hello, world!").unwrap();
 }
