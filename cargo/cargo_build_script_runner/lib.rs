@@ -138,6 +138,7 @@ cargo:rustc-env=FOO=BAR
 cargo:rustc-link-search=bleh
 cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=-Lblah
+cargo:invalid=ignored
 cargo:rerun-if-changed=ignored
 cargo:rustc-cfg=feature=awesome
 ",
