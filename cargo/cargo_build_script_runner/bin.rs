@@ -18,26 +18,19 @@ extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::BuildScriptOutput;
 use std::env;
-use std::fs::File;
+use std::fs::{File, canonicalize};
 use std::io::Write;
 use std::process::{exit, Command};
-use std::path::PathBuf;
 
-fn absolute_path(path: &str) -> PathBuf {
-    let mut p = env::current_dir().unwrap();
-    p.push(path);
-    p
-}
-
-fn main() {
+fn main() -> std::io::Result<()> {
     let mut args = env::args().skip(1);
     // Because of the Bazel's sandbox, bazel cannot provide full path, convert all relative path to correct path.
-    let manifest_dir = absolute_path(&env::var("CARGO_MANIFEST_DIR").unwrap());
-    let out_dir = absolute_path(&env::var("OUT_DIR").unwrap());
-    let rustc = absolute_path(&env::var("RUSTC").unwrap());
+    let manifest_dir = canonicalize(&env::var("CARGO_MANIFEST_DIR").unwrap())?;
+    let out_dir = canonicalize(&env::var("OUT_DIR").unwrap())?;
+    let rustc = canonicalize(&env::var("RUSTC").unwrap())?;
     match (args.next(), args.next(), args.next()) {
         (Some(progname), Some(envfile), Some(flagfile)) => {
-            let output = BuildScriptOutput::from_command(Command::new(absolute_path(&progname))
+            let output = BuildScriptOutput::from_command(Command::new(canonicalize(&progname)?)
                 .args(args)
                 .current_dir(manifest_dir.clone())
                 .env("OUT_DIR", out_dir)
@@ -57,4 +50,5 @@ fn main() {
             exit(1);
         }
     }
+    Ok(())
 }
