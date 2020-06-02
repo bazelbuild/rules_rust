@@ -20,8 +20,6 @@ use std::process::{Command, Stdio};
 /// Enum containing all the considered return value from the script
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BuildScriptOutput {
-    /// Value for ignored cargo directive
-    None,
     /// cargo:rustc-link-lib
     LinkLib(String),
     /// cargo:rustc-link-search
@@ -39,29 +37,33 @@ impl BuildScriptOutput {
     ///
     /// Examples
     /// ```rust
-    /// assert_eq!(BuildScriptOutput::new("cargo:rustc-link-lib=lib"), BuildScriptOutput::LinkLib("lib".to_owned()));
+    /// assert_eq!(BuildScriptOutput::new("cargo:rustc-link-lib=lib"), Some(BuildScriptOutput::LinkLib("lib".to_owned())));
     /// ```
-    fn new(line: &str) -> BuildScriptOutput {
+    fn new(line: &str) -> Option<BuildScriptOutput> {
         let split = line.splitn(2, '=').collect::<Vec<_>>();
         if split.len() <= 1 {
-            return BuildScriptOutput::None;
+            return None;
         }
         let param = split[1].trim().to_owned();
         match split[0] {
-            "cargo:rustc-link-lib" => BuildScriptOutput::LinkLib(param),
-            "cargo:rustc-link-search" => BuildScriptOutput::LinkSearch(param),
-            "cargo:rustc-cfg" => BuildScriptOutput::Cfg(param),
-            "cargo:rustc-flags" => BuildScriptOutput::Flags(param),
-            "cargo:rustc-env" => BuildScriptOutput::Env(param),
+            "cargo:rustc-link-lib" => Some(BuildScriptOutput::LinkLib(param)),
+            "cargo:rustc-link-search" => Some(BuildScriptOutput::LinkSearch(param)),
+            "cargo:rustc-cfg" => Some(BuildScriptOutput::Cfg(param)),
+            "cargo:rustc-flags" => Some(BuildScriptOutput::Flags(param)),
+            "cargo:rustc-env" => Some(BuildScriptOutput::Env(param)),
             "cargo:rerun-if-changed" | "cargo:rerun-if-env-changed" =>
                 // Ignored because Bazel will re-run if those change all the time.
-                BuildScriptOutput::None,
+                None,
+            "cargo:warning" => {
+                eprintln!("Build Script Warning: {}", split[1]);
+                None
+            },
             _ => {
                 // Not yet supported:
                 // cargo:KEY=VALUE — Metadata, used by links scripts.
                 // cargo:rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
                 eprintln!("Warning: build script returned unsupported directive `{}`", split[0]);
-                BuildScriptOutput::None
+                None
             },
         }
     }
@@ -70,16 +72,13 @@ impl BuildScriptOutput {
     fn from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
         let mut result = Vec::<BuildScriptOutput>::new();
         let mut line = String::new();
-        loop {
-            line.clear();
-            if reader.read_line(&mut line).expect("Valid script output") == 0 {
-                return result;
-            }
-            let bso = BuildScriptOutput::new(&line);
-            if bso != BuildScriptOutput::None {
+        while reader.read_line(&mut line).expect("Cannot read line") != 0 {
+            if let Some(bso) = BuildScriptOutput::new(&line) {
                 result.push(bso);
             }
+            line.clear();
         }
+        result
     }
 
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
@@ -139,6 +138,7 @@ cargo:rustc-env=FOO=BAR
 cargo:rustc-link-search=bleh
 cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=-Lblah
+cargo:rerun-if-changed=ignored
 cargo:rustc-cfg=feature=awesome
 ",
         );
