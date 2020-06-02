@@ -6,12 +6,12 @@ def _build_script_impl(ctx):
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
+    manifest_dir = "%s.runfiles/%s" % (ctx.executable.script.path, ctx.label.workspace_name)
     env = {
-        "CARGO_MANIFEST_DIR": ctx.build_file_path.rsplit("/", 1)[0],
+        "CARGO_MANIFEST_DIR": manifest_dir,
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_triple,
         "OUT_DIR": out_dir.path,
-        "BINARY_PATH": ctx.executable.script.path,
     }
 
     for f in ctx.attr.crate_features:
@@ -22,7 +22,7 @@ def _build_script_impl(ctx):
         arguments = [ctx.executable.script.path, env_out.path, flags_out.path],
         outputs = [out_dir, env_out, flags_out],
         tools = [ctx.executable.script, ctx.executable._cargo_build_script_runner],
-        inputs = ctx.files.srcs + [ctx.executable.script, toolchain.rustc],
+        inputs = [ctx.executable.script, toolchain.rustc],
         mnemonic = "CargoBuildScriptRun",
         env = env,
     )
@@ -46,7 +46,6 @@ cargo_build_script_run = rule(
             doc = "The binary script to run, generally a rust_binary target. ",
         ),
         "crate_features": attr.string_list(doc = "The list of rust features that the build script should consider activated."),
-        "srcs": attr.label_list(allow_files = True, doc = "A list of files the scripts needs to access, generally the sources of the crate for which the build script is working"),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
@@ -85,12 +84,15 @@ load("@io_bazel_rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 rust_binary(
     name = "build_script_bin",
     srcs = ["build.rs"],
+    # Data are shipped during execution.
+    data = ["src/lib.rs"],
 )
 
+# This will run the build script from the root of the workspace, and
+# collect the outputs.
 cargo_build_script_run(
     name = "build_script",
     script = ":build_script_bin",
-    srcs = ["src/lib.rs"],
 )
 
 rust_library(

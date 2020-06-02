@@ -28,4 +28,9 @@ mod test {
     fn test_rustc_contents() {
         assert!(cfg!(blah = "bleh"));
     }
+
+    #[test]
+    fn test_access_data() {
+        assert!(cfg!(data = "Yeah!"));
+    }
 }

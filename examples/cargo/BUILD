@@ -12,6 +12,7 @@ load(
 rust_binary(
     name = "build_script",
     srcs = ["build_script.rs"],
+    data = ["test.txt"],
 )
 
 cargo_build_script_run(

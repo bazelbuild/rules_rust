@@ -16,16 +16,16 @@ use std::fs::File;
 use std::env;
 
 fn main() {
-    let bleh = env::var("CARGO_FEATURE_BLEH");
-    let out_dir = env::var("OUT_DIR");
-    assert!(bleh.is_ok());
-    assert!(out_dir.is_ok());
-    assert!(!bleh.unwrap().is_empty());
+    let bleh = env::var("CARGO_FEATURE_BLEH").unwrap();
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let data = std::fs::read("cargo/test.txt").unwrap();
+    assert!(!bleh.is_empty());
     println!(r#"cargo:rustc-env=FOO=BAR
 cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=--cfg=blah="bleh"
-cargo:rustc-cfg=foobar"#);
+cargo:rustc-flags=--cfg=data="{}"
+cargo:rustc-cfg=foobar"#, std::str::from_utf8(&data).unwrap());
     assert!(true);
-    let mut file = File::create(format!("{}/hello.world.txt", out_dir.unwrap())).unwrap();
+    let mut file = File::create(format!("{}/hello.world.txt", out_dir)).unwrap();
     file.write_all(b"Hello, world!").unwrap();
 }

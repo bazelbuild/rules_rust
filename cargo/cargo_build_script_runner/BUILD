@@ -7,7 +7,7 @@ rust_library(
 
 rust_test(
     name = "test",
-    deps = [":cargo_build_script_output_parser"],
+    crate = ":cargo_build_script_output_parser",
 )
 
 rust_binary(
