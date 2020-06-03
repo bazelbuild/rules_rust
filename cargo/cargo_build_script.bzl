@@ -7,7 +7,7 @@ def _cargo_build_script_run(ctx, script):
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
-    manifest_dir = "%s.runfiles/%s" % (script.path, ctx.label.workspace_name)
+    manifest_dir = "%s.runfiles/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name)
     env = {
         "CARGO_MANIFEST_DIR": manifest_dir,
         "RUSTC": toolchain.rustc.path,
