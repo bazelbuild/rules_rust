@@ -25,9 +25,9 @@ use std::process::{exit, Command};
 fn main() -> std::io::Result<()> {
     let mut args = env::args().skip(1);
     // Because of the Bazel's sandbox, bazel cannot provide full path, convert all relative path to correct path.
-    let manifest_dir = canonicalize(&env::var("CARGO_MANIFEST_DIR").unwrap())?;
-    let out_dir = canonicalize(&env::var("OUT_DIR").unwrap())?;
-    let rustc = canonicalize(&env::var("RUSTC").unwrap())?;
+    let manifest_dir = canonicalize(&env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set"))?;
+    let out_dir = canonicalize(&env::var("OUT_DIR").expect("OUT_DIR was not set"))?;
+    let rustc = canonicalize(&env::var("RUSTC").expect("RUSTC was not set"))?;
     match (args.next(), args.next(), args.next()) {
         (Some(progname), Some(envfile), Some(flagfile)) => {
             let output = BuildScriptOutput::from_command(Command::new(canonicalize(&progname)?)
