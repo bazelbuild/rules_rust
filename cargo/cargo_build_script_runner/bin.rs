@@ -18,7 +18,7 @@ extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::BuildScriptOutput;
 use std::env;
-use std::fs::{File, canonicalize};
+use std::fs::{File, canonicalize, create_dir_all};
 use std::io::Write;
 use std::process::{exit, Command};
 
@@ -26,6 +26,8 @@ fn main() {
     let mut args = env::args().skip(1);
     let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
     let out_dir_env = env::var("OUT_DIR").expect("OUT_DIR was not set");
+    // For some reason RBE does not creat the output directory, force create it
+    create_dir_all(out_dir_env.clone()).expect(&format!("Failed to create OUT_DIR: {}", out_dir_env));
     let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
     // Because of the Bazel's sandbox, bazel cannot provide full path, convert all relative path to correct path.
     let manifest_dir = canonicalize(&manifest_dir_env).expect(&format!("Failed to canonicalize '{}'", manifest_dir_env));
