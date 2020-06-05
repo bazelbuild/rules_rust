@@ -22,15 +22,20 @@ use std::fs::{File, canonicalize};
 use std::io::Write;
 use std::process::{exit, Command};
 
-fn main() -> std::io::Result<()> {
+fn main() {
     let mut args = env::args().skip(1);
+    let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
+    let out_dir_env = env::var("OUT_DIR").expect("OUT_DIR was not set");
+    let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
     // Because of the Bazel's sandbox, bazel cannot provide full path, convert all relative path to correct path.
-    let manifest_dir = canonicalize(&env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set"))?;
-    let out_dir = canonicalize(&env::var("OUT_DIR").expect("OUT_DIR was not set"))?;
-    let rustc = canonicalize(&env::var("RUSTC").expect("RUSTC was not set"))?;
+    let manifest_dir = canonicalize(&manifest_dir_env).expect(&format!("Failed to canonicalize '{}'", manifest_dir_env));
+    let out_dir = canonicalize(&out_dir_env).expect(&format!("Failed to canonicalize '{}'", out_dir_env));
+    let rustc = canonicalize(&rustc_env).expect(&format!("Failed to canonicalize '{}'", rustc_env));
     match (args.next(), args.next(), args.next()) {
         (Some(progname), Some(envfile), Some(flagfile)) => {
-            let output = BuildScriptOutput::from_command(Command::new(canonicalize(&progname)?)
+            let output = BuildScriptOutput::from_command(
+                    Command::new(
+                        canonicalize(&progname).expect(&format!("Failed to canonicalize '{}'", progname)))
                 .args(args)
                 .current_dir(manifest_dir.clone())
                 .env("OUT_DIR", out_dir)
@@ -50,5 +55,4 @@ fn main() -> std::io::Result<()> {
             exit(1);
         }
     }
-    Ok(())
 }
