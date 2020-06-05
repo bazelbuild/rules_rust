@@ -13,6 +13,7 @@ def _cargo_build_script_run(ctx, script):
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_triple,
         "OUT_DIR": out_dir.path,
+        "RUST_BACKTRACE": "full",
     }
 
     for f in ctx.attr.crate_features:
