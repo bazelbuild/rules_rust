@@ -23,21 +23,22 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "hermit_abi",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__libc__0_2_71//:libc",
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "0.1.13",
     crate_features = [
+        "default",
     ],
 )
 

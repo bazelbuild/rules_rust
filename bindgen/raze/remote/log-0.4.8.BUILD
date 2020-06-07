@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "restricted", # "MIT OR Apache-2.0"
 ])
 
 load(
@@ -24,20 +24,24 @@ load(
 
 
 # Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "filters" with type "test" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "log",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__cfg_if__0_1_10//:cfg_if",
     ],
     rustc_flags = [
         "--cap-lints=allow",
+        "--cfg=atomic_cas",
     ],
-    version = "0.4.0",
+    version = "0.4.8",
     crate_features = [
+        "std",
     ],
 )
 

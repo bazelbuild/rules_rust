@@ -23,10 +23,9 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "lazy_static",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
@@ -36,8 +35,10 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "1.4.0",
     crate_features = [
     ],
 )
 
+# Unsupported target "no_std" with type "test" omitted
+# Unsupported target "test" with type "test" omitted

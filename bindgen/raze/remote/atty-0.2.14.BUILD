@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "notice", # "MIT"
 ])
 
 load(
@@ -23,20 +23,21 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "atty" with type "example" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "atty",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__libc__0_2_71//:libc",
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "0.2.14",
     crate_features = [
     ],
 )

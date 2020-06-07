@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "restricted", # "Unlicense OR MIT"
 ])
 
 load(
@@ -23,20 +23,19 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "termcolor",
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2015",
+    edition = "2018",
     srcs = glob(["**/*.rs"]),
     deps = [
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "1.1.0",
     crate_features = [
     ],
 )

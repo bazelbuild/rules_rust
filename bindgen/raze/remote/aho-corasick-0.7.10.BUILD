@@ -12,7 +12,8 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "notice", # "MIT"
+  "unencumbered", # "Unlicense"
 ])
 
 load(
@@ -23,21 +24,23 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "aho_corasick",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__memchr__2_3_3//:memchr",
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "0.7.10",
     crate_features = [
+        "default",
+        "std",
     ],
 )
 

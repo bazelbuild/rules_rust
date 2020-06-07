@@ -23,10 +23,10 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "context" with type "example" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "quick_error",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
@@ -36,7 +36,7 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "1.2.3",
     crate_features = [
     ],
 )

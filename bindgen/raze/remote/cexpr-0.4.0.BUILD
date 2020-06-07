@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "notice", # "Apache-2.0,MIT"
 ])
 
 load(
@@ -23,15 +23,15 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "cexpr",
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2015",
+    edition = "2018",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__nom__5_1_1//:nom",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -41,3 +41,4 @@ rust_library(
     ],
 )
 
+# Unsupported target "clang" with type "test" omitted

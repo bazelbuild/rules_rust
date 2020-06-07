@@ -3,17 +3,23 @@ genmode = "Remote"
 workspace_path = "//bindgen/raze"
 
 [dependencies]
-# TODO: Using "0.47.0" requires yet more overrides for building clang-sys '0.27.0'.
-bindgen = "0.40.0"
+bindgen = "0.54.0"
 
-[raze.crates.bindgen.'0.40.0']
+[raze.crates.bindgen.'0.54.0']
 gen_buildrs = true
 extra_aliased_targets = ["cargo_bin_bindgen"]
 
-# TODO: Un-patch crates.bzl
-#       See https://github.com/google/cargo-raze/issues/58
-# [raze.crates.libloading.'0.5.0']
-# custom_build_file_path = "//bindgen/raze:libloading.BUILD"
+[raze.crates.clang-sys.'0.29.3']
+gen_buildrs = true
+
+[raze.crates.libloading.'0.5.2']
+additional_deps = [":global_static"]
+additional_build_file = "libloading-global-static.BUILD"
+
+[raze.crates.log.'0.4.8']
+additional_flags = [
+    "--cfg=atomic_cas",
+]
 
 [package]
 name = "fake_lib"

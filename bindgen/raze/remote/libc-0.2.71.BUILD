@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "restricted", # "MIT OR Apache-2.0"
 ])
 
 load(
@@ -24,9 +24,10 @@ load(
 
 
 # Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "const_fn" with type "test" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "libc",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
@@ -36,8 +37,10 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "0.2.71",
     crate_features = [
+        "default",
+        "std",
     ],
 )
 

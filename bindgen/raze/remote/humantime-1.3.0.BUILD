@@ -23,20 +23,22 @@ load(
 )
 
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "datetime_format" with type "bench" omitted
+# Unsupported target "datetime_parse" with type "bench" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "humantime",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        "@raze__quick_error__1_2_3//:quick_error",
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "1.3.0",
     crate_features = [
     ],
 )

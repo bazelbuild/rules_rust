@@ -12,7 +12,7 @@ package(default_visibility = [
 ])
 
 licenses([
-  "notice", # "MIT,Apache-2.0"
+  "notice", # "ISC"
 ])
 
 load(
@@ -24,20 +24,31 @@ load(
 
 
 # Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "functions" with type "test" omitted
 
 rust_library(
-    name = "winapi_i686_pc_windows_gnu",
+    name = "libloading",
     crate_root = "src/lib.rs",
     crate_type = "lib",
     edition = "2015",
     srcs = glob(["**/*.rs"]),
     deps = [
+        ":global_static",
     ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.4.0",
+    version = "0.5.2",
     crate_features = [
     ],
 )
 
+# Unsupported target "markers" with type "test" omitted
+# Unsupported target "windows" with type "test" omitted
+
+# Additional content from libloading-global-static.BUILD
+cc_library(
+    name = "global_static",
+    srcs = ["src/os/unix/global_static.c"],
+    copts = ["-fPIC"],
+)
