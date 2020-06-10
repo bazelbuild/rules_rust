@@ -210,32 +210,13 @@ def _get_linker_and_args(ctx, rpaths):
 
     return ld, link_args, link_env
 
-def rustc_compile_action(
+def _rustc_compile_inputs(
         ctx,
         toolchain,
         crate_info,
-        output_hash = None,
-        rust_flags = []):
-    """
-    Constructs the rustc command used to build the current target.
-
-    Returns:
-      List[Provider]: A list of the following providers:
-                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
-                     - DepInfo: The transitive dependencies of this crate.
-                     - DefaultInfo: The output file for this crate, and its runfiles.
-    """
-    output_dir = crate_info.output.dirname
-
-    dep_info, build_info = collect_deps(
-        crate_info.deps,
-        crate_info.aliases,
-        toolchain,
-    )
-
+        dep_info,
+        build_info):
     linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
-
-    cc_toolchain = find_cpp_toolchain(ctx)
 
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.25.0", BAZEL_VERSION)):
@@ -257,6 +238,23 @@ def rustc_compile_action(
             linker_depset,
         ],
     )
+
+    out_dir = _create_out_dir_action(ctx, build_info.out_dir if build_info else None)
+    if out_dir:
+        compile_inputs = depset([out_dir], transitive = [compile_inputs])
+
+    return compile_inputs, out_dir
+
+def _rustc_compile_arguments(
+        ctx,
+        toolchain,
+        crate_info,
+        dep_info,
+        output_hash,
+        rust_flags):
+    output_dir = crate_info.output.dirname
+
+    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
 
     env = _get_rustc_env(ctx, toolchain)
 
@@ -280,7 +278,7 @@ def rustc_compile_action(
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
-    if hasattr(ctx.attr, "linker_script") and linker_script != None:
+    if linker_script != None:
         args.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
@@ -305,13 +303,24 @@ def rustc_compile_action(
         args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
     add_native_link_flags(args, dep_info)
-
     add_crate_link_flags(args, dep_info)
 
-    # We awkwardly construct this command because we cannot reference $PWD from ctx.actions.run(executable=toolchain.rustc)
-    out_dir = _create_out_dir_action(ctx, build_info.out_dir if build_info else None)
+    # Make bin crate data deps available to tests.
+    for data in getattr(ctx.attr, "data", []):
+        if CrateInfo in data:
+            dep_crate_info = data[CrateInfo]
+            if dep_crate_info.type == "bin":
+                env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
+
+    # Update environment with user provided variables.
+    env.update(crate_info.rustc_env)
+
+    return args, env
+
+def _create_command_env(ctx, out_dir):
     if out_dir:
-        compile_inputs = depset([out_dir], transitive = [compile_inputs])
+        # We awkwardly construct this command because we cannot reference $PWD
+        # from ctx.actions.run(executable=toolchain.rustc)
         out_dir_env = "OUT_DIR=$(pwd)/{} ".format(out_dir.path)
     else:
         out_dir_env = ""
@@ -338,44 +347,96 @@ def rustc_compile_action(
     package_dir = ctx.build_file_path[:ctx.build_file_path.rfind("/")]
     manifest_dir_env = "CARGO_MANIFEST_DIR=$(pwd)/{} ".format(package_dir)
 
+    return out_dir_env + manifest_dir_env
+
+def _construct_compile_command(
+        ctx,
+        command,
+        toolchain,
+        crate_info,
+        build_info,
+        out_dir):
+    rustc_env_expansion = ("export $(cat %s);" % build_info.rustc_env.path) if build_info else ""
+    command_env = _create_command_env(ctx, out_dir)
+    build_flags_expansion = (" $(cat '%s')" % build_info.flags.path) if build_info else ""
     # Handle that the binary name and crate name may be different.
-    # If a target name contains a - then cargo (and rules_rust) will generate a crate name with _ instead.
-    # Accordingly, rustc will generate a output file (executable, or rlib, or whatever) with _ not -.
-    # But when cargo puts a binary in the target/${config} directory, and sets environment variables like
-    # `CARGO_BIN_EXE_${binary_name}` it will use the - version not the _ version.
-    # So we rename the rustc-generated file (with _s) to have -s if needed.
+    #
+    # If a target name contains a - then cargo (and rules_rust) will generate a
+    # crate name with _ instead.  Accordingly, rustc will generate a output
+    # file (executable, or rlib, or whatever) with _ not -.  But when cargo
+    # puts a binary in the target/${config} directory, and sets environment
+    # variables like `CARGO_BIN_EXE_${binary_name}` it will use the - version
+    # not the _ version.  So we rename the rustc-generated file (with _s) to
+    # have -s if needed.
     maybe_rename = ""
     if crate_info.type == "bin":
         generated_file = crate_info.name
         if toolchain.target_arch == "wasm32":
             generated_file = generated_file + ".wasm"
-        src = "/".join([output_dir, generated_file])
+        src = "/".join([crate_info.output.dirname, generated_file])
         dst = crate_info.output.path
         if src != dst:
             maybe_rename = " && /bin/mv {src} {dst}".format(src=src, dst=dst)
-    command = '{}{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd{}{}'.format(
-        ("export $(cat %s);" % build_info.rustc_env.path) if build_info else "",
-        manifest_dir_env,
-        out_dir_env,
+
+    return '{}{}{} "$@" --remap-path-prefix="$(pwd)"=__bazel_redacted_pwd{}{}'.format(
+        rustc_env_expansion,
+        command_env,
         toolchain.rustc.path,
-        (" $(cat '%s')" % build_info.flags.path) if build_info else "",
+        build_flags_expansion,
         maybe_rename,
+    )
+
+def rustc_compile_action(
+        ctx,
+        toolchain,
+        crate_info,
+        output_hash = None,
+        rust_flags = []):
+    """
+    Constructs the rustc command used to build the current target.
+
+    Returns:
+      List[Provider]: A list of the following providers:
+                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
+                     - DepInfo: The transitive dependencies of this crate.
+                     - DefaultInfo: The output file for this crate, and its runfiles.
+    """
+    dep_info, build_info = collect_deps(
+        crate_info.deps,
+        crate_info.aliases,
+        toolchain,
+    )
+
+    compile_inputs, out_dir = _rustc_compile_inputs(
+        ctx,
+        toolchain,
+        crate_info,
+        dep_info,
+        build_info
+    )
+
+    args, env = _rustc_compile_arguments(
+        ctx,
+        toolchain,
+        crate_info,
+        dep_info,
+        output_hash,
+        rust_flags
+    )
+
+    command = _construct_compile_command(
+        ctx,
+        toolchain.rustc.path,
+        toolchain,
+        crate_info,
+        build_info,
+        out_dir,
     )
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
         formatted_version = " v{}".format(ctx.attr.version)
     else:
         formatted_version = ""
-
-    # Make bin crate data deps available to tests.
-    for data in getattr(ctx.attr, "data", []):
-        if CrateInfo in data:
-            dep_crate_info = data[CrateInfo]
-            if dep_crate_info.type == "bin":
-                env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
-
-    # Update environment with user provided variables.
-    env.update(crate_info.rustc_env)
 
     ctx.actions.run_shell(
         command = command,
@@ -395,7 +456,7 @@ def rustc_compile_action(
         files = dep_info.transitive_dylibs.to_list() + getattr(ctx.files, "data", []),
         collect_data = True,
     )
-    
+
     out_binary = False
     if hasattr(ctx.attr, "out_binary"):
         out_binary = getattr(ctx.attr, "out_binary")
