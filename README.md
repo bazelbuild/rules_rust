@@ -80,13 +80,13 @@ The rules are under active development, as such the lastest commit on the master
 To build with a particular version of the Rust compiler, pass that version to `rust_repositories`:
 
 ```python
-rust_repositories(version = "1.42.0")
+rust_repositories(version = "1.42.0", edition="2018")
 ```
 
 As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
 
 ```python
-rust_repositories(version = "nightly", iso_date = "2020-04-19")
+rust_repositories(version = "nightly", iso_date = "2020-04-19", edition="2018")
 ```
 
 Similarly, `rustfmt_version` may also be configured:
@@ -95,11 +95,10 @@ Similarly, `rustfmt_version` may also be configured:
 rust_repositories(rustfmt_version = "1.4.8")
 ```
 
-
 ### External Dependencies
 
-Currently the most common approach to managing external dependencies is using 
-[cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.  
+Currently the most common approach to managing external dependencies is using
+[cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.
 
 <a name="roadmap"></a>
 ## Roadmap
