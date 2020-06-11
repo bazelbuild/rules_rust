@@ -278,7 +278,7 @@ def _rustc_compile_arguments(
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
         args.add_all(getattr(ctx.attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
-    if linker_script != None:
+    if linker_script:
         args.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
