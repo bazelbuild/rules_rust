@@ -86,7 +86,7 @@ def _get_rustc_env(ctx, toolchain):
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
     }
 
-def _get_compilation_mode_opts(ctx, toolchain):
+def get_compilation_mode_opts(ctx, toolchain):
     comp_mode = ctx.var["COMPILATION_MODE"]
     if not comp_mode in toolchain.compilation_mode_opts:
         fail("Unrecognized compilation mode {} for toolchain.".format(comp_mode))
@@ -296,7 +296,7 @@ def rustc_compile_action(
     args.add("--out-dir=" + output_dir)
     args.add("--codegen=extra-filename=" + extra_filename)
 
-    compilation_mode = _get_compilation_mode_opts(ctx, toolchain)
+    compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 

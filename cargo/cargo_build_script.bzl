@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "rustc_compile_action")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "get_compilation_mode_opts")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
@@ -8,13 +8,16 @@ def _cargo_build_script_run(ctx, script):
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     manifest_dir = "%s.runfiles/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name)
+    compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
     env = {
-        "CARGO_MANIFEST_DIR": manifest_dir,
-        "RUSTC": toolchain.rustc.path,
-        "TARGET": toolchain.target_triple,
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
+        "CARGO_MANIFEST_DIR": manifest_dir,
+        "HOST": toolchain.exec_triple,
+        "OPT_LEVEL": compilation_mode_opt_level,
         "OUT_DIR": out_dir.path,
+        "RUSTC": toolchain.rustc.path,
         "RUST_BACKTRACE": "full",
+        "TARGET": toolchain.target_triple,
     }
 
     for f in ctx.attr.crate_features:
