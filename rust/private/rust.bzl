@@ -14,7 +14,6 @@
 
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
-load("@io_bazel_rules_rust//rust:private/transitions.bzl", "proc_macro_host_transition")
 
 _OLD_INLINE_TEST_CRATE_MSG = """
 --------------------------------------------------------------------------------
@@ -131,6 +130,7 @@ def _rust_library_impl(ctx):
             root = lib_rs,
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            proc_macro_deps = ctx.attr.proc_macro_deps,
             aliases = ctx.attr.aliases,
             output = rust_lib,
             edition = _get_edition(ctx, toolchain),
@@ -159,6 +159,7 @@ def _rust_binary_impl(ctx):
             root = _crate_root_src(ctx, "main.rs"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            proc_macro_deps = ctx.attr.proc_macro_deps,
             aliases = ctx.attr.aliases,
             output = output,
             edition = _get_edition(ctx, toolchain),
@@ -186,6 +187,7 @@ def _rust_test_common(ctx, test_binary):
             root = crate.root,
             srcs = crate.srcs + ctx.files.srcs,
             deps = crate.deps + ctx.attr.deps,
+            proc_macro_deps = ctx.attr.proc_macro_deps,
             aliases = ctx.attr.aliases,
             output = test_binary,
             edition = crate.edition,
@@ -206,6 +208,7 @@ def _rust_test_common(ctx, test_binary):
             root = _crate_root_src(ctx),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
+            proc_macro_deps = ctx.attr.proc_macro_deps,
             aliases = ctx.attr.aliases,
             output = test_binary,
             edition = _get_edition(ctx, toolchain),
@@ -297,6 +300,17 @@ _rust_common_attrs = {
             linking a native library.
         """),
     ),
+    # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
+    # used into cfg="host" using `@local_config_platform//:host`.
+    # This fails for remote execution, which needs cfg="exec", and there isn't anything like
+    # `@local_config_platform//:exec` exposed.
+    "proc_macro_deps": attr.label_list(
+        doc = _tidy("""
+            List of `rust_library` targets with kind `proc-macro` used to help build this library target.
+        """),
+        cfg = "exec",
+        providers = [CrateInfo],
+    ),
     "aliases": attr.label_keyed_string_dict(
         doc = _tidy("""
             Remap crates to a new name or moniker for linkage to this target
@@ -354,9 +368,6 @@ _rust_library_attrs = {
         """),
         default = "rlib",
     ),
-    "_whitelist_function_transition": attr.label(
-        default = "//tools/whitelists/function_transition_whitelist",
-    ),
 }
 
 _rust_test_attrs = {
@@ -377,7 +388,6 @@ rust_library = rule(
                  _rust_library_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    cfg = proc_macro_host_transition,
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -453,7 +463,7 @@ _rust_binary_attrs = {
         doc = _tidy("""
             Link script to forward into linker via rustc options.
         """),
-        cfg = "host",
+        cfg = "exec",
         allow_single_file = True,
     ),
     "crate_type": attr.string(

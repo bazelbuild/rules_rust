@@ -44,11 +44,13 @@ rust_binary(
         "@raze__log__0_4_6//:log",
         "@raze__rouille__3_0_0//:rouille",
         "@raze__serde__1_0_94//:serde",
-        "@raze__serde_derive__1_0_94//:serde_derive",
         "@raze__serde_json__1_0_39//:serde_json",
         "@raze__walrus__0_8_0//:walrus",
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
+    ],
+    proc_macro_deps = [
+        "@raze__serde_derive__1_0_94//:serde_derive",
     ],
 )
 
@@ -74,11 +76,13 @@ rust_binary(
         "@raze__log__0_4_6//:log",
         "@raze__rouille__3_0_0//:rouille",
         "@raze__serde__1_0_94//:serde",
-        "@raze__serde_derive__1_0_94//:serde_derive",
         "@raze__serde_json__1_0_39//:serde_json",
         "@raze__walrus__0_8_0//:walrus",
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
+    ],
+    proc_macro_deps = [
+        "@raze__serde_derive__1_0_94//:serde_derive",
     ],
 )
 
@@ -103,10 +107,12 @@ rust_binary(
         "@raze__log__0_4_6//:log",
         "@raze__rouille__3_0_0//:rouille",
         "@raze__serde__1_0_94//:serde",
-        "@raze__serde_derive__1_0_94//:serde_derive",
         "@raze__serde_json__1_0_39//:serde_json",
         "@raze__walrus__0_8_0//:walrus",
         "@raze__wasm_bindgen_cli_support__0_2_48//:wasm_bindgen_cli_support",
         "@raze__wasm_bindgen_shared__0_2_48//:wasm_bindgen_shared",
+    ],
+    proc_macro_deps = [
+        "@raze__serde_derive__1_0_94//:serde_derive",
     ],
 )

@@ -47,6 +47,8 @@ rust_library(
     version = "0.1.5",
     deps = [
         "@raze__backtrace__0_3_32//:backtrace",
+    ],
+    proc_macro_deps = [
         "@raze__failure_derive__0_1_5//:failure_derive",
     ],
 )

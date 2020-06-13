@@ -5,7 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.4.8"):
+def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.4.8", edition = None):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
@@ -15,6 +15,7 @@ def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.
       version: The version of Rust. Either "nightly", "beta", or an exact version.
       rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
       iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
+      edition: The rust edition to be used by default (2015 (default) or 2018)
     """
 
     maybe(
@@ -33,6 +34,7 @@ def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.
         version = version,
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
+        edition = edition,
     )
 
     rust_repository_set(
@@ -42,6 +44,7 @@ def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.
         version = version,
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
+        edition = edition,
     )
 
     rust_repository_set(
@@ -51,6 +54,7 @@ def rust_repositories(version = "1.39.0", iso_date = None, rustfmt_version = "1.
         version = version,
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
+        edition = edition,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):

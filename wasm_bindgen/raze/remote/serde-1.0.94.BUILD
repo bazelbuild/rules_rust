@@ -41,7 +41,7 @@ rust_library(
         "--cap-lints=allow",
     ],
     version = "1.0.94",
-    deps = [
+    proc_macro_deps = [
         "@raze__serde_derive__1_0_94//:serde_derive",
     ],
 )

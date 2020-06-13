@@ -89,7 +89,7 @@ rust_doc = rule(
         "html_in_header": attr.label(allow_single_file = [".html", ".md"]),
         "html_before_content": attr.label(allow_single_file = [".html", ".md"]),
         "html_after_content": attr.label(allow_single_file = [".html", ".md"]),
-        "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "host", executable = True),
+        "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "exec", executable = True),
     },
     outputs = {
         "rust_doc_zip": "%{name}.zip",

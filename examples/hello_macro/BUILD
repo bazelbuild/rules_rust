@@ -24,7 +24,7 @@ rust_test(
 rust_test(
     name = "greeting_test",
     srcs = ["tests/greeting.rs"],
-    deps = [":hello_macro"],
+    proc_macro_deps = [":hello_macro"],
 )
 
 rust_doc(

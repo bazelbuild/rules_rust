@@ -46,7 +46,7 @@ rust_library(
         "--cap-lints=allow",
     ],
     version = "0.2.48",
-    deps = [
+    proc_macro_deps = [
         "@raze__wasm_bindgen_macro__0_2_48//:wasm_bindgen_macro",
     ],
 )

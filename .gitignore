@@ -10,3 +10,5 @@
 
 # protobuf cargo-raze files
 /proto/raze/target
+
+node_modules

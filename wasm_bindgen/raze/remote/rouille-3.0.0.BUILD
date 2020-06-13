@@ -50,7 +50,6 @@ rust_library(
         "@raze__num_cpus__1_10_1//:num_cpus",
         "@raze__rand__0_5_6//:rand",
         "@raze__serde__1_0_94//:serde",
-        "@raze__serde_derive__1_0_94//:serde_derive",
         "@raze__serde_json__1_0_39//:serde_json",
         "@raze__sha1__0_6_0//:sha1",
         "@raze__term__0_5_2//:term",
@@ -58,6 +57,9 @@ rust_library(
         "@raze__time__0_1_42//:time",
         "@raze__tiny_http__0_6_2//:tiny_http",
         "@raze__url__1_7_2//:url",
+    ],
+    proc_macro_deps = [
+        "@raze__serde_derive__1_0_94//:serde_derive",
     ],
 )
 

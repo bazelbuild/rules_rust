@@ -45,7 +45,9 @@ rust_library(
         "@raze__leb128__0_2_4//:leb128",
         "@raze__log__0_4_6//:log",
         "@raze__rayon__1_1_0//:rayon",
-        "@raze__walrus_macro__0_8_0//:walrus_macro",
         "@raze__wasmparser__0_30_0//:wasmparser",
+    ],
+    proc_macro_deps = [
+        "@raze__walrus_macro__0_8_0//:walrus_macro",
     ],
 )

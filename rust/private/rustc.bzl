@@ -32,6 +32,7 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "srcs": "List[File]: All source Files that are part of the crate.",
         "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
+        "proc_macro_deps": "List[CrateInfo]: This crate's rust proc_macro dependencies' providers.",
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "output": "File: The output File that will be produced, depends on crate type.",
         "edition": "str: The edition of this crate.",
@@ -101,17 +102,39 @@ def get_lib_name(lib):
     else:
         return libname
 
-def collect_deps(deps, aliases, toolchain):
+def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     """
     Walks through dependencies and collects the transitive dependencies.
 
     Args:
+      label: str: Label of the current target.
       deps: List[Label]: The deps from ctx.attr.deps.
-      name: str: Name of the current target.
+      proc_macro_deps: List[Label]: The proc_macro deps from ctx.attr.proc_macro_deps.
 
     Returns:
       Returns a DepInfo provider.
     """
+
+    for dep in deps:
+        if CrateInfo in dep:
+            if dep[CrateInfo].type == "proc-macro":
+              fail(
+                  "{} listed {} in its deps, but it is a proc-macro. It should instead be in proc-macro-deps.".format(
+                      label,
+                      dep.label,
+                  )
+              )
+    for dep in proc_macro_deps:
+        type = dep[CrateInfo].type
+        if type != "proc-macro":
+          fail(
+              "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
+                  label,
+                  dep.label,
+                  type,
+              )
+          )
+
 
     # TODO: Fix depset union (https://docs.bazel.build/versions/master/skylark/depsets.html)
     direct_crates = []
@@ -120,8 +143,8 @@ def collect_deps(deps, aliases, toolchain):
     transitive_staticlibs = depset()
     build_info = None
 
-    aliases = {k.label: v for k, v in aliases.items()}
-    for dep in deps:
+    aliases = {k.label: v for k,v in aliases.items()}
+    for dep in deps + proc_macro_deps:
         if CrateInfo in dep:
             # This dependency is a rust_library
             direct_dep = dep[CrateInfo]
@@ -406,7 +429,9 @@ def rustc_compile_action(
                      - DefaultInfo: The output file for this crate, and its runfiles.
     """
     dep_info, build_info = collect_deps(
+        ctx.label,
         crate_info.deps,
+        crate_info.proc_macro_deps,
         crate_info.aliases,
         toolchain,
     )
