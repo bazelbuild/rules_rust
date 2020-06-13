@@ -210,7 +210,7 @@ def _get_linker_and_args(ctx, rpaths):
 
     return ld, link_args, link_env
 
-def _rustc_compile_inputs_add_out_dir(
+def _add_out_dir_to_compile_inputs(
         ctx,
         build_info,
         compile_inputs):
@@ -219,7 +219,7 @@ def _rustc_compile_inputs_add_out_dir(
         compile_inputs = depset([out_dir], transitive = [compile_inputs])
     return compile_inputs, out_dir
 
-def _rustc_compile_inputs(
+def _collect_inputs(
         ctx,
         toolchain,
         crate_info,
@@ -247,9 +247,9 @@ def _rustc_compile_inputs(
             linker_depset,
         ],
     )
-    return _rustc_compile_inputs_add_out_dir(ctx, build_info, compile_inputs)
+    return _add_out_dir_to_compile_inputs(ctx, build_info, compile_inputs)
 
-def _rustc_compile_arguments(
+def _construct_arguments(
         ctx,
         toolchain,
         crate_info,
@@ -411,7 +411,7 @@ def rustc_compile_action(
         toolchain,
     )
 
-    compile_inputs, out_dir = _rustc_compile_inputs(
+    compile_inputs, out_dir = _collect_inputs(
         ctx,
         toolchain,
         crate_info,
@@ -419,7 +419,7 @@ def rustc_compile_action(
         build_info
     )
 
-    args, env = _rustc_compile_arguments(
+    args, env = _construct_arguments(
         ctx,
         toolchain,
         crate_info,
