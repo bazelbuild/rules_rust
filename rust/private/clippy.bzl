@@ -34,16 +34,13 @@ _rust_extensions = [
 def _is_rust_target(srcs):
     return any([src.extension in _rust_extensions for src in srcs])
 
-def _all_sources(target, rule):
+def _rust_sources(target, rule):
     srcs = []
     if "srcs" in dir(rule.attr):
         srcs += [f for src in rule.attr.srcs for f in src.files.to_list()]
     if "hdrs" in dir(rule.attr):
         srcs += [f for hdr in rule.attr.hdrs for f in hdr.files.to_list()]
-    return srcs
-
-def _rust_sources(target, rule):
-    return [src for src in _all_sources(target, rule) if src.extension in _rust_extensions]
+    return [src for src in srcs if src.extension in _rust_extensions]
 
 def _clippy_aspect_impl(target, ctx):
     if CrateInfo not in target:
@@ -136,7 +133,6 @@ def _clippy_aspect_impl(target, ctx):
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
-    attr_aspects = ["deps"],
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     attrs = {
