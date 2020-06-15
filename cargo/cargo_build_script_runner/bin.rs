@@ -33,8 +33,8 @@ fn main() {
     let manifest_dir = canonicalize(&manifest_dir_env).expect(&format!("Failed to canonicalize '{}'", manifest_dir_env));
     let out_dir = canonicalize(&out_dir_env).expect(&format!("Failed to canonicalize '{}'", out_dir_env));
     let rustc = canonicalize(&rustc_env).expect(&format!("Failed to canonicalize '{}'", rustc_env));
-    match (args.next(), args.next(), args.next()) {
-        (Some(progname), Some(envfile), Some(flagfile)) => {
+    match (args.next(), args.next(), args.next(), args.next(), args.next()) {
+        (Some(progname), Some(crate_name), Some(envfile), Some(flagfile), Some(depenvfile)) => {
             let output = BuildScriptOutput::from_command(
                     Command::new(
                         canonicalize(&progname).expect(&format!("Failed to canonicalize '{}'", progname)))
@@ -48,12 +48,16 @@ fn main() {
             f.write_all(BuildScriptOutput::to_env(&output).as_bytes())
                 .expect(&format!("Unable to write file {}", envfile));
             let mut f =
+                File::create(&depenvfile).expect(&format!("Unable to create file {}", depenvfile));
+            f.write_all(BuildScriptOutput::to_dep_env(&output, &crate_name).as_bytes())
+                .expect(&format!("Unable to write file {}", depenvfile));
+            let mut f =
                 File::create(&flagfile).expect(&format!("Unable to create file {}", flagfile));
             f.write_all(BuildScriptOutput::to_flags(&output).as_bytes())
                 .expect(&format!("Unable to write file {}", flagfile));
         }
         _ => {
-            eprintln!("Usage: $0 progname envfile flagfile [arg1...argn]");
+            eprintln!("Usage: $0 progname crate_name envfile flagfile depenvfile [arg1...argn]");
             exit(1);
         }
     }

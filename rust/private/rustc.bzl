@@ -45,6 +45,7 @@ BuildInfo = provider(
         "flags": """File: file containing additional flags to pass to rustc""",
         "out_dir": """File: directory containing the result of a build script""",
         "rustc_env": """File: file containing additional environment variables to set for rustc.""",
+        "dep_env": """File: extra build script environment varibles to be set to direct dependencies.""",
     },
 )
 
@@ -62,6 +63,7 @@ DepInfo = provider(
         "transitive_dylibs": "depset[File]",
         "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
+        "dep_env": """File: File with environment variables direct dependencies build scripts rely upon.""",
     },
 )
 
@@ -185,6 +187,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             transitive_dylibs = transitive_dylibs,
             transitive_staticlibs = transitive_staticlibs,
             transitive_libs = transitive_libs.to_list(),
+            dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
     )

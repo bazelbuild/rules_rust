@@ -30,6 +30,8 @@ pub enum BuildScriptOutput {
     Flags(String),
     /// cargo:rustc-env
     Env(String),
+    /// cargo:VAR=VALUE
+    DepEnv(String),
 }
 
 impl BuildScriptOutput {
@@ -45,25 +47,32 @@ impl BuildScriptOutput {
             return None;
         }
         let param = split[1].trim().to_owned();
-        match split[0] {
-            "cargo:rustc-link-lib" => Some(BuildScriptOutput::LinkLib(param)),
-            "cargo:rustc-link-search" => Some(BuildScriptOutput::LinkSearch(param)),
-            "cargo:rustc-cfg" => Some(BuildScriptOutput::Cfg(param)),
-            "cargo:rustc-flags" => Some(BuildScriptOutput::Flags(param)),
-            "cargo:rustc-env" => Some(BuildScriptOutput::Env(param)),
-            "cargo:rerun-if-changed" | "cargo:rerun-if-env-changed" =>
+        let key_split = split[0].splitn(2, ':').collect::<Vec<_>>();
+        if key_split.len() <= 1 || key_split[0] != "cargo" {
+            // Not a cargo directive.
+            return None
+        }
+        match key_split[1] {
+            "rustc-link-lib" => Some(BuildScriptOutput::LinkLib(param)),
+            "rustc-link-search" => Some(BuildScriptOutput::LinkSearch(param)),
+            "rustc-cfg" => Some(BuildScriptOutput::Cfg(param)),
+            "rustc-flags" => Some(BuildScriptOutput::Flags(param)),
+            "rustc-env" => Some(BuildScriptOutput::Env(param)),
+            "rerun-if-changed" | "rerun-if-env-changed" =>
                 // Ignored because Bazel will re-run if those change all the time.
                 None,
-            "cargo:warning" => {
+            "warning" => {
                 eprintln!("Build Script Warning: {}", split[1]);
                 None
             },
-            _ => {
-                // Not yet supported:
-                // cargo:KEY=VALUE — Metadata, used by links scripts.
+            "rustc-cdylib-link-arg" => {
                 // cargo:rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
                 eprintln!("Warning: build script returned unsupported directive `{}`", split[0]);
                 None
+            },
+            _ => {
+                // cargo:KEY=VALUE — Metadata, used by links scripts.
+                Some(BuildScriptOutput::DepEnv(format!("{}={}", key_split[1].to_uppercase(), param)))
             },
         }
     }
@@ -109,6 +118,28 @@ impl BuildScriptOutput {
             .join(" ")
     }
 
+    /// Convert a vector of [BuildScriptOutput] into a list of dependencies environment variables.
+    pub fn to_dep_env(v: &Vec<BuildScriptOutput>, crate_name: &str) -> String {
+        // TODO: make use of `strip_suffix`.
+        const SYS_CRATE_SUFFIX: &str = "-sys";
+        let name = if crate_name.ends_with(SYS_CRATE_SUFFIX) {
+            crate_name.split_at(crate_name.rfind(SYS_CRATE_SUFFIX).unwrap()).0
+        } else {
+            crate_name
+        };
+        let prefix = format!("DEP_{}_", name.replace("-", "_").to_uppercase());
+        v.iter()
+            .filter_map(|x| {
+                if let BuildScriptOutput::DepEnv(env) = x {
+                    Some(format!("{}{}", prefix, env.to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
     /// Convert a vector of [BuildScriptOutput] into a flagfile.
     pub fn to_flags(v: &Vec<BuildScriptOutput>) -> String {
         v.iter()
@@ -138,14 +169,15 @@ cargo:rustc-env=FOO=BAR
 cargo:rustc-link-search=bleh
 cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=-Lblah
-cargo:invalid=ignored
 cargo:rerun-if-changed=ignored
 cargo:rustc-cfg=feature=awesome
+cargo:version=123
+cargo:version_number=1010107f
 ",
         );
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::from_reader(reader);
-        assert_eq!(result.len(), 6);
+        assert_eq!(result.len(), 8);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
         assert_eq!(result[2], BuildScriptOutput::LinkSearch("bleh".to_owned()));
@@ -155,7 +187,13 @@ cargo:rustc-cfg=feature=awesome
             result[5],
             BuildScriptOutput::Cfg("feature=awesome".to_owned())
         );
+        assert_eq!(result[6], BuildScriptOutput::DepEnv("VERSION=123".to_owned()));
+        assert_eq!(result[7], BuildScriptOutput::DepEnv("VERSION_NUMBER=1010107f".to_owned()));
 
+        assert_eq!(
+            BuildScriptOutput::to_dep_env(&result, "my-crate-sys"),
+            "DEP_MY_CRATE_VERSION=123 DEP_MY_CRATE_VERSION_NUMBER=1010107f".to_owned()
+        );
         assert_eq!(
             BuildScriptOutput::to_env(&result),
             "FOO=BAR BAR=FOO".to_owned()
