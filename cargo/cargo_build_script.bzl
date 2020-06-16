@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -20,6 +20,14 @@ def _cargo_build_script_run(ctx, script):
             crate_name = crate_name.replace("_build_script", "")
         crate_name = crate_name.replace("_", "-")
 
+    toolchain_tools = [
+        # Needed for rustc to function.
+        toolchain.rustc_lib.files,
+        toolchain.rust_lib.files,
+    ]
+
+    cc_toolchain = find_cpp_toolchain(ctx)
+
     env = {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_MANIFEST_DIR": manifest_dir,
@@ -31,10 +39,15 @@ def _cargo_build_script_run(ctx, script):
         "TARGET": toolchain.target_triple,
     }
 
-    cc_toolchain = find_cpp_toolchain(ctx)
+    # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
+    # We hope that the linker env is sufficient for the whole cc_toolchain.
+    _, _, linker_env = get_linker_and_args(ctx, None)
+    env.update(**linker_env)
+
     cc_executable = cc_toolchain and cc_toolchain.compiler_executable
     if cc_executable:
         env["CC"] = cc_executable
+        toolchain_tools.append(cc_toolchain.all_files)
 
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
@@ -45,11 +58,7 @@ def _cargo_build_script_run(ctx, script):
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
         ],
-        transitive = [
-            # Needed for rustc to function.
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
-        ],
+        transitive = toolchain_tools,
     )
 
     # dep_env_file contains additional environment variables coming from
@@ -109,6 +118,7 @@ _build_script_run = rule(
         ),
         "deps": attr.label_list(),
     },
+    fragments = ["cpp"],
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",

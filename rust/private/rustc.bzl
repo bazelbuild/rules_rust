@@ -192,7 +192,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         build_info,
     )
 
-def _get_linker_and_args(ctx, rpaths):
+def get_linker_and_args(ctx, rpaths):
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.18.0", BAZEL_VERSION)):
         user_link_flags = ctx.fragments.cpp.linkopts
@@ -331,7 +331,7 @@ def construct_arguments(
     # linker since it won't understand.
     if toolchain.target_arch != "wasm32":
         rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args, link_env = _get_linker_and_args(ctx, rpaths)
+        ld, link_args, link_env = get_linker_and_args(ctx, rpaths)
         env.update(link_env)
         args.add("--codegen=linker=" + ld)
         args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")

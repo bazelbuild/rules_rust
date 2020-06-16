@@ -20,6 +20,7 @@ use cargo_build_script_output_parser::BuildScriptOutput;
 use std::env;
 use std::fs::{File, create_dir_all};
 use std::io::Write;
+use std::path::Path;
 use std::process::{exit, Command};
 
 fn main() {
@@ -40,15 +41,31 @@ fn main() {
     let manifest_dir = exec_root.join(&manifest_dir_env);
     let out_dir = exec_root.join(&out_dir_env);
     let rustc = exec_root.join(&rustc_env);
+
+    let cc = env::var_os("CC").map(|env_var| {
+        let cc_path = Path::new(&env_var);
+        if cc_path.is_relative() {
+            exec_root.join(cc_path).into_os_string()
+        } else {
+            env_var
+        }
+    });
+
     match (args.next(), args.next(), args.next(), args.next(), args.next()) {
         (Some(progname), Some(crate_name), Some(envfile), Some(flagfile), Some(depenvfile)) => {
-            let output = BuildScriptOutput::from_command(
-                    Command::new(exec_root.join(&progname))
+            let mut command = Command::new(exec_root.join(&progname));
+            command
                 .args(args)
                 .current_dir(manifest_dir.clone())
                 .env("OUT_DIR", out_dir)
                 .env("CARGO_MANIFEST_DIR", manifest_dir)
-                .env("RUSTC", rustc));
+                .env("RUSTC", rustc);
+
+            if let Some(cc) = cc {
+                command.env("CC", cc);
+            }
+
+            let output = BuildScriptOutput::from_command(&mut command);
             let mut f =
                 File::create(&envfile).expect(&format!("Unable to create file {}", envfile));
             f.write_all(BuildScriptOutput::to_env(&output).as_bytes())
