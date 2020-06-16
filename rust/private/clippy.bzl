@@ -23,7 +23,6 @@ load(
 load(
     "@io_bazel_rules_rust//rust:private/rust.bzl",
     "crate_root_src",
-    "get_edition"
 )
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
@@ -50,20 +49,8 @@ def _clippy_aspect_impl(target, ctx):
         return []
 
     toolchain = find_toolchain(ctx)
-    crate_name = ctx.label.name.replace("-", "_")
-    crate_type = getattr(ctx.rule.attr, "crate_type") if hasattr(ctx.rule.attr, "crate_type") else "lib"
-    crate_info = CrateInfo(
-        name = crate_name,
-        type = crate_type,
-        root = crate_root_src(ctx, srcs = rust_srcs),
-        srcs = rust_srcs,
-        deps = ctx.rule.attr.deps,
-        proc_macro_deps = ctx.rule.attr.proc_macro_deps,
-        aliases = ctx.rule.attr.aliases,
-        output = None,
-        edition = get_edition(ctx.rule.attr, toolchain),
-        rustc_env = ctx.rule.attr.rustc_env,
-    )
+    root = crate_root_src(ctx.rule.attr, srcs = rust_srcs)
+    crate_info = target[CrateInfo]
 
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -75,6 +62,8 @@ def _clippy_aspect_impl(target, ctx):
 
     compile_inputs, out_dir = collect_inputs(
         ctx,
+        ctx.rule.file,
+        ctx.rule.files,
         toolchain,
         crate_info,
         dep_info,
@@ -83,13 +72,14 @@ def _clippy_aspect_impl(target, ctx):
 
     args, env = construct_arguments(
         ctx,
+        ctx.rule.file,
         toolchain,
         crate_info,
         dep_info,
-        output_hash = None,
+        output_hash = repr(hash(root.path)),
         rust_flags = [])
 
-    # A marker file indicating clang tidy has executed successfully.
+    # A marker file indicating clippy has executed successfully.
     # This file is necessary because "ctx.actions.run" mandates an output.
     clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
 
@@ -126,10 +116,8 @@ def _clippy_aspect_impl(target, ctx):
         OutputGroupInfo(clippy_checks = depset([clippy_marker])),
     ]
 
-# Executes a "compile command" on all specified targets.
-#
-# Example: Run the clang-tidy checker on all targets in the codebase.
-#   bazel build --aspects=@rules_rust//rust:clippy.bzl%rust_clippy_aspect \
+# Example: Run the clippy checker on all targets in the codebase.
+#   bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
@@ -145,6 +133,36 @@ rust_clippy_aspect = aspect(
         "@bazel_tools//tools/cpp:toolchain_type"
     ],
     implementation = _clippy_aspect_impl,
+    doc = """
+Executes the clippy checker on specified targets.
+
+This aspect applies to existing rust_library, rust_test, and rust_binary rules.
+
+As an example, if the following is defined in `hello_lib/BUILD`:
+
+```python
+package(default_visibility = ["//visibility:public"])
+
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+```
+
+Then the targets can be analyzed with clippy using the following command:
+
+$ bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+              --output_groups=clippy_checks //hello_lib:all
+""",
+
 )
 
 def _rust_clippy_rule_impl(ctx):
@@ -156,4 +174,10 @@ rust_clippy = rule(
     attrs = {
         'deps': attr.label_list(aspects = [rust_clippy_aspect]),
     },
+    doc = """
+Executes the clippy checker on a specific target.
+
+Similar to `rust_clippy_aspect`, but allows specifying a list of dependencies
+within the build.
+""",
 )

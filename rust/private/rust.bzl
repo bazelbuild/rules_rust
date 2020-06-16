@@ -77,21 +77,22 @@ def get_edition(attr, toolchain):
     else:
         return toolchain.default_edition
 
-def crate_root_src(ctx, srcs, file_name = "lib.rs"):
+def crate_root_src(attr, srcs, file_name = "lib.rs"):
     """Finds the source file for the crate root."""
 
     crate_root = None
-    if hasattr(ctx.file, "crate_root"):
-        crate_root = ctx.file.crate_root
+    if hasattr(attr, "crate_root"):
+        if attr.crate_root:
+            crate_root = attr.crate_root.files.to_list()[0]
 
     if not crate_root:
         crate_root = (
             (srcs[0] if len(srcs) == 1 else None) or
             _shortest_src_with_basename(srcs, file_name) or
-            _shortest_src_with_basename(srcs, ctx.attr.name + ".rs")
+            _shortest_src_with_basename(srcs, attr.name + ".rs")
         )
     if not crate_root:
-        file_names = [file_name, ctx.attr.name + ".rs"]
+        file_names = [file_name, attr.name + ".rs"]
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
 
@@ -108,7 +109,7 @@ def _shortest_src_with_basename(srcs, basename):
 
 def _rust_library_impl(ctx):
     # Find lib.rs
-    lib_rs = crate_root_src(ctx, ctx.files.srcs)
+    lib_rs = crate_root_src(ctx.attr, ctx.files.srcs)
 
     toolchain = find_toolchain(ctx)
 
@@ -159,7 +160,7 @@ def _rust_binary_impl(ctx):
         crate_info = CrateInfo(
             name = crate_name,
             type = crate_type,
-            root = crate_root_src(ctx, ctx.files.srcs, file_name = "main.rs"),
+            root = crate_root_src(ctx.attr, ctx.files.srcs, file_name = "main.rs"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,
@@ -208,7 +209,7 @@ def _rust_test_common(ctx, test_binary):
         target = CrateInfo(
             name = test_binary.basename,
             type = "lib",
-            root = crate_root_src(ctx, ctx.files.srcs),
+            root = crate_root_src(ctx.attr, ctx.files.srcs),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,

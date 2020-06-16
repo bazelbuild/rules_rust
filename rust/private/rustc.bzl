@@ -238,30 +238,33 @@ def _get_linker_and_args(ctx, rpaths):
 
 def _add_out_dir_to_compile_inputs(
         ctx,
+        file,
         build_info,
         compile_inputs):
-    out_dir = _create_out_dir_action(ctx, build_info.out_dir if build_info else None)
+    out_dir = _create_out_dir_action(ctx, file, build_info.out_dir if build_info else None)
     if out_dir:
         compile_inputs = depset([out_dir], transitive = [compile_inputs])
     return compile_inputs, out_dir
 
 def collect_inputs(
         ctx,
+        file,
+        files,
         toolchain,
         crate_info,
         dep_info,
         build_info):
-    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
+    linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.25.0", BAZEL_VERSION)):
         linker_depset = find_cpp_toolchain(ctx).all_files
     else:
-        linker_depset = depset(ctx.files._cc_toolchain)
+        linker_depset = depset(files._cc_toolchain)
 
     compile_inputs = depset(
         crate_info.srcs +
-        getattr(ctx.files, "data", []) +
+        getattr(files, "data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -273,10 +276,11 @@ def collect_inputs(
             linker_depset,
         ],
     )
-    return _add_out_dir_to_compile_inputs(ctx, build_info, compile_inputs)
+    return _add_out_dir_to_compile_inputs(ctx, file, build_info, compile_inputs)
 
 def construct_arguments(
         ctx,
+        file,
         toolchain,
         crate_info,
         dep_info,
@@ -284,7 +288,7 @@ def construct_arguments(
         rust_flags):
     output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
 
-    linker_script = getattr(ctx.file, "linker_script") if hasattr(ctx.file, "linker_script") else None
+    linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
     env = _get_rustc_env(ctx, toolchain)
 
@@ -445,6 +449,8 @@ def rustc_compile_action(
 
     compile_inputs, out_dir = collect_inputs(
         ctx,
+        ctx.file,
+        ctx.files,
         toolchain,
         crate_info,
         dep_info,
@@ -453,6 +459,7 @@ def rustc_compile_action(
 
     args, env = construct_arguments(
         ctx,
+        ctx.file,
         toolchain,
         crate_info,
         dep_info,
@@ -512,8 +519,8 @@ def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
 
-def _create_out_dir_action(ctx, build_info_out_dir = None):
-    tar_file = getattr(ctx.file, "out_dir_tar", None)
+def _create_out_dir_action(ctx, file, build_info_out_dir = None):
+    tar_file = getattr(file, "out_dir_tar", None)
     if not tar_file:
         return build_info_out_dir
     else:
