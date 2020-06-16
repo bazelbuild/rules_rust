@@ -178,6 +178,38 @@ rust_clippy = rule(
 Executes the clippy checker on a specific target.
 
 Similar to `rust_clippy_aspect`, but allows specifying a list of dependencies
-within the build.
+within the build system.
+
+For example, given the following example targets:
+
+```python
+package(default_visibility = ["//visibility:public"])
+
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+```
+
+Rust clippy can be set as a build target with the following:
+
+```python
+rust_clippy(
+    name = "hello_library_clippy",
+    testonly = True,
+    deps = [
+        ":hello_lib",
+        ":greeting_test",
+    ],
+)
+```
 """,
 )
