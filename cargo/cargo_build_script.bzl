@@ -12,8 +12,7 @@ def _cargo_build_script_run(ctx, script):
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
     crate_name = ctx.attr.crate_name
-    # Derive crate name from the rule label which is <crate_name>_build_script
-    # TODO: Remove once cargo_raze starts providing crate_name attribute.
+    # Derive crate name from the rule label which is <crate_name>_build_script if not provided.
     if not crate_name:
         crate_name = ctx.label.name
         if crate_name.endswith("_build_script"):
@@ -47,6 +46,11 @@ def _cargo_build_script_run(ctx, script):
         ],
     )
 
+    # dep_env_file contains additional environment variables coming from
+    # direct dependency sys-crates' build scripts. These need to be made
+    # available to the current crate build script.
+    # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
+    # for details.
     cmd = ""
     dep_env_files = []
     for dep in ctx.attr.deps:
