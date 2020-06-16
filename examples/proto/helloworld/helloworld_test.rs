@@ -56,17 +56,19 @@ impl ServerInfo {
                     .expect("Waiting for server startup");
                 line = line.trim().to_owned();
                 if line.starts_with(port_prefix) {
-                    port = u16::from_str(&line[port_prefix.len()..]).expect(&format!(
-                        "Invalid port number {}",
-                        &line[port_prefix.len()..]
-                    ))
+                    port = u16::from_str(&line[port_prefix.len()..]).unwrap_or_else(|_|
+                        panic!(
+                            "Invalid port number {}",
+                            &line[port_prefix.len()..]
+                        )
+                    )
                 }
             }
         }
         println!("Started server on port {}", port);
         ServerInfo {
             process: c,
-            port: port,
+            port,
         }
     }
 

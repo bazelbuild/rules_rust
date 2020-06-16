@@ -36,7 +36,7 @@ impl Greeter for GreeterImpl {
 
 fn main() {
     let mut server = grpc::ServerBuilder::<tls_api_stub::TlsAcceptor>::new();
-    let port = u16::from_str(&env::args().nth(1).unwrap_or("50051".to_owned())).unwrap();
+    let port = u16::from_str(&env::args().nth(1).unwrap_or_else(|| "50051".to_owned())).unwrap();
     server.http.set_port(port);
     server.add_service(GreeterServer::new_service_def(GreeterImpl));
     server.http.set_cpu_pool_threads(4);

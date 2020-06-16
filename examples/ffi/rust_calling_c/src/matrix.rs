@@ -45,7 +45,7 @@ impl Matrix {
             if matrix.is_null() {
                 panic!("Failed to allocate Matrix.");
             }
-            Matrix { matrix: matrix }
+            Matrix { matrix }
         }
     }
 
