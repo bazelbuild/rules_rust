@@ -1,6 +1,7 @@
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "get_compilation_mode_opts")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
 def _cargo_build_script_run(ctx, script):
     toolchain = find_toolchain(ctx)
@@ -19,6 +20,11 @@ def _cargo_build_script_run(ctx, script):
         "RUST_BACKTRACE": "full",
         "TARGET": toolchain.target_triple,
     }
+
+    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_executable = cc_toolchain and cc_toolchain.compiler_executable
+    if cc_executable:
+        env["CC"] = cc_executable
 
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
@@ -67,6 +73,7 @@ _build_script_run = rule(
             doc = "The binary script to run, generally a rust_binary target. ",
         ),
         "crate_features": attr.string_list(doc = "The list of rust features that the build script should consider activated."),
+        "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
@@ -76,6 +83,7 @@ _build_script_run = rule(
     },
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )
 
