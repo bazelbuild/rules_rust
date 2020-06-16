@@ -148,10 +148,8 @@ rust_clippy_aspect = aspect(
 )
 
 def _rust_clippy_rule_impl(ctx):
-    checks = depset([])
-    for dep in ctx.attr.deps:
-        checks = depset(dep[OutputGroupInfo].clippy_checks.to_list(), transitive = checks.to_list())
-    return [DefaultInfo(files = checks)]
+    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in ctx.attr.deps])
+    return [DefaultInfo(files = files)]
 
 rust_clippy = rule(
     implementation = _rust_clippy_rule_impl,
