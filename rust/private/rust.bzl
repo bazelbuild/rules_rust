@@ -191,7 +191,7 @@ def _rust_test_common(ctx, test_binary):
             root = crate.root,
             srcs = crate.srcs + ctx.files.srcs,
             deps = crate.deps + ctx.attr.deps,
-            proc_macro_deps = ctx.attr.proc_macro_deps,
+            proc_macro_deps = crate.proc_macro_deps + ctx.attr.proc_macro_deps,
             aliases = ctx.attr.aliases,
             output = test_binary,
             edition = crate.edition,
