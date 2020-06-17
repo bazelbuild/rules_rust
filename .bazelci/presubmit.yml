@@ -50,3 +50,18 @@ tasks:
     working_directory: examples
     test_targets:
     - //...
+  clippy_examples:
+    name: Clippy on Examples
+    platform: ubuntu1804
+    working_directory: examples
+    build_flags:
+    - "--aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect"
+    - "--output_groups=clippy_checks"
+    build_targets:
+    - //...
+  clippy_failure:
+    name: Negative Clippy Tests
+    platform: ubuntu1804
+    shell_commands:
+    - ./test/clippy/clippy_failure_test.sh
+
