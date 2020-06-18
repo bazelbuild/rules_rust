@@ -18,11 +18,18 @@ extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::BuildScriptOutput;
 use std::env;
-use std::fs::{File, canonicalize, create_dir_all};
+use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::process::{exit, Command};
 
 fn main() {
+    // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
+    // some execution strategies and remote execution environments may use symlinks in ways which
+    // canonicalizing them may break them, e.g. by having input files be symlinks into a /cas
+    // directory - resolving these may cause tools which inspect $0, or try to resolve files
+    // relative to themselves, to fail.
+    let exec_root = env::current_dir().expect("Failed to get current directory");
+
     let mut args = env::args().skip(1);
     let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
     let out_dir_env = env::var("OUT_DIR").expect("OUT_DIR was not set");
@@ -30,14 +37,13 @@ fn main() {
     create_dir_all(out_dir_env.clone()).expect(&format!("Failed to create OUT_DIR: {}", out_dir_env));
     let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
     // Because of the Bazel's sandbox, bazel cannot provide full path, convert all relative path to correct path.
-    let manifest_dir = canonicalize(&manifest_dir_env).expect(&format!("Failed to canonicalize '{}'", manifest_dir_env));
-    let out_dir = canonicalize(&out_dir_env).expect(&format!("Failed to canonicalize '{}'", out_dir_env));
-    let rustc = canonicalize(&rustc_env).expect(&format!("Failed to canonicalize '{}'", rustc_env));
+    let manifest_dir = exec_root.join(&manifest_dir_env);
+    let out_dir = exec_root.join(&out_dir_env);
+    let rustc = exec_root.join(&rustc_env);
     match (args.next(), args.next(), args.next(), args.next(), args.next()) {
         (Some(progname), Some(crate_name), Some(envfile), Some(flagfile), Some(depenvfile)) => {
             let output = BuildScriptOutput::from_command(
-                    Command::new(
-                        canonicalize(&progname).expect(&format!("Failed to canonicalize '{}'", progname)))
+                    Command::new(exec_root.join(&progname))
                 .args(args)
                 .current_dir(manifest_dir.clone())
                 .env("OUT_DIR", out_dir)
