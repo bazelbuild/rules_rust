@@ -5,7 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.4.8", edition = None):
+def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.4.8", edition = None, dev_components = False):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
@@ -16,7 +16,11 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
       rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
       iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
       edition: The rust edition to be used by default (2015 (default) or 2018)
+      dev_components: Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
     """
+
+    if dev_components and version != "nightly":
+        fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
 
     maybe(
         http_archive,
@@ -35,6 +39,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
         edition = edition,
+        dev_components = dev_components,
     )
 
     rust_repository_set(
@@ -45,6 +50,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
         edition = edition,
+        dev_components = dev_components,
     )
 
     rust_repository_set(
@@ -55,6 +61,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
         edition = edition,
+        dev_components = dev_components,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
@@ -382,6 +389,25 @@ def _load_rust_stdlib(ctx, target_triple):
 
     return stdlib_BUILD + toolchain_BUILD
 
+def _load_rustc_dev_nightly(ctx, target_triple):
+    """Loads the nightly rustc dev component
+
+    Args:
+      ctx: A repository_ctx.
+      target_triple: The rust-style target triple of the tool
+    """
+
+    load_arbitrary_tool(
+        ctx,
+        iso_date = ctx.attr.iso_date,
+        target_triple = target_triple,
+        tool_name = "rustc-dev",
+        tool_subdirectories = ["rustc-dev-{}".format(target_triple)],
+        version = ctx.attr.version,
+    )
+
+    return
+
 def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
 
@@ -392,7 +418,14 @@ def _rust_toolchain_repository_impl(ctx):
     if ctx.attr.rustfmt_version:
         BUILD_components.append(_load_rustfmt(ctx))
 
-    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
+    for target_triple in [ctx.attr.exec_triple]:
+        BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
+        if ctx.attr.dev_components:
+            # No BUILD file is needed because components will match the stdlib
+            # BUILD file globs
+            _load_rustc_dev_nightly(ctx, target_triple)
+
+    for target_triple in ctx.attr.extra_target_triples:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
 
     ctx.file("WORKSPACE", "")
@@ -441,6 +474,7 @@ rust_toolchain_repository = repository_rule(
         "extra_target_triples": attr.string_list(),
         "toolchain_name_prefix": attr.string(),
         "edition": attr.string(default = "2015"),
+        "dev_components": attr.bool(default = False),
     },
     implementation = _rust_toolchain_repository_impl,
 )
@@ -474,7 +508,8 @@ def rust_repository_set(
         extra_target_triples = [],
         iso_date = None,
         rustfmt_version = None,
-        edition = None):
+        edition = None,
+        dev_components = False):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -490,6 +525,8 @@ def rust_repository_set(
                             should support.
       rustfmt_version: The version of rustfmt to be associated with the toolchain.
       edition: The rust edition to be used by default (2015 (default) or 2018)
+      dev_components: Whether to download the rustc-dev components (defaults to False).
+                      Requires version to be "nightly".
     """
 
     rust_toolchain_repository(
@@ -501,6 +538,7 @@ def rust_repository_set(
         version = version,
         rustfmt_version = rustfmt_version,
         edition = edition,
+        dev_components = dev_components
     )
 
     rust_toolchain_repository_proxy(
