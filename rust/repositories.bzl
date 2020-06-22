@@ -418,8 +418,9 @@ def _rust_toolchain_repository_impl(ctx):
     if ctx.attr.rustfmt_version:
         BUILD_components.append(_load_rustfmt(ctx))
 
-    for target_triple in [ctx.attr.exec_triple]:
+    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
+
         # extra_target_triples contains targets such as wasm, which don't have rustc_dev components
         if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
             _load_rustc_dev_nightly(ctx, target_triple)
@@ -534,7 +535,7 @@ def rust_repository_set(
         version = version,
         rustfmt_version = rustfmt_version,
         edition = edition,
-        dev_components = dev_components
+        dev_components = dev_components,
     )
 
     rust_toolchain_repository_proxy(
