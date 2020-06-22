@@ -420,13 +420,8 @@ def _rust_toolchain_repository_impl(ctx):
 
     for target_triple in [ctx.attr.exec_triple]:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
-        if ctx.attr.dev_components:
-            # No BUILD file is needed because components will match the stdlib
-            # BUILD file globs
+        if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
             _load_rustc_dev_nightly(ctx, target_triple)
-
-    for target_triple in ctx.attr.extra_target_triples:
-        BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
 
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(BUILD_components))
