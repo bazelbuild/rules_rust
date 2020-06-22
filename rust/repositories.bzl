@@ -420,6 +420,7 @@ def _rust_toolchain_repository_impl(ctx):
 
     for target_triple in [ctx.attr.exec_triple]:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
+        # extra_target_triples contains targets such as wasm, which don't have rustc_dev components
         if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
             _load_rustc_dev_nightly(ctx, target_triple)
 
