@@ -327,8 +327,10 @@ def construct_arguments(
 
     # Gets the paths to the folders containing the standard library (or libcore)
     rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
+    # Gets the paths to the folders containing the rustc dynamic libraries
+    rustc_lib_paths = depset([file.dirname for file in toolchain.rustc_lib.files.to_list()]).to_list()
     # Tell Rustc where to find the standard library
-    args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
+    args.add_all(rust_lib_paths+rustc_lib_paths, before_each = "-L", format_each = "%s")
 
     args.add_all(rust_flags)
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
