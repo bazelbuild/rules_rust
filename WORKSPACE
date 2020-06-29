@@ -26,7 +26,7 @@ http_archive(
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+rust_repositories(version = "nightly", iso_date = "2020-06-23", dev_components = True)
 
 new_git_repository(
     name = "libc",
