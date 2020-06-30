@@ -18,6 +18,7 @@ load(
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
+    "get_cc_toolchain",
 )
 load(
     "@io_bazel_rules_rust//rust:private/rust.bzl",
@@ -73,11 +74,15 @@ def _clippy_aspect_impl(target, ctx):
     # This file is necessary because "ctx.actions.run" mandates an output.
     clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
 
+    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
+
     args, env = construct_arguments(
         ctx,
         ctx.file,
         toolchain,
         toolchain.clippy_driver.path,
+        cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         output_hash = repr(hash(root.path)),

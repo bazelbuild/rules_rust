@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_linker_and_args")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_cc_toolchain", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -41,7 +41,8 @@ def _cargo_build_script_run(ctx, script):
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
-    _, _, linker_env = get_linker_and_args(ctx, None)
+    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
+    _, _, linker_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
     if cc_toolchain:

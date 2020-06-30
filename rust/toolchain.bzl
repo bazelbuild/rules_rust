@@ -22,6 +22,7 @@ def _rust_toolchain_impl(ctx):
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
+        stdlib_linkflags = ctx.attr.stdlib_linkflags,
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
@@ -60,6 +61,10 @@ rust_toolchain = rule(
         "binary_ext": attr.string(mandatory = True),
         "staticlib_ext": attr.string(mandatory = True),
         "dylib_ext": attr.string(mandatory = True),
+        "stdlib_linkflags": attr.string_list(
+            doc = """Additional linker libs used when std lib is linked,
+                see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs""",
+            mandatory = True),
         "os": attr.string(mandatory = True),
         "default_edition": attr.string(
             doc = "The edition to use for rust_* rules that don't specify an edition.",
@@ -103,6 +108,7 @@ rust_toolchain(
   binary_ext = "",
   staticlib_ext = ".a",
   dylib_ext = ".so",
+  stdlib_linkflags = ["-lpthread", "-ldl"],
   os = "linux",
 )
 

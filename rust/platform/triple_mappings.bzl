@@ -69,6 +69,47 @@ _SYSTEM_TO_DYLIB_EXT = {
     "unknown": ".wasm",
 }
 
+# See https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs
+_SYSTEM_TO_STDLIB_LINKFLAGS = {
+    # TODO(bazelbuild/rules_cc#75):
+    #
+    # Right now bazel cc rules does not specify the exact flag setup needed for calling out system
+    # libs, that is we dont know given a toolchain if it should be, for example,
+    # `-lxxx` or `/Lxxx` or `xxx.lib` etc.
+    #
+    # We include the flag setup as they are _commonly seen_ on various platforms with a cc_rules
+    # style override for people doing things like gnu-mingw on windows.
+    #
+    # If you are reading this ... sorry! set the env var `BAZEL_RUST_STDLIB_LINKFLAGS` to
+    # what you need for your specific setup, for example like so
+    # `BAZEL_RUST_STDLIB_LINKFLAGS="-ladvapi32:-lws2_32:-luserenv"`
+
+    "freebsd": ["-lexecinfo", "-lpthread"],
+    # TODO: This ignores musl. Longer term what does Bazel think about musl?
+    "linux": ["-ldl", "-lpthread"],
+    "darwin": ["-lSystem", "-lresolv"],
+    "uwp": ["ws2_32.lib"],
+    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib"],
+    "ios": ["-lSystem", "-lobjc", "-framework Security", "-framework Foundation", "-lresolv"],
+    # NOTE: Rust stdlib `build.rs` treats android as a subset of linux, rust rules treat android
+    # as its own system.
+    "android": ["-ldl", "-llog", "-lgcc"],
+    "emscripten": [],
+    "nacl": [],
+    "bitrig": [],
+    "dragonfly": ["-lpthread"],
+    "netbsd": ["-lpthread", "-lrt"],
+    "openbsd": ["-lpthread"],
+    "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
+    "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
+    "fuchsia": ["-lzircon", "-lfdio"],
+    # TODO(gregbowyer): If rust stdlib is compiled for cloudabi with the backtrace feature it
+    # includes `-lunwind` but this might not actually be required.
+    # I am not sure which is the common configuration or how we encode it as a link flag.
+    "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
+    "unknown": [],
+}
+
 def cpu_arch_to_constraints(cpu_arch):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
@@ -112,6 +153,9 @@ def system_to_staticlib_ext(system):
 
 def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
+
+def system_to_stdlib_linkflags(system):
+    return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
 
 def triple_to_constraint_set(triple):
     component_parts = triple.split("-")

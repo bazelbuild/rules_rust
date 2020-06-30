@@ -1,5 +1,5 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
-load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "triple_to_constraint_set", "triple_to_system")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "system_to_stdlib_linkflags", "triple_to_constraint_set", "triple_to_system")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -181,7 +181,8 @@ filegroup(
         target_triple = target_triple,
     )
 
-def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple, default_edition = "2015"):
+def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple,
+                             stdlib_linkflags=None, default_edition = "2015"):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -189,9 +190,12 @@ def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple, d
       name: The name of the toolchain declaration
       exec_triple: The rust-style target that this compiler runs on
       target_triple: The rust-style target triple of the tool
+      stdlib_linkflags: Overriden flags needed for linking to rust stdlib, akin to BAZEL_LINKLIBS
     """
 
     system = triple_to_system(target_triple)
+    if stdlib_linkflags == None:
+        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
 
     return """
 rust_toolchain(
@@ -205,6 +209,7 @@ rust_toolchain(
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
+    stdlib_linkflags = [{stdlib_linkflags}],
     os = "{system}",
     default_edition = "{default_edition}",
     exec_triple = "{exec_triple}",
@@ -217,6 +222,7 @@ rust_toolchain(
         binary_ext = system_to_binary_ext(system),
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
+        stdlib_linkflags = stdlib_linkflags,
         system = system,
         default_edition = default_edition,
         exec_triple = exec_triple,
@@ -378,6 +384,11 @@ def _load_rust_stdlib(ctx, target_triple):
 
     toolchain_prefix = ctx.attr.toolchain_name_prefix or DEFAULT_TOOLCHAIN_NAME_PREFIX
     stdlib_BUILD = BUILD_for_stdlib(target_triple)
+
+    stdlib_linkflags = None
+    if 'BAZEL_RUST_STDLIB_LINKFLAGS' in ctx.os.environ:
+        stdlib_linkflags = ctx.os.environ['BAZEL_RUST_STDLIB_LINKFLAGS'].split(':')
+
     toolchain_BUILD = BUILD_for_rust_toolchain(
         name = "{toolchain_prefix}_{target_triple}".format(
             toolchain_prefix = toolchain_prefix,
@@ -385,6 +396,7 @@ def _load_rust_stdlib(ctx, target_triple):
         ),
         exec_triple = ctx.attr.exec_triple,
         target_triple = target_triple,
+        stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
     )

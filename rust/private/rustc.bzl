@@ -197,14 +197,9 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         build_info,
     )
 
-def get_linker_and_args(ctx, rpaths):
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.18.0", BAZEL_VERSION)):
-        user_link_flags = ctx.fragments.cpp.linkopts
-    else:
-        user_link_flags = depset(ctx.fragments.cpp.linkopts)
-
+def get_cc_toolchain(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
+
     kwargs = {
         "ctx": ctx,
     } if len(BAZEL_VERSION) == 0 or versions.is_at_least(
@@ -217,6 +212,17 @@ def get_linker_and_args(ctx, rpaths):
         unsupported_features = ctx.disabled_features,
         **kwargs
     )
+    return cc_toolchain, feature_configuration
+
+def get_cc_user_link_flags(ctx):
+    if (len(BAZEL_VERSION) == 0 or
+        versions.is_at_least("0.18.0", BAZEL_VERSION)):
+        return ctx.fragments.cpp.linkopts
+    else:
+        return depset(ctx.fragments.cpp.linkopts)
+
+def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
+    user_link_flags = get_cc_user_link_flags(ctx)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -290,6 +296,8 @@ def construct_arguments(
         file,
         toolchain,
         tool_path,
+        cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         output_hash,
@@ -392,7 +400,7 @@ def construct_arguments(
     # linker since it won't understand.
     if toolchain.target_arch != "wasm32":
         rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args, link_env = get_linker_and_args(ctx, rpaths)
+        ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
         env.update(link_env)
         args.add("--codegen=linker=" + ld)
         args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
@@ -449,11 +457,15 @@ def rustc_compile_action(
         build_info,
     )
 
+    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
+
     args, env = construct_arguments(
         ctx,
         ctx.file,
         toolchain,
         toolchain.rustc.path,
+        cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         output_hash,
@@ -493,7 +505,7 @@ def rustc_compile_action(
     if hasattr(ctx.attr, "out_binary"):
         out_binary = getattr(ctx.attr, "out_binary")
 
-    return [
+    return establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration) + [
         crate_info,
         dep_info,
         DefaultInfo(
@@ -504,6 +516,42 @@ def rustc_compile_action(
         ),
     ]
 
+def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
+    """ If the produced crate is suitable yield a CcInfo to allow for interop with cc rules """
+
+    if crate_info.type not in ("staticlib", "cdylib"):
+        return []
+
+    if crate_info.type == "staticlib":
+        library_to_link = cc_common.create_library_to_link(
+            actions = ctx.actions,
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            static_library = crate_info.output,
+        )
+    elif crate_info.type == "cdylib":
+        library_to_link = cc_common.create_library_to_link(
+            actions = ctx.actions,
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            dynamic_library = crate_info.output,
+        )
+
+    link_input = cc_common.create_linker_input(
+        owner = ctx.label,
+        libraries = depset([library_to_link]),
+        user_link_flags = depset(toolchain.stdlib_linkflags),
+    )
+
+    linking_context = cc_common.create_linking_context(
+        # TODO - What to do for no_std?
+        linker_inputs = depset([link_input]),
+    )
+
+    cc_infos = [dep[CcInfo] for dep in ctx.attr.deps]
+    cc_infos.append(CcInfo(linking_context = linking_context))
+
+    return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
