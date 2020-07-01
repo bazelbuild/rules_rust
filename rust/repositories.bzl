@@ -431,6 +431,25 @@ def _load_rustc_dev_nightly(ctx, target_triple):
 
     return
 
+def _load_llvm_tools(ctx, target_triple):
+    """Loads the llvm tools
+
+    Args:
+      ctx: A repository_ctx.
+      target_triple: The rust-style target triple of the tool
+    """
+
+    load_arbitrary_tool(
+        ctx,
+        iso_date = ctx.attr.iso_date,
+        target_triple = target_triple,
+        tool_name = "llvm-tools",
+        tool_subdirectories = ["llvm-tools-preview"],
+        version = ctx.attr.version,
+    )
+
+    return
+
 def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
 
@@ -440,6 +459,10 @@ def _rust_toolchain_repository_impl(ctx):
 
     if ctx.attr.rustfmt_version:
         BUILD_components.append(_load_rustfmt(ctx))
+
+    # Nightly Rust builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
+    if ctx.attr.version == "nightly" and int(ctx.attr.iso_date.replace("-", "")) > 20200522:
+            _load_llvm_tools(ctx, ctx.attr.exec_triple)
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
