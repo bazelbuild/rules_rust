@@ -54,6 +54,10 @@ fn main() -> Result<(), String> {
             while let Some(dep_env_path) = args.next() {
                 if let Ok(contents) = read_to_string(dep_env_path) {
                     for line in contents.split('\n') {
+                        // split on empty contents will still produce a single empty string in iterable.
+                        if line.is_empty() {
+                            continue;
+                        }
                         let mut key_val = line.splitn(2, '=');
                         match (key_val.next(), key_val.next()) {
                             (Some(key), Some(value)) => {
