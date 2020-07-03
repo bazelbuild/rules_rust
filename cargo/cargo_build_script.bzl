@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_cc_toolchain", "get_linker_and_args")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -14,6 +14,7 @@ def _cargo_build_script_run(ctx, script):
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
     crate_name = ctx.attr.crate_name
+
     # Derive crate name from the rule label which is <crate_name>_build_script if not provided.
     if not crate_name:
         crate_name = ctx.label.name
@@ -32,12 +33,20 @@ def _cargo_build_script_run(ctx, script):
     env = {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_MANIFEST_DIR": manifest_dir,
+        "CARGO_PKG_NAME": crate_name,
         "HOST": toolchain.exec_triple,
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_triple,
         # OUT_DIR is set by the runner itself, rather than on the action.
     }
+
+    if ctx.attr.version:
+        version = ctx.attr.version.split(".")
+        env["CARGO_PKG_VERSION"] = ctx.attr.version
+        env["CARGO_PKG_VERSION_MAJOR"] = version[0]
+        env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
+        env["CARGO_PKG_VERSION_PATCH"] = version[2] if len(version) > 2 else ""
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
@@ -121,6 +130,7 @@ _build_script_run = rule(
         ),
         "crate_name": attr.string(),
         "crate_features": attr.string_list(doc = "The list of rust features that the build script should consider activated."),
+        "version": attr.string(),
         "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
         "_cargo_build_script_runner": attr.label(
             executable = True,
@@ -137,12 +147,14 @@ _build_script_run = rule(
     ],
 )
 
-def cargo_build_script(name,
-                       crate_name = "",
-                       crate_features = [],
-                       deps = [],
-                       build_script_env = {},
-                       **kwargs):
+def cargo_build_script(
+        name,
+        crate_name = "",
+        crate_features = [],
+        version = "",
+        deps = [],
+        build_script_env = {},
+        **kwargs):
     """
     Compile and execute a rust build script to generate build attributes
 
@@ -196,6 +208,7 @@ def cargo_build_script(name,
     rust_binary(
         name = name + "_script_",
         crate_features = crate_features,
+        version = version,
         deps = deps,
         **kwargs
     )
@@ -204,6 +217,7 @@ def cargo_build_script(name,
         script = ":%s_script_" % name,
         crate_name = crate_name,
         crate_features = crate_features,
+        version = version,
         build_script_env = build_script_env,
         deps = deps,
     )
