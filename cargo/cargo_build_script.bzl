@@ -151,7 +151,7 @@ def cargo_build_script(
         name,
         crate_name = "",
         crate_features = [],
-        version = "",
+        version = None,
         deps = [],
         build_script_env = {},
         **kwargs):
