@@ -42,11 +42,13 @@ def _cargo_build_script_run(ctx, script):
     }
 
     if ctx.attr.version:
-        version = ctx.attr.version.split(".")
+        version = ctx.attr.version.split("+")[0].split(".")
+        patch = version[2].split("-") if len(version) > 2 else [""]
         env["CARGO_PKG_VERSION"] = ctx.attr.version
         env["CARGO_PKG_VERSION_MAJOR"] = version[0]
         env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
-        env["CARGO_PKG_VERSION_PATCH"] = version[2] if len(version) > 2 else ""
+        env["CARGO_PKG_VERSION_PATCH"] = patch[0]
+        env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
