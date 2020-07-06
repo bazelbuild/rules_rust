@@ -461,7 +461,7 @@ def _rust_toolchain_repository_impl(ctx):
         BUILD_components.append(_load_rustfmt(ctx))
 
     # Nightly Rust builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    if ctx.attr.version == "nightly" and int(ctx.attr.iso_date.replace("-", "")) > 20200522:
+    if ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22":
             _load_llvm_tools(ctx, ctx.attr.exec_triple)
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
