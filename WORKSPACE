@@ -19,9 +19,9 @@ local_repository(
 
 http_archive(
     name = "bazel_skylib",
-    sha256 = "eb5c57e4c12e68c0c20bc774bfbc60a568e800d025557bc4ea022c6479acc867",
-    strip_prefix = "bazel-skylib-0.6.0",
-    url = "https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz",
+    sha256 = "12ee3a5732e8c353fce4a710dbe045a16a161c49c79622faa1f2813f668bb442",
+    strip_prefix = "bazel-skylib-8f3151fb4a91d5f2ae4cad5901ea72fe30a2aba0",
+    url = "https://github.com/bazelbuild/bazel-skylib/archive/8f3151fb4a91d5f2ae4cad5901ea72fe30a2aba0.tar.gz",  # 2020-07-10
 )
 
 # TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
