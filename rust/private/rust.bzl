@@ -15,34 +15,6 @@
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
-_OLD_INLINE_TEST_CRATE_MSG = """
---------------------------------------------------------------------------------
-Testing crates with inline `#[cfg(test)]` attributes is now handled with the
-`crate` attribute in `rust_test`:
-
-This means you should migrate from:
-
-```
-rust_test(
-    name = "{name}",
-    deps = ["{dep}"],
-    ...
-)
-```
-
-to the following:
-```
-rust_test(
-    name = "{name}",
-    crate = "{dep}",
-    ...
-```
-
-See https://github.com/bazelbuild/rules_rust/pull/203 for more details
---------------------------------------------------------------------------------
-
-"""
-
 # TODO(marco): Separate each rule into its own file.
 
 def _determine_output_hash(lib_rs):
@@ -211,13 +183,6 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
         )
-    elif len(ctx.attr.deps) == 1 and len(ctx.files.srcs) == 0:
-        dep = ctx.attr.deps[0].label
-        msg = _OLD_INLINE_TEST_CRATE_MSG.format(
-            name = crate_name,
-            dep = dep if ctx.label.package != dep.package else ":" + dep.name,
-        )
-        fail(msg)
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
         target = CrateInfo(
