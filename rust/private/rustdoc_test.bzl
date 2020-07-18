@@ -89,7 +89,7 @@ set -e;
     --crate-name={crate_name} \\
     {flags}
 """.format(
-        rust_doc = toolchain.rust_doc.path,
+        rust_doc = toolchain.rust_doc.short_path,
         crate_root = crate.root.path,
         crate_name = crate.name,
         # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
