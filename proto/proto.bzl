@@ -172,6 +172,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
             output = rust_lib,
             edition = proto_toolchain.edition,
             rustc_env = {},
+            is_test = False,
         ),
         output_hash = output_hash,
     )

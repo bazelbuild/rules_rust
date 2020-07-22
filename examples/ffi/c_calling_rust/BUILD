@@ -1,10 +1,15 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "rusty",
     srcs = ["lib.rs"],
     crate_type = "staticlib",
+)
+
+rust_test(
+    name = "rusty_test",
+    crate = ":rusty",
 )
 
 cc_test(

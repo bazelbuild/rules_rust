@@ -37,6 +37,7 @@ CrateInfo = provider(
         "output": "File: The output File that will be produced, depends on crate type.",
         "edition": "str: The edition of this crate.",
         "rustc_env": """Dict[String, String]: Additional `"key": "value"` environment variables to set for rustc.""",
+        "is_test": "bool: If the crate is being compiled in a test context",
     },
 )
 
@@ -512,14 +513,14 @@ def rustc_compile_action(
             # nb. This field is required for cc_library to depend on our output.
             files = depset([crate_info.output]),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" or "--test" in rust_flags or out_binary else None,
+            executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
         ),
     ]
 
 def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
     """ If the produced crate is suitable yield a CcInfo to allow for interop with cc rules """
 
-    if crate_info.type not in ("staticlib", "cdylib"):
+    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib"):
         return []
 
     if crate_info.type == "staticlib":
