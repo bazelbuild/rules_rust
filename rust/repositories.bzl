@@ -5,7 +5,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
-def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.4.8", edition = None, dev_components = False):
+def rust_repositories(
+        version = "1.44.0",
+        iso_date = None,
+        rustfmt_version = "1.4.8",
+        edition = None,
+        dev_components = False,
+        sha256s = None):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
@@ -17,6 +23,16 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
       iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
       edition: The rust edition to be used by default (2015 (default) or 2018)
       dev_components: Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
+      sha256s: A dict associating tool subdirectories to sha256 hashes.  See
+               load_arbitrary_tool for more details.  As an example:
+               {
+                   "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+                   "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+                   "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+               }
+               would match for exec_triple = "x86_64-unknown-linux-gnu.  If not
+               specified, rules_rust pulls from a non-exhaustive list of known
+               checksums.
     """
 
     if dev_components and version != "nightly":
@@ -40,6 +56,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        sha256s = sha256s,
     )
 
     rust_repository_set(
@@ -51,6 +68,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        sha256s = sha256s,
     )
 
     rust_repository_set(
@@ -62,6 +80,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        sha256s = sha256s,
     )
 
     rust_repository_set(
@@ -71,6 +90,7 @@ def rust_repositories(version = "1.44.0", iso_date = None, rustfmt_version = "1.
         version = version,
         iso_date = iso_date,
         rustfmt_version = rustfmt_version,
+        sha256s = sha256s,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
@@ -191,8 +211,13 @@ filegroup(
         target_triple = target_triple,
     )
 
-def BUILD_for_rust_toolchain(workspace_name, name, exec_triple, target_triple,
-                             stdlib_linkflags=None, default_edition = "2015"):
+def BUILD_for_rust_toolchain(
+        workspace_name,
+        name,
+        exec_triple,
+        target_triple,
+        stdlib_linkflags = None,
+        default_edition = "2015"):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -322,7 +347,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     ctx.download(
         url,
         output = archive_path,
-        sha256 = FILE_KEY_TO_SHA.get(tool_suburl) or sha256,
+        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or sha256,
     )
     for subdirectory in tool_subdirectories:
         ctx.extract(
@@ -396,8 +421,8 @@ def _load_rust_stdlib(ctx, target_triple):
     stdlib_BUILD = BUILD_for_stdlib(target_triple)
 
     stdlib_linkflags = None
-    if 'BAZEL_RUST_STDLIB_LINKFLAGS' in ctx.os.environ:
-        stdlib_linkflags = ctx.os.environ['BAZEL_RUST_STDLIB_LINKFLAGS'].split(':')
+    if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
+        stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
 
     toolchain_BUILD = BUILD_for_rust_toolchain(
         name = "{toolchain_prefix}_{target_triple}".format(
@@ -439,7 +464,6 @@ def _load_llvm_tools(ctx, target_triple):
       ctx: A repository_ctx.
       target_triple: The rust-style target triple of the tool
     """
-
     load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
@@ -463,7 +487,7 @@ def _rust_toolchain_repository_impl(ctx):
 
     # Nightly Rust builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
     if ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22":
-            _load_llvm_tools(ctx, ctx.attr.exec_triple)
+        _load_llvm_tools(ctx, ctx.attr.exec_triple)
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
         BUILD_components.append(_load_rust_stdlib(ctx, target_triple))
@@ -507,6 +531,16 @@ Args:
   extra_target_triples: The Rust-style triples for extra compilation targets
   toolchain_name_prefix: The per-target prefix expected for the rust_toolchain declarations
   edition: The rust edition to be used by default (2015 (default) or 2018)
+  sha256s: A dict associating tool subdirectories to sha256 hashes.  See
+           load_arbitrary_tool for more details.  As an example:
+           {
+               "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+               "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+               "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+           }
+           would match for exec_triple = "x86_64-unknown-linux-gnu.  If not
+           specified, rules_rust pulls from a non-exhaustive list of known
+           checksums.
 """
 
 rust_toolchain_repository = repository_rule(
@@ -519,6 +553,7 @@ rust_toolchain_repository = repository_rule(
         "toolchain_name_prefix": attr.string(),
         "edition": attr.string(default = "2015"),
         "dev_components": attr.bool(default = False),
+        "sha256s": attr.string_dict(),
     },
     implementation = _rust_toolchain_repository_impl,
 )
@@ -553,7 +588,8 @@ def rust_repository_set(
         iso_date = None,
         rustfmt_version = None,
         edition = None,
-        dev_components = False):
+        dev_components = False,
+        sha256s = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -571,6 +607,16 @@ def rust_repository_set(
       edition: The rust edition to be used by default (2015 (default) or 2018)
       dev_components: Whether to download the rustc-dev components (defaults to False).
                       Requires version to be "nightly".
+      sha256s: A dict associating tool subdirectories to sha256 hashes.  See
+               load_arbitrary_tool for more details.  As an example:
+               {
+                   "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+                   "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+                   "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+               }
+               would match for exec_triple = "x86_64-unknown-linux-gnu.  If not
+               specified, rules_rust pulls from a non-exhaustive list of known
+               checksums.
     """
 
     rust_toolchain_repository(
@@ -583,6 +629,7 @@ def rust_repository_set(
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        sha256s = sha256s,
     )
 
     rust_toolchain_repository_proxy(
