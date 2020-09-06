@@ -8,7 +8,7 @@ DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 def rust_repositories(
         version = "1.44.0",
         iso_date = None,
-        rustfmt_version = "1.4.8",
+        rustfmt_version = "1.4.18",
         edition = None,
         dev_components = False,
         sha256s = None):
