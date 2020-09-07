@@ -18,13 +18,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 void matrix_print(const Matrix* m) {
   for (size_t i = 0; i < m->rows; ++i) {
     for (size_t j = 0; j < m->cols; ++j) {
       uint64_t val = 0;
       matrix_at(m, i, j, &val);
-      printf("%lu ", val);
+      printf("%"PRIu64" ", val);
     }
     printf("\n");
   }
