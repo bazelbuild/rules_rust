@@ -3,31 +3,18 @@ workspace(name = "io_bazel_rules_rust")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-local_repository(
-    name = "examples",
-    path = "examples",
-)
-
-local_repository(
-    name = "docs",
-    path = "docs",
-)
-
 http_archive(
     name = "bazel_skylib",
+    sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
     urls = [
         "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
         "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
     ],
-    sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
 )
 
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-bazel_skylib_workspace()
 
-# TODO: Move this to examples/WORKSPACE when recursive repositories are enabled.
-load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+bazel_skylib_workspace()
 
 new_git_repository(
     name = "libc",
@@ -37,34 +24,17 @@ new_git_repository(
 )
 
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+
 rust_proto_repositories()
 
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+
 rust_bindgen_repositories()
 
 load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+
 rust_wasm_bindgen_repositories()
 
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "e1a0d6eb40ec89f61a13a028e7113aa3630247253bcb1406281b627e44395145",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/1.0.1/rules_nodejs-1.0.1.tar.gz"],
-)
-
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
-node_repositories()
-
-# Dependencies for the @examples//hello_world_wasm example.
-npm_install(
-    name = "npm",
-    package_json = "//:package.json",
-    package_lock_json = "//:package-lock.json",
-)
-
-# Install all Bazel dependencies needed for npm packages that supply Bazel rules
-load("@npm//:install_bazel_dependencies.bzl", "install_bazel_dependencies")
-
-install_bazel_dependencies()
 # --- end stardoc
 
 http_archive(
@@ -72,8 +42,8 @@ http_archive(
     sha256 = "d8c2f20deb2f6143bac792d210db1a4872102d81529fe0ea3476c1696addd7ff",
     strip_prefix = "bazel-toolchains-0.28.3",
     urls = [
-      "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0.28.3.tar.gz",
-      "https://github.com/bazelbuild/bazel-toolchains/archive/0.28.3.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0.28.3.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/archive/0.28.3.tar.gz",
     ],
 )
 
@@ -86,7 +56,43 @@ rbe_autoconfig(
 )
 
 load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+
 bazel_version(name = "bazel_version")
 
+# Load all dependencies for examples
+
+local_repository(
+    name = "examples",
+    path = "examples",
+)
+
+load("@examples//:examples_repositories.bzl", examples_repositories = "repositories")
+
+examples_repositories()
+
+load("@examples//:examples_deps.bzl", examples_deps = "deps")
+
+examples_deps()
+
+load("@examples//:examples_extra_deps.bzl", examples_extra_deps = "extra_deps")
+
+examples_extra_deps()
+
 load("@examples//hello_sys:workspace.bzl", "remote_deps")
+
 remote_deps()
+
+# Load all dependencies for docs
+
+local_repository(
+    name = "docs",
+    path = "docs",
+)
+
+load("@docs//:docs_repositories.bzl", docs_repositories = "repositories")
+
+docs_repositories()
+
+load("@docs//:docs_deps.bzl", docs_deps = "deps")
+
+docs_deps(is_top_level = True)
