@@ -1,6 +1,6 @@
-package(default_visibility = ["//visibility:public"])
-
 load(":platform.bzl", "declare_config_settings")
+
+package(default_visibility = ["//visibility:public"])
 
 declare_config_settings()
 

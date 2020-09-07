@@ -1,3 +1,6 @@
+"""Definitions for support config settings and platform definitions"""
+
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     ":triple_mappings.bzl",
     "cpu_arch_to_constraints",
@@ -26,35 +29,38 @@ _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-ios",
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
-    "powerpc-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
-    "s390x-unknown-linux-gnu",
     "i686-linux-android",
     "i686-unknown-freebsd",
+    "powerpc-unknown-linux-gnu",
+    "s390x-unknown-linux-gnu",
+    "wasm32-unknown-unknown",
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
 ]
 
 _SUPPORTED_CPU_ARCH = [
-    "x86_64",
-    "powerpc",
     "aarch64",
     "arm",
     "i686",
+    "powerpc",
     "s390x",
+    "x86_64",
 ]
 
 _SUPPORTED_SYSTEMS = [
     "android",
-    "freebsd",
     "darwin",
+    "freebsd",
     "ios",
     "linux",
     "windows",
 ]
 
+# buildifier: disable=unnamed-macro
 def declare_config_settings():
+    """Helper function for declaring `config_setting`s"""
     for cpu_arch in _SUPPORTED_CPU_ARCH:
         native.config_setting(
             name = cpu_arch,
@@ -89,5 +95,15 @@ def declare_config_settings():
         name = "wasm",
         constraint_values = [
             "@io_bazel_rules_rust//rust/platform:wasm32",
+        ],
+    )
+
+    selects.config_setting_group(
+        name = "unix",
+        match_any = [
+            ":android",
+            ":darwin",
+            ":freebsd",
+            ":linux",
         ],
     )

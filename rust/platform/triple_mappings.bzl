@@ -1,3 +1,5 @@
+"""Helpers for constructing supported Rust platform triples"""
+
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "x86_64": "x86_64",
@@ -80,7 +82,6 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # If you are reading this ... sorry! set the env var `BAZEL_RUST_STDLIB_LINKFLAGS` to
     # what you need for your specific setup, for example like so
     # `BAZEL_RUST_STDLIB_LINKFLAGS="-ladvapi32:-lws2_32:-luserenv"`
-
     "freebsd": ["-lexecinfo", "-lpthread"],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
@@ -155,6 +156,14 @@ def system_to_stdlib_linkflags(system):
     return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
 
 def triple_to_constraint_set(triple):
+    """Returns a set of constraints for a given platform triple
+
+    Args:
+        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+
+    Returns:
+        list: A list of constraints (each represented by a list of strings)
+    """
     component_parts = triple.split("-")
     if len(component_parts) < 3:
         fail("Expected target triple to contain at least three sections separated by '-'")
