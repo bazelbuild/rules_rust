@@ -1,0 +1,11 @@
+# Docs
+docs/bazel-bin
+docs/bazel-docs
+docs/bazel-out
+docs/bazel-testlogs
+
+# Examples
+examples/bazel-bin
+examples/bazel-examples
+examples/bazel-out
+examples/bazel-testlogs
