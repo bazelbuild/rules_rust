@@ -34,6 +34,7 @@ _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
+    "wasm32-unknown-unknown",
 ]
 
 _SUPPORTED_CPU_ARCH = [
