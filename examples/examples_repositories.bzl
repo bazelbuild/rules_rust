@@ -14,7 +14,7 @@ def repositories():
     maybe(
         http_archive,
         name = "libc",
-        build_file = "@//:libc.BUILD",
+        build_file = "@examples//:libc.BUILD",
         sha256 = "1ac4c2ac6ed5a8fb9020c166bc63316205f1dc78d4b964ad31f4f21eb73f0c6d",
         strip_prefix = "libc-0.2.20",
         urls = [

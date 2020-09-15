@@ -1,6 +1,5 @@
 workspace(name = "io_bazel_rules_rust")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -15,14 +14,6 @@ http_archive(
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
-
-new_git_repository(
-    name = "libc",
-    build_file = "@io_bazel_rules_rust//:libc.BUILD",
-    remote = "https://github.com/rust-lang/libc",
-    tag = "0.2.20",
-)
-
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
