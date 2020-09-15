@@ -17,33 +17,24 @@ To use the Rust rules, add the following to your `WORKSPACE` file to add the ext
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "bazel_skylib",
-    urls = [
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-    ],
-    sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
-)
-
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-bazel_skylib_workspace()
-
-http_archive(
     name = "io_bazel_rules_rust",
-    sha256 = "b6da34e057a31b8a85e343c732de4af92a762f804fc36b0baa6c001423a70ebc",
-    strip_prefix = "rules_rust-55f77017a7f5b08e525ebeab6e11d8896a4499d2",
+    sha256 = "9158524bbbdfded6326d00e76d4fb293efbb07d4e4881416210bac221613432f",
+    strip_prefix = "rules_rust-7d9e890c58ca00eacf8dd4a2ba991cfe9c3f44e4",
     urls = [
-        # Master branch as of 2019-10-07
-        "https://github.com/bazelbuild/rules_rust/archive/55f77017a7f5b08e525ebeab6e11d8896a4499d2.tar.gz",
+        # Master branch as of 2020-09-09
+        "https://github.com/bazelbuild/rules_rust/archive/7d9e890c58ca00eacf8dd4a2ba991cfe9c3f44e4.tar.gz",
     ],
 )
 
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+
 rust_repositories()
 
-load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
-bazel_version(name = "bazel_version")
+load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
+
+rust_workspace()
 ```
+
 The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 0.26.0.
 
 ## Rules
@@ -85,9 +76,11 @@ Currently the most common approach to managing external dependencies is using
 
 ## WebAssembly
 
-To build a `rust_binary` for wasm32-unknown-unknown add the `--platforms=//rust/platform:wasm` flag.
+To build a `rust_binary` for wasm32-unknown-unknown add the `--platforms=@io_bazel_rules_rust//rust/platform:wasm` flag.
 
-    bazel build @examples//hello_world_wasm --platforms=//rust/platform:wasm
+```command
+bazel build @examples//hello_world_wasm --platforms=@io_bazel_rules_rust//rust/platform:wasm
+```
 
 `rust_wasm_bindgen` will automatically transition to the wasm platform and can be used when
 building wasm code for the host target.
