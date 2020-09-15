@@ -23,3 +23,11 @@ bazel_version = repository_rule(
     ),
     implementation = _bazel_version_impl,
 )
+
+def rust_workspace():
+    """A helper macro for setting up requirements for `rules_rust` within a given workspace"""
+
+    bazel_skylib_workspace()
+
+    bazel_version(name = "bazel_version")
+

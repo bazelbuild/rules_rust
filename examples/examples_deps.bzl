@@ -3,7 +3,7 @@
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
 load("@examples//hello_sys:workspace.bzl", "remote_deps")
-load("@io_bazel_rules_rust//:workspace.bzl", "bazel_version")
+load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
@@ -45,7 +45,7 @@ def deps():
 
     rust_wasm_bindgen_repositories()
 
-    bazel_version(name = "bazel_version")
+    rust_workspace()
 
     remote_deps()
 
