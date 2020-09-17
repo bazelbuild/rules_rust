@@ -417,7 +417,7 @@ def _load_rust_compiler(ctx):
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rust",
-        tool_subdirectories = ["rustc", "clippy-preview"],
+        tool_subdirectories = ["rustc", "clippy-preview", "cargo"],
         version = ctx.attr.version,
     )
 
