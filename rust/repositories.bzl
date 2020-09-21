@@ -161,6 +161,23 @@ def BUILD_for_compiler(target_triple):
         target_triple = target_triple,
     )
 
+_build_file_for_cargo_template = """
+load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+filegroup(
+    name = "cargo",
+    srcs = ["bin/cargo{binary_ext}"],
+    visibility = ["//visibility:public"],
+)"""
+
+def BUILD_for_cargo(target_triple):
+    """Emits a BUILD file the cargo .tar.gz."""
+
+    system = triple_to_system(target_triple)
+    return _build_file_for_cargo_template.format(
+        binary_ext = system_to_binary_ext(system),
+    )
+
 _build_file_for_rustfmt_template = """
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
@@ -235,6 +252,7 @@ rust_toolchain(
     rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
     rustfmt = "@{workspace_name}//:rustfmt_bin",
+    cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
     rustc_lib = "@{workspace_name}//:rustc_lib",
     binary_ext = "{binary_ext}",
@@ -421,7 +439,7 @@ def _load_rust_compiler(ctx):
         version = ctx.attr.version,
     )
 
-    compiler_build_file = BUILD_for_compiler(target_triple) + BUILD_for_clippy(target_triple)
+    compiler_build_file = BUILD_for_compiler(target_triple) + BUILD_for_clippy(target_triple) + BUILD_for_cargo(target_triple)
 
     return compiler_build_file
 
