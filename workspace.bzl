@@ -25,9 +25,12 @@ bazel_version = repository_rule(
 )
 
 def rust_workspace():
-    """A helper macro for setting up requirements for `rules_rust` within a given workspace"""
+    """A helper macro for setting up requirements for `rules_rust` within a given workspace.
+
+    This macro should always loaded and invoked after `rust_repositories` within a WORKSPACE
+    file.
+    """
 
     bazel_skylib_workspace()
 
     bazel_version(name = "bazel_version")
-
