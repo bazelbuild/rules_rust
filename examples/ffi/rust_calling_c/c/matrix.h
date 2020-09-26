@@ -15,8 +15,8 @@
 #ifndef MATRIX_SRC_MATRIX_H_
 #define MATRIX_SRC_MATRIX_H_
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct {
   size_t rows;
@@ -45,4 +45,4 @@ int matrix_equal(const Matrix* a, const Matrix* b);
 // Frees the matrix.
 void matrix_free(Matrix* matrix);
 
-#endif  // MATRIX_SRC_MATRIX_H_
+#endif // MATRIX_SRC_MATRIX_H_

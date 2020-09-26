@@ -1,0 +1,16 @@
+[package]
+name = "rules_rust_examples_ffi_rust_calling_c"
+version = "0.0.1"
+
+[lib]
+name = "rules_rust_examples_ffi_rust_calling_c"
+path = "src/matrix.rs"
+
+[dependencies]
+libc = "0.2.77"
+
+[raze]
+workspace_path = "//ffi/rust_calling_c/raze"
+genmode = "Remote"
+incompatible_relative_workspace_path = true
+gen_workspace_prefix = "rules_rust_examples_ffi_rust_calling_c"

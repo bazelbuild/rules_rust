@@ -1,6 +1,6 @@
-package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
-
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_doc", "rust_library", "rust_test")
+
+package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
 
 rust_library(
     name = "matrix",
@@ -10,7 +10,7 @@ rust_library(
     ],
     deps = [
         "//ffi/rust_calling_c/c:native_matrix",
-        "@libc",
+        "//ffi/rust_calling_c/raze:libc",
     ],
 )
 
@@ -35,7 +35,7 @@ rust_library(
     crate_root = "src/matrix.rs",
     deps = [
         "//ffi/rust_calling_c/c:native_matrix_so",
-        "@libc",
+        "//ffi/rust_calling_c/raze:libc",
     ],
 )
 

@@ -1,3 +1,5 @@
+# A file specifying filepatterns for git to ignore.
+
 # vim
 *.swp
 
@@ -9,7 +11,8 @@
 # rustfmt
 *.rs.bk
 
-# protobuf cargo-raze files
-/proto/raze/target
+# Cargo
+**/target/
 
-node_modules
+# npm
+**/node_modules/

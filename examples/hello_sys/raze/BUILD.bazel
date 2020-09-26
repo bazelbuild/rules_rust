@@ -1,0 +1,22 @@
+"""
+@generated
+cargo-raze workspace build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "bzip2",
+    actual = "@rules_rust_examples_hello_sys__bzip2__0_3_3//:bzip2",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)

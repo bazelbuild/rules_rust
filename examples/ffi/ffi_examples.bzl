@@ -12,20 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+"""This module contains defines helper macros for the cbindgen examples"""
 
-package(default_visibility = ["//visibility:public"])
+load("@examples//ffi/rust_calling_c/raze:crates.bzl", "rules_rust_examples_ffi_rust_calling_c_fetch_remote_crates")
 
-rust_binary(
-    name = "hello_sys",
-    srcs = ["src/main.rs"],
-    edition = "2018",
-    deps = ["//hello_sys/raze:bzip2"],
-)
-
-sh_test(
-    name = "test",
-    srcs = ["test.sh"],
-    args = ["$(location :hello_sys)"],
-    data = [":hello_sys"],
-)
+def ffi_examples_fetch_remote_crates():
+    rules_rust_examples_ffi_rust_calling_c_fetch_remote_crates()

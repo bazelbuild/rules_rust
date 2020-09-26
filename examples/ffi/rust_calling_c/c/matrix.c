@@ -14,8 +14,8 @@
 
 #include "ffi/rust_calling_c/c/matrix.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 Matrix* matrix_new(size_t rows, size_t cols, const uint64_t* data) {
   if (data == NULL) {

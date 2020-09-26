@@ -2,7 +2,8 @@
 
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
-load("@examples//hello_sys:workspace.bzl", "remote_deps")
+load("@examples//ffi/rust_calling_c/raze:crates.bzl", "rules_rust_examples_ffi_rust_calling_c_fetch_remote_crates")
+load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
 load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
@@ -47,8 +48,10 @@ def deps():
 
     rust_workspace()
 
-    remote_deps()
+    rules_rust_examples_hello_sys_fetch_remote_crates()
 
     rules_proto_dependencies()
 
     rules_proto_toolchains()
+
+    rules_rust_examples_ffi_rust_calling_c_fetch_remote_crates()

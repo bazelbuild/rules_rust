@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use libc::size_t;
-use libc::uint64_t;
-use libc::c_int;
+use libc::{c_int, size_t};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Matrix {
     pub rows: size_t,
     pub cols: size_t,
-    pub data: *mut uint64_t,
+    pub data: *mut u64,
 }
 
 // #[link(name = "native_matrix")] // Don't need this, BUILD file manages linking already.
 extern {
-    pub fn matrix_new(rows: size_t, cols: size_t, data: *const uint64_t) -> *mut Matrix;
-    pub fn matrix_at(matrix: *const Matrix, row: size_t, col: size_t, n: *mut uint64_t) -> c_int;
-    pub fn matrix_set(matrix: *const Matrix, row: size_t, col: size_t, n: uint64_t) -> c_int;
+    pub fn matrix_new(rows: size_t, cols: size_t, data: *const u64) -> *mut Matrix;
+    pub fn matrix_at(matrix: *const Matrix, row: size_t, col: size_t, n: *mut u64) -> c_int;
+    pub fn matrix_set(matrix: *const Matrix, row: size_t, col: size_t, n: u64) -> c_int;
     pub fn matrix_transpose(matrix: *mut Matrix);
     pub fn matrix_equal(a: *const Matrix, b: *const Matrix) -> c_int;
     pub fn matrix_free(matrix: *mut Matrix);

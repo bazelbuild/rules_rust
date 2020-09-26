@@ -15,10 +15,10 @@
 #include "ffi/rust_calling_c/c/matrix.h"
 
 #include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 void matrix_print(const Matrix* m) {
   for (size_t i = 0; i < m->rows; ++i) {

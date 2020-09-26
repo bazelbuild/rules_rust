@@ -57,10 +57,6 @@ load("@examples//:examples_extra_deps.bzl", examples_extra_deps = "extra_deps")
 
 examples_extra_deps()
 
-load("@examples//hello_sys:workspace.bzl", "remote_deps")
-
-remote_deps()
-
 # Load all dependencies for docs
 
 local_repository(
