@@ -13,18 +13,6 @@ def repositories():
 
     maybe(
         http_archive,
-        name = "libc",
-        build_file = "@examples//:libc.BUILD",
-        sha256 = "1ac4c2ac6ed5a8fb9020c166bc63316205f1dc78d4b964ad31f4f21eb73f0c6d",
-        strip_prefix = "libc-0.2.20",
-        urls = [
-            "https://mirror.bazel.build/github.com/rust-lang/libc/archive/0.2.20.zip",
-            "https://github.com/rust-lang/libc/archive/0.2.20.zip",
-        ],
-    )
-
-    maybe(
-        http_archive,
         name = "bazel_skylib",
         sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
         urls = [
