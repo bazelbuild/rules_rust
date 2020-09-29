@@ -7,3 +7,7 @@ repositories()
 load(":docs_deps.bzl", "deps")
 
 deps()
+
+load(":docs_extra_deps.bzl", "extra_deps")
+
+extra_deps()

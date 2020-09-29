@@ -70,4 +70,8 @@ docs_repositories()
 
 load("@docs//:docs_deps.bzl", docs_deps = "deps")
 
-docs_deps(is_top_level = True)
+docs_deps()
+
+load("@docs//:docs_extra_deps.bzl", docs_extra_deps = "extra_deps")
+
+docs_extra_deps(is_top_level = True)
