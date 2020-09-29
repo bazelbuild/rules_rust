@@ -1,5 +1,9 @@
 workspace(name = "io_bazel_rules_rust")
 
+load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+
+rust_repositories()
+
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
@@ -53,9 +57,9 @@ load("@examples//:examples_deps.bzl", examples_deps = "deps")
 
 examples_deps()
 
-load("@examples//:examples_extra_deps.bzl", examples_extra_deps = "extra_deps")
+load("@examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
 
-examples_extra_deps()
+examples_transitive_deps()
 
 # Load all dependencies for docs
 
@@ -70,4 +74,8 @@ docs_repositories()
 
 load("@docs//:docs_deps.bzl", docs_deps = "deps")
 
-docs_deps(is_top_level = True)
+docs_deps()
+
+load("@docs//:docs_transitive_deps.bzl", docs_transitive_deps = "transitive_deps")
+
+docs_transitive_deps(is_top_level = True)

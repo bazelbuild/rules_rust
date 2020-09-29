@@ -8,6 +8,6 @@ load(":examples_deps.bzl", "deps")
 
 deps()
 
-load(":examples_extra_deps.bzl", "extra_deps")
+load(":examples_transitive_deps.bzl", "transitive_deps")
 
-extra_deps()
+transitive_deps()

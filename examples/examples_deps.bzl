@@ -1,23 +1,26 @@
 """Define dependencies for `rules_rust` examples"""
 
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
 load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
 load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 
 def deps():
     """Define dependencies for `rules_rust` examples"""
-    bazel_skylib_workspace()
 
     rust_repositories()
 
+    rust_bindgen_repositories()
+
+    rust_wasm_bindgen_repositories()
+
+    rust_proto_repositories()
+
+    # Example of `rust_repository_set`
     rust_repository_set(
         name = "fake_toolchain_for_test_of_sha256",
         edition = "2018",
@@ -32,8 +35,6 @@ def deps():
         version = "1.46.0",
     )
 
-    rust_proto_repositories()
-
     node_repositories()
 
     # Dependencies for the @examples//hello_world_wasm example.
@@ -43,17 +44,7 @@ def deps():
         package_lock_json = "@examples//:package-lock.json",
     )
 
-    rust_bindgen_repositories()
-
-    rust_wasm_bindgen_repositories()
-
-    rust_workspace()
-
     rules_rust_examples_hello_sys_fetch_remote_crates()
-
-    rules_proto_dependencies()
-
-    rules_proto_toolchains()
 
     maybe(
         http_archive,
