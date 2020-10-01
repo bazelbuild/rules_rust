@@ -1,4 +1,5 @@
 load(":platform.bzl", "declare_config_settings")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -9,4 +10,10 @@ package_group(
     packages = [
         "//...",
     ],
+)
+
+bzl_library(
+    name = "rules",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["@io_bazel_rules_rust//rust:__pkg__"],
 )

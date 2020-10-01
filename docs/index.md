@@ -52,7 +52,7 @@ You can also browse the [full API in one page](flatten.md).
 
 ## Specifying Rust version
 
-To build with a particular version of the Rust compiler, pass that version to `rust_repositories`:
+To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
 
 ```python
 rust_repositories(version = "1.42.0", edition="2018")
