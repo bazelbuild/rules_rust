@@ -51,7 +51,8 @@ BuildInfo = provider(
     },
 )
 
-AliasableDep = provider(
+AliasableDepInfo = provider(
+    doc = "",
     fields = {
         "name": "str",
         "dep": "CrateInfo",
@@ -153,7 +154,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         if CrateInfo in dep:
             # This dependency is a rust_library
             direct_dep = dep[CrateInfo]
-            aliasable_dep = AliasableDep(
+            aliasable_dep = AliasableDepInfo(
                 name = aliases.get(dep.label, direct_dep.name),
                 dep = direct_dep,
             )
