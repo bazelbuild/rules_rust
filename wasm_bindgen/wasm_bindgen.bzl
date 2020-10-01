@@ -38,13 +38,19 @@ def _rust_wasm_bindgen_impl(ctx):
         arguments = [args],
     )
 
+    # TODO: Legacy provider syntax should be updated. See the following guide:
+    # https://docs.bazel.build/versions/master/skylark/rules.html#migrating-from-legacy-providers
     return struct(
-        files = depset([
-            ctx.outputs.bindgen_wasm_module,
-            ctx.outputs.bindgen_typescript_bindings,
-            ctx.outputs.typescript_bindings,
-            ctx.outputs.javascript_bindings,
-        ]),
+        providers = [
+            DefaultInfo(
+                files = depset([
+                    ctx.outputs.bindgen_wasm_module,
+                    ctx.outputs.bindgen_typescript_bindings,
+                    ctx.outputs.typescript_bindings,
+                    ctx.outputs.javascript_bindings,
+                ]),
+            ),
+        ],
         typescript = struct(
             declarations = depset([
                 ctx.outputs.typescript_bindings,
