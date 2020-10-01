@@ -24,7 +24,7 @@ load(
     "@io_bazel_rules_rust//rust:private/rust.bzl",
     "crate_root_src",
 )
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
 
 _rust_extensions = [
     "rs",
@@ -85,7 +85,7 @@ def _clippy_aspect_impl(target, ctx):
         feature_configuration,
         crate_info,
         dep_info,
-        output_hash = repr(hash(root.path)),
+        output_hash = determine_output_hash(root),
         rust_flags = [],
         out_dir = out_dir,
         build_env_file = build_env_file,

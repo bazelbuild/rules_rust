@@ -42,7 +42,7 @@ load(
     _generated_file_stem = "generated_file_stem",
 )
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
 
 RustProtoInfo = provider(
     fields = {
@@ -152,7 +152,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
     srcs.append(lib_rs)
 
     # And simulate rust_library behavior
-    output_hash = repr(hash(lib_rs.path))
+    output_hash = determine_output_hash(lib_rs)
     rust_lib = ctx.actions.declare_file("%s/lib%s-%s.rlib" % (
         output_dir,
         crate_name,

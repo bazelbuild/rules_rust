@@ -13,12 +13,9 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
 
 # TODO(marco): Separate each rule into its own file.
-
-def _determine_output_hash(lib_rs):
-    return repr(hash(lib_rs.path))
 
 def _deprecated_attributes(ctx):
     if getattr(ctx.attr, "out_dir_tar", None):
@@ -101,7 +98,7 @@ def _rust_library_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     # Determine unique hash for this rlib
-    output_hash = _determine_output_hash(lib_rs)
+    output_hash = determine_output_hash(lib_rs)
 
     crate_name = ctx.label.name.replace("-", "_")
     rust_lib_name = _determine_lib_name(
