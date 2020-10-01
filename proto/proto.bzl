@@ -44,7 +44,7 @@ load(
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
-RustProtoProvider = provider(
+RustProtoInfo = provider(
     fields = {
         "proto_sources": "List[string]: list of source paths of protos",
         "transitive_proto_sources": "depset[string]",
@@ -99,11 +99,11 @@ def _rust_proto_aspect_impl(target, ctx):
         for f in target[ProtoInfo].direct_sources
     ]
     transitive_sources = [
-        f[RustProtoProvider].transitive_proto_sources
+        f[RustProtoInfo].transitive_proto_sources
         for f in ctx.rule.attr.deps
-        if RustProtoProvider in f
+        if RustProtoInfo in f
     ]
-    return RustProtoProvider(
+    return RustProtoInfo(
         proto_sources = sources,
         transitive_proto_sources = depset(transitive = transitive_sources, direct = sources),
     )
@@ -182,9 +182,9 @@ def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
     proto = _expand_provider(ctx.attr.deps, ProtoInfo)
     transitive_sources = [
-        f[RustProtoProvider].transitive_proto_sources
+        f[RustProtoInfo].transitive_proto_sources
         for f in ctx.attr.deps
-        if RustProtoProvider in f
+        if RustProtoInfo in f
     ]
 
     srcs = depset(transitive = transitive_sources)
