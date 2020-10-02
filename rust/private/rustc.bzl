@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "relativize")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "relativize")
 load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -98,15 +98,6 @@ def get_compilation_mode_opts(ctx, toolchain):
         fail("Unrecognized compilation mode {} for toolchain.".format(comp_mode))
 
     return toolchain.compilation_mode_opts[comp_mode]
-
-def get_lib_name(lib):
-    """Returns the name of a library artifact, eg. libabc.a -> abc"""
-    libname, ext = lib.basename.split(".", 2)
-
-    if libname.startswith("lib"):
-        return libname[3:]
-    else:
-        return libname
 
 def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     """

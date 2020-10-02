@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "get_lib_name")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
 
 def _rust_doc_test_impl(ctx):
     if CrateInfo not in ctx.attr.dep:

@@ -67,3 +67,19 @@ def _path_parts(path):
     """
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
+    
+def get_lib_name(lib):
+    """Returns the name of a library artifact, eg. libabc.a -> abc
+
+    Args:
+        lib (File): A library file
+
+    Returns:
+        str: The name of the library
+    """
+    libname, ext = lib.basename.split(".", 2)
+
+    if libname.startswith("lib"):
+        return libname[3:]
+    else:
+        return libname
