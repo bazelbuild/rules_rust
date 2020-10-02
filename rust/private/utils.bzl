@@ -12,18 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Utility functions not specific to the rust toolchain.
-"""
+"""Utility functions not specific to the rust toolchain."""
 
 def find_toolchain(ctx):
-    """Finds the first rust toolchain that is configured."""
+    """Finds the first rust toolchain that is configured.
+
+    Args:
+        ctx (ctx): The ctx object for the current target.
+
+    Returns:
+        ToolchainContext: A Rust toolchain context.
+    """
     return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
 
-def relative_path(src_path, dest_path):
-    """Returns the relative path from src_path to dest_path."""
-    src_parts = _path_parts(src_path)
-    dest_parts = _path_parts(dest_path)
+# TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
+# dependency issues or generating docs will break.
+def relativize(path, start):
+    """Returns the relative path from start to path.
+
+    Args:
+        path (str): The path to relativize.
+        start (str): The ancestor path against which to relativize.
+
+    Returns:
+        str: The portion of `path` that is relative to `start`.
+    """
+    src_parts = _path_parts(start)
+    dest_parts = _path_parts(path)
     n = 0
     done = False
     for src_part, dest_part in zip(src_parts, dest_parts):
@@ -41,11 +56,11 @@ def relative_path(src_path, dest_path):
 def _path_parts(path):
     """Takes a path and returns a list of its parts with all "." elements removed.
 
-    The main use case of this function is if one of the inputs to _relative()
+    The main use case of this function is if one of the inputs to relativize()
     is a relative path, such as "./foo".
 
     Args:
-      path_parts: A list containing parts of a path.
+      path: A list containing parts of a path.
 
     Returns:
       Returns a list containing the path parts with all "." elements removed.

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "relative_path")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "relativize")
 load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -597,7 +597,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
 
     # Multiple dylibs can be present in the same directory, so deduplicate them.
     return depset([
-        relative_path(output_dir, lib_dir)
+        relativize(lib_dir, output_dir)
         for lib_dir in _get_dir_names(dep_info.transitive_dylibs.to_list())
     ])
 
