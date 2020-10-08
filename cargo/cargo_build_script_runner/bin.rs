@@ -17,6 +17,7 @@
 extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
+use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs::{create_dir_all, read_to_string, write};
@@ -43,9 +44,12 @@ fn main() -> Result<(), String> {
             // For some reason Google's RBE does not create the output directory, force create it.
             create_dir_all(&out_dir_abs).expect(&format!("Failed to make output directory: {:?}", out_dir_abs));
 
+            let target_env_vars = get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
+
             let mut command = Command::new(exec_root.join(&progname));
             command
                 .current_dir(manifest_dir.clone())
+                .envs(target_env_vars)
                 .env("OUT_DIR", out_dir_abs)
                 .env("CARGO_MANIFEST_DIR", manifest_dir)
                 .env("RUSTC", rustc)
@@ -116,6 +120,44 @@ fn main() -> Result<(), String> {
             Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile depenvfile [arg1...argn]".to_owned())
         }
     }
+}
+
+fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, String>, String> {
+    // As done by Cargo when constructing a cargo::core::compiler::build_context::target_info::TargetInfo.
+    let output = Command::new(rustc.as_ref())
+        .arg("--print=cfg")
+        .output()
+        .map_err(|err| format!("Error running rustc to get target information: {}", err))?;
+    if !output.status.success() {
+        return Err(format!(
+            "Error running rustc to get target information: {:?}",
+            output
+        ));
+    }
+    let stdout = std::str::from_utf8(&output.stdout)
+        .map_err(|err| format!("Non-UTF8 stdout from rustc: {:?}", err))?;
+
+    let mut values = BTreeMap::new();
+
+    for line in stdout.lines() {
+        if line.starts_with("target_") && line.contains('=') {
+            let mut parts = line.splitn(2, '=');
+            // UNWRAP: Verified that line contains = and split into exactly 2 parts.
+            let key = parts.next().unwrap();
+            let value = parts.next().unwrap();
+            if value.starts_with('"') && value.ends_with('"') && value.len() >= 2 {
+                values
+                    .entry(key)
+                    .or_insert(vec![])
+                    .push(value[1..(value.len() - 1)].to_owned());
+            }
+        }
+    }
+
+    Ok(values
+        .into_iter()
+        .map(|(key, value)| (format!("CARGO_CFG_{}", key.to_uppercase()), value.join(",")))
+        .collect())
 }
 
 fn absolutify(root: &Path, maybe_relative: OsString) -> OsString {

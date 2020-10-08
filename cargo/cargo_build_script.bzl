@@ -31,7 +31,6 @@ def _cargo_build_script_run(ctx, script):
     cc_toolchain = find_cpp_toolchain(ctx)
 
     env = {
-        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": crate_name,
         "HOST": toolchain.exec_triple,
