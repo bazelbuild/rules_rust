@@ -125,11 +125,11 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a list of environment variables.
-    pub fn to_env(v: &Vec<BuildScriptOutput>) -> String {
+    pub fn to_env(v: &Vec<BuildScriptOutput>, exec_root: &str) -> String {
         v.iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::Env(env) = x {
-                    Some(env.to_owned())
+                    Some(Self::redact_exec_root(env, exec_root))
                 } else {
                     None
                 }
@@ -178,8 +178,12 @@ impl BuildScriptOutput {
         }
         CompileAndLinkFlags {
             compile_flags: compile_flags.join("\n"),
-            link_flags: link_flags.join("\n").replace(exec_root, "${pwd}"),
+            link_flags: Self::redact_exec_root(&link_flags.join("\n"), exec_root),
         }
+    }
+
+    fn redact_exec_root(value: &str, exec_root: &str) -> String {
+        value.replace(exec_root, "${pwd}")
     }
 }
 
@@ -201,11 +205,12 @@ cargo:rerun-if-changed=ignored
 cargo:rustc-cfg=feature=awesome
 cargo:version=123
 cargo:version_number=1010107f
+cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
 ",
         );
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::from_reader(reader);
-        assert_eq!(result.len(), 8);
+        assert_eq!(result.len(), 9);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
         assert_eq!(
@@ -226,14 +231,18 @@ cargo:version_number=1010107f
             result[7],
             BuildScriptOutput::DepEnv("VERSION_NUMBER=1010107f".to_owned())
         );
+        assert_eq!(
+            result[8],
+            BuildScriptOutput::Env("SOME_PATH=/some/absolute/path/beep".to_owned())
+        );
 
         assert_eq!(
             BuildScriptOutput::to_dep_env(&result, "my-crate-sys"),
             "DEP_MY_CRATE_VERSION=123\nDEP_MY_CRATE_VERSION_NUMBER=1010107f".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::to_env(&result),
-            "FOO=BAR\nBAR=FOO".to_owned()
+            BuildScriptOutput::to_env(&result, "/some/absolute/path"),
+            "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::to_flags(&result, "/some/absolute/path"),

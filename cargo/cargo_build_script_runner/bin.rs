@@ -103,7 +103,7 @@ fn main() -> Result<(), String> {
                 )
             })?;
 
-            write(&envfile, BuildScriptOutput::to_env(&output).as_bytes())
+            write(&envfile, BuildScriptOutput::to_env(&output, &exec_root.to_string_lossy()).as_bytes())
                 .expect(&format!("Unable to write file {:?}", envfile));
             write(&depenvfile, BuildScriptOutput::to_dep_env(&output, &crate_name).as_bytes())
                 .expect(&format!("Unable to write file {:?}", depenvfile));
