@@ -1,6 +1,8 @@
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@bazel_skylib//lib:versions.bzl", "versions")
 
+_MINIMUM_SUPPORTED_BAZEL_VERSION = "0.17.1"
+
 def _bazel_version_impl(repository_ctx):
     """The implementation for the `bazel_version` rule
 
@@ -10,10 +12,15 @@ def _bazel_version_impl(repository_ctx):
     bazel_version = versions.get()
     if len(bazel_version) == 0:
         # buildifier: disable=print
-        print("You're using development build of Bazel, make sure it's at least version 0.17.1")
-    elif versions.is_at_most("0.17.0", bazel_version):
-        fail("Bazel {} is too old to use with rules_rust, please use at least Bazel 0.17.1, preferably newer.".format(bazel_version))
-    repository_ctx.file("BUILD", "exports_files(['def.bzl'])")
+        print("You're using development build of Bazel, make sure it's at least version {}".format(
+            _MINIMUM_SUPPORTED_BAZEL_VERSION,
+        ))
+    elif versions.is_at_most(_MINIMUM_SUPPORTED_BAZEL_VERSION, bazel_version):
+        fail("Bazel {} is too old to use with rules_rust, please use at least Bazel {}, preferably newer.".format(
+            bazel_version,
+            _MINIMUM_SUPPORTED_BAZEL_VERSION,
+        ))
+    repository_ctx.file("BUILD.bazel", "exports_files(['def.bzl'])")
     repository_ctx.file("def.bzl", "BAZEL_VERSION='" + bazel_version + "'")
 
 bazel_version = repository_rule(
