@@ -133,8 +133,7 @@ toolchain(
 )
 ```
 
-Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass
-it to the "--extra_toolchains" flag for Bazel, and it will be used.
+Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass it to the "--extra_toolchains" flag for Bazel, and it will be used.
 
 See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
 
