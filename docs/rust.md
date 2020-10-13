@@ -13,22 +13,17 @@ rust_benchmark(<a href="#rust_benchmark-name">name</a>, <a href="#rust_benchmark
                <a href="#rust_benchmark-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_benchmark-rustc_env">rustc_env</a>, <a href="#rust_benchmark-rustc_flags">rustc_flags</a>, <a href="#rust_benchmark-srcs">srcs</a>, <a href="#rust_benchmark-version">version</a>)
 </pre>
 
-
 Builds a Rust benchmark test.
 
-**Warning**: This rule is currently experimental. [Rust Benchmark
-tests][rust-bench] require the `Bencher` interface in the unstable `libtest`
-crate, which is behind the `test` unstable feature gate. As a result, using
-this rule would require using a nightly binary release of Rust.
+**Warning**: This rule is currently experimental. [Rust Benchmark tests][rust-bench] require the `Bencher` interface in the unstable `libtest` crate, which is behind the `test` unstable feature gate. As a result, using this rule would require using a nightly binary release of Rust.
 
 [rust-bench]: https://doc.rust-lang.org/book/benchmark-tests.html
 
 Example:
 
-Suppose you have the following directory structure for a Rust project with a
-library crate, `fibonacci` with benchmarks under the `benches/` directory:
+Suppose you have the following directory structure for a Rust project with a library crate, `fibonacci` with benchmarks under the `benches/` directory:
 
-```
+```output
 [workspace]/
   WORKSPACE
   fibonacci/
@@ -124,7 +119,6 @@ rust_binary(<a href="#rust_binary-name">name</a>, <a href="#rust_binary-aliases"
             <a href="#rust_binary-version">version</a>)
 </pre>
 
-
 Builds a Rust binary crate.
 
 Example:
@@ -133,7 +127,7 @@ Suppose you have the following directory structure for a Rust project with a
 library crate, `hello_lib`, and a binary crate, `hello_world` that uses the
 `hello_lib` library:
 
-```
+```output
 [workspace]/
     WORKSPACE
     hello_lib/
@@ -241,14 +235,13 @@ rust_library(<a href="#rust_library-name">name</a>, <a href="#rust_library-alias
              <a href="#rust_library-out_dir_tar">out_dir_tar</a>, <a href="#rust_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_library-rustc_env">rustc_env</a>, <a href="#rust_library-rustc_flags">rustc_flags</a>, <a href="#rust_library-srcs">srcs</a>, <a href="#rust_library-version">version</a>)
 </pre>
 
-
 Builds a Rust library crate.
 
 Example:
 
 Suppose you have the following directory structure for a simple Rust library crate:
 
-```
+```output
 [workspace]/
     WORKSPACE
     hello_lib/
@@ -297,7 +290,7 @@ rust_library(
 ```
 
 Build the library:
-```
+```output
 $ bazel build //hello_lib
 INFO: Found 1 target...
 Target //examples/rust/hello_lib:hello_lib up-to-date:
@@ -315,7 +308,7 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 | <a id="rust_library-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target<br><br>These are other <code>rust_library</code> targets and will be presented as the new name given.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: Label -> String</a> | optional | {} |
 | <a id="rust_library-crate_features"></a>crate_features |  List of features to enable for this crate.<br><br>Features are defined in the code using the <code>#[cfg(feature = "foo")]</code> configuration option. The features listed here will be passed to <code>rustc</code> with <code>--cfg feature="${feature_name}"</code> flags.   | List of strings | optional | [] |
 | <a id="rust_library-crate_root"></a>crate_root |  The file that will be passed to <code>rustc</code> to be used for building this crate.<br><br>If <code>crate_root</code> is not set, then this rule will look for a <code>lib.rs</code> file (or <code>main.rs</code> for rust_binary) or the single file in <code>srcs</code> if <code>srcs</code> contains only one file.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_library-crate_type"></a>crate_type |  The type of linkage to use for building this library. Options include "lib", "rlib", "dylib", "cdylib", "staticlib", and "proc-macro".<br><br>The exact output file will depend on the toolchain used.   | String | optional | "rlib" |
+| <a id="rust_library-crate_type"></a>crate_type |  The type of linkage to use for building this library. Options include <code>"lib"</code>, <code>"rlib"</code>, <code>"dylib"</code>, <code>"cdylib"</code>, <code>"staticlib"</code>, and <code>"proc-macro"</code>.<br><br>The exact output file will depend on the toolchain used.   | String | optional | "rlib" |
 | <a id="rust_library-data"></a>data |  List of files used by this rule at runtime.<br><br>This attribute can be used to specify any data files that are embedded into the library, such as via the [<code>include_str!</code>](https://doc.rust-lang.org/std/macro.include_str!.html) macro.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="rust_library-deps"></a>deps |  List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="rust_library-edition"></a>edition |  The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.   | String | optional | "" |
@@ -336,15 +329,13 @@ rust_test(<a href="#rust_test-name">name</a>, <a href="#rust_test-aliases">alias
           <a href="#rust_test-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_test-rustc_env">rustc_env</a>, <a href="#rust_test-rustc_flags">rustc_flags</a>, <a href="#rust_test-srcs">srcs</a>, <a href="#rust_test-version">version</a>)
 </pre>
 
-
 Builds a Rust test crate.
 
 Examples:
 
-Suppose you have the following directory structure for a Rust library crate
-with unit test code in the library sources:
+Suppose you have the following directory structure for a Rust library crate with unit test code in the library sources:
 
-```
+```output
 [workspace]/
     WORKSPACE
     hello_lib/
@@ -381,8 +372,7 @@ mod test {
 }
 ```
 
-To build and run the tests, simply add a `rust_test` rule with no `srcs` and
-only depends on the `hello_lib` `rust_library` target:
+To build and run the tests, simply add a `rust_test` rule with no `srcs` and only depends on the `hello_lib` `rust_library` target:
 
 `hello_lib/BUILD`:
 ```python
@@ -403,10 +393,9 @@ rust_test(
 
 Run the test with `bazel build //hello_lib:hello_lib_test`.
 
-To run a crate or lib with the `#[cfg(test)]` configuration, handling inline
-tests, you should specify the crate directly like so.
+To run a crate or lib with the `#[cfg(test)]` configuration, handling inline tests, you should specify the crate directly like so.
 
-```
+```python
 rust_test(
     name = "hello_lib_test",
     crate = ":hello_lib",
@@ -417,14 +406,11 @@ rust_test(
 
 ### Example: `test` directory
 
-Integration tests that live in the [`tests` directory][int-tests], they are
-essentially built as separate crates. Suppose you have the following directory
-structure where `greeting.rs` is an integration test for the `hello_lib`
-library crate:
+Integration tests that live in the [`tests` directory][int-tests], they are essentially built as separate crates. Suppose you have the following directory structure where `greeting.rs` is an integration test for the `hello_lib` library crate:
 
 [int-tests]: http://doc.rust-lang.org/book/testing.html#the-tests-directory
 
-```
+```output
 [workspace]/
     WORKSPACE
     hello_lib/
