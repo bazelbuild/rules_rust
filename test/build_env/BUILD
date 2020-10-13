@@ -1,9 +1,9 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "//rust:rust.bzl",
     "rust_test",
 )
+
+package(default_visibility = ["//visibility:public"])
 
 rust_test(
     name = "conflicting_deps_test",

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 

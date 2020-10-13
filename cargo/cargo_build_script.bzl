@@ -43,11 +43,11 @@ def _cargo_build_script_run(ctx, script):
     if ctx.attr.version:
         version = ctx.attr.version.split("+")[0].split(".")
         patch = version[2].split("-") if len(version) > 2 else [""]
-        env["CARGO_PKG_VERSION"] = ctx.attr.version
         env["CARGO_PKG_VERSION_MAJOR"] = version[0]
         env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
         env["CARGO_PKG_VERSION_PATCH"] = patch[0]
         env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
+        env["CARGO_PKG_VERSION"] = ctx.attr.version
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
@@ -130,9 +130,13 @@ _build_script_run = rule(
             doc = "Environment variables for build scripts.",
         ),
         "crate_name": attr.string(),
-        "crate_features": attr.string_list(doc = "The list of rust features that the build script should consider activated."),
+        "crate_features": attr.string_list(
+            doc = "The list of rust features that the build script should consider activated.",
+        ),
         "version": attr.string(),
-        "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,

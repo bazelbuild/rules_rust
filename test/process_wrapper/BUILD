@@ -43,7 +43,6 @@ filegroup(
     ],
 )
 
-
 process_wrapper_tester(
     name = "process_wrapper_basic",
     test_config = "basic",

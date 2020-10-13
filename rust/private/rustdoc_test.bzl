@@ -110,7 +110,7 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
     )
     ctx.actions.write(
         output = rust_doc_test,
-                    content = """\
+        content = """\
 {rust_doc} --test ^
     {crate_root} ^
     --crate-name={crate_name} ^

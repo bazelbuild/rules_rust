@@ -40,9 +40,9 @@ rust_test(
 
 rust_test(
     name = "mod3_test",
-    crate = ":mod3",
     aliases = {
         ":mod1": "alias_a",
         ":mod2": "alias_b",
     },
+    crate = ":mod3",
 )

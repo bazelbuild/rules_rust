@@ -9,8 +9,8 @@ rust_library(
         "src/matrix.rs",
     ],
     deps = [
-        "@libc",
         "//ffi/rust_calling_c/c:native_matrix",
+        "@libc",
     ],
 )
 
@@ -34,8 +34,8 @@ rust_library(
     ],
     crate_root = "src/matrix.rs",
     deps = [
-        "@libc",
         "//ffi/rust_calling_c/c:native_matrix_so",
+        "@libc",
     ],
 )
 

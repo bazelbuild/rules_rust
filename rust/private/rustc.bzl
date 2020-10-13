@@ -79,17 +79,17 @@ def _get_rustc_env(ctx, toolchain):
     else:
         pre = ""
     return {
-        "CARGO_PKG_VERSION": version,
+        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
+        "CARGO_CFG_TARGET_OS": toolchain.os,
+        "CARGO_PKG_AUTHORS": "",
+        "CARGO_PKG_DESCRIPTION": "",
+        "CARGO_PKG_HOMEPAGE": "",
+        "CARGO_PKG_NAME": ctx.label.name,
         "CARGO_PKG_VERSION_MAJOR": major,
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
-        "CARGO_PKG_AUTHORS": "",
-        "CARGO_PKG_NAME": ctx.label.name,
-        "CARGO_PKG_DESCRIPTION": "",
-        "CARGO_PKG_HOMEPAGE": "",
-        "CARGO_CFG_TARGET_OS": toolchain.os,
-        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
+        "CARGO_PKG_VERSION": version,
     }
 
 def get_compilation_mode_opts(ctx, toolchain):
@@ -149,7 +149,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 name = aliases.get(dep.label, direct_dep.name),
                 dep = direct_dep,
             )
-            direct_crates += [aliasable_dep]
+            direct_crates.append(aliasable_dep)
             transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])
             transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
             transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
@@ -160,8 +160,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
             libs = get_libs_for_static_executable(dep)
-            dylibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.dylib_ext)]
-            staticlibs = [l for l in libs.to_list() if l.basename.endswith(toolchain.staticlib_ext)]
+            dylibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.dylib_ext)]
+            staticlibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.staticlib_ext)]
             transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
             transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
         elif BuildInfo in dep:
@@ -323,12 +323,12 @@ def construct_arguments(
     # As such we attempt to infer `$CARGO_MANIFEST_DIR`.
     # Inference cannot be derived from `attr.crate_root`, as this points at a source file which may or
     # may not follow the `src/lib.rs` convention. As such we use `ctx.build_file_path` mapped into the
-    # `exec_root`. Since we cannot (seemingly) get the `exec_root` from skylark, we cheat a little
+    # `exec_root`. Since we cannot (seemingly) get the `exec_root` from starlark, we cheat a little
     # and use `${pwd}` which resolves the `exec_root` at action execution time.
     args.add("--subst", "pwd=${pwd}")
-    
+
     env["CARGO_MANIFEST_DIR"] = "${pwd}/" + ctx.build_file_path[:ctx.build_file_path.rfind("/")]
-    
+
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
 
@@ -381,6 +381,7 @@ def construct_arguments(
 
     # Gets the paths to the folders containing the standard library (or libcore)
     rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
+
     # Tell Rustc where to find the standard library
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
 
@@ -530,6 +531,8 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
             cc_toolchain = cc_toolchain,
             dynamic_library = crate_info.output,
         )
+    else:
+        fail("Unexpected case")
 
     link_input = cc_common.create_linker_input(
         owner = ctx.label,
@@ -546,6 +549,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
     cc_infos.append(CcInfo(linking_context = linking_context))
 
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
+
 def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
@@ -562,6 +566,7 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
     if build_info:
         out_dir = build_info.out_dir.path
         build_env_file = build_info.rustc_env.path
+
         # out_dir will be added as input by the transitive_build_infos loop below.
         build_flags_files.append(build_info.flags.path)
 

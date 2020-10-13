@@ -387,7 +387,6 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         target_triple (str): The rust-style target triple of the tool
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
     """
-    
 
     _check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
@@ -638,11 +637,11 @@ rust_toolchain_repository_proxy = repository_rule(
     attrs = {
         "parent_workspace_name": attr.string(
             doc = "The name of the other rust_toolchain_repository",
-            mandatory = True
+            mandatory = True,
         ),
         "exec_triple": attr.string(
             doc = "The Rust-style target triple for the compilation platform",
-            mandatory = True
+            mandatory = True,
         ),
         "extra_target_triples": attr.string_list(
             doc = "The Rust-style triples for extra compilation targets",

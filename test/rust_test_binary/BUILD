@@ -1,9 +1,9 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "//rust:rust.bzl",
     "rust_test_binary",
 )
+
+package(default_visibility = ["//visibility:public"])
 
 # Here we build the rust binary that, when run, will run our test cases.
 # However, it requires some other arbitrary setup first.
@@ -22,6 +22,6 @@ rust_test_binary(
 sh_test(
     name = "wrapped_rust_test",
     srcs = ["scripts/exec_with_test_env.sh"],
-    data = [":rust_test_that_requires_wrapping"],
     args = ["$(location :rust_test_that_requires_wrapping)"],
+    data = [":rust_test_that_requires_wrapping"],
 )

@@ -24,7 +24,7 @@ load(
     "@io_bazel_rules_rust//rust:private/rust.bzl",
     "crate_root_src",
 )
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 _rust_extensions = [
     "rs",

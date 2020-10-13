@@ -95,9 +95,9 @@ def _rust_bindgen_impl(ctx):
     args.add_all(clang_args)
 
     env = {
-        "RUST_BACKTRACE": "1",
         "CLANG_PATH": clang_bin.path,
         "LIBCLANG_PATH": libclang_dir,
+        "RUST_BACKTRACE": "1",
     }
 
     if libstdcxx:

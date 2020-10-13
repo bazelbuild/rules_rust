@@ -88,3 +88,5 @@ tasks:
     shell_commands:
     - ./test/clippy/clippy_failure_test.sh
 
+# TODO: Fix all buildifier defects then enable buildifier in CI
+# buildifier: latest

@@ -69,7 +69,8 @@ rust_toolchain = rule(
         "stdlib_linkflags": attr.string_list(
             doc = """Additional linker libs used when std lib is linked,
                 see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs""",
-            mandatory = True),
+            mandatory = True,
+        ),
         "os": attr.string(mandatory = True),
         "default_edition": attr.string(
             doc = "The edition to use for rust_* rules that don't specify an edition.",

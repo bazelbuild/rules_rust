@@ -42,7 +42,7 @@ load(
     _generated_file_stem = "generated_file_stem",
 )
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "determine_output_hash")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 RustProtoInfo = provider(
     fields = {
@@ -220,7 +220,9 @@ rust_proto_library = rule(
             doc = "The crates the generated library depends on.",
             default = PROTO_COMPILE_DEPS,
         ),
-        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_cc_toolchain": attr.label(
+            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ),
         "_process_wrapper": attr.label(
             default = "@io_bazel_rules_rust//util/process_wrapper",
             executable = True,

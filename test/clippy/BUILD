@@ -40,8 +40,8 @@ rust_clippy(
 
 rust_clippy(
     name = "ok_test_clippy",
-    deps = [":ok_test"],
     testonly = True,
+    deps = [":ok_test"],
 )
 
 # Declaration of failing targets.
@@ -68,19 +68,19 @@ rust_test(
 
 rust_clippy(
     name = "bad_binary_clippy",
+    tags = ["manual"],
     deps = [":bad_binary"],
-    tags = [ "manual" ],
 )
 
 rust_clippy(
     name = "bad_library_clippy",
+    tags = ["manual"],
     deps = [":bad_library"],
-    tags = [ "manual" ],
 )
 
 rust_clippy(
     name = "bad_test_clippy",
-    deps = [":bad_test"],
-    tags = [ "manual" ],
     testonly = True,
+    tags = ["manual"],
+    deps = [":bad_test"],
 )

@@ -30,8 +30,8 @@ load(
 )
 load(
     "@io_bazel_rules_rust//rust:private/clippy.bzl",
-    _rust_clippy_aspect = "rust_clippy_aspect",
     _rust_clippy = "rust_clippy",
+    _rust_clippy_aspect = "rust_clippy_aspect",
 )
 
 rust_library = _rust_library

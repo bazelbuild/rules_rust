@@ -8,10 +8,10 @@ rustfmt_generator(
 sh_test(
     name = "rustfmt_test",
     size = "small",
+    srcs = [":rustfmt_test.sh"],
     data = [
         ":formatted.rs",
         ":unformatted.rs",
     ],
-    srcs = [":rustfmt_test.sh"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
