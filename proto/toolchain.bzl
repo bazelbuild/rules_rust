@@ -108,17 +108,17 @@ def _rust_proto_toolchain_impl(ctx):
         edition = ctx.attr.edition,
     )
 
+# Default dependencies needed to compile protobuf stubs.
 PROTO_COMPILE_DEPS = [
     "@io_bazel_rules_rust//proto/raze:protobuf",
 ]
-"""Default dependencies needed to compile protobuf stubs."""
 
+# Default dependencies needed to compile gRPC stubs.
 GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
     "@io_bazel_rules_rust//proto/raze:grpc",
     "@io_bazel_rules_rust//proto/raze:tls_api",
     "@io_bazel_rules_rust//proto/raze:tls_api_stub",
 ]
-"""Default dependencies needed to compile gRPC stubs."""
 
 # TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
 # proto_compile_deps and grpc_compile_deps and remove them from the
@@ -186,7 +186,7 @@ toolchain(
 )
 ```
 
-Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass
+Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass \
 it to the "--extra_toolchains" flag for Bazel, and it will be used.
 
 See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.

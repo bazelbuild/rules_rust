@@ -1,10 +1,19 @@
 load(":known_shas.bzl", "FILE_KEY_TO_SHA")
-load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "system_to_dylib_ext", "system_to_staticlib_ext", "system_to_stdlib_linkflags", "triple_to_constraint_set", "triple_to_system")
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load(
+    "//rust/platform:triple_mappings.bzl",
+    "system_to_binary_ext",
+    "system_to_dylib_ext",
+    "system_to_staticlib_ext",
+    "system_to_stdlib_linkflags",
+    "triple_to_constraint_set",
+    "triple_to_system",
+)
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
+# buildifier: disable=unnamed-macro
 def rust_repositories(
         version = "1.44.0",
         iso_date = None,
@@ -663,11 +672,10 @@ def rust_repository_set(
         edition = None,
         dev_components = False,
         sha256s = None):
-    # buildifier: disable=function-docstring-header
-    """Assembles a remote repository for the given toolchain params, produces a proxy repository
+    """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
-    N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)
+    N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints) \
     without actually downloading the toolchain.
 
     Args:

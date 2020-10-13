@@ -69,7 +69,7 @@ def _rust_wasm_bindgen_impl(ctx):
     )
 
 rust_wasm_bindgen = rule(
-    _rust_wasm_bindgen_impl,
+    implementation = _rust_wasm_bindgen_impl,
     doc = "Generates javascript and typescript bindings for a webassembly module.",
     attrs = {
         "wasm_file": attr.label(
@@ -101,7 +101,7 @@ def _rust_wasm_bindgen_toolchain_impl(ctx):
     )
 
 rust_wasm_bindgen_toolchain = rule(
-    _rust_wasm_bindgen_toolchain_impl,
+    implementation = _rust_wasm_bindgen_toolchain_impl,
     doc = "The tools required for the `rust_wasm_bindgen` rule.",
     attrs = {
         "bindgen": attr.label(

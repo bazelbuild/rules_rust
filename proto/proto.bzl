@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")
-
 """Rust Protobuf Rules
 
 These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [Rust][rust] with Bazel.
@@ -43,6 +41,7 @@ load(
 )
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 
 RustProtoInfo = provider(
     fields = {
@@ -158,6 +157,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         crate_name,
         output_hash,
     ))
+
     result = rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),

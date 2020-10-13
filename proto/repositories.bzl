@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//proto/raze:crates.bzl", _crate_deps = "raze_fetch_remote_crates")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//proto/raze:crates.bzl", _crate_deps = "raze_fetch_remote_crates")
 
 # buildifier: disable=unnamed-macro
 def rust_proto_repositories():
@@ -40,16 +40,6 @@ def rust_proto_repositories():
             "https://github.com/bazelbuild/rules_python/archive/0.0.1.zip",
         ],
         sha256 = "f73c0cf51c32c7aaeaf02669ed03b32d12f2d92e1b05699eb938a75f35a210f4",
-    )
-
-    maybe(
-        http_archive,
-        name = "bazel_skylib",
-        sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
-        urls = [
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-        ],
     )
 
     maybe(

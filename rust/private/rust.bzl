@@ -17,7 +17,12 @@ load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "f
 
 # TODO(marco): Separate each rule into its own file.
 
-def _deprecated_attributes(ctx):
+def _assert_no_deprecated_attributes(ctx):
+    """Forces a failure if any deprecated attributes were specified
+
+    Args:
+        ctx (ctx): The current rule's context object
+    """
     if getattr(ctx.attr, "out_dir_tar", None):
         fail(ctx, "".join([
             "`out_dir_tar` is no longer supported, please use cargo/cargo_build_script.bzl ",
@@ -92,13 +97,13 @@ def _shortest_src_with_basename(srcs, basename):
 
 def _rust_library_impl(ctx):
     # Find lib.rs
-    lib_rs = crate_root_src(ctx.attr, ctx.files.srcs)
-    _deprecated_attributes(ctx)
+    crate_root = crate_root_src(ctx.attr, ctx.files.srcs)
+    _assert_no_deprecated_attributes(ctx)
 
     toolchain = find_toolchain(ctx)
 
     # Determine unique hash for this rlib
-    output_hash = determine_output_hash(lib_rs)
+    output_hash = determine_output_hash(crate_root)
 
     crate_name = ctx.label.name.replace("-", "_")
     rust_lib_name = _determine_lib_name(
@@ -115,7 +120,7 @@ def _rust_library_impl(ctx):
         crate_info = CrateInfo(
             name = crate_name,
             type = ctx.attr.crate_type,
-            root = lib_rs,
+            root = crate_root,
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,
@@ -162,7 +167,7 @@ def _rust_test_common(ctx, toolchain, output):
         ctx: The ctx object for the current target.
         test_binary: The File object for the test binary.
     """
-    _deprecated_attributes(ctx)
+    _assert_no_deprecated_attributes(ctx)
 
     crate_name = ctx.label.name.replace("-", "_")
 
@@ -216,7 +221,7 @@ def _rust_test_impl(ctx):
     return _rust_test_common(ctx, toolchain, output)
 
 def _rust_benchmark_impl(ctx):
-    _deprecated_attributes(ctx)
+    _assert_no_deprecated_attributes(ctx)
 
     toolchain = find_toolchain(ctx)
 
@@ -254,15 +259,15 @@ def _rust_benchmark_impl(ctx):
             is_executable = True,
         )
 
-    runfiles = ctx.runfiles(
-        files = info.runfiles + [bench_binary],
-        collect_data = True,
-    )
-
-    return struct(
-        runfiles = runfiles,
-        executable = bench_script,
-    )
+    return [
+        DefaultInfo(
+            runfiles = ctx.runfiles(
+                files = info.runfiles + [bench_binary],
+                collect_data = True,
+            ),
+            executable = bench_script,
+        ),
+    ]
 
 def _tidy(doc_string):
     """Tidy excess whitespace in docstrings to not break index.md"""
@@ -360,7 +365,9 @@ _rust_common_attrs = {
             ".tar.gz",
         ],
     ),
-    "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+    "_cc_toolchain": attr.label(
+        default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+    ),
     "_process_wrapper": attr.label(
         default = "@io_bazel_rules_rust//util/process_wrapper",
         executable = True,

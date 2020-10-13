@@ -12,18 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "relativize")
-load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
-load(
-    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
-    "CPP_LINK_EXECUTABLE_ACTION_NAME",
-)
-load(
-    "@bazel_tools//tools/cpp:toolchain_utils.bzl",
-    "find_cpp_toolchain",
-)
 load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_LINK_EXECUTABLE_ACTION_NAME")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@bazel_version//:def.bzl", "BAZEL_VERSION")
+load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "relativize")
 
 CrateInfo = provider(
     fields = {
@@ -298,7 +292,7 @@ def construct_arguments(
         out_dir,
         build_env_file,
         build_flags_files,
-        maker_path):
+        maker_path = None):
     output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
 
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
@@ -468,7 +462,6 @@ def rustc_compile_action(
         out_dir,
         build_env_file,
         build_flags_files,
-        maker_path = None,
     )
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":

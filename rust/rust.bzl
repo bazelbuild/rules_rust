@@ -35,28 +35,28 @@ load(
 )
 
 rust_library = _rust_library
-""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_binary = _rust_binary
-""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_test = _rust_test
-""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_test_binary = _rust_test_binary
-""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_benchmark = _rust_benchmark
-""" See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_doc = _rust_doc
-""" See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description.
 
 rust_doc_test = _rust_doc_test
-""" See @io_bazel_rules_rust//rust:private/rustdoc_test.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/rustdoc_test.bzl for a complete description.
 
 rust_clippy_aspect = _rust_clippy_aspect
-""" See @io_bazel_rules_rust//rust:private/clippy.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/clippy.bzl for a complete description.
 
 rust_clippy = _rust_clippy
-""" See @io_bazel_rules_rust//rust:private/clippy.bzl for a complete description. """
+# See @io_bazel_rules_rust//rust:private/clippy.bzl for a complete description.

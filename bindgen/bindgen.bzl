@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
 def rust_bindgen_library(
         name,
@@ -141,8 +141,8 @@ def _rust_bindgen_impl(ctx):
         )
 
 rust_bindgen = rule(
-    _rust_bindgen_impl,
     doc = "Generates a rust source file from a cc_library and a header.",
+    implementation = _rust_bindgen_impl,
     attrs = {
         "header": attr.label(
             doc = "The .h file to generate bindings for.",

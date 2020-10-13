@@ -47,13 +47,17 @@ def _rust_doc_test_impl(ctx):
         ],
     )
 
-    runfiles = ctx.runfiles(
-        files = compile_inputs.to_list(),
-        collect_data = True,
-    )
-    return struct(runfiles = runfiles, executable = rust_doc_test)
+    return [DefaultInfo(
+        runfiles = ctx.runfiles(
+            files = compile_inputs.to_list(),
+            collect_data = True,
+        ),
+        executable = rust_doc_test,
+    )]
 
-def dirname(path_str):
+# TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some dependency issues or
+# generating docs will break.
+def _dirname(path_str):
     return "/".join(path_str.split("/")[:-1])
 
 def _build_rustdoc_flags(dep_info, crate):
@@ -67,24 +71,18 @@ def _build_rustdoc_flags(dep_info, crate):
 
     link_flags.append("--extern=" + crate.name + "=" + crate.output.short_path)
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
-    link_search_flags += ["-Ldependency={}".format(dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
+    link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
     link_flags += ["-ldylib=" + get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
-    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_dylibs.to_list()]
+    link_search_flags += ["-Lnative={}".format(_dirname(lib.short_path)) for lib in d.transitive_dylibs.to_list()]
     link_flags += ["-lstatic=" + get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]
-    link_search_flags += ["-Lnative={}".format(dirname(lib.short_path)) for lib in d.transitive_staticlibs.to_list()]
+    link_search_flags += ["-Lnative={}".format(_dirname(lib.short_path)) for lib in d.transitive_staticlibs.to_list()]
 
     edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
 
     return link_search_flags + link_flags + edition_flags
 
-def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate):
-    rust_doc_test = ctx.actions.declare_file(
-        ctx.label.name + ".sh",
-    )
-    ctx.actions.write(
-        output = rust_doc_test,
-        content = """\
+_rustdoc_test_bash_script = """\
 #!/usr/bin/env bash
 
 set -e;
@@ -93,7 +91,26 @@ set -e;
     {crate_root} \\
     --crate-name={crate_name} \\
     {flags}
-""".format(
+"""
+
+def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate):
+    """Generates a helper script for executing a rustdoc test for unix systems
+
+    Args:
+        ctx (ctx): The `rust_doc_test` rule's context object
+        toolchain (ToolchainInfo): A rustdoc toolchain
+        flags (list): A list of rustdoc flags (str)
+        crate (CrateInfo): The CrateInfo provider
+
+    Returns:
+        File: An executable containing information for a rustdoc test
+    """
+    rust_doc_test = ctx.actions.declare_file(
+        ctx.label.name + ".sh",
+    )
+    ctx.actions.write(
+        output = rust_doc_test,
+        content = _rustdoc_test_bash_script.format(
             rust_doc = toolchain.rust_doc.short_path,
             crate_root = crate.root.path,
             crate_name = crate.name,
@@ -104,18 +121,20 @@ set -e;
     )
     return rust_doc_test
 
+_rustdoc_test_batch_script = """\
+{rust_doc} --test ^
+    {crate_root} ^
+    --crate-name={crate_name} ^
+    {flags}
+"""
+
 def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
     rust_doc_test = ctx.actions.declare_file(
         ctx.label.name + ".bat",
     )
     ctx.actions.write(
         output = rust_doc_test,
-        content = """\
-{rust_doc} --test ^
-    {crate_root} ^
-    --crate-name={crate_name} ^
-    {flags}
-""".format(
+        content = _rustdoc_test_batch_script.format(
             rust_doc = toolchain.rust_doc.short_path.replace("/", "\\"),
             crate_root = crate.root.path,
             crate_name = crate.name,

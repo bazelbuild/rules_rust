@@ -1,4 +1,4 @@
-"""Define extra dependencies for `rules_rust` examples
+"""Define transitive dependencies for `rules_rust` examples
 
 There are some transitive dependencies of the dependencies of the examples' 
 dependencies. This file contains the required macros to pull these dependencies
