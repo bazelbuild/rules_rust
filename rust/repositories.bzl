@@ -23,25 +23,29 @@ def rust_repositories(
         sha256s = None):
     """Emits a default set of toolchains for Linux, OSX, and Freebsd
 
-    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for
+    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
     other hosts or for additional target triples.
 
+    The `sha256` attribute represents a dict associating tool subdirectories to sha256 hashes. As an example:
+    ```python
+    {
+        "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+        "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+        "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+    }
+    ```
+    This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive \
+    list of known checksums..
+
+    See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for more details.
+
     Args:
-      version: The version of Rust. Either "nightly", "beta", or an exact version.
-      rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
-      iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
-      edition: The rust edition to be used by default (2015 (default) or 2018)
-      dev_components: Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-      sha256s: A dict associating tool subdirectories to sha256 hashes.  See
-               load_arbitrary_tool for more details.  As an example:
-               {
-                   "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
-                   "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
-                   "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
-               }
-               would match for exec_triple = "x86_64-unknown-linux-gnu.  If not
-               specified, rules_rust pulls from a non-exhaustive list of known
-               checksums.
+        version: The version of Rust. Either "nightly", "beta", or an exact version.
+        rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
+        iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
+        edition: The rust edition to be used by default (2015 (default) or 2018)
+        dev_components: Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
+        sha256s: A dict associating tool subdirectories to sha256 hashes.
     """
 
     if dev_components and version != "nightly":
@@ -140,7 +144,7 @@ def serialized_constraint_set_from_triple(target_triple):
         constraint_set_strs.append("\"{}\"".format(constraint))
     return "[{}]".format(", ".join(constraint_set_strs))
 
-_build_file_for_compiler_template = """
+_build_file_for_compiler_template = """\
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
@@ -180,7 +184,7 @@ def BUILD_for_compiler(target_triple):
         target_triple = target_triple,
     )
 
-_build_file_for_cargo_template = """
+_build_file_for_cargo_template = """\
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
@@ -197,7 +201,7 @@ def BUILD_for_cargo(target_triple):
         binary_ext = system_to_binary_ext(system),
     )
 
-_build_file_for_rustfmt_template = """
+_build_file_for_rustfmt_template = """\
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
@@ -221,7 +225,7 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(system),
     )
 
-_build_file_for_clippy_template = """
+_build_file_for_clippy_template = """\
 load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
@@ -237,7 +241,7 @@ def BUILD_for_clippy(target_triple):
     system = triple_to_system(target_triple)
     return _build_file_for_clippy_template.format(binary_ext = system_to_binary_ext(system))
 
-_build_file_for_stdlib_template = """
+_build_file_for_stdlib_template = """\
 filegroup(
     name = "rust_lib-{target_triple}",
     srcs = glob(
@@ -264,7 +268,7 @@ def BUILD_for_stdlib(target_triple):
         target_triple = target_triple,
     )
 
-_build_file_for_rust_toolchain_template = """
+_build_file_for_rust_toolchain_template = """\
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
@@ -306,7 +310,7 @@ def BUILD_for_rust_toolchain(
         default_edition (str, optional): Default Rust edition. Defaults to "2015".
 
     Returns:
-        [type]: [description]
+        str: A rendered template of a `rust_toolchain` declaration
     """
     system = triple_to_system(target_triple)
     if stdlib_linkflags == None:
@@ -325,7 +329,7 @@ def BUILD_for_rust_toolchain(
         target_triple = target_triple,
     )
 
-_build_file_for_toolchain_template = """
+_build_file_for_toolchain_template = """\
 toolchain(
     name = "{name}",
     exec_compatible_with = {exec_constraint_sets_serialized},
@@ -578,17 +582,15 @@ def _rust_toolchain_repository_proxy_impl(ctx):
     ctx.file("WORKSPACE", "")
     ctx.file("BUILD", "\n".join(build_components))
 
-_rust_toolchain_repository_doc = """\
-Composes a single workspace containing the toolchain components for compiling on a given
-platform to a series of target platforms.
-
-A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy
-invocation to declare its toolchains to Bazel; the indirection allows separating toolchain
-selection from toolchain fetching
-"""
-
 rust_toolchain_repository = repository_rule(
-    doc = _rust_toolchain_repository_doc,
+    doc = (
+        "Composes a single workspace containing the toolchain components for compiling on a given " +
+        "platform to a series of target platforms.\n" +
+        "\n" +
+        "A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy " +
+        "invocation to declare its toolchains to Bazel; the indirection allows separating toolchain " +
+        "selection from toolchain fetching."
+    ),
     attrs = {
         "version": attr.string(
             doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
@@ -619,30 +621,17 @@ rust_toolchain_repository = repository_rule(
             default = False,
         ),
         "sha256s": attr.string_dict(
-            doc = (
-                "A dict associating tool subdirectories to sha256 hashes. See load_arbitrary_tool for more details.\n" +
-                "As an example:\n" +
-                "{\n" +
-                "    \"rust-1.46.0-x86_64-unknown-linux-gnu\": \"e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5\n" +
-                "    \"rustfmt-1.4.12-x86_64-unknown-linux-gnu\": \"1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0\n" +
-                "    \"rust-std-1.46.0-x86_64-unknown-linux-gnu\": \"ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc\n" +
-                "}\n" +
-                "would match for exec_triple = \"x86_64-unknown-linux-gnu\". If not " +
-                "specified, rules_rust pulls from a non-exhaustive list of known" +
-                "checksums."
-            ),
+            doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
         ),
     },
     implementation = _rust_toolchain_repository_impl,
 )
 
-_rust_toolchain_repository_proxy_doc = """\
-Generates a toolchain-bearing repository that declares the toolchains from some other
-rust_toolchain_repository.
-"""
-
 rust_toolchain_repository_proxy = repository_rule(
-    doc = _rust_toolchain_repository_proxy_doc,
+    doc = (
+        "Generates a toolchain-bearing repository that declares the toolchains from some other " +
+        "rust_toolchain_repository."
+    ),
     attrs = {
         "parent_workspace_name": attr.string(
             doc = "The name of the other rust_toolchain_repository",
@@ -691,14 +680,7 @@ def rust_repository_set(
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
-            load_arbitrary_tool for more details.  As an example:
-            {
-                "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
-                "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
-                "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
-            }
-            would match for exec_triple = "x86_64-unknown-linux-gnu". If not specified,
-            rules_rust pulls from a non-exhaustive list of known checksums. Defaults to None.
+            [rust_repositories](#rust_repositories) for more details.
     """
 
     rust_toolchain_repository(

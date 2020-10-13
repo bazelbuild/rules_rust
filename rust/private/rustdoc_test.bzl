@@ -16,6 +16,14 @@ load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
 
 def _rust_doc_test_impl(ctx):
+    """The implementation for the `rust_doc_test` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing a DefaultInfo provider
+    """
     if CrateInfo not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
@@ -58,10 +66,26 @@ def _rust_doc_test_impl(ctx):
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some dependency issues or
 # generating docs will break.
 def _dirname(path_str):
+    """Returns the path of the direcotry from a unix path.
+
+    Args:
+        path_str (str): A string representing a unix path
+
+    Returns:
+        str: The parsed directory name of the provided path
+    """
     return "/".join(path_str.split("/")[:-1])
 
 def _build_rustdoc_flags(dep_info, crate):
-    """ Constructs the rustdoc script used to test `crate`. """
+    """Constructs the rustdoc script used to test `crate`. 
+
+    Args:
+        dep_info (DepInfo): The DepInfo provider
+        crate (CrateInfo): The CrateInfo provider
+
+    Returns:
+        list: A list of rustdoc flags (str)
+    """
 
     d = dep_info
 
@@ -129,6 +153,17 @@ _rustdoc_test_batch_script = """\
 """
 
 def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
+    """Generates a helper script for executing a rustdoc test for windows systems
+
+    Args:
+        ctx (ctx): The `rust_doc_test` rule's context object
+        toolchain (ToolchainInfo): A rustdoc toolchain
+        flags (list): A list of rustdoc flags (str)
+        crate (CrateInfo): The CrateInfo provider
+
+    Returns:
+        File: An executable containing information for a rustdoc test
+    """
     rust_doc_test = ctx.actions.declare_file(
         ctx.label.name + ".bat",
     )
@@ -146,15 +181,15 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
     return rust_doc_test
 
 rust_doc_test = rule(
-    _rust_doc_test_impl,
+    implementation = _rust_doc_test_impl,
     attrs = {
         "dep": attr.label(
-            doc = """
-The label of the target to run documentation tests for.
-
-`rust_doc_test` can run documentation tests for the source files of
-`rust_library` or `rust_binary` targets.
-""",
+            doc = (
+                "The label of the target to run documentation tests for.\n" +
+                "\n" +
+                "`rust_doc_test` can run documentation tests for the source files of " +
+                "`rust_library` or `rust_binary` targets."
+            ),
             mandatory = True,
             providers = [CrateInfo],
         ),
@@ -162,14 +197,13 @@ The label of the target to run documentation tests for.
     executable = True,
     test = True,
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
-    doc = """
-Runs Rust documentation tests.
+    doc = """Runs Rust documentation tests.
 
 Example:
 
 Suppose you have the following directory structure for a Rust library crate:
 
-```
+```output
 [workspace]/
   WORKSPACE
   hello_lib/
@@ -178,8 +212,8 @@ Suppose you have the following directory structure for a Rust library crate:
           lib.rs
 ```
 
-To run [documentation tests][doc-test] for the `hello_lib` crate, define a
-`rust_doc_test` target that depends on the `hello_lib` `rust_library` target:
+To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust_doc_test` \
+target that depends on the `hello_lib` `rust_library` target:
 
 [doc-test]: https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
 

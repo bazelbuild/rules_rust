@@ -21,7 +21,7 @@ def find_toolchain(ctx):
         ctx (ctx): The ctx object for the current target.
 
     Returns:
-        ToolchainContext: A Rust toolchain context.
+        rust_toolchain: A Rust toolchain context.
     """
     return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
 

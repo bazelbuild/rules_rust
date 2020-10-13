@@ -205,13 +205,13 @@ def _rust_grpc_library_impl(ctx):
     return _rust_protogrpc_library_impl(ctx, True)
 
 rust_proto_library = rule(
-    _rust_proto_library_impl,
+    implementation = _rust_proto_library_impl,
     attrs = {
         "deps": attr.label_list(
-            doc = """
-                List of proto_library dependencies that will be built.
-                One crate for each proto_library will be created with the corresponding stubs.
-            """,
+            doc = (
+                "List of proto_library dependencies that will be built. " +
+                "One crate for each proto_library will be created with the corresponding stubs."
+            ),
             mandatory = True,
             providers = [ProtoInfo],
             aspects = [_rust_proto_aspect],
@@ -244,12 +244,12 @@ rust_proto_library = rule(
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    doc = """
+    doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
 
 Example:
 
-```
+```python
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_proto_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
@@ -273,13 +273,13 @@ rust_binary(
 )
 
 rust_grpc_library = rule(
-    _rust_grpc_library_impl,
+    implementation = _rust_grpc_library_impl,
     attrs = {
         "deps": attr.label_list(
-            doc = """
-                List of proto_library dependencies that will be built.
-                One crate for each proto_library will be created with the corresponding gRPC stubs.
-            """,
+            doc = (
+                "List of proto_library dependencies that will be built. " +
+                "One crate for each proto_library will be created with the corresponding gRPC stubs."
+            ),
             mandatory = True,
             providers = [ProtoInfo],
             aspects = [_rust_proto_aspect],
@@ -288,7 +288,9 @@ rust_grpc_library = rule(
             doc = "The crates the generated library depends on.",
             default = GRPC_COMPILE_DEPS,
         ),
-        "_cc_toolchain": attr.label(default = "@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_cc_toolchain": attr.label(
+            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ),
         "_process_wrapper": attr.label(
             default = "@io_bazel_rules_rust//util/process_wrapper",
             executable = True,
@@ -310,12 +312,12 @@ rust_grpc_library = rule(
         "@io_bazel_rules_rust//rust:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    doc = """
+    doc = """\
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 
 Example:
 
-```
+```python
 load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
 load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 

@@ -9,6 +9,7 @@ This repository provides rules for building [Rust][rust] projects with [Bazel](h
 <!-- TODO: Render generated docs on the github pages site again, https://bazelbuild.github.io/rules_rust/ -->
 
 <a name="setup"></a>
+
 ## Setup
 
 To use the Rust rules, add the following to your `WORKSPACE` file to add the external repositories for the Rust toolchain:
@@ -39,13 +40,13 @@ The rules are under active development, as such the lastest commit on the master
 
 ## Rules
 
-* [rust](rust.md): standard rust rules for building and testing libraries and binaries.
-* [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
-* [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
+- [rust](rust.md): standard rust rules for building and testing libraries and binaries.
+- [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
+- [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.
-* [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-* [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating WebAssembly bindings, see the section about [WebAssembly](#webassembly).
-* [cargo_build_script](cargo_build_script.md): a rule to run [`build.rs` script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) from Bazel.
+- [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
+- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating WebAssembly bindings, see the section about [WebAssembly](#webassembly).
+- [cargo_build_script](cargo_build_script.md): a rule to run [`build.rs` script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) from Bazel.
 
 You can also browse the [full API in one page](flatten.md).
 

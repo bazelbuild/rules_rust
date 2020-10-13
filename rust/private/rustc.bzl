@@ -20,6 +20,7 @@ load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "relativize")
 
 CrateInfo = provider(
+    doc = "A provider containing general Crate information.",
     fields = {
         "name": "str: The name of this crate.",
         "type": "str: The type of this crate. eg. lib or bin",
@@ -30,23 +31,24 @@ CrateInfo = provider(
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "output": "File: The output File that will be produced, depends on crate type.",
         "edition": "str: The edition of this crate.",
-        "rustc_env": """Dict[String, String]: Additional `"key": "value"` environment variables to set for rustc.""",
+        "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "is_test": "bool: If the crate is being compiled in a test context",
     },
 )
 
 BuildInfo = provider(
+    doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
-        "flags": """File: file containing additional flags to pass to rustc""",
-        "out_dir": """File: directory containing the result of a build script""",
-        "rustc_env": """File: file containing additional environment variables to set for rustc.""",
-        "dep_env": """File: extra build script environment varibles to be set to direct dependencies.""",
-        "link_flags": """File: file containing flags to pass to the linker""",
+        "flags": "File: file containing additional flags to pass to rustc",
+        "out_dir": "File: directory containing the result of a build script",
+        "rustc_env": "File: file containing additional environment variables to set for rustc.",
+        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
+        "link_flags": "File: file containing flags to pass to the linker",
     },
 )
 
 AliasableDepInfo = provider(
-    doc = "",
+    doc = "A provider mapping an alias name to a Crate's information.",
     fields = {
         "name": "str",
         "dep": "CrateInfo",
@@ -54,6 +56,7 @@ AliasableDepInfo = provider(
 )
 
 DepInfo = provider(
+    doc = "A provider contianing information about a Crate's dependencies.",
     fields = {
         "direct_crates": "depset[CrateInfo]",
         "transitive_crates": "depset[CrateInfo]",
@@ -61,11 +64,20 @@ DepInfo = provider(
         "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
         "transitive_build_infos": "depset[BuildInfo]",
-        "dep_env": """File: File with environment variables direct dependencies build scripts rely upon.""",
+        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
     },
 )
 
 def _get_rustc_env(ctx, toolchain):
+    """Gathers rustc environment variables
+
+    Args:
+        ctx (ctx): The current target's rule context object
+        toolchain (rust_toolchain): The current target's rust toolchain context
+
+    Returns:
+        dict: Rustc environment variables
+    """
     version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
     major, minor, patch = version.split(".", 2)
     if "-" in patch:
@@ -87,6 +99,15 @@ def _get_rustc_env(ctx, toolchain):
     }
 
 def get_compilation_mode_opts(ctx, toolchain):
+    """Gathers rustc flags for the current compilation mode (opt/debug)
+
+    Args:
+        ctx (ctx): The current rule's context object
+        toolchain (rust_toolchain): The current rule's `rust_toolchain`
+
+    Returns:
+        struct: See `_rust_toolchain_impl` for more details
+    """
     comp_mode = ctx.var["COMPILATION_MODE"]
     if not comp_mode in toolchain.compilation_mode_opts:
         fail("Unrecognized compilation mode {} for toolchain.".format(comp_mode))
@@ -94,16 +115,17 @@ def get_compilation_mode_opts(ctx, toolchain):
     return toolchain.compilation_mode_opts[comp_mode]
 
 def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
-    """
-    Walks through dependencies and collects the transitive dependencies.
+    """Walks through dependencies and collects the transitive dependencies.
 
     Args:
-      label: str: Label of the current target.
-      deps: List[Label]: The deps from ctx.attr.deps.
-      proc_macro_deps: List[Label]: The proc_macro deps from ctx.attr.proc_macro_deps.
+        label (str): Label of the current target.
+        deps (list): The deps from ctx.attr.deps.
+        proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
+        aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        toolchain (rust_toolchain): The current `rust_toolchain`.
 
     Returns:
-      Returns a DepInfo provider.
+        tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
     """
 
     for dep in deps:
@@ -185,6 +207,14 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     )
 
 def get_cc_toolchain(ctx):
+    """Extracts a CcToolchain from the current target's context
+
+    Args:
+        ctx (ctx): The current target's rule context object
+
+    Returns:
+        tuple: A tuple of (CcToolchain, FeatureConfiguration)
+    """
     cc_toolchain = find_cpp_toolchain(ctx)
 
     kwargs = {
@@ -202,6 +232,14 @@ def get_cc_toolchain(ctx):
     return cc_toolchain, feature_configuration
 
 def get_cc_user_link_flags(ctx):
+    """Get the current target's linkopt flags
+
+    Args:
+        ctx (ctx): The current rule's context object
+
+    Returns:
+        depset: The flags passed to Bazel by --linkopt option.
+    """
     if (len(BAZEL_VERSION) == 0 or
         versions.is_at_least("0.18.0", BAZEL_VERSION)):
         return ctx.fragments.cpp.linkopts
@@ -209,6 +247,20 @@ def get_cc_user_link_flags(ctx):
         return depset(ctx.fragments.cpp.linkopts)
 
 def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
+    """Gathers cc_common linker information
+
+    Args:
+        ctx (ctx): The current target's context object
+        cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
+        rpaths (depset): Depset of directories where loader will look for libraries at runtime.
+
+    Returns:
+        tuple: A tuple of the following items:
+            - (str): The tool path for given action.
+            - (sequence): A flattened command line flags for given action.
+            - (dict): Environment variables to be set for given action.
+    """
     user_link_flags = get_cc_user_link_flags(ctx)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
@@ -241,6 +293,23 @@ def _process_build_scripts(
         build_info,
         dep_info,
         compile_inputs):
+    """Gathers the outputs from a target's `cargo_build_script` action.
+
+    Args:
+        ctx (ctx): The rule's context object
+        file (File): A struct containing files defined in label type attributes marked as `allow_single_file`.
+        crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
+        build_info (BuildInfo): The target Build's dependency info.
+        dep_info (Depinfo): The target Crate's dependency info.
+        compile_inputs (depset): A set of all files that will participate in the build.
+
+    Returns:
+        tuple: A tuple: A tuple of the following items:
+            - (list): A list of all build info `OUT_DIR` File objects
+            - (str): The `OUT_DIR` of the current build info
+            - (str): An optional path to a generated environment file from a `cargo_build_script` target
+            - (list): All direct and transitive build flags from the current build info.
+    """
     extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
     if extra_inputs:
         compile_inputs = depset(extra_inputs, transitive = [compile_inputs])
@@ -254,6 +323,20 @@ def collect_inputs(
         crate_info,
         dep_info,
         build_info):
+    """Gather's the inputs and required input information for a rustc action
+
+    Args:
+        ctx (ctx): The rule's context object
+        file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
+        files (list): A list of all inputs
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
+        dep_info (DepInfo): The target Crate's dependency information.
+        build_info (BuildInfo): The target Crate's build settings.
+
+    Returns:
+        tuple: See `_process_build_scripts`
+    """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
     if (len(BAZEL_VERSION) == 0 or
@@ -293,6 +376,29 @@ def construct_arguments(
         build_env_file,
         build_flags_files,
         maker_path = None):
+    """Builds an Args object containing common rustc flags
+
+    Args:
+        ctx (ctx): The rule's context object
+        file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`
+        tool_path (str): Path to rustc
+        cc_toolchain (CcToolchain): The CcToolchain for the current target.
+        feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
+        crate_info (CrateInfo): The CrateInfo provider of the target crate
+        dep_info (DepInfo): The DepInfo provider of the target crate
+        output_hash (str): The hashed path of the crate root
+        rust_flags (list): Additional flags to pass to rustc
+        out_dir (str): The path to the output directory for the target Crate.
+        build_env_file (str): The output file of a `cargo_build_script` action containing rustc environment variables
+        build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
+        maker_path (File): An optional clippy marker file
+
+    Returns:
+        tuple: A tuple of the following items
+            - (Args): An Args object with common Rust flags
+            - (dict): Common rustc environment variables
+    """
     output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
 
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
@@ -419,14 +525,20 @@ def rustc_compile_action(
         crate_info,
         output_hash = None,
         rust_flags = []):
-    """
-    Constructs the rustc command used to build the current target.
+    """Constructs the rustc command used to build the current target.
+
+    Args:
+        ctx (ctx): The rule's context object
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        crate_info (CrateInfo): The CrateInfo provider for the current target.
+        output_hash (str, optional): The hashed path of the crate root. Defaults to None.
+        rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
 
     Returns:
-      List[Provider]: A list of the following providers:
-                     - CrateInfo: info for the crate we just built; same as `crate_info` parameter.
-                     - DepInfo: The transitive dependencies of this crate.
-                     - DefaultInfo: The output file for this crate, and its runfiles.
+        list: A list of the following providers:
+            - (CrateInfo): info for the crate we just built; same as `crate_info` parameter.
+            - (DepInfo): The transitive dependencies of this crate.
+            - (DefaultInfo): The output file for this crate, and its runfiles.
     """
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -505,7 +617,18 @@ def rustc_compile_action(
     ]
 
 def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
-    """ If the produced crate is suitable yield a CcInfo to allow for interop with cc rules """
+    """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules 
+
+    Args:
+        ctx (ctx): The rule's context object
+        crate_info (CrateInfo): The CrateInfo provider of the target crate
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        cc_toolchain (CcToolchainInfo): The current CcToolchainInfo
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
+
+    Returns:
+        list: A list containing the CcInfo provider
+    """
 
     if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib"):
         return []
@@ -544,10 +667,31 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 
 def add_edition_flags(args, crate):
+    """Adds the Rust edition flag to an arguments object reference
+
+    Args:
+        args (Args): A reference to an Args object
+        crate (CrateInfo): A CrateInfo provider
+    """
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
 
 def _create_extra_input_args(ctx, file, build_info, dep_info):
+    """Gather additional input arguments from transitive dependencies
+
+    Args:
+        ctx (ctx): The rule's context object
+        file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
+        build_info (BuildInfo): The BuildInfo provider from the target Crate's set of inputs.
+        dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
+
+    Returns:
+        tuple: A tuple of the following items:
+            - (list): A list of all build info `OUT_DIR` File objects
+            - (str): The `OUT_DIR` of the current build info
+            - (str): An optional path to a generated environment file from a `cargo_build_script` target
+            - (list): All direct and transitive build flags from the current build info.
+    """
     input_files = []
 
     # Arguments to the commandline line wrapper that are going to be used
@@ -572,9 +716,15 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
     return input_files, out_dir, build_env_file, build_flags_files
 
 def _compute_rpaths(toolchain, output_dir, dep_info):
-    """
-    Determine the artifact's rpaths relative to the bazel root
-    for runtime linking of shared libraries.
+    """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
+
+    Args:
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        output_dir (str): The output directory of the current target
+        dep_info (DepInfo): The current target's dependency info
+
+    Returns:
+        depset: A set of relative paths from the output directory to each dependency
     """
     if not dep_info.transitive_dylibs:
         return depset([])
@@ -591,12 +741,27 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     ])
 
 def _get_dir_names(files):
+    """Returns a list of directory names from the given list of File objects
+
+    Args:
+        files (list): A list of File objects
+
+    Returns:
+        list: A list of directory names for all files
+    """
     dirs = {}
     for f in files:
         dirs[f.dirname] = None
     return dirs.keys()
 
 def add_crate_link_flags(args, dep_info):
+    """Adds link flags to an Args object reference
+
+    Args:
+        args (Args): An arguments object reference
+        dep_info (DepInfo): The current target's dependency info
+    """
+
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
     args.add_all(
@@ -607,16 +772,46 @@ def add_crate_link_flags(args, dep_info):
     )
 
 def _crate_to_link_flag(crate_info):
+    """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
+
+    Args:
+        crate_info (CrateInfo): A CrateInfo provider from the current rule
+
+    Returns:
+        list: Link flags for the current crate info
+    """
     return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
 
 def _get_crate_dirname(crate):
+    """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
+
+    Args:
+        crate (CrateInfo): A CrateInfo provider from the current rule
+
+    Returns:
+        str: The directory name of the the output File that will be produced.
+    """
     return crate.output.dirname
 
 def add_native_link_flags(args, dep_info):
+    """Adds linker flags for all dependencies of the current target.
+
+    Args:
+        args (Args): The Args struct for a ctx.action
+        dep_info (DepInfo): Dependeincy Info provider
+    """
     native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
     args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
 def _get_dirname(file):
+    """A helper function for `add_native_link_flags`.
+
+    Args:
+        file (File): The target file
+
+    Returns:
+        [str]: Directory name of `file`
+    """
     return file.dirname

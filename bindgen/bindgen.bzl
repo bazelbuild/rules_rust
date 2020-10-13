@@ -26,6 +26,14 @@ def rust_bindgen_library(
     """Generates a rust source file for `header`, and builds a rust_library.
 
     Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to rust_library.
+
+    Args:
+        name (str): A unique name for this target.
+        header (str): The label of the .h file to generate bindings for.
+        cc_lib (str): The label of the cc_library that contains the .h file. This is used to find the transitive includes.
+        bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
+        clang_flags (list, optional): Flags to pass directly to the clang executable.
+        **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
 
     rust_bindgen(
