@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bindgen/raze:crates.bzl", "raze_fetch_remote_crates")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//bindgen/raze:crates.bzl", "rules_rust_bindgen_fetch_remote_crates")
 
-def maybe(workspace_rule, **kwargs):
-    if not native.existing_rule(kwargs["name"]):
-        workspace_rule(**kwargs)
-
+# buildifier: disable=unnamed-macro
 def rust_bindgen_repositories():
     """Declare dependencies needed for bindgen."""
 
@@ -30,19 +28,7 @@ def rust_bindgen_repositories():
         name = "local_libstdcpp",
     )
 
-    # This overrides the BUILD file raze generates for libloading with a handwritten one.
-    # TODO: Tidier to implement https://github.com/google/cargo-raze/issues/58
-    maybe(
-        http_archive,
-        name = "raze__libloading__0_5_0",
-        url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/libloading/libloading-0.5.0.crate",
-        type = "tar.gz",
-        sha256 = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2",
-        strip_prefix = "libloading-0.5.0",
-        # TODO: This is a manual patch, need https://github.com/google/cargo-raze/issues/58
-        build_file = Label("//bindgen/raze:libloading.BUILD"),
-    )
-    raze_fetch_remote_crates()
+    rules_rust_bindgen_fetch_remote_crates()
 
     native.register_toolchains("@io_bazel_rules_rust//bindgen:example-bindgen-toolchain")
 
