@@ -1,28 +1,34 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
-package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//bindgen/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
-])
 
-licenses([
-  "notice", # MIT from expression "MIT"
-])
-
+# buildifier: disable=load
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
 
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//bindgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated targets
 # Unsupported target "arithmetic" with type "bench" omitted
 # Unsupported target "arithmetic" with type "test" omitted
 # Unsupported target "arithmetic_ast" with type "test" omitted
@@ -47,11 +53,12 @@ load(
 # Unsupported target "multiline" with type "test" omitted
 # Unsupported target "named_args" with type "test" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "nom",
     crate_type = "lib",
     deps = [
-        "@raze__memchr__2_3_3//:memchr",
+        "@rules_rust_bindgen__memchr__2_3_3//:memchr",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
@@ -60,12 +67,15 @@ rust_library(
         "--cap-lints=allow",
     ],
     version = "5.1.2",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
     crate_features = [
         "alloc",
         "std",
     ],
 )
-
 # Unsupported target "overflow" with type "test" omitted
 # Unsupported target "reborrow_fold" with type "test" omitted
 # Unsupported target "s_expression" with type "example" omitted

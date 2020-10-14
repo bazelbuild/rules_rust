@@ -29,21 +29,21 @@ licenses([
 ])
 
 # Generated targets
-# Unsupported target "exhaustive_tests" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "unicode_xid",
+    name = "hermit_abi",
     crate_type = "lib",
     deps = [
+        "@rules_rust_bindgen__libc__0_2_77//:libc",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.2.1",
+    version = "0.1.15",
     tags = [
         "cargo-raze",
         "manual",

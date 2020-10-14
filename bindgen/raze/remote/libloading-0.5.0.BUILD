@@ -25,31 +25,26 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "notice",  # ISC from expression "ISC"
 ])
 
 # Generated targets
 # Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "functions" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "winapi",
+    name = "libloading",
     crate_type = "lib",
     deps = [
+        ":global_static",
     ] + selects.with_or({
-        # i686-pc-windows-gnu
+        # cfg(windows)
         (
             "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
-        ): [
-            "@rules_rust_bindgen__winapi_i686_pc_windows_gnu__0_4_0//:winapi_i686_pc_windows_gnu",
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # x86_64-pc-windows-gnu
-        (
             "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
         ): [
-            "@rules_rust_bindgen__winapi_x86_64_pc_windows_gnu__0_4_0//:winapi_x86_64_pc_windows_gnu",
+            "@rules_rust_bindgen__winapi__0_3_9//:winapi",
         ],
         "//conditions:default": [],
     }),
@@ -59,25 +54,25 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.3.9",
+    version = "0.5.0",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
-        "consoleapi",
-        "errhandlingapi",
-        "fileapi",
-        "libloaderapi",
-        "minwinbase",
-        "minwindef",
-        "processenv",
-        "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     aliases = {
     },
+)
+# Unsupported target "markers" with type "test" omitted
+# Unsupported target "windows" with type "test" omitted
+
+# Additional content from libloading-global-static.BUILD
+# buildifier: disable=load-on-top
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "global_static",
+    srcs = ["src/os/unix/global_static.c"],
+    copts = ["-fPIC"],
 )

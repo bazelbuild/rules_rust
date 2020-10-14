@@ -29,15 +29,20 @@ licenses([
 ])
 
 # Generated targets
-# Unsupported target "atty" with type "example" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "atty",
+    name = "clap",
     crate_type = "lib",
     deps = [
+        "@rules_rust_bindgen__atty__0_2_14//:atty",
+        "@rules_rust_bindgen__bitflags__1_2_1//:bitflags",
+        "@rules_rust_bindgen__strsim__0_8_0//:strsim",
+        "@rules_rust_bindgen__textwrap__0_11_0//:textwrap",
+        "@rules_rust_bindgen__unicode_width__0_1_8//:unicode_width",
+        "@rules_rust_bindgen__vec_map__0_8_2//:vec_map",
     ] + selects.with_or({
-        # cfg(unix)
+        # cfg(not(windows))
         (
             "@io_bazel_rules_rust//rust/platform:aarch64-apple-ios",
             "@io_bazel_rules_rust//rust/platform:aarch64-linux-android",
@@ -49,22 +54,14 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:i686-unknown-linux-gnu",
             "@io_bazel_rules_rust//rust/platform:powerpc-unknown-linux-gnu",
             "@io_bazel_rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:wasm32-unknown-unknown",
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
             "@io_bazel_rules_rust//rust/platform:x86_64-linux-android",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@rules_rust_bindgen__libc__0_2_77//:libc",
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(windows)
-        (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
-        ): [
-            "@rules_rust_bindgen__winapi__0_3_9//:winapi",
+            "@rules_rust_bindgen__ansi_term__0_11_0//:ansi_term",
         ],
         "//conditions:default": [],
     }),
@@ -74,12 +71,19 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.2.14",
+    version = "2.33.3",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
+        "ansi_term",
+        "atty",
+        "color",
+        "default",
+        "strsim",
+        "suggestions",
+        "vec_map",
     ],
     aliases = {
     },

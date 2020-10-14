@@ -29,11 +29,10 @@ licenses([
 ])
 
 # Generated targets
-# Unsupported target "exhaustive_tests" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "unicode_xid",
+    name = "lazycell",
     crate_type = "lib",
     deps = [
     ],
@@ -43,12 +42,11 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.2.1",
+    version = "1.3.0",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
-        "default",
     ],
 )

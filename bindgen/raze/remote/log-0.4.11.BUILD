@@ -29,26 +29,30 @@ licenses([
 ])
 
 # Generated targets
-# Unsupported target "exhaustive_tests" with type "test" omitted
+# Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "filters" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "unicode_xid",
+    name = "log",
     crate_type = "lib",
     deps = [
+        "@rules_rust_bindgen__cfg_if__0_1_10//:cfg_if",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
+        "--cfg=atomic_cas",
     ],
-    version = "0.2.1",
+    version = "0.4.11",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
-        "default",
+        "std",
     ],
 )
+# Unsupported target "macros" with type "test" omitted
