@@ -1,41 +1,30 @@
+[package]
+name = "fake_rules_rust_wasm_bindgen_lib"
+version = "0.0.1"
+
+[lib]
+path = "fake_rules_rust_wasm_bindgen_lib.rs"
+
+[dependencies]
+wasm-bindgen = "=0.2.48"
+backtrace-sys = "=0.1.29"
+
 [raze]
 genmode = "Remote"
 workspace_path = "//wasm_bindgen/raze"
+gen_workspace_prefix = "rules_rust_wasm_bindgen"
+output_buildfile_suffix = "BUILD"
 
-[raze.crates.wasm-bindgen-cli.'0.2.48']
-gen_buildrs = true
-extra_aliased_targets = ["cargo_bin_wasm_bindgen"]
+[raze.binary_deps]
+wasm-bindgen-cli = "0.2.48"
 
-[raze.crates.proc-macro2.'0.4.30']
-additional_flags = [
-    "--cfg=use_proc_macro",
-]
-
-[raze.crates.unicase.'1.4.2']
-additional_flags = [
-  "--cfg=__unicase__iter_cmp",
-  "--cfg=__unicase__defauler_hasher",
-]
-
-[raze.crates.mime_guess.'1.8.7']
-gen_buildrs = true
-
-[dependencies]
-wasm-bindgen-cli = "=0.2.48"
-wasm-bindgen = "=0.2.48"
-
-[raze.crates.rand_jitter.'0.1.4']
+[raze.crates.backtrace-sys.'0.1.29']
+additional_build_file = "overrides/backtrace-sys-0.1.29.BUILD"
 additional_deps = [
-    "@raze__libc__0_2_58//:libc"
+    ":native_backtrace"
 ]
 
-[raze.crates.syn.'0.15.43']
-gen_buildrs = true
-additional_flags = [
-  "--cfg=syn_can_call_macro_by_path",
-]
-
-[raze.crates.libc.'0.2.58']
+[raze.crates.libc.'0.2.77']
 additional_flags = [
   "--cfg=libc_core_cvoid",
   "--cfg=libc_priv_mod_use",
@@ -45,7 +34,19 @@ additional_flags = [
   "--cfg=libc_packagedN",
 ]
 
-[raze.crates.openssl-sys.'0.9.47']
+[raze.crates.log.'0.3.9']
+additional_flags = [
+    "--cfg=atomic_cas",
+    "--cfg=use_std",
+]
+
+[raze.crates.log.'0.4.11']
+additional_flags = [
+    "--cfg=atomic_cas",
+    "--cfg=use_std",
+]
+
+[raze.crates.openssl-sys.'0.9.58']
 additional_flags = [
   # Vendored openssl is 1.0.2m
   "--cfg=ossl101",
@@ -63,17 +64,47 @@ additional_flags = [
   "dylib=crypto",
 ]
 
-[raze.crates.backtrace.'0.3.32']
-skipped_deps = [
-    "backtrace-sys-0.1.29",
-]
-additional_deps = [
-    "@wasm_bindgen_backtrace_sys_0_1_29//:backtrace_sys",
+[raze.crates.mime_guess.'1.8.8']
+gen_buildrs = true
+
+[raze.crates.proc-macro2.'0.4.30']
+gen_buildrs = true
+additional_flags = [
+    "--cfg=use_proc_macro",
 ]
 
-[package]
-name = "fake_lib"
-version = "0.0.1"
+[raze.crates.proc-macro2.'1.0.24']
+gen_buildrs = true
+additional_flags = [
+    "--cfg=use_proc_macro",
+]
 
-[lib]
-path = "fake_lib.rs"
+[raze.crates.syn.'0.15.44']
+gen_buildrs = true
+additional_flags = [
+    "--cfg=feature=\\\"full\\\"",
+    "--cfg=feature=\\\"visit\\\""
+]
+
+[raze.crates.syn.'1.0.44']
+gen_buildrs = true
+additional_flags = [
+    "--cfg=feature=\\\"full\\\"",
+    "--cfg=feature=\\\"visit\\\""
+]
+
+[raze.crates.serde_json.'1.0.59']
+gen_buildrs = true
+
+[raze.crates.unicase.'1.4.2']
+additional_flags = [
+  "--cfg=__unicase__iter_cmp",
+  "--cfg=__unicase__defauler_hasher",
+]
+
+[raze.crates.wasm-bindgen.'0.2.48']
+gen_buildrs = true
+
+[raze.crates.wasm-bindgen-cli.'0.2.48']
+gen_buildrs = true
+extra_aliased_targets = ["cargo_bin_wasm_bindgen"]
