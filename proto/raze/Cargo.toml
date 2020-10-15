@@ -1,10 +1,10 @@
 
 [package]
-name = "fake_lib"
+name = "fake_rules_rust_proto"
 version = "0.0.1"
 
 [lib]
-path = "lib.rs"
+path = "fake_rules_rust_proto.rs"
 
 [dependencies]
 # Newer version of protobuf have been released, but the 0.6.2 release of
@@ -26,6 +26,8 @@ log = "0.4, <0.4.7"
 [raze]
 genmode = "Remote"
 workspace_path = "//proto/raze"
+gen_workspace_prefix = "rules_rust_proto"
+output_buildfile_suffix = "BUILD"
 
 [raze.crates.lazy_static.'1.4.0']
 additional_flags = [

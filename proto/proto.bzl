@@ -102,10 +102,10 @@ def _rust_proto_aspect_impl(target, ctx):
         for f in ctx.rule.attr.deps
         if RustProtoInfo in f
     ]
-    return RustProtoInfo(
+    return [RustProtoInfo(
         proto_sources = sources,
         transitive_proto_sources = depset(transitive = transitive_sources, direct = sources),
-    )
+    )]
 
 _rust_proto_aspect = aspect(
     _rust_proto_aspect_impl,
@@ -158,7 +158,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         output_hash,
     ))
 
-    result = rustc_compile_action(
+    return rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
         crate_info = CrateInfo(
@@ -176,7 +176,6 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         ),
         output_hash = output_hash,
     )
-    return result
 
 def _rust_protogrpc_library_impl(ctx, grpc):
     """Implementation of the rust_(proto|grpc)_library."""
@@ -187,22 +186,26 @@ def _rust_protogrpc_library_impl(ctx, grpc):
         if RustProtoInfo in f
     ]
 
-    srcs = depset(transitive = transitive_sources)
     return _rust_proto_compile(
-        srcs,
-        depset(transitive = [p.transitive_descriptor_sets for p in proto]),
-        depset(transitive = [p.transitive_imports for p in proto]),
-        ctx.label.name,
-        ctx,
-        grpc,
-        ctx.attr.rust_deps,
+        protos = depset(transitive = transitive_sources),
+        descriptor_sets = depset(transitive = [p.transitive_descriptor_sets for p in proto]),
+        imports = depset(transitive = [p.transitive_imports for p in proto]),
+        crate_name = ctx.label.name,
+        ctx = ctx,
+        grpc = grpc,
+        compile_deps = ctx.attr.rust_deps,
     )
 
 def _rust_proto_library_impl(ctx):
-    return _rust_protogrpc_library_impl(ctx, False)
+    """The implementation of the `rust_proto_library` rule
 
-def _rust_grpc_library_impl(ctx):
-    return _rust_protogrpc_library_impl(ctx, True)
+    Args:
+        ctx (ctx): The rule's context object.
+
+    Returns:
+        list: A list of providers, see `_rust_protogrpc_library_impl`
+    """
+    return _rust_protogrpc_library_impl(ctx, False)
 
 rust_proto_library = rule(
     implementation = _rust_proto_library_impl,
@@ -271,6 +274,17 @@ rust_binary(
 ```
 """,
 )
+
+def _rust_grpc_library_impl(ctx):
+    """The implementation of the `rust_grpc_library` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list of providers. See `_rust_protogrpc_library_impl`
+    """
+    return _rust_protogrpc_library_impl(ctx, True)
 
 rust_grpc_library = rule(
     implementation = _rust_grpc_library_impl,
