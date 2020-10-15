@@ -16,6 +16,15 @@ rust_library(
     crate_type = "proc-macro",
 )
 
+rust_library(
+    name = "hello_macro_2018",
+    srcs = [
+        "src/lib_2018.rs",
+    ],
+    crate_type = "proc-macro",
+    edition = "2018",
+)
+
 rust_test(
     name = "hello_macro_test",
     crate = ":hello_macro",

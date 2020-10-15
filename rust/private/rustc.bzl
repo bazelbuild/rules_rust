@@ -518,6 +518,10 @@ def construct_arguments(
     add_native_link_flags(args, dep_info)
     add_crate_link_flags(args, dep_info)
 
+    if crate_info.type == "proc-macro" and crate_info.edition != "2015":
+        args.add("--extern")
+        args.add("proc_macro")
+
     # Make bin crate data deps available to tests.
     for data in getattr(ctx.attr, "data", []):
         if CrateInfo in data:
