@@ -1,46 +1,88 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
-package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//proto/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
-])
 
-licenses([
-  "notice", # "Apache-2.0,MIT"
-])
-
+# buildifier: disable=load
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
 
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//proto/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated targets
 # Unsupported target "build-script-build" with type "custom-build" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "parking_lot_core",
-    crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2018",
-    srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__cfg_if__0_1_10//:cfg_if",
-        "@raze__libc__0_2_69//:libc",
-        "@raze__smallvec__0_6_13//:smallvec",
-    ],
+        "@rules_rust_proto__cfg_if__0_1_10//:cfg_if",
+        "@rules_rust_proto__smallvec__0_6_13//:smallvec",
+    ] + selects.with_or({
+        # cfg(unix)
+        (
+            "@io_bazel_rules_rust//rust/platform:aarch64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:aarch64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@io_bazel_rules_rust//rust/platform:i686-apple-darwin",
+            "@io_bazel_rules_rust//rust/platform:i686-linux-android",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:powerpc-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
+            "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:x86_64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@rules_rust_proto__libc__0_2_69//:libc",
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(windows)
+        (
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
+        ): [
+            "@rules_rust_proto__winapi__0_3_8//:winapi",
+        ],
+        "//conditions:default": [],
+    }),
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.6.2",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
     crate_features = [
     ],
+    aliases = {
+    },
 )
-

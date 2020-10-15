@@ -1,28 +1,34 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
-package(default_visibility = [
-  # Public for visibility by "@raze__crate__version//" targets.
-  #
-  # Prefer access through "//proto/raze", which limits external
-  # visibility to explicit Cargo.toml dependencies.
-  "//visibility:public",
-])
 
-licenses([
-  "notice", # "MIT,Apache-2.0"
-])
-
+# buildifier: disable=load
 load(
     "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
     "rust_binary",
+    "rust_library",
     "rust_test",
 )
 
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//proto/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
 # Unsupported target "buffered" with type "test" omitted
 # Unsupported target "chain" with type "test" omitted
 # Unsupported target "chat" with type "example" omitted
@@ -49,32 +55,36 @@ load(
 # Unsupported target "tinydb" with type "example" omitted
 # Unsupported target "tinyhttp" with type "example" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "tokio_core",
-    crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2015",
-    srcs = glob(["**/*.rs"]),
     deps = [
-        "@raze__bytes__0_4_12//:bytes",
-        "@raze__futures__0_1_29//:futures",
-        "@raze__iovec__0_1_4//:iovec",
-        "@raze__log__0_4_6//:log",
-        "@raze__mio__0_6_21//:mio",
-        "@raze__scoped_tls__0_1_2//:scoped_tls",
-        "@raze__tokio__0_1_22//:tokio",
-        "@raze__tokio_executor__0_1_10//:tokio_executor",
-        "@raze__tokio_io__0_1_13//:tokio_io",
-        "@raze__tokio_reactor__0_1_12//:tokio_reactor",
-        "@raze__tokio_timer__0_2_13//:tokio_timer",
+        "@rules_rust_proto__bytes__0_4_12//:bytes",
+        "@rules_rust_proto__futures__0_1_29//:futures",
+        "@rules_rust_proto__iovec__0_1_4//:iovec",
+        "@rules_rust_proto__log__0_4_6//:log",
+        "@rules_rust_proto__mio__0_6_21//:mio",
+        "@rules_rust_proto__scoped_tls__0_1_2//:scoped_tls",
+        "@rules_rust_proto__tokio__0_1_22//:tokio",
+        "@rules_rust_proto__tokio_executor__0_1_10//:tokio_executor",
+        "@rules_rust_proto__tokio_io__0_1_13//:tokio_io",
+        "@rules_rust_proto__tokio_reactor__0_1_12//:tokio_reactor",
+        "@rules_rust_proto__tokio_timer__0_2_13//:tokio_timer",
     ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.1.17",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
     crate_features = [
     ],
 )
-
 # Unsupported target "udp" with type "test" omitted
 # Unsupported target "udp-codec" with type "example" omitted
