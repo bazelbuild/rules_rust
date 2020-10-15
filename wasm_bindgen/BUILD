@@ -12,12 +12,12 @@ bzl_library(
 )
 
 rust_wasm_bindgen_toolchain(
-    name = "example-wasm-bindgen-toolchain-impl",
+    name = "default_wasm_bindgen_toolchain_impl",
     bindgen = "//wasm_bindgen/raze:cargo_bin_wasm_bindgen",
 )
 
 toolchain(
-    name = "example-wasm-bindgen-toolchain",
-    toolchain = "example-wasm-bindgen-toolchain-impl",
+    name = "default_wasm_bindgen_toolchain",
+    toolchain = "default_wasm_bindgen_toolchain_impl",
     toolchain_type = "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
 )
