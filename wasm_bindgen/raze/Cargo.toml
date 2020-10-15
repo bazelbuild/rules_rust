@@ -6,8 +6,7 @@ version = "0.0.1"
 path = "fake_rules_rust_wasm_bindgen_lib.rs"
 
 [dependencies]
-wasm-bindgen = "=0.2.48"
-backtrace-sys = "=0.1.29"
+wasm-bindgen = "0.2.68"
 
 [raze]
 genmode = "Remote"
@@ -16,23 +15,7 @@ gen_workspace_prefix = "rules_rust_wasm_bindgen"
 output_buildfile_suffix = "BUILD"
 
 [raze.binary_deps]
-wasm-bindgen-cli = "0.2.48"
-
-[raze.crates.backtrace-sys.'0.1.29']
-additional_build_file = "overrides/backtrace-sys-0.1.29.BUILD"
-additional_deps = [
-    ":backtrace_native"
-]
-
-[raze.crates.libc.'0.2.77']
-additional_flags = [
-  "--cfg=libc_core_cvoid",
-  "--cfg=libc_priv_mod_use",
-  "--cfg=libc_union",
-  "--cfg=libc_const_size_of",
-  "--cfg=libc_align",
-  "--cfg=libc_packagedN",
-]
+wasm-bindgen-cli = "0.2.68"
 
 [raze.crates.log.'0.3.9']
 additional_flags = [
@@ -45,6 +28,9 @@ additional_flags = [
     "--cfg=atomic_cas",
     "--cfg=use_std",
 ]
+
+[raze.crates.mime_guess.'1.8.8']
+gen_buildrs = true
 
 [raze.crates.openssl-sys.'0.9.58']
 additional_flags = [
@@ -64,10 +50,7 @@ additional_flags = [
   "dylib=crypto",
 ]
 
-[raze.crates.mime_guess.'1.8.8']
-gen_buildrs = true
-
-[raze.crates.proc-macro2.'0.4.30']
+[raze.crates.proc-macro2.'1.0.23']
 gen_buildrs = true
 additional_flags = [
     "--cfg=use_proc_macro",
@@ -79,21 +62,13 @@ additional_flags = [
     "--cfg=use_proc_macro",
 ]
 
-[raze.crates.syn.'0.15.44']
+[raze.crates.syn.'1.0.40']
 gen_buildrs = true
-additional_flags = [
-    "--cfg=feature=\\\"full\\\"",
-    "--cfg=feature=\\\"visit\\\""
-]
 
-[raze.crates.syn.'1.0.44']
+[raze.crates.syn.'1.0.45']
 gen_buildrs = true
-additional_flags = [
-    "--cfg=feature=\\\"full\\\"",
-    "--cfg=feature=\\\"visit\\\""
-]
 
-[raze.crates.serde_json.'1.0.59']
+[raze.crates.serde_json.'1.0.57']
 gen_buildrs = true
 
 [raze.crates.unicase.'1.4.2']
@@ -102,9 +77,9 @@ additional_flags = [
   "--cfg=__unicase__defauler_hasher",
 ]
 
-[raze.crates.wasm-bindgen.'0.2.48']
+[raze.crates.wasm-bindgen.'0.2.68']
 gen_buildrs = true
 
-[raze.crates.wasm-bindgen-cli.'0.2.48']
+[raze.crates.wasm-bindgen-cli.'0.2.68']
 gen_buildrs = true
 extra_aliased_targets = ["cargo_bin_wasm_bindgen"]

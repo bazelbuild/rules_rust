@@ -29,10 +29,11 @@ def _rust_wasm_bindgen_impl(ctx):
         executable = bindgen_bin,
         inputs = [ctx.file.wasm_file],
         outputs = [
-            ctx.outputs.bindgen_wasm_module,
+            ctx.outputs.bindgen_javascript_bindings,
             ctx.outputs.bindgen_typescript_bindings,
-            ctx.outputs.typescript_bindings,
+            ctx.outputs.bindgen_wasm_module,
             ctx.outputs.javascript_bindings,
+            ctx.outputs.typescript_bindings,
         ],
         mnemonic = "RustWasmBindgen",
         progress_message = "Generating WebAssembly bindings for {}..".format(ctx.file.wasm_file.path),
@@ -46,10 +47,11 @@ def _rust_wasm_bindgen_impl(ctx):
         providers = [
             DefaultInfo(
                 files = depset([
-                    ctx.outputs.bindgen_wasm_module,
+                    ctx.outputs.bindgen_javascript_bindings,
                     ctx.outputs.bindgen_typescript_bindings,
-                    ctx.outputs.typescript_bindings,
+                    ctx.outputs.bindgen_wasm_module,
                     ctx.outputs.javascript_bindings,
+                    ctx.outputs.typescript_bindings,
                 ]),
             ),
         ],
@@ -63,10 +65,22 @@ def _rust_wasm_bindgen_impl(ctx):
                 ctx.outputs.bindgen_typescript_bindings,
             ]),
             type_blacklisted_declarations = depset(),
-            es5_sources = depset([ctx.outputs.javascript_bindings]),
-            es6_sources = depset([ctx.outputs.javascript_bindings]),
-            transitive_es5_sources = depset(depset([ctx.outputs.javascript_bindings]).to_list()),
-            transitive_es6_sources = depset(depset([ctx.outputs.javascript_bindings]).to_list()),
+            es5_sources = depset([
+                ctx.outputs.bindgen_javascript_bindings,
+                ctx.outputs.javascript_bindings,
+            ]),
+            es6_sources = depset([
+                ctx.outputs.bindgen_javascript_bindings,
+                ctx.outputs.javascript_bindings,
+            ]),
+            transitive_es5_sources = depset([
+                ctx.outputs.bindgen_javascript_bindings,
+                ctx.outputs.javascript_bindings,
+            ]),
+            transitive_es6_sources = depset([
+                ctx.outputs.bindgen_javascript_bindings,
+                ctx.outputs.javascript_bindings,
+            ]),
         ),
     )
 
@@ -87,10 +101,11 @@ rust_wasm_bindgen = rule(
         ),
     },
     outputs = {
+        "bindgen_javascript_bindings": "%{name}_bg.js",
+        "bindgen_typescript_bindings": "%{name}_bg.wasm.d.ts",
         "bindgen_wasm_module": "%{name}_bg.wasm",
-        "bindgen_typescript_bindings": "%{name}_bg.d.ts",
-        "typescript_bindings": "%{name}.d.ts",
         "javascript_bindings": "%{name}.js",
+        "typescript_bindings": "%{name}.d.ts",
     },
     toolchains = [
         "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
@@ -107,7 +122,7 @@ rust_wasm_bindgen_toolchain = rule(
     doc = "The tools required for the `rust_wasm_bindgen` rule.",
     attrs = {
         "bindgen": attr.label(
-            doc = "The label of a `bindgen` executable.",
+            doc = "The label of a `wasm-bindgen` executable.",
             executable = True,
             cfg = "exec",
         ),
