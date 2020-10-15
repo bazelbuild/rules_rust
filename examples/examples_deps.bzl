@@ -37,13 +37,6 @@ def deps():
 
     node_repositories()
 
-    # Dependencies for the @examples//hello_world_wasm example.
-    npm_install(
-        name = "npm",
-        package_json = "@examples//:package.json",
-        package_lock_json = "@examples//:package-lock.json",
-    )
-
     rules_rust_examples_hello_sys_fetch_remote_crates()
 
     maybe(

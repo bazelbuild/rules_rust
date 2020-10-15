@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# buildifier: disable=module-docstring
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 load("@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
-load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -22,7 +23,9 @@ rust_binary(
     name = "hello_world_wasm",
     srcs = ["main.rs"],
     edition = "2018",
-    deps = ["@io_bazel_rules_rust//wasm_bindgen/raze:wasm_bindgen"],
+    deps = [
+        "@io_bazel_rules_rust//wasm_bindgen/raze:wasm_bindgen",
+    ],
 )
 
 rust_wasm_bindgen(
@@ -30,13 +33,8 @@ rust_wasm_bindgen(
     wasm_file = ":hello_world_wasm",
 )
 
-jasmine_node_test(
+nodejs_test(
     name = "hello_world_wasm_test",
-    srcs = [
-        "hello_world_wasm_test.js",
-    ],
-    data = [
-        ":hello_world_wasm_bindgen_bg.wasm",
-        "@npm//jasmine",
-    ],
+    data = [":hello_world_wasm_bindgen"],
+    entry_point = "hello_world_wasm_test.js",
 )

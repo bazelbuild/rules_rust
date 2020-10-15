@@ -45,12 +45,12 @@ tasks:
     windows_targets: &windows_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
     - "@examples//..."
-    - "-@examples//proto/..." 
-    - "-@examples//hello_world_wasm/..."
-    - "-@examples//hello_sys/..."
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
     - "-@examples//ffi/rust_calling_c/simple/..."
+    - "-@examples//hello_sys/..."
+    - "-@examples//proto/..." 
+    - "-@examples//wasm/..."
     build_targets: *windows_targets
     test_targets: *windows_targets
   examples:
