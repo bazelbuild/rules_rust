@@ -44,6 +44,7 @@ load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "f
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 
 RustProtoInfo = provider(
+    doc = "Rust protobuf provider info",
     fields = {
         "proto_sources": "List[string]: list of source paths of protos",
         "transitive_proto_sources": "depset[string]",
@@ -51,7 +52,16 @@ RustProtoInfo = provider(
 )
 
 def _compute_proto_source_path(file, source_root_attr):
-    """Take the short path of file and make it suitable for protoc."""
+    """Take the short path of file and make it suitable for protoc.
+
+    Args:
+        file (File): The target source file.
+        source_root_attr (str): The directory relative to which the `.proto` \
+            files defined in the proto_library are defined.
+
+    Returns:
+        str: The protoc suitible path of `file`
+    """
 
     # Bazel creates symlinks to the .proto files under a directory called
     # "_virtual_imports/<rule name>" if we do any sort of munging of import
@@ -82,6 +92,15 @@ def _compute_proto_source_path(file, source_root_attr):
         return path
 
 def _rust_proto_aspect_impl(target, ctx):
+    """The implementation of the `rust_proto_aspect` aspect
+
+    Args:
+        target (Target): The target to which the aspect is applied
+        ctx (ctx): The rule context which the targetis created from
+
+    Returns:
+        list: A list containg a `RustProtoInfo` provider
+    """
     if ProtoInfo not in target:
         return None
 
@@ -108,12 +127,20 @@ def _rust_proto_aspect_impl(target, ctx):
     )]
 
 _rust_proto_aspect = aspect(
-    _rust_proto_aspect_impl,
+    doc = "An aspect that gathers rust proto direct and transitive sources",
+    implementation = _rust_proto_aspect_impl,
     attr_aspects = ["deps"],
 )
 
 def _gen_lib(ctx, grpc, srcs, lib):
-    """Generate a lib.rs file for the crates."""
+    """Generate a lib.rs file for the crates.
+
+    Args:
+        ctx (ctx): The current rule's context object
+        grpc (bool): True if the current rule is a `gRPC` rule.
+        srcs (list): A list of protoc suitible file paths (str).
+        lib (File): The File object where the rust source file should be written
+    """
     content = ["extern crate protobuf;"]
     if grpc:
         content.append("extern crate grpc;")
@@ -127,9 +154,33 @@ def _gen_lib(ctx, grpc, srcs, lib):
     ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):
+    """Gathers a list of a specific provider from a list of targets.
+
+    Args:
+        lst (list): A list of Targets
+        provider (Provider): The target provider type to extract `lst`
+
+    Returns:
+        list: A list of providers of the type from `provider`.
+    """
     return [el[provider] for el in lst if provider in el]
 
 def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
+    """Create and run a rustc compile action based on the current rule's attributes
+
+    Args:
+        protos (depset): Paths of protos to compile.
+        descriptor_sets (depset): A set of transitive protobuf `FileDescriptorSet`s
+        imports (depset): A set of transitive protobuf Imports.
+        crate_name (str): The name of the Crate for the current target
+        ctx (ctx): The current rule's context object
+        grpc (bool): True if the current rule is a `gRPC` rule.
+        compile_deps (list): A list of Rust dependencies (`List[Target]`)
+
+    Returns:
+        list: A list of providers, see `rustc_compile_action`
+    """
+
     # Create all the source in a specific folder
     proto_toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
@@ -178,7 +229,15 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
     )
 
 def _rust_protogrpc_library_impl(ctx, grpc):
-    """Implementation of the rust_(proto|grpc)_library."""
+    """Implementation of the rust_(proto|grpc)_library.
+
+    Args:
+        ctx (ctx): The current rule's context object
+        grpc (bool): True if the current rule is a `gRPC` rule.
+
+    Returns:
+        list: A list of providers, see `_rust_proto_compile`
+    """
     proto = _expand_provider(ctx.attr.deps, ProtoInfo)
     transitive_sources = [
         f[RustProtoInfo].transitive_proto_sources

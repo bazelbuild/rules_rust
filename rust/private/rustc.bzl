@@ -525,7 +525,7 @@ def rustc_compile_action(
         crate_info,
         output_hash = None,
         rust_flags = []):
-    """Constructs the rustc command used to build the current target.
+    """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
         ctx (ctx): The rule's context object
