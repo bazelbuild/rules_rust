@@ -21,7 +21,7 @@ wasm-bindgen-cli = "0.2.48"
 [raze.crates.backtrace-sys.'0.1.29']
 additional_build_file = "overrides/backtrace-sys-0.1.29.BUILD"
 additional_deps = [
-    ":native_backtrace"
+    ":backtrace_native"
 ]
 
 [raze.crates.libc.'0.2.77']

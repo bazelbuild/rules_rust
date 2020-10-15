@@ -36,7 +36,7 @@ rust_library(
     crate_type = "lib",
     deps = [
         "@rules_rust_wasm_bindgen__libc__0_2_77//:libc",
-        ":native_backtrace",
+        ":backtrace_native",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
@@ -55,19 +55,12 @@ rust_library(
 # Unsupported target "build-script-build" with type "custom-build" omitted
 
 # Additional content from overrides/backtrace-sys-0.1.29.BUILD
+# buildifier: disable=load-on-top
 load("@rules_cc//cc:defs.bzl", "cc_library")
-
-package(default_visibility = ["//ext/public/rust/cargo:__subpackages__"])
 
 licenses([
     "notice",  # "MIT,Apache-2.0"
 ])
-
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-)
 
 genrule(
     name = "touch_config_header",
@@ -75,6 +68,7 @@ genrule(
         "config.h",
     ],
     cmd = "touch $@",
+    visibility = ["//ext/public/rust/cargo:__subpackages__"],
 )
 
 genrule(
@@ -83,6 +77,7 @@ genrule(
         "backtrace-supported.h",
     ],
     cmd = "touch $@",
+    visibility = ["//ext/public/rust/cargo:__subpackages__"],
 )
 
 cc_library(
@@ -115,16 +110,5 @@ cc_library(
         "_LARGE_FILES=1",
     ],
     includes = ["."],
-)
-
-rust_library(
-    name = "backtrace_sys",
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    crate_type = "lib",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":backtrace_native",
-        "@raze__libc__0_2_58//:libc",
-    ],
+    visibility = ["//ext/public/rust/cargo:__subpackages__"],
 )
