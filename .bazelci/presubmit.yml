@@ -39,8 +39,6 @@ tasks:
     - "-@examples//ffi/rust_calling_c/simple/..."
     # See https://github.com/bazelbuild/bazel/issues/9987
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
-    # rust-lld isn't available on RBE
-    - "-@examples//hello_world_wasm:hello_world_wasm_test"
   windows:
     build_flags:
     - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
