@@ -630,7 +630,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         list: A list containing the CcInfo provider
     """
 
-    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib"):
+    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib") or getattr(ctx.attr, "out_binary", False):
         return []
 
     if crate_info.type == "staticlib":
