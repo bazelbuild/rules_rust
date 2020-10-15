@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 load(
     "@io_bazel_rules_rust//rust:toolchain.bzl",
     _rust_toolchain = "rust_toolchain",

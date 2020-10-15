@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# buildifier: disable=module-docstring
 load("@bazel_skylib//lib:versions.bzl", "versions")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -165,16 +166,17 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         if CrateInfo in dep:
             # This dependency is a rust_library
             direct_dep = dep[CrateInfo]
-            aliasable_dep = AliasableDepInfo(
+            direct_crates.append(AliasableDepInfo(
                 name = aliases.get(dep.label, direct_dep.name),
                 dep = direct_dep,
-            )
-            direct_crates.append(aliasable_dep)
-            transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])
-            transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])
-            transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])
-            transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])
-            transitive_build_infos = depset(transitive = [transitive_build_infos, dep[DepInfo].transitive_build_infos])
+            ))
+
+            # TODO (bazelbuild/rules_rust#442): Solve for all overly-nested-depset warnings here
+            transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])  # buildifier: disable=overly-nested-depset
+            transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])  # buildifier: disable=overly-nested-depset
+            transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])  # buildifier: disable=overly-nested-depset
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])  # buildifier: disable=overly-nested-depset
+            transitive_build_infos = depset(transitive = [transitive_build_infos, dep[DepInfo].transitive_build_infos])  # buildifier: disable=overly-nested-depset
         elif CcInfo in dep:
             # This dependency is a cc_library
 
@@ -182,13 +184,13 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             libs = get_libs_for_static_executable(dep)
             dylibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.dylib_ext)]
             staticlibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.staticlib_ext)]
-            transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])
-            transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])
+            transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])  # buildifier: disable=overly-nested-depset
+            transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])  # buildifier: disable=overly-nested-depset
         elif BuildInfo in dep:
             if build_info:
                 fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
             build_info = dep[BuildInfo]
-            transitive_build_infos = depset([build_info], transitive = [transitive_build_infos])
+            transitive_build_infos = depset([build_info], transitive = [transitive_build_infos])  # buildifier: disable=overly-nested-depset
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 

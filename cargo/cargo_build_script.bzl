@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_compile_env", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")

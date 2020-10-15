@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# buildifier: disable=module-docstring
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
 

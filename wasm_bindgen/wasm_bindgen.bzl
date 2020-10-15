@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# buildifier: disable=module-docstring
 load("@io_bazel_rules_rust//rust:private/transitions.bzl", "wasm_bindgen_transition")
 
 def _rust_wasm_bindgen_impl(ctx):
@@ -38,8 +39,9 @@ def _rust_wasm_bindgen_impl(ctx):
         arguments = [args],
     )
 
-    # TODO: Legacy provider syntax should be updated. See the following guide:
+    # TODO (bazelbuild/rules_rust#443): Legacy provider syntax should be updated. See the following guide:
     # https://docs.bazel.build/versions/master/skylark/rules.html#migrating-from-legacy-providers
+    # buildifier: disable=rule-impl-return
     return struct(
         providers = [
             DefaultInfo(

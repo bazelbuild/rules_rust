@@ -60,7 +60,6 @@ PAGES = {
     ],
     "rust_workspace": [
         "rust_workspace",
-        "bazel_version",
     ],
 }
 

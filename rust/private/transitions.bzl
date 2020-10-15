@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 def _wasm_bindgen_transition(settings, attr):
     """The implementation of the `wasm_bindgen_transition` transition
 

@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@bazel_skylib//lib:versions.bzl", "versions")
 

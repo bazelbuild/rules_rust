@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
 def _rustfmt_generator_impl(ctx):
@@ -23,7 +24,7 @@ def _rustfmt_generator_impl(ctx):
     )
 
 rustfmt_generator = rule(
-    _rustfmt_generator_impl,
+    implementation = _rustfmt_generator_impl,
     doc = "Given an unformatted Rust source file, output the file after being run through rustfmt.",
     attrs = {
         "src": attr.label(

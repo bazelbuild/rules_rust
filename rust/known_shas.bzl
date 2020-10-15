@@ -1,3 +1,4 @@
+# buildifier: disable=module-docstring
 # This is a generated file -- see //util:fetch_shas.sh
 FILE_KEY_TO_SHA = {
     "2018-10-30/rust-beta-x86_64-apple-darwin": "51acc0077d6abae5beed0e7b99c39ae9b8a0ff0f66daec227caef653046144e6",
