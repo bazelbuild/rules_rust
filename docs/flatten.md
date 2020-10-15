@@ -1,6 +1,5 @@
 # Rust rules
 
-* [bazel_version](#bazel_version)
 * [cargo_build_script](#cargo_build_script)
 * [rust_benchmark](#rust_benchmark)
 * [rust_binary](#rust_binary)
@@ -884,7 +883,8 @@ rust_toolchain_repository(<a href="#rust_toolchain_repository-name">name</a>, <a
                           <a href="#rust_toolchain_repository-iso_date">iso_date</a>, <a href="#rust_toolchain_repository-rustfmt_version">rustfmt_version</a>, <a href="#rust_toolchain_repository-sha256s">sha256s</a>, <a href="#rust_toolchain_repository-toolchain_name_prefix">toolchain_name_prefix</a>, <a href="#rust_toolchain_repository-version">version</a>)
 </pre>
 
-Composes a single workspace containing the toolchain components for compiling on a given platform to a series of target platforms. 
+Composes a single workspace containing the toolchain components for compiling on a given platform to a series of target platforms.
+
 A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy invocation to declare its toolchains to Bazel; the indirection allows separating toolchain selection from toolchain fetching.
 
 **ATTRIBUTES**

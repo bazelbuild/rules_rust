@@ -1,6 +1,5 @@
 # Rust rules
 * [rust_workspace](#rust_workspace)
-* [bazel_version](#bazel_version)
 
 <a id="#rust_workspace"></a>
 
