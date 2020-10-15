@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,36 +25,34 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # "ISC"
+    "notice",  # ISC from expression "ISC"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
-
+# Generated targets
 # Unsupported target "rdrand" with type "bench" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "rdrand",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "default",
-        "std",
-    ],
-    crate_root = "src/lib.rs",
     crate_type = "lib",
+    deps = [
+        "@rules_rust_wasm_bindgen__rand_core__0_3_1//:rand_core",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.4.0",
-    deps = [
-        "@raze__rand_core__0_3_1//:rand_core",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+        "default",
+        "std",
     ],
 )
-
 # Unsupported target "rdseed" with type "bench" omitted
 # Unsupported target "std" with type "bench" omitted

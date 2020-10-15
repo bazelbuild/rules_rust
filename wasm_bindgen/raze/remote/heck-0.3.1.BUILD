@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,29 +25,29 @@ package(default_visibility = [
 ])
 
 licenses([
-    "restricted",  # "MIT OR Apache-2.0"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
+# Generated targets
 
+# buildifier: leave-alone
 rust_library(
     name = "heck",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-    ],
-    crate_root = "src/lib.rs",
     crate_type = "lib",
+    deps = [
+        "@rules_rust_wasm_bindgen__unicode_segmentation__1_6_0//:unicode_segmentation",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.3.1",
-    deps = [
-        "@raze__unicode_segmentation__1_3_0//:unicode_segmentation",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
     ],
 )

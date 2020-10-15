@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,32 +25,32 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # "MIT,Apache-2.0"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
+# Generated targets
 
+# buildifier: leave-alone
 rust_library(
     name = "walrus_macro",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-    ],
-    crate_root = "src/lib.rs",
     crate_type = "proc-macro",
+    deps = [
+        "@rules_rust_wasm_bindgen__heck__0_3_1//:heck",
+        "@rules_rust_wasm_bindgen__proc_macro2__0_4_30//:proc_macro2",
+        "@rules_rust_wasm_bindgen__quote__0_6_13//:quote",
+        "@rules_rust_wasm_bindgen__syn__0_15_44//:syn",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.8.0",
-    deps = [
-        "@raze__heck__0_3_1//:heck",
-        "@raze__proc_macro2__0_4_30//:proc_macro2",
-        "@raze__quote__0_6_12//:quote",
-        "@raze__syn__0_15_43//:syn",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
     ],
 )

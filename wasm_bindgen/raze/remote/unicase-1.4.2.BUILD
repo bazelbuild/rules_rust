@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,25 +25,20 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # "MIT"
+    "notice",  # MIT from expression "MIT"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
-
+# Generated targets
 # Unsupported target "build-script-build" with type "custom-build" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "unicase",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-    ],
-    crate_root = "src/lib.rs",
     crate_type = "lib",
+    deps = [
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
@@ -39,6 +46,10 @@ rust_library(
         "--cfg=__unicase__defauler_hasher",
     ],
     version = "1.4.2",
-    deps = [
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
     ],
 )

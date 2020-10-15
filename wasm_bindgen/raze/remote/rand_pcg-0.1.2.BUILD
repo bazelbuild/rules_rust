@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,33 +25,32 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # "MIT,Apache-2.0"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
-
+# Generated targets
 # Unsupported target "build-script-build" with type "custom-build" omitted
 # Unsupported target "lcg64xsh32" with type "test" omitted
 # Unsupported target "mcg128xsl64" with type "test" omitted
 
+# buildifier: leave-alone
 rust_library(
     name = "rand_pcg",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-    ],
-    crate_root = "src/lib.rs",
     crate_type = "lib",
+    deps = [
+        "@rules_rust_wasm_bindgen__rand_core__0_4_2//:rand_core",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.1.2",
-    deps = [
-        "@raze__rand_core__0_4_0//:rand_core",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
     ],
 )

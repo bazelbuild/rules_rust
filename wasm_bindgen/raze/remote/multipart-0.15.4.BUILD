@@ -1,8 +1,20 @@
 """
+@generated
 cargo-raze crate build file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -13,60 +25,41 @@ package(default_visibility = [
 ])
 
 licenses([
-    "restricted",  # "MIT OR Apache-2.0"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_test",
-)
+# Generated targets
 
+# buildifier: leave-alone
 rust_binary(
     # Prefix bin name to disambiguate from (probable) collision with lib name
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_form_test",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "buf_redux",
-        "httparse",
-        "quick-error",
-        "safemem",
-        "server",
-        "twoway",
+    deps = [
+        # Binaries get an implicit dependency on their crate's lib
+        ":multipart",
+        "@rules_rust_wasm_bindgen__buf_redux__0_8_4//:buf_redux",
+        "@rules_rust_wasm_bindgen__httparse__1_3_4//:httparse",
+        "@rules_rust_wasm_bindgen__log__0_4_11//:log",
+        "@rules_rust_wasm_bindgen__mime__0_2_6//:mime",
+        "@rules_rust_wasm_bindgen__mime_guess__1_8_8//:mime_guess",
+        "@rules_rust_wasm_bindgen__quick_error__1_2_3//:quick_error",
+        "@rules_rust_wasm_bindgen__rand__0_4_6//:rand",
+        "@rules_rust_wasm_bindgen__safemem__0_3_3//:safemem",
+        "@rules_rust_wasm_bindgen__tempdir__0_3_7//:tempdir",
+        "@rules_rust_wasm_bindgen__twoway__0_1_8//:twoway",
     ],
+    srcs = glob(["**/*.rs"]),
     crate_root = "src/bin/form_test.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.15.4",
-    deps = [
-        # Binaries get an implicit dependency on their crate's lib
-        ":multipart",
-        "@raze__buf_redux__0_8_1//:buf_redux",
-        "@raze__httparse__1_3_3//:httparse",
-        "@raze__log__0_4_6//:log",
-        "@raze__mime__0_2_6//:mime",
-        "@raze__mime_guess__1_8_7//:mime_guess",
-        "@raze__quick_error__1_2_2//:quick_error",
-        "@raze__rand__0_4_6//:rand",
-        "@raze__safemem__0_3_0//:safemem",
-        "@raze__tempdir__0_3_7//:tempdir",
-        "@raze__twoway__0_1_8//:twoway",
+    tags = [
+        "cargo-raze",
+        "manual",
     ],
-)
-
-# Unsupported target "hyper_client" with type "example" omitted
-# Unsupported target "hyper_reqbuilder" with type "example" omitted
-# Unsupported target "hyper_server" with type "example" omitted
-# Unsupported target "iron" with type "example" omitted
-# Unsupported target "iron_intercept" with type "example" omitted
-
-rust_library(
-    name = "multipart",
-    srcs = glob(["**/*.rs"]),
     crate_features = [
         "buf_redux",
         "httparse",
@@ -75,27 +68,49 @@ rust_library(
         "server",
         "twoway",
     ],
-    crate_root = "src/lib.rs",
+)
+# Unsupported target "hyper_client" with type "example" omitted
+# Unsupported target "hyper_reqbuilder" with type "example" omitted
+# Unsupported target "hyper_server" with type "example" omitted
+# Unsupported target "iron" with type "example" omitted
+# Unsupported target "iron_intercept" with type "example" omitted
+
+# buildifier: leave-alone
+rust_library(
+    name = "multipart",
     crate_type = "lib",
+    deps = [
+        "@rules_rust_wasm_bindgen__buf_redux__0_8_4//:buf_redux",
+        "@rules_rust_wasm_bindgen__httparse__1_3_4//:httparse",
+        "@rules_rust_wasm_bindgen__log__0_4_11//:log",
+        "@rules_rust_wasm_bindgen__mime__0_2_6//:mime",
+        "@rules_rust_wasm_bindgen__mime_guess__1_8_8//:mime_guess",
+        "@rules_rust_wasm_bindgen__quick_error__1_2_3//:quick_error",
+        "@rules_rust_wasm_bindgen__rand__0_4_6//:rand",
+        "@rules_rust_wasm_bindgen__safemem__0_3_3//:safemem",
+        "@rules_rust_wasm_bindgen__tempdir__0_3_7//:tempdir",
+        "@rules_rust_wasm_bindgen__twoway__0_1_8//:twoway",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     version = "0.15.4",
-    deps = [
-        "@raze__buf_redux__0_8_1//:buf_redux",
-        "@raze__httparse__1_3_3//:httparse",
-        "@raze__log__0_4_6//:log",
-        "@raze__mime__0_2_6//:mime",
-        "@raze__mime_guess__1_8_7//:mime_guess",
-        "@raze__quick_error__1_2_2//:quick_error",
-        "@raze__rand__0_4_6//:rand",
-        "@raze__safemem__0_3_0//:safemem",
-        "@raze__tempdir__0_3_7//:tempdir",
-        "@raze__twoway__0_1_8//:twoway",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+        "buf_redux",
+        "httparse",
+        "quick-error",
+        "safemem",
+        "server",
+        "twoway",
     ],
 )
-
 # Unsupported target "nickel" with type "example" omitted
 # Unsupported target "rocket" with type "example" omitted
 # Unsupported target "tiny_http" with type "example" omitted
