@@ -37,7 +37,15 @@ rust_library(
     crate_type = "lib",
     deps = [
         "@rules_rust_wasm_bindgen__libc__0_2_79//:libc",
-    ],
+    ] + selects.with_or({
+        # cfg(target_env = "msvc")
+        (
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+        ],
+        "//conditions:default": [],
+    }),
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
     edition = "2015",
@@ -52,4 +60,6 @@ rust_library(
     crate_features = [
         "libc",
     ],
+    aliases = {
+    },
 )

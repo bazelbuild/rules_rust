@@ -61,6 +61,16 @@ rust_library(
             "@rules_rust_wasm_bindgen__openssl_sys__0_9_58//:openssl_sys",
         ],
         "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(target_env = "msvc")
+        (
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            "@rules_rust_wasm_bindgen__schannel__0_1_19//:schannel",
+            "@rules_rust_wasm_bindgen__winapi__0_3_9//:winapi",
+        ],
+        "//conditions:default": [],
     }),
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",

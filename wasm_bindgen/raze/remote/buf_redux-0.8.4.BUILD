@@ -46,7 +46,7 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:arm-unknown-linux-gnueabi",
             "@io_bazel_rules_rust//rust/platform:i686-apple-darwin",
             "@io_bazel_rules_rust//rust/platform:i686-linux-android",
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
             "@io_bazel_rules_rust//rust/platform:i686-unknown-freebsd",
             "@io_bazel_rules_rust//rust/platform:i686-unknown-linux-gnu",
             "@io_bazel_rules_rust//rust/platform:powerpc-unknown-linux-gnu",
@@ -54,7 +54,7 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
             "@io_bazel_rules_rust//rust/platform:x86_64-linux-android",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [

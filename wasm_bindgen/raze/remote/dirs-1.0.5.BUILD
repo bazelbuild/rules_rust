@@ -60,8 +60,8 @@ rust_library(
     }) + selects.with_or({
         # cfg(windows)
         (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             "@rules_rust_wasm_bindgen__winapi__0_3_9//:winapi",
         ],

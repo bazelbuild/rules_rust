@@ -36,23 +36,7 @@ rust_library(
     name = "winapi",
     crate_type = "lib",
     deps = [
-    ] + selects.with_or({
-        # i686-pc-windows-gnu
-        (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-gnu",
-        ): [
-            "@rules_rust_proto__winapi_i686_pc_windows_gnu__0_4_0//:winapi_i686_pc_windows_gnu",
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # x86_64-pc-windows-gnu
-        (
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-gnu",
-        ): [
-            "@rules_rust_proto__winapi_x86_64_pc_windows_gnu__0_4_0//:winapi_x86_64_pc_windows_gnu",
-        ],
-        "//conditions:default": [],
-    }),
+    ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
     edition = "2015",
@@ -77,6 +61,4 @@ rust_library(
         "ws2ipdef",
         "ws2tcpip",
     ],
-    aliases = {
-    },
 )
