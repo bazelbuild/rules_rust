@@ -130,13 +130,13 @@ rust_proto_toolchain = rule(
         "protoc": attr.label(
             doc = "The location of the `protoc` binary. It should be an executable target.",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@com_google_protobuf//:protoc"),
         ),
         "proto_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
             allow_single_file = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust",
             ),
@@ -144,7 +144,7 @@ rust_proto_toolchain = rule(
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
             ),

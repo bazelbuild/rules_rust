@@ -197,27 +197,27 @@ rust_bindgen_toolchain = rule(
         "bindgen": attr.label(
             doc = "The label of a `bindgen` executable.",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "rustfmt": attr.label(
             doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             mandatory = False,
         ),
         "clang": attr.label(
             doc = "The label of a `clang` executable.",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "libclang": attr.label(
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
-            cfg = "host",
+            cfg = "exec",
             providers = [CcInfo],
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
-            cfg = "host",
+            cfg = "exec",
             providers = [CcInfo],
         ),
     },

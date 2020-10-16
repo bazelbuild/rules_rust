@@ -147,7 +147,7 @@ _build_script_run = rule(
             executable = True,
             allow_files = True,
             mandatory = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "crate_name": attr.string(
             doc = "Name of the crate associated with this build script target",
@@ -171,7 +171,7 @@ _build_script_run = rule(
             executable = True,
             allow_files = True,
             default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
-            cfg = "host",
+            cfg = "exec",
         ),
     },
     fragments = ["cpp"],

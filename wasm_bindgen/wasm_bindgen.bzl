@@ -109,7 +109,7 @@ rust_wasm_bindgen_toolchain = rule(
         "bindgen": attr.label(
             doc = "The label of a `bindgen` executable.",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
 )

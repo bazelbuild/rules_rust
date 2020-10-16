@@ -293,7 +293,7 @@ rust_proto_library = rule(
         ),
         "_optional_output_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label(
                 "@io_bazel_rules_rust//proto:optional_output_wrapper",
             ),
@@ -372,7 +372,7 @@ rust_grpc_library = rule(
         ),
         "_optional_output_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label(
                 "@io_bazel_rules_rust//proto:optional_output_wrapper",
             ),
