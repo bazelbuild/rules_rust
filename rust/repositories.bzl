@@ -16,9 +16,9 @@ DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.44.0",
+        version = "1.47.0",
         iso_date = None,
-        rustfmt_version = "1.4.18",
+        rustfmt_version = "1.4.20",
         edition = None,
         dev_components = False,
         sha256s = None):
@@ -556,8 +556,8 @@ def _rust_toolchain_repository_impl(ctx):
     if ctx.attr.rustfmt_version:
         build_components.append(_load_rustfmt(ctx))
 
-    # Nightly Rust builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    if ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22":
+    # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
+    if ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22"):
         _load_llvm_tools(ctx, ctx.attr.exec_triple)
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:

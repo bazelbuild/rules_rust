@@ -1,3 +1,4 @@
 rust
 rustc
 rust-std
+llvm-tools

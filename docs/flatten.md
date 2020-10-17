@@ -1093,9 +1093,9 @@ See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for m
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_repositories-version"></a>version |  The version of Rust. Either "nightly", "beta", or an exact version.   |  <code>"1.44.0"</code> |
+| <a id="rust_repositories-version"></a>version |  The version of Rust. Either "nightly", "beta", or an exact version.   |  <code>"1.47.0"</code> |
 | <a id="rust_repositories-iso_date"></a>iso_date |  The date of the nightly or beta release (or None, if the version is a specific version).   |  <code>None</code> |
-| <a id="rust_repositories-rustfmt_version"></a>rustfmt_version |  The version of rustfmt. Either "nightly", "beta", or an exact version.   |  <code>"1.4.18"</code> |
+| <a id="rust_repositories-rustfmt_version"></a>rustfmt_version |  The version of rustfmt. Either "nightly", "beta", or an exact version.   |  <code>"1.4.20"</code> |
 | <a id="rust_repositories-edition"></a>edition |  The rust edition to be used by default (2015 (default) or 2018)   |  <code>None</code> |
 | <a id="rust_repositories-dev_components"></a>dev_components |  Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".   |  <code>False</code> |
 | <a id="rust_repositories-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes.   |  <code>None</code> |

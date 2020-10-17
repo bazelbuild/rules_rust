@@ -50,10 +50,12 @@ enumerate_rustfmt_keys() {
 
 emit_bzl_file_contents() {
   echo "$@" \
-    | parallel --trim lr -d ' ' --will-cite 'printf "%s %s\n", {}, $(curl https://static.rust-lang.org/dist/{}.tar.gz.sha256 | cut -f1 --delimiter=" ")' \
+    | parallel --trim lr -d ' ' --will-cite 'printf "%s %s\n", {}, $(curl --fail https://static.rust-lang.org/dist/{}.tar.gz.sha256 | cut -f1 --delimiter=" ")' \
     | sed "s/,//g" \
+    | grep -v " $" \
     > /tmp/reload_shas_shalist.txt
 
+  echo "# buildifier: disable=module-docstring"
   echo "# This is a generated file -- see //util:fetch_shas.sh"
   echo "FILE_KEY_TO_SHA = {"
   cat /tmp/reload_shas_shalist.txt | sort | awk '{print "    \"" $1 "\": \"" $2 "\","}'
