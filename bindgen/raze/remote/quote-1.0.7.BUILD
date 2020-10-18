@@ -36,7 +36,7 @@ rust_library(
     name = "quote",
     crate_type = "lib",
     deps = [
-        "@rules_rust_bindgen__proc_macro2__1_0_21//:proc_macro2",
+        "@rules_rust_bindgen__proc_macro2__1_0_23//:proc_macro2",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",

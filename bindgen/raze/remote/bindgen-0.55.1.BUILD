@@ -42,7 +42,7 @@ cargo_build_script(
     crate_root = "build.rs",
     edition = "2018",
     deps = [
-        "@rules_rust_bindgen__clang_sys__0_29_3//:clang_sys",
+        "@rules_rust_bindgen__clang_sys__1_0_0//:clang_sys",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -64,7 +64,7 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.54.0",
+    version = "0.55.1",
     visibility = ["//visibility:private"],
 )
 
@@ -81,14 +81,14 @@ rust_binary(
         "@rules_rust_bindgen__bitflags__1_2_1//:bitflags",
         "@rules_rust_bindgen__cexpr__0_4_0//:cexpr",
         "@rules_rust_bindgen__cfg_if__0_1_10//:cfg_if",
-        "@rules_rust_bindgen__clang_sys__0_29_3//:clang_sys",
+        "@rules_rust_bindgen__clang_sys__1_0_0//:clang_sys",
         "@rules_rust_bindgen__clap__2_33_3//:clap",
         "@rules_rust_bindgen__env_logger__0_7_1//:env_logger",
         "@rules_rust_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_bindgen__lazycell__1_3_0//:lazycell",
         "@rules_rust_bindgen__log__0_4_11//:log",
         "@rules_rust_bindgen__peeking_take_while__0_1_2//:peeking_take_while",
-        "@rules_rust_bindgen__proc_macro2__1_0_21//:proc_macro2",
+        "@rules_rust_bindgen__proc_macro2__1_0_23//:proc_macro2",
         "@rules_rust_bindgen__quote__1_0_7//:quote",
         "@rules_rust_bindgen__regex__1_3_9//:regex",
         "@rules_rust_bindgen__rustc_hash__1_1_0//:rustc_hash",
@@ -101,7 +101,7 @@ rust_binary(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.54.0",
+    version = "0.55.1",
     tags = [
         "cargo-raze",
         "manual",
@@ -127,14 +127,14 @@ rust_library(
         "@rules_rust_bindgen__bitflags__1_2_1//:bitflags",
         "@rules_rust_bindgen__cexpr__0_4_0//:cexpr",
         "@rules_rust_bindgen__cfg_if__0_1_10//:cfg_if",
-        "@rules_rust_bindgen__clang_sys__0_29_3//:clang_sys",
+        "@rules_rust_bindgen__clang_sys__1_0_0//:clang_sys",
         "@rules_rust_bindgen__clap__2_33_3//:clap",
         "@rules_rust_bindgen__env_logger__0_7_1//:env_logger",
         "@rules_rust_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_bindgen__lazycell__1_3_0//:lazycell",
         "@rules_rust_bindgen__log__0_4_11//:log",
         "@rules_rust_bindgen__peeking_take_while__0_1_2//:peeking_take_while",
-        "@rules_rust_bindgen__proc_macro2__1_0_21//:proc_macro2",
+        "@rules_rust_bindgen__proc_macro2__1_0_23//:proc_macro2",
         "@rules_rust_bindgen__quote__1_0_7//:quote",
         "@rules_rust_bindgen__regex__1_3_9//:regex",
         "@rules_rust_bindgen__rustc_hash__1_1_0//:rustc_hash",
@@ -147,7 +147,7 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.54.0",
+    version = "0.55.1",
     tags = [
         "cargo-raze",
         "manual",

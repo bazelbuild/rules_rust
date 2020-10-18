@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "bindgen",
-    actual = "@rules_rust_bindgen__bindgen__0_54_0//:bindgen",
+    actual = "@rules_rust_bindgen__bindgen__0_55_1//:bindgen",
     tags = [
         "cargo-raze",
         "manual",
@@ -25,7 +25,7 @@ alias(
     # Extra aliased target, from raze configuration
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_bindgen",
-    actual = "@rules_rust_bindgen__bindgen__0_54_0//:cargo_bin_bindgen",
+    actual = "@rules_rust_bindgen__bindgen__0_55_1//:cargo_bin_bindgen",
     tags = [
         "cargo-raze",
         "manual",
@@ -34,7 +34,7 @@ alias(
 
 alias(
     name = "libloading",
-    actual = "@rules_rust_bindgen__libloading__0_5_0//:libloading",
+    actual = "@rules_rust_bindgen__libloading__0_6_3//:libloading",
     tags = [
         "cargo-raze",
         "manual",

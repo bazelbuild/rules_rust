@@ -25,54 +25,35 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # ISC from expression "ISC"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
 # Generated targets
 # Unsupported target "build-script-build" with type "custom-build" omitted
-# Unsupported target "functions" with type "test" omitted
+# Unsupported target "comments" with type "test" omitted
+# Unsupported target "features" with type "test" omitted
+# Unsupported target "marker" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "libloading",
+    name = "proc_macro2",
     crate_type = "lib",
     deps = [
-        ":global_static",
-    ] + selects.with_or({
-        # cfg(windows)
-        (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            "@rules_rust_bindgen__winapi__0_3_9//:winapi",
-        ],
-        "//conditions:default": [],
-    }),
+        "@rules_rust_bindgen__unicode_xid__0_2_1//:unicode_xid",
+    ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "0.5.0",
+    version = "1.0.23",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
     ],
-    aliases = {
-    },
 )
-# Unsupported target "markers" with type "test" omitted
-# Unsupported target "windows" with type "test" omitted
-
-# Additional content from libloading-global-static.BUILD
-# buildifier: disable=load-on-top
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-cc_library(
-    name = "global_static",
-    srcs = ["src/os/unix/global_static.c"],
-    copts = ["-fPIC"],
-)
+# Unsupported target "test" with type "test" omitted
+# Unsupported target "test_fmt" with type "test" omitted

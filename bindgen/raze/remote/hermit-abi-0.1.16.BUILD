@@ -29,17 +29,13 @@ licenses([
 ])
 
 # Generated targets
-# Unsupported target "build-script-build" with type "custom-build" omitted
-# Unsupported target "comments" with type "test" omitted
-# Unsupported target "features" with type "test" omitted
-# Unsupported target "marker" with type "test" omitted
 
 # buildifier: leave-alone
 rust_library(
-    name = "proc_macro2",
+    name = "hermit_abi",
     crate_type = "lib",
     deps = [
-        "@rules_rust_bindgen__unicode_xid__0_2_1//:unicode_xid",
+        "@rules_rust_bindgen__libc__0_2_77//:libc",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
@@ -47,13 +43,12 @@ rust_library(
     rustc_flags = [
         "--cap-lints=allow",
     ],
-    version = "1.0.21",
+    version = "0.1.16",
     tags = [
         "cargo-raze",
         "manual",
     ],
     crate_features = [
+        "default",
     ],
 )
-# Unsupported target "test" with type "test" omitted
-# Unsupported target "test_fmt" with type "test" omitted
