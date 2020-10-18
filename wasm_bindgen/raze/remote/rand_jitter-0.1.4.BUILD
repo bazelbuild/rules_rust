@@ -46,7 +46,7 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
             "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
         ): [
-            "@rules_rust_wasm_bindgen__libc__0_2_79//:libc",
+            "@rules_rust_wasm_bindgen__libc__0_2_76//:libc",
         ],
         "//conditions:default": [],
     }) + selects.with_or({

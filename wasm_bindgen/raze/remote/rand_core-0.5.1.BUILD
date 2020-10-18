@@ -35,7 +35,7 @@ rust_library(
     name = "rand_core",
     crate_type = "lib",
     deps = [
-        "@rules_rust_wasm_bindgen__getrandom__0_1_15//:getrandom",
+        "@rules_rust_wasm_bindgen__getrandom__0_1_14//:getrandom",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",

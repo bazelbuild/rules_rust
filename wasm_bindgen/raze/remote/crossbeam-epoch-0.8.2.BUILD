@@ -40,7 +40,7 @@ rust_library(
         "@rules_rust_wasm_bindgen__crossbeam_utils__0_7_2//:crossbeam_utils",
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_wasm_bindgen__maybe_uninit__2_0_0//:maybe_uninit",
-        "@rules_rust_wasm_bindgen__memoffset__0_5_6//:memoffset",
+        "@rules_rust_wasm_bindgen__memoffset__0_5_5//:memoffset",
         "@rules_rust_wasm_bindgen__scopeguard__1_1_0//:scopeguard",
     ],
     srcs = glob(["**/*.rs"]),

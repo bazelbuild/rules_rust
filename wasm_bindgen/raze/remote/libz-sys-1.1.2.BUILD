@@ -36,7 +36,7 @@ rust_library(
     name = "libz_sys",
     crate_type = "lib",
     deps = [
-        "@rules_rust_wasm_bindgen__libc__0_2_79//:libc",
+        "@rules_rust_wasm_bindgen__libc__0_2_76//:libc",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

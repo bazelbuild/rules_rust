@@ -35,7 +35,7 @@ rust_library(
     name = "redox_users",
     crate_type = "lib",
     deps = [
-        "@rules_rust_wasm_bindgen__getrandom__0_1_15//:getrandom",
+        "@rules_rust_wasm_bindgen__getrandom__0_1_14//:getrandom",
         "@rules_rust_wasm_bindgen__redox_syscall__0_1_57//:redox_syscall",
         "@rules_rust_wasm_bindgen__rust_argon2__0_8_2//:rust_argon2",
     ],

@@ -45,7 +45,7 @@ rust_library(
     crate_type = "lib",
     deps = [
         "@rules_rust_wasm_bindgen__ascii__0_8_7//:ascii",
-        "@rules_rust_wasm_bindgen__chrono__0_4_19//:chrono",
+        "@rules_rust_wasm_bindgen__chrono__0_4_15//:chrono",
         "@rules_rust_wasm_bindgen__chunked_transfer__0_3_1//:chunked_transfer",
         "@rules_rust_wasm_bindgen__log__0_4_11//:log",
         "@rules_rust_wasm_bindgen__url__1_7_2//:url",

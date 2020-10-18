@@ -35,7 +35,7 @@ rust_library(
     name = "id_arena",
     crate_type = "lib",
     deps = [
-        "@rules_rust_wasm_bindgen__rayon__1_4_1//:rayon",
+        "@rules_rust_wasm_bindgen__rayon__1_4_0//:rayon",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",

@@ -39,7 +39,7 @@ rust_library(
     name = "rand",
     crate_type = "lib",
     deps = [
-        "@rules_rust_wasm_bindgen__getrandom__0_1_15//:getrandom",
+        "@rules_rust_wasm_bindgen__getrandom__0_1_14//:getrandom",
         "@rules_rust_wasm_bindgen__rand_chacha__0_2_2//:rand_chacha",
         "@rules_rust_wasm_bindgen__rand_core__0_5_1//:rand_core",
     ] + selects.with_or({
@@ -61,7 +61,7 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@rules_rust_wasm_bindgen__libc__0_2_79//:libc",
+            "@rules_rust_wasm_bindgen__libc__0_2_76//:libc",
         ],
         "//conditions:default": [],
     }),
@@ -85,7 +85,7 @@ rust_library(
         "std",
     ],
     aliases = {
-        "@rules_rust_wasm_bindgen__getrandom__0_1_15//:getrandom": "getrandom_package",
+        "@rules_rust_wasm_bindgen__getrandom__0_1_14//:getrandom": "getrandom_package",
     },
 )
 # Unsupported target "seq" with type "bench" omitted

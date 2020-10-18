@@ -42,13 +42,13 @@ rust_library(
     crate_type = "lib",
     deps = [
         "@rules_rust_wasm_bindgen__base64__0_9_3//:base64",
-        "@rules_rust_wasm_bindgen__chrono__0_4_19//:chrono",
+        "@rules_rust_wasm_bindgen__chrono__0_4_15//:chrono",
         "@rules_rust_wasm_bindgen__filetime__0_2_12//:filetime",
         "@rules_rust_wasm_bindgen__multipart__0_15_4//:multipart",
         "@rules_rust_wasm_bindgen__num_cpus__1_13_0//:num_cpus",
         "@rules_rust_wasm_bindgen__rand__0_5_6//:rand",
-        "@rules_rust_wasm_bindgen__serde__1_0_116//:serde",
-        "@rules_rust_wasm_bindgen__serde_json__1_0_59//:serde_json",
+        "@rules_rust_wasm_bindgen__serde__1_0_115//:serde",
+        "@rules_rust_wasm_bindgen__serde_json__1_0_57//:serde_json",
         "@rules_rust_wasm_bindgen__sha1__0_6_0//:sha1",
         "@rules_rust_wasm_bindgen__term__0_5_2//:term",
         "@rules_rust_wasm_bindgen__threadpool__1_8_1//:threadpool",
@@ -60,7 +60,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2015",
     proc_macro_deps = [
-        "@rules_rust_wasm_bindgen__serde_derive__1_0_116//:serde_derive",
+        "@rules_rust_wasm_bindgen__serde_derive__1_0_115//:serde_derive",
     ],
     rustc_flags = [
         "--cap-lints=allow",

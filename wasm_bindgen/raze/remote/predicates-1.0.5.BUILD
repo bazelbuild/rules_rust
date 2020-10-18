@@ -40,7 +40,7 @@ rust_library(
         "@rules_rust_wasm_bindgen__float_cmp__0_8_0//:float_cmp",
         "@rules_rust_wasm_bindgen__normalize_line_endings__0_3_0//:normalize_line_endings",
         "@rules_rust_wasm_bindgen__predicates_core__1_0_0//:predicates_core",
-        "@rules_rust_wasm_bindgen__regex__1_4_1//:regex",
+        "@rules_rust_wasm_bindgen__regex__1_3_9//:regex",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",

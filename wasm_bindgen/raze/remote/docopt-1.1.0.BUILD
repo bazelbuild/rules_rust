@@ -39,8 +39,8 @@ rust_library(
     crate_type = "lib",
     deps = [
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
-        "@rules_rust_wasm_bindgen__regex__1_4_1//:regex",
-        "@rules_rust_wasm_bindgen__serde__1_0_116//:serde",
+        "@rules_rust_wasm_bindgen__regex__1_3_9//:regex",
+        "@rules_rust_wasm_bindgen__serde__1_0_115//:serde",
         "@rules_rust_wasm_bindgen__strsim__0_9_3//:strsim",
     ],
     srcs = glob(["**/*.rs"]),
@@ -67,8 +67,8 @@ rust_binary(
         # Binaries get an implicit dependency on their crate's lib
         ":docopt",
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
-        "@rules_rust_wasm_bindgen__regex__1_4_1//:regex",
-        "@rules_rust_wasm_bindgen__serde__1_0_116//:serde",
+        "@rules_rust_wasm_bindgen__regex__1_3_9//:regex",
+        "@rules_rust_wasm_bindgen__serde__1_0_115//:serde",
         "@rules_rust_wasm_bindgen__strsim__0_9_3//:strsim",
     ],
     srcs = glob(["**/*.rs"]),
