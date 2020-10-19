@@ -12,15 +12,21 @@ bzl_library(
 )
 
 rust_bindgen_toolchain(
-    name = "example-bindgen-toolchain-impl",
+    name = "default_bindgen_toolchain_impl",
     bindgen = "//bindgen/raze:cargo_bin_bindgen",
-    clang = "@bindgen_clang//:clang",
-    libclang = "@bindgen_clang//:libclang.so",
+    clang = select({
+        "@io_bazel_rules_rust//rust/platform:osx": "@bindgen_clang_osx//:clang",
+        "//conditions:default": "@bindgen_clang_linux//:clang",
+    }),
+    libclang = select({
+        "@io_bazel_rules_rust//rust/platform:osx": "@bindgen_clang_osx//:libclang.so",
+        "//conditions:default": "@bindgen_clang_linux//:libclang.so",
+    }),
     libstdcxx = "@local_libstdcpp//:libstdc++",
 )
 
 toolchain(
-    name = "example-bindgen-toolchain",
-    toolchain = "example-bindgen-toolchain-impl",
+    name = "default_bindgen_toolchain",
+    toolchain = "default_bindgen_toolchain_impl",
     toolchain_type = "@io_bazel_rules_rust//bindgen:bindgen_toolchain",
 )
