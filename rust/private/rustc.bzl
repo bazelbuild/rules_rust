@@ -153,12 +153,11 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 ),
             )
 
-    # TODO: Fix depset union (https://docs.bazel.build/versions/master/skylark/depsets.html)
     direct_crates = []
-    transitive_crates = depset()
-    transitive_dylibs = depset(order = "topological")  # dylib link flag ordering matters.
-    transitive_staticlibs = depset()
-    transitive_build_infos = depset()
+    transitive_crates = []
+    transitive_dylibs = []
+    transitive_staticlibs = []
+    transitive_build_infos = []
     build_info = None
 
     aliases = {k.label: v for k, v in aliases.items()}
@@ -171,42 +170,51 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 dep = direct_dep,
             ))
 
-            # TODO (bazelbuild/rules_rust#442): Solve for all overly-nested-depset warnings here
-            transitive_crates = depset([dep[CrateInfo]], transitive = [transitive_crates])  # buildifier: disable=overly-nested-depset
-            transitive_crates = depset(transitive = [transitive_crates, dep[DepInfo].transitive_crates])  # buildifier: disable=overly-nested-depset
-            transitive_dylibs = depset(transitive = [transitive_dylibs, dep[DepInfo].transitive_dylibs])  # buildifier: disable=overly-nested-depset
-            transitive_staticlibs = depset(transitive = [transitive_staticlibs, dep[DepInfo].transitive_staticlibs])  # buildifier: disable=overly-nested-depset
-            transitive_build_infos = depset(transitive = [transitive_build_infos, dep[DepInfo].transitive_build_infos])  # buildifier: disable=overly-nested-depset
+            transitive_crates.append(depset([dep[CrateInfo]], transitive = [dep[DepInfo].transitive_crates]))
+            transitive_dylibs.append(dep[DepInfo].transitive_dylibs)
+            transitive_staticlibs.append(dep[DepInfo].transitive_staticlibs)
+            transitive_build_infos.append(dep[DepInfo].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
             libs = get_libs_for_static_executable(dep)
-            dylibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.dylib_ext)]
-            staticlibs = [lib for lib in libs.to_list() if lib.basename.endswith(toolchain.staticlib_ext)]
-            transitive_dylibs = depset(transitive = [transitive_dylibs, depset(dylibs)])  # buildifier: disable=overly-nested-depset
-            transitive_staticlibs = depset(transitive = [transitive_staticlibs, depset(staticlibs)])  # buildifier: disable=overly-nested-depset
+
+            transitive_dylibs.append(depset([
+                lib
+                for lib in libs.to_list()
+                if lib.basename.endswith(toolchain.dylib_ext)
+            ]))
+            transitive_staticlibs.append(depset([
+                lib
+                for lib in libs.to_list()
+                if lib.basename.endswith(toolchain.staticlib_ext)
+            ]))
         elif BuildInfo in dep:
             if build_info:
                 fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
             build_info = dep[BuildInfo]
-            transitive_build_infos = depset([build_info], transitive = [transitive_build_infos])  # buildifier: disable=overly-nested-depset
+            transitive_build_infos.append(depset([build_info]))
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
+    transitive_crates_depset = depset(transitive = transitive_crates)
     transitive_libs = depset(
-        [c.output for c in transitive_crates.to_list()],
-        transitive = [transitive_staticlibs, transitive_dylibs],
+        [c.output for c in transitive_crates_depset.to_list()],
+        transitive = transitive_staticlibs + transitive_dylibs,
     )
 
     return (
         DepInfo(
             direct_crates = depset(direct_crates),
-            transitive_crates = transitive_crates,
-            transitive_dylibs = transitive_dylibs,
-            transitive_staticlibs = transitive_staticlibs,
+            transitive_crates = transitive_crates_depset,
+            transitive_dylibs = depset(
+                transitive = transitive_dylibs,
+                order = "topological",  # dylib link flag ordering matters.
+            ),
+            transitive_staticlibs = depset(transitive = transitive_staticlibs),
             transitive_libs = transitive_libs.to_list(),
-            transitive_build_infos = transitive_build_infos,
+            transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
