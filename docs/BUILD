@@ -7,7 +7,7 @@ bzl_library(
     name = "all_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@bazel_version//:def.bzl",
+        "@io_bazel_rules_rust_bazel_version//:def.bzl",
     ],
     deps = [
         "@bazel_skylib//:workspace",

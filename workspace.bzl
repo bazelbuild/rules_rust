@@ -41,4 +41,4 @@ def rust_workspace():
 
     bazel_skylib_workspace()
 
-    bazel_version(name = "bazel_version")
+    bazel_version(name = "io_bazel_rules_rust_bazel_version")
