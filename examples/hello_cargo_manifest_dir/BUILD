@@ -1,0 +1,8 @@
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+
+rust_library(
+    name = "hello_cargo_manifest_dir",
+    srcs = ["src/lib.rs"],
+    data = ["include/included_file.rs.inc"],
+    visibility = ["//visibility:public"],
+)

@@ -59,7 +59,7 @@ examples_deps()
 
 load("@examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
 
-examples_transitive_deps()
+examples_transitive_deps(is_top_level = True)
 
 # Load all dependencies for docs
 

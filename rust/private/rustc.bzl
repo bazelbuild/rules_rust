@@ -442,9 +442,18 @@ def construct_arguments(
     # may not follow the `src/lib.rs` convention. As such we use `ctx.build_file_path` mapped into the
     # `exec_root`. Since we cannot (seemingly) get the `exec_root` from starlark, we cheat a little
     # and use `${pwd}` which resolves the `exec_root` at action execution time.
+    #
+    # Unfortunately, ctx.build_file_path isn't relative to the exec_root for external repositories in
+    # which case we use ctx.label.workspace_root to complete the path.
     args.add("--subst", "pwd=${pwd}")
 
-    env["CARGO_MANIFEST_DIR"] = "${pwd}/" + ctx.build_file_path[:ctx.build_file_path.rfind("/")]
+    workspace_root_items = ctx.label.workspace_root.split("/")
+    if (len(workspace_root_items) >= 2 and
+        workspace_root_items[0] == "external" and
+        workspace_root_items[-1] == ctx.build_file_path.split("/")[0]):
+        workspace_root_items = workspace_root_items[:-1]
+
+    env["CARGO_MANIFEST_DIR"] = "${pwd}/" + "/".join(workspace_root_items + ctx.build_file_path.split("/")[:-1])
 
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
