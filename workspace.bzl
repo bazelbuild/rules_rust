@@ -41,4 +41,8 @@ def rust_workspace():
 
     bazel_skylib_workspace()
 
+    # Give this repository a scoped name to avoid conflicting with other
+    # projects' similar workarounds when used in the same workspace
+    # (issue #268#issuecomment-713920963). TODO(#462): Investigate
+    # whether this can be entirely replaced with `native.bazel_version`.
     bazel_version(name = "io_bazel_rules_rust_bazel_version")
