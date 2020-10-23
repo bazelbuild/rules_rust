@@ -2,7 +2,7 @@
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 load("@bazel_skylib//lib:versions.bzl", "versions")
 
-_MINIMUM_SUPPORTED_BAZEL_VERSION = "0.17.1"
+_MINIMUM_SUPPORTED_BAZEL_VERSION = "3.0.0"
 
 def _bazel_version_impl(repository_ctx):
     """The implementation for the `bazel_version` rule
