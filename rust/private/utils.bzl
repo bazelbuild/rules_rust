@@ -94,3 +94,32 @@ def determine_output_hash(crate_root):
         str: A string representation of the hash.
     """
     return repr(hash(crate_root.path))
+
+def get_libs_for_static_executable(dep):
+    """find the libraries used for linking a static executable.
+
+    Args:
+        dep (Target): A cc_library target.
+
+    Returns:
+        depset: A depset[File]
+    """
+    linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+    return depset([_get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries])
+
+def _get_preferred_artifact(library_to_link):
+    """Get the first available library to link from a LibraryToLink object.
+
+    Args:
+        library_to_link (LibraryToLink): See the followg links for additional details:
+          https://docs.bazel.build/versions/master/skylark/lib/LibraryToLink.html
+
+    Returns:
+        File: Returns the first valid library type (only one is expected)
+    """
+    return (
+        library_to_link.static_library or
+        library_to_link.pic_static_library or
+        library_to_link.interface_library or
+        library_to_link.dynamic_library
+    )

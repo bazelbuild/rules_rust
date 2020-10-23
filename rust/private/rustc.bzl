@@ -21,8 +21,7 @@ load(
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@io_bazel_rules_rust_bazel_version//:def.bzl", "BAZEL_VERSION")
-load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "relativize")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "get_libs_for_static_executable", "relativize")
 
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
