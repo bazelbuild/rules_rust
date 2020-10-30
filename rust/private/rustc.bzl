@@ -386,6 +386,21 @@ def collect_inputs(
     )
     return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
 
+def _exec_root_relative_path(ctx, filepath):
+    # Bazel 3.7.0 (commit 301b96b223b0c0) changed how file paths are returned for external packages.
+    # TODO: use a proper Bazel API to determine exec-root-relative paths.
+    if len(ctx.label.workspace_root) > 0 and \
+       (len(BAZEL_VERSION) == 0 or versions.is_at_least("3.7.0", BAZEL_VERSION)):
+        workspace_root_items = ctx.label.workspace_root.split("/")
+        if (len(workspace_root_items) >= 2 and
+            workspace_root_items[0] == "external" and
+            workspace_root_items[-1] == filepath.split("/")[0]):
+            workspace_root_items = workspace_root_items[:-1]
+
+        return "/".join(workspace_root_items + filepath.split("/"))
+    else:
+        return filepath
+
 def construct_arguments(
         ctx,
         file,
@@ -452,16 +467,11 @@ def construct_arguments(
     # and use `${pwd}` which resolves the `exec_root` at action execution time.
     #
     # Unfortunately, ctx.build_file_path isn't relative to the exec_root for external repositories in
-    # which case we use ctx.label.workspace_root to complete the path.
+    # which case we use ctx.label.workspace_root to complete the path in `_exec_root_relative_path()`.
     args.add("--subst", "pwd=${pwd}")
 
-    workspace_root_items = ctx.label.workspace_root.split("/")
-    if (len(workspace_root_items) >= 2 and
-        workspace_root_items[0] == "external" and
-        workspace_root_items[-1] == ctx.build_file_path.split("/")[0]):
-        workspace_root_items = workspace_root_items[:-1]
-
-    env["CARGO_MANIFEST_DIR"] = "${pwd}/" + "/".join(workspace_root_items + ctx.build_file_path.split("/")[:-1])
+    relative_build_file_path = _exec_root_relative_path(ctx, ctx.build_file_path)
+    env["CARGO_MANIFEST_DIR"] = "${pwd}/" + relative_build_file_path[:relative_build_file_path.rfind("/")]
 
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
