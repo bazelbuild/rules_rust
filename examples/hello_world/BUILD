@@ -2,6 +2,7 @@ load(
     "@io_bazel_rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_doc",
+    "rust_doc_server",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -15,4 +16,9 @@ rust_binary(
 rust_doc(
     name = "hello_world_doc",
     dep = ":hello_world",
+)
+
+rust_doc_server(
+    name = "hello_world_doc_server",
+    dep = ":hello_world_doc",
 )

@@ -24,6 +24,7 @@ load(
 load(
     "@io_bazel_rules_rust//rust:private/rustdoc.bzl",
     _rust_doc = "rust_doc",
+    _rust_doc_server = "rust_doc_server",
 )
 load(
     "@io_bazel_rules_rust//rust:private/rustdoc_test.bzl",
@@ -51,6 +52,9 @@ rust_benchmark = _rust_benchmark
 # See @io_bazel_rules_rust//rust:private/rust.bzl for a complete description.
 
 rust_doc = _rust_doc
+# See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description.
+
+rust_doc_server = _rust_doc_server
 # See @io_bazel_rules_rust//rust:private/rustdoc.bzl for a complete description.
 
 rust_doc_test = _rust_doc_test

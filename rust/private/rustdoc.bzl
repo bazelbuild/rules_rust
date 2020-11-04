@@ -16,6 +16,13 @@
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
+_DocInfo = provider(
+    doc = "A provider containing information about a Rust documentation target.",
+    fields = {
+        "zip_file": "File: the zip file with rustdoc(1) output",
+    },
+)
+
 _rust_doc_doc = """Generates code documentation.
 
 Example:
@@ -66,6 +73,7 @@ def _rust_doc_impl(ctx):
 
     crate = ctx.attr.dep[CrateInfo]
     dep_info = ctx.attr.dep[DepInfo]
+    doc_info = _DocInfo(zip_file = ctx.outputs.rust_doc_zip)
 
     toolchain = find_toolchain(ctx)
 
@@ -109,6 +117,7 @@ def _rust_doc_impl(ctx):
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
     _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
+    return [crate, doc_info]
 
 def _zip_action(ctx, input_dir, output_zip):
     """Creates an archive of the generated documentation from `rustdoc`
@@ -176,3 +185,47 @@ rust_doc = rule(
     },
     toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
 )
+
+def _rust_doc_server_stub_impl(ctx):
+    dep = ctx.attr.rust_doc_dep
+    crate_name = dep[CrateInfo].name
+    zip_file = dep[_DocInfo].zip_file
+    ctx.actions.expand_template(
+        template = ctx.file._server_template,
+        output = ctx.outputs.main,
+        substitutions = {
+            "{CRATE_NAME}": crate_name,
+            "{ZIP_FILE}": zip_file.basename,
+        },
+    )
+
+_rust_doc_server_stub = rule(
+    implementation = _rust_doc_server_stub_impl,
+    attrs = {
+        "rust_doc_dep": attr.label(
+            mandatory = True,
+            providers = [CrateInfo, _DocInfo],
+        ),
+        "main": attr.output(),
+        "zip_file": attr.output(),
+        "_server_template": attr.label(
+            default = Label("//rust:doc_server.template.py"),
+            allow_single_file = True,
+        ),
+    },
+)
+
+def rust_doc_server(name, dep, **kwargs):
+    python_stub_name = name + "_python_stub"
+    python_stub_output = name + ".py"
+    zip_file = dep + ".zip"
+    _rust_doc_server_stub(
+        name = python_stub_name,
+        rust_doc_dep = dep,
+        main = python_stub_output,
+    )
+    native.py_binary(
+        name = name,
+        srcs = [python_stub_output],
+        data = [zip_file],
+    )

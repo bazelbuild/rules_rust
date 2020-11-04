@@ -3,6 +3,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
+    "doc_server.template.py",
     "known_shas.bzl",
     "repositories.bzl",
     "rust.bzl",
