@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
@@ -119,15 +120,16 @@ def _zip_action(ctx, input_dir, output_zip):
         output_zip (File): The location of the output archive containing generated documentation
     """
     args = ctx.actions.args()
-
-    # Create but not compress.
-    args.add("c", output_zip)
+    args.add("--zipper", ctx.executable._zipper)
+    args.add("--output", output_zip)
+    args.add("--root-dir", input_dir.path)
     args.add_all([input_dir], expand_directories = True)
     ctx.actions.run(
-        executable = ctx.executable._zipper,
+        executable = ctx.executable._dir_zipper,
         inputs = [input_dir],
         outputs = [output_zip],
         arguments = [args],
+        tools = [ctx.executable._zipper],
     )
 
 rust_doc = rule(
@@ -158,6 +160,11 @@ rust_doc = rule(
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",
             allow_single_file = [".html", ".md"],
+        ),
+        "_dir_zipper": attr.label(
+            default = Label("//util/dir_zipper"),
+            cfg = "exec",
+            executable = True,
         ),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
