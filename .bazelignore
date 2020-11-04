@@ -1,3 +1,3 @@
 docs
 examples
-examples/hello_cargo_manifest_dir
+examples/cargo_manifest_dir/external_crate

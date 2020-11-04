@@ -27,12 +27,12 @@ def transitive_deps(is_top_level = False):
     if is_top_level:
         maybe(
             native.local_repository,
-            name = "hello_cargo_manifest_dir",
-            path = "examples/hello_cargo_manifest_dir",
+            name = "rules_rust_example_cargo_manifest_dir",
+            path = "examples/cargo_manifest_dir/external_crate",
         )
     else:
         maybe(
             native.local_repository,
-            name = "hello_cargo_manifest_dir",
-            path = "hello_cargo_manifest_dir",
+            name = "rules_rust_example_cargo_manifest_dir",
+            path = "cargo_manifest_dir/external_crate",
         )

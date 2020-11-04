@@ -1,5 +1,5 @@
 
-use hello_cargo_manifest_dir::get_included_str;
+use external_crate::get_included_str;
 
 #[test]
 fn test_lib_with_include() {

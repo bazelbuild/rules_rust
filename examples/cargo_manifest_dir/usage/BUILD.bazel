@@ -1,8 +1,8 @@
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_test")
 
 rust_test(
-    name = "hello_uses_cargo_manifest_dir",
+    name = "cargo_manifest_dir_usage",
     srcs = ["src/lib.rs"],
     edition = "2018",
-    deps = ["@hello_cargo_manifest_dir"],
+    deps = ["@rules_rust_example_cargo_manifest_dir//:external_crate"],
 )

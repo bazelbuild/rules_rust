@@ -1,6 +1,8 @@
+workspace(name = "rules_rust_example_cargo_manifest_dir")
+
 local_repository(
     name = "io_bazel_rules_rust",
-    path = "../..",
+    path = "../../../",
 )
 
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
