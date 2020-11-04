@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 
