@@ -15,6 +15,7 @@
 # buildifier: disable=module-docstring
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 _DocInfo = provider(
     doc = "A provider containing information about a Rust documentation target.",
@@ -216,6 +217,13 @@ _rust_doc_server_stub = rule(
 )
 
 def rust_doc_server(name, dep, **kwargs):
+    """Generates a web server to display code documentation.
+
+    Args:
+      name: A unique name for this target.
+      dep: Label for a `rust_doc` rule whose docs to serve.
+      **kwargs: Any generic binary kwargs, like `tags` or `visibility`.
+    """
     python_stub_name = name + "_python_stub"
     python_stub_output = name + ".py"
     zip_file = dep + ".zip"
@@ -224,8 +232,10 @@ def rust_doc_server(name, dep, **kwargs):
         rust_doc_dep = dep,
         main = python_stub_output,
     )
-    native.py_binary(
+    py_binary(
         name = name,
         srcs = [python_stub_output],
         data = [zip_file],
+        srcs_version = "PY3",
+        python_version = "PY3",
     )
