@@ -121,19 +121,21 @@ def _build_script_impl(ctx):
     # for details.
     args = ctx.actions.args()
     args.add_all([script.path, crate_name, links, out_dir.path, env_out.path, flags_out.path, link_flags.path, dep_env_out.path])
-    dep_env_files = []
+    build_script_inputs = []
     for dep in ctx.attr.deps:
         if DepInfo in dep and dep[DepInfo].dep_env:
             dep_env_file = dep[DepInfo].dep_env
             args.add(dep_env_file.path)
-            dep_env_files.append(dep_env_file)
+            build_script_inputs.append(dep_env_file)
+            for dep_build_info in dep[DepInfo].transitive_build_infos.to_list():
+                build_script_inputs.append(dep_build_info.out_dir)
 
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args],
         outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out],
         tools = tools,
-        inputs = dep_env_files,
+        inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
         env = env,
     )
