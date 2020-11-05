@@ -310,6 +310,15 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
 
     return ld, link_args, link_env
 
+def _expand_locations(ctx, env, aspect):
+    "Expand $(rootpath ...) references in user-provided env vars."
+    if aspect:
+        data = getattr(ctx.rule.attr, "data", [])
+    else:
+        data = getattr(ctx.attr, "data", [])
+
+    return dict([(k, ctx.expand_location(v, data)) for (k, v) in env.items()])
+
 def _process_build_scripts(
         ctx,
         file,
@@ -414,7 +423,8 @@ def construct_arguments(
         out_dir,
         build_env_file,
         build_flags_files,
-        maker_path = None):
+        maker_path = None,
+        aspect = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -432,6 +442,7 @@ def construct_arguments(
         build_env_file (str): The output file of a `cargo_build_script` action containing rustc environment variables
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         maker_path (File): An optional clippy marker file
+        aspect (bool): True if called in an aspect context.
 
     Returns:
         tuple: A tuple of the following items
@@ -558,7 +569,7 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(crate_info.rustc_env)
+    env.update(_expand_locations(ctx, crate_info.rustc_env, aspect))
 
     # This empty value satisfies Clippy, which otherwise complains about the
     # sysroot being undefined.
