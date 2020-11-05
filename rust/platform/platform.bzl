@@ -35,6 +35,7 @@ _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "powerpc-unknown-linux-gnu",
     "s390x-unknown-linux-gnu",
     "wasm32-unknown-unknown",
+    "wasm32-wasi",
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
@@ -86,15 +87,19 @@ def declare_config_settings():
             constraint_values = triple_to_constraint_set(triple),
         )
 
-    native.constraint_value(
-        name = "wasm32",
-        constraint_setting = "@platforms//cpu",
-    )
-
     native.platform(
         name = "wasm",
         constraint_values = [
-            "@io_bazel_rules_rust//rust/platform:wasm32",
+            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
+            "@io_bazel_rules_rust//rust/platform/os:unknown",
+        ],
+    )
+
+    native.platform(
+        name = "wasi",
+        constraint_values = [
+            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
+            "@io_bazel_rules_rust//rust/platform/os:wasi",
         ],
     )
 
