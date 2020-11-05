@@ -1,0 +1,21 @@
+[package]
+name = "rules_rust_examples_complex_sys"
+version = "0.0.1"
+
+[[bin]]
+name = "rules_rust_examples_complex_sys"
+path = "src/main.rs"
+
+[dependencies]
+git2 = "=0.13.12"
+
+[raze]
+workspace_path = "//complex_sys/raze"
+genmode = "Remote"
+gen_workspace_prefix = "rules_rust_examples_complex_sys"
+default_gen_buildrs = true
+
+[raze.crates.openssl-sys.'0.9.58']
+additional_deps = [
+  "@openssl//:openssl",
+]
