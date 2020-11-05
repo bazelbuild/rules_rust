@@ -92,6 +92,7 @@ def _clippy_aspect_impl(target, ctx):
         build_env_file = build_env_file,
         build_flags_files = build_flags_files,
         maker_path = clippy_marker.path,
+        aspect = True,
     )
 
     # Deny the default-on clippy warning levels.

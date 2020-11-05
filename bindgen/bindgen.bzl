@@ -13,8 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/legacy_cc_starlark_api_shim.bzl", "get_libs_for_static_executable")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_libs_for_static_executable")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
 
 def rust_bindgen_library(

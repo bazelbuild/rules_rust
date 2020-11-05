@@ -417,6 +417,12 @@ _rust_common_attrs = {
     "rustc_env": attr.string_dict(
         doc = _tidy("""
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
+
+            rust_test()/rust_binary() rules can use $(rootpath //package:target) to pass in the
+            location of a generated file or external tool. Cargo build scripts that wish to
+            expand locations should use cargo_build_script()'s build_script_env argument instead,
+            as build scripts are run in a different environment - see cargo_build_script()'s
+            documentation for more.
         """),
     ),
     "crate_features": attr.string_list(

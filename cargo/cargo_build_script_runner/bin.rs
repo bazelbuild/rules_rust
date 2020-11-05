@@ -48,7 +48,7 @@ fn main() -> Result<(), String> {
 
             let mut command = Command::new(exec_root.join(&progname));
             command
-                .current_dir(manifest_dir.clone())
+                .current_dir(&manifest_dir)
                 .envs(target_env_vars)
                 .env("OUT_DIR", out_dir_abs)
                 .env("CARGO_MANIFEST_DIR", manifest_dir)
@@ -91,6 +91,15 @@ fn main() -> Result<(), String> {
                     command.env("AR", absolutify(&exec_root, ar_path));
                 }
             }
+
+            // replace env vars with a ${pwd} prefix with the exec_root
+            for (key, value) in env::vars() {
+                let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
+                if value.contains("${pwd}") {
+                    env::set_var(key, value.replace("${pwd}", exec_root_str));
+                }
+            }
+
 
             let output = BuildScriptOutput::from_command(&mut command).map_err(|exit_code| {
                 format!(
