@@ -147,6 +147,14 @@ def abi_to_constraints(abi):
     return []
 
 def triple_to_system(triple):
+    """Returns a system name for a given platform triple
+
+    Args:
+        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+
+    Returns:
+        str: A system name
+    """
     if triple == "wasm32-wasi":
         return "wasi"
 
