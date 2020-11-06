@@ -6,7 +6,7 @@
 ## cargo_build_script
 
 <pre>
-cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
+cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -40,10 +40,19 @@ load("@io_bazel_rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 cargo_build_script(
     name = "build_script",
     srcs = ["build.rs"],
-    # Data are shipped during execution.
-    data = ["src/lib.rs"],
-    # Environment variables passed during build.rs execution
-    build_script_env = {"CARGO_PKG_VERSION": "0.1.2"},
+    # Optional environment variables passed during build.rs compilation
+    rustc_env = {
+       "CARGO_PKG_VERSION": "0.1.2",
+    },
+    # Optional environment variables passed during build.rs execution.
+    # Note that as the build script's working directory is not execroot,
+    # execpath/location will return an absolute path, instead of a relative
+    # one.
+    build_script_env = {
+        "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
+    }
+    # Optional data/tool dependencies
+    data = ["@tool//:binary"],
 )
 
 rust_library(
@@ -69,6 +78,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  <code>None</code> |
 | <a id="cargo_build_script-deps"></a>deps |  The dependencies of the crate defined by <code>crate_name</code>.   |  <code>[]</code> |
 | <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  <code>{}</code> |
+| <a id="cargo_build_script-data"></a>data |  Files or tools needed by the build script.   |  <code>[]</code> |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
 
 

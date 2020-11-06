@@ -36,7 +36,7 @@ load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 rust_workspace()
 ```
 
-The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 0.26.0.
+The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 3.0.0.
 
 ## Rules
 
@@ -77,11 +77,17 @@ Currently the most common approach to managing external dependencies is using
 
 ## WebAssembly
 
-To build a `rust_binary` for wasm32-unknown-unknown add the `--platforms=@io_bazel_rules_rust//rust/platform:wasm` flag.
+To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@io_bazel_rules_rust//rust/platform:wasm` flag.
 
 ```command
 bazel build @examples//hello_world_wasm --platforms=@io_bazel_rules_rust//rust/platform:wasm
 ```
 
-`rust_wasm_bindgen` will automatically transition to the wasm platform and can be used when
-building wasm code for the host target.
+To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@io_bazel_rules_rust//rust/platform:wasi` flag.
+
+```command
+bazel build @examples//hello_world_wasm --platforms=@io_bazel_rules_rust//rust/platform:wasi
+```
+
+`rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
+building WebAssembly code for the host target.
