@@ -70,7 +70,7 @@ fn main() {
         .unwrap_or_else(|e| die!("fatal: could not wait on zipper: {}", e));
     if !exit_status.success() {
         match exit_status.code() {
-            Some(c) => die!("fatal: zipper exited with {}", c),
+            Some(c) => std::process::exit(c),
             None => die!("fatal: zipper terminated by signal"),
         }
     }
