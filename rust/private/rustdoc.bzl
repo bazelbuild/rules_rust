@@ -119,9 +119,9 @@ def _zip_action(ctx, input_dir, output_zip):
         output_zip (File): The location of the output archive containing generated documentation
     """
     args = ctx.actions.args()
-    args.add("--zipper", ctx.executable._zipper)
-    args.add("--output", output_zip)
-    args.add("--root-dir", input_dir.path)
+    args.add(ctx.executable._zipper)
+    args.add(output_zip)
+    args.add(input_dir.path)
     args.add_all([input_dir], expand_directories = True)
     ctx.actions.run(
         executable = ctx.executable._dir_zipper,
