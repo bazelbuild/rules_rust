@@ -4,6 +4,19 @@ load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "ge
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
+def _expand_location(ctx, env, data):
+    for directive in "$(execpath ", "$(location ":
+        if directive in env:
+            # build script runner will expand pwd to execroot for us
+            env = env.replace(directive, "${pwd}/" + directive)
+    return ctx.expand_location(env, data)
+
+def _expand_locations(ctx):
+    "Expand $(execpath ...) references in user-provided env vars."
+    env = ctx.attr.build_script_env
+    data = getattr(ctx.attr, "data", [])
+    return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
 def _build_script_impl(ctx):
     """The implementation for the `_build_script_run` rule.
 
@@ -88,14 +101,14 @@ def _build_script_impl(ctx):
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
-    env.update(ctx.attr.build_script_env)
+    env.update(_expand_locations(ctx))
 
     tools = depset(
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
-        ],
+        ] + ctx.files.data,
         transitive = toolchain_tools,
     )
 
@@ -164,6 +177,10 @@ _build_script_run = rule(
         "build_script_env": attr.string_dict(
             doc = "Environment variables for build scripts.",
         ),
+        "data": attr.label_list(
+            doc = "Data or tools required by the build script.",
+            allow_files = True,
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
@@ -188,6 +205,7 @@ def cargo_build_script(
         version = None,
         deps = [],
         build_script_env = {},
+        data = [],
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -220,10 +238,19 @@ def cargo_build_script(
     cargo_build_script(
         name = "build_script",
         srcs = ["build.rs"],
-        # Data are shipped during execution.
-        data = ["src/lib.rs"],
-        # Environment variables passed during build.rs execution
-        build_script_env = {"CARGO_PKG_VERSION": "0.1.2"},
+        # Optional environment variables passed during build.rs compilation
+        rustc_env = {
+           "CARGO_PKG_VERSION": "0.1.2",
+        },
+        # Optional environment variables passed during build.rs execution.
+        # Note that as the build script's working directory is not execroot,
+        # execpath/location will return an absolute path, instead of a relative
+        # one.
+        build_script_env = {
+            "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
+        }
+        # Optional data/tool dependencies
+        data = ["@tool//:binary"],
     )
 
     rust_library(
@@ -245,6 +272,7 @@ def cargo_build_script(
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The dependencies of the crate defined by `crate_name`.
         build_script_env (dict, optional): Environment variables for build scripts.
+        data (list, optional): Files or tools needed by the build script.
         **kwargs: Forwards to the underlying `rust_binary` rule.
     """
     rust_binary(
@@ -252,6 +280,7 @@ def cargo_build_script(
         crate_features = crate_features,
         version = version,
         deps = deps,
+        data = data,
         **kwargs
     )
     _build_script_run(
@@ -262,4 +291,5 @@ def cargo_build_script(
         version = version,
         build_script_env = build_script_env,
         deps = deps,
+        data = data,
     )

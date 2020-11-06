@@ -19,6 +19,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "le32": None,
     "mips": None,
     "mipsel": None,
+    "wasm32": None,
 }
 
 # Systems that map to a "@platforms//os entry
@@ -30,6 +31,8 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "ios": "ios",
     "android": "android",
     "emscripten": None,
+    "unknown": None,
+    "wasi": None,
     "nacl": None,
     "bitrig": None,
     "dragonfly": None,
@@ -49,6 +52,7 @@ _SYSTEM_TO_BINARY_EXT = {
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
+    "wasi": ".wasm",
 }
 
 _SYSTEM_TO_STATICLIB_EXT = {
@@ -59,6 +63,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "windows": ".lib",
     "emscripten": ".js",
     "unknown": "",
+    "wasi": "",
 }
 
 _SYSTEM_TO_DYLIB_EXT = {
@@ -69,6 +74,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "windows": ".dll",
     "emscripten": ".js",
     "unknown": ".wasm",
+    "wasi": ".wasm",
 }
 
 # See https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs
@@ -109,6 +115,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # I am not sure which is the common configuration or how we encode it as a link flag.
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
     "unknown": [],
+    "wasi": [],
 }
 
 def cpu_arch_to_constraints(cpu_arch):
@@ -140,6 +147,17 @@ def abi_to_constraints(abi):
     return []
 
 def triple_to_system(triple):
+    """Returns a system name for a given platform triple
+
+    Args:
+        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+
+    Returns:
+        str: A system name
+    """
+    if triple == "wasm32-wasi":
+        return "wasi"
+
     component_parts = triple.split("-")
     if len(component_parts) < 3:
         fail("Expected target triple to contain at least three sections separated by '-'")
@@ -167,6 +185,11 @@ def triple_to_constraint_set(triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
+    if triple == "wasm32-wasi":
+        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:wasi"]
+    if triple == "wasm32-unknown-unknown":
+        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:unknown"]
+
     component_parts = triple.split("-")
     if len(component_parts) < 3:
         fail("Expected target triple to contain at least three sections separated by '-'")
@@ -178,9 +201,6 @@ def triple_to_constraint_set(triple):
 
     if len(component_parts) == 4:
         abi = component_parts[3]
-
-    if cpu_arch == "wasm32":
-        return ["@io_bazel_rules_rust//rust/platform:wasm32"]
 
     constraint_set = []
     constraint_set += cpu_arch_to_constraints(cpu_arch)
