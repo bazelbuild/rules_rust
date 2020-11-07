@@ -45,6 +45,8 @@ PAGES = {
         "rust_bindgen",
     ],
     "rust_wasm_bindgen": [
+        # This cannot be included due to https://github.com/google/cargo-raze/issues/285
+        # "rust_wasm_bindgen_repositories",
         "rust_wasm_bindgen_toolchain",
         "rust_wasm_bindgen",
     ],

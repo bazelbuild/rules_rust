@@ -1,21 +1,65 @@
 # buildifier: disable=module-docstring
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_compile_env", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
+load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
 def _expand_location(ctx, env, data):
-    for directive in "$(execpath ", "$(location ":
+    """A trivial helper for `_expand_locations`
+
+    Args:
+        ctx (ctx): The rule's context object
+        env (str): The value possibly containing location macros to expand.
+        data (sequence of Targets): see `_expand_locations`
+
+    Returns:
+        string: The location-macro expanded version of the string.
+    """
+    for directive in ("$(execpath ", "$(location "):
         if directive in env:
             # build script runner will expand pwd to execroot for us
             env = env.replace(directive, "${pwd}/" + directive)
     return ctx.expand_location(env, data)
 
-def _expand_locations(ctx):
-    "Expand $(execpath ...) references in user-provided env vars."
-    env = ctx.attr.build_script_env
-    data = getattr(ctx.attr, "data", [])
+def _expand_locations(ctx, env, data):
+    """Performs location-macro expansion on string values.
+
+    Note that exec-root relative locations will be exposed to the build script
+    as absolute paths, rather than the ordinary exec-root relative paths,
+    because cargo build scripts do not run in the exec root.
+
+    Args:
+        ctx (ctx): The rule's context object
+        env (dict): A dict whose values we iterate over
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        dict: A dict of environment variables with expanded location macros
+    """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
+def get_cc_compile_env(cc_toolchain, feature_configuration):
+    """Gather cc environment variables from the given `cc_toolchain`
+
+    Args:
+        cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
+
+    Returns:
+        dict: Returns environment variables to be set for given action.
+    """
+    compile_variables = cc_common.create_compile_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+    )
+    return cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = C_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
 
 def _build_script_impl(ctx):
     """The implementation for the `_build_script_run` rule.
@@ -101,7 +145,11 @@ def _build_script_impl(ctx):
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
-    env.update(_expand_locations(ctx))
+    env.update(_expand_locations(
+        ctx,
+        ctx.attr.build_script_env,
+        getattr(ctx.attr, "data", []),
+    ))
 
     tools = depset(
         direct = [

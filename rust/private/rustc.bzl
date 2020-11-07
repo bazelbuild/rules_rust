@@ -17,11 +17,16 @@ load("@bazel_skylib//lib:versions.bzl", "versions")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
-    "C_COMPILE_ACTION_NAME",
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@io_bazel_rules_rust_bazel_version//:def.bzl", "BAZEL_VERSION")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "get_lib_name", "get_libs_for_static_executable", "relativize")
+load(
+    "@io_bazel_rules_rust//rust:private/utils.bzl",
+    "get_lib_name",
+    "get_libs_for_static_executable",
+    "relativize",
+    "rule_attrs",
+)
 
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
@@ -244,17 +249,6 @@ def get_cc_toolchain(ctx):
     )
     return cc_toolchain, feature_configuration
 
-def get_cc_compile_env(cc_toolchain, feature_configuration):
-    compile_variables = cc_common.create_compile_variables(
-        feature_configuration = feature_configuration,
-        cc_toolchain = cc_toolchain,
-    )
-    return cc_common.get_environment_variables(
-        feature_configuration = feature_configuration,
-        action_name = C_COMPILE_ACTION_NAME,
-        variables = compile_variables,
-    )
-
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
 
@@ -310,13 +304,22 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
 
     return ld, link_args, link_env
 
-def _expand_locations(ctx, env, aspect):
-    "Expand $(rootpath ...) references in user-provided env vars."
-    if aspect:
-        data = getattr(ctx.rule.attr, "data", [])
-    else:
-        data = getattr(ctx.attr, "data", [])
+def _expand_locations(ctx, env, data):
+    """Performs location-macro expansion on string values.
 
+    Note: Only `$(rootpath ...)` is recommended  as `$(execpath ...)` will fail
+    in the case of generated sources.
+
+    Args:
+        ctx (ctx): The rule's context object
+        env (str): The value possibly containing location macros to expand.
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        dict: A dict of environment variables with expanded location macros
+    """
     return dict([(k, ctx.expand_location(v, data)) for (k, v) in env.items()])
 
 def _process_build_scripts(
@@ -395,6 +398,16 @@ def collect_inputs(
     return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
 
 def _exec_root_relative_path(ctx, filepath):
+    """Get the path to filepath, relative to the exec root.
+
+    Args:
+        ctx (ctx): The rule's context object
+        filepath (str): Path of the file to get. This should be relative to the root of the workspace containing the file, such as that returned by `Label.package` or `ctx.build_file_path`
+
+    Returns:
+        str: The path relative to the exec root.
+    """
+
     # Bazel 3.7.0 (commit 301b96b223b0c0) changed how file paths are returned for external packages.
     # TODO: use a proper Bazel API to determine exec-root-relative paths.
     if len(ctx.label.workspace_root) > 0 and \
@@ -569,7 +582,11 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(_expand_locations(ctx, crate_info.rustc_env, aspect))
+    env.update(_expand_locations(
+        ctx,
+        crate_info.rustc_env,
+        getattr(rule_attrs(ctx, aspect), "data", []),
+    ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
     # sysroot being undefined.
@@ -865,6 +882,6 @@ def _get_dirname(file):
         file (File): The target file
 
     Returns:
-        [str]: Directory name of `file`
+        str: Directory name of `file`
     """
     return file.dirname

@@ -17,7 +17,7 @@ load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_cra
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_repositories():
-    """Declare dependencies needed for bindgen."""
+    """Declare dependencies needed for wasm-bindgen."""
 
     rules_rust_wasm_bindgen_fetch_remote_crates()
 
