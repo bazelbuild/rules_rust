@@ -16,7 +16,7 @@ def _bazel_version_impl(repository_ctx):
         print("You're using development build of Bazel, make sure it's at least version {}".format(
             _MINIMUM_SUPPORTED_BAZEL_VERSION,
         ))
-    elif versions.is_at_most(_MINIMUM_SUPPORTED_BAZEL_VERSION, bazel_version):
+    elif not versions.is_at_least(_MINIMUM_SUPPORTED_BAZEL_VERSION, bazel_version):
         fail("Bazel {} is too old to use with rules_rust, please use at least Bazel {}, preferably newer.".format(
             bazel_version,
             _MINIMUM_SUPPORTED_BAZEL_VERSION,
