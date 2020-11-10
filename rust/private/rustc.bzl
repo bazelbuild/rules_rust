@@ -397,31 +397,6 @@ def collect_inputs(
     )
     return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
 
-def _exec_root_relative_path(ctx, filepath):
-    """Get the path to filepath, relative to the exec root.
-
-    Args:
-        ctx (ctx): The rule's context object
-        filepath (str): Path of the file to get. This should be relative to the root of the workspace containing the file, such as that returned by `Label.package` or `ctx.build_file_path`
-
-    Returns:
-        str: The path relative to the exec root.
-    """
-
-    # Bazel 3.7.0 (commit 301b96b223b0c0) changed how file paths are returned for external packages.
-    # TODO: use a proper Bazel API to determine exec-root-relative paths.
-    if len(ctx.label.workspace_root) > 0 and \
-       (len(BAZEL_VERSION) == 0 or versions.is_at_least("3.7.0", BAZEL_VERSION)):
-        workspace_root_items = ctx.label.workspace_root.split("/")
-        if (len(workspace_root_items) >= 2 and
-            workspace_root_items[0] == "external" and
-            workspace_root_items[-1] == filepath.split("/")[0]):
-            workspace_root_items = workspace_root_items[:-1]
-
-        return "/".join(workspace_root_items + filepath.split("/"))
-    else:
-        return filepath
-
 def construct_arguments(
         ctx,
         file,
@@ -476,25 +451,24 @@ def construct_arguments(
 
     args.add_all(build_flags_files, before_each = "--arg-file")
 
-    # Certain rust build processes expect to find files from the environment variable
-    # `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera, asakuma.
+    # Certain rust build processes expect to find files from the environment
+    # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
+    # asakuma.
     #
-    # The compiler and by extension proc-macros see the current working directory as the Bazel exec
-    # root. Therefore, in order to fix this without an upstream code change, we have to set
-    # `$CARGO_MANIFEST_DIR`.
+    # The compiler and by extension proc-macros see the current working
+    # directory as the Bazel exec root. This is what `$CARGO_MANIFEST_DIR`
+    # would default to but is often the wrong value (e.g. if the source is in a
+    # sub-package or if we are building something in an external repository).
+    # Hence, we need to set `CARGO_MANIFEST_DIR` explicitly.
     #
-    # As such we attempt to infer `$CARGO_MANIFEST_DIR`.
-    # Inference cannot be derived from `attr.crate_root`, as this points at a source file which may or
-    # may not follow the `src/lib.rs` convention. As such we use `ctx.build_file_path` mapped into the
-    # `exec_root`. Since we cannot (seemingly) get the `exec_root` from starlark, we cheat a little
-    # and use `${pwd}` which resolves the `exec_root` at action execution time.
-    #
-    # Unfortunately, ctx.build_file_path isn't relative to the exec_root for external repositories in
-    # which case we use ctx.label.workspace_root to complete the path in `_exec_root_relative_path()`.
+    # Since we cannot get the `exec_root` from starlark, we cheat a little and
+    # use `${pwd}` which resolves the `exec_root` at action execution time.
     args.add("--subst", "pwd=${pwd}")
 
-    relative_build_file_path = _exec_root_relative_path(ctx, ctx.build_file_path)
-    env["CARGO_MANIFEST_DIR"] = "${pwd}/" + relative_build_file_path[:relative_build_file_path.rfind("/")]
+    # Both ctx.label.workspace_root and ctx.label.package are relative paths
+    # and either can be empty strings. Avoid trailing/double slashes in the path.
+    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
