@@ -14,6 +14,11 @@ tasks:
     test_targets:
       - "..."
       - "@examples//..."
+  ubuntu2004:
+    name: "Minimum Supported Version"
+    bazel: "3.0.0"
+    build_targets: *default_targets
+    test_targets: *default_targets
   macos:
     osx_targets: &osx_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -50,7 +55,7 @@ tasks:
     - "-@examples//ffi/rust_calling_c/simple/..."
     - "-@examples//hello_sys/..."
     - "-@examples//complex_sys/..."
-    - "-@examples//proto/..." 
+    - "-@examples//proto/..."
     - "-@examples//wasm/..."
     build_targets: *windows_targets
     test_targets: *windows_targets
