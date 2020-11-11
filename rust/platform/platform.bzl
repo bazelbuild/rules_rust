@@ -26,6 +26,7 @@ _SUPPORTED_T1_PLATFORM_TRIPLES = [
 # Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
 # See @io_bazel_rules_rust//rust/platform:triple_mappings.bzl for the complete list.
 _SUPPORTED_T2_PLATFORM_TRIPLES = [
+    "aarch64-apple-darwin",
     "aarch64-apple-ios",
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
