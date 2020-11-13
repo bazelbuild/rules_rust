@@ -12,7 +12,6 @@ TARGETS="$(cat ./util/fetch_shas_TARGETS.txt)"
 VERSIONS="$(cat ./util/fetch_shas_VERSIONS.txt)"
 BETA_ISO_DATES="$(cat ./util/fetch_shas_BETA_ISO_DATES.txt)"
 NIGHTLY_ISO_DATES="$(cat ./util/fetch_shas_NIGHTLY_ISO_DATES.txt)"
-RUSTFMT_TARGETS="$(cat ./util/fetch_shas_RUSTFMT_TARGETS.txt)"
 RUSTFMT_VERSIONS="$(cat ./util/fetch_shas_RUSTFMT_VERSIONS.txt)"
 
 enumerate_keys() {
@@ -20,10 +19,17 @@ enumerate_keys() {
   do
     for TARGET in $TARGETS
     do
-      for VERSION in $VERSIONS
-      do
-        echo "$TOOL-$VERSION-$TARGET"
-      done
+      if [ "$TOOL" == "rustfmt" ]; then
+        for VERSION in $RUSTFMT_VERSIONS
+        do
+          echo "$TOOL-$VERSION-$TARGET"
+        done
+      else
+        for VERSION in $VERSIONS
+        do
+          echo "$TOOL-$VERSION-$TARGET"
+        done
+      fi
 
       for ISO_DATE in $BETA_ISO_DATES
       do
@@ -36,16 +42,6 @@ enumerate_keys() {
       done
     done
   done
-}
-
-enumerate_rustfmt_keys() {
-    for RUSTFMT_TARGET in $RUSTFMT_TARGETS
-    do
-        for RUSTFMT_VERSION in $RUSTFMT_VERSIONS
-        do
-            echo "$RUSTFMT_VERSION-$RUSTFMT_TARGET"
-        done
-    done
 }
 
 emit_bzl_file_contents() {
@@ -62,4 +58,4 @@ emit_bzl_file_contents() {
   echo "}"
 }
 
-echo "$(emit_bzl_file_contents $(enumerate_keys) $(enumerate_rustfmt_keys))" > ./rust/known_shas.bzl
+echo "$(emit_bzl_file_contents $(enumerate_keys))" > ./rust/known_shas.bzl

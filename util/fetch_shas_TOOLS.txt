@@ -1,4 +1,5 @@
 rust
 rustc
+rustfmt
 rust-std
 llvm-tools
