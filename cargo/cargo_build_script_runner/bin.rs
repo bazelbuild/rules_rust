@@ -154,6 +154,10 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
     // As done by Cargo when constructing a cargo::core::compiler::build_context::target_info::TargetInfo.
     let output = Command::new(rustc.as_ref())
         .arg("--print=cfg")
+        .arg(format!(
+            "--target={}",
+            env::var("TARGET").expect("missing TARGET")
+        ))
         .output()
         .map_err(|err| format!("Error running rustc to get target information: {}", err))?;
     if !output.status.success() {
