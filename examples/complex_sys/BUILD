@@ -1,4 +1,4 @@
-# Copyright 2019 The Bazel Authors. All rights reserved.
+# Copyright 2020 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
-load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_crates")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
-# buildifier: disable=unnamed-macro
-def rust_wasm_bindgen_repositories():
-    """Declare dependencies needed for wasm-bindgen."""
+package(default_visibility = ["//visibility:public"])
 
-    rules_rust_wasm_bindgen_fetch_remote_crates()
-
-    native.register_toolchains("@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain")
+rust_binary(
+    name = "complex_sys",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = ["//complex_sys/raze:git2"],
+)

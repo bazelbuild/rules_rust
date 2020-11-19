@@ -28,3 +28,19 @@ def repositories():
             "https://github.com/bazelbuild/rules_proto/archive/97d8af4dc474595af3900dd85cb3a29ad28cc313.tar.gz",
         ],
     )
+
+    maybe(
+        http_archive,
+        name = "rules_foreign_cc",
+        strip_prefix = "rules_foreign_cc-d54c78ab86b40770ee19f0949db9d74a831ab9f0",
+        url = "https://github.com/bazelbuild/rules_foreign_cc/archive/d54c78ab86b40770ee19f0949db9d74a831ab9f0.zip",
+    )
+
+    maybe(
+        http_archive,
+        name = "openssl",
+        strip_prefix = "openssl-OpenSSL_1_1_1d",
+        urls = ["https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz"],
+        sha256 = "23011a5cc78e53d0dc98dfa608c51e72bcd350aa57df74c5d5574ba4ffb62e74",
+        build_file = "@examples//third_party/openssl:openssl.BUILD",
+    )

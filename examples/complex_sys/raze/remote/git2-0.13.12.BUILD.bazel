@@ -1,0 +1,100 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//complex_sys/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+# Unsupported target "add" with type "example" omitted
+# Unsupported target "blame" with type "example" omitted
+# Unsupported target "cat-file" with type "example" omitted
+# Unsupported target "clone" with type "example" omitted
+# Unsupported target "diff" with type "example" omitted
+# Unsupported target "fetch" with type "example" omitted
+
+# buildifier: leave-alone
+rust_library(
+    name = "git2",
+    crate_type = "lib",
+    deps = [
+        "@rules_rust_examples_complex_sys__bitflags__1_2_1//:bitflags",
+        "@rules_rust_examples_complex_sys__libc__0_2_80//:libc",
+        "@rules_rust_examples_complex_sys__libgit2_sys__0_12_14_1_1_0//:libgit2_sys",
+        "@rules_rust_examples_complex_sys__log__0_4_11//:log",
+        "@rules_rust_examples_complex_sys__url__2_1_1//:url",
+    ] + selects.with_or({
+        # cfg(all(unix, not(target_os = "macos")))
+        (
+            "@io_bazel_rules_rust//rust/platform:aarch64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:aarch64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@io_bazel_rules_rust//rust/platform:i686-linux-android",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:powerpc-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:x86_64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@rules_rust_examples_complex_sys__openssl_probe__0_1_2//:openssl_probe",
+            "@rules_rust_examples_complex_sys__openssl_sys__0_9_58//:openssl_sys",
+        ],
+        "//conditions:default": [],
+    }),
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    version = "0.13.12",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+        "default",
+        "https",
+        "openssl-probe",
+        "openssl-sys",
+        "ssh",
+        "ssh_key_from_memory",
+    ],
+    aliases = {
+    },
+)
+# Unsupported target "init" with type "example" omitted
+# Unsupported target "log" with type "example" omitted
+# Unsupported target "ls-remote" with type "example" omitted
+# Unsupported target "pull" with type "example" omitted
+# Unsupported target "rev-list" with type "example" omitted
+# Unsupported target "rev-parse" with type "example" omitted
+# Unsupported target "status" with type "example" omitted
+# Unsupported target "tag" with type "example" omitted

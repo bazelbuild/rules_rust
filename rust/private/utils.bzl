@@ -60,10 +60,10 @@ def _path_parts(path):
     is a relative path, such as "./foo".
 
     Args:
-      path: A list containing parts of a path.
+      path (str): A string representing a unix path
 
     Returns:
-      Returns a list containing the path parts with all "." elements removed.
+      list: A list containing the path parts with all "." elements removed.
     """
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
@@ -112,7 +112,7 @@ def _get_preferred_artifact(library_to_link):
 
     Args:
         library_to_link (LibraryToLink): See the followg links for additional details:
-          https://docs.bazel.build/versions/master/skylark/lib/LibraryToLink.html
+            https://docs.bazel.build/versions/master/skylark/lib/LibraryToLink.html
 
     Returns:
         File: Returns the first valid library type (only one is expected)
@@ -123,3 +123,20 @@ def _get_preferred_artifact(library_to_link):
         library_to_link.interface_library or
         library_to_link.dynamic_library
     )
+
+def rule_attrs(ctx, aspect):
+    """Gets a rule's attributes.
+
+    As per https://docs.bazel.build/versions/master/skylark/aspects.html when we're executing from an
+    aspect we need to get attributes of a rule differently to if we're not in an aspect.
+
+    Args:
+        ctx (ctx): A rule's context object
+        aspect (bool): Whether we're running in an aspect
+
+    Returns:
+        struct: A struct to access the values of the attributes for a
+            [rule_attributes](https://docs.bazel.build/versions/master/skylark/lib/rule_attributes.html#modules.rule_attributes)
+            object.
+    """
+    return ctx.rule.attr if aspect else ctx.attr
