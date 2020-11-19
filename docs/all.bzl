@@ -1,25 +1,10 @@
-# buildifier: disable=module-docstring
+"""This module provides a single place for all aspects, rules, and macros that are meant
+to have stardoc generated documentation.
+"""
+
 load(
-    "@io_bazel_rules_rust//rust:toolchain.bzl",
-    _rust_toolchain = "rust_toolchain",
-)
-load(
-    "@io_bazel_rules_rust//proto:toolchain.bzl",
-    _rust_proto_toolchain = "rust_proto_toolchain",
-)
-load(
-    "@io_bazel_rules_rust//proto:proto.bzl",
-    _rust_grpc_library = "rust_grpc_library",
-    _rust_proto_library = "rust_proto_library",
-)
-load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    _rust_benchmark = "rust_benchmark",
-    _rust_binary = "rust_binary",
-    _rust_doc = "rust_doc",
-    _rust_doc_test = "rust_doc_test",
-    _rust_library = "rust_library",
-    _rust_test = "rust_test",
+    "@io_bazel_rules_rust//:workspace.bzl",
+    _rust_workspace = "rust_workspace",
 )
 load(
     "@io_bazel_rules_rust//bindgen:bindgen.bzl",
@@ -32,16 +17,14 @@ load(
     _cargo_build_script = "cargo_build_script",
 )
 load(
-    "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
-    _rust_wasm_bindgen = "rust_wasm_bindgen",
-    _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
+    "@io_bazel_rules_rust//proto:proto.bzl",
+    _rust_grpc_library = "rust_grpc_library",
+    _rust_proto_library = "rust_proto_library",
 )
-
-# rust_wasm_bindgen_repositories depends on raze depedencies which are not worth
-# including.
-# load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl",
-#     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
-# )
+load(
+    "@io_bazel_rules_rust//proto:toolchain.bzl",
+    _rust_proto_toolchain = "rust_proto_toolchain",
+)
 load(
     "@io_bazel_rules_rust//rust:repositories.bzl",
     _rust_repositories = "rust_repositories",
@@ -50,8 +33,27 @@ load(
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
 )
 load(
-    "@io_bazel_rules_rust//:workspace.bzl",
-    _rust_workspace = "rust_workspace",
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    _rust_benchmark = "rust_benchmark",
+    _rust_binary = "rust_binary",
+    _rust_doc = "rust_doc",
+    _rust_doc_test = "rust_doc_test",
+    _rust_library = "rust_library",
+    _rust_test = "rust_test",
+)
+load(
+    "@io_bazel_rules_rust//rust:toolchain.bzl",
+    _rust_toolchain = "rust_toolchain",
+)
+# This cannot be included due to https://github.com/google/cargo-raze/issues/285
+# load(
+#     "@io_bazel_rules_rust//wasm_bindgen:repositories.bzl",
+#     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
+# )
+load(
+    "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
+    _rust_wasm_bindgen = "rust_wasm_bindgen",
+    _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 
 rust_library = _rust_library
@@ -75,8 +77,7 @@ cargo_build_script = _cargo_build_script
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
-# rust_wasm_bindgen_repositories depends on raze depedencies which are not worth
-# including.
+# This cannot be included due to https://github.com/google/cargo-raze/issues/285
 # rust_wasm_bindgen_repositories = _rust_wasm_bindgen_repositories
 
 rust_repositories = _rust_repositories

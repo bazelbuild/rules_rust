@@ -131,7 +131,7 @@ def _zip_action(ctx, input_dir, output_zip):
     args = ctx.actions.args()
     args.add(ctx.executable._zipper)
     args.add(output_zip)
-    args.add(input_dir.path)
+    args.add(ctx.bin_dir.path)
     args.add_all([input_dir], expand_directories = True)
     ctx.actions.run(
         executable = ctx.executable._dir_zipper,

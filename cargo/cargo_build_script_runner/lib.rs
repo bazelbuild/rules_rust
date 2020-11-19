@@ -139,21 +139,12 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a list of dependencies environment variables.
-    pub fn to_dep_env(v: &Vec<BuildScriptOutput>, crate_name: &str) -> String {
-        // TODO: make use of `strip_suffix`.
-        const SYS_CRATE_SUFFIX: &str = "-sys";
-        let name = if crate_name.ends_with(SYS_CRATE_SUFFIX) {
-            crate_name
-                .split_at(crate_name.rfind(SYS_CRATE_SUFFIX).unwrap())
-                .0
-        } else {
-            crate_name
-        };
-        let prefix = format!("DEP_{}_", name.replace("-", "_").to_uppercase());
+    pub fn to_dep_env(v: &Vec<BuildScriptOutput>, crate_links: &str, exec_root: &str) -> String {
+        let prefix = format!("DEP_{}_", crate_links.replace("-", "_").to_uppercase());
         v.iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::DepEnv(env) = x {
-                    Some(format!("{}{}", prefix, env.to_owned()))
+                    Some(format!("{}{}", prefix, Self::redact_exec_root(env, exec_root)))
                 } else {
                     None
                 }
@@ -205,12 +196,13 @@ cargo:rerun-if-changed=ignored
 cargo:rustc-cfg=feature=awesome
 cargo:version=123
 cargo:version_number=1010107f
+cargo:include_path=/some/absolute/path/include
 cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
 ",
         );
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::from_reader(reader);
-        assert_eq!(result.len(), 9);
+        assert_eq!(result.len(), 10);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
         assert_eq!(
@@ -232,13 +224,13 @@ cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
             BuildScriptOutput::DepEnv("VERSION_NUMBER=1010107f".to_owned())
         );
         assert_eq!(
-            result[8],
+            result[9],
             BuildScriptOutput::Env("SOME_PATH=/some/absolute/path/beep".to_owned())
         );
 
         assert_eq!(
-            BuildScriptOutput::to_dep_env(&result, "my-crate-sys"),
-            "DEP_MY_CRATE_VERSION=123\nDEP_MY_CRATE_VERSION_NUMBER=1010107f".to_owned()
+            BuildScriptOutput::to_dep_env(&result, "ssh2", "/some/absolute/path"),
+            "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::to_env(&result, "/some/absolute/path"),

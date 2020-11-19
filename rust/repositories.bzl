@@ -115,6 +115,18 @@ def rust_repositories(
     )
 
     rust_repository_set(
+        name = "rust_darwin_aarch64",
+        exec_triple = "aarch64-apple-darwin",
+        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
+        version = version,
+        iso_date = iso_date,
+        rustfmt_version = rustfmt_version,
+        edition = edition,
+        dev_components = dev_components,
+        sha256s = sha256s,
+    )
+
+    rust_repository_set(
         name = "rust_freebsd_x86_64",
         exec_triple = "x86_64-unknown-freebsd",
         extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
