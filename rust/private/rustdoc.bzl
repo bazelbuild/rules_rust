@@ -191,10 +191,13 @@ def _rust_doc_server_stub_impl(ctx):
     dep = ctx.attr.rust_doc_dep
     crate_name = dep[CrateInfo].name
     zip_file = dep[_DocInfo].zip_file
+    path_parts = [dep.label.workspace_root, dep.label.package, dep.label.name]
+    target_path = "/".join([p for p in path_parts if p])
     ctx.actions.expand_template(
         template = ctx.file._server_template,
         output = ctx.outputs.main,
         substitutions = {
+            "{TARGET_PATH}": target_path,
             "{CRATE_NAME}": crate_name,
             "{ZIP_FILE}": zip_file.basename,
         },

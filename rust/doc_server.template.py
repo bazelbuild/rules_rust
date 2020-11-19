@@ -8,6 +8,7 @@ import zipfile
 
 
 ZIP_FILE = "{ZIP_FILE}"
+TARGET_PATH = "{TARGET_PATH}"
 CRATE_NAME = "{CRATE_NAME}"
 
 DEFAULT_PORT = 8000
@@ -39,7 +40,7 @@ def main():
                 data[path] = zp.read(path)
     sys.stderr.write("Read %d files from %s\n" % (len(data), ZIP_FILE))
 
-    default_path = "/%s/index.html" % CRATE_NAME
+    default_path = "/%s/%s/index.html" % (TARGET_PATH, CRATE_NAME)
 
     def app(environ, start_response):
         p = environ.get("PATH_INFO", "/").lstrip("/")
