@@ -25,3 +25,10 @@ def repositories(is_top_level = False):
         sha256 = "5d7191bb0800434a9192d8ac80cba4909e96dbb087c5d51f168fedd7bde7b525",
         strip_prefix = "stardoc-1ef781ced3b1443dca3ed05dec1989eca1a4e1cd",
     )
+
+    maybe(
+        http_archive,
+        name = "rules_python",
+        url = "https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz",
+        sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
+    )
