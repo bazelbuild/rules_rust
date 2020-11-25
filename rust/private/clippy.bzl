@@ -50,8 +50,11 @@ def _clippy_aspect_impl(target, ctx):
         return []
 
     toolchain = find_toolchain(ctx)
-    root = crate_root_src(ctx.rule.attr, srcs = rust_srcs)
     crate_info = target[CrateInfo]
+    if crate_info.type == 'bin':
+        root = crate_root_src(ctx.rule.attr, srcs = rust_srcs, file_name = "main.rs")
+    else:
+        root = crate_root_src(ctx.rule.attr, srcs = rust_srcs)
 
     dep_info, build_info = collect_deps(
         ctx.label,
