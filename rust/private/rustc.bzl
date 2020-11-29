@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@bazel_skylib//lib:versions.bzl", "versions")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
