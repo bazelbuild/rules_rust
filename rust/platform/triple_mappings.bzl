@@ -9,11 +9,11 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "i686": "x86_32",
     "s390x": "s390x",
     "asmjs": None,
-    "i386": None,
+    "i386": "i386",
     "i586": None,
     "powerpc64": None,
     "powerpc64le": None,
-    "armv7": None,
+    "armv7": "armv7",
     "armv7s": None,
     "s390": None,
     "le32": None,
@@ -37,7 +37,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "bitrig": None,
     "dragonfly": None,
     "netbsd": None,
-    "openbsd": None,
+    "openbsd": "openbsd",
     "solaris": None,
 }
 
