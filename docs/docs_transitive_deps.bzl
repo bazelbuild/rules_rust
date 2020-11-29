@@ -1,7 +1,6 @@
 """Define transitive dependencies for `rules_rust` docs"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 def transitive_deps(is_top_level = False):
@@ -12,8 +11,6 @@ def transitive_deps(is_top_level = False):
             from the root WORKSPACE file of `rules_rust`. Defaults to False.
     """
     rust_proto_repositories()
-
-    rust_workspace()
 
     # Rules proto does not declare a bzl_library, we stub it there for now.
     # TODO: Remove this hack if/when rules_proto adds a bzl_library.

@@ -20,7 +20,6 @@
 * [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
-* [rust_workspace](#rust_workspace)
 
 
 <a id="#rust_benchmark"></a>
@@ -1141,22 +1140,5 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-edition"></a>edition |  The rust edition to be used by default (2015 (if None) or 2018).   |  <code>None</code> |
 | <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components.     Requires version to be "nightly". Defaults to False.   |  <code>False</code> |
 | <a id="rust_repository_set-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. See     [rust_repositories](#rust_repositories) for more details.   |  <code>None</code> |
-
-
-<a id="#rust_workspace"></a>
-
-## rust_workspace
-
-<pre>
-rust_workspace()
-</pre>
-
-A helper macro for setting up requirements for `rules_rust` within a given workspace.
-
-This macro should always loaded and invoked after `rust_repositories` within a WORKSPACE
-file.
-
-**PARAMETERS**
-
 
 
