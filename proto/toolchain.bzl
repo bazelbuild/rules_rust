@@ -16,8 +16,21 @@
 
 load("@io_bazel_rules_rust//rust:private/rust.bzl", "name_to_crate_name")
 
-def generated_file_stem(f):
-    basename = f.rsplit("/", 2)[-1]
+def generated_file_stem(file_path):
+    """Returns the basename of a file without any extensions.
+
+    Example:
+    ```python
+    content.append("pub mod %s;" % _generated_file_stem(f))
+    ```
+
+    Args:
+        file_path (string): A path to a file
+
+    Returns:
+        string: The file stem of the filename
+    """
+    basename = file_path.rsplit("/", 2)[-1]
     basename = name_to_crate_name(basename)
     return basename.rsplit(".", 2)[0]
 
@@ -107,7 +120,9 @@ def _rust_proto_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(
         protoc = ctx.executable.protoc,
         proto_plugin = ctx.file.proto_plugin,
+        proto_compile_deps = ctx.attr.proto_compile_deps,
         grpc_plugin = ctx.file.grpc_plugin,
+        grpc_compile_deps = ctx.attr.grpc_compile_deps,
         edition = ctx.attr.edition,
     )
 
@@ -123,9 +138,6 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
     "@io_bazel_rules_rust//proto/raze:tls_api_stub",
 ]
 
-# TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
-# proto_compile_deps and grpc_compile_deps and remove them from the
-# rust_proto_library and grpc_proto_library.
 rust_proto_toolchain = rule(
     implementation = _rust_proto_toolchain_impl,
     attrs = {
@@ -143,6 +155,11 @@ rust_proto_toolchain = rule(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust",
             ),
         ),
+        "proto_compile_deps": attr.label_list(
+            doc = "The crates the generated protobuf libraries depends on.",
+            cfg = "target",
+            default = [Label(dep) for dep in PROTO_COMPILE_DEPS],
+        ),
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
@@ -150,6 +167,11 @@ rust_proto_toolchain = rule(
             default = Label(
                 "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
             ),
+        ),
+        "grpc_compile_deps": attr.label_list(
+            doc = "The crates the generated grpc libraries depends on.",
+            cfg = "target",
+            default = [Label(dep) for dep in GRPC_COMPILE_DEPS],
         ),
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",
