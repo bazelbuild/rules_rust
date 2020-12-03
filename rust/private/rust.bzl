@@ -86,19 +86,21 @@ def get_edition(attr, toolchain):
     else:
         return toolchain.default_edition
 
-def crate_root_src(attr, srcs, file_name = "lib.rs"):
+def crate_root_src(attr, srcs, crate_type):
     """Finds the source file for the crate root.
 
     Args:
         attr (struct): The attributes of the current target
         srcs (list): A list of all sources for the target Crate.
-        file_name (str, optional): The basename of the crate's root file. Defaults to "lib.rs".
+        crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
 
     Returns:
         File: The root File object for a given crate. See the following links for more details:
             - https://doc.rust-lang.org/cargo/reference/cargo-targets.html#library
             - https://doc.rust-lang.org/cargo/reference/cargo-targets.html#binaries
     """
+    default_crate_root_filename = "main.rs" if crate_type == "bin" else "lib.rs"
+
     crate_root = None
     if hasattr(attr, "crate_root"):
         if attr.crate_root:
@@ -107,11 +109,11 @@ def crate_root_src(attr, srcs, file_name = "lib.rs"):
     if not crate_root:
         crate_root = (
             (srcs[0] if len(srcs) == 1 else None) or
-            _shortest_src_with_basename(srcs, file_name) or
+            _shortest_src_with_basename(srcs, default_crate_root_filename) or
             _shortest_src_with_basename(srcs, attr.name + ".rs")
         )
     if not crate_root:
-        file_names = [file_name, attr.name + ".rs"]
+        file_names = [default_crate_root_filename, attr.name + ".rs"]
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
 
@@ -143,7 +145,7 @@ def _rust_library_impl(ctx):
     """
 
     # Find lib.rs
-    crate_root = crate_root_src(ctx.attr, ctx.files.srcs)
+    crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
 
     toolchain = find_toolchain(ctx)
@@ -201,7 +203,7 @@ def _rust_binary_impl(ctx):
         crate_info = CrateInfo(
             name = crate_name,
             type = crate_type,
-            root = crate_root_src(ctx.attr, ctx.files.srcs, file_name = "main.rs"),
+            root = crate_root_src(ctx.attr, ctx.files.srcs, crate_type),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,
@@ -250,7 +252,7 @@ def _rust_test_common(ctx, toolchain, output):
         target = CrateInfo(
             name = crate_name,
             type = "lib",
-            root = crate_root_src(ctx.attr, ctx.files.srcs),
+            root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,
