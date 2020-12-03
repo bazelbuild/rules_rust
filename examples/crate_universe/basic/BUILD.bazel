@@ -1,0 +1,21 @@
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+)
+load("@crate_universe_basic_rust_deps//:defs.bzl", "crate")
+
+rust_binary(
+    name = "basic",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = [
+        crate("lazy_static"),
+    ],
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.sh"],
+    data = [":basic"],
+    args = ["$(location :basic)"],
+)

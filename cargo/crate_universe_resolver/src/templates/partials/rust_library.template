@@ -1,0 +1,33 @@
+
+{% if target_name_sanitized != crate_name_sanitized -%}
+alias(
+    name = "{{ crate_name_sanitized }}",
+    actual = ":{{ target_name_sanitized }}",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+{% endif -%}
+# buildifier: leave-alone
+rust_library(
+    name = "{{ target_name_sanitized }}",
+    crate_type = "{{ target.kind }}",
+    deps = [
+        {%- if crate.build_script_target %}
+        ":{{ crate_name_sanitized }}_build_script",
+        {%- endif %}
+        {%- for dependency in crate.default_deps.dependencies %}
+        "{{dependency.buildable_target}}",
+        {%- endfor %}
+        {%- for dependency in crate.raze_settings.additional_deps %}
+        "{{dependency}}",
+        {%- endfor %}
+    ]
+    {%- if crate.targeted_deps %}
+    {%- include "templates/partials/targeted_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+{% include "templates/partials/common_attrs.template" %}
+)

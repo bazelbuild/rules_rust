@@ -63,7 +63,7 @@ examples_repositories()
 
 load("@examples//:examples_deps.bzl", examples_deps = "deps")
 
-examples_deps()
+examples_deps(is_top_level = True)
 
 load("@examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
 

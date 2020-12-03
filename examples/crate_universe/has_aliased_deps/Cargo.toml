@@ -1,0 +1,8 @@
+[package]
+name = "has_aliased_deps"
+version = "0.1.0"
+authors = ["Daniel Wagner-Hall <dwagnerhall@apple.com>"]
+edition = "2018"
+
+[dependencies]
+reqwest = { version = "0.10.7", features = ["blocking", "json"] }

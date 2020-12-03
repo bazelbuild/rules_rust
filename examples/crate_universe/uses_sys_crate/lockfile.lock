@@ -1,0 +1,550 @@
+# rules_rust crate_universe file format 1
+# config hash d555ad6fce4572c24cb874f784ca32c0b4c5c6b6655c759f6b1381c0ef72667a
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+def pinned_rust_install():
+    http_archive(
+        name = "crate_universe_uses_sys_crate_rust_deps__bzip2__0_3_3",
+        # TODO: Allow configuring where rust_library comes from
+        build_file_content = """# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+
+# buildifier: leave-alone
+rust_library(
+    name = "bzip2",
+    crate_type = "lib",
+    deps = [
+        "@crate_universe_uses_sys_crate_rust_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+        "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "0.3.3",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+# Unsupported target "tokio" with type "test" omitted
+""",
+        sha256 = "42b7c3cbf0fa9c1b82308d57191728ca0256cb821220f4e2fd410a72ade26e3b",
+        strip_prefix = "bzip2-0.3.3",
+        type = "tar.gz",
+        url = "https://crates.io/api/v1/crates/bzip2/0.3.3/download",
+    )
+
+    http_archive(
+        name = "crate_universe_uses_sys_crate_rust_deps__bzip2_sys__0_1_10_1_0_8",
+        # TODO: Allow configuring where rust_library comes from
+        build_file_content = """# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+# buildifier: disable=load-on-top
+load(
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
+
+# buildifier: leave-alone
+cargo_build_script(
+    name = "bzip2_sys_build_script",
+    srcs = glob(["**/*.rs"]),
+    crate_root = "build.rs",
+    edition = "2015",
+    deps = [
+        "@crate_universe_uses_sys_crate_rust_deps__cc__1_0_66//:cc",
+        "@crate_universe_uses_sys_crate_rust_deps__pkg_config__0_3_19//:pkg_config",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    crate_features = [
+    ],
+    build_script_env = {
+    },
+    links = "bzip2",
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.1.10+1.0.8",
+    visibility = ["//visibility:private"],
+)
+
+
+# buildifier: leave-alone
+rust_library(
+    name = "bzip2_sys",
+    crate_type = "lib",
+    deps = [
+        ":bzip2_sys_build_script",
+        "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "lib.rs",
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "0.1.10+1.0.8",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+""",
+        sha256 = "17fa3d1ac1ca21c5c4e36a97f3c3eb25084576f6fc47bf0139c1123434216c6c",
+        strip_prefix = "bzip2-sys-0.1.10+1.0.8",
+        type = "tar.gz",
+        url = "https://crates.io/api/v1/crates/bzip2-sys/0.1.10+1.0.8/download",
+    )
+
+    http_archive(
+        name = "crate_universe_uses_sys_crate_rust_deps__cc__1_0_66",
+        # TODO: Allow configuring where rust_library comes from
+        build_file_content = """# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+
+# buildifier: leave-alone
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_gcc_shim",
+    deps = [
+        # Binaries get an implicit dependency on their crate's lib
+        ":cc",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/bin/gcc-shim.rs",
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "1.0.66",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+
+# buildifier: leave-alone
+rust_library(
+    name = "cc",
+    crate_type = "lib",
+    deps = [
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "1.0.66",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+# Unsupported target "cc_env" with type "test" omitted
+# Unsupported target "cflags" with type "test" omitted
+# Unsupported target "cxxflags" with type "test" omitted
+# Unsupported target "test" with type "test" omitted
+""",
+        sha256 = "4c0496836a84f8d0495758516b8621a622beb77c0fed418570e50764093ced48",
+        strip_prefix = "cc-1.0.66",
+        type = "tar.gz",
+        url = "https://crates.io/api/v1/crates/cc/1.0.66/download",
+    )
+
+    http_archive(
+        name = "crate_universe_uses_sys_crate_rust_deps__libc__0_2_76",
+        # TODO: Allow configuring where rust_library comes from
+        build_file_content = """# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+# buildifier: disable=load-on-top
+load(
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
+
+# buildifier: leave-alone
+cargo_build_script(
+    name = "libc_build_script",
+    srcs = glob(["**/*.rs"]),
+    crate_root = "build.rs",
+    edition = "2015",
+    deps = [
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    crate_features = [
+      "default",
+      "std",
+    ],
+    build_script_env = {
+    },
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.2.76",
+    visibility = ["//visibility:private"],
+)
+
+
+# buildifier: leave-alone
+rust_library(
+    name = "libc",
+    crate_type = "lib",
+    deps = [
+        ":libc_build_script",
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "0.2.76",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+        "default",
+        "std",
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+# Unsupported target "const_fn" with type "test" omitted
+""",
+        sha256 = "755456fae044e6fa1ebbbd1b3e902ae19e73097ed4ed87bb79934a867c007bc3",
+        strip_prefix = "libc-0.2.76",
+        type = "tar.gz",
+        url = "https://crates.io/api/v1/crates/libc/0.2.76/download",
+    )
+
+    http_archive(
+        name = "crate_universe_uses_sys_crate_rust_deps__pkg_config__0_3_19",
+        # TODO: Allow configuring where rust_library comes from
+        build_file_content = """# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated targets
+
+# buildifier: leave-alone
+rust_library(
+    name = "pkg_config",
+    crate_type = "lib",
+    deps = [
+    ],
+    srcs = glob(["**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    data = glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ]),
+    version = "0.3.19",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+    ],
+    aliases = select({
+        # Default
+        "//conditions:default": {
+        },
+    }),
+)
+# Unsupported target "test" with type "test" omitted
+""",
+        sha256 = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c",
+        strip_prefix = "pkg-config-0.3.19",
+        type = "tar.gz",
+        url = "https://crates.io/api/v1/crates/pkg-config/0.3.19/download",
+    )
+
+
+CRATE_TARGET_NAMES = {
+    "bzip2": "@crate_universe_uses_sys_crate_rust_deps__bzip2__0_3_3//:bzip2",
+    "libc": "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+}
+
+def crate(crate_name):
+    """Return the name of the target for the given crate.
+    """
+    target_name = CRATE_TARGET_NAMES.get(crate_name)
+    if target_name == None:
+        fail("Unknown crate name: {}".format(crate_name))
+    return target_name
+
+def all_deps():
+    """Return all standard dependencies explicitly listed in the Cargo.toml or packages list."""
+    return [
+        crate(crate_name) for crate_name in [
+            "bzip2",
+            "libc",
+        ]
+    ]
+
+def all_proc_macro_deps():
+    """Return all proc-macro dependencies explicitly listed in the Cargo.toml or packages list."""
+    return [
+        crate(crate_name) for crate_name in [
+        ]
+    ]
+
+def crates_from(label):
+    mapping = {
+        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [crate("bzip2")],
+    }
+    return mapping[_absolutify(label)]
+
+def dev_crates_from(label):
+    mapping = {
+        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+    }
+    return mapping[_absolutify(label)]
+
+def build_crates_from(label):
+    mapping = {
+        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+    }
+    return mapping[_absolutify(label)]
+
+def proc_macro_crates_from(label):
+    mapping = {
+        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+    }
+    return mapping[_absolutify(label)]
+
+def _absolutify(label):
+    if label.startswith("//") or label.startswith("@"):
+        return label
+    if label.startswith(":"):
+        return "//" + native.package_name() + label
+    return "//" + native.package_name() + ":" + label

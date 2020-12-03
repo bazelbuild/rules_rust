@@ -8,6 +8,11 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 
+load("@crate_universe_basic_rust_deps//:defs.bzl", basic_pinned_rust_install = "pinned_rust_install")
+load("@crate_universe_uses_proc_macro_rust_deps//:defs.bzl", uses_proc_macro_pinned_rust_install = "pinned_rust_install")
+load("@crate_universe_uses_sys_crate_rust_deps//:defs.bzl", uses_sys_crate_pinned_rust_install = "pinned_rust_install")
+load("@crate_universe_has_aliased_deps_rust_deps//:defs.bzl", has_aliased_deps_pinned_rust_install = "pinned_rust_install")
+
 # buildifier: disable=unnamed-macro
 def transitive_deps(is_top_level = False):
     """Define transitive dependencies for `rules_rust` examples
@@ -36,3 +41,11 @@ def transitive_deps(is_top_level = False):
         )
 
     node_repositories()
+
+    basic_pinned_rust_install()
+
+    uses_proc_macro_pinned_rust_install()
+
+    uses_sys_crate_pinned_rust_install()
+
+    has_aliased_deps_pinned_rust_install()

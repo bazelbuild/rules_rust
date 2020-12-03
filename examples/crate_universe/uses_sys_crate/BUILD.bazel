@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+)
+load("@crate_universe_uses_sys_crate_rust_deps//:defs.bzl", "crate")
+
+rust_binary(
+    name = "uses_sys_crate",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = [crate("bzip2")],
+)
+
+sh_test(
+    name = "test",
+    size = "small",
+    srcs = ["test.sh"],
+    args = ["$(location :uses_sys_crate)"],
+    data = [":uses_sys_crate"],
+)

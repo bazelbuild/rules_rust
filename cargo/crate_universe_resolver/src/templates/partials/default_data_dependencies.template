@@ -1,0 +1,12 @@
+glob(["**"], exclude=[
+        # These can be manually added with overrides if needed.
+
+        # If you run `cargo build` in this dir, the target dir can get very big very quick.
+        "target/**",
+
+        # These are not vendored from the crate - we exclude them to avoid busting caches
+        # when we change how we generate BUILD files and such.
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ])

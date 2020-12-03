@@ -1,0 +1,41 @@
+    srcs = glob(["**/*.rs"]),
+    crate_root = "{{ target.path }}",
+    edition = "{{ target.edition }}",
+    {%- if crate.default_deps.proc_macro_dependencies %}
+    proc_macro_deps = [
+    {%- for dependency in crate.default_deps.proc_macro_dependencies %}
+        "{{dependency.buildable_target}}",
+    {%- endfor %}
+    ],
+    {%- endif %}
+    rustc_flags = [
+        "--cap-lints=allow",
+        {%- for flag in crate.raze_settings.additional_flags %}
+        "{{flag}}",
+        {%- endfor %}
+    ],
+    {%- if crate.raze_settings.additional_env %}
+    rustc_env = {
+        {%- for key, value in crate.raze_settings.additional_env %}
+        "{{key}}": "{{value}}",
+        {%- endfor %}
+    },
+    {%- endif %}
+    data = {% include "templates/partials/default_data_dependencies.template" -%}
+    {%- if crate.raze_settings.data_attr -%} + {{crate.raze_settings.data_attr}}
+    {%- endif %}
+    {%- if crate.targeted_deps %}
+    {%- include "templates/partials/targeted_data_dependencies.template" %},
+    {%- else %},
+    {%- endif %}
+    version = "{{ crate.pkg_version }}",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    crate_features = [
+        {%- for feature in crate.features %}
+        "{{feature}}",
+        {%- endfor %}
+    ],
+    aliases = {%- include "templates/partials/targeted_aliases.template" %},

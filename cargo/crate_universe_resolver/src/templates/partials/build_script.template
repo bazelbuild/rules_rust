@@ -1,0 +1,60 @@
+# buildifier: disable=load-on-top
+load(
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
+
+# buildifier: leave-alone
+cargo_build_script(
+    name = "{{ crate_name_sanitized }}_build_script",
+    srcs = glob(["**/*.rs"]),
+    {%- if crate.build_script_target.path %}
+    crate_root = "{{ crate.build_script_target.path }}",
+    {%- else %}
+    crate_root = "build.rs",
+    {%- endif %}
+    edition = "{{ crate.edition }}",
+    deps = [
+      {%- for dependency in crate.default_deps.build_dependencies %}
+        "{{dependency.buildable_target}}",
+      {%- endfor %}
+    ]
+    {%- if crate.targeted_deps %}
+    {%- include "templates/partials/targeted_build_script_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+    {%- if crate.default_deps.build_proc_macro_dependencies %}
+    proc_macro_deps = [
+    {%- for dependency in crate.default_deps.build_proc_macro_dependencies %}
+        "{{dependency.buildable_target}}",
+    {%- endfor %}
+    ],
+    {%- endif %}
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    crate_features = [
+      {%- for feature in crate.features %}
+      "{{feature}}",
+      {%- endfor %}
+    ],
+    build_script_env = {
+        {%- for key, value in crate.raze_settings.buildrs_additional_environment_variables %}
+        "{{key}}": "{{value}}",
+        {%- endfor %}
+    },
+    {%- if crate.links %}
+    links = "{{ crate.links }}",
+    {%- endif %}
+    data = {% include "templates/partials/default_data_dependencies.template" -%}
+    {%- if crate.targeted_deps %}
+    {%- include "templates/partials/targeted_build_script_data_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "{{ crate.pkg_version }}",
+    visibility = ["//visibility:private"],
+)

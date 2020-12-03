@@ -1,0 +1,27 @@
+
+# buildifier: leave-alone
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_{{ target_name_sanitized }}",
+    deps = [
+        {%- if crate.lib_target_name %}
+        # Binaries get an implicit dependency on their crate's lib
+        ":{{crate.lib_target_name | replace(from="-", to="_") }}",
+        {%- endif %}
+        {%- if crate.build_script_target %}
+        ":{{ crate_name_sanitized }}_build_script",
+        {%- endif %}
+        {%- for dependency in crate.default_deps.dependencies %}
+        "{{dependency.buildable_target}}",
+        {%- endfor %}
+        {%- for dependency in crate.raze_settings.additional_deps %}
+        "{{dependency}}",
+        {%- endfor %}
+    ]
+    {%- if crate.targeted_deps %} 
+    {%- include "templates/partials/targeted_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+{% include "templates/partials/common_attrs.template" %}
+)

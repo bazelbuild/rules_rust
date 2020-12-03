@@ -1,0 +1,10 @@
+ select({
+{%- for condition, targeted_dep in targeted_metadata %}
+        # {{ targeted_dep.target }}
+        "{{ condition }}": {
+            {%- for alias in targeted_dep.deps.aliased_dependencies %}
+            "{{alias.target}}": "{{alias.alias}}",
+            {%- endfor %}
+        },
+{%- endfor %}
+    })
