@@ -165,7 +165,7 @@ def _expand_provider(lst, provider):
     """
     return [el[provider] for el in lst if provider in el]
 
-def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc, compile_deps):
+def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_grpc, compile_deps):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -174,7 +174,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         imports (depset): A set of transitive protobuf Imports.
         crate_name (str): The name of the Crate for the current target
         ctx (ctx): The current rule's context object
-        grpc (bool): True if the current rule is a `gRPC` rule.
+        is_grpc (bool): True if the current rule is a `gRPC` rule.
         compile_deps (list): A list of Rust dependencies (`List[Target]`)
 
     Returns:
@@ -183,7 +183,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
 
     # Create all the source in a specific folder
     proto_toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
-    output_dir = "%s.%s.rust" % (crate_name, "grpc" if grpc else "proto")
+    output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
     srcs = _generate_proto(
@@ -193,12 +193,12 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         imports = imports,
         output_dir = output_dir,
         proto_toolchain = proto_toolchain,
-        grpc = grpc,
+        is_grpc = is_grpc,
     )
 
     # and lib.rs
     lib_rs = ctx.actions.declare_file("%s/lib.rs" % output_dir)
-    _gen_lib(ctx, grpc, protos, lib_rs)
+    _gen_lib(ctx, is_grpc, protos, lib_rs)
     srcs.append(lib_rs)
 
     # And simulate rust_library behavior
@@ -228,12 +228,12 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, grpc,
         output_hash = output_hash,
     )
 
-def _rust_protogrpc_library_impl(ctx, grpc):
+def _rust_protogrpc_library_impl(ctx, is_grpc):
     """Implementation of the rust_(proto|grpc)_library.
 
     Args:
         ctx (ctx): The current rule's context object
-        grpc (bool): True if the current rule is a `gRPC` rule.
+        is_grpc (bool): True if the current rule is a `gRPC` rule.
 
     Returns:
         list: A list of providers, see `_rust_proto_compile`
@@ -251,7 +251,7 @@ def _rust_protogrpc_library_impl(ctx, grpc):
         imports = depset(transitive = [p.transitive_imports for p in proto]),
         crate_name = ctx.label.name,
         ctx = ctx,
-        grpc = grpc,
+        is_grpc = is_grpc,
         compile_deps = ctx.attr.rust_deps,
     )
 
