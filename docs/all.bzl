@@ -3,10 +3,6 @@ to have stardoc generated documentation.
 """
 
 load(
-    "@io_bazel_rules_rust//:workspace.bzl",
-    _rust_workspace = "rust_workspace",
-)
-load(
     "@io_bazel_rules_rust//bindgen:bindgen.bzl",
     _rust_bindgen = "rust_bindgen",
     _rust_bindgen_library = "rust_bindgen_library",
@@ -84,5 +80,3 @@ rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
-
-rust_workspace = _rust_workspace

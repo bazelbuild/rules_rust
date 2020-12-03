@@ -13,13 +13,11 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@bazel_skylib//lib:versions.bzl", "versions")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@io_bazel_rules_rust_bazel_version//:def.bzl", "BAZEL_VERSION")
 load(
     "@io_bazel_rules_rust//rust:private/utils.bzl",
     "get_lib_name",
@@ -235,17 +233,11 @@ def get_cc_toolchain(ctx):
     """
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    kwargs = {
-        "ctx": ctx,
-    } if len(BAZEL_VERSION) == 0 or versions.is_at_least(
-        "0.25.0",
-        BAZEL_VERSION,
-    ) else {}
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
-        **kwargs
     )
     return cc_toolchain, feature_configuration
 
@@ -258,11 +250,7 @@ def get_cc_user_link_flags(ctx):
     Returns:
         depset: The flags passed to Bazel by --linkopt option.
     """
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.18.0", BAZEL_VERSION)):
-        return ctx.fragments.cpp.linkopts
-    else:
-        return depset(ctx.fragments.cpp.linkopts)
+    return ctx.fragments.cpp.linkopts
 
 def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
     """Gathers cc_common linker information
@@ -375,11 +363,7 @@ def collect_inputs(
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.25.0", BAZEL_VERSION)):
-        linker_depset = find_cpp_toolchain(ctx).all_files
-    else:
-        linker_depset = depset(files._cc_toolchain)
+    linker_depset = find_cpp_toolchain(ctx).all_files
 
     compile_inputs = depset(
         crate_info.srcs +

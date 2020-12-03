@@ -7,7 +7,6 @@ bzl_library(
     name = "all_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@io_bazel_rules_rust_bazel_version//:def.bzl",
     ],
     deps = [
         "@bazel_skylib//:workspace",
@@ -59,9 +58,6 @@ PAGES = {
         "rust_toolchain",
         "rust_toolchain_repository",
         "rust_toolchain_repository_proxy",
-    ],
-    "rust_workspace": [
-        "rust_workspace",
     ],
 }
 

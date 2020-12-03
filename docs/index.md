@@ -30,10 +30,6 @@ http_archive(
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
-
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
-
-rust_workspace()
 ```
 
 The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 3.0.0.
