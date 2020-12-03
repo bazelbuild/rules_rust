@@ -9,6 +9,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
     copts = ["-std=c99"],
     linkopts = ["-Wl,-soname,libreturn_zero.so.2"],
     linkshared = True,
+    tags = ["manual"],
 ) for x in ("so", "so.2")]
 
 cc_library(
@@ -17,5 +18,6 @@ cc_library(
         ":libreturn_zero.so",
         ":libreturn_zero.so.2",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )

@@ -11,6 +11,7 @@ rust_binary(
     srcs = [
         "src/main.rs",
     ],
+    tags = ["manual"],
     deps = [
         "//test/versioned_dylib/c:libreturn_zero",
         "@libc",
@@ -20,4 +21,5 @@ rust_binary(
 rust_test(
     name = "versioned_dylib_test",
     crate = "versioned_dylib",
+    tags = ["manual"],
 )
