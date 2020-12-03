@@ -185,7 +185,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             transitive_dylibs.append(depset([
                 lib
                 for lib in libs.to_list()
-                # Dynamic libraries may have a version number nowhere, or before (linux) or after (macos) the extension.
+                # Dynamic libraries may have a version number nowhere, or before (macos) or after (linux) the extension.
                 if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]
             ]))
             transitive_staticlibs.append(depset([
