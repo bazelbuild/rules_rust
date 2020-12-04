@@ -25,8 +25,8 @@ fn parse_args() -> (String, u16) {
     let mut name = "world".to_owned();
     let mut port = 50051;
     for arg in env::args().skip(1) {
-        if arg.starts_with("-p=") {
-            port = u16::from_str(&arg[3..]).unwrap()
+        if let Some(argp) = arg.strip_prefix("-p=") {
+            port = u16::from_str(argp).unwrap()
         } else {
             name = arg.to_owned();
         }
