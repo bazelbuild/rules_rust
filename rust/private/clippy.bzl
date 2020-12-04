@@ -144,6 +144,7 @@ rust_clippy_aspect = aspect(
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_error_format": attr.label(default = "//:error_format"),
     },
     toolchains = [
         "@io_bazel_rules_rust//rust:toolchain",

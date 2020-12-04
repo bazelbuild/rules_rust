@@ -462,6 +462,7 @@ _rust_common_attrs = {
         allow_single_file = True,
         cfg = "exec",
     ),
+    "_error_format": attr.label(default = "//:error_format"),
 }
 
 _rust_library_attrs = {

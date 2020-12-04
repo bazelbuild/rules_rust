@@ -76,6 +76,13 @@ DepInfo = provider(
     },
 )
 
+_error_format_values = ["human", "json", "short"]
+
+ErrorFormatInfo = provider(
+    doc = "Set the --error-format flag for all rustc invocations",
+    fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
+)
+
 def _get_rustc_env(ctx, toolchain):
     """Gathers rustc environment variables
 
@@ -470,6 +477,8 @@ def construct_arguments(
     args.add(crate_info.root)
     args.add("--crate-name=" + crate_info.name)
     args.add("--crate-type=" + crate_info.type)
+    if hasattr(ctx.attr, "_error_format"):
+        args.add("--error-format=" + ctx.attr._error_format[ErrorFormatInfo].error_format)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
@@ -831,3 +840,15 @@ def _get_dirname(file):
         str: Directory name of `file`
     """
     return file.dirname
+
+def _error_format_impl(ctx):
+    raw = ctx.build_setting_value
+    if raw not in _error_format_values:
+        fail(str(ctx.label) + " expected a value in [" + ", ".join(_error_format_values) +
+             "] but got " + raw)
+    return ErrorFormatInfo(error_format = raw)
+
+error_format = rule(
+    implementation = _error_format_impl,
+    build_setting = config.string(flag = True),
+)
