@@ -397,7 +397,8 @@ def construct_arguments(
         build_env_file,
         build_flags_files,
         maker_path = None,
-        aspect = False):
+        aspect = False,
+        emit = ["dep-info", "link"]):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -416,6 +417,7 @@ def construct_arguments(
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         maker_path (File): An optional clippy marker file
         aspect (bool): True if called in an aspect context.
+        emit (list): Values for the --emit flag to rustc.
 
     Returns:
         tuple: A tuple of the following items
@@ -497,7 +499,7 @@ def construct_arguments(
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
-    args.add("--emit=dep-info,link")
+    args.add("--emit=" + ",".join(emit))
     args.add("--color=always")
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
@@ -516,17 +518,19 @@ def construct_arguments(
     add_edition_flags(args, crate_info)
 
     # Link!
+    if "link" in emit:
+        # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
+        # linker since it won't understand.
+        if toolchain.target_arch != "wasm32":
+            rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
+            env.update(link_env)
+            args.add("--codegen=linker=" + ld)
+            args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-    # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
-    # linker since it won't understand.
-    if toolchain.target_arch != "wasm32":
-        rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
-        env.update(link_env)
-        args.add("--codegen=linker=" + ld)
-        args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+        add_native_link_flags(args, dep_info)
 
-    add_native_link_flags(args, dep_info)
+    # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
     if crate_info.type == "proc-macro" and crate_info.edition != "2015":
