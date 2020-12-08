@@ -14,9 +14,11 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
+load("@io_bazel_rules_rust//rust:private/rust.bzl", "name_to_crate_name")
+
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
-    basename = basename.replace("-", "_")
+    basename = name_to_crate_name(basename)
     return basename.rsplit(".", 2)[0]
 
 def rust_generate_proto(

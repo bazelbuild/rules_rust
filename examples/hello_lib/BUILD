@@ -66,7 +66,7 @@ rust_library(
 )
 
 rust_test(
-    name = "hello_lib_test",
+    name = "hello-lib-test",
     crate = ":hello_lib",
 )
 

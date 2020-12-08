@@ -1,6 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@io_bazel_rules_rust//rust:private/rust.bzl", "name_to_crate_name")
 load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
 load("@io_bazel_rules_rust//rust:private/utils.bzl", "expand_locations", "find_toolchain")
 load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
@@ -107,7 +108,7 @@ def _build_script_impl(ctx):
             env["AR"] = ar_executable
 
     for f in ctx.attr.crate_features:
-        env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
+        env["CARGO_FEATURE_" + name_to_crate_name(f).upper()] = "1"
 
     env.update(expand_locations(
         ctx,
