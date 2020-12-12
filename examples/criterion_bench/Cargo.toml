@@ -1,0 +1,23 @@
+[package]
+name = "rules_rust_examples_criterion_bench"
+version = "0.0.1"
+edition = "2018"
+
+[dev-dependencies]
+criterion = "=0.3.3"
+
+[lib]
+name = "dummy"
+path = "dummy.rs"
+
+[package.metadata.raze]
+workspace_path = "//criterion_bench/raze"
+genmode = "Remote"
+gen_workspace_prefix = "rules_rust_examples_criterion_bench"
+default_gen_buildrs = true
+
+[package.metadata.raze.crates.bstr.'*']
+data_attr = "glob([\"src/**\"])"
+
+[package.metadata.raze.crates.criterion.'*']
+data_attr = "glob([\"src/**\"])"

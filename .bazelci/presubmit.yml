@@ -68,6 +68,7 @@ tasks:
       - "-@examples//ffi/rust_calling_c/simple/..."
       - "-@examples//hello_sys/..."
       - "-@examples//complex_sys/..."
+      - "-@examples//criterion_bench/..."
       - "-@examples//proto/..."
       - "-@examples//wasm/..."
     build_targets: *windows_targets

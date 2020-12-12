@@ -3,6 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@examples//complex_sys:repositories.bzl", "rules_rust_examples_complex_sys_repositories")
+load("@examples//criterion_bench/raze:crates.bzl", "rules_rust_examples_criterion_bench_fetch_remote_crates")
 load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
 load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
@@ -39,6 +40,8 @@ def deps():
     rules_rust_examples_hello_sys_fetch_remote_crates()
 
     rules_rust_examples_complex_sys_repositories()
+
+    rules_rust_examples_criterion_bench_fetch_remote_crates()
 
     maybe(
         http_archive,
