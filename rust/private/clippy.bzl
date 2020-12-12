@@ -93,17 +93,25 @@ def _clippy_aspect_impl(target, ctx):
         build_flags_files = build_flags_files,
         maker_path = clippy_marker.path,
         aspect = True,
+        emit = ["dep-info", "metadata"],
     )
 
-    # Deny the default-on clippy warning levels.
-    #
-    # If these are left as warnings, then Bazel will consider the execution
-    # result of the aspect to be "success", and Clippy won't be re-triggered
-    # unless the source file is modified.
-    args.add("-Dclippy::style")
-    args.add("-Dclippy::correctness")
-    args.add("-Dclippy::complexity")
-    args.add("-Dclippy::perf")
+    # Turn any warnings from clippy or rustc into an error, as otherwise
+    # Bazel will consider the execution result of the aspect to be "success",
+    # and Clippy won't be re-triggered unless the source file is modified.
+    if "__bindgen" in ctx.rule.attr.tags:
+        # bindgen-generated content is likely to trigger warnings, so
+        # only fail on clippy warnings
+        args.add("-Dclippy::style")
+        args.add("-Dclippy::correctness")
+        args.add("-Dclippy::complexity")
+        args.add("-Dclippy::perf")
+    else:
+        # fail on any warning
+        args.add("-Dwarnings")
+
+    if crate_info.is_test:
+        args.add("--test")
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,

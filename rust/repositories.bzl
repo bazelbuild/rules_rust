@@ -16,9 +16,9 @@ DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.47.0",
+        version = "1.48.0",
         iso_date = None,
-        rustfmt_version = "1.4.20",
+        rustfmt_version = "1.48.0",
         edition = None,
         dev_components = False,
         sha256s = None):

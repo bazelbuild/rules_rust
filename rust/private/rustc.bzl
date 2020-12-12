@@ -20,6 +20,7 @@ load(
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     "@io_bazel_rules_rust//rust:private/utils.bzl",
+    "expand_locations",
     "get_lib_name",
     "get_libs_for_static_executable",
     "relativize",
@@ -293,24 +294,6 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
 
     return ld, link_args, link_env
 
-def _expand_locations(ctx, env, data):
-    """Performs location-macro expansion on string values.
-
-    Note: Only `$(rootpath ...)` is recommended  as `$(execpath ...)` will fail
-    in the case of generated sources.
-
-    Args:
-        ctx (ctx): The rule's context object
-        env (str): The value possibly containing location macros to expand.
-        data (sequence of Targets): The targets which may be referenced by
-            location macros. This is expected to be the `data` attribute of
-            the target, though may have other targets or attributes mixed in.
-
-    Returns:
-        dict: A dict of environment variables with expanded location macros
-    """
-    return dict([(k, ctx.expand_location(v, data)) for (k, v) in env.items()])
-
 def _process_build_scripts(
         ctx,
         file,
@@ -369,6 +352,7 @@ def collect_inputs(
     compile_inputs = depset(
         crate_info.srcs +
         getattr(files, "data", []) +
+        getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -397,7 +381,8 @@ def construct_arguments(
         build_env_file,
         build_flags_files,
         maker_path = None,
-        aspect = False):
+        aspect = False,
+        emit = ["dep-info", "link"]):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -416,6 +401,7 @@ def construct_arguments(
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         maker_path (File): An optional clippy marker file
         aspect (bool): True if called in an aspect context.
+        emit (list): Values for the --emit flag to rustc.
 
     Returns:
         tuple: A tuple of the following items
@@ -497,7 +483,7 @@ def construct_arguments(
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
-    args.add("--emit=dep-info,link")
+    args.add("--emit=" + ",".join(emit))
     args.add("--color=always")
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
@@ -516,17 +502,19 @@ def construct_arguments(
     add_edition_flags(args, crate_info)
 
     # Link!
+    if "link" in emit:
+        # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
+        # linker since it won't understand.
+        if toolchain.target_arch != "wasm32":
+            rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
+            env.update(link_env)
+            args.add("--codegen=linker=" + ld)
+            args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-    # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
-    # linker since it won't understand.
-    if toolchain.target_arch != "wasm32":
-        rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
-        env.update(link_env)
-        args.add("--codegen=linker=" + ld)
-        args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+        add_native_link_flags(args, dep_info)
 
-    add_native_link_flags(args, dep_info)
+    # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
     if crate_info.type == "proc-macro" and crate_info.edition != "2015":
@@ -541,10 +529,11 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(_expand_locations(
+    env.update(expand_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(rule_attrs(ctx, aspect), "data", []),
+        getattr(rule_attrs(ctx, aspect), "data", []) +
+        getattr(rule_attrs(ctx, aspect), "compile_data", []),
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
