@@ -381,7 +381,17 @@ _rust_common_attrs = {
     ),
     "data": attr.label_list(
         doc = _tidy("""
-            List of files used by this rule at runtime.
+            List of files used by this rule at compile time and runtime.
+
+            If including data at compile time with include_str!() and similar,
+            prefer `compile_data` over `data`, to prevent the data also being included
+            in the runfiles.
+        """),
+        allow_files = True,
+    ),
+    "compile_data": attr.label_list(
+        doc = _tidy("""
+            List of files used by this rule at compile time.
 
             This attribute can be used to specify any data files that are embedded into
             the library, such as via the

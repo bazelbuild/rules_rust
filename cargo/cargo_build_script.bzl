@@ -113,7 +113,8 @@ def _build_script_impl(ctx):
     env.update(expand_locations(
         ctx,
         ctx.attr.build_script_env,
-        getattr(ctx.attr, "data", []),
+        getattr(ctx.attr, "data", []) +
+        getattr(ctx.attr, "compile_data", []),
     ))
 
     tools = depset(

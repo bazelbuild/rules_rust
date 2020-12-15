@@ -359,6 +359,7 @@ def collect_inputs(
     compile_inputs = depset(
         crate_info.srcs +
         getattr(files, "data", []) +
+        getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -540,7 +541,8 @@ def construct_arguments(
     env.update(expand_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(rule_attrs(ctx, aspect), "data", []),
+        getattr(rule_attrs(ctx, aspect), "data", []) +
+        getattr(rule_attrs(ctx, aspect), "compile_data", []),
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
