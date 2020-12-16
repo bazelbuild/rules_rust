@@ -106,6 +106,7 @@ def _get_rustc_env(ctx, toolchain):
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
         "CARGO_PKG_NAME": ctx.label.name,
+        "CARGO_CRATE_NAME": ctx.label.name.replace("-", "_"),
         "CARGO_PKG_VERSION_MAJOR": major,
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,

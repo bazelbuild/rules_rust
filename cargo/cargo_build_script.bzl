@@ -52,7 +52,8 @@ def _build_script_impl(ctx):
         crate_name = ctx.label.name
         if crate_name.endswith("_build_script"):
             crate_name = crate_name.replace("_build_script", "")
-        crate_name = crate_name.replace("_", "-")
+
+    pkg_name = crate_name.replace("_", "-")
 
     toolchain_tools = [
         # Needed for rustc to function.
@@ -68,7 +69,8 @@ def _build_script_impl(ctx):
 
     env.update({
         "CARGO_MANIFEST_DIR": manifest_dir,
-        "CARGO_PKG_NAME": crate_name,
+        "CARGO_PKG_NAME": pkg_name,
+        "CARGO_CRATE_NAME": crate_name,
         "HOST": toolchain.exec_triple,
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
@@ -134,7 +136,7 @@ def _build_script_impl(ctx):
     # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
     # for details.
     args = ctx.actions.args()
-    args.add_all([script.path, crate_name, links, out_dir.path, env_out.path, flags_out.path, link_flags.path, dep_env_out.path])
+    args.add_all([script.path, pkg_name, links, out_dir.path, env_out.path, flags_out.path, link_flags.path, dep_env_out.path])
     build_script_inputs = []
     for dep in ctx.attr.deps:
         if DepInfo in dep and dep[DepInfo].dep_env:
