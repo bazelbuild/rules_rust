@@ -1,0 +1,81 @@
+[package]
+name = "compile_with_bazel"
+version = "0.1.0"
+edition = '2018'
+
+# Mandatory (or Cargo tooling is unhappy)
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+anyhow = "=1.0.31"
+heck = "=0.3.1"
+hyper = "=0.13.6"
+syn= "=1.0.31"
+proc-macro2= "=1.0.18"
+proc-macro-error = "=1.0.2"
+prost = "=0.6.1"
+prost-derive = "=0.6.1"
+prost-build = "=0.6.1"
+prost-types = "=0.6.1"
+structopt = { version = "=0.3.13", default-features = false }
+thiserror = "=1.0.18"
+tonic = { version = "=0.3.0", features = ["default", "tls", "tls-roots", "transport"] }
+tonic-build = "=0.3.0"
+
+[raze]
+# The WORKSPACE relative path to the Cargo.toml working directory.
+workspace_path = "//proto/prostgen/raze"
+genmode = "Remote"
+default_gen_buildrs = true
+# default_gen_buildrs = false
+
+# The target to generate BUILD rules for.
+target = "x86_64-unknown-linux-gnu"
+
+# [raze.crates.proc-macro2.'1.0.21']
+# gen_buildrs = true
+# additional_flags = [
+#     "--cfg=u128",
+#     "--cfg=use_proc_macro",
+#     "--cfg=wrap_proc_macro",
+# ]
+# [raze.crates.proc-macro2.'1.0.18']
+# gen_buildrs = false
+# additional_flags = [
+#     "--cfg=u128",
+#     "--cfg=use_proc_macro",
+#     "--cfg=wrap_proc_macro",
+# ]
+#
+# [raze.crates.proc-macro-error.'1.0.2']
+# gen_buildrs = false
+# additional_flags = [
+#     "--cfg=use_fallback",
+# ]
+
+# [raze.crates.indexmap.'1.6.0']
+# # version 1.3 added no-std support, so it uses autocfg to detect the std crate
+# additional_flags = [
+#     "--cfg=has_std",
+# ]
+
+[raze.crates.prost-build.'0.6.1']
+gen_buildrs = false
+patches = [
+    "//proto/prostgen/raze/patches:prost-build-0.6.1.patch",
+]
+patch_args = ["-p1"]
+
+[raze.crates.ring.'0.16.15']
+gen_buildrs = false
+data_attr = 'glob(["**/src/data/*", "**/src/ec/**/*.der"])'
+additional_deps = [
+    # provided by the additional_build_file
+    ":ring-core",
+]
+additional_build_file = "builds/ring-0.16.BUILD"
+
+[raze.crates.webpki.'0.21.3']
+gen_buildrs = false
+data_attr = 'glob(["**/src/data/*"])'

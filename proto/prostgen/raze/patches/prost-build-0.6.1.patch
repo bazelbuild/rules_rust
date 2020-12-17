@@ -1,0 +1,20 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index c0c5724..8aad4e1 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -677,12 +677,12 @@ where
+ 
+ /// Returns the path to the `protoc` binary.
+-pub fn protoc() -> &'static Path {
+-    Path::new(env!("PROTOC"))
++pub fn protoc() -> PathBuf {
++    PathBuf::from(std::env::var("PROTOC").expect("protoc not specified"))
+ }
+ 
+ /// Returns the path to the Protobuf include directory.
+ pub fn protoc_include() -> &'static Path {
+-    Path::new(env!("PROTOC_INCLUDE"))
++    Path::new(option_env!("PROTOC_INCLUDE").unwrap_or("."))
+ }
+ 
+ #[cfg(test)]

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package prostgen.test;
+
+import "proto/prostgen/test/use_external.proto";
+
+message DependsOnUseExternal {
+  prostgen.test.UseExternal embeded = 1;
+}
