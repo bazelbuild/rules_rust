@@ -144,7 +144,11 @@ impl BuildScriptOutput {
         v.iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::DepEnv(env) = x {
-                    Some(format!("{}{}", prefix, Self::redact_exec_root(env, exec_root)))
+                    Some(format!(
+                        "{}{}",
+                        prefix,
+                        Self::redact_exec_root(env, exec_root)
+                    ))
                 } else {
                     None
                 }
