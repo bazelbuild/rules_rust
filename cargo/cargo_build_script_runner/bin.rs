@@ -202,7 +202,7 @@ fn parse_args() -> Result<Options, String> {
                 flagfile,
                 linkflags,
                 output_dep_env_path,
-                input_dep_env_paths: args.collect();
+                input_dep_env_paths: args.collect(),
             })
         }
         _ => {
