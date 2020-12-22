@@ -43,8 +43,8 @@ fn main() -> Result<(), String> {
         envfile,
         flagfile,
         linkflags,
-        depenvfile,
-        remaining_args,
+        output_dep_env_path,
+        input_dep_env_paths,
     } = parse_args()?;
 
     let out_dir_abs = exec_root.join(&out_dir);
@@ -66,7 +66,7 @@ fn main() -> Result<(), String> {
         .env("RUSTC", rustc)
         .env("RUST_BACKTRACE", "full");
 
-    for dep_env_path in remaining_args.iter() {
+    for dep_env_path in input_dep_env_paths.iter() {
         if let Ok(contents) = read_to_string(dep_env_path) {
             for line in contents.split('\n') {
                 // split on empty contents will still produce a single empty string in iterable.
@@ -146,11 +146,11 @@ fn main() -> Result<(), String> {
     )
     .expect(&format!("Unable to write file {:?}", envfile));
     write(
-        &depenvfile,
+        &output_dep_env_path,
         BuildScriptOutput::to_dep_env(&output, crate_links, &exec_root.to_string_lossy())
             .as_bytes(),
     )
-    .expect(&format!("Unable to write file {:?}", depenvfile));
+    .expect(&format!("Unable to write file {:?}", output_dep_env_path));
 
     let CompileAndLinkFlags {
         compile_flags,
@@ -173,8 +173,8 @@ struct Options {
     envfile: String,
     flagfile: String,
     linkflags: String,
-    depenvfile: String,
-    remaining_args: Vec<String>,
+    output_dep_env_path: String,
+    input_dep_env_paths: Vec<String>,
 }
 
 /// Parses positional comamnd line arguments into a well defined struct
@@ -191,13 +191,8 @@ fn parse_args() -> Result<Options, String> {
             Some(envfile), 
             Some(flagfile), 
             Some(linkflags), 
-            Some(depenvfile)
+            Some(output_dep_env_path)
         ) => {
-            let mut remaining_args = Vec::new();
-            while let Some(arg) = args.next() {
-                remaining_args.push(arg);
-            }
-
             Ok(Options{
                 progname,
                 crate_name,
@@ -206,12 +201,12 @@ fn parse_args() -> Result<Options, String> {
                 envfile,
                 flagfile,
                 linkflags,
-                depenvfile,
-                remaining_args,
+                output_dep_env_path,
+                input_dep_env_paths: args.collect();
             })
         }
         _ => {
-            Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile depenvfile [arg1...argn]".to_owned())
+            Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
         }
     }
 }
