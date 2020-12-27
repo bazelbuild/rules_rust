@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
+load("//rust:private/utils.bzl", "find_toolchain")
 
 _rust_doc_doc = """Generates code documentation.
 
@@ -174,5 +174,5 @@ rust_doc = rule(
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [str(Label("//rust:toolchain"))],
 )

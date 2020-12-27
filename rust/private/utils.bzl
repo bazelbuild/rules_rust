@@ -23,7 +23,7 @@ def find_toolchain(ctx):
     Returns:
         rust_toolchain: A Rust toolchain context.
     """
-    return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
+    return ctx.toolchains[Label("//rust:toolchain")]
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
 # dependency issues or generating docs will break.

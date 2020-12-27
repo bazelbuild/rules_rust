@@ -17,6 +17,6 @@ bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
     deps = [
-        "@io_bazel_rules_rust//rust/platform:rules",
+        "//rust/platform:rules",
     ],
 )

@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -467,7 +467,7 @@ _rust_common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_process_wrapper": attr.label(
-        default = "@io_bazel_rules_rust//util/process_wrapper",
+        default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
@@ -506,7 +506,7 @@ rust_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -596,7 +596,7 @@ rust_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -694,7 +694,7 @@ rust_test = rule(
     host_fragments = ["cpp"],
     test = True,
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -842,7 +842,7 @@ rust_test_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -865,7 +865,7 @@ rust_benchmark = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\

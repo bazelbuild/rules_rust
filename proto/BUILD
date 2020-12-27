@@ -25,7 +25,7 @@ rust_binary(
 toolchain(
     name = "default-proto-toolchain",
     toolchain = ":default-proto-toolchain-impl",
-    toolchain_type = "@io_bazel_rules_rust//proto:toolchain",
+    toolchain_type = "//proto:toolchain",
 )
 
 rust_proto_toolchain(name = "default-proto-toolchain-impl")

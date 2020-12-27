@@ -26,4 +26,4 @@ def rust_wasm_bindgen_repositories():
 
     rules_rust_wasm_bindgen_fetch_remote_crates()
 
-    native.register_toolchains("@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain")
+    native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))

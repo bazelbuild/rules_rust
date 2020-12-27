@@ -7,7 +7,7 @@ dummy_cc_toolchain(name = "dummy_cc_wasm32")
 # TODO(jedmonds@spotify.com): Need to support linking C code to rust code when compiling for wasm32.
 toolchain(
     name = "dummy_cc_wasm32_toolchain",
-    target_compatible_with = ["@io_bazel_rules_rust//rust/platform/cpu:wasm32"],
+    target_compatible_with = ["//rust/platform/cpu:wasm32"],
     toolchain = ":dummy_cc_wasm32",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )

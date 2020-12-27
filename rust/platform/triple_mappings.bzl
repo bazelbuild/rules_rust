@@ -186,9 +186,15 @@ def triple_to_constraint_set(triple):
         list: A list of constraints (each represented by a list of strings)
     """
     if triple == "wasm32-wasi":
-        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:wasi"]
+        return [
+            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
+            "@io_bazel_rules_rust//rust/platform/os:wasi",
+        ]
     if triple == "wasm32-unknown-unknown":
-        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:unknown"]
+        return [
+            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
+            "@io_bazel_rules_rust//rust/platform/os:unknown",
+        ]
 
     component_parts = triple.split("-")
     if len(component_parts) < 3:

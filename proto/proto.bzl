@@ -26,22 +26,22 @@ To use the Rust proto rules, add the following to your `WORKSPACE` file to add t
 external repositories for the Rust proto toolchain (in addition to the [rust rules setup](..)):
 
 ```python
-load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 ```
 """
 
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
-    "@io_bazel_rules_rust//proto:toolchain.bzl",
+    "//proto:toolchain.bzl",
     "GRPC_COMPILE_DEPS",
     "PROTO_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -182,7 +182,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     """
 
     # Create all the source in a specific folder
-    proto_toolchain = ctx.toolchains["@io_bazel_rules_rust//proto:toolchain"]
+    proto_toolchain = ctx.toolchains[Label("//proto:toolchain")]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
@@ -283,10 +283,10 @@ rust_proto_library = rule(
             default = PROTO_COMPILE_DEPS,
         ),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -294,16 +294,14 @@ rust_proto_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:optional_output_wrapper",
-            ),
+            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//proto:toolchain",
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//proto:toolchain")),
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -365,7 +363,7 @@ rust_grpc_library = rule(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -373,16 +371,14 @@ rust_grpc_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:optional_output_wrapper",
-            ),
+            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//proto:toolchain",
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//proto:toolchain")),
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -391,8 +387,8 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
-load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
+load("//proto:proto.bzl", "rust_grpc_library")
+load("//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",

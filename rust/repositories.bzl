@@ -609,8 +609,8 @@ def _rust_toolchain_repository_impl(ctx):
         if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
             _load_rustc_dev_nightly(ctx, target_triple)
 
-    ctx.file("WORKSPACE", "")
-    ctx.file("BUILD", "\n".join(build_components))
+    ctx.file("WORKSPACE.bazel", "")
+    ctx.file("BUILD.bazel", "\n".join(build_components))
 
 def _rust_toolchain_repository_proxy_impl(ctx):
     build_components = []
@@ -625,8 +625,8 @@ def _rust_toolchain_repository_proxy_impl(ctx):
             target_triple = target_triple,
         ))
 
-    ctx.file("WORKSPACE", "")
-    ctx.file("BUILD", "\n".join(build_components))
+    ctx.file("WORKSPACE.bazel", "")
+    ctx.file("BUILD.bazel", "\n".join(build_components))
 
 rust_toolchain_repository = repository_rule(
     doc = (
@@ -767,4 +767,4 @@ def rust_repository_set(
 
     # Register toolchains
     native.register_toolchains(*all_toolchain_names)
-    native.register_toolchains("@io_bazel_rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")
+    native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))

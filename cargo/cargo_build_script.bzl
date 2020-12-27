@@ -1,10 +1,10 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@io_bazel_rules_rust//rust:private/rust.bzl", "name_to_crate_name")
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "expand_locations", "find_toolchain")
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+load("//rust:private/rust.bzl", "name_to_crate_name")
+load("//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust:private/utils.bzl", "expand_locations", "find_toolchain")
+load("//rust:rust.bzl", "rust_binary")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -232,7 +232,7 @@ _build_script_run = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )

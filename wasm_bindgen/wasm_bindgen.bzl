@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/transitions.bzl", "wasm_bindgen_transition")
+load("//rust:private/transitions.bzl", "wasm_bindgen_transition")
 
 _WASM_BINDGEN_DOC = """\
 Generates javascript and typescript bindings for a webassembly module.
@@ -60,7 +60,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 """
 
 def _rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains["@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain"]
+    toolchain = ctx.toolchains[Label("//wasm_bindgen:wasm_bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
 
     args = ctx.actions.args()
@@ -141,7 +141,7 @@ rust_wasm_bindgen = rule(
             doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
         ),
         "_whitelist_function_transition": attr.label(
-            default = "//tools/whitelists/function_transition_whitelist",
+            default = Label("//tools/whitelists/function_transition_whitelist"),
         ),
     },
     outputs = {
@@ -152,7 +152,7 @@ rust_wasm_bindgen = rule(
         "typescript_bindings": "%{name}.d.ts",
     },
     toolchains = [
-        "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
+        str(Label("//wasm_bindgen:wasm_bindgen_toolchain")),
     ],
 )
 

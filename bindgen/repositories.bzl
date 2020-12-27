@@ -31,7 +31,7 @@ def rust_bindgen_repositories():
 
     rules_rust_bindgen_fetch_remote_crates()
 
-    native.register_toolchains("@io_bazel_rules_rust//bindgen:default_bindgen_toolchain")
+    native.register_toolchains(str(Label("//bindgen:default_bindgen_toolchain")))
 
 _COMMON_WORKSPACE = """\
 workspace(name = "{}")
