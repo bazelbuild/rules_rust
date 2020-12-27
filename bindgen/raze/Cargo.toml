@@ -9,23 +9,25 @@ path = "fake_rules_rust_bindgen_lib.rs"
 bindgen = "0.55.1"
 libloading = "=0.6.3"
 
-[raze]
+[package.metadata.raze]
 genmode = "Remote"
 workspace_path = "//bindgen/raze"
 gen_workspace_prefix = "rules_rust_bindgen"
-output_buildfile_suffix = "BUILD"
+rust_rules_workspace_name = "io_bazel_rules_rust"
+package_aliases_dir = "."
+default_gen_buildrs = false
 
-[raze.crates.bindgen.'0.55.1']
+[package.metadata.raze.crates.bindgen.'0.55.1']
 gen_buildrs = true
 extra_aliased_targets = ["cargo_bin_bindgen"]
 
-[raze.crates.clang-sys.'1.0.0']
+[package.metadata.raze.crates.clang-sys.'1.0.0']
 gen_buildrs = true
 
-[raze.crates.libloading.'0.6.3']
+[package.metadata.raze.crates.libloading.'0.6.3']
 gen_buildrs = true
 
-[raze.crates.log.'0.4.11']
+[package.metadata.raze.crates.log.'0.4.11']
 additional_flags = [
     "--cfg=atomic_cas",
 ]

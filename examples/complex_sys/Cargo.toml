@@ -9,6 +9,7 @@ path = "src/main.rs"
 [dependencies]
 git2 = "=0.13.12"
 
+# WARNING: Subsequent runs of cargo-raze on this manifest will break examples
 [raze]
 workspace_path = "//complex_sys/raze"
 genmode = "Remote"
