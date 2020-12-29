@@ -16,13 +16,13 @@ DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.48.0",
+        version = "1.49.0",
         iso_date = None,
-        rustfmt_version = "1.48.0",
+        rustfmt_version = None,
         edition = None,
         dev_components = False,
         sha256s = None):
-    """Emits a default set of toolchains for Linux, OSX, and Freebsd
+    """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
     other hosts or for additional target triples.
@@ -41,16 +41,19 @@ def rust_repositories(
     See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for more details.
 
     Args:
-        version: The version of Rust. Either "nightly", "beta", or an exact version.
-        rustfmt_version: The version of rustfmt. Either "nightly", "beta", or an exact version.
-        iso_date: The date of the nightly or beta release (or None, if the version is a specific version).
-        edition: The rust edition to be used by default (2015 (default) or 2018)
-        dev_components: Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-        sha256s: A dict associating tool subdirectories to sha256 hashes.
+        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
+        iso_date (str, optional): The date of the nightly or beta release (or None, if the version is a specific version).
+        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
+        edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
+        dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
+        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
     """
 
     if dev_components and version != "nightly":
         fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
+
+    if not rustfmt_version:
+        rustfmt_version = version
 
     maybe(
         http_archive,
