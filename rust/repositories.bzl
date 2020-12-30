@@ -409,7 +409,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     "${RUST_STATIC_URL}/dist/index.html" if the RUST_STATIC_URL envinronment variable is set).
 
     Args:
-        ctx (ctx): A repository_ctx (no attrs required).
+        ctx (repository_ctx): A repository_ctx (no attrs required).
         tool_name (str): The name of the given tool per the archive naming.
         tool_subdirectories (str): The subdirectories of the tool files (at a level below the root directory of
             the archive). The root directory of the archive is expected to match
@@ -424,7 +424,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
                                              .../etc
             tool_subdirectories = ["clippy-preview", "rustc"]
         version (str): The version of the tool among "nightly", "beta', or an exact version.
-        iso_date (bool): The date of the tool (or None, if the version is a specific version).
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
         target_triple (str): The rust-style target triple of the tool
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
     """
@@ -434,15 +434,17 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     # N.B. See https://static.rust-lang.org/dist/index.html to find the tool_suburl for a given
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    static_rust = ctx.os.environ["STATIC_RUST_URL"] if "STATIC_RUST_URL" in ctx.os.environ else "https://static.rust-lang.org"
+    static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
     url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
-    archive_path = tool_path + ".tar.gz"
+    archive_path = "{}.tar.gz".format(tool_path)
     ctx.download(
         url,
         output = archive_path,
-        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or sha256,
+        sha256 = getattr(ctx.attr, "sha256s", dict()).get(tool_suburl) or
+                 FILE_KEY_TO_SHA.get(tool_suburl) or
+                 sha256,
     )
     for subdirectory in tool_subdirectories:
         ctx.extract(
