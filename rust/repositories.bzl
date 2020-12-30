@@ -442,7 +442,9 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     ctx.download(
         url,
         output = archive_path,
-        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or sha256,
+        sha256 = getattr(repository_ctx.attr, "sha256s", dict()).get(tool_suburl) or
+                 FILE_KEY_TO_SHA.get(tool_suburl) or
+                 sha256,
     )
     for subdirectory in tool_subdirectories:
         ctx.extract(
