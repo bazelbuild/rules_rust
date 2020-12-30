@@ -46,12 +46,17 @@ def _clippy_aspect_impl(target, ctx):
     if CrateInfo not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
-    if rust_srcs == []:
-        return []
 
     toolchain = find_toolchain(ctx)
     crate_info = target[CrateInfo]
-    root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
+
+    if crate_info.is_test:
+        root = crate_info.root
+    else:
+        if rust_srcs == []:
+            # nothing to do
+            return []
+        root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
 
     dep_info, build_info = collect_deps(
         ctx.label,
