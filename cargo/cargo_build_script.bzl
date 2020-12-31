@@ -45,6 +45,11 @@ def _build_script_impl(ctx):
     manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
+    streams = struct(
+        stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
+        stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
+    )
+
     crate_name = ctx.attr.crate_name
 
     # Derive crate name from the rule label which is <crate_name>_build_script if not provided.
@@ -134,7 +139,18 @@ def _build_script_impl(ctx):
     # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
     # for details.
     args = ctx.actions.args()
-    args.add_all([script.path, crate_name, links, out_dir.path, env_out.path, flags_out.path, link_flags.path, dep_env_out.path])
+    args.add_all([
+        script.path,
+        crate_name,
+        links,
+        out_dir.path,
+        env_out.path,
+        flags_out.path,
+        link_flags.path,
+        dep_env_out.path,
+        streams.stdout.path,
+        streams.stderr.path,
+    ])
     build_script_inputs = []
     for dep in ctx.attr.deps:
         if DepInfo in dep and dep[DepInfo].dep_env:
@@ -147,7 +163,7 @@ def _build_script_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args],
-        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out],
+        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out, streams.stdout, streams.stderr],
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
@@ -162,6 +178,7 @@ def _build_script_impl(ctx):
             flags = flags_out,
             link_flags = link_flags,
         ),
+        OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
     ]
 
 _build_script_run = rule(

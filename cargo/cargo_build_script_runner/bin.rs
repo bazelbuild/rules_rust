@@ -44,6 +44,8 @@ fn main() -> Result<(), String> {
         flagfile,
         linkflags,
         output_dep_env_path,
+        stdout_path,
+        stderr_path,
         input_dep_env_paths,
     } = parse_args()?;
 
@@ -111,14 +113,16 @@ fn main() -> Result<(), String> {
         }
     }
 
-    let output = BuildScriptOutput::from_command(&mut command).map_err(|exit_code| {
+    let (buildrs_outputs, process_output) = BuildScriptOutput::from_command(&mut command).map_err(|process_output| {
         format!(
-            "Build script process failed{}",
-            if let Some(exit_code) = exit_code {
+            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+            if let Some(exit_code) = process_output.status.code() {
                 format!(" with exit code {}", exit_code)
             } else {
                 String::new()
-            }
+            },
+            String::from_utf8(process_output.stdout).expect("Failed to parse stdout of child process"),
+            String::from_utf8(process_output.stderr).expect("Failed to parse stdout of child process"),
         )
     })?;
 
@@ -142,20 +146,30 @@ fn main() -> Result<(), String> {
 
     write(
         &envfile,
-        BuildScriptOutput::to_env(&output, &exec_root.to_string_lossy()).as_bytes(),
+        BuildScriptOutput::to_env(&buildrs_outputs, &exec_root.to_string_lossy()).as_bytes(),
     )
     .expect(&format!("Unable to write file {:?}", envfile));
     write(
         &output_dep_env_path,
-        BuildScriptOutput::to_dep_env(&output, crate_links, &exec_root.to_string_lossy())
+        BuildScriptOutput::to_dep_env(&buildrs_outputs, crate_links, &exec_root.to_string_lossy())
             .as_bytes(),
     )
     .expect(&format!("Unable to write file {:?}", output_dep_env_path));
+    write(
+        &stdout_path,
+        process_output.stdout,
+    )
+    .expect(&format!("Unable to write file {:?}", stdout_path));
+    write(
+        &stderr_path,
+        process_output.stderr,
+    )
+    .expect(&format!("Unable to write file {:?}", stderr_path));
 
     let CompileAndLinkFlags {
         compile_flags,
         link_flags,
-    } = BuildScriptOutput::to_flags(&output, &exec_root.to_string_lossy());
+    } = BuildScriptOutput::to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
 
     write(&flagfile, compile_flags.as_bytes())
         .expect(&format!("Unable to write file {:?}", flagfile));
@@ -174,6 +188,8 @@ struct Options {
     flagfile: String,
     linkflags: String,
     output_dep_env_path: String,
+    stdout_path: String,
+    stderr_path: String,
     input_dep_env_paths: Vec<String>,
 }
 
@@ -182,7 +198,7 @@ fn parse_args() -> Result<Options, String> {
     let mut args = env::args().skip(1);
 
     // TODO: we should consider an alternative to positional arguments.
-    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
+    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
         (
             Some(progname), 
             Some(crate_name), 
@@ -190,8 +206,10 @@ fn parse_args() -> Result<Options, String> {
             Some(out_dir), 
             Some(envfile), 
             Some(flagfile), 
-            Some(linkflags), 
-            Some(output_dep_env_path)
+            Some(linkflags),
+            Some(output_dep_env_path),
+            Some(stdout_path),
+            Some(stderr_path),
         ) => {
             Ok(Options{
                 progname,
@@ -202,6 +220,8 @@ fn parse_args() -> Result<Options, String> {
                 flagfile,
                 linkflags,
                 output_dep_env_path,
+                stdout_path,
+                stderr_path,
                 input_dep_env_paths: args.collect(),
             })
         }
