@@ -368,7 +368,7 @@ mod test {
     use super::Greeter;
 
     #[test]
-    fn test_greet() {
+    fn test_greeting() {
         let hello = Greeter::new("Hi");
         assert_eq!("Hi Rust", hello.greet("Rust"));
     }
