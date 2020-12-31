@@ -1,11 +1,12 @@
-pub fn foo() {
-    println!("Hello world");
+pub fn greeting() -> String {
+    "Hello World".to_owned()
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
-        assert_eq!(2 + 2, 4);
+        assert_eq!(greeting(), "Hello World".to_owned());
     }
 }
