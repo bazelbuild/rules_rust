@@ -943,6 +943,18 @@ rust_wasm_bindgen(<a href="#rust_wasm_bindgen-name">name</a>, <a href="#rust_was
 
 Generates javascript and typescript bindings for a webassembly module.
 
+To use the Rust WebAssembly bindgen rules, add the following to your `WORKSPACE` file to add the
+external repositories for the Rust bindgen toolchain (in addition to the Rust rules setup):
+
+```python
+load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+
+rust_wasm_bindgen_repositories()
+```
+
+An example of this rule in use can be seen at [@io_bazel_rules_rust//examples/wasm/...](../examples/wasm)
+
+
 **ATTRIBUTES**
 
 
@@ -962,6 +974,32 @@ rust_wasm_bindgen_toolchain(<a href="#rust_wasm_bindgen_toolchain-name">name</a>
 </pre>
 
 The tools required for the `rust_wasm_bindgen` rule.
+
+You can also use your own version of wasm-bindgen using the toolchain rules below:
+
+```python
+load("@io_bazel_rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+
+rust_bindgen_toolchain(
+    bindgen = "//my/raze:cargo_bin_wasm_bindgen",
+)
+
+toolchain(
+    name = "wasm-bindgen-toolchain",
+    toolchain = "wasm-bindgen-toolchain-impl",
+    toolchain_type = "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
+)
+```
+
+Now that you have your own toolchain, you need to register it by
+inserting the following statement in your `WORKSPACE` file:
+
+```python
+register_toolchains("//my/toolchains:wasm-bindgen-toolchain")
+```
+
+For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
+
 
 **ATTRIBUTES**
 
