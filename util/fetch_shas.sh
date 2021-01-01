@@ -11,12 +11,12 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY}" ]]; then
     BUILD_WORKSPACE_DIRECTORY="$( dirname "${SCRIPT_DIR}")"
 fi
 
-TOOLS="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TOOLS.txt)"
-TARGETS="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TARGETS.txt)"
-VERSIONS="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_VERSIONS.txt)"
-BETA_ISO_DATES="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_BETA_ISO_DATES.txt)"
-NIGHTLY_ISO_DATES="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_NIGHTLY_ISO_DATES.txt)"
-RUSTFMT_VERSIONS="$(cat ${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_RUSTFMT_VERSIONS.txt)"
+TOOLS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TOOLS.txt")"
+TARGETS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TARGETS.txt")"
+VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_VERSIONS.txt")"
+BETA_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_BETA_ISO_DATES.txt")"
+NIGHTLY_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_NIGHTLY_ISO_DATES.txt")"
+RUSTFMT_VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_RUSTFMT_VERSIONS.txt")"
 
 enumerate_keys() {
   for TOOL in $TOOLS
@@ -55,8 +55,11 @@ emit_bzl_file_contents() {
     | grep -v " $" \
     > /tmp/reload_shas_shalist.txt
 
-  echo "# buildifier: disable=module-docstring"
-  echo "# This is a generated file -- see //util:fetch_shas"
+  echo "\"\"\"A module containing a mapping of Rust tools to checksums"
+  echo ""
+  echo "This is a generated file -- see //util:fetch_shas"
+  echo "\"\"\""
+  echo ""
   echo "FILE_KEY_TO_SHA = {"
   cat /tmp/reload_shas_shalist.txt | sed '/^[[:space:]]*$/d' | sort | awk '{print "    \"" $1 "\": \"" $2 "\","}'
   echo "}"

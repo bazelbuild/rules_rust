@@ -1,5 +1,8 @@
-# buildifier: disable=module-docstring
-# This is a generated file -- see //util:fetch_shas
+"""A module containing a mapping of Rust tools to checksums
+
+This is a generated file -- see //util:fetch_shas
+"""
+
 FILE_KEY_TO_SHA = {
     "2018-10-30/llvm-tools-beta-aarch64-unknown-linux-gnu": "9417a07c501e173fe3848c815b8536cf70c6518c8040d45b19260ca3ab720760",
     "2018-10-30/llvm-tools-beta-x86_64-apple-darwin": "b86d22bc723936f23186acaa94cd0738ff1c7b703d67712be62d99845a6ccc80",
