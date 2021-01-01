@@ -66,4 +66,4 @@ emit_bzl_file_contents() {
   rm /tmp/reload_shas_shalist.txt
 }
 
-echo "$(emit_bzl_file_contents $(enumerate_keys))" > ${BUILD_WORKSPACE_DIRECTORY}/rust/known_shas.bzl
+echo "$(emit_bzl_file_contents $(enumerate_keys))" > "${BUILD_WORKSPACE_DIRECTORY}/rust/known_shas.bzl"
