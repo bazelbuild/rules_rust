@@ -191,7 +191,7 @@ _build_script_run = rule(
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
         "script": attr.label(
-            doc = "The binary script to run, generally a rust_binary target.",
+            doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             allow_files = True,
             mandatory = True,
@@ -204,7 +204,8 @@ _build_script_run = rule(
             doc = "The name of the native library this crate links against.",
         ),
         "deps": attr.label_list(
-            doc = "The dependencies of the crate defined by `crate_name`",
+            doc = "The Rust dependencies of the crate defined by `crate_name`",
+            providers = [DepInfo],
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
