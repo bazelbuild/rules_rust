@@ -24,7 +24,7 @@ use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
 use std::process::Command;
 
-fn main() -> Result<(), String> {
+fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
     // some execution strategies and remote execution environments may use symlinks in ways which
     // canonicalizing them may break them, e.g. by having input files be symlinks into a /cas
@@ -280,4 +280,15 @@ fn absolutify(root: &Path, maybe_relative: OsString) -> OsString {
     } else {
         maybe_relative
     }
+}
+
+fn main() {
+    std::process::exit(match run_buildrs() {
+        Ok(_) => 0,
+        Err(err) => {
+            // Neatly print errors
+            eprintln!("{}", err);
+            1
+        }
+    });
 }
