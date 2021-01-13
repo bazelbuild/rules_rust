@@ -8,15 +8,18 @@ path = "src/main.rs"
 
 [dependencies]
 git2 = "=0.13.12"
+openssl = "=0.10.32"
+openssl-sys = "=0.9.60"
 
-# WARNING: Subsequent runs of cargo-raze on this manifest will break examples
-[raze]
+[package.metadata.raze]
 workspace_path = "//complex_sys/raze"
 genmode = "Remote"
 gen_workspace_prefix = "rules_rust_examples_complex_sys"
+rust_rules_workspace_name = "io_bazel_rules_rust"
+package_aliases_dir = "raze"
 default_gen_buildrs = true
 
-[raze.crates.openssl-sys.'0.9.58']
+[package.metadata.raze.crates.openssl-sys.'0.9.60']
 additional_deps = [
   "@openssl//:openssl",
 ]
