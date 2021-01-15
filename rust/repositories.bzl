@@ -21,7 +21,8 @@ def rust_repositories(
         rustfmt_version = None,
         edition = None,
         dev_components = False,
-        sha256s = None):
+        sha256s = None,
+        urls = ["https://static.rust-lang.org/dist/{}.tar.gz"]):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -47,6 +48,7 @@ def rust_repositories(
         edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
     """
 
     if dev_components and version != "nightly":
@@ -84,6 +86,7 @@ def rust_repositories(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_repository_set(
@@ -96,6 +99,7 @@ def rust_repositories(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_repository_set(
@@ -108,6 +112,7 @@ def rust_repositories(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_repository_set(
@@ -120,6 +125,7 @@ def rust_repositories(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_repository_set(
@@ -132,6 +138,7 @@ def rust_repositories(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_repository_set(
@@ -143,6 +150,7 @@ def rust_repositories(
         rustfmt_version = rustfmt_version,
         sha256s = sha256s,
         edition = edition,
+        urls = urls,
     )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
@@ -409,7 +417,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
 
     This function sources the tool from the Rust-lang static file server. The index is available
     at: https://static.rust-lang.org/dist/index.html (or the path specified by
-    "${RUST_STATIC_URL}/dist/index.html" if the RUST_STATIC_URL envinronment variable is set).
+    "${STATIC_RUST_URL}/dist/index.html" if the STATIC_RUST_URL envinronment variable is set).
 
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
@@ -438,12 +446,17 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
-    url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
+    urls = ["{}/dist/{}.tar.gz".format(static_rust, tool_suburl)]
+
+    for url in ctx.attr.urls:
+        new_url = url.format(tool_suburl)
+        if new_url not in urls:
+            urls.append(new_url)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
     archive_path = "{}.tar.gz".format(tool_path)
     ctx.download(
-        url,
+        urls,
         output = archive_path,
         sha256 = getattr(ctx.attr, "sha256s", dict()).get(tool_suburl) or
                  FILE_KEY_TO_SHA.get(tool_suburl) or
@@ -656,6 +669,10 @@ rust_toolchain_repository = repository_rule(
         "sha256s": attr.string_dict(
             doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
         ),
+        "urls": attr.string_list(
+            doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). It defaults to the official repository 'https://static.rust-lang.org/dist/{}.tar.gz'",
+            default = ["https://static.rust-lang.org/dist/{}.tar.gz"],
+        ),
     },
     implementation = _rust_toolchain_repository_impl,
 )
@@ -693,7 +710,8 @@ def rust_repository_set(
         rustfmt_version = None,
         edition = None,
         dev_components = False,
-        sha256s = None):
+        sha256s = None,
+        urls = ["https://static.rust-lang.org/dist/{}.tar.gz"]):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -714,6 +732,7 @@ def rust_repository_set(
             Requires version to be "nightly". Defaults to False.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
     """
 
     rust_toolchain_repository(
@@ -727,6 +746,7 @@ def rust_repository_set(
         edition = edition,
         dev_components = dev_components,
         sha256s = sha256s,
+        urls = urls,
     )
 
     rust_toolchain_repository_proxy(
