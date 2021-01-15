@@ -670,7 +670,7 @@ rust_toolchain_repository = repository_rule(
             doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
         ),
         "urls": attr.string_list(
-            doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). It defaults to the official repository 'https://static.rust-lang.org/dist/{}.tar.gz'",
+            doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
             default = ["https://static.rust-lang.org/dist/{}.tar.gz"],
         ),
     },
