@@ -1,4 +1,5 @@
 # Rust rules
+* [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
 
@@ -77,5 +78,19 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_wasm_bindgen_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+
+
+<a id="#rust_wasm_bindgen_repositories"></a>
+
+## rust_wasm_bindgen_repositories
+
+<pre>
+rust_wasm_bindgen_repositories()
+</pre>
+
+Declare dependencies needed for wasm-bindgen.
+
+This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust     repository. This makes the default toolchain `@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+
 
 

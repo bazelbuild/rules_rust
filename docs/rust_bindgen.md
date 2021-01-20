@@ -1,6 +1,7 @@
 # Rust rules
-* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_bindgen_library](#rust_bindgen_library)
+* [rust_bindgen_repositories](#rust_bindgen_repositories)
+* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_bindgen](#rust_bindgen)
 
 <a id="#rust_bindgen"></a>
@@ -72,5 +73,17 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   |  <code>None</code> |
 | <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  <code>None</code> |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
+
+
+<a id="#rust_bindgen_repositories"></a>
+
+## rust_bindgen_repositories
+
+<pre>
+rust_bindgen_repositories()
+</pre>
+
+Declare dependencies needed for bindgen.
+
 
 
