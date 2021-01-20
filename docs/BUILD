@@ -34,18 +34,19 @@ PAGES = {
         "rust_doc_test",
     ],
     "rust_proto": [
-        "rust_proto_toolchain",
-        "rust_proto_library",
         "rust_grpc_library",
+        "rust_proto_library",
+        "rust_proto_repositories",
+        "rust_proto_toolchain",
     ],
     "rust_bindgen": [
-        "rust_bindgen_toolchain",
         "rust_bindgen_library",
+        "rust_bindgen_repositories",
+        "rust_bindgen_toolchain",
         "rust_bindgen",
     ],
     "rust_wasm_bindgen": [
-        # This cannot be included due to https://github.com/google/cargo-raze/issues/285
-        # "rust_wasm_bindgen_repositories",
+        "rust_wasm_bindgen_repositories",
         "rust_wasm_bindgen_toolchain",
         "rust_wasm_bindgen",
     ],
