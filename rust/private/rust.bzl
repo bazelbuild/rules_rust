@@ -542,6 +542,18 @@ _common_attrs = {
             documentation for more.
         """),
     ),
+    "rustc_env_files": attr.label_list(
+        doc = _tidy("""
+            Files containing additional environment variables to set for rustc.
+
+            These files should  contain a single variable per line, of format
+            `NAME=value`, and newlines may be included in a value by ending a
+            line with a trailing back-slash (`\\`).
+
+            The order that these files will be processed is unspecified, so
+            multiple definitions of a particular variable are discouraged.
+        """),
+    ),
     "rustc_flags": attr.string_list(
         doc = "List of compiler flags passed to `rustc`.",
     ),

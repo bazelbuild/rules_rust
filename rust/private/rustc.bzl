@@ -287,7 +287,7 @@ def _process_build_scripts(
         tuple: A tuple: A tuple of the following items:
             - (list): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
-            - (str): An optional path to a generated environment file from a `cargo_build_script` target
+            - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (list): All direct and transitive build flags from the current build info.
     """
     extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
@@ -338,7 +338,12 @@ def collect_inputs(
             linker_depset,
         ],
     )
-    return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
+    build_env_files = getattr(files, "rustc_env_files", [])
+    compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
+    if build_env_file:
+        build_env_files = [f for f in build_env_files] + [build_env_file]
+    compile_inputs = depset(build_env_files, transitive = [compile_inputs])
+    return compile_inputs, out_dir, build_env_files, build_flags_files
 
 def construct_arguments(
         ctx,
@@ -353,7 +358,7 @@ def construct_arguments(
         output_hash,
         rust_flags,
         out_dir,
-        build_env_file,
+        build_env_files,
         build_flags_files,
         maker_path = None,
         aspect = False,
@@ -373,7 +378,7 @@ def construct_arguments(
         output_hash (str): The hashed path of the crate root
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
-        build_env_file (str): The output file of a `cargo_build_script` action containing rustc environment variables
+        build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         maker_path (File): An optional clippy marker file
         aspect (bool): True if called in an aspect context.
@@ -393,7 +398,7 @@ def construct_arguments(
     # Wrapper args first
     args = ctx.actions.args()
 
-    if build_env_file != None:
+    for build_env_file in build_env_files:
         args.add("--env-file", build_env_file)
 
     args.add_all(build_flags_files, before_each = "--arg-file")
@@ -558,7 +563,7 @@ def rustc_compile_action(
         toolchain,
     )
 
-    compile_inputs, out_dir, build_env_file, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
         ctx,
         ctx.file,
         ctx.files,
@@ -582,7 +587,7 @@ def rustc_compile_action(
         output_hash,
         rust_flags,
         out_dir,
-        build_env_file,
+        build_env_files,
         build_flags_files,
     )
 
@@ -699,7 +704,7 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
         tuple: A tuple of the following items:
             - (list): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
-            - (str): An optional path to a generated environment file from a `cargo_build_script` target
+            - (File): An optional generated environment file from a `cargo_build_script` target
             - (list): All direct and transitive build flags from the current build info.
     """
     input_files = []
@@ -712,7 +717,7 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
 
     if build_info:
         out_dir = build_info.out_dir.path
-        build_env_file = build_info.rustc_env.path
+        build_env_file = build_info.rustc_env
         build_flags_files.append(build_info.flags.path)
         build_flags_files.append(build_info.link_flags.path)
         input_files.append(build_info.out_dir)
