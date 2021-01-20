@@ -95,7 +95,6 @@ rust_binary(
     version = "0.55.1",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":bindgen",
         ":bindgen_build_script",
         "@rules_rust_bindgen__bitflags__1_2_1//:bitflags",

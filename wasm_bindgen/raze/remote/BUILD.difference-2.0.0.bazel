@@ -51,7 +51,6 @@ rust_binary(
     version = "2.0.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":difference",
     ],
 )

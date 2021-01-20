@@ -50,7 +50,6 @@ rust_binary(
     version = "0.6.2",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":grpc_compiler",
         "@rules_rust_proto__protobuf__2_8_2//:protobuf",
         "@rules_rust_proto__protobuf_codegen__2_8_2//:protobuf_codegen",
