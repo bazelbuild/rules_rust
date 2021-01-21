@@ -47,6 +47,9 @@ cargo_build_script(
         "@openssl",
     ],
     edition = "2015",
+    # TODO: This must be manually added until a feature in cargo-raze is implemented
+    # https://github.com/google/cargo-raze/issues/344
+    links = "ssh2",
     rustc_flags = [
         "--cap-lints=allow",
     ],
