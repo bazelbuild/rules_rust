@@ -13,6 +13,7 @@ load(
 )
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
+DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
@@ -22,7 +23,7 @@ def rust_repositories(
         edition = None,
         dev_components = False,
         sha256s = None,
-        urls = ["https://static.rust-lang.org/dist/{}.tar.gz"]):
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -448,7 +449,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
     urls = ["{}/dist/{}.tar.gz".format(static_rust, tool_suburl)]
 
-    for url in ctx.attr.urls:
+    for url in getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES):
         new_url = url.format(tool_suburl)
         if new_url not in urls:
             urls.append(new_url)
@@ -671,7 +672,7 @@ rust_toolchain_repository = repository_rule(
         ),
         "urls": attr.string_list(
             doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
-            default = ["https://static.rust-lang.org/dist/{}.tar.gz"],
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         ),
     },
     implementation = _rust_toolchain_repository_impl,
@@ -711,7 +712,7 @@ def rust_repository_set(
         edition = None,
         dev_components = False,
         sha256s = None,
-        urls = ["https://static.rust-lang.org/dist/{}.tar.gz"]):
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 

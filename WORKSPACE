@@ -20,6 +20,10 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
 
+load("//test:deps.bzl", "io_bazel_rules_rust_test_deps")
+
+io_bazel_rules_rust_test_deps()
+
 # --- end stardoc
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
