@@ -71,7 +71,7 @@ rust_library(
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@rules_rust_examples_complex_sys__libc__0_2_81//:libc",
+            "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
         ],
         "//conditions:default": [],
     }),

@@ -38,19 +38,15 @@ load(
 cargo_build_script(
     name = "openssl_sys_build_script",
     srcs = glob(["**/*.rs"]),
-    # MODIFIED MANUALLY #
     build_script_env = {
         "OPENSSL_DIR": "../openssl/openssl",
     },
-    # / MODIFIED MANUALLY #
     crate_features = [
     ],
     crate_root = "build/main.rs",
-    # MODIFIED MANUALLY #
     data = glob(["**"]) + [
-    "@openssl",
+        "@openssl",
     ],
-    # / MODIFIED MANUALLY #
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
@@ -99,8 +95,8 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":openssl_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_81//:libc",
-        "@openssl//:openssl",
+        "@openssl",
+        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

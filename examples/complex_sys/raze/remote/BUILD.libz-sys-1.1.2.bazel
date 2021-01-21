@@ -93,7 +93,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":libz_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_81//:libc",
+        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

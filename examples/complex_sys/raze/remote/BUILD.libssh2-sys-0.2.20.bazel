@@ -43,12 +43,9 @@ cargo_build_script(
     crate_features = [
     ],
     crate_root = "build.rs",
-    # MODIFIED MANUALLY #
-    links = "ssh2",
     data = glob(["**"]) + [
         "@openssl",
     ],
-    # / MODIFIED MANUALLY #
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
@@ -120,7 +117,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":libssh2_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_81//:libc",
+        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
         "@rules_rust_examples_complex_sys__libz_sys__1_1_2//:libz_sys",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
