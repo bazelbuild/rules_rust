@@ -50,7 +50,6 @@ rust_binary(
     version = "1.0.2",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":assert_cmd",
         "@rules_rust_wasm_bindgen__doc_comment__0_3_3//:doc_comment",
         "@rules_rust_wasm_bindgen__predicates__1_0_5//:predicates",

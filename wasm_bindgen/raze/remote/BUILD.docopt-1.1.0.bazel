@@ -50,7 +50,6 @@ rust_binary(
     version = "1.1.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":docopt",
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_wasm_bindgen__regex__1_4_2//:regex",

@@ -56,7 +56,6 @@ rust_binary(
     version = "0.15.4",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":multipart",
         "@rules_rust_wasm_bindgen__buf_redux__0_8_4//:buf_redux",
         "@rules_rust_wasm_bindgen__httparse__1_3_4//:httparse",

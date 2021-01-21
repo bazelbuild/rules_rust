@@ -32,5 +32,5 @@ rust_proto_toolchain(name = "default-proto-toolchain-impl")
 
 bzl_library(
     name = "rules",
-    srcs = glob(["**/*.bzl"]),
+    srcs = glob(["**/*.bzl"]) + ["//proto/raze:crates.bzl"],
 )

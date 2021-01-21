@@ -9,6 +9,10 @@ load(
     _rust_bindgen_toolchain = "rust_bindgen_toolchain",
 )
 load(
+    "@io_bazel_rules_rust//bindgen:repositories.bzl",
+    _rust_bindgen_repositories = "rust_bindgen_repositories",
+)
+load(
     "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
     _cargo_build_script = "cargo_build_script",
 )
@@ -16,6 +20,10 @@ load(
     "@io_bazel_rules_rust//proto:proto.bzl",
     _rust_grpc_library = "rust_grpc_library",
     _rust_proto_library = "rust_proto_library",
+)
+load(
+    "@io_bazel_rules_rust//proto:repositories.bzl",
+    _rust_proto_repositories = "rust_proto_repositories",
 )
 load(
     "@io_bazel_rules_rust//proto:toolchain.bzl",
@@ -41,11 +49,10 @@ load(
     "@io_bazel_rules_rust//rust:toolchain.bzl",
     _rust_toolchain = "rust_toolchain",
 )
-# This cannot be included due to https://github.com/google/cargo-raze/issues/285
-# load(
-#     "@io_bazel_rules_rust//wasm_bindgen:repositories.bzl",
-#     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
-# )
+load(
+    "@io_bazel_rules_rust//wasm_bindgen:repositories.bzl",
+    _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
+)
 load(
     "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
     _rust_wasm_bindgen = "rust_wasm_bindgen",
@@ -65,16 +72,17 @@ rust_grpc_library = _rust_grpc_library
 rust_bindgen_toolchain = _rust_bindgen_toolchain
 rust_bindgen = _rust_bindgen
 rust_bindgen_library = _rust_bindgen_library
+rust_bindgen_repositories = _rust_bindgen_repositories
 
 rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
+rust_proto_repositories = _rust_proto_repositories
 
 cargo_build_script = _cargo_build_script
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
-# This cannot be included due to https://github.com/google/cargo-raze/issues/285
-# rust_wasm_bindgen_repositories = _rust_wasm_bindgen_repositories
+rust_wasm_bindgen_repositories = _rust_wasm_bindgen_repositories
 
 rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set

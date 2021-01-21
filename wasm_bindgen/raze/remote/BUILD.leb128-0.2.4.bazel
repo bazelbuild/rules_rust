@@ -52,7 +52,6 @@ rust_binary(
     version = "0.2.4",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":leb128",
     ],
 )

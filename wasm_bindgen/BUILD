@@ -7,7 +7,7 @@ toolchain_type(name = "wasm_bindgen_toolchain")
 
 bzl_library(
     name = "rules",
-    srcs = glob(["**/*.bzl"]),
+    srcs = glob(["**/*.bzl"]) + ["//wasm_bindgen/raze:crates.bzl"],
     deps = ["//rust:rules"],
 )
 

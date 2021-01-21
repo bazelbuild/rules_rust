@@ -52,7 +52,6 @@ rust_binary(
     version = "0.2.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":wait_timeout",
     ] + selects.with_or({
         # cfg(unix)
@@ -102,7 +101,6 @@ rust_binary(
     version = "0.2.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":wait_timeout",
     ] + selects.with_or({
         # cfg(unix)
@@ -152,7 +150,6 @@ rust_binary(
     version = "0.2.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":wait_timeout",
     ] + selects.with_or({
         # cfg(unix)

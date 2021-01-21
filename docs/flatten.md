@@ -5,12 +5,14 @@
 * [rust_binary](#rust_binary)
 * [rust_bindgen](#rust_bindgen)
 * [rust_bindgen_library](#rust_bindgen_library)
+* [rust_bindgen_repositories](#rust_bindgen_repositories)
 * [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_doc](#rust_doc)
 * [rust_doc_test](#rust_doc_test)
 * [rust_grpc_library](#rust_grpc_library)
 * [rust_library](#rust_library)
 * [rust_proto_library](#rust_proto_library)
+* [rust_proto_repositories](#rust_proto_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
 * [rust_repositories](#rust_repositories)
 * [rust_repository_set](#rust_repository_set)
@@ -19,6 +21,7 @@
 * [rust_toolchain_repository](#rust_toolchain_repository)
 * [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
+* [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
 
 
@@ -1120,6 +1123,30 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
 
 
+<a id="#rust_bindgen_repositories"></a>
+
+## rust_bindgen_repositories
+
+<pre>
+rust_bindgen_repositories()
+</pre>
+
+Declare dependencies needed for bindgen.
+
+
+
+<a id="#rust_proto_repositories"></a>
+
+## rust_proto_repositories
+
+<pre>
+rust_proto_repositories()
+</pre>
+
+Declare dependencies needed for proto compilation.
+
+
+
 <a id="#rust_repositories"></a>
 
 ## rust_repositories
@@ -1188,5 +1215,19 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components.     Requires version to be "nightly". Defaults to False.   |  <code>False</code> |
 | <a id="rust_repository_set-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. See     [rust_repositories](#rust_repositories) for more details.   |  <code>None</code> |
 | <a id="rust_repository_set-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']   |  <code>["https://static.rust-lang.org/dist/{}.tar.gz"]</code> |
+
+
+<a id="#rust_wasm_bindgen_repositories"></a>
+
+## rust_wasm_bindgen_repositories
+
+<pre>
+rust_wasm_bindgen_repositories()
+</pre>
+
+Declare dependencies needed for wasm-bindgen.
+
+This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust     repository. This makes the default toolchain `@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+
 
 
