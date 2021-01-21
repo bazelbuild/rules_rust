@@ -42,7 +42,8 @@ rust_test(
     edition = "2018",
     rustc_env = {
         "SOURCE_FILE": "$(rootpath source.file)",
-        "GENERATED_DATA": "$(rootpath generated.data)",
+        "GENERATED_DATA_ROOT": "$(rootpath generated.data)",
+        "GENERATED_DATA_ABS": "$(execpath generated.data)",
         "SOME_TOOL": "$(rootpath @com_google_protobuf//:protoc)",
     },
     deps = [

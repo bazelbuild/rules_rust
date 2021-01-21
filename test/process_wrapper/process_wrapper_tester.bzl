@@ -82,7 +82,7 @@ process_wrapper_tester = rule(
             cfg = "exec",
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",

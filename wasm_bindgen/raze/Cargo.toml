@@ -8,31 +8,27 @@ path = "fake_rules_rust_wasm_bindgen_lib.rs"
 [dependencies]
 wasm-bindgen = "0.2.68"
 
-[raze]
+[package.metadata.raze]
 genmode = "Remote"
 workspace_path = "//wasm_bindgen/raze"
 gen_workspace_prefix = "rules_rust_wasm_bindgen"
-output_buildfile_suffix = "BUILD"
+rust_rules_workspace_name = "io_bazel_rules_rust"
+package_aliases_dir = "."
+default_gen_buildrs = false
 
-[raze.binary_deps]
+[package.metadata.raze.binary_deps]
 wasm-bindgen-cli = "0.2.68"
 
-[raze.crates.log.'0.3.9']
+[package.metadata.raze.crates.log.'<5']
 additional_flags = [
     "--cfg=atomic_cas",
     "--cfg=use_std",
 ]
 
-[raze.crates.log.'0.4.11']
-additional_flags = [
-    "--cfg=atomic_cas",
-    "--cfg=use_std",
-]
-
-[raze.crates.mime_guess.'1.8.8']
+[package.metadata.raze.crates.mime_guess.'1.8']
 gen_buildrs = true
 
-[raze.crates.openssl-sys.'0.9.58']
+[package.metadata.raze.crates.openssl-sys.'0.9']
 additional_flags = [
   # Vendored openssl is 1.0.2m
   "--cfg=ossl101",
@@ -50,36 +46,30 @@ additional_flags = [
   "dylib=crypto",
 ]
 
-[raze.crates.proc-macro2.'1.0.23']
+[package.metadata.raze.crates.proc-macro2.'1.0']
 gen_buildrs = true
 additional_flags = [
     "--cfg=use_proc_macro",
 ]
 
-[raze.crates.proc-macro2.'1.0.24']
-gen_buildrs = true
-additional_flags = [
-    "--cfg=use_proc_macro",
-]
-
-[raze.crates.syn.'1.0.40']
+[package.metadata.raze.crates.libc.'0.2']
 gen_buildrs = true
 
-[raze.crates.syn.'1.0.45']
+[package.metadata.raze.crates.syn.'1.0']
 gen_buildrs = true
 
-[raze.crates.serde_json.'1.0.57']
+[package.metadata.raze.crates.serde_json.'1.0']
 gen_buildrs = true
 
-[raze.crates.unicase.'1.4.2']
+[package.metadata.raze.crates.unicase.'1.4']
 additional_flags = [
   "--cfg=__unicase__iter_cmp",
   "--cfg=__unicase__defauler_hasher",
 ]
 
-[raze.crates.wasm-bindgen.'0.2.68']
+[package.metadata.raze.crates.wasm-bindgen.'0.2.68']
 gen_buildrs = true
 
-[raze.crates.wasm-bindgen-cli.'0.2.68']
+[package.metadata.raze.crates.wasm-bindgen-cli.'0.2.68']
 gen_buildrs = true
 extra_aliased_targets = ["cargo_bin_wasm_bindgen"]

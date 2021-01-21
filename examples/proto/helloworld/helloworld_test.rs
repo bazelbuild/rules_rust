@@ -55,13 +55,9 @@ impl ServerInfo {
                     .read_line(&mut line)
                     .expect("Waiting for server startup");
                 line = line.trim().to_owned();
-                if line.starts_with(port_prefix) {
-                    port = u16::from_str(&line[port_prefix.len()..]).unwrap_or_else(|_|
-                        panic!(
-                            "Invalid port number {}",
-                            &line[port_prefix.len()..]
-                        )
-                    )
+                if let Some(argp) = line.strip_prefix(port_prefix) {
+                    port = u16::from_str(argp)
+                        .unwrap_or_else(|_| panic!("Invalid port number {}", argp))
                 }
             }
         }

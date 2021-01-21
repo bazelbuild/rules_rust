@@ -14,7 +14,7 @@
 
 # buildifier: disable=module-docstring
 load(
-    "@io_bazel_rules_rust//rust:private/rustc.bzl",
+    "//rust:private/rustc.bzl",
     "CrateInfo",
     "collect_deps",
     "collect_inputs",
@@ -22,10 +22,10 @@ load(
     "get_cc_toolchain",
 )
 load(
-    "@io_bazel_rules_rust//rust:private/rust.bzl",
+    "//rust:private/rust.bzl",
     "crate_root_src",
 )
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 _rust_extensions = [
     "rs",
@@ -46,12 +46,17 @@ def _clippy_aspect_impl(target, ctx):
     if CrateInfo not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
-    if rust_srcs == []:
-        return []
 
     toolchain = find_toolchain(ctx)
     crate_info = target[CrateInfo]
-    root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
+
+    if crate_info.is_test:
+        root = crate_info.root
+    else:
+        if rust_srcs == []:
+            # nothing to do
+            return []
+        root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
 
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -93,17 +98,25 @@ def _clippy_aspect_impl(target, ctx):
         build_flags_files = build_flags_files,
         maker_path = clippy_marker.path,
         aspect = True,
+        emit = ["dep-info", "metadata"],
     )
 
-    # Deny the default-on clippy warning levels.
-    #
-    # If these are left as warnings, then Bazel will consider the execution
-    # result of the aspect to be "success", and Clippy won't be re-triggered
-    # unless the source file is modified.
-    args.add("-Dclippy::style")
-    args.add("-Dclippy::correctness")
-    args.add("-Dclippy::complexity")
-    args.add("-Dclippy::perf")
+    # Turn any warnings from clippy or rustc into an error, as otherwise
+    # Bazel will consider the execution result of the aspect to be "success",
+    # and Clippy won't be re-triggered unless the source file is modified.
+    if "__bindgen" in ctx.rule.attr.tags:
+        # bindgen-generated content is likely to trigger warnings, so
+        # only fail on clippy warnings
+        args.add("-Dclippy::style")
+        args.add("-Dclippy::correctness")
+        args.add("-Dclippy::complexity")
+        args.add("-Dclippy::perf")
+    else:
+        # fail on any warning
+        args.add("-Dwarnings")
+
+    if crate_info.is_test:
+        args.add("--test")
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
@@ -131,14 +144,15 @@ rust_clippy_aspect = aspect(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_error_format": attr.label(default = "//:error_format"),
     },
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     implementation = _clippy_aspect_impl,

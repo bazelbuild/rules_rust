@@ -14,9 +14,11 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
+load("//rust:private/rust.bzl", "name_to_crate_name")
+
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
-    basename = basename.replace("-", "_")
+    basename = name_to_crate_name(basename)
     return basename.rsplit(".", 2)[0]
 
 def rust_generate_proto(
@@ -26,7 +28,7 @@ def rust_generate_proto(
         imports,
         output_dir,
         proto_toolchain,
-        grpc = False):
+        is_grpc = False):
     """Generate a proto compilation action.
 
     Args:
@@ -36,7 +38,7 @@ def rust_generate_proto(
         imports (depset): directory, relative to the package, to output the list of stubs.
         output_dir (str): The basename of the output directory for for the output generated stubs
         proto_toolchain (ToolchainInfo): The toolchain for rust-proto compilation. See `rust_proto_toolchain`
-        grpc (bool, optional): generate gRPC stubs. Defaults to False.
+        is_grpc (bool, optional): generate gRPC stubs. Defaults to False.
 
     Returns:
         list: the list of generate stubs (File)
@@ -55,7 +57,7 @@ def rust_generate_proto(
     outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
     output_directory = outs[0].dirname
 
-    if grpc:
+    if is_grpc:
         # Add grpc stubs to the list of outputs
         grpc_files = [ctx.actions.declare_file(path + "_grpc.rs") for path in paths]
         outs.extend(grpc_files)
@@ -111,14 +113,14 @@ def _rust_proto_toolchain_impl(ctx):
 
 # Default dependencies needed to compile protobuf stubs.
 PROTO_COMPILE_DEPS = [
-    "@io_bazel_rules_rust//proto/raze:protobuf",
+    Label("//proto/raze:protobuf"),
 ]
 
 # Default dependencies needed to compile gRPC stubs.
 GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
-    "@io_bazel_rules_rust//proto/raze:grpc",
-    "@io_bazel_rules_rust//proto/raze:tls_api",
-    "@io_bazel_rules_rust//proto/raze:tls_api_stub",
+    Label("//proto/raze:grpc"),
+    Label("//proto/raze:tls_api"),
+    Label("//proto/raze:tls_api_stub"),
 ]
 
 # TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
@@ -137,17 +139,13 @@ rust_proto_toolchain = rule(
             doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:protoc_gen_rust",
-            ),
+            default = Label("//proto:protoc_gen_rust"),
         ),
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
-            ),
+            default = Label("//proto:protoc_gen_rust_grpc"),
         ),
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",

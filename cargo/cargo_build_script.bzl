@@ -1,45 +1,10 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
-
-def _expand_location(ctx, env, data):
-    """A trivial helper for `_expand_locations`
-
-    Args:
-        ctx (ctx): The rule's context object
-        env (str): The value possibly containing location macros to expand.
-        data (sequence of Targets): see `_expand_locations`
-
-    Returns:
-        string: The location-macro expanded version of the string.
-    """
-    for directive in ("$(execpath ", "$(location "):
-        if directive in env:
-            # build script runner will expand pwd to execroot for us
-            env = env.replace(directive, "${pwd}/" + directive)
-    return ctx.expand_location(env, data)
-
-def _expand_locations(ctx, env, data):
-    """Performs location-macro expansion on string values.
-
-    Note that exec-root relative locations will be exposed to the build script
-    as absolute paths, rather than the ordinary exec-root relative paths,
-    because cargo build scripts do not run in the exec root.
-
-    Args:
-        ctx (ctx): The rule's context object
-        env (dict): A dict whose values we iterate over
-        data (sequence of Targets): The targets which may be referenced by
-            location macros. This is expected to be the `data` attribute of
-            the target, though may have other targets or attributes mixed in.
-
-    Returns:
-        dict: A dict of environment variables with expanded location macros
-    """
-    return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+load("//rust:private/rust.bzl", "name_to_crate_name")
+load("//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust:private/utils.bzl", "expand_locations", "find_toolchain")
+load("//rust:rust.bzl", "rust_binary")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -79,6 +44,11 @@ def _build_script_impl(ctx):
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
+
+    streams = struct(
+        stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
+        stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
+    )
 
     crate_name = ctx.attr.crate_name
 
@@ -143,12 +113,13 @@ def _build_script_impl(ctx):
             env["AR"] = ar_executable
 
     for f in ctx.attr.crate_features:
-        env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
+        env["CARGO_FEATURE_" + name_to_crate_name(f).upper()] = "1"
 
-    env.update(_expand_locations(
+    env.update(expand_locations(
         ctx,
         ctx.attr.build_script_env,
-        getattr(ctx.attr, "data", []),
+        getattr(ctx.attr, "data", []) +
+        getattr(ctx.attr, "compile_data", []),
     ))
 
     tools = depset(
@@ -168,7 +139,18 @@ def _build_script_impl(ctx):
     # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
     # for details.
     args = ctx.actions.args()
-    args.add_all([script.path, crate_name, links, out_dir.path, env_out.path, flags_out.path, link_flags.path, dep_env_out.path])
+    args.add_all([
+        script.path,
+        crate_name,
+        links,
+        out_dir.path,
+        env_out.path,
+        flags_out.path,
+        link_flags.path,
+        dep_env_out.path,
+        streams.stdout.path,
+        streams.stderr.path,
+    ])
     build_script_inputs = []
     for dep in ctx.attr.deps:
         if DepInfo in dep and dep[DepInfo].dep_env:
@@ -181,7 +163,7 @@ def _build_script_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args],
-        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out],
+        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out, streams.stdout, streams.stderr],
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
@@ -196,6 +178,7 @@ def _build_script_impl(ctx):
             flags = flags_out,
             link_flags = link_flags,
         ),
+        OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
     ]
 
 _build_script_run = rule(
@@ -208,7 +191,7 @@ _build_script_run = rule(
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
         "script": attr.label(
-            doc = "The binary script to run, generally a rust_binary target.",
+            doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             allow_files = True,
             mandatory = True,
@@ -221,7 +204,8 @@ _build_script_run = rule(
             doc = "The name of the native library this crate links against.",
         ),
         "deps": attr.label_list(
-            doc = "The dependencies of the crate defined by `crate_name`",
+            doc = "The Rust dependencies of the crate defined by `crate_name`",
+            providers = [DepInfo],
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
@@ -248,7 +232,7 @@ _build_script_run = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )

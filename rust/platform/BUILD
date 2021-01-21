@@ -15,5 +15,5 @@ package_group(
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
-    visibility = ["@io_bazel_rules_rust//rust:__pkg__"],
+    visibility = ["//rust:__pkg__"],
 )

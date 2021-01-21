@@ -23,7 +23,7 @@ def find_toolchain(ctx):
     Returns:
         rust_toolchain: A Rust toolchain context.
     """
-    return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
+    return ctx.toolchains[Label("//rust:toolchain")]
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
 # dependency issues or generating docs will break.
@@ -77,7 +77,9 @@ def get_lib_name(lib):
     Returns:
         str: The name of the library
     """
-    libname, ext = lib.basename.split(".", 2)
+
+    # NB: The suffix may contain a version number like 'so.1.2.3'
+    libname = lib.basename.split(".", 1)[0]
 
     if libname.startswith("lib"):
         return libname[3:]
@@ -140,3 +142,47 @@ def rule_attrs(ctx, aspect):
             object.
     """
     return ctx.rule.attr if aspect else ctx.attr
+
+def _expand_location(ctx, env, data):
+    """A trivial helper for `_expand_locations`
+
+    Args:
+        ctx (ctx): The rule's context object
+        env (str): The value possibly containing location macros to expand.
+        data (sequence of Targets): see `_expand_locations`
+
+    Returns:
+        string: The location-macro expanded version of the string.
+    """
+    for directive in ("$(execpath ", "$(location "):
+        if directive in env:
+            # build script runner will expand pwd to execroot for us
+            env = env.replace(directive, "${pwd}/" + directive)
+    return ctx.expand_location(env, data)
+
+def expand_locations(ctx, env, data):
+    """Performs location-macro expansion on string values.
+
+    $(execroot ...) and $(location ...) are prefixed with ${pwd},
+    which process_wrapper and build_script_runner will expand at run time
+    to the absolute path. This is necessary because include_str!() is relative
+    to the currently compiled file, and build scripts run relative to the
+    manifest dir, so we can not use execroot-relative paths.
+
+    $(rootpath ...) is unmodified, and is useful for passing in paths via
+    rustc_env that are encoded in the binary with env!(), but utilized at
+    runtime, such as in tests. The absolute paths are not usable in this case,
+    as compilation happens in a separate sandbox folder, so when it comes time
+    to read the file at runtime, the path is no longer valid.
+
+    Args:
+        ctx (ctx): The rule's context object
+        env (dict): A dict whose values we iterate over
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        dict: A dict of environment variables with expanded location macros
+    """
+    return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])

@@ -117,34 +117,26 @@ mod test {
 
     #[test]
     fn test_size() {
-        let matrix = Matrix::new(2, 4, &vec![11, 12, 13, 14,
-                                             21, 22, 23, 24]);
+        let matrix = Matrix::new(2, 4, &[11, 12, 13, 14, 21, 22, 23, 24]);
         assert_eq!(2, matrix.rows());
         assert_eq!(4, matrix.cols());
     }
 
     #[test]
     fn test_equal() {
-        let matrix_a = Matrix::new(2, 4, &vec![11, 12, 13, 14,
-                                               21, 22, 23, 24]);
-        let matrix_b = Matrix::new(2, 4, &vec![11, 12, 13, 14,
-                                               21, 22, 23, 24]);
+        let matrix_a = Matrix::new(2, 4, &[11, 12, 13, 14, 21, 22, 23, 24]);
+        let matrix_b = Matrix::new(2, 4, &[11, 12, 13, 14, 21, 22, 23, 24]);
         assert!(matrix_a.equal(&matrix_b));
 
-        let matrix_c = Matrix::new(2, 4, &vec![12, 13, 14, 15,
-                                               23, 24, 25, 26]);
+        let matrix_c = Matrix::new(2, 4, &[12, 13, 14, 15, 23, 24, 25, 26]);
         assert!(!matrix_a.equal(&matrix_c));
     }
 
     #[test]
     fn test_transpose() {
-        let mut matrix = Matrix::new(2, 4, &vec![11, 12, 13, 14,
-                                                 21, 22, 23, 24]);
+        let mut matrix = Matrix::new(2, 4, &[11, 12, 13, 14, 21, 22, 23, 24]);
         matrix.transpose();
-        let expected = Matrix::new(4, 2, &vec![11, 21,
-                                               12, 22,
-                                               13, 23,
-                                               14, 24]);
+        let expected = Matrix::new(4, 2, &[11, 21, 12, 22, 13, 23, 14, 24]);
         assert!(matrix.equal(&expected));
     }
 }

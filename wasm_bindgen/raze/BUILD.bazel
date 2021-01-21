@@ -1,0 +1,41 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen__0_2_68//:wasm_bindgen",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    # Extra aliased target, from raze configuration
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_68//:cargo_bin_wasm_bindgen",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+# Export file for Stardoc support
+exports_files(
+    [
+        "crates.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

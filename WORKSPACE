@@ -16,9 +16,13 @@ load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_r
 
 rust_wasm_bindgen_repositories()
 
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
-rust_workspace()
+bazel_skylib_workspace()
+
+load("//test:deps.bzl", "io_bazel_rules_rust_test_deps")
+
+io_bazel_rules_rust_test_deps()
 
 # --- end stardoc
 

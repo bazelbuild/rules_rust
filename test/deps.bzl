@@ -1,0 +1,8 @@
+"""A module defining dependencies of the `io_bazel_rules_rust` tests"""
+
+load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
+
+def io_bazel_rules_rust_test_deps():
+    """Load dependencies for io_bazel_rules_rust tests"""
+
+    load_arbitrary_tool_test()

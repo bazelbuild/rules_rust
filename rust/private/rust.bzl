@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -153,7 +153,7 @@ def _rust_library_impl(ctx):
     # Determine unique hash for this rlib
     output_hash = determine_output_hash(crate_root)
 
-    crate_name = ctx.label.name.replace("-", "_")
+    crate_name = name_to_crate_name(ctx.label.name)
     rust_lib_name = _determine_lib_name(
         crate_name,
         ctx.attr.crate_type,
@@ -191,7 +191,7 @@ def _rust_binary_impl(ctx):
         list: A list of providers. See `rustc_compile_action`
     """
     toolchain = find_toolchain(ctx)
-    crate_name = ctx.label.name.replace("-", "_")
+    crate_name = name_to_crate_name(ctx.label.name)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
@@ -228,7 +228,7 @@ def _rust_test_common(ctx, toolchain, output):
     """
     _assert_no_deprecated_attributes(ctx)
 
-    crate_name = ctx.label.name.replace("-", "_")
+    crate_name = name_to_crate_name(ctx.label.name)
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -282,7 +282,7 @@ def _rust_test_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     output = ctx.actions.declare_file(
-        ctx.label.name + toolchain.binary_ext,
+        name_to_crate_name(ctx.label.name) + toolchain.binary_ext,
     )
 
     return _rust_test_common(ctx, toolchain, output)
@@ -381,7 +381,17 @@ _rust_common_attrs = {
     ),
     "data": attr.label_list(
         doc = _tidy("""
-            List of files used by this rule at runtime.
+            List of files used by this rule at compile time and runtime.
+
+            If including data at compile time with include_str!() and similar,
+            prefer `compile_data` over `data`, to prevent the data also being included
+            in the runfiles.
+        """),
+        allow_files = True,
+    ),
+    "compile_data": attr.label_list(
+        doc = _tidy("""
+            List of files used by this rule at compile time.
 
             This attribute can be used to specify any data files that are embedded into
             the library, such as via the
@@ -457,11 +467,12 @@ _rust_common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_process_wrapper": attr.label(
-        default = "@io_bazel_rules_rust//util/process_wrapper",
+        default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
     ),
+    "_error_format": attr.label(default = "//:error_format"),
 }
 
 _rust_library_attrs = {
@@ -495,7 +506,7 @@ rust_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -585,7 +596,7 @@ rust_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -683,7 +694,7 @@ rust_test = rule(
     host_fragments = ["cpp"],
     test = True,
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -726,7 +737,7 @@ mod test {
     #[test]
     fn test_greeting() {
         let hello = Greeter::new("Hi");
-        assert_eq!("Hi Rust", hello.greeting("Rust"));
+        assert_eq!("Hi Rust", hello.greet("Rust"));
     }
 }
 ```
@@ -831,7 +842,7 @@ rust_test_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -854,7 +865,7 @@ rust_benchmark = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -938,3 +949,21 @@ rust_benchmark(
 Run the benchmark test using: `bazel run //fibonacci:fibonacci_bench`.
 """,
 )
+
+def name_to_crate_name(name):
+    """Converts a build target's name into the name of its associated crate.
+
+    Crate names cannot contain certain characters, such as -, which are allowed
+    in build target names. All illegal characters will be converted to
+    underscores.
+
+    This is a similar conversion as that which cargo does, taking a
+    `Cargo.toml`'s `package.name` and canonicalizing it
+
+    Args:
+        name (str): The name of the target.
+
+    Returns:
+        str: The name of the crate for this target.
+    """
+    return name.replace("-", "_")

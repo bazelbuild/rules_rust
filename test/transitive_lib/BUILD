@@ -1,8 +1,5 @@
-load(
-    "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
-    "cargo_build_script",
-)
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
+load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//rust:rust.bzl", "rust_binary", "rust_library")
 
 # sets link alias
 cargo_build_script(

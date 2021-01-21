@@ -5,7 +5,6 @@ dependencies. This file contains the required macros to pull these dependencies
 """
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 
 # buildifier: disable=unnamed-macro
@@ -20,8 +19,6 @@ def transitive_deps(is_top_level = False):
     rules_proto_dependencies()
 
     rules_proto_toolchains()
-
-    rust_workspace()
 
     # Needed by the hello_uses_cargo_manifest_dir example.
     if is_top_level:

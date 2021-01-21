@@ -13,15 +13,14 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@bazel_skylib//lib:versions.bzl", "versions")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@io_bazel_rules_rust_bazel_version//:def.bzl", "BAZEL_VERSION")
 load(
-    "@io_bazel_rules_rust//rust:private/utils.bzl",
+    "//rust:private/utils.bzl",
+    "expand_locations",
     "get_lib_name",
     "get_libs_for_static_executable",
     "relativize",
@@ -75,6 +74,13 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
     },
+)
+
+_error_format_values = ["human", "json", "short"]
+
+ErrorFormatInfo = provider(
+    doc = "Set the --error-format flag for all rustc invocations",
+    fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
 def _get_rustc_env(ctx, toolchain):
@@ -187,7 +193,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             transitive_dylibs.append(depset([
                 lib
                 for lib in libs.to_list()
-                if lib.basename.endswith(toolchain.dylib_ext)
+                # Dynamic libraries may have a version number nowhere, or before (macos) or after (linux) the extension.
+                if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]
             ]))
             transitive_staticlibs.append(depset([
                 lib
@@ -235,17 +242,11 @@ def get_cc_toolchain(ctx):
     """
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    kwargs = {
-        "ctx": ctx,
-    } if len(BAZEL_VERSION) == 0 or versions.is_at_least(
-        "0.25.0",
-        BAZEL_VERSION,
-    ) else {}
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
-        **kwargs
     )
     return cc_toolchain, feature_configuration
 
@@ -258,11 +259,7 @@ def get_cc_user_link_flags(ctx):
     Returns:
         depset: The flags passed to Bazel by --linkopt option.
     """
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.18.0", BAZEL_VERSION)):
-        return ctx.fragments.cpp.linkopts
-    else:
-        return depset(ctx.fragments.cpp.linkopts)
+    return ctx.fragments.cpp.linkopts
 
 def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
     """Gathers cc_common linker information
@@ -303,24 +300,6 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
     )
 
     return ld, link_args, link_env
-
-def _expand_locations(ctx, env, data):
-    """Performs location-macro expansion on string values.
-
-    Note: Only `$(rootpath ...)` is recommended  as `$(execpath ...)` will fail
-    in the case of generated sources.
-
-    Args:
-        ctx (ctx): The rule's context object
-        env (str): The value possibly containing location macros to expand.
-        data (sequence of Targets): The targets which may be referenced by
-            location macros. This is expected to be the `data` attribute of
-            the target, though may have other targets or attributes mixed in.
-
-    Returns:
-        dict: A dict of environment variables with expanded location macros
-    """
-    return dict([(k, ctx.expand_location(v, data)) for (k, v) in env.items()])
 
 def _process_build_scripts(
         ctx,
@@ -375,15 +354,12 @@ def collect_inputs(
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    if (len(BAZEL_VERSION) == 0 or
-        versions.is_at_least("0.25.0", BAZEL_VERSION)):
-        linker_depset = find_cpp_toolchain(ctx).all_files
-    else:
-        linker_depset = depset(files._cc_toolchain)
+    linker_depset = find_cpp_toolchain(ctx).all_files
 
     compile_inputs = depset(
         crate_info.srcs +
         getattr(files, "data", []) +
+        getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -412,7 +388,8 @@ def construct_arguments(
         build_env_file,
         build_flags_files,
         maker_path = None,
-        aspect = False):
+        aspect = False,
+        emit = ["dep-info", "link"]):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -431,6 +408,7 @@ def construct_arguments(
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         maker_path (File): An optional clippy marker file
         aspect (bool): True if called in an aspect context.
+        emit (list): Values for the --emit flag to rustc.
 
     Returns:
         tuple: A tuple of the following items
@@ -500,6 +478,8 @@ def construct_arguments(
     args.add(crate_info.root)
     args.add("--crate-name=" + crate_info.name)
     args.add("--crate-type=" + crate_info.type)
+    if hasattr(ctx.attr, "_error_format"):
+        args.add("--error-format=" + ctx.attr._error_format[ErrorFormatInfo].error_format)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
@@ -512,7 +492,7 @@ def construct_arguments(
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
-    args.add("--emit=dep-info,link")
+    args.add("--emit=" + ",".join(emit))
     args.add("--color=always")
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
@@ -531,17 +511,19 @@ def construct_arguments(
     add_edition_flags(args, crate_info)
 
     # Link!
+    if "link" in emit:
+        # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
+        # linker since it won't understand.
+        if toolchain.target_arch != "wasm32":
+            rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
+            env.update(link_env)
+            args.add("--codegen=linker=" + ld)
+            args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-    # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
-    # linker since it won't understand.
-    if toolchain.target_arch != "wasm32":
-        rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-        ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
-        env.update(link_env)
-        args.add("--codegen=linker=" + ld)
-        args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+        add_native_link_flags(args, dep_info)
 
-    add_native_link_flags(args, dep_info)
+    # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
     if crate_info.type == "proc-macro" and crate_info.edition != "2015":
@@ -556,10 +538,11 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(_expand_locations(
+    env.update(expand_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(rule_attrs(ctx, aspect), "data", []),
+        getattr(rule_attrs(ctx, aspect), "data", []) +
+        getattr(rule_attrs(ctx, aspect), "compile_data", []),
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
@@ -859,3 +842,15 @@ def _get_dirname(file):
         str: Directory name of `file`
     """
     return file.dirname
+
+def _error_format_impl(ctx):
+    raw = ctx.build_setting_value
+    if raw not in _error_format_values:
+        fail(str(ctx.label) + " expected a value in [" + ", ".join(_error_format_values) +
+             "] but got " + raw)
+    return ErrorFormatInfo(error_format = raw)
+
+error_format = rule(
+    implementation = _error_format_impl,
+    build_setting = config.string(flag = True),
+)

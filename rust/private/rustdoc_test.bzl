@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
+load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
+load("//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -197,7 +197,7 @@ rust_doc_test = rule(
     },
     executable = True,
     test = True,
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [str(Label("//rust:toolchain"))],
     doc = """Runs Rust documentation tests.
 
 Example:

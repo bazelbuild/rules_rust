@@ -1,7 +1,8 @@
 # Rust rules
-* [rust_proto_toolchain](#rust_proto_toolchain)
-* [rust_proto_library](#rust_proto_library)
 * [rust_grpc_library](#rust_grpc_library)
+* [rust_proto_library](#rust_proto_library)
+* [rust_proto_repositories](#rust_proto_repositories)
+* [rust_proto_toolchain](#rust_proto_toolchain)
 
 <a id="#rust_grpc_library"></a>
 
@@ -143,5 +144,17 @@ See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
 | <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @io_bazel_rules_rust//proto:protoc_gen_rust_grpc |
 | <a id="rust_proto_toolchain-proto_plugin"></a>proto_plugin |  The location of the Rust protobuf compiler plugin used to generate rust sources.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @io_bazel_rules_rust//proto:protoc_gen_rust |
 | <a id="rust_proto_toolchain-protoc"></a>protoc |  The location of the <code>protoc</code> binary. It should be an executable target.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @com_google_protobuf//:protoc |
+
+
+<a id="#rust_proto_repositories"></a>
+
+## rust_proto_repositories
+
+<pre>
+rust_proto_repositories()
+</pre>
+
+Declare dependencies needed for proto compilation.
+
 
 

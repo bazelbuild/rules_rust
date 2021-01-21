@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// theoretically this should be safe, as unit tests are built without
+// optimizations
+#![allow(clippy::assertions_on_constants)]
 mod test {
     #[test]
     fn test_env_contents() {

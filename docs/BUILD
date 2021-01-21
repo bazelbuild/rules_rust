@@ -7,7 +7,6 @@ bzl_library(
     name = "all_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@io_bazel_rules_rust_bazel_version//:def.bzl",
     ],
     deps = [
         "@bazel_skylib//:workspace",
@@ -35,18 +34,19 @@ PAGES = {
         "rust_doc_test",
     ],
     "rust_proto": [
-        "rust_proto_toolchain",
-        "rust_proto_library",
         "rust_grpc_library",
+        "rust_proto_library",
+        "rust_proto_repositories",
+        "rust_proto_toolchain",
     ],
     "rust_bindgen": [
-        "rust_bindgen_toolchain",
         "rust_bindgen_library",
+        "rust_bindgen_repositories",
+        "rust_bindgen_toolchain",
         "rust_bindgen",
     ],
     "rust_wasm_bindgen": [
-        # This cannot be included due to https://github.com/google/cargo-raze/issues/285
-        # "rust_wasm_bindgen_repositories",
+        "rust_wasm_bindgen_repositories",
         "rust_wasm_bindgen_toolchain",
         "rust_wasm_bindgen",
     ],
@@ -59,9 +59,6 @@ PAGES = {
         "rust_toolchain",
         "rust_toolchain_repository",
         "rust_toolchain_repository_proxy",
-    ],
-    "rust_workspace": [
-        "rust_workspace",
     ],
 }
 
