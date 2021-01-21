@@ -4,7 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
-load("@examples//complex_sys/raze:crates.bzl", "rules_rust_examples_complex_sys_fetch_remote_crates")
+load("@examples//complex_sys:repositories.bzl", "rules_rust_examples_complex_sys_repositories")
 load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
@@ -41,7 +41,7 @@ def deps():
 
     rules_rust_examples_hello_sys_fetch_remote_crates()
 
-    rules_rust_examples_complex_sys_fetch_remote_crates()
+    rules_rust_examples_complex_sys_repositories()
 
     maybe(
         http_archive,
