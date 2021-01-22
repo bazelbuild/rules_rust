@@ -36,12 +36,3 @@ def repositories():
         url = "https://github.com/bazelbuild/rules_foreign_cc/archive/d54c78ab86b40770ee19f0949db9d74a831ab9f0.zip",
         sha256 = "3c6445404e9e5d17fa0ecdef61be00dd93b20222c11f45e146a98c0a3f67defa",
     )
-
-    maybe(
-        http_archive,
-        name = "openssl",
-        strip_prefix = "openssl-OpenSSL_1_1_1d",
-        urls = ["https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz"],
-        sha256 = "23011a5cc78e53d0dc98dfa608c51e72bcd350aa57df74c5d5574ba4ffb62e74",
-        build_file = "@examples//third_party/openssl:openssl.BUILD",
-    )

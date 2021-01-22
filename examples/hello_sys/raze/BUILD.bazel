@@ -20,3 +20,11 @@ alias(
         "manual",
     ],
 )
+
+# Export file for Stardoc support
+exports_files(
+    [
+        "crates.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
