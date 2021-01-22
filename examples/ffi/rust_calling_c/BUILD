@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_doc", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_doc", "rust_library", "rust_test")
 
 package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
 

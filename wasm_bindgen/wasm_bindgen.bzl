@@ -22,12 +22,12 @@ To use the Rust WebAssembly bindgen rules, add the following to your `WORKSPACE`
 external repositories for the Rust bindgen toolchain (in addition to the Rust rules setup):
 
 ```python
-load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 ```
 
-An example of this rule in use can be seen at [@io_bazel_rules_rust//examples/wasm/...](../examples/wasm)
+An example of this rule in use can be seen at [@rules_rust//examples/wasm/...](../examples/wasm)
 """
 
 _WASM_BINDGEN_TOOLCHAIN_DOC = """\
@@ -36,7 +36,7 @@ The tools required for the `rust_wasm_bindgen` rule.
 You can also use your own version of wasm-bindgen using the toolchain rules below:
 
 ```python
-load("@io_bazel_rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     bindgen = "//my/raze:cargo_bin_wasm_bindgen",
@@ -45,7 +45,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "wasm-bindgen-toolchain",
     toolchain = "wasm-bindgen-toolchain-impl",
-    toolchain_type = "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
+    toolchain_type = "@rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
 )
 ```
 

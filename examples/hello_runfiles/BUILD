@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+load("@rules_rust//rust:rust.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,5 +21,5 @@ rust_binary(
     srcs = ["hello_runfiles.rs"],
     data = ["hello_runfiles.rs"],  # Yes, we're being cute.
     edition = "2018",
-    deps = ["@io_bazel_rules_rust//tools/runfiles"],
+    deps = ["@rules_rust//tools/runfiles"],
 )

@@ -13,7 +13,7 @@ bzip2 = "=0.3.3"
 workspace_path = "//hello_sys/raze"
 genmode = "Remote"
 gen_workspace_prefix = "rules_rust_examples_hello_sys"
-rust_rules_workspace_name = "io_bazel_rules_rust"
+rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "raze"
 default_gen_buildrs = false
 

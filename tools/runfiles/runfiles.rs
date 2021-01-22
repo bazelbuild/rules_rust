@@ -8,7 +8,7 @@
 //!           name = "my_binary",
 //!           ...
 //!           data = ["//path/to/my/data.txt"],
-//!           deps = ["@io_bazel_rules_rust//tools/runfiles"],
+//!           deps = ["@rules_rust//tools/runfiles"],
 //!       )
 //!     ```
 //!
@@ -126,7 +126,7 @@ mod test {
         let r = Runfiles::create().unwrap();
 
         let mut f =
-            File::open(r.rlocation("io_bazel_rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+            File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
 
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();

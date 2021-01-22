@@ -13,7 +13,7 @@ libloading = "=0.6.3"
 genmode = "Remote"
 workspace_path = "//bindgen/raze"
 gen_workspace_prefix = "rules_rust_bindgen"
-rust_rules_workspace_name = "io_bazel_rules_rust"
+rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "."
 default_gen_buildrs = false
 

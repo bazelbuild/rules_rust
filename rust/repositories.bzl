@@ -40,7 +40,7 @@ def rust_repositories(
     This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive \
     list of known checksums..
 
-    See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for more details.
+    See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
 
     Args:
         version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
@@ -183,7 +183,7 @@ def serialized_constraint_set_from_triple(target_triple):
     return "[{}]".format(", ".join(constraint_set_strs))
 
 _build_file_for_compiler_template = """\
-load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "rustc",
@@ -225,7 +225,7 @@ def BUILD_for_compiler(target_triple):
     )
 
 _build_file_for_cargo_template = """\
-load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "cargo",
@@ -242,7 +242,7 @@ def BUILD_for_cargo(target_triple):
     )
 
 _build_file_for_rustfmt_template = """\
-load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "rustfmt_bin",
@@ -266,7 +266,7 @@ def BUILD_for_rustfmt(target_triple):
     )
 
 _build_file_for_clippy_template = """\
-load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "clippy_driver_bin",
@@ -375,7 +375,7 @@ toolchain(
     exec_compatible_with = {exec_constraint_sets_serialized},
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "@{parent_workspace_name}//:{name}_impl",
-    toolchain_type = "@io_bazel_rules_rust//rust:toolchain",
+    toolchain_type = "@rules_rust//rust:toolchain",
 )
 """
 

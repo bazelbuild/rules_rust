@@ -379,7 +379,7 @@ def rules_rust_proto_fetch_remote_crates():
         sha256 = "70731852eec72c56d11226c8a5f96ad5058a3dab73647ca5f7ee351e464f2571",
         strip_prefix = "protobuf-2.8.2",
         patches = [
-            "@io_bazel_rules_rust//proto/raze/patch:protobuf-2.8.2.patch",
+            "@rules_rust//proto/raze/patch:protobuf-2.8.2.patch",
         ],
         patch_args = [
             "-p1",

@@ -187,13 +187,13 @@ def triple_to_constraint_set(triple):
     """
     if triple == "wasm32-wasi":
         return [
-            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
-            "@io_bazel_rules_rust//rust/platform/os:wasi",
+            "@rules_rust//rust/platform/cpu:wasm32",
+            "@rules_rust//rust/platform/os:wasi",
         ]
     if triple == "wasm32-unknown-unknown":
         return [
-            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
-            "@io_bazel_rules_rust//rust/platform/os:unknown",
+            "@rules_rust//rust/platform/cpu:wasm32",
+            "@rules_rust//rust/platform/os:unknown",
         ]
 
     component_parts = triple.split("-")

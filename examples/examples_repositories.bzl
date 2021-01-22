@@ -7,7 +7,7 @@ def repositories():
     """Define repository dependencies for `rules_rust` examples"""
     maybe(
         native.local_repository,
-        name = "io_bazel_rules_rust",
+        name = "rules_rust",
         path = "..",
     )
 

@@ -164,7 +164,7 @@ Suppose a new nicer gRPC plugin has came out. The new plugin can be \
 used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
+load('@rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
 
 rust_proto_toolchain(
    name="rust_proto_impl",
@@ -187,6 +187,6 @@ toolchain(
 Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass \
 it to the `--extra_toolchains` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
+See @rules_rust//proto:BUILD for examples of defining the toolchain.
 """,
 )

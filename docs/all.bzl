@@ -3,41 +3,41 @@ to have stardoc generated documentation.
 """
 
 load(
-    "@io_bazel_rules_rust//bindgen:bindgen.bzl",
+    "@rules_rust//bindgen:bindgen.bzl",
     _rust_bindgen = "rust_bindgen",
     _rust_bindgen_library = "rust_bindgen_library",
     _rust_bindgen_toolchain = "rust_bindgen_toolchain",
 )
 load(
-    "@io_bazel_rules_rust//bindgen:repositories.bzl",
+    "@rules_rust//bindgen:repositories.bzl",
     _rust_bindgen_repositories = "rust_bindgen_repositories",
 )
 load(
-    "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
+    "@rules_rust//cargo:cargo_build_script.bzl",
     _cargo_build_script = "cargo_build_script",
 )
 load(
-    "@io_bazel_rules_rust//proto:proto.bzl",
+    "@rules_rust//proto:proto.bzl",
     _rust_grpc_library = "rust_grpc_library",
     _rust_proto_library = "rust_proto_library",
 )
 load(
-    "@io_bazel_rules_rust//proto:repositories.bzl",
+    "@rules_rust//proto:repositories.bzl",
     _rust_proto_repositories = "rust_proto_repositories",
 )
 load(
-    "@io_bazel_rules_rust//proto:toolchain.bzl",
+    "@rules_rust//proto:toolchain.bzl",
     _rust_proto_toolchain = "rust_proto_toolchain",
 )
 load(
-    "@io_bazel_rules_rust//rust:repositories.bzl",
+    "@rules_rust//rust:repositories.bzl",
     _rust_repositories = "rust_repositories",
     _rust_repository_set = "rust_repository_set",
     _rust_toolchain_repository = "rust_toolchain_repository",
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
 )
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_doc = "rust_doc",
@@ -46,15 +46,15 @@ load(
     _rust_test = "rust_test",
 )
 load(
-    "@io_bazel_rules_rust//rust:toolchain.bzl",
+    "@rules_rust//rust:toolchain.bzl",
     _rust_toolchain = "rust_toolchain",
 )
 load(
-    "@io_bazel_rules_rust//wasm_bindgen:repositories.bzl",
+    "@rules_rust//wasm_bindgen:repositories.bzl",
     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
 )
 load(
-    "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen.bzl",
+    "@rules_rust//wasm_bindgen:wasm_bindgen.bzl",
     _rust_wasm_bindgen = "rust_wasm_bindgen",
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )

@@ -133,7 +133,7 @@ def _clippy_aspect_impl(target, ctx):
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
-#   bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+#   bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
@@ -166,7 +166,7 @@ As an example, if the following is defined in `hello_lib/BUILD`:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -183,7 +183,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+$ bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
               --output_groups=clippy_checks //hello_lib:all
 ```
 """,
@@ -209,7 +209,7 @@ For example, given the following example targets:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",

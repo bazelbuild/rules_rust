@@ -27,7 +27,7 @@ log = "0.4, <0.4.7"
 genmode = "Remote"
 workspace_path = "//proto/raze"
 gen_workspace_prefix = "rules_rust_proto"
-rust_rules_workspace_name = "io_bazel_rules_rust"
+rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "."
 default_gen_buildrs = false
 
@@ -37,7 +37,7 @@ additional_flags = [
 ]
 
 [package.metadata.raze.crates.protobuf.'2.8.2']
-patches = ["@io_bazel_rules_rust//proto/raze/patch:protobuf-2.8.2.patch"]
+patches = ["@rules_rust//proto/raze/patch:protobuf-2.8.2.patch"]
 patch_args = ["-p1"]
 
 [package.metadata.raze.crates.protobuf-codegen.'2.8.2']

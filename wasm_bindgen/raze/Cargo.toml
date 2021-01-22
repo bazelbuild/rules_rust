@@ -12,7 +12,7 @@ wasm-bindgen = "0.2.68"
 genmode = "Remote"
 workspace_path = "//wasm_bindgen/raze"
 gen_workspace_prefix = "rules_rust_wasm_bindgen"
-rust_rules_workspace_name = "io_bazel_rules_rust"
+rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "."
 default_gen_buildrs = false
 
