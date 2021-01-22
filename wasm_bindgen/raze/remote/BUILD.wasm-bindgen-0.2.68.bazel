@@ -7,7 +7,7 @@ DO NOT EDIT! Replaced on runs of cargo-raze
 
 # buildifier: disable=load
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
     "rust_test",
@@ -31,7 +31,7 @@ licenses([
 # Generated Targets
 # buildifier: disable=load-on-top
 load(
-    "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
+    "@rules_rust//cargo:cargo_build_script.bzl",
     "cargo_build_script",
 )
 
@@ -61,8 +61,8 @@ cargo_build_script(
     ] + selects.with_or({
         # cfg(target_arch = "wasm32")
         (
-            "@io_bazel_rules_rust//rust/platform:wasm32-unknown-unknown",
-            "@io_bazel_rules_rust//rust/platform:wasm32-wasi",
+            "@rules_rust//rust/platform:wasm32-unknown-unknown",
+            "@rules_rust//rust/platform:wasm32-wasi",
         ): [
         ],
         "//conditions:default": [],
@@ -101,8 +101,8 @@ rust_library(
     ] + selects.with_or({
         # cfg(target_arch = "wasm32")
         (
-            "@io_bazel_rules_rust//rust/platform:wasm32-unknown-unknown",
-            "@io_bazel_rules_rust//rust/platform:wasm32-wasi",
+            "@rules_rust//rust/platform:wasm32-unknown-unknown",
+            "@rules_rust//rust/platform:wasm32-wasi",
         ): [
         ],
         "//conditions:default": [],

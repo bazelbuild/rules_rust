@@ -7,7 +7,7 @@ DO NOT EDIT! Replaced on runs of cargo-raze
 
 # buildifier: disable=load
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
     "rust_test",
@@ -58,11 +58,11 @@ rust_library(
     ] + selects.with_or({
         # cfg(any(target_os = "macos", target_os = "ios"))
         (
-            "@io_bazel_rules_rust//rust/platform:aarch64-apple-darwin",
-            "@io_bazel_rules_rust//rust/platform:aarch64-apple-ios",
-            "@io_bazel_rules_rust//rust/platform:i686-apple-darwin",
-            "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
-            "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
+            "@rules_rust//rust/platform:aarch64-apple-darwin",
+            "@rules_rust//rust/platform:aarch64-apple-ios",
+            "@rules_rust//rust/platform:i686-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-apple-ios",
         ): [
             "@rules_rust_wasm_bindgen__libc__0_2_81//:libc",
         ],
@@ -70,8 +70,8 @@ rust_library(
     }) + selects.with_or({
         # cfg(target_os = "windows")
         (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             "@rules_rust_wasm_bindgen__winapi__0_3_9//:winapi",
         ],
