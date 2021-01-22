@@ -31,7 +31,7 @@ Example:
   ```python
   package(default_visibility = ["//visibility:public"])
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_doc")
+  load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc")
 
   rust_library(
       name = "hello_lib",
@@ -90,7 +90,7 @@ To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
 
 rust_library(
     name = "hello_lib",

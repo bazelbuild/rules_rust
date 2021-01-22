@@ -24,7 +24,7 @@ Example:
 Suppose the core rust team has ported the compiler to a new target CPU, called `cpuX`. This support can be used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//rust:toolchain.bzl', 'rust_toolchain')
+load('@rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
 rust_toolchain(
     name = "rust_cpuX_impl",
@@ -53,7 +53,7 @@ toolchain(
 
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository with the actual binaries and libraries.
+See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository with the actual binaries and libraries.
 
 
 **ATTRIBUTES**
@@ -160,7 +160,7 @@ The `sha256` attribute represents a dict associating tool subdirectories to sha2
 ```
 This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive     list of known checksums..
 
-See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for more details.
+See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
 
 
 **PARAMETERS**

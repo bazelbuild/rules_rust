@@ -93,7 +93,7 @@ To build the benchmark test, add a `rust_benchmark` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
 
 rust_library(
   name = "fibonacci",
@@ -183,7 +183,7 @@ impl Greeter {
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:rust.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -203,7 +203,7 @@ fn main() {
 
 `hello_world/BUILD`:
 ```python
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+load("@rules_rust//rust:rust.bzl", "rust_binary")
 
 rust_binary(
     name = "hello_world",
@@ -323,7 +323,7 @@ Example:
   ```python
   package(default_visibility = ["//visibility:public"])
 
-  load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_doc")
+  load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc")
 
   rust_library(
       name = "hello_lib",
@@ -382,7 +382,7 @@ To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
 
 rust_library(
     name = "hello_lib",
@@ -420,8 +420,8 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
-load("@io_bazel_rules_rust//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
+load("//proto:proto.bzl", "rust_grpc_library")
+load("//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -448,7 +448,7 @@ rust_binary(
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_grpc_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_grpc_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
-| <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | ["@io_bazel_rules_rust//proto/raze:protobuf", "@io_bazel_rules_rust//proto/raze:grpc", "@io_bazel_rules_rust//proto/raze:tls_api", "@io_bazel_rules_rust//proto/raze:tls_api_stub"] |
+| <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf"), Label("//proto/raze:grpc"), Label("//proto/raze:tls_api"), Label("//proto/raze:tls_api_stub")] |
 
 
 <a id="#rust_library"></a>
@@ -503,7 +503,7 @@ pub mod greeter;
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:rust.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -559,8 +559,8 @@ Builds a Rust library crate from a set of `proto_library`s.
 Example:
 
 ```python
-load("@io_bazel_rules_rust//proto:proto.bzl", "rust_proto_library")
-load("@io_bazel_rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
+load("@rules_rust//proto:proto.bzl", "rust_proto_library")
+load("@rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -587,7 +587,7 @@ rust_binary(
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_proto_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
-| <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | ["@io_bazel_rules_rust//proto/raze:protobuf"] |
+| <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf")] |
 
 
 <a id="#rust_proto_toolchain"></a>
@@ -607,7 +607,7 @@ Example:
 Suppose a new nicer gRPC plugin has came out. The new plugin can be used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
+load('@rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
 
 rust_proto_toolchain(
    name="rust_proto_impl",
@@ -629,7 +629,7 @@ toolchain(
 
 Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass it to the `--extra_toolchains` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
+See @rules_rust//proto:BUILD for examples of defining the toolchain.
 
 
 **ATTRIBUTES**
@@ -639,8 +639,8 @@ See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2015" |
-| <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @io_bazel_rules_rust//proto:protoc_gen_rust_grpc |
-| <a id="rust_proto_toolchain-proto_plugin"></a>proto_plugin |  The location of the Rust protobuf compiler plugin used to generate rust sources.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @io_bazel_rules_rust//proto:protoc_gen_rust |
+| <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust_grpc |
+| <a id="rust_proto_toolchain-proto_plugin"></a>proto_plugin |  The location of the Rust protobuf compiler plugin used to generate rust sources.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust |
 | <a id="rust_proto_toolchain-protoc"></a>protoc |  The location of the <code>protoc</code> binary. It should be an executable target.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @com_google_protobuf//:protoc |
 
 
@@ -702,7 +702,7 @@ To build and run the tests, simply add a `rust_test` rule with no `srcs` and onl
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -765,7 +765,7 @@ with `greeting.rs` in `srcs` and a dependency on the `hello_lib` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -823,7 +823,7 @@ Example:
 Suppose the core rust team has ported the compiler to a new target CPU, called `cpuX`. This support can be used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//rust:toolchain.bzl', 'rust_toolchain')
+load('@rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
 rust_toolchain(
     name = "rust_cpuX_impl",
@@ -852,7 +852,7 @@ toolchain(
 
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository with the actual binaries and libraries.
+See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository with the actual binaries and libraries.
 
 
 **ATTRIBUTES**
@@ -951,12 +951,12 @@ To use the Rust WebAssembly bindgen rules, add the following to your `WORKSPACE`
 external repositories for the Rust bindgen toolchain (in addition to the Rust rules setup):
 
 ```python
-load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 ```
 
-An example of this rule in use can be seen at [@io_bazel_rules_rust//examples/wasm/...](../examples/wasm)
+An example of this rule in use can be seen at [@rules_rust//examples/wasm/...](../examples/wasm)
 
 
 **ATTRIBUTES**
@@ -982,7 +982,7 @@ The tools required for the `rust_wasm_bindgen` rule.
 You can also use your own version of wasm-bindgen using the toolchain rules below:
 
 ```python
-load("@io_bazel_rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     bindgen = "//my/raze:cargo_bin_wasm_bindgen",
@@ -991,7 +991,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "wasm-bindgen-toolchain",
     toolchain = "wasm-bindgen-toolchain-impl",
-    toolchain_type = "@io_bazel_rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
+    toolchain_type = "@rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
 )
 ```
 
@@ -1046,8 +1046,8 @@ Then you want to use the build script in the following:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
-load("@io_bazel_rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
+load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
 # This will run the build script from the root of the workspace, and
 # collect the outputs.
@@ -1169,7 +1169,7 @@ The `sha256` attribute represents a dict associating tool subdirectories to sha2
 ```
 This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive     list of known checksums..
 
-See `load_arbitrary_tool` in `@io_bazel_rules_rust//rust:repositories.bzl` for more details.
+See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
 
 
 **PARAMETERS**
@@ -1227,7 +1227,7 @@ rust_wasm_bindgen_repositories()
 
 Declare dependencies needed for wasm-bindgen.
 
-This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust     repository. This makes the default toolchain `@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust     repository. This makes the default toolchain `@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
 
 
 
