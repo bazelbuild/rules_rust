@@ -20,9 +20,9 @@ cc_test(
 
 ## Do the same as above, but with a dynamic c library.
 
-cc_library(
+cc_import(
     name = "native_matrix_so",
-    srcs = [":libnative_matrix_so.so"],
+    shared_library = ":libnative_matrix_so.so",
     hdrs = ["matrix.h"],
 )
 
