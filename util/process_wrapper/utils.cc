@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <streambuf>
+#include <sstream>
 
 #if defined(PW_WIN_UNICODE)
 #include <codecvt>
@@ -99,5 +100,43 @@ bool ReadFileToArray(const System::StrType& file_path,
   }
   return true;
 } 
+
+std::vector<System::StrType> SplitN(const System::StrType input, const System::StrType::value_type delimiter, const size_t n) {
+  size_t start = 0;
+  std::vector<System::StrType> parts;
+  if (n == 0) {
+    return parts;
+  }
+
+  size_t remaining = n;
+  while (--remaining >= 1) {
+    size_t end = input.find(delimiter, start);
+    if (end == std::string::npos) {
+      break;
+    } else {
+      parts.push_back(input.substr(start, end - start));
+      start = end + 1;
+      if (end == input.length()) {
+         break;
+      }
+    }
+  }
+  if (start <= input.length()) {
+    parts.push_back(input.substr(start, input.length() - start));
+  }
+  return parts;
+}
+
+System::StrType MakeEnv(const System::StrType name, const System::StrType value) {
+#if defined(PW_WIN_UNICODE)
+  std::wstringstream env;
+#else
+  std::stringstream env;
+#endif
+  env << name;
+  env << PW_SYS_STR('=');
+  env << value;
+  return env.str();
+}
 
 }  // namespace process_wrapper

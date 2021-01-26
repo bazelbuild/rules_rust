@@ -453,8 +453,11 @@ _rust_common_attrs = {
         doc = "List of compiler flags passed to `rustc`.",
     ),
     "version": attr.string(
-        doc = "A version to inject in the cargo environment variable.",
-        default = "0.0.0",
+        doc = "A version to inject in the cargo environment variable. At most one of version and version_file may be set. If neither are set, defaults to 0.0.0.",
+    ),
+    "version_file": attr.label(
+        doc = "A file containing a version to inject in the cargo environment variable. At most one of version and version_file may be set. If neither are set, defaults to 0.0.0.",
+        allow_single_file = True,
     ),
     "out_dir_tar": attr.label(
         doc = "__Deprecated__, do not use, see [#cargo_build_script] instead.",

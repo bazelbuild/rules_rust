@@ -32,6 +32,13 @@ void ReplaceToken(System::StrType& str, const System::StrType& token,
 // Reads a file in text mode and feeds each line to item in the vec output
 bool ReadFileToArray(const System::StrType& file_path, System::StrVecType& vec);
 
+// Splits input into at most n substrings. If delimiter appears more than n-1 times, the remaining characters will be in the last element of the vector.
+// If n == 0, an empty vector will be returned.
+std::vector<System::StrType> SplitN(const System::StrType input, const System::StrType::value_type delimiter, const size_t n);
+
+// Makes a value suitable for adding to an environment variables vector.
+System::StrType MakeEnv(const System::StrType name, const System::StrType value);
+
 }  // namespace process_wrapper
 
 #endif  // LIB_PROCESS_WRAPPER_UTILS_H_

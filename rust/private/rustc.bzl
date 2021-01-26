@@ -93,12 +93,6 @@ def _get_rustc_env(ctx, toolchain):
     Returns:
         dict: Rustc environment variables
     """
-    version = ctx.attr.version if hasattr(ctx.attr, "version") else "0.0.0"
-    major, minor, patch = version.split(".", 2)
-    if "-" in patch:
-        patch, pre = patch.split("-", 1)
-    else:
-        pre = ""
     return {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
@@ -106,11 +100,6 @@ def _get_rustc_env(ctx, toolchain):
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
         "CARGO_PKG_NAME": ctx.label.name,
-        "CARGO_PKG_VERSION_MAJOR": major,
-        "CARGO_PKG_VERSION_MINOR": minor,
-        "CARGO_PKG_VERSION_PATCH": patch,
-        "CARGO_PKG_VERSION_PRE": pre,
-        "CARGO_PKG_VERSION": version,
     }
 
 def get_compilation_mode_opts(ctx, toolchain):
@@ -307,7 +296,8 @@ def _process_build_scripts(
         crate_info,
         build_info,
         dep_info,
-        compile_inputs):
+        compile_inputs,
+        version_file):
     """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
@@ -324,11 +314,12 @@ def _process_build_scripts(
             - (str): The `OUT_DIR` of the current build info
             - (str): An optional path to a generated environment file from a `cargo_build_script` target
             - (list): All direct and transitive build flags from the current build info.
+            - (File): File containing version number.
     """
     extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
     if extra_inputs:
         compile_inputs = depset(extra_inputs, transitive = [compile_inputs])
-    return compile_inputs, out_dir, build_env_file, build_flags_files
+    return compile_inputs, out_dir, build_env_file, build_flags_files, version_file
 
 def collect_inputs(
         ctx,
@@ -356,6 +347,15 @@ def collect_inputs(
 
     linker_depset = find_cpp_toolchain(ctx).all_files
 
+    if hasattr(ctx.attr, "version_file") and len(ctx.files.version_file) == 1:
+        if ctx.attr.version != "":
+            fail("Cannot specify both version (%s) and version_file" % ctx.attr.version)
+        version_file = ctx.file.version_file
+    else:
+        version_file = ctx.actions.declare_file("__%s.version_env_file" % ctx.label.name)
+        version = getattr(ctx.attr, "version", None) or "0.0.0"
+        ctx.actions.write(version_file, version)
+
     compile_inputs = depset(
         crate_info.srcs +
         getattr(files, "data", []) +
@@ -363,6 +363,7 @@ def collect_inputs(
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
+        [version_file] +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
@@ -371,13 +372,14 @@ def collect_inputs(
             linker_depset,
         ],
     )
-    return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
+    return _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs, version_file)
 
 def construct_arguments(
         ctx,
         file,
         toolchain,
         tool_path,
+        version_file,
         cc_toolchain,
         feature_configuration,
         crate_info,
@@ -426,6 +428,8 @@ def construct_arguments(
 
     if build_env_file != None:
         args.add("--env-file", build_env_file)
+
+    args.add("--version-file", version_file)
 
     args.add_all(build_flags_files, before_each = "--arg-file")
 
@@ -580,7 +584,7 @@ def rustc_compile_action(
         toolchain,
     )
 
-    compile_inputs, out_dir, build_env_file, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_file, build_flags_files, version_file = collect_inputs(
         ctx,
         ctx.file,
         ctx.files,
@@ -597,6 +601,7 @@ def rustc_compile_action(
         ctx.file,
         toolchain,
         toolchain.rustc.path,
+        version_file.path,
         cc_toolchain,
         feature_configuration,
         crate_info,

@@ -66,7 +66,7 @@ def _clippy_aspect_impl(target, ctx):
         toolchain,
     )
 
-    compile_inputs, out_dir, build_env_file, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_file, build_flags_files, version_file = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
@@ -87,6 +87,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx.file,
         toolchain,
         toolchain.clippy_driver.path,
+        version_file.path,
         cc_toolchain,
         feature_configuration,
         crate_info,

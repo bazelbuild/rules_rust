@@ -79,6 +79,33 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
       if (!ReadFileToArray(argv[i], environment_block)) {
         return -1;
       }
+    } else if (arg == PW_SYS_STR("--version-file")) {
+      System::StrVecType lines;
+      if (!ReadFileToArray(argv[i], lines)) {
+        return -1;
+      }
+      if (lines.size() != 1) {
+        std::cerr << "process wrapper error: version-file should contain exactly one line but contained " << lines.size() << std::endl;
+        return -1;
+      }
+      System::StrType version = lines[0];
+      System::StrVecType majorMinorPatch = SplitN(version, FromUtf8(".")[0], 3);
+      if (majorMinorPatch.size() != 3) {
+        std::cerr << "process wrapper error: version number must be of form major.minor.patch but was " << version << std::endl;
+        return -1;
+      }
+
+      System::StrVecType patchPre = SplitN(majorMinorPatch[2], FromUtf8("-")[0], 2);
+      System::StrType pre = PW_SYS_STR("");
+      if (patchPre.size() == 2) {
+        pre = patchPre[1];
+      }
+
+      environment_block.push_back(MakeEnv(PW_SYS_STR("CARGO_PKG_VERSION"), version));
+      environment_block.push_back(MakeEnv(PW_SYS_STR("CARGO_PKG_VERSION_MAJOR"), majorMinorPatch[0]));
+      environment_block.push_back(MakeEnv(PW_SYS_STR("CARGO_PKG_VERSION_MINOR"), majorMinorPatch[1]));
+      environment_block.push_back(MakeEnv(PW_SYS_STR("CARGO_PKG_VERSION_PATCH"), patchPre[0]));
+      environment_block.push_back(MakeEnv(PW_SYS_STR("CARGO_PKG_VERSION_PRE"), pre));
     } else if (arg == PW_SYS_STR("--arg-file")) {
       if (!ReadFileToArray(argv[i], file_arguments)) {
         return -1;
