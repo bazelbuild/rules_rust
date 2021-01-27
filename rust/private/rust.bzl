@@ -437,6 +437,12 @@ _rust_common_attrs = {
             documentation for more.
         """),
     ),
+    "cfg_flags": attr.string_list(
+        doc = _tidy("""
+           List of boolean configuration flags passed to `rustc` as `--cfg foo`.
+           Use crate_features to pass '--cfg feature=val',
+    """)
+    ),
     "crate_features": attr.string_list(
         doc = _tidy("""
             List of features to enable for this crate.

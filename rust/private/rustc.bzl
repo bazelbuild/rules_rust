@@ -508,6 +508,7 @@ def construct_arguments(
 
     args.add_all(rust_flags)
     args.add_all(getattr(ctx.attr, "rustc_flags", []))
+    args.add_all(getattr(ctx.attr, "cfg_flags", []), before_each = "--cfg")
     add_edition_flags(args, crate_info)
 
     # Link!
