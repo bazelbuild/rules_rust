@@ -154,6 +154,10 @@ def rust_repositories(
         urls = urls,
     )
 
+    native.register_toolchains(
+        "@io_bazel_rules_rust//worker",
+    )
+
 def _check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense."""
 

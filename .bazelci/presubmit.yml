@@ -11,6 +11,8 @@ tasks:
   ubuntu1604:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    build_flags:
+    - "--@io_bazel_rules_rust//worker:use_worker=True"
   ubuntu1804:
     build_targets: *default_linux_targets
     test_targets:
@@ -51,6 +53,8 @@ tasks:
   windows:
     build_flags:
     - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+    - "--worker_quit_after_build" # configuration changes that prompt a worker rebuild will fail if it's still running
+    - "--@io_bazel_rules_rust//worker:use_worker=True"
     windows_targets: &windows_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
     - "@examples//..."

@@ -303,6 +303,7 @@ rust_proto_library = rule(
         str(Label("//proto:toolchain")),
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@io_bazel_rules_rust//worker:toolchain_type",
     ],
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
@@ -380,6 +381,7 @@ rust_grpc_library = rule(
         str(Label("//proto:toolchain")),
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@io_bazel_rules_rust//worker:toolchain_type",
     ],
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
