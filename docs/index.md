@@ -19,11 +19,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_rust",
-    sha256 = "b5d4d1c7609714dfef821355f40353c58aa1afb3803401b3442ed2355db9b0c7",
-    strip_prefix = "rules_rust-8d2b4eeeff9dce24f5cbb36018f2d60ecd676639",
+    sha256 = "e6d835ee673f388aa5b62dc23d82db8fc76497e93fa47d8a4afe97abaf09b10d",
+    strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
     urls = [
-        # Master branch as of 2020-11-10
-        "https://github.com/bazelbuild/rules_rust/archive/8d2b4eeeff9dce24f5cbb36018f2d60ecd676639.tar.gz",
+        # Master branch as of 2021-01-27
+        "https://github.com/bazelbuild/rules_rust/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
     ],
 )
 
@@ -51,19 +51,19 @@ You can also browse the [full API in one page](flatten.md).
 To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
 
 ```python
-rust_repositories(version = "1.48.0", edition="2018")
+rust_repositories(version = "1.49.0", edition="2018")
 ```
 
 As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
 
 ```python
-rust_repositories(version = "nightly", iso_date = "2020-11-10", edition="2018")
+rust_repositories(version = "nightly", iso_date = "2020-12-30", edition="2018")
 ```
 
 Similarly, `rustfmt_version` may also be configured:
 
 ```python
-rust_repositories(rustfmt_version = "1.48.0")
+rust_repositories(rustfmt_version = "1.49.0")
 ```
 
 ## External Dependencies
