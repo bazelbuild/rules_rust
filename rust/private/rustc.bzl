@@ -17,11 +17,11 @@ load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "expand_locations",
+    "find_cc_toolchain",
     "get_lib_name",
     "get_libs_for_static_executable",
     "relativize",
@@ -215,25 +215,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         build_info,
     )
 
-def get_cc_toolchain(ctx):
-    """Extracts a CcToolchain from the current target's context
-
-    Args:
-        ctx (ctx): The current target's rule context object
-
-    Returns:
-        tuple: A tuple of (CcToolchain, FeatureConfiguration)
-    """
-    cc_toolchain = find_cpp_toolchain(ctx)
-
-    feature_configuration = cc_common.configure_features(
-        ctx = ctx,
-        cc_toolchain = cc_toolchain,
-        requested_features = ctx.features,
-        unsupported_features = ctx.disabled_features,
-    )
-    return cc_toolchain, feature_configuration
-
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
 
@@ -319,16 +300,18 @@ def collect_inputs(
         file,
         files,
         toolchain,
+        cc_toolchain,
         crate_info,
         dep_info,
         build_info):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
-        ctx (ctx): The rule's context object
+        ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
-        files (list): A list of all inputs
-        toolchain (rust_toolchain): The current `rust_toolchain`
+        files (list): A list of all inputs.
+        toolchain (rust_toolchain): The current `rust_toolchain`.
+        cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
@@ -338,7 +321,7 @@ def collect_inputs(
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    linker_depset = find_cpp_toolchain(ctx).all_files
+    linker_depset = cc_toolchain.all_files
 
     compile_inputs = depset(
         crate_info.srcs +
@@ -510,7 +493,7 @@ def construct_arguments(
             args.add("--codegen=linker=" + ld)
             args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        add_native_link_flags(args, dep_info, crate_type)
+        _add_native_link_flags(args, dep_info, crate_type, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
@@ -565,6 +548,8 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+
     dep_info, build_info = collect_deps(
         ctx.label,
         crate_info.deps,
@@ -578,12 +563,11 @@ def rustc_compile_action(
         ctx.file,
         ctx.files,
         toolchain,
+        cc_toolchain,
         crate_info,
         dep_info,
         build_info,
     )
-
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
 
     args, env = construct_arguments(
         ctx,
@@ -656,7 +640,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         ctx (ctx): The rule's context object
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         toolchain (rust_toolchain): The current `rust_toolchain`
-        cc_toolchain (CcToolchainInfo): The current CcToolchainInfo
+        cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
 
     Returns:
@@ -821,13 +805,15 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def add_native_link_flags(args, dep_info, crate_type):
+def _add_native_link_flags(args, dep_info, crate_type, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
         args (Args): The Args struct for a ctx.action
         dep_info (DepInfo): Dependency Info provider
         crate_type: Crate type of the current target
+        cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
+        feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
     if crate_type in ["lib", "rlib"]:
@@ -838,8 +824,25 @@ def add_native_link_flags(args, dep_info, crate_type):
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
+    if crate_type in ["dylib", "cdylib"]:
+        # For shared libraries we want to link C++ runtime library dynamically
+        # (for example libstdc++.so or libc++.so).
+        args.add_all(
+            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+            map_each = get_lib_name,
+            format_each = "-ldylib=%s",
+        )
+    else:
+        # For all other crate types we want to link C++ runtime library statically
+        # (for example libstdc++.a or libc++.a).
+        args.add_all(
+            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+            map_each = get_lib_name,
+            format_each = "-lstatic=%s",
+        )
+
 def _get_dirname(file):
-    """A helper function for `add_native_link_flags`.
+    """A helper function for `_add_native_link_flags`.
 
     Args:
         file (File): The target file
