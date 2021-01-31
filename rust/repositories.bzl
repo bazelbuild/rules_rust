@@ -265,21 +265,8 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(system),
     )
 
-_build_file_for_clippy_template = """\
+_build_file_for_rustc_src = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
-
-filegroup(
-    name = "clippy_driver_bin",
-    srcs = ["bin/clippy-driver{binary_ext}"],
-    visibility = ["//visibility:public"],
-)
-"""
-
-def BUILD_for_rustc_src():
-    """Emits a BUILD file for the rustc src extracted files."""
-
-    return """
-load("@io_bazel_rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 filegroup(
     name = "rustc_src",
@@ -288,6 +275,22 @@ filegroup(
             "lib/rustlib/src/**/*.rs",
         ],
     ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rustc_src():
+    """Emits a BUILD file for the rustc src extracted files."""
+
+    return _build_file_for_rustc_src
+
+
+_build_file_for_clippy_template = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+filegroup(
+    name = "clippy_driver_bin",
+    srcs = ["bin/clippy-driver{binary_ext}"],
     visibility = ["//visibility:public"],
 )
 """

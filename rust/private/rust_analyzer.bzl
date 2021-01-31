@@ -20,8 +20,8 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "BuildInfo", "CrateInfo")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("//rust:private/rustc.bzl", "BuildInfo", "CrateInfo")
+load("//rust:private/utils.bzl", "find_toolchain")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 
 # We support only these rule kinds.
@@ -62,45 +62,59 @@ def _rust_analyzer_aspect_impl(target, ctx):
         if BuildInfo in dep:
             build_info = dep[BuildInfo]
 
-    deps = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
+    dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "proc_macro_deps"):
-        deps += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
-    transitive_deps = depset(direct = deps, order = "postorder", transitive = [dep.transitive_deps for dep in deps])
+        dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
+    transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
     crate_info = target[CrateInfo]
-    proc_macro_dylib_path = None
-    if crate_info.type == "proc-macro":
-        dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
-        for action in target.actions:
-            for output in action.outputs.to_list():
-                if output.extension == dylib_ext[1:]:
-                    proc_macro_dylib_path = output.path
-
     return [RustAnalyzerInfo(
         crate = crate_info,
         cfgs = cfgs,
         env = ctx.rule.attr.rustc_env if hasattr(ctx.rule.attr, "rustc_env") else {},
-        deps = deps,
+        deps = dep_infos,
         transitive_deps = transitive_deps,
-        proc_macro_dylib_path = proc_macro_dylib_path,
+        proc_macro_dylib_path = find_proc_macro_dylib_path(crate_info, toolchain),
         build_info = build_info,
     )]
+
+def find_proc_macro_dylib_path(toolchain, target):
+    """Find the proc_macro_dylib_path of target. Returns None if target crate is not type proc-macro.
+    
+    Args:
+        toolchain: The current rust toolchain.
+        target: The current target.
+    Returns:
+        (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
+    """
+    if target[CrateInfo].type != "proc-macro":
+        return None
+
+    dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
+    for action in target.actions:
+        for output in action.outputs.to_list():
+            if output.extension == dylib_ext[1:]:
+                return output.path
+
+    # Failed to find the dylib path inside a proc-macro crate.
+    # TODO: Should this be an error?
+    return None
 
 rust_analyzer_aspect = aspect(
     attr_aspects = ["deps", "proc_macro_deps"],
     implementation = _rust_analyzer_aspect_impl,
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [str(Label("//rust:toolchain"))],
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
 _exec_root_tmpl = '__EXEC_ROOT__/'
 
 def _crate_id(crate_info):
-    '''Returns a unique stable identifier for a crate
+    """Returns a unique stable identifier for a crate
     
     Returns:
         (string): This crate's unique stable id.
-    '''
+    """
     return "ID-" + crate_info.root.path
 
 def create_crate(ctx, info, crate_mapping):
@@ -200,6 +214,6 @@ rust_analyzer = rule(
         "filename": "rust-project.json",
     },
     implementation = _rust_project_impl,
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [str(Label("//rust:toolchain"))],
     doc = "Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.",
 )

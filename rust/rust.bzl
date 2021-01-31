@@ -35,7 +35,7 @@ load(
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
 load(
-    "@io_bazel_rules_rust//rust:private/rust_analyzer.bzl",
+    "//rust:private/rust_analyzer.bzl",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
 )
