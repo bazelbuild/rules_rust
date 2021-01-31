@@ -69,6 +69,4 @@ def rust_proto_repositories():
     rules_rust_proto_fetch_remote_crates()
 
     # Register toolchains
-    native.register_toolchains(
-        "@io_bazel_rules_rust//proto:default-proto-toolchain",
-    )
+    native.register_toolchains(str(Label("//proto:default-proto-toolchain")))

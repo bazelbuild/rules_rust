@@ -1,5 +1,5 @@
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain")
+load("//rust:private/utils.bzl", "find_toolchain")
 
 def _rustfmt_generator_impl(ctx):
     toolchain = find_toolchain(ctx)
@@ -32,7 +32,7 @@ rustfmt_generator = rule(
             allow_single_file = True,
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -40,6 +40,6 @@ rustfmt_generator = rule(
     },
     outputs = {"out": "%{name}.rs"},
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
     ],
 )

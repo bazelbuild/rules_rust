@@ -23,23 +23,25 @@ tls-api-stub = "0.1.22"
 # requires httpbis.
 log = "0.4, <0.4.7"
 
-[raze]
+[package.metadata.raze]
 genmode = "Remote"
 workspace_path = "//proto/raze"
 gen_workspace_prefix = "rules_rust_proto"
-output_buildfile_suffix = "BUILD"
+rust_rules_workspace_name = "rules_rust"
+package_aliases_dir = "."
+default_gen_buildrs = false
 
-[raze.crates.lazy_static.'1.4.0']
+[package.metadata.raze.crates.lazy_static.'1.4.0']
 additional_flags = [
   "--cfg=lazy_static_heap_impl",
 ]
 
-[raze.crates.protobuf.'2.8.2']
-patches = ["@io_bazel_rules_rust//proto/raze/patch:protobuf-2.8.2.patch"]
+[package.metadata.raze.crates.protobuf.'2.8.2']
+patches = ["@rules_rust//proto/raze/patch:protobuf-2.8.2.patch"]
 patch_args = ["-p1"]
 
-[raze.crates.protobuf-codegen.'2.8.2']
+[package.metadata.raze.crates.protobuf-codegen.'2.8.2']
 extra_aliased_targets = ["cargo_bin_protoc_gen_rust"]
 
-[raze.crates.grpc-compiler.'0.6.2']
+[package.metadata.raze.crates.grpc-compiler.'0.6.2']
 extra_aliased_targets = ["cargo_bin_protoc_gen_rust_grpc"]

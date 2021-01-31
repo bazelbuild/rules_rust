@@ -1,8 +1,8 @@
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_test",
 )
-load("@io_bazel_rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
 # generate a file
 genrule(

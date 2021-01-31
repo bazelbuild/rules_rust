@@ -12,7 +12,7 @@ def repositories(is_top_level = False):
     """
     maybe(
         native.local_repository,
-        name = "io_bazel_rules_rust",
+        name = "rules_rust",
         path = "..",
     )
 

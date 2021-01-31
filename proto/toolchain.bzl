@@ -14,7 +14,7 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
-load("@io_bazel_rules_rust//rust:private/rust.bzl", "name_to_crate_name")
+load("//rust:private/rust.bzl", "name_to_crate_name")
 
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
@@ -113,14 +113,14 @@ def _rust_proto_toolchain_impl(ctx):
 
 # Default dependencies needed to compile protobuf stubs.
 PROTO_COMPILE_DEPS = [
-    "@io_bazel_rules_rust//proto/raze:protobuf",
+    Label("//proto/raze:protobuf"),
 ]
 
 # Default dependencies needed to compile gRPC stubs.
 GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
-    "@io_bazel_rules_rust//proto/raze:grpc",
-    "@io_bazel_rules_rust//proto/raze:tls_api",
-    "@io_bazel_rules_rust//proto/raze:tls_api_stub",
+    Label("//proto/raze:grpc"),
+    Label("//proto/raze:tls_api"),
+    Label("//proto/raze:tls_api_stub"),
 ]
 
 # TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
@@ -139,17 +139,13 @@ rust_proto_toolchain = rule(
             doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:protoc_gen_rust",
-            ),
+            default = Label("//proto:protoc_gen_rust"),
         ),
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label(
-                "@io_bazel_rules_rust//proto:protoc_gen_rust_grpc",
-            ),
+            default = Label("//proto:protoc_gen_rust_grpc"),
         ),
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",
@@ -168,7 +164,7 @@ Suppose a new nicer gRPC plugin has came out. The new plugin can be \
 used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
+load('@rules_rust//proto:toolchain.bzl', 'rust_proto_toolchain')
 
 rust_proto_toolchain(
    name="rust_proto_impl",
@@ -191,6 +187,6 @@ toolchain(
 Then, either add the label of the toolchain rule to register_toolchains in the WORKSPACE, or pass \
 it to the `--extra_toolchains` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//proto:BUILD for examples of defining the toolchain.
+See @rules_rust//proto:BUILD for examples of defining the toolchain.
 """,
 )

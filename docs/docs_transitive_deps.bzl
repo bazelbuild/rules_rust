@@ -1,7 +1,7 @@
 """Define transitive dependencies for `rules_rust` docs"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 def transitive_deps(is_top_level = False):
     """Define transitive dependencies for `rules_rust` docs

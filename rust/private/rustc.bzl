@@ -19,7 +19,7 @@ load(
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
-    "@io_bazel_rules_rust//rust:private/utils.bzl",
+    "//rust:private/utils.bzl",
     "expand_locations",
     "get_lib_name",
     "get_libs_for_static_executable",
@@ -74,6 +74,13 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
     },
+)
+
+_error_format_values = ["human", "json", "short"]
+
+ErrorFormatInfo = provider(
+    doc = "Set the --error-format flag for all rustc invocations",
+    fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
 def _get_rustc_env(ctx, toolchain):
@@ -352,6 +359,7 @@ def collect_inputs(
     compile_inputs = depset(
         crate_info.srcs +
         getattr(files, "data", []) +
+        getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -470,6 +478,8 @@ def construct_arguments(
     args.add(crate_info.root)
     args.add("--crate-name=" + crate_info.name)
     args.add("--crate-type=" + crate_info.type)
+    if hasattr(ctx.attr, "_error_format"):
+        args.add("--error-format=" + ctx.attr._error_format[ErrorFormatInfo].error_format)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
@@ -481,6 +491,9 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
+
+    # For determinism to help with build distribution and such
+    args.add("--remap-path-prefix=${pwd}=.")
 
     args.add("--emit=" + ",".join(emit))
     args.add("--color=always")
@@ -531,7 +544,8 @@ def construct_arguments(
     env.update(expand_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(rule_attrs(ctx, aspect), "data", []),
+        getattr(rule_attrs(ctx, aspect), "data", []) +
+        getattr(rule_attrs(ctx, aspect), "compile_data", []),
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
@@ -831,3 +845,15 @@ def _get_dirname(file):
         str: Directory name of `file`
     """
     return file.dirname
+
+def _error_format_impl(ctx):
+    raw = ctx.build_setting_value
+    if raw not in _error_format_values:
+        fail(str(ctx.label) + " expected a value in [" + ", ".join(_error_format_values) +
+             "] but got " + raw)
+    return ErrorFormatInfo(error_format = raw)
+
+error_format = rule(
+    implementation = _error_format_impl,
+    build_setting = config.string(flag = True),
+)

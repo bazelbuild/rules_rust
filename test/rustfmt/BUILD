@@ -1,4 +1,4 @@
-load("@io_bazel_rules_rust//test/rustfmt:rustfmt_generator.bzl", "rustfmt_generator")
+load("@rules_rust//test/rustfmt:rustfmt_generator.bzl", "rustfmt_generator")
 
 rustfmt_generator(
     name = "formatted",

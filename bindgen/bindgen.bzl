@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_libs_for_static_executable")
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("//rust:private/utils.bzl", "find_toolchain", "get_libs_for_static_executable")
+load("//rust:rust.bzl", "rust_library")
 
 def rust_bindgen_library(
         name,
@@ -61,7 +61,7 @@ def _rust_bindgen_impl(ctx):
     if header not in cc_header_list:
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
-    toolchain = ctx.toolchains["@io_bazel_rules_rust//bindgen:bindgen_toolchain"]
+    toolchain = ctx.toolchains[Label("//bindgen:bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
     rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
     clang_bin = toolchain.clang
@@ -168,7 +168,7 @@ rust_bindgen = rule(
             doc = "Flags to pass directly to the clang executable.",
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -176,8 +176,8 @@ rust_bindgen = rule(
     },
     outputs = {"out": "%{name}.rs"},
     toolchains = [
-        "@io_bazel_rules_rust//bindgen:bindgen_toolchain",
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//bindgen:bindgen_toolchain")),
+        str(Label("//rust:toolchain")),
     ],
 )
 

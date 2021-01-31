@@ -1,5 +1,5 @@
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
     "rust_test",
@@ -21,13 +21,13 @@ rust_library(
         "lib.rs",
         "print_generic.rs",
     ] + select({
-        "@io_bazel_rules_rust//rust/platform:linux": [
+        "@rules_rust//rust/platform:linux": [
             ":print_linux.rs",
         ],
-        "@io_bazel_rules_rust//rust/platform:osx": [
+        "@rules_rust//rust/platform:osx": [
             ":print_osx.rs",
         ],
-        "@io_bazel_rules_rust//rust/platform:windows": [
+        "@rules_rust//rust/platform:windows": [
             ":print_windows.rs",
         ],
     }),

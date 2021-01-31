@@ -14,7 +14,7 @@
 
 # buildifier: disable=module-docstring
 load(
-    "@io_bazel_rules_rust//rust:private/rustc.bzl",
+    "//rust:private/rustc.bzl",
     "CrateInfo",
     "collect_deps",
     "collect_inputs",
@@ -22,10 +22,10 @@ load(
     "get_cc_toolchain",
 )
 load(
-    "@io_bazel_rules_rust//rust:private/rust.bzl",
+    "//rust:private/rust.bzl",
     "crate_root_src",
 )
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 _rust_extensions = [
     "rs",
@@ -46,12 +46,17 @@ def _clippy_aspect_impl(target, ctx):
     if CrateInfo not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
-    if rust_srcs == []:
-        return []
 
     toolchain = find_toolchain(ctx)
     crate_info = target[CrateInfo]
-    root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
+
+    if crate_info.is_test:
+        root = crate_info.root
+    else:
+        if rust_srcs == []:
+            # nothing to do
+            return []
+        root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
 
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -128,7 +133,7 @@ def _clippy_aspect_impl(target, ctx):
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
-#   bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+#   bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
@@ -139,14 +144,15 @@ rust_clippy_aspect = aspect(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_error_format": attr.label(default = "//:error_format"),
     },
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     implementation = _clippy_aspect_impl,
@@ -160,7 +166,7 @@ As an example, if the following is defined in `hello_lib/BUILD`:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -177,7 +183,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+$ bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
               --output_groups=clippy_checks //hello_lib:all
 ```
 """,
@@ -203,7 +209,7 @@ For example, given the following example targets:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",

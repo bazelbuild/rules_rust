@@ -9,11 +9,11 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "i686": "x86_32",
     "s390x": "s390x",
     "asmjs": None,
-    "i386": None,
+    "i386": "i386",
     "i586": None,
     "powerpc64": None,
     "powerpc64le": None,
-    "armv7": None,
+    "armv7": "armv7",
     "armv7s": None,
     "s390": None,
     "le32": None,
@@ -37,7 +37,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "bitrig": None,
     "dragonfly": None,
     "netbsd": None,
-    "openbsd": None,
+    "openbsd": "openbsd",
     "solaris": None,
 }
 
@@ -186,9 +186,15 @@ def triple_to_constraint_set(triple):
         list: A list of constraints (each represented by a list of strings)
     """
     if triple == "wasm32-wasi":
-        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:wasi"]
+        return [
+            "@rules_rust//rust/platform/cpu:wasm32",
+            "@rules_rust//rust/platform/os:wasi",
+        ]
     if triple == "wasm32-unknown-unknown":
-        return ["@io_bazel_rules_rust//rust/platform/cpu:wasm32", "@io_bazel_rules_rust//rust/platform/os:unknown"]
+        return [
+            "@rules_rust//rust/platform/cpu:wasm32",
+            "@rules_rust//rust/platform/os:unknown",
+        ]
 
     component_parts = triple.split("-")
     if len(component_parts) < 3:

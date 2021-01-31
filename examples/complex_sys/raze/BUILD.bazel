@@ -1,6 +1,6 @@
 """
 @generated
-cargo-raze workspace build file.
+cargo-raze generated Bazel file.
 
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
@@ -19,4 +19,30 @@ alias(
         "cargo-raze",
         "manual",
     ],
+)
+
+alias(
+    name = "openssl",
+    actual = "@rules_rust_examples_complex_sys__openssl__0_10_32//:openssl",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "openssl_sys",
+    actual = "@rules_rust_examples_complex_sys__openssl_sys__0_9_60//:openssl_sys",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+# Export file for Stardoc support
+exports_files(
+    [
+        "crates.bzl",
+    ],
+    visibility = ["//visibility:public"],
 )

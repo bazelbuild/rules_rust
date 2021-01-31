@@ -24,128 +24,209 @@ use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
 use std::process::Command;
 
-fn main() -> Result<(), String> {
+fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
     // some execution strategies and remote execution environments may use symlinks in ways which
     // canonicalizing them may break them, e.g. by having input files be symlinks into a /cas
     // directory - resolving these may cause tools which inspect $0, or try to resolve files
     // relative to themselves, to fail.
     let exec_root = env::current_dir().expect("Failed to get current directory");
-
-    let mut args = env::args().skip(1);
     let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
     let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
     let manifest_dir = exec_root.join(&manifest_dir_env);
     let rustc = exec_root.join(&rustc_env);
+    let Options {
+        progname,
+        crate_name,
+        crate_links,
+        out_dir,
+        envfile,
+        flagfile,
+        linkflags,
+        output_dep_env_path,
+        stdout_path,
+        stderr_path,
+        input_dep_env_paths,
+    } = parse_args()?;
+
+    let out_dir_abs = exec_root.join(&out_dir);
+    // For some reason Google's RBE does not create the output directory, force create it.
+    create_dir_all(&out_dir_abs).expect(&format!(
+        "Failed to make output directory: {:?}",
+        out_dir_abs
+    ));
+
+    let target_env_vars =
+        get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
+
+    let mut command = Command::new(exec_root.join(&progname));
+    command
+        .current_dir(&manifest_dir)
+        .envs(target_env_vars)
+        .env("OUT_DIR", out_dir_abs)
+        .env("CARGO_MANIFEST_DIR", manifest_dir)
+        .env("RUSTC", rustc)
+        .env("RUST_BACKTRACE", "full");
+
+    for dep_env_path in input_dep_env_paths.iter() {
+        if let Ok(contents) = read_to_string(dep_env_path) {
+            for line in contents.split('\n') {
+                // split on empty contents will still produce a single empty string in iterable.
+                if line.is_empty() {
+                    continue;
+                }
+                let mut key_val = line.splitn(2, '=');
+                match (key_val.next(), key_val.next()) {
+                    (Some(key), Some(value)) => {
+                        command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
+                    }
+                    _ => {
+                        return Err("error: Wrong environment file format, should not happen".to_owned())
+                    }
+                }
+            }
+        } else {
+            return Err("error: Dependency environment file unreadable".to_owned())
+        }
+    }
+
+    if let Some(cc_path) = env::var_os("CC") {
+        command.env("CC", absolutify(&exec_root, cc_path));
+    }
+
+    if let Some(ar_path) = env::var_os("AR") {
+        // The default OSX toolchain uses libtool as ar_executable not ar.
+        // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
+        // /usr/bin/ar which is probably good enough.
+        if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
+            command.env_remove("AR");
+        } else {
+            command.env("AR", absolutify(&exec_root, ar_path));
+        }
+    }
+
+    // replace env vars with a ${pwd} prefix with the exec_root
+    for (key, value) in env::vars() {
+        let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
+        if value.contains("${pwd}") {
+            env::set_var(key, value.replace("${pwd}", exec_root_str));
+        }
+    }
+
+    let (buildrs_outputs, process_output) = BuildScriptOutput::from_command(&mut command).map_err(|process_output| {
+        format!(
+            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+            if let Some(exit_code) = process_output.status.code() {
+                format!(" with exit code {}", exit_code)
+            } else {
+                String::new()
+            },
+            String::from_utf8(process_output.stdout).expect("Failed to parse stdout of child process"),
+            String::from_utf8(process_output.stderr).expect("Failed to parse stdout of child process"),
+        )
+    })?;
+
+    // The right way to set the dep env var is to use the links attribute from the
+    // Cargo.toml, but cargo_build_script didn't used to have a `links` attribute, so for
+    // backward-compatibility reasons, try to infer it from the name of the crate.
+    // TODO: remove this backward-compatibility fallback in next major version.
+    let crate_links = match crate_links.as_ref() {
+        "" => {
+            const SYS_CRATE_SUFFIX: &str = "-sys";
+            if crate_name.ends_with(SYS_CRATE_SUFFIX) {
+                crate_name
+                    .split_at(crate_name.rfind(SYS_CRATE_SUFFIX).unwrap())
+                    .0
+            } else {
+                &crate_name
+            }
+        }
+        crate_links => crate_links,
+    };
+
+    write(
+        &envfile,
+        BuildScriptOutput::to_env(&buildrs_outputs, &exec_root.to_string_lossy()).as_bytes(),
+    )
+    .expect(&format!("Unable to write file {:?}", envfile));
+    write(
+        &output_dep_env_path,
+        BuildScriptOutput::to_dep_env(&buildrs_outputs, crate_links, &exec_root.to_string_lossy())
+            .as_bytes(),
+    )
+    .expect(&format!("Unable to write file {:?}", output_dep_env_path));
+    write(
+        &stdout_path,
+        process_output.stdout,
+    )
+    .expect(&format!("Unable to write file {:?}", stdout_path));
+    write(
+        &stderr_path,
+        process_output.stderr,
+    )
+    .expect(&format!("Unable to write file {:?}", stderr_path));
+
+    let CompileAndLinkFlags {
+        compile_flags,
+        link_flags,
+    } = BuildScriptOutput::to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
+
+    write(&flagfile, compile_flags.as_bytes())
+        .expect(&format!("Unable to write file {:?}", flagfile));
+    write(&linkflags, link_flags.as_bytes())
+        .expect(&format!("Unable to write file {:?}", linkflags));
+    Ok(())
+}
+
+/// A representation of expected command line arguments.
+struct Options {
+    progname: String,
+    crate_name: String,
+    crate_links: String,
+    out_dir: String,
+    envfile: String,
+    flagfile: String,
+    linkflags: String,
+    output_dep_env_path: String,
+    stdout_path: String,
+    stderr_path: String,
+    input_dep_env_paths: Vec<String>,
+}
+
+/// Parses positional comamnd line arguments into a well defined struct
+fn parse_args() -> Result<Options, String> {
+    let mut args = env::args().skip(1);
 
     // TODO: we should consider an alternative to positional arguments.
-    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
-        (Some(progname), Some(crate_name), Some(crate_links), Some(out_dir), Some(envfile), Some(flagfile), Some(linkflags), Some(depenvfile)) => {
-            let out_dir_abs = exec_root.join(&out_dir);
-            // For some reason Google's RBE does not create the output directory, force create it.
-            create_dir_all(&out_dir_abs).expect(&format!("Failed to make output directory: {:?}", out_dir_abs));
-
-            let target_env_vars = get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
-
-            let mut command = Command::new(exec_root.join(&progname));
-            command
-                .current_dir(&manifest_dir)
-                .envs(target_env_vars)
-                .env("OUT_DIR", out_dir_abs)
-                .env("CARGO_MANIFEST_DIR", manifest_dir)
-                .env("RUSTC", rustc)
-                .env("RUST_BACKTRACE", "full");
-
-            while let Some(dep_env_path) = args.next() {
-                if let Ok(contents) = read_to_string(dep_env_path) {
-                    for line in contents.split('\n') {
-                        // split on empty contents will still produce a single empty string in iterable.
-                        if line.is_empty() {
-                            continue;
-                        }
-                        let mut key_val = line.splitn(2, '=');
-                        match (key_val.next(), key_val.next()) {
-                            (Some(key), Some(value)) => {
-                                command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
-                            }
-                            _ => {
-                                return Err("error: Wrong environment file format, should not happen".to_owned())
-                            }
-                        }
-                    }
-                } else {
-                    return Err("error: Dependency environment file unreadable".to_owned())
-                }
-            }
-
-            if let Some(cc_path) = env::var_os("CC") {
-                command.env("CC", absolutify(&exec_root, cc_path));
-            }
-
-            if let Some(ar_path) = env::var_os("AR") {
-                // The default OSX toolchain uses libtool as ar_executable not ar.
-                // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
-                // /usr/bin/ar which is probably good enough.
-                if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
-                    command.env_remove("AR");
-                } else {
-                    command.env("AR", absolutify(&exec_root, ar_path));
-                }
-            }
-
-            // replace env vars with a ${pwd} prefix with the exec_root
-            for (key, value) in env::vars() {
-                let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
-                if value.contains("${pwd}") {
-                    env::set_var(key, value.replace("${pwd}", exec_root_str));
-                }
-            }
-
-
-            let output = BuildScriptOutput::from_command(&mut command).map_err(|exit_code| {
-                format!(
-                    "Build script process failed{}",
-                    if let Some(exit_code) = exit_code {
-                        format!(" with exit code {}", exit_code)
-                    } else {
-                        String::new()
-                    }
-                )
-            })?;
-
-            // The right way to set the dep env var is to use the links attribute from the
-            // Cargo.toml, but cargo_build_script didn't used to have a `links` attribute, so for
-            // backward-compatibility reasons, try to infer it from the name of the crate.
-            // TODO: remove this backward-compatibility fallback in next major version.
-            let crate_links = match crate_links.as_ref() {
-                "" => {
-                    const SYS_CRATE_SUFFIX: &str = "-sys";
-                    if crate_name.ends_with(SYS_CRATE_SUFFIX) {
-                        crate_name
-                            .split_at(crate_name.rfind(SYS_CRATE_SUFFIX).unwrap())
-                            .0
-                    } else {
-                        &crate_name
-                    }
-                },
-                crate_links => crate_links,
-            };
-
-            write(&envfile, BuildScriptOutput::to_env(&output, &exec_root.to_string_lossy()).as_bytes())
-                .expect(&format!("Unable to write file {:?}", envfile));
-            write(&depenvfile, BuildScriptOutput::to_dep_env(&output, crate_links, &exec_root.to_string_lossy()).as_bytes())
-                .expect(&format!("Unable to write file {:?}", depenvfile));
-
-            let CompileAndLinkFlags { compile_flags, link_flags } = BuildScriptOutput::to_flags(&output, &exec_root.to_string_lossy());
-
-            write(&flagfile, compile_flags.as_bytes())
-                .expect(&format!("Unable to write file {:?}", flagfile));
-            write(&linkflags, link_flags.as_bytes())
-                .expect(&format!("Unable to write file {:?}", linkflags));
-            Ok(())
+    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
+        (
+            Some(progname), 
+            Some(crate_name), 
+            Some(crate_links), 
+            Some(out_dir), 
+            Some(envfile), 
+            Some(flagfile), 
+            Some(linkflags),
+            Some(output_dep_env_path),
+            Some(stdout_path),
+            Some(stderr_path),
+        ) => {
+            Ok(Options{
+                progname,
+                crate_name,
+                crate_links,
+                out_dir,
+                envfile,
+                flagfile,
+                linkflags,
+                output_dep_env_path,
+                stdout_path,
+                stderr_path,
+                input_dep_env_paths: args.collect(),
+            })
         }
         _ => {
-            Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile depenvfile [arg1...argn]".to_owned())
+            Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
         }
     }
 }
@@ -199,4 +280,15 @@ fn absolutify(root: &Path, maybe_relative: OsString) -> OsString {
     } else {
         maybe_relative
     }
+}
+
+fn main() {
+    std::process::exit(match run_buildrs() {
+        Ok(_) => 0,
+        Err(err) => {
+            // Neatly print errors
+            eprintln!("{}", err);
+            1
+        }
+    });
 }

@@ -15,7 +15,7 @@
 //! Parse the output of a cargo build.rs script and generate a list of flags and
 //! environment variable for the build.
 use std::io::{BufRead, BufReader, Read};
-use std::process::{Command, Stdio};
+use std::process::{Command, Output};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CompileAndLinkFlags {
@@ -51,14 +51,12 @@ impl BuildScriptOutput {
         let split = line.splitn(2, '=').collect::<Vec<_>>();
         if split.len() <= 1 {
             // Not a cargo directive.
-            print!("{}", line);
             return None;
         }
         let param = split[1].trim().to_owned();
         let key_split = split[0].splitn(2, ':').collect::<Vec<_>>();
         if key_split.len() <= 1 || key_split[0] != "cargo" {
             // Not a cargo directive.
-            print!("{}", line);
             return None;
         }
         match key_split[1] {
@@ -73,12 +71,12 @@ impl BuildScriptOutput {
                 None
             }
             "warning" => {
-                eprintln!("Build Script Warning: {}", split[1]);
+                eprint!("Build Script Warning: {}", split[1]);
                 None
             }
             "rustc-cdylib-link-arg" => {
                 // cargo:rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
-                eprintln!(
+                eprint!(
                     "Warning: build script returned unsupported directive `{}`",
                     split[0]
                 );
@@ -109,18 +107,16 @@ impl BuildScriptOutput {
     }
 
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
-    pub fn from_command(cmd: &mut Command) -> Result<Vec<BuildScriptOutput>, Option<i32>> {
-        let mut child = cmd
-            .stdout(Stdio::piped())
-            .spawn()
+    pub fn from_command(cmd: &mut Command) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
+        let child_output = cmd
+            .output()
             .expect("Unable to start binary");
-        let reader = BufReader::new(child.stdout.as_mut().expect("Failed to open stdout"));
-        let output = Self::from_reader(reader);
-        let ecode = child.wait().expect("failed to wait on child");
-        if ecode.success() {
-            Ok(output)
+        if child_output.status.success() {
+            let reader = BufReader::new(child_output.stdout.as_slice());
+            let output = Self::from_reader(reader);
+            Ok((output, child_output))
         } else {
-            Err(ecode.code())
+            Err(child_output)
         }
     }
 
@@ -144,7 +140,11 @@ impl BuildScriptOutput {
         v.iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::DepEnv(env) = x {
-                    Some(format!("{}{}", prefix, Self::redact_exec_root(env, exec_root)))
+                    Some(format!(
+                        "{}{}",
+                        prefix,
+                        Self::redact_exec_root(env, exec_root)
+                    ))
                 } else {
                     None
                 }

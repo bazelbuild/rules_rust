@@ -1,0 +1,4 @@
+sh_binary(
+    name = "fetch_shas",
+    srcs = ["fetch_shas.sh"],
+)

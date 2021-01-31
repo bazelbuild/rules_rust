@@ -23,7 +23,7 @@ def find_toolchain(ctx):
     Returns:
         rust_toolchain: A Rust toolchain context.
     """
-    return ctx.toolchains["@io_bazel_rules_rust//rust:toolchain"]
+    return ctx.toolchains[Label("//rust:toolchain")]
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
 # dependency issues or generating docs will break.
@@ -77,6 +77,7 @@ def get_lib_name(lib):
     Returns:
         str: The name of the library
     """
+
     # NB: The suffix may contain a version number like 'so.1.2.3'
     libname = lib.basename.split(".", 1)[0]
 

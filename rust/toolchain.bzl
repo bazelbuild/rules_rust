@@ -142,7 +142,7 @@ Suppose the core rust team has ported the compiler to a new target CPU, called `
 support can be used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@io_bazel_rules_rust//rust:toolchain.bzl', 'rust_toolchain')
+load('@rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
 rust_toolchain(
     name = "rust_cpuX_impl",
@@ -172,7 +172,7 @@ toolchain(
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass \
 it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
-See @io_bazel_rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository \
+See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository \
 with the actual binaries and libraries.
 """,
 )

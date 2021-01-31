@@ -24,7 +24,7 @@ _SUPPORTED_T1_PLATFORM_TRIPLES = [
 ]
 
 # Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
-# See @io_bazel_rules_rust//rust/platform:triple_mappings.bzl for the complete list.
+# See @rules_rust//rust/platform:triple_mappings.bzl for the complete list.
 _SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios",
@@ -91,16 +91,16 @@ def declare_config_settings():
     native.platform(
         name = "wasm",
         constraint_values = [
-            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
-            "@io_bazel_rules_rust//rust/platform/os:unknown",
+            str(Label("//rust/platform/cpu:wasm32")),
+            str(Label("//rust/platform/os:unknown")),
         ],
     )
 
     native.platform(
         name = "wasi",
         constraint_values = [
-            "@io_bazel_rules_rust//rust/platform/cpu:wasm32",
-            "@io_bazel_rules_rust//rust/platform/os:wasi",
+            str(Label("//rust/platform/cpu:wasm32")),
+            str(Label("//rust/platform/os:wasi")),
         ],
     )
 

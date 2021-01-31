@@ -17,8 +17,13 @@ load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_cra
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_repositories():
-    """Declare dependencies needed for wasm-bindgen."""
+    """Declare dependencies needed for wasm-bindgen.
+
+    This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust \
+    repository. This makes the default toolchain `@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For \
+    more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+    """
 
     rules_rust_wasm_bindgen_fetch_remote_crates()
 
-    native.register_toolchains("@io_bazel_rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain")
+    native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))

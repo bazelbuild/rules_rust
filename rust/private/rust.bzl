@@ -13,8 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
+load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -381,7 +381,17 @@ _rust_common_attrs = {
     ),
     "data": attr.label_list(
         doc = _tidy("""
-            List of files used by this rule at runtime.
+            List of files used by this rule at compile time and runtime.
+
+            If including data at compile time with include_str!() and similar,
+            prefer `compile_data` over `data`, to prevent the data also being included
+            in the runfiles.
+        """),
+        allow_files = True,
+    ),
+    "compile_data": attr.label_list(
+        doc = _tidy("""
+            List of files used by this rule at compile time.
 
             This attribute can be used to specify any data files that are embedded into
             the library, such as via the
@@ -457,11 +467,12 @@ _rust_common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_process_wrapper": attr.label(
-        default = "@io_bazel_rules_rust//util/process_wrapper",
+        default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
     ),
+    "_error_format": attr.label(default = "//:error_format"),
 }
 
 _rust_library_attrs = {
@@ -495,7 +506,7 @@ rust_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -542,7 +553,7 @@ pub mod greeter;
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:rust.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -585,7 +596,7 @@ rust_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -631,7 +642,7 @@ impl Greeter {
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:rust.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -651,7 +662,7 @@ fn main() {
 
 `hello_world/BUILD`:
 ```python
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
+load("@rules_rust//rust:rust.bzl", "rust_binary")
 
 rust_binary(
     name = "hello_world",
@@ -683,7 +694,7 @@ rust_test = rule(
     host_fragments = ["cpp"],
     test = True,
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -726,7 +737,7 @@ mod test {
     #[test]
     fn test_greeting() {
         let hello = Greeter::new("Hi");
-        assert_eq!("Hi Rust", hello.greeting("Rust"));
+        assert_eq!("Hi Rust", hello.greet("Rust"));
     }
 }
 ```
@@ -738,7 +749,7 @@ only depends on the `hello_lib` `rust_library` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -805,7 +816,7 @@ with `greeting.rs` in `srcs` and a dependency on the `hello_lib` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -831,7 +842,7 @@ rust_test_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -854,7 +865,7 @@ rust_benchmark = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -921,7 +932,7 @@ To build the benchmark test, add a `rust_benchmark` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_benchmark")
 
 rust_library(
   name = "fibonacci",
