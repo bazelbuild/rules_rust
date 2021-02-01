@@ -71,7 +71,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
     return [RustAnalyzerInfo(
         crate = crate_info,
         cfgs = cfgs,
-        env = ctx.rule.attr.rustc_env if hasattr(ctx.rule.attr, "rustc_env") else {},
+        env = getattr(ctx.rule.attr, "rustc_env", {}),
         deps = dep_infos,
         transitive_deps = transitive_deps,
         proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
