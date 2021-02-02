@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Public entry point to all Rust rules and supported APIs."""
+
 load(
     "//rust/private:clippy.bzl",
     _rust_clippy = "rust_clippy",

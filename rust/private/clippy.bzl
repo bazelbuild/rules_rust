@@ -49,6 +49,7 @@ def _clippy_aspect_impl(target, ctx):
 
     toolchain = find_toolchain(ctx)
     crate_info = target[rust_common.crate_info]
+    crate_type = crate_info.type
 
     if crate_info.is_test:
         root = crate_info.root
@@ -89,6 +90,7 @@ def _clippy_aspect_impl(target, ctx):
         toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
+        crate_type,
         crate_info,
         dep_info,
         output_hash = determine_output_hash(root),

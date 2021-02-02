@@ -155,9 +155,10 @@ def _rust_library_impl(ctx):
     output_hash = determine_output_hash(crate_root)
 
     crate_name = name_to_crate_name(ctx.label.name)
+    crate_type = getattr(ctx.attr, "crate_type")
     rust_lib_name = _determine_lib_name(
         crate_name,
-        ctx.attr.crate_type,
+        crate_type,
         toolchain,
         output_hash,
     )
@@ -166,9 +167,10 @@ def _rust_library_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
+        crate_type = crate_type,
         crate_info = rust_common.crate_info(
             name = crate_name,
-            type = ctx.attr.crate_type,
+            type = crate_type,
             root = crate_root,
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
@@ -201,6 +203,7 @@ def _rust_binary_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
+        crate_type = crate_type,
         crate_info = rust_common.crate_info(
             name = crate_name,
             type = crate_type,
@@ -230,14 +233,14 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
 
     crate_name = name_to_crate_name(ctx.label.name)
-
+    crate_type = "bin"
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         # Build the test binary using the dependency's srcs.
         crate = ctx.attr.crate[rust_common.crate_info]
         target = rust_common.crate_info(
             name = crate_name,
-            type = crate.type,
+            type = crate_type,
             root = crate.root,
             srcs = crate.srcs + ctx.files.srcs,
             deps = crate.deps + ctx.attr.deps,
@@ -252,7 +255,7 @@ def _rust_test_common(ctx, toolchain, output):
         # Target is a standalone crate. Build the test binary as its own crate.
         target = rust_common.crate_info(
             name = crate_name,
-            type = "lib",
+            type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
@@ -267,6 +270,7 @@ def _rust_test_common(ctx, toolchain, output):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
+        crate_type = crate_type,
         crate_info = target,
         rust_flags = ["--test"],
     )

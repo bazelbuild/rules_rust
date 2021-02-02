@@ -364,6 +364,7 @@ def construct_arguments(
         tool_path,
         cc_toolchain,
         feature_configuration,
+        crate_type,
         crate_info,
         dep_info,
         output_hash,
@@ -383,6 +384,7 @@ def construct_arguments(
         tool_path (str): Path to rustc
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
+        crate_type (str): Crate type of the current target.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
         output_hash (str): The hashed path of the crate root
@@ -508,7 +510,7 @@ def construct_arguments(
             args.add("--codegen=linker=" + ld)
             args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        add_native_link_flags(args, dep_info)
+        add_native_link_flags(args, dep_info, crate_type)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
@@ -541,6 +543,7 @@ def construct_arguments(
 def rustc_compile_action(
         ctx,
         toolchain,
+        crate_type,
         crate_info,
         output_hash = None,
         rust_flags = []):
@@ -549,6 +552,7 @@ def rustc_compile_action(
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current `rust_toolchain`
+        crate_type (str): Crate type of the current target
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
@@ -586,6 +590,7 @@ def rustc_compile_action(
         toolchain.rustc.path,
         cc_toolchain,
         feature_configuration,
+        crate_type,
         crate_info,
         dep_info,
         output_hash,
@@ -807,13 +812,18 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def add_native_link_flags(args, dep_info):
+def add_native_link_flags(args, dep_info, crate_type):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
         args (Args): The Args struct for a ctx.action
-        dep_info (DepInfo): Dependeincy Info provider
+        dep_info (DepInfo): Dependency Info provider
+        crate_type: Crate type of the current target
+
     """
+    if crate_type in ["lib", "rlib"]:
+        return
+
     native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
     args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
