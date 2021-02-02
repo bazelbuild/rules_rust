@@ -153,19 +153,19 @@ rust_bindgen = rule(
     doc = "Generates a rust source file from a cc_library and a header.",
     implementation = _rust_bindgen_impl,
     attrs = {
-        "header": attr.label(
-            doc = "The .h file to generate bindings for.",
-            allow_single_file = True,
+        "bindgen_flags": attr.string_list(
+            doc = "Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.",
         ),
         "cc_lib": attr.label(
             doc = "The cc_library that contains the .h file. This is used to find the transitive includes.",
             providers = [CcInfo],
         ),
-        "bindgen_flags": attr.string_list(
-            doc = "Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.",
-        ),
         "clang_flags": attr.string_list(
             doc = "Flags to pass directly to the clang executable.",
+        ),
+        "header": attr.label(
+            doc = "The .h file to generate bindings for.",
+            allow_single_file = True,
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
@@ -199,12 +199,6 @@ rust_bindgen_toolchain = rule(
             executable = True,
             cfg = "exec",
         ),
-        "rustfmt": attr.label(
-            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
-            executable = True,
-            cfg = "exec",
-            mandatory = False,
-        ),
         "clang": attr.label(
             doc = "The label of a `clang` executable.",
             executable = True,
@@ -219,6 +213,12 @@ rust_bindgen_toolchain = rule(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
             cfg = "exec",
             providers = [CcInfo],
+        ),
+        "rustfmt": attr.label(
+            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
+            executable = True,
+            cfg = "exec",
+            mandatory = False,
         ),
     },
 )

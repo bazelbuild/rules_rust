@@ -14,6 +14,11 @@
 
 # buildifier: disable=module-docstring
 load(
+    "//rust:private/clippy.bzl",
+    _rust_clippy = "rust_clippy",
+    _rust_clippy_aspect = "rust_clippy_aspect",
+)
+load(
     "//rust:private/rust.bzl",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
@@ -28,11 +33,6 @@ load(
 load(
     "//rust:private/rustdoc_test.bzl",
     _rust_doc_test = "rust_doc_test",
-)
-load(
-    "//rust:private/clippy.bzl",
-    _rust_clippy = "rust_clippy",
-    _rust_clippy_aspect = "rust_clippy_aspect",
 )
 
 rust_library = _rust_library

@@ -43,17 +43,9 @@ def _rust_toolchain_impl(ctx):
 rust_toolchain = rule(
     implementation = _rust_toolchain_impl,
     attrs = {
-        "rustc": attr.label(
-            doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
-            allow_single_file = True,
-        ),
-        "rust_doc": attr.label(
-            doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
-            allow_single_file = True,
-        ),
-        "rustfmt": attr.label(
-            doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
-            allow_single_file = True,
+        "binary_ext": attr.string(
+            doc = "The extension for binaries created from rustc.",
+            mandatory = True,
         ),
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
@@ -63,22 +55,60 @@ rust_toolchain = rule(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
         ),
-        "rustc_lib": attr.label(
-            doc = "The libraries used by rustc during compilation.",
+        "debug_info": attr.string_dict(
+            doc = "Rustc debug info levels per opt level",
+            default = {
+                "dbg": "2",
+                "fastbuild": "0",
+                "opt": "0",
+            },
+        ),
+        "default_edition": attr.string(
+            doc = "The edition to use for rust_* rules that don't specify an edition.",
+            default = "2015",
+        ),
+        "dylib_ext": attr.string(
+            doc = "The extension for dynamic libraries created from rustc.",
+            mandatory = True,
+        ),
+        "exec_triple": attr.string(
+            doc = (
+                "The platform triple for the toolchains execution environment. " +
+                "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
+            ),
+        ),
+        "opt_level": attr.string_dict(
+            doc = "Rustc optimization levels.",
+            default = {
+                "dbg": "0",
+                "fastbuild": "0",
+                "opt": "3",
+            },
+        ),
+        "os": attr.string(
+            doc = "The operating system for the current toolchain",
+            mandatory = True,
+        ),
+        "rust_doc": attr.label(
+            doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
         ),
-        "binary_ext": attr.string(
-            doc = "The extension for binaries created from rustc.",
-            mandatory = True,
+        "rustc": attr.label(
+            doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+        ),
+        "rustc_lib": attr.label(
+            doc = "The libraries used by rustc during compilation.",
+        ),
+        "rustfmt": attr.label(
+            doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
         ),
         "staticlib_ext": attr.string(
             doc = "The extension for static libraries created from rustc.",
-            mandatory = True,
-        ),
-        "dylib_ext": attr.string(
-            doc = "The extension for dynamic libraries created from rustc.",
             mandatory = True,
         ),
         "stdlib_linkflags": attr.string_list(
@@ -88,41 +118,11 @@ rust_toolchain = rule(
             ),
             mandatory = True,
         ),
-        "os": attr.string(
-            doc = "The operating system for the current toolchain",
-            mandatory = True,
-        ),
-        "default_edition": attr.string(
-            doc = "The edition to use for rust_* rules that don't specify an edition.",
-            default = "2015",
-        ),
-        "exec_triple": attr.string(
-            doc = (
-                "The platform triple for the toolchains execution environment. " +
-                "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
-            ),
-        ),
         "target_triple": attr.string(
             doc = (
                 "The platform triple for the toolchains target environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
-        ),
-        "opt_level": attr.string_dict(
-            doc = "Rustc optimization levels.",
-            default = {
-                "opt": "3",
-                "dbg": "0",
-                "fastbuild": "0",
-            },
-        ),
-        "debug_info": attr.string_dict(
-            doc = "Rustc debug info levels per opt level",
-            default = {
-                "opt": "0",
-                "dbg": "2",
-                "fastbuild": "0",
-            },
         ),
         "_crosstool": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

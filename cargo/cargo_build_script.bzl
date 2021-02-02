@@ -188,6 +188,26 @@ _build_script_run = rule(
     ),
     implementation = _build_script_impl,
     attrs = {
+        "build_script_env": attr.string_dict(
+            doc = "Environment variables for build scripts.",
+        ),
+        "crate_features": attr.string_list(
+            doc = "The list of rust features that the build script should consider activated.",
+        ),
+        "crate_name": attr.string(
+            doc = "Name of the crate associated with this build script target",
+        ),
+        "data": attr.label_list(
+            doc = "Data or tools required by the build script.",
+            allow_files = True,
+        ),
+        "deps": attr.label_list(
+            doc = "The Rust dependencies of the crate defined by `crate_name`",
+            providers = [DepInfo],
+        ),
+        "links": attr.string(
+            doc = "The name of the native library this crate links against.",
+        ),
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
         "script": attr.label(
@@ -197,37 +217,17 @@ _build_script_run = rule(
             mandatory = True,
             cfg = "exec",
         ),
-        "crate_name": attr.string(
-            doc = "Name of the crate associated with this build script target",
-        ),
-        "links": attr.string(
-            doc = "The name of the native library this crate links against.",
-        ),
-        "deps": attr.label_list(
-            doc = "The Rust dependencies of the crate defined by `crate_name`",
-            providers = [DepInfo],
-        ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
-        ),
-        "crate_features": attr.string_list(
-            doc = "The list of rust features that the build script should consider activated.",
-        ),
-        "build_script_env": attr.string_dict(
-            doc = "Environment variables for build scripts.",
-        ),
-        "data": attr.label_list(
-            doc = "Data or tools required by the build script.",
-            allow_files = True,
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
             default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
             cfg = "exec",
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],

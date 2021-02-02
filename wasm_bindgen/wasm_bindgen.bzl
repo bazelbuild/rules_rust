@@ -132,13 +132,13 @@ rust_wasm_bindgen = rule(
     implementation = _rust_wasm_bindgen_impl,
     doc = _WASM_BINDGEN_DOC,
     attrs = {
+        "bindgen_flags": attr.string_list(
+            doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
+        ),
         "wasm_file": attr.label(
             doc = "The .wasm file to generate bindings for.",
             allow_single_file = True,
             cfg = wasm_bindgen_transition,
-        ),
-        "bindgen_flags": attr.string_list(
-            doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
         ),
         "_whitelist_function_transition": attr.label(
             default = Label("//tools/whitelists/function_transition_whitelist"),

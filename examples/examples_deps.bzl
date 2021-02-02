@@ -3,13 +3,13 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
-load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
 load("@examples//complex_sys:repositories.bzl", "rules_rust_examples_complex_sys_repositories")
+load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
+load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
-load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 
 def deps():
     """Define dependencies for `rules_rust` examples"""

@@ -14,16 +14,16 @@
 
 # buildifier: disable=module-docstring
 load(
+    "//rust:private/rust.bzl",
+    "crate_root_src",
+)
+load(
     "//rust:private/rustc.bzl",
     "CrateInfo",
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
     "get_cc_toolchain",
-)
-load(
-    "//rust:private/rust.bzl",
-    "crate_root_src",
 )
 load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
 
@@ -143,13 +143,13 @@ rust_clippy_aspect = aspect(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_error_format": attr.label(default = "//:error_format"),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
         ),
-        "_error_format": attr.label(default = "//:error_format"),
     },
     toolchains = [
         str(Label("//rust:toolchain")),

@@ -285,16 +285,16 @@ rust_proto_library = rule(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "exec",
+            default = Label("//proto:optional_output_wrapper"),
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
-        ),
-        "_optional_output_wrapper": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],
@@ -362,16 +362,16 @@ rust_grpc_library = rule(
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "exec",
+            default = Label("//proto:optional_output_wrapper"),
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
-        ),
-        "_optional_output_wrapper": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],

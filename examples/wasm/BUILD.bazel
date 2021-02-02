@@ -13,9 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
 load("@rules_rust//rust:rust.bzl", "rust_binary")
 load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
-load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
 
 package(default_visibility = ["//visibility:public"])
 

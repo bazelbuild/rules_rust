@@ -1,5 +1,4 @@
 # buildifier: disable=module-docstring
-load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
@@ -11,6 +10,7 @@ load(
     "triple_to_constraint_set",
     "triple_to_system",
 )
+load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
@@ -639,15 +639,13 @@ rust_toolchain_repository = repository_rule(
         "selection from toolchain fetching."
     ),
     attrs = {
-        "version": attr.string(
-            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
-            mandatory = True,
+        "dev_components": attr.bool(
+            doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
+            default = False,
         ),
-        "rustfmt_version": attr.string(
-            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
-        ),
-        "iso_date": attr.string(
-            doc = "The date of the tool (or None, if the version is a specific version).",
+        "edition": attr.string(
+            doc = "The rust edition to be used by default.",
+            default = "2015",
         ),
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
@@ -656,23 +654,25 @@ rust_toolchain_repository = repository_rule(
         "extra_target_triples": attr.string_list(
             doc = "Additional rust-style targets that this set of toolchains should support.",
         ),
-        "toolchain_name_prefix": attr.string(
-            doc = "The per-target prefix expected for the rust_toolchain declarations in the parent workspace.",
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
         ),
-        "edition": attr.string(
-            doc = "The rust edition to be used by default.",
-            default = "2015",
-        ),
-        "dev_components": attr.bool(
-            doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
-            default = False,
+        "rustfmt_version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
         ),
         "sha256s": attr.string_dict(
             doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
         ),
+        "toolchain_name_prefix": attr.string(
+            doc = "The per-target prefix expected for the rust_toolchain declarations in the parent workspace.",
+        ),
         "urls": attr.string_list(
             doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
             default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
         ),
     },
     implementation = _rust_toolchain_repository_impl,
@@ -684,16 +684,16 @@ rust_toolchain_repository_proxy = repository_rule(
         "rust_toolchain_repository."
     ),
     attrs = {
-        "parent_workspace_name": attr.string(
-            doc = "The name of the other rust_toolchain_repository",
-            mandatory = True,
-        ),
         "exec_triple": attr.string(
             doc = "The Rust-style target triple for the compilation platform",
             mandatory = True,
         ),
         "extra_target_triples": attr.string_list(
             doc = "The Rust-style triples for extra compilation targets",
+        ),
+        "parent_workspace_name": attr.string(
+            doc = "The name of the other rust_toolchain_repository",
+            mandatory = True,
         ),
         "toolchain_name_prefix": attr.string(
             doc = "The per-target prefix expected for the rust_toolchain declarations in the parent workspace.",

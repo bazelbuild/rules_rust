@@ -30,49 +30,49 @@ load(
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
-        "name": "str: The name of this crate.",
-        "type": "str: The type of this crate. eg. lib or bin",
-        "root": "File: The source File entrypoint to this crate, eg. lib.rs",
-        "srcs": "List[File]: All source Files that are part of the crate.",
-        "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
-        "proc_macro_deps": "List[CrateInfo]: This crate's rust proc_macro dependencies' providers.",
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
-        "output": "File: The output File that will be produced, depends on crate type.",
+        "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
-        "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "is_test": "bool: If the crate is being compiled in a test context",
+        "name": "str: The name of this crate.",
+        "output": "File: The output File that will be produced, depends on crate type.",
+        "proc_macro_deps": "List[CrateInfo]: This crate's rust proc_macro dependencies' providers.",
+        "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
+        "srcs": "List[File]: All source Files that are part of the crate.",
+        "type": "str: The type of this crate. eg. lib or bin",
     },
 )
 
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
+        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
         "flags": "File: file containing additional flags to pass to rustc",
+        "link_flags": "File: file containing flags to pass to the linker",
         "out_dir": "File: directory containing the result of a build script",
         "rustc_env": "File: file containing additional environment variables to set for rustc.",
-        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
-        "link_flags": "File: file containing flags to pass to the linker",
     },
 )
 
 AliasableDepInfo = provider(
     doc = "A provider mapping an alias name to a Crate's information.",
     fields = {
-        "name": "str",
         "dep": "CrateInfo",
+        "name": "str",
     },
 )
 
 DepInfo = provider(
     doc = "A provider contianing information about a Crate's dependencies.",
     fields = {
+        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[CrateInfo]",
+        "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_dylibs": "depset[File]",
-        "transitive_staticlibs": "depset[File]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
-        "transitive_build_infos": "depset[BuildInfo]",
-        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
+        "transitive_staticlibs": "depset[File]",
     },
 )
 
@@ -106,11 +106,11 @@ def _get_rustc_env(ctx, toolchain):
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
         "CARGO_PKG_NAME": ctx.label.name,
+        "CARGO_PKG_VERSION": version,
         "CARGO_PKG_VERSION_MAJOR": major,
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
-        "CARGO_PKG_VERSION": version,
     }
 
 def get_compilation_mode_opts(ctx, toolchain):

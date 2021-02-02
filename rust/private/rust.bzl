@@ -356,19 +356,32 @@ def _tidy(doc_string):
     return "\n".join([line.strip() for line in doc_string.splitlines()])
 
 _rust_common_attrs = {
-    # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
-    # "name": attr.string(
-    #     doc = "This name will also be used as the name of the crate built by this rule.",
-    # `),
-    "srcs": attr.label_list(
+    "aliases": attr.label_keyed_string_dict(
         doc = _tidy("""
-            List of Rust `.rs` source files used to build the library.
+            Remap crates to a new name or moniker for linkage to this target
 
-            If `srcs` contains more than one file, then there must be a file either
-            named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
-            is the root of the crate to be passed to rustc to build this crate.
+            These are other `rust_library` targets and will be presented as the new name given.
         """),
-        allow_files = [".rs"],
+    ),
+    "compile_data": attr.label_list(
+        doc = _tidy("""
+            List of files used by this rule at compile time.
+
+            This attribute can be used to specify any data files that are embedded into
+            the library, such as via the
+            [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
+            macro.
+        """),
+        allow_files = True,
+    ),
+    "crate_features": attr.string_list(
+        doc = _tidy("""
+            List of features to enable for this crate.
+
+            Features are defined in the code using the `#[cfg(feature = "foo")]`
+            configuration option. The features listed here will be passed to `rustc`
+            with `--cfg feature="${feature_name}"` flags.
+        """),
     ),
     "crate_root": attr.label(
         doc = _tidy("""
@@ -389,17 +402,6 @@ _rust_common_attrs = {
         """),
         allow_files = True,
     ),
-    "compile_data": attr.label_list(
-        doc = _tidy("""
-            List of files used by this rule at compile time.
-
-            This attribute can be used to specify any data files that are embedded into
-            the library, such as via the
-            [`include_str!`](https://doc.rust-lang.org/std/macro.include_str!.html)
-            macro.
-        """),
-        allow_files = True,
-    ),
     "deps": attr.label_list(
         doc = _tidy("""
             List of other libraries to be linked to this library target.
@@ -407,6 +409,16 @@ _rust_common_attrs = {
             These can be either other `rust_library` targets or `cc_library` targets if
             linking a native library.
         """),
+    ),
+    "edition": attr.string(
+        doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
+    ),
+    "out_dir_tar": attr.label(
+        doc = "__Deprecated__, do not use, see [#cargo_build_script] instead.",
+        allow_single_file = [
+            ".tar",
+            ".tar.gz",
+        ],
     ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.
@@ -419,13 +431,6 @@ _rust_common_attrs = {
         cfg = "exec",
         providers = [CrateInfo],
     ),
-    "aliases": attr.label_keyed_string_dict(
-        doc = _tidy("""
-            Remap crates to a new name or moniker for linkage to this target
-
-            These are other `rust_library` targets and will be presented as the new name given.
-        """),
-    ),
     "rustc_env": attr.string_dict(
         doc = _tidy("""
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
@@ -437,42 +442,37 @@ _rust_common_attrs = {
             documentation for more.
         """),
     ),
-    "crate_features": attr.string_list(
-        doc = _tidy("""
-            List of features to enable for this crate.
-
-            Features are defined in the code using the `#[cfg(feature = "foo")]`
-            configuration option. The features listed here will be passed to `rustc`
-            with `--cfg feature="${feature_name}"` flags.
-        """),
-    ),
-    "edition": attr.string(
-        doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
-    ),
     "rustc_flags": attr.string_list(
         doc = "List of compiler flags passed to `rustc`.",
+    ),
+    # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
+    # "name": attr.string(
+    #     doc = "This name will also be used as the name of the crate built by this rule.",
+    # `),
+    "srcs": attr.label_list(
+        doc = _tidy("""
+            List of Rust `.rs` source files used to build the library.
+
+            If `srcs` contains more than one file, then there must be a file either
+            named `lib.rs`. Otherwise, `crate_root` must be set to the source file that
+            is the root of the crate to be passed to rustc to build this crate.
+        """),
+        allow_files = [".rs"],
     ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
     ),
-    "out_dir_tar": attr.label(
-        doc = "__Deprecated__, do not use, see [#cargo_build_script] instead.",
-        allow_single_file = [
-            ".tar",
-            ".tar.gz",
-        ],
-    ),
     "_cc_toolchain": attr.label(
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
+    "_error_format": attr.label(default = "//:error_format"),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
     ),
-    "_error_format": attr.label(default = "//:error_format"),
 }
 
 _rust_library_attrs = {
@@ -576,15 +576,15 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 )
 
 _rust_binary_attrs = {
+    "crate_type": attr.string(
+        default = "bin",
+    ),
     "linker_script": attr.label(
         doc = _tidy("""
             Link script to forward into linker via rustc options.
         """),
         cfg = "exec",
         allow_single_file = True,
-    ),
-    "crate_type": attr.string(
-        default = "bin",
     ),
     "out_binary": attr.bool(),
 }

@@ -2,83 +2,94 @@
 
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
-    "x86_64": "x86_64",
-    "powerpc": "ppc",
     "aarch64": "aarch64",
     "arm": "arm",
-    "i686": "x86_32",
-    "s390x": "s390x",
+    "armv7": "armv7",
+    "armv7s": None,
     "asmjs": None,
     "i386": "i386",
     "i586": None,
-    "powerpc64": None,
-    "powerpc64le": None,
-    "armv7": "armv7",
-    "armv7s": None,
-    "s390": None,
+    "i686": "x86_32",
     "le32": None,
     "mips": None,
     "mipsel": None,
+    "powerpc": "ppc",
+    "powerpc64": None,
+    "powerpc64le": None,
+    "s390": None,
+    "s390x": "s390x",
     "wasm32": None,
+    "x86_64": "x86_64",
 }
 
 # Systems that map to a "@platforms//os entry
 _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
-    "freebsd": "freebsd",
-    "linux": "linux",
-    "darwin": "osx",
-    "windows": "windows",
-    "ios": "ios",
     "android": "android",
-    "emscripten": None,
-    "unknown": None,
-    "wasi": None,
-    "nacl": None,
     "bitrig": None,
+    "darwin": "osx",
     "dragonfly": None,
+    "emscripten": None,
+    "freebsd": "freebsd",
+    "ios": "ios",
+    "linux": "linux",
+    "nacl": None,
     "netbsd": None,
     "openbsd": "openbsd",
     "solaris": None,
+    "unknown": None,
+    "wasi": None,
+    "windows": "windows",
 }
 
 _SYSTEM_TO_BINARY_EXT = {
-    "freebsd": "",
-    "linux": "",
-    "windows": ".exe",
     "darwin": "",
-    "ios": "",
     "emscripten": ".js",
+    "freebsd": "",
+    "ios": "",
+    "linux": "",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "windows": ".exe",
 }
 
 _SYSTEM_TO_STATICLIB_EXT = {
-    "freebsd": ".a",
-    "linux": ".a",
     "darwin": ".a",
-    "ios": ".a",
-    "windows": ".lib",
     "emscripten": ".js",
+    "freebsd": ".a",
+    "ios": ".a",
+    "linux": ".a",
     "unknown": "",
     "wasi": "",
+    "windows": ".lib",
 }
 
 _SYSTEM_TO_DYLIB_EXT = {
-    "freebsd": ".so",
-    "linux": ".so",
     "darwin": ".dylib",
-    "ios": ".dylib",
-    "windows": ".dll",
     "emscripten": ".js",
+    "freebsd": ".so",
+    "ios": ".dylib",
+    "linux": ".so",
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "windows": ".dll",
 }
 
 # See https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs
 _SYSTEM_TO_STDLIB_LINKFLAGS = {
+    # NOTE: Rust stdlib `build.rs` treats android as a subset of linux, rust rules treat android
+    # as its own system.
+    "android": ["-ldl", "-llog", "-lgcc"],
+    "bitrig": [],
+    # TODO(gregbowyer): If rust stdlib is compiled for cloudabi with the backtrace feature it
+    # includes `-lunwind` but this might not actually be required.
+    # I am not sure which is the common configuration or how we encode it as a link flag.
+    "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
+    "darwin": ["-lSystem", "-lresolv"],
+    "dragonfly": ["-lpthread"],
+    "emscripten": [],
     # TODO(bazelbuild/rules_cc#75):
     #
     # Right now bazel cc rules does not specify the exact flag setup needed for calling out system
@@ -92,30 +103,19 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # what you need for your specific setup, for example like so
     # `BAZEL_RUST_STDLIB_LINKFLAGS="-ladvapi32:-lws2_32:-luserenv"`
     "freebsd": ["-lexecinfo", "-lpthread"],
+    "fuchsia": ["-lzircon", "-lfdio"],
+    "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
+    "ios": ["-lSystem", "-lobjc", "-framework Security", "-framework Foundation", "-lresolv"],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
-    "darwin": ["-lSystem", "-lresolv"],
-    "uwp": ["ws2_32.lib"],
-    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib"],
-    "ios": ["-lSystem", "-lobjc", "-framework Security", "-framework Foundation", "-lresolv"],
-    # NOTE: Rust stdlib `build.rs` treats android as a subset of linux, rust rules treat android
-    # as its own system.
-    "android": ["-ldl", "-llog", "-lgcc"],
-    "emscripten": [],
     "nacl": [],
-    "bitrig": [],
-    "dragonfly": ["-lpthread"],
     "netbsd": ["-lpthread", "-lrt"],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
-    "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
-    "fuchsia": ["-lzircon", "-lfdio"],
-    # TODO(gregbowyer): If rust stdlib is compiled for cloudabi with the backtrace feature it
-    # includes `-lunwind` but this might not actually be required.
-    # I am not sure which is the common configuration or how we encode it as a link flag.
-    "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
     "unknown": [],
+    "uwp": ["ws2_32.lib"],
     "wasi": [],
+    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib"],
 }
 
 def cpu_arch_to_constraints(cpu_arch):
