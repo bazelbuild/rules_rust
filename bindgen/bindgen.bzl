@@ -23,7 +23,7 @@ def rust_bindgen_library(
         bindgen_flags = None,
         clang_flags = None,
         **kwargs):
-    """Generates a rust source file for `header`, and builds a rust_library.
+    """asdfGenerates a rust source file for `header`, and builds a rust_library.
 
     Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to rust_library.
 
