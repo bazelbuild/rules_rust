@@ -13,8 +13,10 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:private/utils.bzl", "find_toolchain", "get_libs_for_static_executable")
 load("//rust:rust.bzl", "rust_library")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "find_toolchain", "get_libs_for_static_executable")
 
 def rust_bindgen_library(
         name,

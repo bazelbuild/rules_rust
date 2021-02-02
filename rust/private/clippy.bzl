@@ -13,19 +13,19 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("//rust:common.bzl", "CrateInfo")
 load(
-    "//rust:private/rust.bzl",
+    "//rust/private:rust.bzl",
     "crate_root_src",
 )
 load(
-    "//rust:private/rustc.bzl",
-    "CrateInfo",
+    "//rust/private:rustc.bzl",
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
     "get_cc_toolchain",
 )
-load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
 
 _rust_extensions = [
     "rs",

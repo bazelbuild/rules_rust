@@ -13,8 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
-load("//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
+load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:rustc.bzl", "DepInfo")
+load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule

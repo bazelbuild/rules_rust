@@ -20,7 +20,9 @@ load(
     "JSModuleInfo",
     "JSNamedModuleInfo",
 )
-load("//rust:private/transitions.bzl", "wasm_bindgen_transition")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:transitions.bzl", "wasm_bindgen_transition")
 
 _WASM_BINDGEN_DOC = """\
 Generates javascript and typescript bindings for a webassembly module.

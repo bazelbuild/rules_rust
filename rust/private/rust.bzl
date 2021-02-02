@@ -13,8 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:rustc.bzl", "rustc_compile_action")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -355,7 +356,7 @@ def _tidy(doc_string):
     """
     return "\n".join([line.strip() for line in doc_string.splitlines()])
 
-_rust_common_attrs = {
+_common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = _tidy("""
             Remap crates to a new name or moniker for linkage to this target
@@ -501,7 +502,7 @@ _rust_test_attrs = {
 
 rust_library = rule(
     implementation = _rust_library_impl,
-    attrs = dict(_rust_common_attrs.items() +
+    attrs = dict(_common_attrs.items() +
                  _rust_library_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -591,7 +592,7 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    attrs = dict(_rust_common_attrs.items() + _rust_binary_attrs.items()),
+    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -687,7 +688,7 @@ Hello world
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    attrs = dict(_rust_common_attrs.items() +
+    attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -836,7 +837,7 @@ Run the test with `bazel build //hello_lib:hello_lib_test`.
 
 rust_test_binary = rule(
     implementation = _rust_test_impl,
-    attrs = dict(_rust_common_attrs.items() +
+    attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -860,7 +861,7 @@ See `rust_test` for example usage.
 
 rust_benchmark = rule(
     implementation = _rust_benchmark_impl,
-    attrs = _rust_common_attrs,
+    attrs = _common_attrs,
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],

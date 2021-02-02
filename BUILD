@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:private/rustc.bzl", "error_format")
+load("//rust/private:rustc.bzl", "error_format")
 
 bzl_library(
     name = "rules",

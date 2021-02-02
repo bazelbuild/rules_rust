@@ -14,7 +14,8 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
-load("//rust:private/rust.bzl", "name_to_crate_name")
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "name_to_crate_name")
 
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]

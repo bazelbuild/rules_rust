@@ -18,30 +18,14 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("//rust:common.bzl", "CrateInfo")
 load(
-    "//rust:private/utils.bzl",
+    "//rust/private:utils.bzl",
     "expand_locations",
     "get_lib_name",
     "get_libs_for_static_executable",
     "relativize",
     "rule_attrs",
-)
-
-CrateInfo = provider(
-    doc = "A provider containing general Crate information.",
-    fields = {
-        "aliases": "Dict[Label, String]: Renamed and aliased crates",
-        "deps": "List[Provider]: This crate's (rust or cc) dependencies' providers.",
-        "edition": "str: The edition of this crate.",
-        "is_test": "bool: If the crate is being compiled in a test context",
-        "name": "str: The name of this crate.",
-        "output": "File: The output File that will be produced, depends on crate type.",
-        "proc_macro_deps": "List[CrateInfo]: This crate's rust proc_macro dependencies' providers.",
-        "root": "File: The source File entrypoint to this crate, eg. lib.rs",
-        "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
-        "srcs": "List[File]: All source Files that are part of the crate.",
-        "type": "str: The type of this crate. eg. lib or bin",
-    },
 )
 
 BuildInfo = provider(

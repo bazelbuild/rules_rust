@@ -1,6 +1,6 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_test")
-load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "simple",

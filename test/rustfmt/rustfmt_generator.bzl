@@ -1,5 +1,6 @@
 # buildifier: disable=module-docstring
-load("//rust:private/utils.bzl", "find_toolchain")
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "find_toolchain")
 
 def _rustfmt_generator_impl(ctx):
     toolchain = find_toolchain(ctx)
