@@ -13,6 +13,13 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@build_bazel_rules_nodejs//internal/providers:declaration_info.bzl", "DeclarationInfo")
+load(
+    "@build_bazel_rules_nodejs//internal/providers:js_providers.bzl",
+    "JSEcmaScriptModuleInfo",
+    "JSModuleInfo",
+    "JSNamedModuleInfo",
+)
 load("//rust:private/transitions.bzl", "wasm_bindgen_transition")
 
 _WASM_BINDGEN_DOC = """\
@@ -84,49 +91,48 @@ def _rust_wasm_bindgen_impl(ctx):
         arguments = [args],
     )
 
-    # TODO (bazelbuild/rules_rust#443): Legacy provider syntax should be updated. See the following guide:
-    # https://docs.bazel.build/versions/master/skylark/rules.html#migrating-from-legacy-providers
-    # buildifier: disable=rule-impl-return
-    return struct(
-        providers = [
-            DefaultInfo(
-                files = depset([
-                    ctx.outputs.bindgen_javascript_bindings,
-                    ctx.outputs.bindgen_typescript_bindings,
-                    ctx.outputs.bindgen_wasm_module,
-                    ctx.outputs.javascript_bindings,
-                    ctx.outputs.typescript_bindings,
-                ]),
-            ),
-        ],
-        typescript = struct(
-            declarations = depset([
-                ctx.outputs.typescript_bindings,
+    # Return a structure that is compatible with the deps[] of a ts_library.
+    declarations = depset([
+        ctx.outputs.typescript_bindings,
+        ctx.outputs.bindgen_typescript_bindings,
+    ])
+    es5_sources = depset([
+        ctx.outputs.bindgen_javascript_bindings,
+        ctx.outputs.javascript_bindings,
+    ])
+    es6_sources = depset([
+        ctx.outputs.bindgen_javascript_bindings,
+        ctx.outputs.javascript_bindings,
+    ])
+
+    return [
+        DefaultInfo(
+            files = depset([
+                ctx.outputs.bindgen_javascript_bindings,
                 ctx.outputs.bindgen_typescript_bindings,
-            ]),
-            transitive_declarations = depset([
+                ctx.outputs.bindgen_wasm_module,
+                ctx.outputs.javascript_bindings,
                 ctx.outputs.typescript_bindings,
-                ctx.outputs.bindgen_typescript_bindings,
-            ]),
-            type_blacklisted_declarations = depset(),
-            es5_sources = depset([
-                ctx.outputs.bindgen_javascript_bindings,
-                ctx.outputs.javascript_bindings,
-            ]),
-            es6_sources = depset([
-                ctx.outputs.bindgen_javascript_bindings,
-                ctx.outputs.javascript_bindings,
-            ]),
-            transitive_es5_sources = depset([
-                ctx.outputs.bindgen_javascript_bindings,
-                ctx.outputs.javascript_bindings,
-            ]),
-            transitive_es6_sources = depset([
-                ctx.outputs.bindgen_javascript_bindings,
-                ctx.outputs.javascript_bindings,
             ]),
         ),
-    )
+        DeclarationInfo(
+            declarations = declarations,
+            transitive_declarations = declarations,
+            type_blacklisted_declarations = depset([]),
+        ),
+        JSModuleInfo(
+            direct_sources = es5_sources,
+            sources = es5_sources,
+        ),
+        JSNamedModuleInfo(
+            direct_sources = es5_sources,
+            sources = es5_sources,
+        ),
+        JSEcmaScriptModuleInfo(
+            direct_sources = es6_sources,
+            sources = es6_sources,
+        ),
+    ]
 
 rust_wasm_bindgen = rule(
     implementation = _rust_wasm_bindgen_impl,
