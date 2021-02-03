@@ -97,5 +97,5 @@ fn find_exec_root(bazel_command: &OsString) -> PathBuf {
 
     // TODO: This only works with UTF8 filenames. Esoteric directory name handling
     // would would require platform specific code.
-    PathBuf::from(String::from_utf8_lossy(output.stdout.as_slice()).into_owned())
+    PathBuf::from(String::from_utf8_lossy(output.stdout.as_slice()).trim())
 }
