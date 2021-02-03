@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "DepInfo")
 load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name")
 
@@ -26,10 +26,10 @@ def _rust_doc_test_impl(ctx):
     Returns:
         list: A list containing a DefaultInfo provider
     """
-    if CrateInfo not in ctx.attr.dep:
+    if rust_common.crate_info not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
-    crate = ctx.attr.dep[CrateInfo]
+    crate = ctx.attr.dep[rust_common.crate_info]
 
     toolchain = find_toolchain(ctx)
 
@@ -193,7 +193,7 @@ rust_doc_test = rule(
                 "`rust_library` or `rust_binary` targets."
             ),
             mandatory = True,
-            providers = [CrateInfo],
+            providers = [rust_common.crate_info],
         ),
     },
     executable = True,

@@ -18,6 +18,7 @@ load(
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
+load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
     "//rust/private:rust.bzl",
     _rust_benchmark = "rust_benchmark",
@@ -61,3 +62,6 @@ rust_clippy_aspect = _rust_clippy_aspect
 
 rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+rust_common = _rust_common
+# See @rules_rust//rust/private:common.bzl for a complete description.

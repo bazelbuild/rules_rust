@@ -18,7 +18,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "expand_locations",
@@ -128,8 +128,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     """
 
     for dep in deps:
-        if CrateInfo in dep:
-            if dep[CrateInfo].type == "proc-macro":
+        if rust_common.crate_info in dep:
+            if dep[rust_common.crate_info].type == "proc-macro":
                 fail(
                     "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
                         label,
@@ -137,7 +137,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                     ),
                 )
     for dep in proc_macro_deps:
-        type = dep[CrateInfo].type
+        type = dep[rust_common.crate_info].type
         if type != "proc-macro":
             fail(
                 "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
@@ -156,15 +156,15 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in deps + proc_macro_deps:
-        if CrateInfo in dep:
+        if rust_common.crate_info in dep:
             # This dependency is a rust_library
-            direct_dep = dep[CrateInfo]
+            direct_dep = dep[rust_common.crate_info]
             direct_crates.append(AliasableDepInfo(
                 name = aliases.get(dep.label, direct_dep.name),
                 dep = direct_dep,
             ))
 
-            transitive_crates.append(depset([dep[CrateInfo]], transitive = [dep[DepInfo].transitive_crates]))
+            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[DepInfo].transitive_crates]))
             transitive_dylibs.append(dep[DepInfo].transitive_dylibs)
             transitive_staticlibs.append(dep[DepInfo].transitive_staticlibs)
             transitive_build_infos.append(dep[DepInfo].transitive_build_infos)
@@ -519,8 +519,8 @@ def construct_arguments(
 
     # Make bin crate data deps available to tests.
     for data in getattr(ctx.attr, "data", []):
-        if CrateInfo in data:
-            dep_crate_info = data[CrateInfo]
+        if rust_common.crate_info in data:
+            dep_crate_info = data[rust_common.crate_info]
             if dep_crate_info.type == "bin":
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 

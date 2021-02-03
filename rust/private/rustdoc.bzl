@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "DepInfo", "add_crate_link_flags", "add_edition_flags")
 load("//rust/private:utils.bzl", "find_toolchain")
 
@@ -62,10 +62,10 @@ def _rust_doc_impl(ctx):
     Args:
         ctx (ctx): The rule's context object
     """
-    if CrateInfo not in ctx.attr.dep:
+    if rust_common.crate_info not in ctx.attr.dep:
         fail("Expected rust_library or rust_binary.", "dep")
 
-    crate = ctx.attr.dep[CrateInfo]
+    crate = ctx.attr.dep[rust_common.crate_info]
     dep_info = ctx.attr.dep[DepInfo]
 
     toolchain = find_toolchain(ctx)

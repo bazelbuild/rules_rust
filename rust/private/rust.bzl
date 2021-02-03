@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
 
@@ -166,7 +166,7 @@ def _rust_library_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_info = CrateInfo(
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root,
@@ -201,7 +201,7 @@ def _rust_binary_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_info = CrateInfo(
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, crate_type),
@@ -234,8 +234,8 @@ def _rust_test_common(ctx, toolchain, output):
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         # Build the test binary using the dependency's srcs.
-        crate = ctx.attr.crate[CrateInfo]
-        target = CrateInfo(
+        crate = ctx.attr.crate[rust_common.crate_info]
+        target = rust_common.crate_info(
             name = crate_name,
             type = crate.type,
             root = crate.root,
@@ -250,7 +250,7 @@ def _rust_test_common(ctx, toolchain, output):
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
-        target = CrateInfo(
+        target = rust_common.crate_info(
             name = crate_name,
             type = "lib",
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
@@ -430,7 +430,7 @@ _common_attrs = {
             List of `rust_library` targets with kind `proc-macro` used to help build this library target.
         """),
         cfg = "exec",
-        providers = [CrateInfo],
+        providers = [rust_common.crate_info],
     ),
     "rustc_env": attr.string_dict(
         doc = _tidy("""

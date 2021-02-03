@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:rust.bzl",
     "crate_root_src",
@@ -43,12 +43,12 @@ def _rust_sources(target, rule):
     return [src for src in srcs if src.extension in _rust_extensions]
 
 def _clippy_aspect_impl(target, ctx):
-    if CrateInfo not in target:
+    if rust_common.crate_info not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
 
     toolchain = find_toolchain(ctx)
-    crate_info = target[CrateInfo]
+    crate_info = target[rust_common.crate_info]
 
     if crate_info.is_test:
         root = crate_info.root
