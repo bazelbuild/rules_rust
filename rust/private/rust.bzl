@@ -273,6 +273,7 @@ def _rust_test_common(ctx, toolchain, output):
         crate_type = crate_type,
         crate_info = target,
         rust_flags = ["--test"],
+        environ = ctx.attr.env,
     )
 
 def _rust_test_impl(ctx):
@@ -500,6 +501,14 @@ _rust_test_attrs = {
 
             These tests are typically those that would be held out under
             `#[cfg(test)]` declarations.
+        """),
+    ),
+    "env": attr.string_dict(
+        mandatory = False,
+        doc = _tidy("""
+            Specifies additional environment variables to set when the test is executed by bazel test. 
+            Values are subject to `$(execpath)` and 
+            ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
     ),
 }
