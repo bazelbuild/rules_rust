@@ -13,6 +13,7 @@ rust_library(
         ["src/**/*.template"],
         exclude = ["src/testing/**/*.template"],
     ),
+    edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     deps = all_crate_deps(),
 )
@@ -22,14 +23,52 @@ rust_binary(
     srcs = [
         "src/bin/cargo-raze.rs",
     ],
+    edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     deps = [":cargo_raze"] + all_crate_deps(),
 )
 
+alias(
+    name = "cargo",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:cargo",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:cargo",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:cargo",
+    }),
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "rustc",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustc",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustc",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustc",
+    }),
+    visibility = ["//visibility:private"],
+)
+
+_TEST_DATA = glob(["src/**/*.template"]) + [
+    ":cargo",
+    ":rustc",
+]
+
+_TEST_ENV = {
+    "CARGO": "$(execpath :cargo)",
+    "CARGO_HOME": "$(execpath :cargo).home",
+    "RUSTC": "$(execpath :rustc)",
+}
+
 rust_test(
     name = "cargo_raze_lib_test",
     crate = ":cargo_raze",
-    data = glob(["src/**/*.template"]),
+    data = _TEST_DATA,
+    edition = "2018",
+    env = _TEST_ENV,
     proc_macro_deps = all_crate_deps(proc_macro_dev = True),
     deps = all_crate_deps(normal_dev = True),
 )
@@ -37,7 +76,9 @@ rust_test(
 rust_test(
     name = "cargo_raze_bin_test",
     crate = ":cargo_raze_bin",
-    data = glob(["src/**/*.template"]),
+    data = _TEST_DATA,
+    edition = "2018",
+    env = _TEST_ENV,
     proc_macro_deps = all_crate_deps(proc_macro_dev = True),
     deps = all_crate_deps(normal_dev = True),
 )
