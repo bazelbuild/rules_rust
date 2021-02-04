@@ -543,7 +543,8 @@ def rustc_compile_action(
         toolchain,
         crate_info,
         output_hash = None,
-        rust_flags = []):
+        rust_flags = [],
+        environ = {}):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -552,6 +553,7 @@ def rustc_compile_action(
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
+        environ (dict, optional): A set of makefile expandable environment variables for the action
 
     Returns:
         list: A list of the following providers:
@@ -594,6 +596,13 @@ def rustc_compile_action(
         build_env_file,
         build_flags_files,
     )
+
+    # Make the user defined enviroment variables available to the action
+    expanded_env = dict()
+    data = getattr(ctx.attr, "data", [])
+    for key in environ:
+        expanded_env[key] = ctx.expand_location(environ[key], data)
+    env.update(expanded_env)
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
         formatted_version = " v{}".format(ctx.attr.version)
