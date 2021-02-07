@@ -72,12 +72,26 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
     let mut binary_path = PathBuf::from(&exec_path);
     loop {
         // Check for our neighboring $binary.runfiles directory.
-        let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
-        runfiles_name.push(".runfiles");
+        {
+            let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
+            runfiles_name.push(".runfiles");
 
-        let runfiles_path = binary_path.with_file_name(&runfiles_name);
-        if runfiles_path.is_dir() {
-            return Ok(runfiles_path);
+            let runfiles_path = binary_path.with_file_name(&runfiles_name);
+            if runfiles_path.is_dir() {
+                return Ok(runfiles_path);
+            }
+        }
+        
+        // Test binaries are executed by a $binary.runner, so check for 
+        // $binary.runner.runfiles
+        {
+            let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
+            runfiles_name.push(".runner.runfiles");
+
+            let runfiles_path = binary_path.with_file_name(&runfiles_name);
+            if runfiles_path.is_dir() {
+                return Ok(runfiles_path);
+            }
         }
 
         // Check if we're already under a *.runfiles directory.

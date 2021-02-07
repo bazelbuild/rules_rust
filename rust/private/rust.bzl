@@ -15,7 +15,7 @@
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "expand_locations", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -267,14 +267,66 @@ def _rust_test_common(ctx, toolchain, output):
             is_test = True,
         )
 
-    return rustc_compile_action(
+    environ = expand_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        getattr(ctx.attr, "data", []),
+    )
+
+    providers = rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_type = crate_type,
         crate_info = target,
         rust_flags = ["--test"],
-        environ = ctx.attr.env,
+        environ = environ,
     )
+
+    # Create a process wrapper to ensure runtime environment
+    # variables are defined for the test binary
+    runner = ctx.actions.declare_file(ctx.label.name + ".runner")
+    runner_content = [
+        "#!/bin/bash",
+        "",
+        "pwd=$(pwd)",
+    ]
+
+    for key, value in environ.items():
+        runner_content.append("export {}=\"{}\"".format(key, value))
+
+    runner_content.extend([
+        "",
+        "exec {}".format(output.short_path),
+        "",
+    ])
+
+    ctx.actions.write(
+        runner,
+        content = "\n".join(runner_content),
+        is_executable = True,
+    )
+
+    # Replace the `DefaultInfo` provider in the returned list
+    default_info = None
+    for i in range(len(providers)):
+        if type(providers[i]) == "DefaultInfo":
+            default_info = providers[i]
+            providers.pop(i)
+            break
+
+    if not default_info:
+        fail("No DefaultInfo provider returned from `rustc_compile_action`")
+
+    providers.append(DefaultInfo(
+        files = default_info.files,
+        runfiles = default_info.default_runfiles.merge(
+            # The output is now also considered a runfile
+            ctx.runfiles(files = [output]),
+        ),
+        executable = runner,
+    ))
+
+    return providers
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
