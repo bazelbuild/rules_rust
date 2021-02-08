@@ -21,7 +21,7 @@ fn args() -> Vec<String> {
 /// Simply replace the current process with our test
 #[cfg(target_family = "unix")]
 fn exec(environ: BTreeMap<&'static str, &'static str>) {
-    Command::new("{executable}")
+    Command::new(r#####"{executable}"#####)
     .envs(environ.iter())
     .args(args())
     .exec();
