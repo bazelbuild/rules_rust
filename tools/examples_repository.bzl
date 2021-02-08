@@ -13,7 +13,7 @@ def _examples_dir(repository_ctx):
         path: A path to the cargo-raze workspace root
     """
     workspace_root = repository_ctx.path(repository_ctx.attr._script).dirname.dirname
-    return repository_ctx.path(str(workspace_root) + "/" + repository_ctx.attr._examples_dir.lstrip("/"))
+    return repository_ctx.path(str(workspace_root) + "/" + repository_ctx.attr.examples_dir.lstrip("/"))
 
 EXECUTE_FAIL_MESSAGE = """\
 Failed to setup examples repository with exit code ({}).
@@ -31,7 +31,6 @@ def _examples_repository_impl(repository_ctx):
     """
 
     examples_dir = _examples_dir(repository_ctx)
-    vendor_script = repository_ctx.attr._script
 
     if repository_ctx.attr.target_triple:
         target_triple = repository_ctx.attr.target_triple
@@ -59,17 +58,29 @@ def _examples_repository_impl(repository_ctx):
             continue
         repository_ctx.symlink(item, item.basename)
 
-    # Vendor sources
-    results = repository_ctx.execute(
-        [
+    if "windows" in repository_ctx.os.name:
+        vendor_script = repository_ctx.path(repository_ctx.attr._script_windows)
+        command = [vendor_script]
+        environment = {
+            "EXAMPLES_DIR": str(examples_dir).replace("/", "\\"),
+            "CARGO": "{}/bin/cargo".format(repository_ctx.path(".")).replace("/", "\\"),
+        }
+    else:
+        vendor_script = repository_ctx.path(repository_ctx.attr._script)
+        command = [
             vendor_script,
             "vendor",
-        ],
-        quiet = True,
+        ]
         environment = {
             "EXAMPLES_DIR": str(examples_dir),
             "CARGO": "{}/bin/cargo".format(repository_ctx.path(".")),
-        },
+        }
+
+    # Vendor sources
+    repository_ctx.report_progress("Vendoring example sources")
+    results = repository_ctx.execute(
+        command,
+        environment = environment,
     )
 
     if results.return_code != 0:
@@ -90,13 +101,21 @@ _examples_repository = repository_rule(
         "target_triple": attr.string(
             doc = "The target triple of the cargo binary to download",
         ),
-        "_examples_dir": attr.string(
-            doc = "The path to the examples directory relative to `_root_file",
+        "examples_dir": attr.string(
+            doc = "The path to the examples directory relative to the WORKSPACE root",
             default = "examples",
         ),
         "_script": attr.label(
-            doc = "A script containing the ability to vendor crates into examples",
+            doc = (
+                "A script containing the ability to vendor crates into examples. " + 
+                "This script is also used to detect the path of the workspace root."
+            ),
             default = Label("@cargo_raze//tools:examples_repository_tools.sh"),
+            allow_single_file = True,
+        ),
+        "_script_windows": attr.label(
+            doc = "The windows equivilant of `_script`",
+            default = Label("@cargo_raze//tools:examples_repository_tools.bat"),
             allow_single_file = True,
         ),
     },

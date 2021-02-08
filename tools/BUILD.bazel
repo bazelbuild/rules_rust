@@ -2,6 +2,7 @@ package(default_visibility = ["//:__subpackages__"])
 
 exports_files([
     "examples_repository_tools.sh",
+    "examples_repository_tools.bat",
 ])
 
 sh_binary(
