@@ -5,6 +5,9 @@ use std::process::Command;
 #[cfg(target_family = "unix")]
 use std::os::unix::process::CommandExt;
 
+/// The executable to launch from this test runner
+const EXECUTABLE: &'static str = r#####"{executable}"#####;
+
 /// This is a templated function for defining a map of environment
 /// variables. The comment in this function is replaced by the
 /// definition of this map.
@@ -21,7 +24,7 @@ fn args() -> Vec<String> {
 /// Simply replace the current process with our test
 #[cfg(target_family = "unix")]
 fn exec(environ: BTreeMap<&'static str, &'static str>) {
-    Command::new(r#####"{executable}"#####)
+    Command::new(EXECUTABLE)
     .envs(environ.iter())
     .args(args())
     .exec();
@@ -31,7 +34,7 @@ fn exec(environ: BTreeMap<&'static str, &'static str>) {
 /// so instead we allow the command to run in a subprocess.
 #[cfg(target_family = "windows")]
 fn exec(environ: BTreeMap<&'static str, &'static str>) {
-    let output = Command::new(r#####"{executable}"#####)
+    let output = Command::new(EXECUTABLE)
     .envs(environ.iter())
     .args(args())
     .output()
