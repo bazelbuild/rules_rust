@@ -219,6 +219,97 @@ def _rust_binary_impl(ctx):
         ),
     )
 
+def _create_rust_test_runner(ctx, toolchain, output, providers):
+    """Create a process wrapper to ensure runtime environment variables are defined for the test binary
+
+    Args:
+        ctx (ctx): The rule's context object
+        toolchain (rust_toolchain): The current rust toolchain
+        output (File): The output File that will be produced, depends on crate type.
+        providers (list): Providers from a rust compile action. See `rustc_compile_action`
+
+    Returns:
+        list: A list of providers similar to `rustc_compile_action` but with modified default info
+    """
+
+    # Expand the environment variables
+    environ = expand_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        getattr(ctx.attr, "data", []),
+    )
+
+    # Generate strings for inlining them in the Rust source file
+    environ_defines = []
+    if environ:
+        environ_defines.append("    let mut environ = BTreeMap::new();")
+        for env, value in environ.items():
+            environ_defines.append("    environ.insert(r#####\"{}\"#####, r#####\"{}\"#####);".format(
+                env,
+                value,
+            ))
+        environ_defines.append("    environ")
+    else:
+        environ_defines.append("    BTreeMap::new()")
+
+    # Generate the test runner's source file
+    runner_src = ctx.actions.declare_file(ctx.label.name + ".runner_main.rs")
+    ctx.actions.expand_template(
+        template = ctx.file._test_runner_template,
+        output = runner_src,
+        substitutions = {
+            "// {environ}": "\n".join(environ_defines),
+            "{executable}": output.short_path,
+        }
+    )
+
+    # Compile the test runner
+    runner = ctx.actions.declare_file(ctx.label.name + ".runner" + toolchain.binary_ext)
+    crate_name = name_to_crate_name(ctx.label.name) + "_runner"
+    crate_type = "bin"
+    runner_target = rust_common.crate_info(
+        name = crate_name,
+        type = crate_type,
+        root = runner_src,
+        srcs = [runner_src],
+        deps = [],
+        proc_macro_deps = [],
+        aliases = {},
+        output = runner,
+        edition = "2018",
+        rustc_env = ctx.attr.rustc_env,
+        is_test = False,
+    )
+
+    runner_providers = rustc_compile_action(
+        ctx = ctx,
+        toolchain = toolchain,
+        crate_type = crate_type,
+        crate_info = runner_target,
+    )
+
+    # Replace the `DefaultInfo` provider in the returned list
+    default_info = None
+    for i in range(len(providers)):
+        if type(providers[i]) == "DefaultInfo":
+            default_info = providers[i]
+            providers.pop(i)
+            break
+
+    if not default_info:
+        fail("No DefaultInfo provider returned from `rustc_compile_action`")
+
+    providers.append(DefaultInfo(
+        files = default_info.files,
+        runfiles = default_info.default_runfiles.merge(
+            # The output is now also considered a runfile
+            ctx.runfiles(files = [output]),
+        ),
+        executable = runner,
+    ))
+
+    return providers
+
 def _rust_test_common(ctx, toolchain, output):
     """Builds a Rust test binary.
 
@@ -267,66 +358,15 @@ def _rust_test_common(ctx, toolchain, output):
             is_test = True,
         )
 
-    environ = expand_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        getattr(ctx.attr, "data", []),
-    )
-
     providers = rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_type = crate_type,
         crate_info = target,
         rust_flags = ["--test"],
-        environ = environ,
     )
 
-    # Create a process wrapper to ensure runtime environment
-    # variables are defined for the test binary
-    runner = ctx.actions.declare_file(ctx.label.name + ".runner")
-    runner_content = [
-        "#!/bin/bash",
-        "",
-        "pwd=$(pwd)",
-    ]
-
-    for key, value in environ.items():
-        runner_content.append("export {}=\"{}\"".format(key, value))
-
-    runner_content.extend([
-        "",
-        "exec {}".format(output.short_path),
-        "",
-    ])
-
-    ctx.actions.write(
-        runner,
-        content = "\n".join(runner_content),
-        is_executable = True,
-    )
-
-    # Replace the `DefaultInfo` provider in the returned list
-    default_info = None
-    for i in range(len(providers)):
-        if type(providers[i]) == "DefaultInfo":
-            default_info = providers[i]
-            providers.pop(i)
-            break
-
-    if not default_info:
-        fail("No DefaultInfo provider returned from `rustc_compile_action`")
-
-    providers.append(DefaultInfo(
-        files = default_info.files,
-        runfiles = default_info.default_runfiles.merge(
-            # The output is now also considered a runfile
-            ctx.runfiles(files = [output]),
-        ),
-        executable = runner,
-    ))
-
-    return providers
+    return _create_rust_test_runner(ctx, toolchain, output, providers)
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -561,6 +601,14 @@ _rust_test_attrs = {
             Specifies additional environment variables to set when the test is executed by bazel test. 
             Values are subject to `$(execpath)` and 
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+        """),
+    ),
+    "_test_runner_template": attr.label(
+        allow_single_file = True,
+        default = Label("//rust/private:test_runner_template.rs"),
+        doc = _tidy("""
+            A templated rust source file used for inlining environment variables into a test
+            runner/launcher executable.
         """),
     ),
 }
