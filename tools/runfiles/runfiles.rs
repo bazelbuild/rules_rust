@@ -80,9 +80,12 @@ impl Runfiles {
 fn find_runfiles_dir() -> io::Result<PathBuf> {
     let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
 
-    let mut binary_path = PathBuf::from(&exec_path)
-        .canonicalize()
-        .expect("Failed to locate path to executable");
+    let mut binary_path = PathBuf::from(&exec_path);
+    if !binary_path.is_absolute() {
+        binary_path = std::env::current_dir()
+            .expect("Failed to get current directory")
+            .join(binary_path);
+    }
     loop {
         // Check for our neighboring $binary.runfiles directory.
         {
