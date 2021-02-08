@@ -1,3 +1,4 @@
+# buildifier: disable=out-of-order-load
 # buildifier: disable=load-on-top
 load(
     "@{{ rust_rules_workspace_name }}//cargo:cargo_build_script.bzl",

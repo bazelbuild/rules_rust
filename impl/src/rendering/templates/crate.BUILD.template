@@ -5,6 +5,7 @@ cargo-raze crate build file.
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
 
+# buildifier: disable=out-of-order-load
 # buildifier: disable=load
 load(
     "@{{ rust_rules_workspace_name }}//rust:rust.bzl",
@@ -13,6 +14,7 @@ load(
     "rust_test",
 )
 
+# buildifier: disable=out-of-order-load
 # buildifier: disable=load
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
