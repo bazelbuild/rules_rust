@@ -260,7 +260,7 @@ def _create_rust_test_runner(ctx, toolchain, output, providers):
         substitutions = {
             "// {environ}": "\n".join(environ_defines),
             "{executable}": output.short_path,
-        }
+        },
     )
 
     # Compile the test runner
@@ -299,14 +299,21 @@ def _create_rust_test_runner(ctx, toolchain, output, providers):
     if not default_info:
         fail("No DefaultInfo provider returned from `rustc_compile_action`")
 
-    providers.append(DefaultInfo(
-        files = default_info.files,
-        runfiles = default_info.default_runfiles.merge(
-            # The output is now also considered a runfile
-            ctx.runfiles(files = [output]),
+    providers.extend([
+        DefaultInfo(
+            files = default_info.files,
+            runfiles = default_info.default_runfiles.merge(
+                # The output is now also considered a runfile
+                ctx.runfiles(files = [output]),
+            ),
+            executable = runner,
         ),
-        executable = runner,
-    ))
+        OutputGroupInfo(
+            test_runner = depset([runner]),
+            test_runner_source = depset([runner_src]),
+            output = depset([output]),
+        ),
+    ])
 
     return providers
 
