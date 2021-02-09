@@ -29,6 +29,10 @@ load(
     _rust_test_binary = "rust_test_binary",
 )
 load(
+    "//rust/private:rustc.bzl",
+    _error_format = "error_format",
+)
+load(
     "//rust/private:rustdoc.bzl",
     _rust_doc = "rust_doc",
 )
@@ -63,6 +67,9 @@ rust_clippy_aspect = _rust_clippy_aspect
 
 rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+error_format = _error_format
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common
 # See @rules_rust//rust/private:common.bzl for a complete description.
