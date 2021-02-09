@@ -1,6 +1,6 @@
-use std::vec::Vec;
 use std::collections::BTreeMap;
 use std::process::Command;
+use std::vec::Vec;
 
 #[cfg(target_family = "unix")]
 use std::os::unix::process::CommandExt;
@@ -11,8 +11,11 @@ const EXECUTABLE: &'static str = r#####"{executable}"#####;
 /// This is a templated function for defining a map of environment
 /// variables. The comment in this function is replaced by the
 /// definition of this map.
+#[allow(unused_mut)]
 fn environ() -> BTreeMap<&'static str, &'static str> {
+    let mut environ = BTreeMap::new();
 // {environ}
+    environ
 }
 
 /// Parse the command line arguments but skip the first element which
@@ -50,5 +53,7 @@ fn main() {
     // Replace the current process with the test target
     exec(environ);
 
+    // The call to exec should have exited the application.
+    // This code should be unreachable.
     panic!("Process did not exit");
 }

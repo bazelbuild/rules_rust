@@ -240,17 +240,13 @@ def _create_rust_test_runner(ctx, toolchain, output, providers):
     )
 
     # Generate strings for inlining them in the Rust source file
-    environ_defines = []
-    if environ:
-        environ_defines.append("    let mut environ = BTreeMap::new();")
-        for env, value in environ.items():
-            environ_defines.append("    environ.insert(r#####\"{}\"#####, r#####\"{}\"#####);".format(
-                env,
-                value,
-            ))
-        environ_defines.append("    environ")
-    else:
-        environ_defines.append("    BTreeMap::new()")
+    environ_defines = [
+        "    environ.insert(r#####\"{}\"#####, r#####\"{}\"#####);".format(
+            env,
+            value,
+        )
+        for (env, value) in environ.items()
+    ]
 
     # Generate the test runner's source file
     runner_src = ctx.actions.declare_file(ctx.label.name + ".runner_main.rs")
