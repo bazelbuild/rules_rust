@@ -853,13 +853,29 @@ def _get_dirname(file):
     return file.dirname
 
 def _error_format_impl(ctx):
+    """Implementation of the `error_format` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the ErrorFormatInfo provider
+    """
     raw = ctx.build_setting_value
     if raw not in _error_format_values:
-        fail(str(ctx.label) + " expected a value in [" + ", ".join(_error_format_values) +
-             "] but got " + raw)
-    return ErrorFormatInfo(error_format = raw)
+        fail("{} expected a value in `{}` but got `{}`".format(
+            ctx.label,
+            _error_format_values,
+            raw,
+        ))
+    return [ErrorFormatInfo(error_format = raw)]
 
 error_format = rule(
+    doc = (
+        "A helper rule for controlling the rustc " +
+        "[--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
+        "flag."
+    ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
 )
