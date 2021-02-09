@@ -23,9 +23,8 @@ load(
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
-    "get_cc_toolchain",
 )
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
 _rust_extensions = [
     "rs",
@@ -48,6 +47,7 @@ def _clippy_aspect_impl(target, ctx):
     rust_srcs = _rust_sources(target, ctx.rule)
 
     toolchain = find_toolchain(ctx)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_info = target[rust_common.crate_info]
     crate_type = crate_info.type
 
@@ -72,6 +72,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx.rule.file,
         ctx.rule.files,
         toolchain,
+        cc_toolchain,
         crate_info,
         dep_info,
         build_info,
@@ -80,8 +81,6 @@ def _clippy_aspect_impl(target, ctx):
     # A marker file indicating clippy has executed successfully.
     # This file is necessary because "ctx.actions.run" mandates an output.
     clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
-
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
 
     args, env = construct_arguments(
         ctx,

@@ -7,10 +7,10 @@ load("//rust:rust.bzl", "rust_binary")
 load("//rust/private:rust.bzl", "name_to_crate_name")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust/private:rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "expand_locations", "find_toolchain")
+load("//rust/private:utils.bzl", "expand_locations", "find_cc_toolchain", "find_toolchain")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -98,7 +98,7 @@ def _build_script_impl(ctx):
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     _, _, linker_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
