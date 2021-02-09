@@ -1,6 +1,8 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:rust.bzl", "error_format")
 
+exports_files(["LICENSE"])
+
 bzl_library(
     name = "rules",
     srcs = [
