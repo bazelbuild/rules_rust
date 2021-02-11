@@ -470,11 +470,11 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
 
-def _load_rustfmt(ctx):
+def _load_rustfmt(ctx, iso_date, rustfmt_version):
     target_triple = ctx.attr.exec_triple
 
-    if ctx.attr.rustfmt_version in ("beta", "nightly"):
-        iso_date = ctx.attr.iso_date
+    if rustfmt_version in ("beta", "nightly"):
+        iso_date = iso_date
     else:
         iso_date = None
 
@@ -484,16 +484,18 @@ def _load_rustfmt(ctx):
         target_triple = target_triple,
         tool_name = "rustfmt",
         tool_subdirectories = ["rustfmt-preview"],
-        version = ctx.attr.rustfmt_version,
+        version = rustfmt_version,
     )
 
     return BUILD_for_rustfmt(target_triple)
 
-def _load_rust_compiler(ctx):
+def _load_rust_compiler(ctx, version, iso_date):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
         ctx: A repository_ctx.
+        version: The rust version
+        iso_date: The rust iso_date
     Returns:
         The BUILD file contents for this compiler and compiler library
     """
@@ -501,34 +503,37 @@ def _load_rust_compiler(ctx):
     target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rust",
         tool_subdirectories = ["rustc", "clippy-preview", "cargo"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     compiler_build_file = BUILD_for_compiler(target_triple) + BUILD_for_clippy(target_triple) + BUILD_for_cargo(target_triple)
 
     return compiler_build_file
 
-def _load_rust_stdlib(ctx, target_triple):
+def _load_rust_stdlib(ctx, target_triple, iso_date, version, edition):
     """Loads a rust standard library and yields corresponding BUILD for it
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        version: The rust version
+        iso_date: The rust iso_date
+        edition: The rust edition
     Returns:
         The BUILD file contents for this stdlib, and a toolchain decl to match
     """
 
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rust-std",
         tool_subdirectories = ["rust-std-{}".format(target_triple)],
-        version = ctx.attr.version,
+        version = version,
     )
 
     toolchain_prefix = ctx.attr.toolchain_name_prefix or DEFAULT_TOOLCHAIN_NAME_PREFIX
@@ -547,44 +552,48 @@ def _load_rust_stdlib(ctx, target_triple):
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
-        default_edition = ctx.attr.edition,
+        default_edition = edition,
     )
 
     return stdlib_build_file + toolchain_build_file
 
-def _load_rustc_dev_nightly(ctx, target_triple):
+def _load_rustc_dev_nightly(ctx, target_triple, iso_date, version):
     """Loads the nightly rustc dev component
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        iso_date: The rust iso_date
+        version: The rust version
     """
 
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
         tool_subdirectories = ["rustc-dev-{}".format(target_triple)],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return
 
-def _load_llvm_tools(ctx, target_triple):
+def _load_llvm_tools(ctx, target_triple, iso_date, version):
     """Loads the llvm tools
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        iso_date: The rust iso_date
+        version: The rust version
     """
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "llvm-tools",
         tool_subdirectories = ["llvm-tools-preview"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return
@@ -592,23 +601,31 @@ def _load_llvm_tools(ctx, target_triple):
 def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
 
-    _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
+    version = ctx.os.environ.get("RUST_VERSION") if ctx.os.environ.get("RUST_VERSION") else ctx.attr.version 
+    rustfmt_version = ctx.os.environ.get("RUSTFMT_VERSION") if ctx.os.environ.get("RUSTFMT_VERSION") else ctx.attr.rustfmt_version 
+    iso_date = ctx.os.environ.get("RUST_ISO_DATE") if ctx.os.environ.get("RUST_ISO_DATE") else ctx.attr.iso_date
+    edition = ctx.os.environ.get("RUST_EDITION") if ctx.os.environ.get("RUST_EDITION") else ctx.attr.edition
+    dev_components = True if ctx.os.environ.get("RUST_DEVCOMPS") else ctx.attr.dev_components
+   # ctx.attr['sha256s'] = ctx.os.environ.get("RUST_SHA256S") if ctx.os.environ.get("RUST_SHA256S") else ctx.attr.sha256s
+     
 
-    build_components = [_load_rust_compiler(ctx)]
+    _check_version_valid(version, iso_date)
 
-    if ctx.attr.rustfmt_version:
-        build_components.append(_load_rustfmt(ctx))
+    build_components = [_load_rust_compiler(ctx, version, iso_date)]
+
+    if rustfmt_version:
+        build_components.append(_load_rustfmt(ctx, iso_date, rustfmt_version))
 
     # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    if ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22"):
-        _load_llvm_tools(ctx, ctx.attr.exec_triple)
+    if version >= "1.45.0" or (version == "nightly" and iso_date > "2020-05-22"):
+        _load_llvm_tools(ctx, ctx.attr.exec_triple, iso_date, version)
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
-        build_components.append(_load_rust_stdlib(ctx, target_triple))
+        build_components.append(_load_rust_stdlib(ctx, target_triple, iso_date, version, edition))
 
         # extra_target_triples contains targets such as wasm, which don't have rustc_dev components
-        if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
-            _load_rustc_dev_nightly(ctx, target_triple)
+        if dev_components and target_triple not in ctx.attr.extra_target_triples:
+            _load_rustc_dev_nightly(ctx, target_triple, iso_date, version)
 
     ctx.file("WORKSPACE.bazel", "")
     ctx.file("BUILD.bazel", "\n".join(build_components))
