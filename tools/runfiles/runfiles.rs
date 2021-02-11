@@ -41,13 +41,6 @@ use std::path::PathBuf;
 /// The common name of Bazel runfiles directory suffix
 const RUNFILES_SUFFIX: &'static str = ".runfiles";
 
-/// Tests are wrapped in a `.runner` executable so we need to 
-/// also know to look for this directory as well
-#[cfg(target_family = "unix")]
-const TEST_RUNFILES_SUFFIX: &'static str = ".runner.runfiles";
-#[cfg(target_family = "windows")]
-const TEST_RUNFILES_SUFFIX: &'static str = ".runner.exe.runfiles";
-
 pub struct Runfiles {
     runfiles_dir: PathBuf,
 }
@@ -88,26 +81,12 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
     }
     loop {
         // Check for our neighboring $binary.runfiles directory.
-        {
-            let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
-            runfiles_name.push(RUNFILES_SUFFIX);
+        let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
+        runfiles_name.push(RUNFILES_SUFFIX);
 
-            let runfiles_path = binary_path.with_file_name(&runfiles_name);
-            if runfiles_path.is_dir() {
-                return Ok(runfiles_path);
-            }
-        }
-        
-        // Test binaries are executed by a $binary.runner, so check for 
-        // $binary.runner.runfiles
-        {
-            let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
-            runfiles_name.push(TEST_RUNFILES_SUFFIX);
-            
-            let runfiles_path = binary_path.with_file_name(&runfiles_name);
-            if runfiles_path.is_dir() {
-                return Ok(runfiles_path);
-            }
+        let runfiles_path = binary_path.with_file_name(&runfiles_name);
+        if runfiles_path.is_dir() {
+            return Ok(runfiles_path);
         }
 
         // Check if we're already under a *.runfiles directory.
@@ -118,8 +97,7 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
                 if ancestor
                     .file_name()
                     .map_or(false, |f| {
-                        let f_str = f.to_string_lossy();
-                        f_str.ends_with(RUNFILES_SUFFIX) || f_str.ends_with(TEST_RUNFILES_SUFFIX)
+                        f.to_string_lossy().ends_with(RUNFILES_SUFFIX)
                     })
                 {
                     return Ok(ancestor.to_path_buf());
