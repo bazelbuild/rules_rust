@@ -100,23 +100,3 @@ fn main() {
     // This code should be unreachable.
     panic!("Process did not exit");
 }
-
-
-#[cfg(test)]
-mod test {
-
-    #[test]
-    fn test_environ() {
-
-    }
-
-    #[test]
-    fn test_executable() {
-
-    }
-
-    #[test]
-    fn test_args() {
-
-    }
-}

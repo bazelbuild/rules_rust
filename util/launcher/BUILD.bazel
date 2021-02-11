@@ -1,4 +1,4 @@
-load("//rust:rust.bzl", "rust_binary", "rust_test")
+load("//rust:rust.bzl", "rust_binary")
 load(":installer.bzl", "installer")
 
 package(default_visibility = ["//visibility:public"])
@@ -7,12 +7,6 @@ rust_binary(
     name = "launcher",
     edition = "2018",
     srcs = ["launcher_main.rs"]
-)
-
-rust_test(
-    name = "launcher_test",
-    edition = "2018",
-    crate = ":launcher",
 )
 
 installer(
