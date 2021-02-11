@@ -37,10 +37,6 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
-
-/// The common name of Bazel runfiles directory suffix
-const RUNFILES_SUFFIX: &'static str = ".runfiles";
-
 pub struct Runfiles {
     runfiles_dir: PathBuf,
 }
@@ -74,15 +70,10 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
     let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
 
     let mut binary_path = PathBuf::from(&exec_path);
-    if !binary_path.is_absolute() {
-        binary_path = std::env::current_dir()
-            .expect("Failed to get current directory")
-            .join(binary_path);
-    }
     loop {
         // Check for our neighboring $binary.runfiles directory.
         let mut runfiles_name = binary_path.file_name().unwrap().to_owned();
-        runfiles_name.push(RUNFILES_SUFFIX);
+        runfiles_name.push(".runfiles");
 
         let runfiles_path = binary_path.with_file_name(&runfiles_name);
         if runfiles_path.is_dir() {
@@ -96,9 +87,7 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
             while let Some(ancestor) = next {
                 if ancestor
                     .file_name()
-                    .map_or(false, |f| {
-                        f.to_string_lossy().ends_with(RUNFILES_SUFFIX)
-                    })
+                    .map_or(false, |f| f.to_string_lossy().ends_with(".runfiles"))
                 {
                     return Ok(ancestor.to_path_buf());
                 }
