@@ -17,7 +17,7 @@ DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.g
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.49.0",
+        version = "1.50.0",
         iso_date = None,
         rustfmt_version = None,
         edition = None,
