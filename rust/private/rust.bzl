@@ -219,7 +219,7 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _create_rust_test_runner(ctx, toolchain, output, providers):
+def _create_test_launcher(ctx, toolchain, output, providers):
     """Create a process wrapper to ensure runtime environment variables are defined for the test binary
 
     Args:
@@ -232,57 +232,58 @@ def _create_rust_test_runner(ctx, toolchain, output, providers):
         list: A list of providers similar to `rustc_compile_action` but with modified default info
     """
 
-    # Expand the environment variables
+    args = ctx.actions.args()
+
+    # Because returned executables must be created from the same rule, the 
+    # launcher target is simply copied and exposed. 
+
+    # TODO: Find a better way to detect the configuration this executable
+    # was built in. Here we detect whether or not the executable is built 
+    # for windows based on it's extension.
+    if ctx.executable._launcher.basename.endswith(".exe"):
+        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher.exe"))
+        # Because the windows target
+        args.add_all([
+            ctx.executable._launcher.path.replace("/", "\\"),
+            launcher.path.replace("/", "\\"),
+        ])
+    else:
+        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher"))
+        args.add_all([
+            ctx.executable._launcher,
+            launcher,
+        ])
+
+    ctx.actions.run(
+        outputs = [launcher],
+        tools = [ctx.executable._launcher],
+        mnemonic = "GeneratingLauncher",
+        executable = ctx.executable._launcher_installer,
+        arguments = [args],
+    )
+
+    # Get data attribute
+    data = getattr(ctx.attr, "data", [])
+
+    # Expand the environment variables and write them to a file
+    environ_file = ctx.actions.declare_file(launcher.basename + ".launchfiles/env")
     environ = expand_locations(
         ctx,
         getattr(ctx.attr, "env", {}),
-        getattr(ctx.attr, "data", []),
+        data,
     )
 
-    # Generate strings for inlining them in the Rust source file
-    environ_defines = [
-        "    environ.insert(r#####\"{}\"#####, r#####\"{}\"#####);".format(
-            env,
-            value,
-        )
-        for (env, value) in environ.items()
-    ]
+    # Convert the environment variables into a list to be written into a file.
+    environ_list = []
+    for key, value in environ.items():
+        environ_list.extend([key, value])
 
-    # Generate the test runner's source file
-    runner_src = ctx.actions.declare_file(ctx.label.name + ".runner_main.rs")
-    ctx.actions.expand_template(
-        template = ctx.file._test_runner_template,
-        output = runner_src,
-        substitutions = {
-            "// {environ}": "\n".join(environ_defines),
-            "{executable}": output.short_path,
-        },
+    ctx.actions.write(
+        output = environ_file,
+        content = "\n".join(environ_list)
     )
 
-    # Compile the test runner
-    runner = ctx.actions.declare_file(ctx.label.name + ".runner" + toolchain.binary_ext)
-    crate_name = name_to_crate_name(ctx.label.name) + "_runner"
-    crate_type = "bin"
-    runner_target = rust_common.crate_info(
-        name = crate_name,
-        type = crate_type,
-        root = runner_src,
-        srcs = [runner_src],
-        deps = [],
-        proc_macro_deps = [],
-        aliases = {},
-        output = runner,
-        edition = "2018",
-        rustc_env = ctx.attr.rustc_env,
-        is_test = False,
-    )
-
-    runner_providers = rustc_compile_action(
-        ctx = ctx,
-        toolchain = toolchain,
-        crate_type = crate_type,
-        crate_info = runner_target,
-    )
+    launcher_files = [environ_file]
 
     # Replace the `DefaultInfo` provider in the returned list
     default_info = None
@@ -300,13 +301,12 @@ def _create_rust_test_runner(ctx, toolchain, output, providers):
             files = default_info.files,
             runfiles = default_info.default_runfiles.merge(
                 # The output is now also considered a runfile
-                ctx.runfiles(files = [output]),
+                ctx.runfiles(files = launcher_files + [output]),
             ),
-            executable = runner,
+            executable = launcher,
         ),
         OutputGroupInfo(
-            test_runner = depset([runner]),
-            test_runner_source = depset([runner_src]),
+            launcher_files = depset(launcher_files),
             output = depset([output]),
         ),
     ])
@@ -369,7 +369,7 @@ def _rust_test_common(ctx, toolchain, output):
         rust_flags = ["--test"],
     )
 
-    return _create_rust_test_runner(ctx, toolchain, output, providers)
+    return _create_test_launcher(ctx, toolchain, output, providers)
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -606,12 +606,21 @@ _rust_test_attrs = {
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
     ),
-    "_test_runner_template": attr.label(
-        allow_single_file = True,
-        default = Label("//rust/private:test_runner_template.rs"),
+    "_launcher": attr.label(
+        executable = True,
+        default = Label("//util/launcher:launcher"),
+        cfg = "exec",
         doc = _tidy("""
-            A templated rust source file used for inlining environment variables into a test
-            runner/launcher executable.
+            A launcher executable for loading environment and argument files passed in via the `env` attribute
+            and ensuring the variables are set for the underlying test executable.
+        """),
+    ),
+    "_launcher_installer": attr.label(
+        executable = True,
+        default = Label("//util/launcher:installer"),
+        cfg = "exec",
+        doc = _tidy("""
+            A helper script for creating an installer within the test rule.
         """),
     ),
 }
