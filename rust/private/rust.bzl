@@ -234,15 +234,12 @@ def _create_test_launcher(ctx, toolchain, output, providers):
 
     args = ctx.actions.args()
 
-    # Because returned executables must be created from the same rule, the 
-    # launcher target is simply copied and exposed. 
-
-    # TODO: Find a better way to detect the configuration this executable
-    # was built in. Here we detect whether or not the executable is built 
-    # for windows based on it's extension.
-    if ctx.executable._launcher.basename.endswith(".exe"):
+    # TODO: It's unclear if the toolchain is in the same configuration as the `_launcher` attribute
+    # This should be investigated but for now, we generally assume if the target environment is windows,
+    # the execution environment is windows.
+    if toolchain.os == "windows":
         launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher.exe"))
-        # Because the windows target
+        # Because the windows target is a batch file, it expects native windows paths (with backslashes)
         args.add_all([
             ctx.executable._launcher.path.replace("/", "\\"),
             launcher.path.replace("/", "\\"),
@@ -254,6 +251,8 @@ def _create_test_launcher(ctx, toolchain, output, providers):
             launcher,
         ])
 
+    # Because returned executables must be created from the same rule, the 
+    # launcher target is simply copied and exposed. 
     ctx.actions.run(
         outputs = [launcher],
         tools = [ctx.executable._launcher],
