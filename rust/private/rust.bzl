@@ -275,7 +275,7 @@ def _create_test_launcher(ctx, toolchain, output, providers):
 
     # Convert the environment variables into a list to be written into a file.
     environ_list = []
-    for key, value in environ.items():
+    for key, value in sorted(environ.items()):
         environ_list.extend([key, value])
 
     ctx.actions.write(
