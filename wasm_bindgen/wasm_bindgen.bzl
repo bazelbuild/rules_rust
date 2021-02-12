@@ -148,8 +148,8 @@ rust_wasm_bindgen = rule(
             allow_single_file = True,
             cfg = wasm_bindgen_transition,
         ),
-        "_whitelist_function_transition": attr.label(
-            default = Label("//tools/whitelists/function_transition_whitelist"),
+        "_allowlist_function_transition": attr.label(
+            default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
     },
     outputs = {
