@@ -25,7 +25,7 @@ def _installer_impl(ctx):
     )]
 
 installer = rule(
-    doc = "A rule which makes a native executable script avaialble to other rules",
+    doc = "A rule which makes a native executable script available to other rules",
     implementation = _installer_impl,
     attrs = {
         "src": attr.label(
