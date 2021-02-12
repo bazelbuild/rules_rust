@@ -20,7 +20,7 @@ tasks:
       - "//test/versioned_dylib:versioned_dylib_test"
   ubuntu2004:
     name: "Minimum Supported Version"
-    bazel: "3.0.0"
+    bazel: "4.0.0"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   macos:
