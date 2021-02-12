@@ -32,17 +32,17 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "values" with type "example" omitted
-
 rust_library(
-    name = "num_cpus",
+    name = "security_framework_sys",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "OSX_10_9",
+        "default",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -50,9 +50,10 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "2.0.0",
     # buildifier: leave-alone
     deps = [
+        "@remote_complicated_cargo_library__core_foundation_sys__0_8_2//:core_foundation_sys",
         "@remote_complicated_cargo_library__libc__0_2_85//:libc",
     ],
 )

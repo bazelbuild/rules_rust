@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "libloading",
-    actual = "@remote_complicated_cargo_library__libloading__0_5_2//:libloading",
+    actual = "@remote_complicated_cargo_library__libloading__0_7_0//:libloading",
     tags = [
         "cargo-raze",
         "manual",
@@ -23,7 +23,7 @@ alias(
 
 alias(
     name = "regex",
-    actual = "@remote_complicated_cargo_library__regex__0_2_5//:regex",
+    actual = "@remote_complicated_cargo_library__regex__1_4_3//:regex",
     tags = [
         "cargo-raze",
         "manual",
@@ -32,7 +32,7 @@ alias(
 
 alias(
     name = "security_framework_sys",
-    actual = "@remote_complicated_cargo_library__security_framework_sys__0_2_2//:security_framework_sys",
+    actual = "@remote_complicated_cargo_library__security_framework_sys__2_0_0//:security_framework_sys",
     tags = [
         "cargo-raze",
         "manual",
@@ -41,7 +41,7 @@ alias(
 
 alias(
     name = "specs",
-    actual = "@remote_complicated_cargo_library__specs__0_10_0//:specs",
+    actual = "@remote_complicated_cargo_library__specs__0_16_1//:specs",
     tags = [
         "cargo-raze",
         "manual",

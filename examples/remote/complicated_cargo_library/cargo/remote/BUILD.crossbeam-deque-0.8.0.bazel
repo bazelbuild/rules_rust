@@ -32,17 +32,19 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "values" with type "example" omitted
-
 rust_library(
-    name = "num_cpus",
+    name = "crossbeam_deque",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "crossbeam-epoch",
+        "crossbeam-utils",
+        "default",
+        "std",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -50,9 +52,19 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "0.8.0",
     # buildifier: leave-alone
     deps = [
-        "@remote_complicated_cargo_library__libc__0_2_85//:libc",
+        "@remote_complicated_cargo_library__cfg_if__1_0_0//:cfg_if",
+        "@remote_complicated_cargo_library__crossbeam_epoch__0_9_1//:crossbeam_epoch",
+        "@remote_complicated_cargo_library__crossbeam_utils__0_8_1//:crossbeam_utils",
     ],
 )
+
+# Unsupported target "fifo" with type "test" omitted
+
+# Unsupported target "injector" with type "test" omitted
+
+# Unsupported target "lifo" with type "test" omitted
+
+# Unsupported target "steal" with type "test" omitted

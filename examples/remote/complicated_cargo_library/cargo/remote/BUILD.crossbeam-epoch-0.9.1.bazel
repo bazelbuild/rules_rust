@@ -32,17 +32,31 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "values" with type "example" omitted
+# Unsupported target "defer" with type "bench" omitted
+
+# Unsupported target "flush" with type "bench" omitted
+
+# Unsupported target "pin" with type "bench" omitted
+
+# Unsupported target "sanitize" with type "example" omitted
+
+# Unsupported target "treiber_stack" with type "example" omitted
 
 rust_library(
-    name = "num_cpus",
+    name = "crossbeam_epoch",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "alloc",
+        "lazy_static",
+        "std",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
+    proc_macro_deps = [
+        "@remote_complicated_cargo_library__const_fn__0_4_5//:const_fn",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -50,9 +64,13 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "0.9.1",
     # buildifier: leave-alone
     deps = [
-        "@remote_complicated_cargo_library__libc__0_2_85//:libc",
+        "@remote_complicated_cargo_library__cfg_if__1_0_0//:cfg_if",
+        "@remote_complicated_cargo_library__crossbeam_utils__0_8_1//:crossbeam_utils",
+        "@remote_complicated_cargo_library__lazy_static__1_4_0//:lazy_static",
+        "@remote_complicated_cargo_library__memoffset__0_6_1//:memoffset",
+        "@remote_complicated_cargo_library__scopeguard__1_1_0//:scopeguard",
     ],
 )

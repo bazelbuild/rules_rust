@@ -32,10 +32,8 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "values" with type "example" omitted
-
 rust_library(
-    name = "num_cpus",
+    name = "version_check",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -50,9 +48,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "0.9.2",
     # buildifier: leave-alone
     deps = [
-        "@remote_complicated_cargo_library__libc__0_2_85//:libc",
     ],
 )

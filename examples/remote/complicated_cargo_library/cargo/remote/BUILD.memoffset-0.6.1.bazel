@@ -27,17 +27,47 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "notice",  # MIT from expression "MIT"
 ])
 
 # Generated Targets
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load-on-top
+load(
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
 
-# Unsupported target "values" with type "example" omitted
+cargo_build_script(
+    name = "memoffset_build_script",
+    srcs = glob(["**/*.rs"]),
+    build_script_env = {
+    },
+    crate_features = [
+        "default",
+    ],
+    crate_root = "build.rs",
+    data = glob(["**"]),
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.6.1",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@remote_complicated_cargo_library__autocfg__1_0_1//:autocfg",
+    ],
+)
 
 rust_library(
-    name = "num_cpus",
+    name = "memoffset",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -50,9 +80,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "0.6.1",
     # buildifier: leave-alone
     deps = [
-        "@remote_complicated_cargo_library__libc__0_2_85//:libc",
+        ":memoffset_build_script",
     ],
 )

@@ -32,12 +32,16 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "values" with type "example" omitted
+# Unsupported target "benches" with type "bench" omitted
+
+# Unsupported target "iter" with type "bench" omitted
 
 rust_library(
-    name = "num_cpus",
+    name = "hibitset",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "parallel",
+        "rayon",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -50,9 +54,10 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.13.0",
+    version = "0.6.3",
     # buildifier: leave-alone
     deps = [
-        "@remote_complicated_cargo_library__libc__0_2_85//:libc",
+        "@remote_complicated_cargo_library__atom__0_3_6//:atom",
+        "@remote_complicated_cargo_library__rayon__1_5_0//:rayon",
     ],
 )
