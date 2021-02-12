@@ -586,13 +586,6 @@ def rustc_compile_action(
         build_flags_files,
     )
 
-    # Make the user defined enviroment variables available to the action
-    expanded_env = dict()
-    data = getattr(ctx.attr, "data", [])
-    for key in environ:
-        expanded_env[key] = ctx.expand_location(environ[key], data)
-    env.update(expanded_env)
-
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
         formatted_version = " v{}".format(ctx.attr.version)
     else:
