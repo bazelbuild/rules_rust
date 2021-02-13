@@ -21,7 +21,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
     #
-    # Prefer access through "//third_party/cargo", which limits external
+    # Prefer access through "//cargo/cargo_raze/third_party/cargo", which limits external
     # visibility to explicit Cargo.toml dependencies.
     "//visibility:public",
 ])
@@ -47,8 +47,8 @@ cargo_build_script(
     ],
     crate_root = "build.rs",
     data = glob(["**"]) + [
-        "@libssh2//:libssh2",
-        "@openssl//:openssl",
+        "@cargo_raze__libssh2//:libssh2",
+        "@cargo_raze__openssl//:openssl",
     ],
     edition = "2015",
     rustc_flags = [
@@ -112,8 +112,8 @@ rust_library(
     deps = [
         ":libssh2_sys_build_script",
         "@cargo_raze__libc__0_2_82//:libc",
+        "@cargo_raze__libssh2//:libssh2",
         "@cargo_raze__libz_sys__1_1_2//:libz_sys",
-        "@libssh2//:libssh2",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

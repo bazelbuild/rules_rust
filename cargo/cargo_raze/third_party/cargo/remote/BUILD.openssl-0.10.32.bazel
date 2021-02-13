@@ -21,7 +21,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
     #
-    # Prefer access through "//third_party/cargo", which limits external
+    # Prefer access through "//cargo/cargo_raze/third_party/cargo", which limits external
     # visibility to explicit Cargo.toml dependencies.
     "//visibility:public",
 ])
@@ -89,7 +89,7 @@ rust_library(
         "@cargo_raze__foreign_types__0_3_2//:foreign_types",
         "@cargo_raze__lazy_static__1_4_0//:lazy_static",
         "@cargo_raze__libc__0_2_82//:libc",
+        "@cargo_raze__openssl//:openssl",
         "@cargo_raze__openssl_sys__0_9_60//:openssl_sys",
-        "@openssl//:openssl",
     ],
 )

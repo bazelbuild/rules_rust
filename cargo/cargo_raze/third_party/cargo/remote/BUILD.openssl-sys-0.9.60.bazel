@@ -21,7 +21,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
     #
-    # Prefer access through "//third_party/cargo", which limits external
+    # Prefer access through "//cargo/cargo_raze/third_party/cargo", which limits external
     # visibility to explicit Cargo.toml dependencies.
     "//visibility:public",
 ])
@@ -42,15 +42,15 @@ cargo_build_script(
     name = "openssl_sys_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
-        "OPENSSL_DIR": "$(location @openssl//:gen_dir)",
+        "OPENSSL_DIR": "$(execpath @cargo_raze__openssl//:gen_dir)",
         "OPENSSL_STATIC": "1",
     },
     crate_features = [
     ],
     crate_root = "build/main.rs",
     data = glob(["**"]) + [
-        "@openssl//:gen_dir",
-        "@openssl//:openssl",
+        "@cargo_raze__openssl//:gen_dir",
+        "@cargo_raze__openssl//:openssl",
     ],
     edition = "2015",
     rustc_flags = [
@@ -87,7 +87,7 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    data = [],
+    data = [] + ["@cargo_raze__openssl//:openssl"],
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
@@ -101,7 +101,7 @@ rust_library(
     deps = [
         ":openssl_sys_build_script",
         "@cargo_raze__libc__0_2_82//:libc",
-        "@openssl//:openssl",
+        "@cargo_raze__openssl//:openssl",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

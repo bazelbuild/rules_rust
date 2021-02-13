@@ -21,7 +21,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
     #
-    # Prefer access through "//third_party/cargo", which limits external
+    # Prefer access through "//cargo/cargo_raze/third_party/cargo", which limits external
     # visibility to explicit Cargo.toml dependencies.
     "//visibility:public",
 ])
@@ -61,10 +61,10 @@ rust_library(
     version = "0.4.39+curl-7.74.0",
     # buildifier: leave-alone
     deps = [
+        "@cargo_raze__curl//:curl",
         "@cargo_raze__libc__0_2_82//:libc",
         "@cargo_raze__libnghttp2_sys__0_1_5_1_42_0//:libnghttp2_sys",
         "@cargo_raze__libz_sys__1_1_2//:libz_sys",
-        "@curl//:curl",
     ] + selects.with_or({
         # cfg(all(unix, not(target_os = "macos")))
         (
