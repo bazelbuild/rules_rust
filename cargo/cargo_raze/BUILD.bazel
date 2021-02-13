@@ -1,39 +1,84 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library", "rust_test")
+load("//third_party/cargo:crates.bzl", "all_crate_deps")
 
-alias(
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
     name = "cargo_raze",
-    actual = "//impl:cargo_raze",
-    visibility = ["//visibility:public"],
+    srcs = glob(
+        ["src/**/*.rs"],
+        exclude = ["src/bin/cargo-raze.rs"],
+    ),
+    data = glob(
+        ["src/**/*.template"],
+        exclude = ["src/testing/**/*.template"],
+    ),
+    edition = "2018",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    deps = all_crate_deps(),
 )
 
-alias(
+rust_binary(
     name = "cargo_raze_bin",
-    actual = "//impl:cargo_raze_bin",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "bootstrap",
-    actual = "//tools:bootstrap",
-    visibility = ["//visibility:private"],
-)
-
-alias(
-    name = "publish_new_version",
-    actual = "//tools:publish_new_version",
-    visibility = ["//visibility:private"],
-)
-
-test_suite(
-    name = "examples_tests",
-    tests = [
-        "@cargo_raze_examples//tests:examples_tests",
+    srcs = [
+        "src/bin/cargo-raze.rs",
     ],
+    edition = "2018",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    deps = [":cargo_raze"] + all_crate_deps(),
+)
+
+alias(
+    name = "cargo",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:cargo",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:cargo",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:cargo",
+    }),
     visibility = ["//visibility:private"],
 )
 
-buildifier(
-    name = "buildifier_check",
-    mode = "check",
+alias(
+    name = "rustc",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustc",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustc",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustc",
+    }),
     visibility = ["//visibility:private"],
+)
+
+_TEST_DATA = glob(["src/**/*.template"]) + [
+    ":cargo",
+    ":rustc",
+]
+
+_TEST_ENV = {
+    "CARGO": "$(execpath :cargo)",
+    "CARGO_HOME": "$(execpath :cargo).home",
+    "RUSTC": "$(execpath :rustc)",
+}
+
+rust_test(
+    name = "cargo_raze_lib_test",
+    crate = ":cargo_raze",
+    data = _TEST_DATA,
+    edition = "2018",
+    env = _TEST_ENV,
+    proc_macro_deps = all_crate_deps(proc_macro_dev = True),
+    deps = all_crate_deps(normal_dev = True),
+)
+
+rust_test(
+    name = "cargo_raze_bin_test",
+    crate = ":cargo_raze_bin",
+    data = _TEST_DATA,
+    edition = "2018",
+    env = _TEST_ENV,
+    proc_macro_deps = all_crate_deps(proc_macro_dev = True),
+    deps = all_crate_deps(normal_dev = True),
 )
