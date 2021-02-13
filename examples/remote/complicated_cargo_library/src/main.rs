@@ -9,5 +9,7 @@ fn main() {
   println!("hello world");
 
   // Make sure libloading is not optimized out
-  let _lib = libloading::Library::new("/path/to/liblibrary.so");
+  unsafe {
+    let _lib = libloading::Library::new("/path/to/liblibrary.so");
+  }
 }

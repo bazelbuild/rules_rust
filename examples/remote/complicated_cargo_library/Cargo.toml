@@ -9,38 +9,25 @@ path = "src/main.rs"
 [dependencies]
 # Newer versions of libloading don't depend on C code anymore, so we're using an older version to
 # test additional_build_file.
-libloading = "=0.5.2"
-regex = "=0.2.5"
-specs = "=0.10.0"
-security-framework-sys = "=0.2.2"
+libloading = "=0.7.0"
+regex = "=1.4.3"
+security-framework-sys = "=2.0.0"
+specs = "=0.16.1"
 
 [package.metadata.raze]
 workspace_path = "//remote/complicated_cargo_library/cargo"
 gen_workspace_prefix = "remote_complicated_cargo_library"
 genmode = "Remote"
 package_aliases_dir = "cargo"
-default_gen_buildrs = false
 
-[package.metadata.raze.crates.proc-macro2.'0.4.30']
-additional_flags = [
-    "--cfg=use_proc_macro",
-]
-
-[package.metadata.raze.crates.syn.'0.15.44']
-gen_buildrs = true
-
-[package.metadata.raze.crates.libloading.'0.5.2']
-additional_deps = [":global_static"]
-additional_build_file = "cargo/libloading_global_static.BUILD"
-
-[package.metadata.raze.crates.regex.'0.2.5']
+[package.metadata.raze.crates.regex.'1.4.3']
 skipped_deps = [
   # This will break the regex crate
   #"regex-syntax-0.4.2"
 ]
 additional_deps = [
   # Add an unused dep
-  "@remote_complicated_cargo_library__specs__0_10_0//:specs"
+  "@remote_complicated_cargo_library__specs__0_16_1//:specs"
 ]
 additional_flags = [
   # Add an unused flag
