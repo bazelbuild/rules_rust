@@ -61,6 +61,8 @@ tasks:
     - "-@examples//complex_sys/..."
     - "-@examples//proto/..."
     - "-@examples//wasm/..."
+    # TODO: Fix Cargo raze examples for Windows.
+    - "-@examples//cargo_raze/..."
     build_targets: *windows_targets
     test_targets: *windows_targets
   examples:
