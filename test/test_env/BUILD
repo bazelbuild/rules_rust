@@ -10,13 +10,22 @@ rust_binary(
     edition = "2018",
 )
 
+filegroup(
+    name = "hello_world_main",
+    srcs = ["src/main.rs"],
+)
+
 rust_test(
     name = "test",
     srcs = ["tests/run.rs"],
-    data = [":hello-world"],
+    data = [
+        ":hello-world",
+        ":hello_world_main",
+    ],
     edition = "2018",
     env = {
         "FERRIS_SAYS": "Hello fellow Rustaceans!",
-        "HELLO_WORLD_BIN": "$(rootpath :hello-world)",
+        "HELLO_WORLD_BIN_ROOTPATH": "$(rootpath :hello-world)",
+        "HELLO_WORLD_SRC_EXECPATH": "$(execpath :hello_world_main)",
     },
 )

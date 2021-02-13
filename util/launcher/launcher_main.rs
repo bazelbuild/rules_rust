@@ -21,6 +21,11 @@ fn environ() -> BTreeMap<String, String> {
     let env_path = std::env::args().nth(0).expect("arg 0 was not set") + LAUNCHFILES_ENV_PATH;
     let file = File::open(env_path).expect("Failed to load the environment file");
 
+    // Variables will have the `${pwd}` variable replaced which is rendered by 
+    // `@rules_rust//rust/private:util.bzl::expand_locations`
+    let pwd = std::env::current_dir().expect("Failed to get current working directory");
+    let pwd_str = pwd.to_string_lossy();
+
     // Find all environment variables by reading pairs of lines as key/value pairs
     for line in BufReader::new(file).lines() {
         if key.is_none() {
@@ -29,8 +34,8 @@ fn environ() -> BTreeMap<String, String> {
         }
 
         environ.insert(
-            key.expect("Key is not set"), 
-            line.expect("Failed to read line"),
+            key.expect("Key is not set"),
+            line.expect("Failed to read line").replace("${pwd}", &pwd_str),
         );
 
         key = None;
