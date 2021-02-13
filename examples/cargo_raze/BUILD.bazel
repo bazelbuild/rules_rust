@@ -1,0 +1,32 @@
+sh_binary(
+    name = "examples_vendor",
+    srcs = ["//cargo_raze/tools:examples_repository_tools.sh"],
+    args = ["vendor"],
+)
+
+sh_binary(
+    name = "examples_raze",
+    srcs = ["//cargo_raze/tools:examples_repository_tools.sh"],
+    args = [
+        "raze",
+        "$(location @rules_rust//cargo:raze)",
+    ],
+    data = ["@rules_rust//cargo:raze"],
+)
+
+sh_binary(
+    name = "examples_check",
+    srcs = ["//cargo_raze/tools:examples_repository_tools.sh"],
+    args = [
+        "check",
+        "$(location @rules_rust//cargo:raze)",
+    ],
+    data = ["@rules_rust//cargo:raze"],
+)
+
+test_suite(
+    name = "rules_rust_cargo_raze_examples",
+    tests = [
+        "@rules_rust_cargo_raze_examples//tests:examples_tests",
+    ],
+)

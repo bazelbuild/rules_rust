@@ -21,7 +21,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --manifest-path impl/Cargo.toml
+          args: --manifest-path cargo/cargo_raze/Cargo.toml
 
   test:
     name: Test
@@ -43,7 +43,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path impl/Cargo.toml
+          args: --manifest-path cargo/cargo_raze/Cargo.toml
 
   fmt:
     name: Rustfmt
@@ -64,7 +64,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --manifest-path impl/Cargo.toml --all -- --check
+          args: --manifest-path cargo/cargo_raze/Cargo.toml --all -- --check
 
   clippy:
     name: Clippy
@@ -85,4 +85,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --manifest-path impl/Cargo.toml -- -D warnings
+          args: --manifest-path cargo/cargo_raze/Cargo.toml -- -D warnings

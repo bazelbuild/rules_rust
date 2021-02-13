@@ -12,8 +12,8 @@ def _examples_dir(repository_ctx):
     Returns:
         path: A path to the cargo-raze workspace root
     """
-    workspace_root = repository_ctx.path(repository_ctx.attr._script).dirname.dirname
-    return repository_ctx.path(str(workspace_root) + "/" + repository_ctx.attr.examples_dir.lstrip("/"))
+    examples_cargo_raze_root = repository_ctx.path(repository_ctx.attr._script).dirname.dirname
+    return repository_ctx.path(str(examples_cargo_raze_root) + "/examples")
 
 EXECUTE_FAIL_MESSAGE = """\
 Failed to setup examples repository with exit code ({}).
@@ -62,8 +62,8 @@ def _examples_repository_impl(repository_ctx):
         vendor_script = repository_ctx.path(repository_ctx.attr._script_windows)
         command = [vendor_script]
         environment = {
-            "EXAMPLES_DIR": str(examples_dir).replace("/", "\\"),
             "CARGO": "{}/bin/cargo".format(repository_ctx.path(".")).replace("/", "\\"),
+            "EXAMPLES_DIR": str(examples_dir).replace("/", "\\"),
         }
     else:
         vendor_script = repository_ctx.path(repository_ctx.attr._script)
@@ -72,8 +72,8 @@ def _examples_repository_impl(repository_ctx):
             "vendor",
         ]
         environment = {
-            "EXAMPLES_DIR": str(examples_dir),
             "CARGO": "{}/bin/cargo".format(repository_ctx.path(".")),
+            "EXAMPLES_DIR": str(examples_dir),
         }
 
     # Vendor sources
@@ -101,21 +101,17 @@ _examples_repository = repository_rule(
         "target_triple": attr.string(
             doc = "The target triple of the cargo binary to download",
         ),
-        "examples_dir": attr.string(
-            doc = "The path to the examples directory relative to the WORKSPACE root",
-            default = "examples",
-        ),
         "_script": attr.label(
             doc = (
-                "A script containing the ability to vendor crates into examples. " + 
-                "This script is also used to detect the path of the workspace root."
+                "A script containing the ability to vendor crates into examples. " +
+                "This script is also used to detect the path of the examples."
             ),
-            default = Label("@cargo_raze//tools:examples_repository_tools.sh"),
+            default = Label("//cargo_raze/tools:examples_repository_tools.sh"),
             allow_single_file = True,
         ),
         "_script_windows": attr.label(
             doc = "The windows equivilant of `_script`",
-            default = Label("@cargo_raze//tools:examples_repository_tools.bat"),
+            default = Label("//cargo_raze/tools:examples_repository_tools.bat"),
             allow_single_file = True,
         ),
     },
@@ -125,5 +121,5 @@ def examples_repository():
     """Defines the examples repository"""
 
     _examples_repository(
-        name = "cargo_raze_examples",
+        name = "rules_rust_cargo_raze_examples",
     )

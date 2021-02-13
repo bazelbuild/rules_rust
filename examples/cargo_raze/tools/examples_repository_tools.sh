@@ -6,7 +6,7 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY}" ]]; then
 fi
 
 if [[ -z "${EXAMPLES_DIR}" ]]; then
-    EXAMPLES_DIR=${BUILD_WORKSPACE_DIRECTORY}/examples
+    EXAMPLES_DIR=${BUILD_WORKSPACE_DIRECTORY}/cargo_raze/examples
 fi
 
 # Ensure there's a cargo binary
@@ -31,7 +31,7 @@ function vendor() {
     # Committed `Cargo.toml` files need to be preserved so a temp directory is
     # created where they will be copied into and restored after `cargo vendor`
     # is ran.
-    _TEMP_DIR=$(mktemp -d -t cargo_raze_examples_vendored-XXXXXXXXXX)
+    _TEMP_DIR=$(mktemp -d -t rules_rust_cargo_raze_examples_vendored-XXXXXXXXXX)
 
     for ex in $(find $EXAMPLES_DIR/vendored -maxdepth 1 -type d | tail -n+2); do
         pushd "$ex"

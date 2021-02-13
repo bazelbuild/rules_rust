@@ -20,15 +20,15 @@ _LINUX_CACHE_ENTRIES = dict(_CACHE_ENTRIES.items() + {
 cmake_external(
     name = "libssh2",
     cache_entries = select({
-        "@platforms//os:linux": _LINUX_CACHE_ENTRIES,
+        "@rules_rust//rust/platform:linux": _LINUX_CACHE_ENTRIES,
         "//conditions:default": _CACHE_ENTRIES,
     }),
-    lib_source = "@libssh2//:all",
+    lib_source = "//:all",
     static_libraries = select({
         # TODO: I'm guessing at this name. Needs to be checked on windows.
-        "@platforms//os:windows": ["ssh2.lib"],
+        "@rules_rust//rust/platform:windows": ["ssh2.lib"],
         "//conditions:default": ["libssh2.a"],
     }),
     visibility = ["//visibility:public"],
-    deps = ["@openssl"],
+    deps = ["@cargo_raze__openssl//:openssl"],
 )

@@ -2,6 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@examples//cargo_raze:repositories.bzl", "cargo_raze_example_repositories")
 load("@examples//complex_sys:repositories.bzl", "rules_rust_examples_complex_sys_repositories")
 load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetch_remote_crates")
 load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
@@ -53,3 +54,5 @@ def deps():
     )
 
     rules_foreign_cc_dependencies()
+
+    cargo_raze_example_repositories()

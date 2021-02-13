@@ -82,10 +82,10 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY+x}" ]]; then
   SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   REPO_ROOT="$(dirname $SCRIPT_DIR)"
 else
-  REPO_ROOT="${BUILD_WORKSPACE_DIRECTORY}"
+  REPO_ROOT="${BUILD_WORKSPACE_DIRECTORY}/cargo/cargo_raze"
 fi
 
-pushd "${REPO_ROOT}/impl"
+pushd "${REPO_ROOT}"
 set -x
 publish_crate_version "${NEXT_CRATE_VERSION}"
 popd

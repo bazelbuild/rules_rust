@@ -6,8 +6,8 @@ filegroup(
 )
 
 _CACHE_ENTRIES = {
-    "BUILD_SHARED_LIBS": "off",
     "BUILD_CURL_EXE": "off",
+    "BUILD_SHARED_LIBS": "off",
     "CMAKE_PREFIX_PATH": "$CMAKE_PREFIX_PATH;$EXT_BUILD_DEPS/openssl",
     # TODO: ldap should likely be enabled
     "CURL_DISABLE_LDAP": "on",
@@ -25,24 +25,24 @@ _LINUX_CACHE_ENTRIES = dict(_CACHE_ENTRIES.items() + {
 cmake_external(
     name = "curl",
     cache_entries = select({
-        "@platforms//os:macos": _MACOS_CACHE_ENTRIES,
-        "@platforms//os:linux": _LINUX_CACHE_ENTRIES,
+        "@rules_rust//rust/platform:linux": _LINUX_CACHE_ENTRIES,
+        "@rules_rust//rust/platform:darwin": _MACOS_CACHE_ENTRIES,
         "//conditions:default": _CACHE_ENTRIES,
     }),
     lib_source = ":all",
     static_libraries = select({
         # TODO: I'm guessing at this name. Needs to be checked on windows.
-        "@platforms//os:windows": ["curl.lib"],
+        "@rules_rust//rust/platform:windows": ["curl.lib"],
         "//conditions:default": ["libcurl.a"],
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib//:zlib",
+        "@cargo_raze__zlib//:zlib",
     ] + select({
+        "@rules_rust//rust/platform:windows": [],
         "@rules_rust//rust/platform:ios": [],
-        "@platforms//os:windows": [],
         "//conditions:default": [
-            "@openssl//:openssl",
+            "@cargo_raze__openssl//:openssl",
         ],
     }),
 )

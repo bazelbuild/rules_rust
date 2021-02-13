@@ -21,12 +21,12 @@ configure_make(
     name = "openssl",
     configure_command = "config",
     configure_env_vars = select({
-        "@platforms//os:macos": {"AR": ""},
+        "@rules_rust//rust/platform:darwin": {"AR": ""},
         "//conditions:default": {},
     }),
     configure_in_place = True,
     configure_options = select({
-        "@platforms//os:macos": [
+        "@rules_rust//rust/platform:darwin": [
             "ARFLAGS=r",
             "no-afalgeng",
             "no-asm",
@@ -36,7 +36,7 @@ configure_make(
             "no-shared",
         ] + CONFIGURE_OPTIONS,
     }),
-    lib_source = "@openssl//:all",
+    lib_source = ":all",
     make_commands = [
         "make build_libs",
         "make install_dev",

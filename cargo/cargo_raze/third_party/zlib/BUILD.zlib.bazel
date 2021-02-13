@@ -54,7 +54,7 @@ cc_library(
     ] + _ZLIB_HEADERS,
     hdrs = _ZLIB_PREFIXED_HEADERS,
     copts = select({
-        "@platforms//os:windows": [],
+        "@rules_rust//rust/platform:windows": [],
         "//conditions:default": [
             "-Wno-unused-variable",
             "-Wno-implicit-function-declaration",

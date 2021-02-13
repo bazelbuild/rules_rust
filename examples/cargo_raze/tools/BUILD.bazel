@@ -1,0 +1,4 @@
+exports_files([
+    "examples_repository_tools.sh",
+    "examples_repository_tools.bat",
+])

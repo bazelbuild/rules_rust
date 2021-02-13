@@ -57,7 +57,7 @@ lazy_static = "1.4.0"
 tar = "0.4.30"
 
 [package.metadata.raze]
-workspace_path = "//third_party/cargo"
+workspace_path = "//cargo/cargo_raze/third_party/cargo"
 gen_workspace_prefix = "cargo_raze"
 genmode = "Remote"
 default_gen_buildrs = true
@@ -86,7 +86,7 @@ additional_flags = [
 [package.metadata.raze.crates.curl-sys.'*']
 # build.rs file: https://github.com/alexcrichton/curl-rust/blob/master/curl-sys/build.rs
 gen_buildrs = false
-additional_deps = ["@curl//:curl"]
+additional_deps = ["@cargo_raze__curl//:curl"]
 
 [package.metadata.raze.crates.deunicode.'*']
 # This string is buildifier compliant
@@ -99,15 +99,15 @@ glob(
 [package.metadata.raze.crates.libgit2-sys.'*']
 # build.rs file: https://github.com/rust-lang/git2-rs/blob/master/libgit2-sys/build.rs
 gen_buildrs = false
-additional_deps = ["@libgit2//:libgit2"]
+additional_deps = ["@cargo_raze__libgit2//:libgit2"]
 
 [package.metadata.raze.crates.libssh2-sys.'*']
 # build.rs file: https://github.com/alexcrichton/ssh2-rs/blob/master/libssh2-sys/build.rs
 build_data_dependencies = [
-    "@libssh2//:libssh2",
-    "@openssl//:openssl",
+    "@cargo_raze__libssh2//:libssh2",
+    "@cargo_raze__openssl//:openssl",
 ]
-additional_deps = ["@libssh2//:libssh2"]
+additional_deps = ["@cargo_raze__libssh2//:libssh2"]
 
 [package.metadata.raze.crates.libz-sys.'*']
 # build.rs file: https://github.com/rust-lang/libz-sys/blob/main/build.rs
@@ -115,17 +115,18 @@ gen_buildrs = false
 additional_flags = ["--cfg=static"]
 
 [package.metadata.raze.crates.openssl.'*']
-additional_deps = ["@openssl//:openssl"]
+additional_deps = ["@cargo_raze__openssl//:openssl"]
 
 [package.metadata.raze.crates.openssl-sys.'*']
 # build.rs file: https://github.com/sfackler/rust-openssl/blob/master/openssl-sys/build/main.rs
 build_data_dependencies = [
-    "@openssl//:openssl",
-    "@openssl//:gen_dir",
+    "@cargo_raze__openssl//:openssl",
+    "@cargo_raze__openssl//:gen_dir",
 ]
-additional_deps = ["@openssl//:openssl"]
+data_attr = "[\"@cargo_raze__openssl//:openssl\"]"
+additional_deps = ["@cargo_raze__openssl//:openssl"]
     [package.metadata.raze.crates.openssl-sys.'*'.buildrs_additional_environment_variables]
-        OPENSSL_DIR="$(location @openssl//:gen_dir)"
+        OPENSSL_DIR="$(execpath @cargo_raze__openssl//:gen_dir)"
         OPENSSL_STATIC="1"
 
 [package.metadata.raze.crates.semver-parser.'*']

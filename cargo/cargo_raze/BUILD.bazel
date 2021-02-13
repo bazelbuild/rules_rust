@@ -1,5 +1,5 @@
-load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library", "rust_test")
-load("//third_party/cargo:crates.bzl", "all_crate_deps")
+load("//cargo/cargo_raze/third_party/cargo:crates.bzl", "all_crate_deps")
+load("//rust:rust.bzl", "rust_binary", "rust_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -81,4 +81,9 @@ rust_test(
     env = _TEST_ENV,
     proc_macro_deps = all_crate_deps(proc_macro_dev = True),
     deps = all_crate_deps(normal_dev = True),
+)
+
+alias(
+    name = "bootstrap",
+    actual = "//cargo/cargo_raze/tools:bootstrap",
 )

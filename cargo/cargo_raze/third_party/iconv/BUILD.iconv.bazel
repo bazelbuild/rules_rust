@@ -10,7 +10,7 @@ filegroup(
 configure_make(
     name = "iconv",
     configure_env_vars = select({
-        "@platforms//os:macos": {"AR": ""},
+        "@rules_rust//rust/platform:darwin": {"AR": ""},
         "//conditions:default": {},
     }),
     configure_in_place = True,
@@ -19,7 +19,7 @@ configure_make(
         "--enable-shared=no",
         "--enable-static=yes",
     ],
-    lib_source = "@iconv//:all",
+    lib_source = ":all",
     make_commands = ["make install-lib"],
     static_libraries = [
         "libiconv.a",

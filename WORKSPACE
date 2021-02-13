@@ -4,6 +4,14 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
 
+load("@rules_rust//cargo/cargo_raze:repositories.bzl", "cargo_raze_repositories")
+
+cargo_raze_repositories()
+
+load("@rules_rust//cargo/cargo_raze:transitive_deps.bzl", "cargo_raze_transitive_deps")
+
+cargo_raze_transitive_deps()
+
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()

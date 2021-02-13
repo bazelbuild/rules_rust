@@ -14,7 +14,7 @@ _CACHE_ENTRIES = {
     "BUILD_FUZZERS": "off",
     "BUILD_SHARED_LIBS": "off",
     "CMAKE_PREFIX_PATH": "$EXT_BUILD_DEPS/pcre;$EXT_BUILD_DEPS/openssl;$EXT_BUILD_DEPS/libssh2;$EXT_BUILD_DEPS/zlib;$CMAKE_PREFIX_PATH",
-    "EMBED_SSH_PATH": "$(location @libssh2//:libssh2)",
+    "EMBED_SSH_PATH": "$(execpath @cargo_raze__libssh2//:libssh2)",
     "USE_HTTPS": "on",
 }
 
@@ -26,23 +26,23 @@ _LINUX_CACHE_ENTRIES = dict(_CACHE_ENTRIES.items() + {
 cmake_external(
     name = "libgit2",
     cache_entries = select({
-        "@platforms//os:linux": _LINUX_CACHE_ENTRIES,
+        "@rules_rust//rust/platform:linux": _LINUX_CACHE_ENTRIES,
         "//conditions:default": _CACHE_ENTRIES,
     }),
     lib_source = ":all",
     static_libraries = select({
         # TODO: I'm guessing at this name. Needs to be checked on windows.
-        "@platforms//os:windows": ["git2.lib"],
+        "@rules_rust//rust/platform:windows": ["git2.lib"],
         "//conditions:default": ["libgit2.a"],
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@libssh2",
-        "@zlib",
-        "@openssl",
+        "@cargo_raze__libssh2//:libssh2",
+        "@cargo_raze__zlib//:zlib",
+        "@cargo_raze__openssl//:openssl",
     ] + select({
-        "@platforms//os:macos": ["@iconv"],
-        "@platforms//os:linux": ["@pcre"],
+        "@rules_rust//rust/platform:linux": ["@cargo_raze__pcre//:pcre"],
+        "@rules_rust//rust/platform:darwin": ["@cargo_raze__iconv//:iconv"],
         "//conditions:default": [],
     }),
 )
