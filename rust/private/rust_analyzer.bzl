@@ -20,10 +20,10 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
+load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
 load("//rust/private:utils.bzl", "find_toolchain")
-load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 
 # We support only these rule kinds.
 _rust_rules = [
@@ -34,13 +34,13 @@ _rust_rules = [
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
     fields = {
+        "build_info": "BuildInfo: build info for this crate if present",
+        "cfgs": "List[String]: features or other compilation --cfg settings",
         "crate": "rust_common.crate_info",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
-        "transitive_deps": "List[RustAnalyzerInfo]: transitive closure of dependencies",
-        "cfgs": "List[String]: features or other compilation --cfg settings",
         "env": "Dict{String: String}: Environment variables, used for the `env!` macro",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
-        "build_info": "BuildInfo: build info for this crate if present",
+        "transitive_deps": "List[RustAnalyzerInfo]: transitive closure of dependencies",
     },
 )
 
@@ -81,7 +81,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
 def find_proc_macro_dylib_path(toolchain, target):
     """Find the proc_macro_dylib_path of target. Returns None if target crate is not type proc-macro.
-    
+
     Args:
         toolchain: The current rust toolchain.
         target: The current target.
@@ -108,11 +108,11 @@ rust_analyzer_aspect = aspect(
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
-_exec_root_tmpl = '__EXEC_ROOT__/'
+_exec_root_tmpl = "__EXEC_ROOT__/"
 
 def _crate_id(crate_info):
     """Returns a unique stable identifier for a crate
-    
+
     Returns:
         (string): This crate's unique stable id.
     """
@@ -149,13 +149,13 @@ def create_crate(ctx, info, crate_mapping):
         crate["env"].update({"OUT_DIR": _exec_root_tmpl + info.build_info.out_dir.path})
         crate["source"] = {
             # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
-            "include_dirs": [crate_root, _exec_root_tmpl + info.build_info.out_dir.path],
             "exclude_dirs": [],
+            "include_dirs": [crate_root, _exec_root_tmpl + info.build_info.out_dir.path],
         }
     crate["env"].update(info.env)
 
     deps = [
-        {"name": d.crate.name, "crate": crate_mapping[_crate_id(d.crate)]}
+        {"crate": crate_mapping[_crate_id(d.crate)], "name": d.crate.name}
         for d in info.deps
     ]
     crate["deps"] = deps

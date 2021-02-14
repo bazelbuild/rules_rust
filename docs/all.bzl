@@ -38,14 +38,14 @@ load(
 )
 load(
     "@rules_rust//rust:rust.bzl",
+    _rust_analyzer = "rust_analyzer",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
+    _rust_clippy = "rust_clippy",
     _rust_doc = "rust_doc",
     _rust_doc_test = "rust_doc_test",
     _rust_library = "rust_library",
     _rust_test = "rust_test",
-    _rust_clippy = "rust_clippy",
-    _rust_analyzer = "rust_analyzer",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",

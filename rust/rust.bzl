@@ -29,6 +29,11 @@ load(
     _rust_test_binary = "rust_test_binary",
 )
 load(
+    "//rust/private:rust_analyzer.bzl",
+    _rust_analyzer = "rust_analyzer",
+    _rust_analyzer_aspect = "rust_analyzer_aspect",
+)
+load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
 )
@@ -39,11 +44,6 @@ load(
 load(
     "//rust/private:rustdoc_test.bzl",
     _rust_doc_test = "rust_doc_test",
-)
-load(
-    "//rust/private:rust_analyzer.bzl",
-    _rust_analyzer = "rust_analyzer",
-    _rust_analyzer_aspect = "rust_analyzer_aspect",
 )
 
 rust_library = _rust_library
