@@ -27,7 +27,6 @@
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
 * [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
-* [rust_workspace](#rust_workspace)
 
 
 <a id="#rust_analyzer"></a>
@@ -335,7 +334,7 @@ For example, given the following example targets:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
