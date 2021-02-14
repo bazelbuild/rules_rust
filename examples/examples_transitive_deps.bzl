@@ -5,6 +5,7 @@ dependencies. This file contains the required macros to pull these dependencies
 """
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 
 # buildifier: disable=unnamed-macro
@@ -33,3 +34,5 @@ def transitive_deps(is_top_level = False):
             name = "rules_rust_example_cargo_manifest_dir",
             path = "cargo_manifest_dir/external_crate",
         )
+
+    node_repositories()

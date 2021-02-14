@@ -22,8 +22,8 @@ cc_test(
 
 cc_import(
     name = "native_matrix_so",
-    shared_library = ":libnative_matrix_so.so",
     hdrs = ["matrix.h"],
+    shared_library = ":libnative_matrix_so.so",
 )
 
 cc_binary(

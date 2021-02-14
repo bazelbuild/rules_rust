@@ -96,4 +96,6 @@ tasks:
     shell_commands:
     - ./test/clippy/clippy_failure_test.sh
 
-buildifier: latest
+buildifier:
+  version: latest
+  warnings: "all"

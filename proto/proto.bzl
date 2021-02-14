@@ -40,8 +40,13 @@ load(
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-load("//rust:private/rustc.bzl", "CrateInfo", "rustc_compile_action")
-load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust:rust.bzl", "rust_common")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rustc.bzl", "rustc_compile_action")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -212,7 +217,8 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     return rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
-        crate_info = CrateInfo(
+        crate_type = "rlib",
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = "rlib",
             root = lib_rs,
@@ -285,16 +291,16 @@ rust_proto_library = rule(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "exec",
+            default = Label("//proto:optional_output_wrapper"),
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
-        ),
-        "_optional_output_wrapper": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],
@@ -362,16 +368,16 @@ rust_grpc_library = rule(
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
+        "_optional_output_wrapper": attr.label(
+            executable = True,
+            cfg = "exec",
+            default = Label("//proto:optional_output_wrapper"),
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
-        ),
-        "_optional_output_wrapper": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = Label("//proto:optional_output_wrapper"),
         ),
     },
     fragments = ["cpp"],

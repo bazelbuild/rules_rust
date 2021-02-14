@@ -13,19 +13,18 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("//rust/private:common.bzl", "rust_common")
 load(
-    "//rust:private/rustc.bzl",
-    "CrateInfo",
+    "//rust/private:rust.bzl",
+    "crate_root_src",
+)
+load(
+    "//rust/private:rustc.bzl",
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
-    "get_cc_toolchain",
 )
-load(
-    "//rust:private/rust.bzl",
-    "crate_root_src",
-)
-load("//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
 _rust_extensions = [
     "rs",
@@ -43,12 +42,14 @@ def _rust_sources(target, rule):
     return [src for src in srcs if src.extension in _rust_extensions]
 
 def _clippy_aspect_impl(target, ctx):
-    if CrateInfo not in target:
+    if rust_common.crate_info not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
 
     toolchain = find_toolchain(ctx)
-    crate_info = target[CrateInfo]
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    crate_info = target[rust_common.crate_info]
+    crate_type = crate_info.type
 
     if crate_info.is_test:
         root = crate_info.root
@@ -71,6 +72,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx.rule.file,
         ctx.rule.files,
         toolchain,
+        cc_toolchain,
         crate_info,
         dep_info,
         build_info,
@@ -80,8 +82,6 @@ def _clippy_aspect_impl(target, ctx):
     # This file is necessary because "ctx.actions.run" mandates an output.
     clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
 
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
-
     args, env = construct_arguments(
         ctx,
         ctx.file,
@@ -89,6 +89,7 @@ def _clippy_aspect_impl(target, ctx):
         toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
+        crate_type,
         crate_info,
         dep_info,
         output_hash = determine_output_hash(root),
@@ -143,13 +144,13 @@ rust_clippy_aspect = aspect(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_error_format": attr.label(default = "//:error_format"),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
         ),
-        "_error_format": attr.label(default = "//:error_format"),
     },
     toolchains = [
         str(Label("//rust:toolchain")),

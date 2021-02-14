@@ -1,10 +1,16 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//rust:private/rust.bzl", "name_to_crate_name")
-load("//rust:private/rustc.bzl", "BuildInfo", "DepInfo", "get_cc_toolchain", "get_compilation_mode_opts", "get_linker_and_args")
-load("//rust:private/utils.bzl", "expand_locations", "find_toolchain")
 load("//rust:rust.bzl", "rust_binary")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "name_to_crate_name")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_linker_and_args")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "expand_locations", "find_cc_toolchain", "find_toolchain")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -92,7 +98,7 @@ def _build_script_impl(ctx):
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     _, _, linker_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
@@ -188,6 +194,26 @@ _build_script_run = rule(
     ),
     implementation = _build_script_impl,
     attrs = {
+        "build_script_env": attr.string_dict(
+            doc = "Environment variables for build scripts.",
+        ),
+        "crate_features": attr.string_list(
+            doc = "The list of rust features that the build script should consider activated.",
+        ),
+        "crate_name": attr.string(
+            doc = "Name of the crate associated with this build script target",
+        ),
+        "data": attr.label_list(
+            doc = "Data or tools required by the build script.",
+            allow_files = True,
+        ),
+        "deps": attr.label_list(
+            doc = "The Rust dependencies of the crate defined by `crate_name`",
+            providers = [DepInfo],
+        ),
+        "links": attr.string(
+            doc = "The name of the native library this crate links against.",
+        ),
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
         "script": attr.label(
@@ -197,37 +223,17 @@ _build_script_run = rule(
             mandatory = True,
             cfg = "exec",
         ),
-        "crate_name": attr.string(
-            doc = "Name of the crate associated with this build script target",
-        ),
-        "links": attr.string(
-            doc = "The name of the native library this crate links against.",
-        ),
-        "deps": attr.label_list(
-            doc = "The Rust dependencies of the crate defined by `crate_name`",
-            providers = [DepInfo],
-        ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
-        ),
-        "crate_features": attr.string_list(
-            doc = "The list of rust features that the build script should consider activated.",
-        ),
-        "build_script_env": attr.string_dict(
-            doc = "Environment variables for build scripts.",
-        ),
-        "data": attr.label_list(
-            doc = "Data or tools required by the build script.",
-            allow_files = True,
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
             default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
             cfg = "exec",
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],

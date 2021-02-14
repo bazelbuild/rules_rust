@@ -1,8 +1,8 @@
+load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 load(
     "@rules_rust//rust:rust.bzl",
     "rust_test",
 )
-load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
 # generate a file
 genrule(
@@ -25,10 +25,10 @@ cargo_build_script(
     name = "build",
     srcs = ["build.rs"],
     build_script_env = {
-        # both execpath and location should work
-        "SOURCE_FILE": "$(execpath source.file)",
         "GENERATED_DATA": "$(location generated.data)",
         "SOME_TOOL": "$(execpath @com_google_protobuf//:protoc)",
+        # both execpath and location should work
+        "SOURCE_FILE": "$(execpath source.file)",
     },
     data = _data,
 )
@@ -41,10 +41,10 @@ rust_test(
     data = _data,
     edition = "2018",
     rustc_env = {
-        "SOURCE_FILE": "$(rootpath source.file)",
-        "GENERATED_DATA_ROOT": "$(rootpath generated.data)",
         "GENERATED_DATA_ABS": "$(execpath generated.data)",
+        "GENERATED_DATA_ROOT": "$(rootpath generated.data)",
         "SOME_TOOL": "$(rootpath @com_google_protobuf//:protoc)",
+        "SOURCE_FILE": "$(rootpath source.file)",
     },
     deps = [
         ":build",

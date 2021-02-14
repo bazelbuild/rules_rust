@@ -13,8 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:private/rustc.bzl", "CrateInfo", "DepInfo", "add_crate_link_flags", "add_edition_flags")
-load("//rust:private/utils.bzl", "find_toolchain")
+load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:rustc.bzl", "DepInfo", "add_crate_link_flags", "add_edition_flags")
+load("//rust/private:utils.bzl", "find_toolchain")
 
 _rust_doc_doc = """Generates code documentation.
 
@@ -61,10 +62,10 @@ def _rust_doc_impl(ctx):
     Args:
         ctx (ctx): The rule's context object
     """
-    if CrateInfo not in ctx.attr.dep:
+    if rust_common.crate_info not in ctx.attr.dep:
         fail("Expected rust_library or rust_binary.", "dep")
 
-    crate = ctx.attr.dep[CrateInfo]
+    crate = ctx.attr.dep[rust_common.crate_info]
     dep_info = ctx.attr.dep[DepInfo]
 
     toolchain = find_toolchain(ctx)
@@ -144,21 +145,21 @@ rust_doc = rule(
             ),
             mandatory = True,
         ),
-        "markdown_css": attr.label_list(
-            doc = "CSS files to include via `<link>` in a rendered Markdown file.",
-            allow_files = [".css"],
-        ),
-        "html_in_header": attr.label(
-            doc = "File to add to `<head>`.",
+        "html_after_content": attr.label(
+            doc = "File to add in `<body>`, after content.",
             allow_single_file = [".html", ".md"],
         ),
         "html_before_content": attr.label(
             doc = "File to add in `<body>`, before content.",
             allow_single_file = [".html", ".md"],
         ),
-        "html_after_content": attr.label(
-            doc = "File to add in `<body>`, after content.",
+        "html_in_header": attr.label(
+            doc = "File to add to `<head>`.",
             allow_single_file = [".html", ".md"],
+        ),
+        "markdown_css": attr.label_list(
+            doc = "CSS files to include via `<link>` in a rendered Markdown file.",
+            allow_files = [".css"],
         ),
         "_dir_zipper": attr.label(
             default = Label("//util/dir_zipper"),

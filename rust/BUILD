@@ -18,5 +18,6 @@ bzl_library(
     srcs = glob(["**/*.bzl"]),
     deps = [
         "//rust/platform:rules",
+        "//rust/private:rules",
     ],
 )

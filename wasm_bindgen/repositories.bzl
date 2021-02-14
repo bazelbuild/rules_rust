@@ -13,6 +13,8 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_crates")
 
 # buildifier: disable=unnamed-macro
@@ -23,6 +25,13 @@ def rust_wasm_bindgen_repositories():
     repository. This makes the default toolchain `@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For \
     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
     """
+
+    maybe(
+        http_archive,
+        name = "build_bazel_rules_nodejs",
+        sha256 = "dd4dc46066e2ce034cba0c81aa3e862b27e8e8d95871f567359f7a534cccb666",
+        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.1.0/rules_nodejs-3.1.0.tar.gz"],
+    )
 
     rules_rust_wasm_bindgen_fetch_remote_crates()
 

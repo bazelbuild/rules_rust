@@ -15,4 +15,8 @@ rust_test(
     srcs = ["tests/run.rs"],
     data = [":hello-world"],
     edition = "2018",
+    env = {
+        "FERRIS_SAYS": "Hello fellow Rustaceans!",
+        "HELLO_WORLD_BIN": "$(rootpath :hello-world)",
+    },
 )

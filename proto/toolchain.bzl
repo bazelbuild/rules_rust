@@ -14,7 +14,8 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
-load("//rust:private/rust.bzl", "name_to_crate_name")
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "name_to_crate_name")
 
 def generated_file_stem(f):
     basename = f.rsplit("/", 2)[-1]
@@ -129,17 +130,9 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
 rust_proto_toolchain = rule(
     implementation = _rust_proto_toolchain_impl,
     attrs = {
-        "protoc": attr.label(
-            doc = "The location of the `protoc` binary. It should be an executable target.",
-            executable = True,
-            cfg = "exec",
-            default = Label("@com_google_protobuf//:protoc"),
-        ),
-        "proto_plugin": attr.label(
-            doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
-            allow_single_file = True,
-            cfg = "exec",
-            default = Label("//proto:protoc_gen_rust"),
+        "edition": attr.string(
+            doc = "The edition used by the generated rust source.",
+            default = "2015",
         ),
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
@@ -147,9 +140,17 @@ rust_proto_toolchain = rule(
             cfg = "exec",
             default = Label("//proto:protoc_gen_rust_grpc"),
         ),
-        "edition": attr.string(
-            doc = "The edition used by the generated rust source.",
-            default = "2015",
+        "proto_plugin": attr.label(
+            doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
+            allow_single_file = True,
+            cfg = "exec",
+            default = Label("//proto:protoc_gen_rust"),
+        ),
+        "protoc": attr.label(
+            doc = "The location of the `protoc` binary. It should be an executable target.",
+            executable = True,
+            cfg = "exec",
+            default = Label("@com_google_protobuf//:protoc"),
         ),
     },
     doc = """\

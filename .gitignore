@@ -17,3 +17,7 @@
 
 # npm
 **/node_modules/
+
+# vscode
+.vscode
+*.code-workspace

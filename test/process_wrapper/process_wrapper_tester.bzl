@@ -73,18 +73,18 @@ def _impl(ctx):
 process_wrapper_tester = rule(
     implementation = _impl,
     attrs = {
-        "test_config": attr.string(mandatory = True),
         "arg_files": attr.label_list(),
         "env_files": attr.label_list(),
-        "_process_wrapper_tester": attr.label(
-            default = "//test/process_wrapper:process_wrapper_tester",
-            executable = True,
-            cfg = "exec",
-        ),
+        "test_config": attr.string(mandatory = True),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
+            cfg = "exec",
+        ),
+        "_process_wrapper_tester": attr.label(
+            default = "//test/process_wrapper:process_wrapper_tester",
+            executable = True,
             cfg = "exec",
         ),
     },
