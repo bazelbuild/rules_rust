@@ -20,7 +20,7 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("//rust:rust_common.bzl", "CrateInfo")
+load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
 load("//rust/private:utils.bzl", "find_toolchain")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
@@ -34,7 +34,7 @@ _rust_rules = [
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
     fields = {
-        "crate": "CrateInfo",
+        "crate": "rust_common.crate_info",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "transitive_deps": "List[RustAnalyzerInfo]: transitive closure of dependencies",
         "cfgs": "List[String]: features or other compilation --cfg settings",
@@ -45,7 +45,7 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
-    if CrateInfo not in target:
+    if rust_common.crate_info not in target:
         return []
 
     toolchain = find_toolchain(ctx)
@@ -68,7 +68,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
     transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
-    crate_info = target[CrateInfo]
+    crate_info = target[rust_common.crate_info]
     return [RustAnalyzerInfo(
         crate = crate_info,
         cfgs = cfgs,
@@ -88,7 +88,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     Returns:
         (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
     """
-    if target[CrateInfo].type != "proc-macro":
+    if target[rust_common.crate_info].type != "proc-macro":
         return None
 
     dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
