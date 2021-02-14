@@ -66,7 +66,6 @@ fn build_rust_project_target(config: &Config) {
 // Parse the configuration flags and supplement with bazel info as needed.
 fn parse_config() -> anyhow::Result<Config> {
     let mut config = Config::from_args();
-    println!("Config = {:?}", config);
 
     // Ensure we know the workspace. If we are under `bazel run`, the
     // BUILD_WORKSPACE_DIR environment variable will be present.
