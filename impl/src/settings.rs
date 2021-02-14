@@ -12,19 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-  error::RazeError,
-  metadata::{
-    MetadataFetcher, DEFAULT_CRATE_INDEX_URL, DEFAULT_CRATE_REGISTRY_URL, SYSTEM_CARGO_BIN_PATH,
-  },
-};
+use crate::{error::RazeError, metadata::{
+    MetadataFetcher, DEFAULT_CRATE_INDEX_URL, DEFAULT_CRATE_REGISTRY_URL,
+  }, util};
 use anyhow::{anyhow, Context, Result};
 use cargo_metadata::{Metadata, MetadataCommand, Package};
 use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::HashMap,
-  env,
   hash::Hash,
   path::{Path, PathBuf},
 };
@@ -700,9 +696,7 @@ pub struct SettingsMetadataFetcher {
 impl Default for SettingsMetadataFetcher {
   fn default() -> SettingsMetadataFetcher {
     SettingsMetadataFetcher {
-      cargo_bin_path: env::var("CARGO")
-        .unwrap_or_else(|_| SYSTEM_CARGO_BIN_PATH.to_string())
-        .into(),
+      cargo_bin_path: util::cargo_bin_path(),
     }
   }
 }
@@ -731,12 +725,17 @@ pub fn load_settings_from_manifest<T: AsRef<Path>>(
   cargo_toml_path: T,
   cargo_bin_path: Option<String>,
 ) -> Result<RazeSettings, RazeError> {
-  // Create a MetadataFetcher from either an optional Cargo binary path
-  // or a fallback expected to be found on the system.
+  // Get the path to the cargo binary from either an optional Cargo binary
+  // path or a fallback expected to be found on the system.
+  let bin_path: PathBuf = if let Some(path) = cargo_bin_path {
+    path.into()
+  } else {
+    util::cargo_bin_path()
+  };
+
+  // Create a MetadataFetcher 
   let fetcher = SettingsMetadataFetcher {
-    cargo_bin_path: cargo_bin_path
-      .unwrap_or_else(|| SYSTEM_CARGO_BIN_PATH.to_string())
-      .into(),
+    cargo_bin_path: bin_path,
   };
 
   let cargo_toml_dir = cargo_toml_path.as_ref().parent().ok_or_else(|| {

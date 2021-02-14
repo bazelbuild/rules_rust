@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fmt, iter::Iterator, path::Path, path::PathBuf, process::Command, str::FromStr};
+use std::{env, fmt, iter::Iterator, path::Path, path::PathBuf, process::Command, str::FromStr};
 
 use anyhow::{anyhow, Result};
 
@@ -21,6 +21,7 @@ use cargo_platform::Cfg;
 use cfg_expr::{targets::get_builtin_target_by_triple, Expression, Predicate};
 use pathdiff::diff_paths;
 
+pub(crate) const SYSTEM_CARGO_BIN_PATH: &str = "cargo";
 pub(crate) const RAZE_LOCKFILE_NAME: &str = "Cargo.raze.lock";
 
 static SUPPORTED_PLATFORM_TRIPLES: &[&str] = &[
@@ -339,6 +340,15 @@ pub fn find_lockfile(cargo_workspace_root: &Path, raze_output_dir: &Path) -> Opt
 
   // No lockfile is available.
   None
+}
+
+/// Locates a cargo binary form either an evironment variable or PATH
+pub fn cargo_bin_path() -> PathBuf {
+  // Get path to the current binary
+  let cargo_path =
+    PathBuf::from(env::var("CARGO").unwrap_or_else(|_| SYSTEM_CARGO_BIN_PATH.to_string()));
+
+  cargo_path
 }
 
 #[cfg(test)]
