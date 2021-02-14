@@ -139,11 +139,11 @@ def create_crate(ctx, info, crate_mapping):
     if info.crate.root.path.startswith("external/"):
         crate["is_workspace_member"] = False
         crate["root_module"] = _exec_root_tmpl + info.crate.root.path
-        crate_root = _exec_root_tmpl + info.crate.root.dirname + "/../"
+        crate_root = _exec_root_tmpl + info.crate.root.dirname
     else:
         crate["is_workspace_member"] = True
         crate["root_module"] = info.crate.root.path
-        crate_root = info.crate.root.dirname + "/../"
+        crate_root = info.crate.root.dirname
 
     if info.build_info != None:
         crate["env"].update({"OUT_DIR": _exec_root_tmpl + info.build_info.out_dir.path})
