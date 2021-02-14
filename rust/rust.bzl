@@ -41,7 +41,7 @@ load(
     _rust_doc_test = "rust_doc_test",
 )
 load(
-    "//rust:private/rust_analyzer.bzl",
+    "//rust/private:rust_analyzer.bzl",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
 )

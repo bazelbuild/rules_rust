@@ -20,8 +20,9 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("//rust:private/rustc.bzl", "BuildInfo", "CrateInfo")
-load("//rust:private/utils.bzl", "find_toolchain")
+load("//rust:rust_common.bzl", "CrateInfo")
+load("//rust/private:rustc.bzl", "BuildInfo")
+load("//rust/private:utils.bzl", "find_toolchain")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 
 # We support only these rule kinds.

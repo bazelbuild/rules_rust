@@ -56,18 +56,6 @@ rust_toolchain = rule(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
         ),
-        "rustc_lib": attr.label(
-            doc = "The libraries used by rustc during compilation.",
-        ),
-        "rustc_src": attr.label(
-            doc = "The source code of rustc.",
-        ),
-        "rust_lib": attr.label(
-            doc = "The rust standard library.",
-        ),
-        "binary_ext": attr.string(
-            doc = "The extension for binaries created from rustc.",
-            mandatory = True,
         "debug_info": attr.string_dict(
             doc = "Rustc debug info levels per opt level",
             default = {
@@ -115,6 +103,9 @@ rust_toolchain = rule(
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
+        ),
+        "rustc_src": attr.label(
+            doc = "The source code of rustc.",
         ),
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
