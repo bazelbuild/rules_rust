@@ -478,7 +478,7 @@ def _rust_benchmark_impl(ctx):
     info = rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_info = CrateInfo(
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = "bin",
             root = crate_root_src(ctx.attr, ctx.files.srcs, "bin"),
