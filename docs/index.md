@@ -32,9 +32,10 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 ```
 
-The rules are under active development, as such the lastest commit on the `main` branch should be used. `main` is only tested
-against `4.0.0` as the minmum supported version of Bazel. Though previous versions may still be supported in certain
-environments.
+The rules are under active development, as such the lastest commit on the
+`main` branch should be used. `main` is only tested against `4.0.0` as the
+minimum supported version of Bazel. Though previous versions may still be
+supported in certain environments.
 
 ## Rules
 
