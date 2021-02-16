@@ -17,7 +17,7 @@ fn run() {
     assert!(hello_world_bin.exists());
 
     // Ensure `execpath` expanded variables map to real files and have absolute paths
-    let hello_world_bin = std::path::PathBuf::from(std::env::var("HELLO_WORLD_SRC_EXECPATH").unwrap());
-    assert!(hello_world_bin.is_absolute());
-    assert!(hello_world_bin.exists());
+    let hello_world_src = std::path::PathBuf::from(std::env::var("HELLO_WORLD_SRC_EXECPATH").unwrap());
+    assert!(hello_world_src.is_absolute());
+    assert!(hello_world_src.exists());
 }
