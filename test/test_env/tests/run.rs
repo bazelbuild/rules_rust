@@ -8,10 +8,10 @@ fn run() {
     assert_eq!(std::env::var("FERRIS_SAYS").unwrap(), "Hello fellow Rustaceans!");
 
     // Test the behavior of `rootpath` and that a binary can be found relative to current_dir
-    let hello_world_bin = std::path::PathBuf::from(std::env::var("HELLO_WORLD_BIN_ROOTPATH").unwrap());
+    let hello_world_bin = std::path::PathBuf::from(std::env::var_os("HELLO_WORLD_BIN_ROOTPATH").unwrap());
     assert_eq!(
-        hello_world_bin.display().to_string(), 
-        std::path::Path::new("test/test_env/hello-world").display().to_string(),
+        hello_world_bin.as_path(), 
+        std::path::Path::new("test/test_env/hello-world"),
     );
     assert!(!hello_world_bin.is_absolute());
     assert!(hello_world_bin.exists());
