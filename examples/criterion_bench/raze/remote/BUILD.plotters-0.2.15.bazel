@@ -1,0 +1,130 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//criterion_bench/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "benchmark" with type "bench" omitted
+
+# Unsupported target "animation" with type "example" omitted
+
+# Unsupported target "area-chart" with type "example" omitted
+
+# Unsupported target "blit-bitmap" with type "example" omitted
+
+# Unsupported target "boxplot" with type "example" omitted
+
+# Unsupported target "chart" with type "example" omitted
+
+# Unsupported target "console" with type "example" omitted
+
+# Unsupported target "errorbar" with type "example" omitted
+
+# Unsupported target "histogram" with type "example" omitted
+
+# Unsupported target "mandelbrot" with type "example" omitted
+
+# Unsupported target "matshow" with type "example" omitted
+
+# Unsupported target "normal-dist" with type "example" omitted
+
+# Unsupported target "normal-dist2" with type "example" omitted
+
+# Unsupported target "relative_size" with type "example" omitted
+
+# Unsupported target "sierpinski" with type "example" omitted
+
+# Unsupported target "slc-temp" with type "example" omitted
+
+# Unsupported target "snowflake" with type "example" omitted
+
+# Unsupported target "stock" with type "example" omitted
+
+# Unsupported target "two-scales" with type "example" omitted
+
+rust_library(
+    name = "plotters",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "area_series",
+        "line_series",
+        "svg",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.2.15",
+    # buildifier: leave-alone
+    deps = [
+        "@rules_rust_examples_criterion_bench__num_traits__0_2_14//:num_traits",
+    ] + selects.with_or({
+        # cfg(not(target_arch = "wasm32"))
+        (
+            "@io_bazel_rules_rust//rust/platform:aarch64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:aarch64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@io_bazel_rules_rust//rust/platform:i686-apple-darwin",
+            "@io_bazel_rules_rust//rust/platform:i686-linux-android",
+            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:powerpc-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@io_bazel_rules_rust//rust/platform:x86_64-apple-darwin",
+            "@io_bazel_rules_rust//rust/platform:x86_64-apple-ios",
+            "@io_bazel_rules_rust//rust/platform:x86_64-linux-android",
+            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-freebsd",
+            "@io_bazel_rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(target_arch = "wasm32")
+        (
+            "@io_bazel_rules_rust//rust/platform:wasm32-unknown-unknown",
+            "@io_bazel_rules_rust//rust/platform:wasm32-wasi",
+        ): [
+            "@rules_rust_examples_criterion_bench__js_sys__0_3_46//:js_sys",
+            "@rules_rust_examples_criterion_bench__wasm_bindgen__0_2_69//:wasm_bindgen",
+            "@rules_rust_examples_criterion_bench__web_sys__0_3_46//:web_sys",
+        ],
+        "//conditions:default": [],
+    }),
+)

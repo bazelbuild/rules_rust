@@ -1,0 +1,22 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "criterion",
+    actual = "@rules_rust_examples_criterion_bench__criterion__0_3_3//:criterion",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)

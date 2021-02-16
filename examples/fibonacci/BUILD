@@ -25,6 +25,7 @@ rust_benchmark(
         "noci",
     ],
     deps = [":fibonacci"],
+    test_harness = True,
 )
 
 rust_doc(

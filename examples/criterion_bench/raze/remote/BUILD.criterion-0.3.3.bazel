@@ -1,0 +1,78 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load(
+    "@io_bazel_rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//criterion_bench/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "bench_main" with type "bench" omitted
+
+rust_library(
+    name = "criterion",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = glob(["src/**"]),
+    edition = "2018",
+    proc_macro_deps = [
+        "@rules_rust_examples_criterion_bench__serde_derive__1_0_118//:serde_derive",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.3.3",
+    # buildifier: leave-alone
+    deps = [
+        "@rules_rust_examples_criterion_bench__atty__0_2_14//:atty",
+        "@rules_rust_examples_criterion_bench__cast__0_2_3//:cast",
+        "@rules_rust_examples_criterion_bench__clap__2_33_3//:clap",
+        "@rules_rust_examples_criterion_bench__criterion_plot__0_4_3//:criterion_plot",
+        "@rules_rust_examples_criterion_bench__csv__1_1_5//:csv",
+        "@rules_rust_examples_criterion_bench__itertools__0_9_0//:itertools",
+        "@rules_rust_examples_criterion_bench__lazy_static__1_4_0//:lazy_static",
+        "@rules_rust_examples_criterion_bench__num_traits__0_2_14//:num_traits",
+        "@rules_rust_examples_criterion_bench__oorandom__11_1_3//:oorandom",
+        "@rules_rust_examples_criterion_bench__plotters__0_2_15//:plotters",
+        "@rules_rust_examples_criterion_bench__rayon__1_5_0//:rayon",
+        "@rules_rust_examples_criterion_bench__regex__1_4_2//:regex",
+        "@rules_rust_examples_criterion_bench__serde__1_0_118//:serde",
+        "@rules_rust_examples_criterion_bench__serde_cbor__0_11_1//:serde_cbor",
+        "@rules_rust_examples_criterion_bench__serde_json__1_0_60//:serde_json",
+        "@rules_rust_examples_criterion_bench__tinytemplate__1_1_0//:tinytemplate",
+        "@rules_rust_examples_criterion_bench__walkdir__2_3_1//:walkdir",
+    ],
+)
+
+# Unsupported target "criterion_tests" with type "test" omitted
