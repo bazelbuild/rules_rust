@@ -1,0 +1,60 @@
+    srcs = glob(["**/*.rs"]),
+    {%- if crate.default_deps.aliased_dependencies | length != 0 or crate.targeted_deps | length != 0 %}
+    aliases = {
+        {%- for alias in crate.default_deps.aliased_dependencies %}
+        "{{alias.target}}": "{{alias.alias}}",
+        {%- endfor %}
+        {%- for dep in crate.targeted_deps %}
+        {%- for alias in dep.deps.aliased_dependencies %}
+        "{{alias.target}}": "{{alias.alias}}",
+        {%- endfor %}
+        {%- endfor %}
+    },
+    {%- endif %}
+    crate_features = [
+        {%- for feature in crate.features %}
+        "{{feature}}",
+        {%- endfor %}
+    ],
+    crate_root = "{{ target.path }}",
+    {%- if target.kind != "bin" %}
+    crate_type = "{{ target.kind }}",
+    {%- endif %}
+    data = []
+    {%- if crate.raze_settings.data_attr %} + {{crate.raze_settings.data_attr}}
+    {%- endif -%}
+    {%- if crate.raze_settings.data_dependencies %} + [
+    {%- for dependency in crate.raze_settings.data_dependencies %}
+        "{{dependency}}",
+    {%- endfor %}
+    ]
+    {%- endif %},
+    {%- if crate.raze_settings.compile_data_attr %}
+    compile_data = {{crate.raze_settings.compile_data_attr}},
+    {%- endif %}
+    edition = "{{ target.edition }}",
+    {%- if crate.default_deps.proc_macro_dependencies %}
+    proc_macro_deps = [
+    {%- for dependency in crate.default_deps.proc_macro_dependencies %}
+        "{{dependency.buildable_target}}",
+    {%- endfor %}
+    ],
+    {%- endif %}
+    {%- if crate.raze_settings.additional_env %}
+    rustc_env = {
+        {%- for key, value in crate.raze_settings.additional_env %}
+        "{{key}}": "{{value}}",
+        {%- endfor %}
+    },
+    {%- endif %}
+    rustc_flags = [
+        "--cap-lints=allow",
+        {%- for flag in crate.raze_settings.additional_flags %}
+        "{{flag}}",
+        {%- endfor %}
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "{{ crate.pkg_version }}",

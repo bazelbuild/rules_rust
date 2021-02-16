@@ -1,0 +1,104 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_cargo_clone",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/main.rs",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.1.6",
+    # buildifier: leave-alone
+    deps = [
+        ":cargo_clone",
+        "@cargo_raze__anyhow__1_0_38//:anyhow",
+        "@cargo_raze__flate2__1_0_19//:flate2",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__reqwest__0_11_0//:reqwest",
+        "@cargo_raze__semver__0_11_0//:semver",
+        "@cargo_raze__serde_json__1_0_61//:serde_json",
+        "@cargo_raze__tar__0_4_30//:tar",
+    ],
+)
+
+alias(
+    name = "cargo_clone_crate",
+    actual = ":cargo_clone",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+rust_library(
+    name = "cargo_clone",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.1.6",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__anyhow__1_0_38//:anyhow",
+        "@cargo_raze__flate2__1_0_19//:flate2",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__reqwest__0_11_0//:reqwest",
+        "@cargo_raze__semver__0_11_0//:semver",
+        "@cargo_raze__serde_json__1_0_61//:serde_json",
+        "@cargo_raze__tar__0_4_30//:tar",
+    ],
+)

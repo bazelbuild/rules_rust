@@ -1,0 +1,31 @@
+[package]
+name = "tools"
+version = "0.0.0"
+authors = ["Alex McArther <acmcarther@google.com>"]
+readme = "README.md"
+keywords = ["subcommand"]
+license = "Apache-2.0"
+repository = "https://github.com/google/cargo-raze"
+description = """
+A set of development-only tools for cargo-raze
+
+This crate is not intended to be pushed to crates.io
+"""
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "dump_metadata"
+path = "src/bin/dump_metadata.rs"
+
+[dependencies.cargo-raze]
+path = "../impl"
+
+[dependencies]
+docopt = "1.0.2"
+cargo = "0.32.0"
+serde_derive = "1.0.84"
+serde = "1.0.84"
+serde_json = "1.0.34"
+home = "0.3.4"

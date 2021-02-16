@@ -1,0 +1,109 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//remote/binary_dependencies/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "all-the-things" with type "bench" omitted
+
+# Unsupported target "01_single_example_synthesis" with type "example" omitted
+
+# Unsupported target "02_multi_example_synthesis" with type "example" omitted
+
+# Unsupported target "03_guided_synthesis" with type "example" omitted
+
+# Unsupported target "04_style_transfer" with type "example" omitted
+
+# Unsupported target "05_inpaint" with type "example" omitted
+
+# Unsupported target "06_inpaint_channel" with type "example" omitted
+
+# Unsupported target "07_tiling_texture" with type "example" omitted
+
+# Unsupported target "08_repeat_transform" with type "example" omitted
+
+# Unsupported target "09_sample_masks" with type "example" omitted
+
+rust_library(
+    name = "texture_synthesis",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.8.0",
+    # buildifier: leave-alone
+    deps = [
+        "@remote_binary_dependencies__image__0_23_10//:image",
+        "@remote_binary_dependencies__num_cpus__1_13_0//:num_cpus",
+        "@remote_binary_dependencies__rand__0_7_3//:rand",
+        "@remote_binary_dependencies__rand_pcg__0_2_1//:rand_pcg",
+        "@remote_binary_dependencies__rstar__0_7_1//:rstar",
+    ] + selects.with_or({
+        # cfg(not(target_arch = "wasm32"))
+        (
+            "@rules_rust//rust/platform:aarch64-apple-darwin",
+            "@rules_rust//rust/platform:aarch64-apple-ios",
+            "@rules_rust//rust/platform:aarch64-linux-android",
+            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@rules_rust//rust/platform:i686-apple-darwin",
+            "@rules_rust//rust/platform:i686-linux-android",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:i686-unknown-freebsd",
+            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
+            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-apple-ios",
+            "@rules_rust//rust/platform:x86_64-linux-android",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@remote_binary_dependencies__crossbeam_utils__0_7_2//:crossbeam_utils",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+# Unsupported target "diff" with type "test" omitted

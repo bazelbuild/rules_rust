@@ -1,0 +1,35 @@
+[package]
+name = "compile_with_bazel"
+version = "0.1.0"
+authors = ["Bradlee Speice <bradlee.speice@gmail.com>"]
+
+[dependencies]
+rand = { git = "https://github.com/rust-random/rand.git", tag = "0.4.1" }
+env_logger = { git = "https://github.com/sebasmagri/env_logger.git", tag = "v0.5.5" }
+# Note that we use a (slightly) outdated version of log; because env_logger resolves a version
+# of `log` from crates.io that may clash with the resolution here, we need to force
+# a specific version that's different from what `env_logger` depends on.
+log = { git = "https://github.com/rust-lang-nursery/log.git", rev = "bf40d1f563c" }
+
+[[bin]]
+name = "non_cratesio"
+path = "src/main.rs"
+
+[package.metadata.raze]
+workspace_path = "//remote/non_cratesio/cargo"
+targets = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+genmode = "Remote"
+gen_workspace_prefix = "remote_non_cratesio"
+package_aliases_dir = "cargo"
+default_gen_buildrs = false
+
+[package.metadata.raze.crates.log.'0.4.11']
+additional_flags = [
+    "--cfg=atomic_cas"
+]

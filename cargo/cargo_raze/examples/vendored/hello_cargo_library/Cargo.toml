@@ -1,0 +1,27 @@
+[package]
+name = "compile_with_bazel"
+version = "0.1.0"
+authors = ["Alex McArther <acmcarther@gmail.com>"]
+
+[dependencies]
+log = "=0.3.6"
+fern = "=0.3.5"
+
+[[bin]]
+name = "hello_cargo_library"
+path = "src/main.rs"
+
+[package.metadata.raze]
+workspace_path = "//vendored/hello_cargo_library/cargo"
+targets = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+output_buildfile_suffix = "BUILD.bazel"
+gen_workspace_prefix = "vendored_hello_cargo_library"
+genmode = "Vendored"
+package_aliases_dir = "cargo"
+default_gen_buildrs = false

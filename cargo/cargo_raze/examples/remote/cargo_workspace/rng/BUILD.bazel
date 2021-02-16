@@ -1,0 +1,13 @@
+load("@rules_rust//rust:rust.bzl", "rust_library")
+load("//remote/cargo_workspace/cargo:crates.bzl", "crate_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "rng",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = crate_deps([
+        "rand",
+    ]),
+)

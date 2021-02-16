@@ -1,0 +1,93 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+rust_library(
+    name = "hamcrest2",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.3.0",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__num__0_2_1//:num",
+        "@cargo_raze__regex__1_4_3//:regex",
+    ],
+)
+
+# Unsupported target "all" with type "test" omitted
+
+# Unsupported target "any" with type "test" omitted
+
+# Unsupported target "anything" with type "test" omitted
+
+# Unsupported target "boolean" with type "test" omitted
+
+# Unsupported target "close_to" with type "test" omitted
+
+# Unsupported target "compared_to" with type "test" omitted
+
+# Unsupported target "contains" with type "test" omitted
+
+# Unsupported target "empty" with type "test" omitted
+
+# Unsupported target "equal_to" with type "test" omitted
+
+# Unsupported target "err" with type "test" omitted
+
+# Unsupported target "has" with type "test" omitted
+
+# Unsupported target "len" with type "test" omitted
+
+# Unsupported target "none" with type "test" omitted
+
+# Unsupported target "ok" with type "test" omitted
+
+# Unsupported target "path_exists" with type "test" omitted
+
+# Unsupported target "regex" with type "test" omitted
+
+# Unsupported target "some" with type "test" omitted
+
+# Unsupported target "type_of" with type "test" omitted

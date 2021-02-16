@@ -1,0 +1,31 @@
+{%- if crate.raze_settings.patches %}
+        patches = [
+            {% for patch in crate.raze_settings.patches -%}
+            "{{patch}}",
+            {%- endfor %}
+        ],
+{%- endif %}
+{%- if crate.raze_settings.patch_args %}
+        patch_args = [
+            {% for patch_arg in crate.raze_settings.patch_args -%}
+            "{{patch_arg}}",
+            {%- endfor %}
+        ],
+{%- endif %}
+{%- if crate.raze_settings.patch_cmds %}
+        patch_cmds = [
+            {% for patch_cmd in crate.raze_settings.patch_cmds -%}
+            "{{patch_cmd}}",
+            {%- endfor %}
+        ],
+{%- endif %}
+{%- if crate.raze_settings.patch_cmds_win %}
+        patch_cmds_win = [
+            {% for patch_cmd in crate.raze_settings.patch_cmds_win -%}
+            "{{patch_cmd}}",
+            {%- endfor %}
+        ],
+{%- endif %}
+{%- if crate.raze_settings.patch_tool %}
+        patch_tool = "{{crate.raze_settings.patch_tool}}",
+{%- endif -%}

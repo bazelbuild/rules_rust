@@ -1,0 +1,42 @@
+package(default_visibility = ["//:__subpackages__"])
+
+exports_files([
+    "examples_repository_tools.sh",
+    "examples_repository_tools.bat",
+])
+
+sh_binary(
+    name = "bootstrap",
+    srcs = ["bootstrap.sh"],
+)
+
+sh_binary(
+    name = "publish_new_version",
+    srcs = ["publish-new-version.sh"],
+)
+
+sh_binary(
+    name = "examples_vendor",
+    srcs = ["examples_repository_tools.sh"],
+    args = ["vendor"],
+)
+
+sh_binary(
+    name = "examples_raze",
+    srcs = ["examples_repository_tools.sh"],
+    args = [
+        "raze",
+        "$(location //impl:cargo_raze_bin)",
+    ],
+    data = ["//impl:cargo_raze_bin"],
+)
+
+sh_binary(
+    name = "examples_check",
+    srcs = ["examples_repository_tools.sh"],
+    args = [
+        "check",
+        "$(location //impl:cargo_raze_bin)",
+    ],
+    data = ["//impl:cargo_raze_bin"],
+)

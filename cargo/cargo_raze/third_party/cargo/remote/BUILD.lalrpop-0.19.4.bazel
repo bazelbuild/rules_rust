@@ -1,0 +1,115 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_lalrpop",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "lexer",
+        "pico-args",
+    ],
+    crate_root = "src/main.rs",
+    data = [],
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.19.4",
+    # buildifier: leave-alone
+    deps = [
+        ":lalrpop",
+        "@cargo_raze__ascii_canvas__2_0_0//:ascii_canvas",
+        "@cargo_raze__atty__0_2_14//:atty",
+        "@cargo_raze__bit_set__0_5_2//:bit_set",
+        "@cargo_raze__diff__0_1_12//:diff",
+        "@cargo_raze__ena__0_14_0//:ena",
+        "@cargo_raze__itertools__0_9_0//:itertools",
+        "@cargo_raze__lalrpop_util__0_19_4//:lalrpop_util",
+        "@cargo_raze__petgraph__0_5_1//:petgraph",
+        "@cargo_raze__pico_args__0_3_4//:pico_args",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__regex_syntax__0_6_22//:regex_syntax",
+        "@cargo_raze__string_cache__0_8_1//:string_cache",
+        "@cargo_raze__term__0_5_2//:term",
+        "@cargo_raze__tiny_keccak__2_0_2//:tiny_keccak",
+        "@cargo_raze__unicode_xid__0_2_1//:unicode_xid",
+    ],
+)
+
+rust_library(
+    name = "lalrpop",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "lexer",
+        "pico-args",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.19.4",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__ascii_canvas__2_0_0//:ascii_canvas",
+        "@cargo_raze__atty__0_2_14//:atty",
+        "@cargo_raze__bit_set__0_5_2//:bit_set",
+        "@cargo_raze__diff__0_1_12//:diff",
+        "@cargo_raze__ena__0_14_0//:ena",
+        "@cargo_raze__itertools__0_9_0//:itertools",
+        "@cargo_raze__lalrpop_util__0_19_4//:lalrpop_util",
+        "@cargo_raze__petgraph__0_5_1//:petgraph",
+        "@cargo_raze__pico_args__0_3_4//:pico_args",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__regex_syntax__0_6_22//:regex_syntax",
+        "@cargo_raze__string_cache__0_8_1//:string_cache",
+        "@cargo_raze__term__0_5_2//:term",
+        "@cargo_raze__tiny_keccak__2_0_2//:tiny_keccak",
+        "@cargo_raze__unicode_xid__0_2_1//:unicode_xid",
+    ],
+)

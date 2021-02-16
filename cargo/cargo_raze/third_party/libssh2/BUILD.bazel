@@ -1,0 +1,7 @@
+exports_files(
+    [
+        "BUILD.libssh2.bazel",
+        "WORKSPACE.libssh2.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

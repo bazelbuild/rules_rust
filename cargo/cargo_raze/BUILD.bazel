@@ -1,0 +1,39 @@
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+
+alias(
+    name = "cargo_raze",
+    actual = "//impl:cargo_raze",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "cargo_raze_bin",
+    actual = "//impl:cargo_raze_bin",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "bootstrap",
+    actual = "//tools:bootstrap",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "publish_new_version",
+    actual = "//tools:publish_new_version",
+    visibility = ["//visibility:private"],
+)
+
+test_suite(
+    name = "examples_tests",
+    tests = [
+        "@cargo_raze_examples//tests:examples_tests",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+buildifier(
+    name = "buildifier_check",
+    mode = "check",
+    visibility = ["//visibility:private"],
+)

@@ -1,0 +1,65 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "ls" with type "example" omitted
+
+rust_library(
+    name = "blocking",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.0.2",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__async_channel__1_5_1//:async_channel",
+        "@cargo_raze__async_task__4_0_3//:async_task",
+        "@cargo_raze__atomic_waker__1_0_0//:atomic_waker",
+        "@cargo_raze__fastrand__1_4_0//:fastrand",
+        "@cargo_raze__futures_lite__1_11_3//:futures_lite",
+        "@cargo_raze__once_cell__1_5_2//:once_cell",
+    ],
+)
+
+# Unsupported target "unblock" with type "test" omitted

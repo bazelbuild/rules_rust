@@ -1,0 +1,21 @@
+[package]
+name = "dev_dependencies"
+version = "0.1.0"
+authors = ["UebelAndre <github@uebelandre.com>"]
+
+[[bin]]
+name = "dev_dependencies"
+path = "src/main.rs"
+
+[dependencies]
+ferris-says = "0.2.0"
+
+[dev-dependencies]
+indoc = "1.0.3"
+
+[package.metadata.raze]
+workspace_path = "//remote/dev_dependencies/cargo"
+gen_workspace_prefix = "remote_dev_dependencies"
+genmode = "Remote"
+default_gen_buildrs = true
+package_aliases_dir = "cargo"

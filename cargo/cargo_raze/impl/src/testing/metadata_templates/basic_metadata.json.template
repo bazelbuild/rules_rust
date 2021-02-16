@@ -1,0 +1,66 @@
+{# Cargo.toml
+[package]
+name = "test"
+version = "0.0.1"
+
+[lib]
+path = "not_a_file.rs"
+#}
+{
+    "packages": [
+        {
+            "name": "test",
+            "version": "0.0.1",
+            "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "test",
+                    "src_path": "{{ mock_workspace }}/not_a_file.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "edition": "2015",
+            "links": null
+        }
+    ],
+    "workspace_members": [
+        "test 0.0.1 (path+file://{{ mock_workspace }})"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            }
+        ],
+        "root": "test 0.0.1 (path+file://{{ mock_workspace }})"
+    },
+    "target_directory": "{{ mock_workspace }}/target",
+    "version": 1,
+    "workspace_root": "{{ mock_workspace }}",
+    "metadata": null
+}

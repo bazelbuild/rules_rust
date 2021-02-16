@@ -1,0 +1,7 @@
+exports_files(
+    [
+        "BUILD.openssl.bazel",
+        "WORKSPACE.openssl.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

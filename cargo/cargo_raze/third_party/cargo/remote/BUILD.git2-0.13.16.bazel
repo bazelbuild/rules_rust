@@ -1,0 +1,109 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "add" with type "example" omitted
+
+# Unsupported target "blame" with type "example" omitted
+
+# Unsupported target "cat-file" with type "example" omitted
+
+# Unsupported target "clone" with type "example" omitted
+
+# Unsupported target "diff" with type "example" omitted
+
+# Unsupported target "fetch" with type "example" omitted
+
+# Unsupported target "init" with type "example" omitted
+
+# Unsupported target "log" with type "example" omitted
+
+# Unsupported target "ls-remote" with type "example" omitted
+
+# Unsupported target "pull" with type "example" omitted
+
+# Unsupported target "rev-list" with type "example" omitted
+
+# Unsupported target "rev-parse" with type "example" omitted
+
+# Unsupported target "status" with type "example" omitted
+
+# Unsupported target "tag" with type "example" omitted
+
+rust_library(
+    name = "git2",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "default",
+        "https",
+        "openssl-probe",
+        "openssl-sys",
+        "ssh",
+        "ssh_key_from_memory",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.13.16",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__bitflags__1_2_1//:bitflags",
+        "@cargo_raze__libc__0_2_82//:libc",
+        "@cargo_raze__libgit2_sys__0_12_18_1_1_0//:libgit2_sys",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__url__2_2_0//:url",
+    ] + selects.with_or({
+        # cfg(all(unix, not(target_os = "macos")))
+        (
+            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@cargo_raze__openssl_probe__0_1_2//:openssl_probe",
+            "@cargo_raze__openssl_sys__0_9_60//:openssl_sys",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+# Unsupported target "global_state" with type "test" omitted

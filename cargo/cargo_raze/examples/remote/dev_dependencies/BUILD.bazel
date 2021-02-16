@@ -1,0 +1,18 @@
+load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "dev_dependencies_bin",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = ["@cargo_raze_examples//remote/dev_dependencies/cargo:ferris_says"],
+)
+
+rust_test(
+    name = "dev_dependencies_test",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    proc_macro_deps = ["@cargo_raze_examples//remote/dev_dependencies/cargo:indoc"],
+    deps = ["@cargo_raze_examples//remote/dev_dependencies/cargo:ferris_says"],
+)

@@ -1,0 +1,159 @@
+{# Cargo.toml
+bench = []
+bin = []
+example = []
+test = []
+[badges.maintenance]
+status = "none"
+
+[build-dependencies]
+
+[dependencies]
+
+[dev-dependencies]
+
+[features]
+
+[lib]
+bench = true
+crate-type = []
+doc = true
+doctest = true
+harness = true
+path = "not_a_file.rs"
+plugin = false
+proc-macro = false
+required-features = []
+test = true
+
+[package]
+authors = []
+autobenches = true
+autobins = true
+autoexamples = true
+autotests = true
+categories = []
+edition = "2015"
+keywords = []
+name = "test"
+publish = true
+version = "0.0.1"
+
+[patch]
+
+[profile]
+
+[target]
+
+[workspace]
+default-members = []
+exclude = []
+members = ["some-binary-crate-3.3.3"]
+
+#}
+{# some-binary-crate-3.3.3/Cargo.toml
+[package]
+name = "some-binary-crate"
+version = "3.3.3"
+
+[lib]
+path = "not_a_file.rs"
+
+#}
+{
+    "packages": [
+        {
+            "name": "some-binary-crate",
+            "version": "3.3.3",
+            "id": "some-binary-crate 3.3.3 (path+file://{{ mock_workspace }}/some-binary-crate-3.3.3)",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "some-binary-crate",
+                    "src_path": "{{ mock_workspace }}/some-binary-crate-3.3.3/not_a_file.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/some-binary-crate-3.3.3/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "test",
+            "version": "0.0.1",
+            "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [],
+                    "crate_types": [],
+                    "name": "test",
+                    "src_path": "{{ mock_workspace }}/not_a_file.rs",
+                    "edition": "2015",
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "edition": "2015",
+            "links": null
+        }
+    ],
+    "workspace_members": [
+        "some-binary-crate 3.3.3 (path+file://{{ mock_workspace }}/some-binary-crate-3.3.3)",
+        "test 0.0.1 (path+file://{{ mock_workspace }})"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "some-binary-crate 3.3.3 (path+file://{{ mock_workspace }}/some-binary-crate-3.3.3)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            }
+        ],
+        "root": "test 0.0.1 (path+file://{{ mock_workspace }})"
+    },
+    "target_directory": "{{ mock_workspace }}/target",
+    "version": 1,
+    "workspace_root": "{{ mock_workspace }}",
+    "metadata": null
+}

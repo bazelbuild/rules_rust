@@ -1,0 +1,87 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//remote/binary_dependencies/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "colors" with type "example" omitted
+
+# Unsupported target "colors256" with type "example" omitted
+
+# Unsupported target "cursor_at" with type "example" omitted
+
+# Unsupported target "term" with type "example" omitted
+
+rust_library(
+    name = "console",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "ansi-parsing",
+        "default",
+        "regex",
+        "unicode-width",
+        "winapi-util",
+        "windows-console-colors",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.13.0",
+    # buildifier: leave-alone
+    deps = [
+        "@remote_binary_dependencies__lazy_static__1_4_0//:lazy_static",
+        "@remote_binary_dependencies__libc__0_2_80//:libc",
+        "@remote_binary_dependencies__regex__1_4_1//:regex",
+        "@remote_binary_dependencies__terminal_size__0_1_13//:terminal_size",
+        "@remote_binary_dependencies__unicode_width__0_1_8//:unicode_width",
+    ] + selects.with_or({
+        # cfg(windows)
+        (
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            "@remote_binary_dependencies__encode_unicode__0_3_6//:encode_unicode",
+            "@remote_binary_dependencies__winapi__0_3_9//:winapi",
+            "@remote_binary_dependencies__winapi_util__0_1_5//:winapi_util",
+        ],
+        "//conditions:default": [],
+    }),
+)

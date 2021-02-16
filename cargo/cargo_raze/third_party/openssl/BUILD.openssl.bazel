@@ -1,0 +1,56 @@
+"""An openssl build file based on a snippet found in the github issue:
+https://github.com/bazelbuild/rules_foreign_cc/issues/337
+"""
+
+load("@rules_foreign_cc//tools/build_defs:configure.bzl", "configure_make")
+
+# Read https://wiki.openssl.org/index.php/Compilation_and_Installation
+
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+)
+
+CONFIGURE_OPTIONS = [
+    "no-comp",
+    "no-idea",
+    "no-weak-ssl-ciphers",
+]
+
+configure_make(
+    name = "openssl",
+    configure_command = "config",
+    configure_env_vars = select({
+        "@platforms//os:macos": {"AR": ""},
+        "//conditions:default": {},
+    }),
+    configure_in_place = True,
+    configure_options = select({
+        "@platforms//os:macos": [
+            "ARFLAGS=r",
+            "no-afalgeng",
+            "no-asm",
+            "no-shared",
+        ] + CONFIGURE_OPTIONS,
+        "//conditions:default": [
+            "no-shared",
+        ] + CONFIGURE_OPTIONS,
+    }),
+    lib_source = "@openssl//:all",
+    make_commands = [
+        "make build_libs",
+        "make install_dev",
+    ],
+    static_libraries = [
+        "libcrypto.a",
+        "libssl.a",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gen_dir",
+    srcs = [":openssl"],
+    output_group = "gen_dir",
+    visibility = ["//visibility:public"],
+)

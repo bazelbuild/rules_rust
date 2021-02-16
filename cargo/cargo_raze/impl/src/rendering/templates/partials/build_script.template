@@ -1,0 +1,86 @@
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load-on-top
+load(
+    "@{{ rust_rules_workspace_name }}//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
+
+cargo_build_script(
+    name = "{{ crate_name_sanitized }}_build_script",
+    srcs = glob(["**/*.rs"]),
+    build_script_env = {
+        {%- for key, value in crate.raze_settings.buildrs_additional_environment_variables %}
+        "{{key}}": "{{value}}",
+        {%- endfor %}
+    },
+    crate_features = [
+      {%- for feature in crate.features %}
+        "{{feature}}",
+      {%- endfor %}
+    ],
+    {%- if crate.build_script_target.path %}
+    crate_root = "{{ crate.build_script_target.path }}",
+    {%- else %}
+    crate_root = "build.rs",
+    {%- endif %}
+    {%- set buildrs_data_deps = [] %}
+    {%- for dep in crate.default_deps.build_data_dependencies %}{# Note: build_data_dependencies can only be set when using cargo-raze as a library at the moment #}
+        {%- set_global buildrs_data_deps = buildrs_data_deps | concat(with=dep.buildable_target) %}
+    {%- endfor %}
+    {%- for dep in crate.raze_settings.build_data_dependencies %}
+        {%- set_global buildrs_data_deps = buildrs_data_deps | concat(with=dep) %}
+    {%- endfor %}
+    data = glob(["**"]){%- if buildrs_data_deps %} + [
+    {%- for dep in buildrs_data_deps | sort %}
+        "{{dep}}",
+    {%- endfor %}
+    ],
+    {%- else %},
+    {%- endif %}
+    edition = "{{ crate.edition }}",
+    {%- if crate.default_deps.build_proc_macro_dependencies %}
+    proc_macro_deps = [
+    {%- for dependency in crate.default_deps.build_proc_macro_dependencies %}
+        "{{dependency.buildable_target}}",
+    {%- endfor %}
+    ],
+    {%- endif %}
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "{{ crate.pkg_version }}",
+    visibility = ["//visibility:private"],
+    {%- set buildrs_deps = [] %}
+    {%- for dep in crate.default_deps.build_dependencies %}
+      {%- set_global buildrs_deps = buildrs_deps | concat(with=dep.buildable_target) %}
+    {%- endfor %}
+    {%- for dep in crate.raze_settings.buildrs_additional_deps %}
+      {%- set_global buildrs_deps = buildrs_deps | concat(with=dep) %}
+    {%- endfor %}
+    deps = [
+      {%- for dep in buildrs_deps | sort %}
+        "{{dep}}",
+      {%- endfor %}
+    ]
+    {%- if crate.targeted_deps -%}
+    {% for targeted_dep in crate.targeted_deps %} + selects.with_or({
+        # {{ targeted_dep.target }}
+        (
+    {%- for condition in targeted_dep.conditions %}
+            "{{ condition }}",
+    {%- endfor %}
+        ): [
+    {%- for dependency in targeted_dep.deps.build_dependencies %}
+            "{{ dependency.buildable_target }}",
+    {%- endfor %}
+        ],
+        "//conditions:default": [],
+    })
+    {%- endfor -%}
+    {%- else -%}
+    {%- endif %},
+)

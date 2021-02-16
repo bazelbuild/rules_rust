@@ -1,0 +1,14 @@
+{% for targeted_dep in crate.targeted_deps %} + selects.with_or({
+        # {{ targeted_dep.target }}
+        (
+{%- for condition in targeted_dep.conditions %}
+            "{{ condition }}",
+{%- endfor %}
+        ): [
+{%- for dependency in targeted_dep.deps.dependencies %}
+            "{{ dependency.buildable_target }}",
+{%- endfor %}
+        ],
+        "//conditions:default": [],
+    })
+{%- endfor -%}
