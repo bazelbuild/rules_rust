@@ -38,8 +38,10 @@ load(
 )
 load(
     "@rules_rust//rust:rust.bzl",
+    _rust_analyzer = "rust_analyzer",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
+    _rust_clippy = "rust_clippy",
     _rust_doc = "rust_doc",
     _rust_doc_test = "rust_doc_test",
     _rust_library = "rust_library",
@@ -88,3 +90,6 @@ rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
+
+rust_clippy = _rust_clippy
+rust_analyzer = _rust_analyzer

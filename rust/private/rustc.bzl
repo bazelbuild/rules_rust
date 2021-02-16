@@ -48,7 +48,7 @@ AliasableDepInfo = provider(
 )
 
 DepInfo = provider(
-    doc = "A provider contianing information about a Crate's dependencies.",
+    doc = "A provider containing information about a Crate's dependencies.",
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[CrateInfo]",
