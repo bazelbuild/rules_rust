@@ -29,6 +29,11 @@ load(
     _rust_test_binary = "rust_test_binary",
 )
 load(
+    "//rust/private:rust_analyzer.bzl",
+    _rust_analyzer = "rust_analyzer",
+    _rust_analyzer_aspect = "rust_analyzer_aspect",
+)
+load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
 )
@@ -66,7 +71,13 @@ rust_clippy_aspect = _rust_clippy_aspect
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 rust_clippy = _rust_clippy
-# See @rules_rust//rust/private:clippy.bzl for a complete description.
+# See @rules_rust//rust:private/clippy.bzl for a complete description.
+
+rust_analyzer_aspect = _rust_analyzer_aspect
+# See @rules_rust//rust:private/rust_analyzer.bzl for a complete description.
+
+rust_analyzer = _rust_analyzer
+# See @rules_rust//rust:private/rust_analyzer.bzl for a complete description.
 
 error_format = _error_format
 # See @rules_rust//rust/private:rustc.bzl for a complete description.

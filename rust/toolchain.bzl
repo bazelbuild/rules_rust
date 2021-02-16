@@ -25,6 +25,7 @@ def _rust_toolchain_impl(ctx):
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
         rustc_lib = ctx.attr.rustc_lib,
+        rustc_src = ctx.attr.rustc_src,
         rust_lib = ctx.attr.rust_lib,
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
@@ -102,6 +103,9 @@ rust_toolchain = rule(
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
+        ),
+        "rustc_src": attr.label(
+            doc = "The source code of rustc.",
         ),
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",

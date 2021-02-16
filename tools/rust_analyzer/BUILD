@@ -1,0 +1,15 @@
+load(
+    "//rust:rust.bzl",
+    "rust_binary",
+)
+
+rust_binary(
+    name = "gen_rust_project",
+    srcs = ["main.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/rust_analyzer/raze:anyhow",
+        "//tools/rust_analyzer/raze:structopt",
+    ],
+)
