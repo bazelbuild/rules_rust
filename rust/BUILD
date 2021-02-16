@@ -6,6 +6,7 @@ exports_files([
     "known_shas.bzl",
     "repositories.bzl",
     "rust.bzl",
+    "defs.bzl",
     "toolchain.bzl",
 ])
 

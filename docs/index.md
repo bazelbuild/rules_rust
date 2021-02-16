@@ -39,7 +39,7 @@ supported in certain environments.
 
 ## Rules
 
-- [rust](rust.md): standard rust rules for building and testing libraries and binaries.
+- [defs](defs.md): standard rust rules for building and testing libraries and binaries.
 - [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
 - [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.

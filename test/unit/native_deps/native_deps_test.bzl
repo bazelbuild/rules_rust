@@ -2,9 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-
-# buildifier: disable=bzl-visibility
-load("//rust/private:rust.bzl", "rust_binary", "rust_library")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
 def _assert_argv_contains_not(env, action, flag):
     asserts.true(
@@ -81,55 +79,35 @@ def _bin_has_native_libs_test_impl(ctx):
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
-lib_has_no_native_libs_test = analysistest.make(_lib_has_no_native_libs_test_impl)
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
-dylib_has_native_libs_test = analysistest.make(_dylib_has_native_libs_test_impl)
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
 
 def _native_dep_test():
     rust_library(
-        name = "lib_has_no_native_dep",
-        srcs = ["lib_using_native_dep.rs"],
-        deps = [":native_dep"],
-        crate_type = "lib",
-    )
-
-    rust_library(
         name = "rlib_has_no_native_dep",
         srcs = ["lib_using_native_dep.rs"],
         deps = [":native_dep"],
-        crate_type = "rlib",
     )
 
-    rust_library(
+    rust_static_library(
         name = "staticlib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
         deps = [":native_dep"],
-        crate_type = "staticlib",
     )
 
-    rust_library(
-        name = "dylib_has_native_dep",
-        srcs = ["lib_using_native_dep.rs"],
-        deps = [":native_dep"],
-        crate_type = "dylib",
-    )
-
-    rust_library(
+    rust_shared_library(
         name = "cdylib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
         deps = [":native_dep"],
-        crate_type = "cdylib",
     )
 
-    rust_library(
+    rust_proc_macro(
         name = "proc_macro_has_native_dep",
         srcs = ["proc_macro_using_native_dep.rs"],
         deps = [":native_dep"],
-        crate_type = "proc-macro",
         edition = "2018",
     )
 
@@ -144,10 +122,6 @@ def _native_dep_test():
         srcs = ["native_dep.cc"],
     )
 
-    lib_has_no_native_libs_test(
-        name = "lib_has_no_native_libs_test",
-        target_under_test = ":lib_has_no_native_dep",
-    )
     rlib_has_no_native_libs_test(
         name = "rlib_has_no_native_libs_test",
         target_under_test = ":rlib_has_no_native_dep",
@@ -155,10 +129,6 @@ def _native_dep_test():
     staticlib_has_native_libs_test(
         name = "staticlib_has_native_libs_test",
         target_under_test = ":staticlib_has_native_dep",
-    )
-    dylib_has_native_libs_test(
-        name = "dylib_has_native_libs_test",
-        target_under_test = ":dylib_has_native_dep",
     )
     cdylib_has_native_libs_test(
         name = "cdylib_has_native_libs_test",
@@ -184,10 +154,8 @@ def native_deps_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
-            ":lib_has_no_native_libs_test",
             ":rlib_has_no_native_libs_test",
             ":staticlib_has_native_libs_test",
-            ":dylib_has_native_libs_test",
             ":cdylib_has_native_libs_test",
             ":proc_macro_has_native_libs_test",
             ":bin_has_native_libs_test",

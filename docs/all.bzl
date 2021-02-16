@@ -30,14 +30,7 @@ load(
     _rust_proto_toolchain = "rust_proto_toolchain",
 )
 load(
-    "@rules_rust//rust:repositories.bzl",
-    _rust_repositories = "rust_repositories",
-    _rust_repository_set = "rust_repository_set",
-    _rust_toolchain_repository = "rust_toolchain_repository",
-    _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
-)
-load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     _rust_analyzer = "rust_analyzer",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
@@ -45,7 +38,17 @@ load(
     _rust_doc = "rust_doc",
     _rust_doc_test = "rust_doc_test",
     _rust_library = "rust_library",
+    _rust_proc_macro = "rust_proc_macro",
+    _rust_shared_library = "rust_shared_library",
+    _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
+)
+load(
+    "@rules_rust//rust:repositories.bzl",
+    _rust_repositories = "rust_repositories",
+    _rust_repository_set = "rust_repository_set",
+    _rust_toolchain_repository = "rust_toolchain_repository",
+    _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
@@ -61,8 +64,11 @@ load(
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 
-rust_library = _rust_library
 rust_binary = _rust_binary
+rust_library = _rust_library
+rust_static_library = _rust_static_library
+rust_shared_library = _rust_shared_library
+rust_proc_macro = _rust_proc_macro
 rust_test = _rust_test
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test

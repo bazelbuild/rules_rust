@@ -31,9 +31,12 @@ PAGES = {
     "cargo_build_script": [
         "cargo_build_script",
     ],
-    "rust": [
-        "rust_library",
+    "defs": [
         "rust_binary",
+        "rust_library",
+        "rust_static_library",
+        "rust_shared_library",
+        "rust_proc_macro",
         "rust_benchmark",
         "rust_test",
     ],
