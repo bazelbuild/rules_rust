@@ -48,7 +48,7 @@ AliasableDepInfo = provider(
 )
 
 DepInfo = provider(
-    doc = "A provider contianing information about a Crate's dependencies.",
+    doc = "A provider containing information about a Crate's dependencies.",
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[CrateInfo]",
@@ -585,13 +585,6 @@ def rustc_compile_action(
         build_env_file,
         build_flags_files,
     )
-
-    # Make the user defined enviroment variables available to the action
-    expanded_env = dict()
-    data = getattr(ctx.attr, "data", [])
-    for key in environ:
-        expanded_env[key] = ctx.expand_location(environ[key], data)
-    env.update(expanded_env)
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
         formatted_version = " v{}".format(ctx.attr.version)

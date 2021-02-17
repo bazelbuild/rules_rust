@@ -37,11 +37,19 @@ PAGES = {
         "rust_benchmark",
         "rust_test",
     ],
+    "rust_analyzer": [
+        "rust_analyzer",
+        "rust_analyzer_aspect",
+    ],
     "rust_bindgen": [
         "rust_bindgen_library",
         "rust_bindgen_repositories",
         "rust_bindgen_toolchain",
         "rust_bindgen",
+    ],
+    "rust_clippy": [
+        "rust_clippy",
+        "rust_clippy_aspect",
     ],
     "rust_doc": [
         "rust_doc",

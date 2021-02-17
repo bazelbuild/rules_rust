@@ -1,0 +1,19 @@
+[package]
+name = "compile_with_bazel"
+version = "0.0.0"
+edition="2018"
+
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+anyhow = "1.0"
+structopt = "0.3"
+
+[package.metadata.raze]
+genmode = "Remote"
+workspace_path = "//tools/rust_analyzer/raze"
+gen_workspace_prefix = "rules_rust_tools_rust_analyzer"
+rust_rules_workspace_name = "rules_rust"
+package_aliases_dir = "."
+default_gen_buildrs = true

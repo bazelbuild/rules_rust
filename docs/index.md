@@ -54,7 +54,7 @@ You can also browse the [full API in one page](flatten.md).
 To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
 
 ```python
-rust_repositories(version = "1.49.0", edition="2018")
+rust_repositories(version = "1.50.0", edition="2018")
 ```
 
 As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
@@ -66,7 +66,7 @@ rust_repositories(version = "nightly", iso_date = "2020-12-30", edition="2018")
 Similarly, `rustfmt_version` may also be configured:
 
 ```python
-rust_repositories(rustfmt_version = "1.49.0")
+rust_repositories(rustfmt_version = "1.50.0")
 ```
 
 ## External Dependencies

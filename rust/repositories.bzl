@@ -17,7 +17,7 @@ DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.g
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.49.0",
+        version = "1.50.0",
         iso_date = None,
         rustfmt_version = None,
         edition = None,
@@ -265,6 +265,26 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(system),
     )
 
+_build_file_for_rustc_src = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+filegroup(
+    name = "rustc_src",
+    srcs = glob(
+        [
+            "lib/rustlib/src/**/*.rs",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rustc_src():
+    """Emits a BUILD file for the rustc src extracted files."""
+
+    return _build_file_for_rustc_src
+
+
 _build_file_for_clippy_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
@@ -318,6 +338,7 @@ rust_toolchain(
     cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
     rustc_lib = "@{workspace_name}//:rustc_lib",
+    rustc_src  = "@{workspace_name}//:rustc_src",
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
@@ -512,6 +533,32 @@ def _load_rust_compiler(ctx):
 
     return compiler_build_file
 
+def _load_rust_src(ctx):
+    """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
+
+    Args:
+        ctx (ctx): A repository_ctx.
+    Returns:
+        string: The BUILD file contents for the rust source code
+    """
+    tool_suburl = produce_tool_suburl("rustc", "src", ctx.attr.version, ctx.attr.iso_date)
+    static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
+    url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
+
+    tool_path = produce_tool_path("rustc", "src", ctx.attr.version)
+    archive_path = tool_path + ".tar.gz"
+    ctx.download(
+        url,
+        output = archive_path,
+        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or "",
+    )
+    ctx.extract(
+        archive_path,
+        output = "lib/rustlib/src",
+        stripPrefix = tool_path,
+    )
+    return BUILD_for_rustc_src()
+
 def _load_rust_stdlib(ctx, target_triple):
     """Loads a rust standard library and yields corresponding BUILD for it
 
@@ -594,7 +641,7 @@ def _rust_toolchain_repository_impl(ctx):
 
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    build_components = [_load_rust_compiler(ctx)]
+    build_components = [_load_rust_compiler(ctx), _load_rust_src(ctx)]
 
     if ctx.attr.rustfmt_version:
         build_components.append(_load_rustfmt(ctx))

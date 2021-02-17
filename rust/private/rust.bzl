@@ -15,7 +15,7 @@
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "expand_locations", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -219,6 +219,99 @@ def _rust_binary_impl(ctx):
         ),
     )
 
+def _create_test_launcher(ctx, toolchain, output, providers):
+    """Create a process wrapper to ensure runtime environment variables are defined for the test binary
+
+    Args:
+        ctx (ctx): The rule's context object
+        toolchain (rust_toolchain): The current rust toolchain
+        output (File): The output File that will be produced, depends on crate type.
+        providers (list): Providers from a rust compile action. See `rustc_compile_action`
+
+    Returns:
+        list: A list of providers similar to `rustc_compile_action` but with modified default info
+    """
+
+    args = ctx.actions.args()
+
+    # TODO: It's unclear if the toolchain is in the same configuration as the `_launcher` attribute
+    # This should be investigated but for now, we generally assume if the target environment is windows,
+    # the execution environment is windows.
+    if toolchain.os == "windows":
+        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher.exe"))
+        # Because the windows target is a batch file, it expects native windows paths (with backslashes)
+        args.add_all([
+            ctx.executable._launcher.path.replace("/", "\\"),
+            launcher.path.replace("/", "\\"),
+        ])
+    else:
+        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher"))
+        args.add_all([
+            ctx.executable._launcher,
+            launcher,
+        ])
+
+    # Because returned executables must be created from the same rule, the 
+    # launcher target is simply copied and exposed. 
+    ctx.actions.run(
+        outputs = [launcher],
+        tools = [ctx.executable._launcher],
+        mnemonic = "GeneratingLauncher",
+        executable = ctx.executable._launcher_installer,
+        arguments = [args],
+    )
+
+    # Get data attribute
+    data = getattr(ctx.attr, "data", [])
+
+    # Expand the environment variables and write them to a file
+    environ_file = ctx.actions.declare_file(launcher.basename + ".launchfiles/env")
+    environ = expand_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        data,
+    )
+
+    # Convert the environment variables into a list to be written into a file.
+    environ_list = []
+    for key, value in sorted(environ.items()):
+        environ_list.extend([key, value])
+
+    ctx.actions.write(
+        output = environ_file,
+        content = "\n".join(environ_list)
+    )
+
+    launcher_files = [environ_file]
+
+    # Replace the `DefaultInfo` provider in the returned list
+    default_info = None
+    for i in range(len(providers)):
+        if type(providers[i]) == "DefaultInfo":
+            default_info = providers[i]
+            providers.pop(i)
+            break
+
+    if not default_info:
+        fail("No DefaultInfo provider returned from `rustc_compile_action`")
+
+    providers.extend([
+        DefaultInfo(
+            files = default_info.files,
+            runfiles = default_info.default_runfiles.merge(
+                # The output is now also considered a runfile
+                ctx.runfiles(files = launcher_files + [output]),
+            ),
+            executable = launcher,
+        ),
+        OutputGroupInfo(
+            launcher_files = depset(launcher_files),
+            output = depset([output]),
+        ),
+    ])
+
+    return providers
+
 def _rust_test_common(ctx, toolchain, output):
     """Builds a Rust test binary.
 
@@ -267,14 +360,15 @@ def _rust_test_common(ctx, toolchain, output):
             is_test = True,
         )
 
-    return rustc_compile_action(
+    providers = rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
         crate_type = crate_type,
         crate_info = target,
         rust_flags = ["--test"],
-        environ = ctx.attr.env,
     )
+
+    return _create_test_launcher(ctx, toolchain, output, providers)
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -509,6 +603,23 @@ _rust_test_attrs = {
             Specifies additional environment variables to set when the test is executed by bazel test. 
             Values are subject to `$(execpath)` and 
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+        """),
+    ),
+    "_launcher": attr.label(
+        executable = True,
+        default = Label("//util/launcher:launcher"),
+        cfg = "exec",
+        doc = _tidy("""
+            A launcher executable for loading environment and argument files passed in via the `env` attribute
+            and ensuring the variables are set for the underlying test executable.
+        """),
+    ),
+    "_launcher_installer": attr.label(
+        executable = True,
+        default = Label("//util/launcher:installer"),
+        cfg = "exec",
+        doc = _tidy("""
+            A helper script for creating an installer within the test rule.
         """),
     ),
 }

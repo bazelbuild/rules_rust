@@ -82,6 +82,8 @@ def _build_script_impl(ctx):
         "CARGO_PKG_NAME": crate_name,
         "HOST": toolchain.exec_triple,
         "OPT_LEVEL": compilation_mode_opt_level,
+        # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
+        "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_triple,
         # OUT_DIR is set by the runner itself, rather than on the action.

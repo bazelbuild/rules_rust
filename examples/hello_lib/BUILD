@@ -1,5 +1,6 @@
 load(
     "@rules_rust//rust:rust.bzl",
+    "rust_analyzer",
     "rust_doc",
     "rust_doc_test",
     "rust_library",
@@ -84,4 +85,9 @@ rust_doc(
 rust_doc_test(
     name = "hello_lib_doc_test",
     dep = ":hello_lib",
+)
+
+rust_analyzer(
+    name = "hello_rust_analyzer",
+    targets = [":hello_lib"],
 )
