@@ -645,7 +645,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         list: A list containing the CcInfo provider
     """
 
-    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib") or getattr(ctx.attr, "out_binary", False):
+    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib", "rlib", "lib") or getattr(ctx.attr, "out_binary", False):
         return []
 
     if crate_info.type == "staticlib":
@@ -654,6 +654,19 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
             static_library = crate_info.output,
+        )
+    elif crate_info.type in ("rlib", "lib"):
+        # bazel hard-codes a check for endswith((".a", ".pic.a",
+        # ".lib")) in create_library_to_link, so we work around that
+        # by creating a symlink to the .rlib with a .a extension.
+        dot_a = ctx.actions.declare_file(crate_info.name + ".a", sibling = crate_info.output)
+        ctx.actions.symlink(output = dot_a, target_file = crate_info.output)
+        # TODO(hlopko): handle PIC/NOPIC correctly
+        library_to_link = cc_common.create_library_to_link(
+            actions = ctx.actions,
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            static_library = dot_a,
         )
     elif crate_info.type == "cdylib":
         library_to_link = cc_common.create_library_to_link(
