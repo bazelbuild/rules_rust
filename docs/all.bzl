@@ -46,6 +46,8 @@ load(
     _rust_doc_test = "rust_doc_test",
     _rust_library = "rust_library",
     _rust_test = "rust_test",
+    _error_format = "error_format",
+    _extra_codegen = "extra_codegen",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
@@ -66,6 +68,8 @@ rust_binary = _rust_binary
 rust_test = _rust_test
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test
+error_format = _error_format
+extra_codegen = _extra_codegen
 
 rust_benchmark = _rust_benchmark
 rust_proto_library = _rust_proto_library

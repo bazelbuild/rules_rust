@@ -36,6 +36,8 @@ PAGES = {
         "rust_binary",
         "rust_benchmark",
         "rust_test",
+        "error_format",
+        "extra_codegen",
     ],
     "rust_analyzer": [
         "rust_analyzer",

@@ -67,6 +67,11 @@ ErrorFormatInfo = provider(
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
+ExtraCodegenInfo = provider(
+    doc = "Pass additional --codegen arguments for each value",
+    fields = {"extra_codegen": "List[string] Extra codegen arguments to pass"},
+)
+
 def _get_rustc_env(ctx, toolchain):
     """Gathers rustc environment variables
 
@@ -460,6 +465,8 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
+    if hasattr(ctx.attr, "_extra_codegen") and crate_info.type != "proc-macro":
+        args.add_all(["--codegen=" + x for x in ctx.attr._extra_codegen[ExtraCodegenInfo].extra_codegen])
 
     # For determinism to help with build distribution and such
     args.add("--remap-path-prefix=${pwd}=.")
@@ -864,11 +871,31 @@ def _error_format_impl(ctx):
     return [ErrorFormatInfo(error_format = raw)]
 
 error_format = rule(
-    doc = (
-        "A helper rule for controlling the rustc " +
-        "[--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag."
-    ),
+    doc = ("""
+A helper rule for controlling the rustc
+[--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format)
+flag. Valid values match the documented values of --error-format.
+
+Typical usage is to pass `--@rules_rust//:error_format=<format>` to `bazel build`, e.g. for
+machine-readable output, `--@rules_rust//:error_format=json`.
+"""),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
+)
+
+def _extra_codegen_impl(ctx):
+    return ExtraCodegenInfo(extra_codegen = ctx.build_setting_value)
+
+extra_codegen = rule(
+    doc = ("""
+A helper rule for passing [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html)
+parameters to rustc for ALL targets, such as `lto=thin`. Codegen parameters that apply only to
+single targets should use the regular rule parameter `rustc_flags`.
+
+Typical usage is to pass `--@rules_rust//:extra_codgen=<option>` to `bazel build, e.g. for LTO,
+`--@rules_rust//:extra_codegen=lto=thin`. This flag may be passed multiple times for multiple
+codegen parameters.
+"""),
+    implementation = _extra_codegen_impl,
+    build_setting = config.string_list(flag = True),
 )

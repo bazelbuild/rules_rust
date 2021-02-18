@@ -36,6 +36,7 @@ load(
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_codegen = "extra_codegen",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -80,6 +81,9 @@ rust_analyzer = _rust_analyzer
 # See @rules_rust//rust:private/rust_analyzer.bzl for a complete description.
 
 error_format = _error_format
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+extra_codegen = _extra_codegen
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common

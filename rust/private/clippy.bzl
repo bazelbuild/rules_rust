@@ -145,6 +145,7 @@ rust_clippy_aspect = aspect(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_error_format": attr.label(default = "//:error_format"),
+        "_extra_codegen": attr.label(default = "//:extra_codegen"),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,

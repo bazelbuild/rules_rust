@@ -543,7 +543,10 @@ _common_attrs = {
         """),
     ),
     "rustc_flags": attr.string_list(
-        doc = "List of compiler flags passed to `rustc`.",
+        doc = _tidy("""
+            List of compiler flags passed to `rustc` for this target. For flags that should be
+            passed to all targets, see [--@rules_rust//:extra_codegen](#extra_codegen)
+        """)
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
     # "name": attr.string(
@@ -567,6 +570,7 @@ _common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_error_format": attr.label(default = "//:error_format"),
+    "_extra_codegen": attr.label(default = "//:extra_codegen"),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,
