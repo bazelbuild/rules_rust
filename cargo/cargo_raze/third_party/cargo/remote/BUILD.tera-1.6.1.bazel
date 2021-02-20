@@ -1,0 +1,78 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+rust_library(
+    name = "tera",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "builtins",
+        "chrono",
+        "chrono-tz",
+        "default",
+        "humansize",
+        "percent-encoding",
+        "rand",
+        "slug",
+        "unic-segment",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [] + glob(["**/*.pest"]),
+    edition = "2018",
+    proc_macro_deps = [
+        "@cargo_raze__pest_derive__2_1_0//:pest_derive",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.6.1",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__chrono__0_4_19//:chrono",
+        "@cargo_raze__chrono_tz__0_5_3//:chrono_tz",
+        "@cargo_raze__globwalk__0_8_1//:globwalk",
+        "@cargo_raze__humansize__1_1_0//:humansize",
+        "@cargo_raze__lazy_static__1_4_0//:lazy_static",
+        "@cargo_raze__percent_encoding__2_1_0//:percent_encoding",
+        "@cargo_raze__pest__2_1_3//:pest",
+        "@cargo_raze__rand__0_8_2//:rand",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__serde__1_0_120//:serde",
+        "@cargo_raze__serde_json__1_0_61//:serde_json",
+        "@cargo_raze__slug__0_1_4//:slug",
+        "@cargo_raze__unic_segment__0_9_0//:unic_segment",
+    ],
+)

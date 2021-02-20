@@ -1,0 +1,182 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "mutex" with type "bench" omitted
+
+# Unsupported target "task" with type "bench" omitted
+
+# Unsupported target "task_local" with type "bench" omitted
+
+# Unsupported target "a-chat" with type "example" omitted
+
+# Unsupported target "hello-world" with type "example" omitted
+
+# Unsupported target "line-count" with type "example" omitted
+
+# Unsupported target "list-dir" with type "example" omitted
+
+# Unsupported target "logging" with type "example" omitted
+
+# Unsupported target "print-file" with type "example" omitted
+
+# Unsupported target "socket-timeouts" with type "example" omitted
+
+# Unsupported target "stdin-echo" with type "example" omitted
+
+# Unsupported target "stdin-timeout" with type "example" omitted
+
+# Unsupported target "surf-web" with type "example" omitted
+
+# Unsupported target "task-local" with type "example" omitted
+
+# Unsupported target "task-name" with type "example" omitted
+
+# Unsupported target "tcp-client" with type "example" omitted
+
+# Unsupported target "tcp-echo" with type "example" omitted
+
+# Unsupported target "tcp-ipv4-and-6-echo" with type "example" omitted
+
+# Unsupported target "udp-client" with type "example" omitted
+
+# Unsupported target "udp-echo" with type "example" omitted
+
+rust_library(
+    name = "async_std",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "alloc",
+        "async-channel",
+        "async-global-executor",
+        "async-io",
+        "async-lock",
+        "async-process",
+        "crossbeam-utils",
+        "default",
+        "futures-channel",
+        "futures-core",
+        "futures-io",
+        "futures-lite",
+        "gloo-timers",
+        "kv-log-macro",
+        "log",
+        "memchr",
+        "num_cpus",
+        "once_cell",
+        "pin-project-lite",
+        "pin-utils",
+        "slab",
+        "std",
+        "unstable",
+        "wasm-bindgen-futures",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.9.0",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__async_channel__1_5_1//:async_channel",
+        "@cargo_raze__async_lock__2_3_0//:async_lock",
+        "@cargo_raze__crossbeam_utils__0_8_1//:crossbeam_utils",
+        "@cargo_raze__futures_core__0_3_12//:futures_core",
+        "@cargo_raze__futures_io__0_3_12//:futures_io",
+        "@cargo_raze__kv_log_macro__1_0_7//:kv_log_macro",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__memchr__2_3_4//:memchr",
+        "@cargo_raze__num_cpus__1_13_0//:num_cpus",
+        "@cargo_raze__once_cell__1_5_2//:once_cell",
+        "@cargo_raze__pin_project_lite__0_2_4//:pin_project_lite",
+        "@cargo_raze__pin_utils__0_1_0//:pin_utils",
+        "@cargo_raze__slab__0_4_2//:slab",
+    ] + selects.with_or({
+        # cfg(not(target_os = "unknown"))
+        (
+            "@rules_rust//rust/platform:aarch64-apple-darwin",
+            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@rules_rust//rust/platform:i686-apple-darwin",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@cargo_raze__async_global_executor__2_0_2//:async_global_executor",
+            "@cargo_raze__async_io__1_3_1//:async_io",
+            "@cargo_raze__async_process__1_0_1//:async_process",
+            "@cargo_raze__futures_lite__1_11_3//:futures_lite",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+# Unsupported target "addr" with type "test" omitted
+
+# Unsupported target "block_on" with type "test" omitted
+
+# Unsupported target "buf_writer" with type "test" omitted
+
+# Unsupported target "channel" with type "test" omitted
+
+# Unsupported target "collect" with type "test" omitted
+
+# Unsupported target "condvar" with type "test" omitted
+
+# Unsupported target "io_timeout" with type "test" omitted
+
+# Unsupported target "mutex" with type "test" omitted
+
+# Unsupported target "rwlock" with type "test" omitted
+
+# Unsupported target "stream" with type "test" omitted
+
+# Unsupported target "task_local" with type "test" omitted
+
+# Unsupported target "tcp" with type "test" omitted
+
+# Unsupported target "timeout" with type "test" omitted
+
+# Unsupported target "udp" with type "test" omitted
+
+# Unsupported target "uds" with type "test" omitted
+
+# Unsupported target "verbose_errors" with type "test" omitted

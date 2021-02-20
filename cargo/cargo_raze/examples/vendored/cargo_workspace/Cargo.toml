@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "num_printer",
+    "printer",
+    "rng",
+]
+
+[workspace.metadata.raze]
+workspace_path = "//vendored/cargo_workspace/cargo"
+gen_workspace_prefix = "vendored_cargo_workspace"
+genmode = "Vendored"
+default_gen_buildrs = true
+package_aliases_dir = "cargo"
+experimental_api = true
+render_package_aliases = false

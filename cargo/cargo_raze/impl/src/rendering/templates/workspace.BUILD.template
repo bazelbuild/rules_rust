@@ -1,0 +1,38 @@
+{%- include "templates/partials/header.template" %}
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+{%- if crates %}
+
+# Aliased targets
+{%- for crate in crates %}
+{%- if crate.is_workspace_member_dependency and crate.lib_target_name %}
+{%- set crate_name_sanitized = crate.pkg_name | replace(from="-", to="_") %}
+alias(
+    name = "{{crate_name_sanitized}}",
+    actual = "{{crate.workspace_path_to_crate}}:{{crate_name_sanitized}}",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+{%  endif %}
+{%- for aliased_target in crate.raze_settings.extra_aliased_targets %}
+alias(
+    # Extra aliased target, from raze configuration
+    # N.B.: The exact form of this is subject to change.
+    name = "{{aliased_target}}",
+    actual = "{{crate.workspace_path_to_crate}}:{{aliased_target}}",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+{%  endfor %}
+{%- endfor %}
+{%- else %}
+
+# No targets defined
+{% endif %}

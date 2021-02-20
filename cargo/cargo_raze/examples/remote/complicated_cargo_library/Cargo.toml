@@ -1,0 +1,38 @@
+[package]
+name = "compile_with_bazel"
+version = "0.1.0"
+
+[[bin]]
+name = "complicated_cargo_library"
+path = "src/main.rs"
+
+[dependencies]
+# Newer versions of libloading don't depend on C code anymore, so we're using an older version to
+# test additional_build_file.
+libloading = "=0.7.0"
+regex = "=1.4.3"
+security-framework-sys = "=2.0.0"
+specs = "=0.16.1"
+
+[package.metadata.raze]
+workspace_path = "//remote/complicated_cargo_library/cargo"
+gen_workspace_prefix = "remote_complicated_cargo_library"
+genmode = "Remote"
+package_aliases_dir = "cargo"
+
+[package.metadata.raze.crates.regex.'1.4.3']
+skipped_deps = [
+  # This will break the regex crate
+  #"regex-syntax-0.4.2"
+]
+additional_deps = [
+  # Add an unused dep
+  "@remote_complicated_cargo_library__specs__0_16_1//:specs"
+]
+additional_flags = [
+  # Add an unused flag
+  "--cfg=not_used"
+]
+# Add an unused environment variable
+additional_env = { NOT_USED_KEY = "not_used_value" }
+

@@ -1,0 +1,8 @@
+[package]
+name = "printer"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+rng = { path = "../rng" }
+ferris-says = "0.2.0"

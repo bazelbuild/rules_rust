@@ -1,0 +1,40 @@
+[package]
+name = "complicated_cargo_library"
+version = "0.1.0"
+
+[dependencies]
+conduit-mime-types = "0.7.3"
+regex = "0.2.5"
+security-framework-sys = "0.2.2"
+specs = "0.10.0"
+
+[[bin]]
+name = "complicated_cargo_library"
+path = "src/main.rs"
+
+[package.metadata.raze]
+workspace_path = "//vendored/complicated_cargo_library/cargo"
+gen_workspace_prefix = "vendored_complicated_cargo_library"
+genmode = "Vendored"
+package_aliases_dir = "cargo"
+default_gen_buildrs = false
+
+[package.metadata.raze.crates.proc-macro2.'0.4.30']
+additional_flags = [
+    "--cfg=use_proc_macro",
+]
+
+[package.metadata.raze.crates.regex.'0.2.11']
+additional_deps = [
+  # Add an unused dep
+  "//vendored/complicated_cargo_library/cargo:specs"
+]
+additional_flags = [
+  # Add an unused flag
+  "--cfg=not_used"
+]
+# Add an unused environment variable
+additional_env = { NOT_USED_KEY = "not_used_value" }
+
+[package.metadata.raze.crates.conduit-mime-types.'0.7.3']
+data_attr = "glob([\"data/**\"])"

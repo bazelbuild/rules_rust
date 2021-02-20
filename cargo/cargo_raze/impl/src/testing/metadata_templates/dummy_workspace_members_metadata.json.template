@@ -1,0 +1,312 @@
+{# This metadata came from a workspace with 3 `Cargo.toml` files. #}
+{# Cargo.toml
+
+[workspace]
+members = [
+    "lib_a",
+    "lib_b",
+]
+
+#}
+{# lib_a/Cargo.toml
+
+[package]
+name = "lib_a"
+version = "0.0.1"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+unicode-xid = "0.2.1"
+
+#}
+{# lib_b/Cargo.toml
+
+[package]
+name = "lib_b"
+version = "0.0.1"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+unicode-xid = "0.1.0"
+
+#}
+{
+    "packages": [
+        {
+            "name": "lib_a",
+            "version": "0.0.1",
+            "id": "lib_a 0.0.1 (path+file://{{ mock_workspace }}/lib_a)",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [
+                {
+                    "name": "unicode-xid",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "lib_a",
+                    "src_path": "{{ mock_workspace }}/lib_a/src/lib.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/lib_a/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "lib_b",
+            "version": "0.0.1",
+            "id": "lib_b 0.0.1 (path+file://{{ mock_workspace }}/lib_b)",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [
+                {
+                    "name": "unicode-xid",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "lib_b",
+                    "src_path": "{{ mock_workspace }}/lib_b/src/lib.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/lib_b/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "unicode-xid",
+            "version": "0.1.0",
+            "id": "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "Determine whether characters have the XID_Start\nor XID_Continue properties according to\nUnicode Standard Annex #31.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "unicode-xid",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/unicode-xid-0.1.0/src/lib.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {
+                "bench": [],
+                "default": [],
+                "no_std": []
+            },
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/unicode-xid-0.1.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "erick.tryzelaar <erick.tryzelaar@gmail.com>",
+                "kwantam <kwantam@gmail.com>"
+            ],
+            "categories": [],
+            "keywords": [
+                "text",
+                "unicode",
+                "xid"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/unicode-rs/unicode-xid",
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "unicode-xid",
+            "version": "0.2.1",
+            "id": "unicode-xid 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Determine whether characters have the XID_Start\nor XID_Continue properties according to\nUnicode Standard Annex #31.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "unicode-xid",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/unicode-xid-0.2.1/src/lib.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "exhaustive_tests",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/unicode-xid-0.2.1/tests/exhaustive_tests.rs",
+                    "edition": "2015",
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "bench": [],
+                "default": [],
+                "no_std": []
+            },
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/unicode-xid-0.2.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "erick.tryzelaar <erick.tryzelaar@gmail.com>",
+                "kwantam <kwantam@gmail.com>"
+            ],
+            "categories": [],
+            "keywords": [
+                "text",
+                "unicode",
+                "xid"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/unicode-rs/unicode-xid",
+            "edition": "2015",
+            "links": null
+        }
+    ],
+    "workspace_members": [
+        "lib_a 0.0.1 (path+file://{{ mock_workspace }}/lib_a)",
+        "lib_b 0.0.1 (path+file://{{ mock_workspace }}/lib_b)"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "lib_a 0.0.1 (path+file://{{ mock_workspace }}/lib_a)",
+                "dependencies": [
+                    "unicode-xid 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "unicode_xid",
+                        "pkg": "unicode-xid 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "lib_b 0.0.1 (path+file://{{ mock_workspace }}/lib_b)",
+                "dependencies": [
+                    "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "unicode_xid",
+                        "pkg": "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "default"
+                ]
+            },
+            {
+                "id": "unicode-xid 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "default"
+                ]
+            }
+        ],
+        "root": null
+    },
+    "target_directory": "{{ mock_workspace }}/target",
+    "version": 1,
+    "workspace_root": "{{ mock_workspace }}",
+    "metadata": null
+}

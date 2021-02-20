@@ -1,0 +1,29 @@
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_{{ target_name_sanitized }}",
+{% include "templates/partials/common_attrs.template" %}
+{%- set deps = [] %}
+{%- if crate.lib_target_name %}{# Binaries get an implicit dependency on their crate's lib #}
+    {%- set deps = deps | concat(with=":" ~ crate.lib_target_name | replace(from='-', to='_')) %}
+{%- endif %}
+{%- if crate.build_script_target %}
+    {%- set deps = deps | concat(with=":" ~ crate_name_sanitized ~ "_build_script") %}
+{%- endif %}
+{%- for dependency in crate.default_deps.dependencies %}
+    {%- set_global deps = deps | concat(with=dependency.buildable_target) %}
+{%- endfor %}
+{%- for dependency in crate.raze_settings.additional_deps %}
+    {%- set_global deps = deps | concat(with=dependency) %}
+{%- endfor %}
+    # buildifier: leave-alone{# TODO: https://github.com/google/cargo-raze/issues/348 #}
+    deps = [
+        {%- for dep in deps | sort %}
+        "{{ dep }}",
+        {%- endfor %}
+    ]
+    {%- if crate.targeted_deps %} 
+    {%- include "templates/partials/targeted_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+)

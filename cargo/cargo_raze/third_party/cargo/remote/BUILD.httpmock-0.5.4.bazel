@@ -1,0 +1,121 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_httpmock",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/main.rs",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "@cargo_raze__async_trait__0_1_42//:async_trait",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.5.4",
+    # buildifier: leave-alone
+    deps = [
+        ":httpmock",
+        "@cargo_raze__assert_json_diff__1_1_0//:assert_json_diff",
+        "@cargo_raze__async_object_pool__0_1_4//:async_object_pool",
+        "@cargo_raze__base64__0_13_0//:base64",
+        "@cargo_raze__basic_cookies__0_1_4//:basic_cookies",
+        "@cargo_raze__crossbeam_utils__0_8_1//:crossbeam_utils",
+        "@cargo_raze__difference__2_0_0//:difference",
+        "@cargo_raze__futures_util__0_3_12//:futures_util",
+        "@cargo_raze__hyper__0_14_2//:hyper",
+        "@cargo_raze__isahc__1_0_3//:isahc",
+        "@cargo_raze__lazy_static__1_4_0//:lazy_static",
+        "@cargo_raze__levenshtein__1_0_4//:levenshtein",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__qstring__0_7_2//:qstring",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__serde__1_0_120//:serde",
+        "@cargo_raze__serde_json__1_0_61//:serde_json",
+        "@cargo_raze__serde_regex__1_1_0//:serde_regex",
+        "@cargo_raze__tokio__1_1_0//:tokio",
+    ],
+)
+
+rust_library(
+    name = "httpmock",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    proc_macro_deps = [
+        "@cargo_raze__async_trait__0_1_42//:async_trait",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.5.4",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__assert_json_diff__1_1_0//:assert_json_diff",
+        "@cargo_raze__async_object_pool__0_1_4//:async_object_pool",
+        "@cargo_raze__base64__0_13_0//:base64",
+        "@cargo_raze__basic_cookies__0_1_4//:basic_cookies",
+        "@cargo_raze__crossbeam_utils__0_8_1//:crossbeam_utils",
+        "@cargo_raze__difference__2_0_0//:difference",
+        "@cargo_raze__futures_util__0_3_12//:futures_util",
+        "@cargo_raze__hyper__0_14_2//:hyper",
+        "@cargo_raze__isahc__1_0_3//:isahc",
+        "@cargo_raze__lazy_static__1_4_0//:lazy_static",
+        "@cargo_raze__levenshtein__1_0_4//:levenshtein",
+        "@cargo_raze__log__0_4_13//:log",
+        "@cargo_raze__qstring__0_7_2//:qstring",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__serde__1_0_120//:serde",
+        "@cargo_raze__serde_json__1_0_61//:serde_json",
+        "@cargo_raze__serde_regex__1_1_0//:serde_regex",
+        "@cargo_raze__tokio__1_1_0//:tokio",
+    ],
+)
+
+# Unsupported target "lib" with type "test" omitted

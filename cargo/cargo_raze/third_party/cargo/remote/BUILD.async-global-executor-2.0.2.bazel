@@ -1,0 +1,63 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+rust_library(
+    name = "async_global_executor",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "async-io",
+        "default",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "2.0.2",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__async_channel__1_5_1//:async_channel",
+        "@cargo_raze__async_executor__1_4_0//:async_executor",
+        "@cargo_raze__async_io__1_3_1//:async_io",
+        "@cargo_raze__async_mutex__1_4_0//:async_mutex",
+        "@cargo_raze__blocking__1_0_2//:blocking",
+        "@cargo_raze__futures_lite__1_11_3//:futures_lite",
+        "@cargo_raze__num_cpus__1_13_0//:num_cpus",
+        "@cargo_raze__once_cell__1_5_2//:once_cell",
+    ],
+)

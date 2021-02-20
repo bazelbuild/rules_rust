@@ -1,0 +1,6 @@
+exports_files(
+    [
+        "BUILD.iconv.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,97 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "unencumbered",  # Unlicense from expression "Unlicense OR MIT"
+])
+
+# Generated Targets
+
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_docopt_wordlist",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/wordlist.rs",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.1.0",
+    # buildifier: leave-alone
+    deps = [
+        ":docopt",
+        "@cargo_raze__lazy_static__1_4_0//:lazy_static",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__serde__1_0_120//:serde",
+        "@cargo_raze__strsim__0_9_3//:strsim",
+    ],
+)
+
+# Unsupported target "cargo" with type "example" omitted
+
+# Unsupported target "cp" with type "example" omitted
+
+# Unsupported target "decode" with type "example" omitted
+
+# Unsupported target "hashmap" with type "example" omitted
+
+# Unsupported target "optional_command" with type "example" omitted
+
+# Unsupported target "verbose_multiple" with type "example" omitted
+
+rust_library(
+    name = "docopt",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.1.0",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__lazy_static__1_4_0//:lazy_static",
+        "@cargo_raze__regex__1_4_3//:regex",
+        "@cargo_raze__serde__1_0_120//:serde",
+        "@cargo_raze__strsim__0_9_3//:strsim",
+    ],
+)

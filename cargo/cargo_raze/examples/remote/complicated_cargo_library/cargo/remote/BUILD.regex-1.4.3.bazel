@@ -1,0 +1,110 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//remote/complicated_cargo_library/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "shootout-regex-dna" with type "example" omitted
+
+# Unsupported target "shootout-regex-dna-bytes" with type "example" omitted
+
+# Unsupported target "shootout-regex-dna-cheat" with type "example" omitted
+
+# Unsupported target "shootout-regex-dna-replace" with type "example" omitted
+
+# Unsupported target "shootout-regex-dna-single" with type "example" omitted
+
+# Unsupported target "shootout-regex-dna-single-cheat" with type "example" omitted
+
+rust_library(
+    name = "regex",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "aho-corasick",
+        "default",
+        "memchr",
+        "perf",
+        "perf-cache",
+        "perf-dfa",
+        "perf-inline",
+        "perf-literal",
+        "std",
+        "thread_local",
+        "unicode",
+        "unicode-age",
+        "unicode-bool",
+        "unicode-case",
+        "unicode-gencat",
+        "unicode-perl",
+        "unicode-script",
+        "unicode-segment",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2015",
+    rustc_env = {
+        "NOT_USED_KEY": "not_used_value",
+    },
+    rustc_flags = [
+        "--cap-lints=allow",
+        "--cfg=not_used",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "1.4.3",
+    # buildifier: leave-alone
+    deps = [
+        "@remote_complicated_cargo_library__aho_corasick__0_7_15//:aho_corasick",
+        "@remote_complicated_cargo_library__memchr__2_3_4//:memchr",
+        "@remote_complicated_cargo_library__regex_syntax__0_6_22//:regex_syntax",
+        "@remote_complicated_cargo_library__specs__0_16_1//:specs",
+        "@remote_complicated_cargo_library__thread_local__1_1_3//:thread_local",
+    ],
+)
+
+# Unsupported target "backtrack" with type "test" omitted
+
+# Unsupported target "backtrack-bytes" with type "test" omitted
+
+# Unsupported target "backtrack-utf8bytes" with type "test" omitted
+
+# Unsupported target "crates-regex" with type "test" omitted
+
+# Unsupported target "default" with type "test" omitted
+
+# Unsupported target "default-bytes" with type "test" omitted
+
+# Unsupported target "nfa" with type "test" omitted
+
+# Unsupported target "nfa-bytes" with type "test" omitted
+
+# Unsupported target "nfa-utf8bytes" with type "test" omitted

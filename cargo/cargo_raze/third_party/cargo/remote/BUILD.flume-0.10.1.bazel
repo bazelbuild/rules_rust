@@ -1,0 +1,105 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//third_party/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "basic" with type "bench" omitted
+
+# Unsupported target "async" with type "example" omitted
+
+# Unsupported target "perf" with type "example" omitted
+
+# Unsupported target "select" with type "example" omitted
+
+# Unsupported target "simple" with type "example" omitted
+
+rust_library(
+    name = "flume",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "async",
+        "futures-core",
+        "futures-sink",
+        "pin-project",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.10.1",
+    # buildifier: leave-alone
+    deps = [
+        "@cargo_raze__futures_core__0_3_12//:futures_core",
+        "@cargo_raze__futures_sink__0_3_12//:futures_sink",
+        "@cargo_raze__pin_project__1_0_4//:pin_project",
+        "@cargo_raze__spinning_top__0_2_2//:spinning_top",
+    ],
+)
+
+# Unsupported target "after" with type "test" omitted
+
+# Unsupported target "array" with type "test" omitted
+
+# Unsupported target "async" with type "test" omitted
+
+# Unsupported target "basic" with type "test" omitted
+
+# Unsupported target "golang" with type "test" omitted
+
+# Unsupported target "iter" with type "test" omitted
+
+# Unsupported target "list" with type "test" omitted
+
+# Unsupported target "mpsc" with type "test" omitted
+
+# Unsupported target "never" with type "test" omitted
+
+# Unsupported target "ready" with type "test" omitted
+
+# Unsupported target "same_channel" with type "test" omitted
+
+# Unsupported target "select" with type "test" omitted
+
+# Unsupported target "select_macro" with type "test" omitted
+
+# Unsupported target "stream" with type "test" omitted
+
+# Unsupported target "thread_locals" with type "test" omitted
+
+# Unsupported target "tick" with type "test" omitted
+
+# Unsupported target "zero" with type "test" omitted

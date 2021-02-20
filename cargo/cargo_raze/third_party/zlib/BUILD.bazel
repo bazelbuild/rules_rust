@@ -1,0 +1,6 @@
+exports_files(
+    [
+        "BUILD.zlib.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

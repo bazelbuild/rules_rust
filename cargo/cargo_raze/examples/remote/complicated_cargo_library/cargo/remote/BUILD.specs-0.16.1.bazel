@@ -1,0 +1,96 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//remote/complicated_cargo_library/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "benches_main" with type "bench" omitted
+
+# Unsupported target "big_or_small" with type "bench" omitted
+
+# Unsupported target "parallel" with type "bench" omitted
+
+# Unsupported target "world" with type "bench" omitted
+
+# Unsupported target "async" with type "example" omitted
+
+# Unsupported target "basic" with type "example" omitted
+
+# Unsupported target "bitset" with type "example" omitted
+
+# Unsupported target "cluster_bomb" with type "example" omitted
+
+# Unsupported target "full" with type "example" omitted
+
+# Unsupported target "ordered_track" with type "example" omitted
+
+# Unsupported target "saveload" with type "example" omitted
+
+# Unsupported target "slices" with type "example" omitted
+
+# Unsupported target "track" with type "example" omitted
+
+rust_library(
+    name = "specs",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "parallel",
+        "rayon",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.16.1",
+    # buildifier: leave-alone
+    deps = [
+        "@remote_complicated_cargo_library__crossbeam_queue__0_2_3//:crossbeam_queue",
+        "@remote_complicated_cargo_library__hashbrown__0_7_2//:hashbrown",
+        "@remote_complicated_cargo_library__hibitset__0_6_3//:hibitset",
+        "@remote_complicated_cargo_library__log__0_4_14//:log",
+        "@remote_complicated_cargo_library__rayon__1_5_0//:rayon",
+        "@remote_complicated_cargo_library__shred__0_10_2//:shred",
+        "@remote_complicated_cargo_library__shrev__1_1_1//:shrev",
+        "@remote_complicated_cargo_library__tuple_utils__0_3_0//:tuple_utils",
+    ],
+)
+
+# Unsupported target "no_parallel" with type "test" omitted
+
+# Unsupported target "saveload" with type "test" omitted
+
+# Unsupported target "tests" with type "test" omitted

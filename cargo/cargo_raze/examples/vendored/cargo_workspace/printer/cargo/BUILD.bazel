@@ -1,0 +1,22 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "ferris_says",
+    actual = "//vendored/cargo_workspace/cargo/vendor/ferris-says-0.2.0:ferris_says",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)

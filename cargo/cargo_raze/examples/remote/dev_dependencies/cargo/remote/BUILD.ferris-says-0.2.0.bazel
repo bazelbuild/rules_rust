@@ -1,0 +1,89 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//remote/dev_dependencies/cargo", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
+])
+
+# Generated Targets
+
+rust_binary(
+    # Prefix bin name to disambiguate from (probable) collision with lib name
+    # N.B.: The exact form of this is subject to change.
+    name = "cargo_bin_fsays",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/bin/main.rs",
+    data = [],
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.2.0",
+    # buildifier: leave-alone
+    deps = [
+        ":ferris_says",
+        "@remote_dev_dependencies__clap__2_33_3//:clap",
+        "@remote_dev_dependencies__error_chain__0_10_0//:error_chain",
+        "@remote_dev_dependencies__smallvec__0_4_5//:smallvec",
+        "@remote_dev_dependencies__textwrap__0_11_0//:textwrap",
+        "@remote_dev_dependencies__unicode_width__0_1_8//:unicode_width",
+    ],
+)
+
+rust_library(
+    name = "ferris_says",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2015",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.2.0",
+    # buildifier: leave-alone
+    deps = [
+        "@remote_dev_dependencies__clap__2_33_3//:clap",
+        "@remote_dev_dependencies__error_chain__0_10_0//:error_chain",
+        "@remote_dev_dependencies__smallvec__0_4_5//:smallvec",
+        "@remote_dev_dependencies__textwrap__0_11_0//:textwrap",
+        "@remote_dev_dependencies__unicode_width__0_1_8//:unicode_width",
+    ],
+)
+
+# Unsupported target "integration_test" with type "test" omitted

@@ -1,0 +1,34 @@
+load("@rules_foreign_cc//tools/build_defs:cmake.bzl", "cmake_external")
+
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+)
+
+_CACHE_ENTRIES = {
+    "BUILD_EXAMPLES": "off",
+    "BUILD_SHARED_LIBS": "off",
+    "BUILD_TESTING": "off",
+    "CMAKE_FIND_DEBUG_MODE": "on",
+    "CMAKE_PREFIX_PATH": "$CMAKE_PREFIX_PATH;$EXT_BUILD_DEPS/openssl",
+}
+
+_LINUX_CACHE_ENTRIES = dict(_CACHE_ENTRIES.items() + {
+    "CMAKE_C_FLAGS": "$CMAKE_C_FLAGS -fPIC",
+}.items())
+
+cmake_external(
+    name = "libssh2",
+    cache_entries = select({
+        "@rules_rust//rust/platform:linux": _LINUX_CACHE_ENTRIES,
+        "//conditions:default": _CACHE_ENTRIES,
+    }),
+    lib_source = "//:all",
+    static_libraries = select({
+        # TODO: I'm guessing at this name. Needs to be checked on windows.
+        "@rules_rust//rust/platform:windows": ["ssh2.lib"],
+        "//conditions:default": ["libssh2.a"],
+    }),
+    visibility = ["//visibility:public"],
+    deps = ["@cargo_raze__openssl//:openssl"],
+)

@@ -1,0 +1,13 @@
+load("@rules_rust//rust:rust.bzl", "rust_library")
+load("//remote/cargo_workspace/cargo:crates.bzl", "all_crate_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "printer",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = [
+        "//remote/cargo_workspace/rng",
+    ] + all_crate_deps(),
+)

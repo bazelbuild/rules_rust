@@ -1,0 +1,19 @@
+---
+buildifier: latest
+tasks:
+  # TODO(acmcarther): Add check to verify that examples are up-to-date.
+  ubuntu1804:
+    build_targets:
+      - "..."
+    test_targets:
+      - "..."
+  windows:
+    build_targets:
+      - "..."
+    test_targets:
+      - "..."
+  macos:
+    build_targets:
+      - "..."
+    test_targets:
+      - "..."

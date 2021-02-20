@@ -1,0 +1,35 @@
+{% if target_name_sanitized != crate_name_sanitized -%}
+alias(
+    name = "{{ crate_name_sanitized }}",
+    actual = ":{{ target_name_sanitized }}",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+{% endif -%}
+rust_library(
+    name = "{{ target_name_sanitized }}",
+{% include "templates/partials/common_attrs.template" %}
+{%- set deps = [] %}
+{%- if crate.build_script_target %}
+    {%- set deps = deps | concat(with=":" ~ crate_name_sanitized ~ "_build_script") %}
+{%- endif %}
+{%- for dependency in crate.default_deps.dependencies %}
+    {%- set_global deps = deps | concat(with=dependency.buildable_target) %}
+{%- endfor %}
+{%- for dependency in crate.raze_settings.additional_deps %}
+    {%- set_global deps = deps | concat(with=dependency) %}
+{%- endfor %}
+    # buildifier: leave-alone{# TODO: https://github.com/google/cargo-raze/issues/348 #}
+    deps = [
+        {%- for dep in deps | sort %}
+        "{{ dep }}",
+        {%- endfor %}
+    ]
+    {%- if crate.targeted_deps %} 
+    {%- include "templates/partials/targeted_dependencies.template" -%},
+    {%- else -%},
+    {%- endif %}
+)

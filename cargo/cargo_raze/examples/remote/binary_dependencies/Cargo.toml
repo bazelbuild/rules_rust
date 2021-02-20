@@ -1,0 +1,31 @@
+[package]
+name = "binary_dependencies"
+version = "0.1.0"
+authors = ["UebelAndre <github@uebelandre.com>"]
+
+[[bin]]
+name = "binary_dependencies"
+path = "src/main.rs"
+
+[dependencies]
+ferris-says = "0.2.0"
+
+[package.metadata.raze]
+workspace_path = "//remote/binary_dependencies/cargo"
+gen_workspace_prefix = "remote_binary_dependencies"
+genmode = "Remote"
+default_gen_buildrs = true
+package_aliases_dir = "cargo"
+experimental_api = true
+
+[package.metadata.raze.binary_deps]
+texture-synthesis-cli = "0.8.0"
+
+[package.metadata.raze.crates.texture-synthesis-cli.'0.8.0']
+extra_aliased_targets = ["cargo_bin_texture_synthesis"]
+
+[package.metadata.raze.crates.crossbeam-utils.'0.7.2']
+gen_buildrs = false
+
+[package.metadata.raze.crates.image.'0.23.10']
+data_attr = "[\"README.md\"]"

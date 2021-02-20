@@ -1,0 +1,6 @@
+exports_files(
+    [
+        "BUILD.pcre.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

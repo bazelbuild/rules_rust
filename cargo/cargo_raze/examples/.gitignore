@@ -1,0 +1,10 @@
+bazel-bin
+bazel-examples
+bazel-genfiles
+bazel-out
+bazel-testlogs
+
+# Ignore everything but the `BUILD` files within the vendored directories
+vendored/*/cargo/vendor/*/*
+!vendored/*/cargo/vendor/*/BUILD
+!vendored/*/cargo/vendor/*/BUILD.bazel
