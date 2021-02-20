@@ -1,3 +1,4 @@
 docs
 examples
 examples/cargo_manifest_dir/external_crate
+cargo/cargo_raze
