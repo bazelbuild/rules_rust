@@ -81,7 +81,8 @@ def declare_config_settings():
         actual = ":darwin",
     )
 
-    # Add alias for OSX to "macos" to match the modern name for the OS.
+    # Add alias for OSX to "macos" to be consistent with the long-term
+    # direction of `@platforms` in using the OS's modern name.
     native.alias(
         name = "macos",
         actual = ":darwin",
