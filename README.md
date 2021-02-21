@@ -5,7 +5,7 @@
 
 ## Overview
 
-This repository provides rules for building [Rust][rust] projects with [Bazel](https://bazel.build/).
+This repository provides rules for building [Rust](https://www.rust-lang.org/) projects with [Bazel](https://bazel.build/).
 
 ## Community
 
