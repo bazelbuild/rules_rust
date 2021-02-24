@@ -643,8 +643,8 @@ _rust_test_attrs = {
     "env": attr.string_dict(
         mandatory = False,
         doc = _tidy("""
-            Specifies additional environment variables to set when the test is executed by bazel test. 
-            Values are subject to `$(execpath)` and 
+            Specifies additional environment variables to set when the test is executed by bazel test.
+            Values are subject to `$(execpath)` and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
     ),

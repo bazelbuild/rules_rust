@@ -632,7 +632,7 @@ def rustc_compile_action(
     ]
 
 def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
-    """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules 
+    """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
         ctx (ctx): The rule's context object
