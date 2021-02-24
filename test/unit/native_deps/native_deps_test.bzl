@@ -22,8 +22,8 @@ def _lib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
-    asserts.equals(env, 1, len(actions))
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=lib")
     _assert_argv_contains_not(env, action, "-lstatic=native_dep")
     _assert_argv_contains_not(env, action, "-ldylib=native_dep")
     return analysistest.end(env)
@@ -32,8 +32,8 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
-    asserts.equals(env, 1, len(actions))
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=rlib")
     _assert_argv_contains_not(env, action, "-lstatic=native_dep")
     _assert_argv_contains_not(env, action, "-ldylib=native_dep")
     return analysistest.end(env)
@@ -43,6 +43,7 @@ def _dylib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=dylib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
@@ -51,6 +52,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=cdylib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
@@ -59,6 +61,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=staticlib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
@@ -68,6 +71,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     actions = analysistest.target_actions(env)
     asserts.equals(env, 1, len(actions))
     action = actions[0]
+    _assert_argv_contains(env, action, "--crate-type=proc-macro")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
