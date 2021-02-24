@@ -149,6 +149,9 @@ def _rust_library_impl(ctx):
 def _rust_static_library_impl(ctx):
     """The implementation of the `rust_static_library` rule.
 
+    This rule provides CcInfo, so it can be used everywhere Bazel
+    expects rules_cc.
+
     Args:
         ctx (ctx): The rule's context object
 
@@ -159,6 +162,9 @@ def _rust_static_library_impl(ctx):
 
 def _rust_shared_library_impl(ctx):
     """The implementation of the `rust_shared_library` rule.
+
+    This rule provides CcInfo, so it can be used everywhere Bazel
+    expects rules_cc.
 
     Args:
         ctx (ctx): The rule's context object
