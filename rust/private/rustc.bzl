@@ -667,6 +667,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
             static_library = dot_a,
+            pic_static_library = dot_a,
         )
     elif crate_info.type == "cdylib":
         library_to_link = cc_common.create_library_to_link(
