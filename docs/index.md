@@ -18,29 +18,28 @@ To use the Rust rules, add the following to your `WORKSPACE` file to add the ext
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "io_bazel_rules_rust",
-    sha256 = "b5d4d1c7609714dfef821355f40353c58aa1afb3803401b3442ed2355db9b0c7",
-    strip_prefix = "rules_rust-8d2b4eeeff9dce24f5cbb36018f2d60ecd676639",
+    name = "rules_rust",
+    sha256 = "e6d835ee673f388aa5b62dc23d82db8fc76497e93fa47d8a4afe97abaf09b10d",
+    strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
     urls = [
-        # Master branch as of 2020-11-10
-        "https://github.com/bazelbuild/rules_rust/archive/8d2b4eeeff9dce24f5cbb36018f2d60ecd676639.tar.gz",
+        # Master branch as of 2021-01-27
+        "https://github.com/bazelbuild/rules_rust/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
     ],
 )
 
-load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
-
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
-
-rust_workspace()
 ```
 
-The rules are under active development, as such the lastest commit on the master branch should be used. `master` currently requires Bazel >= 3.0.0.
+The rules are under active development, as such the lastest commit on the
+`main` branch should be used. `main` is only tested against `4.0.0` as the
+minimum supported version of Bazel. Though previous versions may still be
+supported in certain environments.
 
 ## Rules
 
-- [rust](rust.md): standard rust rules for building and testing libraries and binaries.
+- [defs](defs.md): standard rust rules for building and testing libraries and binaries.
 - [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
 - [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.
@@ -55,19 +54,19 @@ You can also browse the [full API in one page](flatten.md).
 To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
 
 ```python
-rust_repositories(version = "1.47.0", edition="2018")
+rust_repositories(version = "1.50.0", edition="2018")
 ```
 
 As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
 
 ```python
-rust_repositories(version = "nightly", iso_date = "2020-11-10", edition="2018")
+rust_repositories(version = "nightly", iso_date = "2020-12-30", edition="2018")
 ```
 
 Similarly, `rustfmt_version` may also be configured:
 
 ```python
-rust_repositories(rustfmt_version = "1.4.20")
+rust_repositories(rustfmt_version = "1.50.0")
 ```
 
 ## External Dependencies
@@ -77,16 +76,16 @@ Currently the most common approach to managing external dependencies is using
 
 ## WebAssembly
 
-To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@io_bazel_rules_rust//rust/platform:wasm` flag.
+To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@rules_rust//rust/platform:wasm` flag.
 
 ```command
-bazel build @examples//hello_world_wasm --platforms=@io_bazel_rules_rust//rust/platform:wasm
+bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasm
 ```
 
-To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@io_bazel_rules_rust//rust/platform:wasi` flag.
+To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@rules_rust//rust/platform:wasi` flag.
 
 ```command
-bazel build @examples//hello_world_wasm --platforms=@io_bazel_rules_rust//rust/platform:wasi
+bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasi
 ```
 
 `rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when

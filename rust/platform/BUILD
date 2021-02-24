@@ -1,12 +1,12 @@
-load(":platform.bzl", "declare_config_settings")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":platform.bzl", "declare_config_settings")
 
 package(default_visibility = ["//visibility:public"])
 
 declare_config_settings()
 
 package_group(
-    name = "function_transition_whitelist",
+    name = "function_transition_allowlist",
     packages = [
         "//...",
     ],
@@ -15,5 +15,5 @@ package_group(
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
-    visibility = ["@io_bazel_rules_rust//rust:__pkg__"],
+    visibility = ["//rust:__subpackages__"],
 )

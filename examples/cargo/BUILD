@@ -1,11 +1,11 @@
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
-    "rust_library",
-    "rust_test",
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
 )
 load(
-    "@io_bazel_rules_rust//cargo:cargo_build_script.bzl",
-    "cargo_build_script",
+    "@rules_rust//rust:rust.bzl",
+    "rust_library",
+    "rust_test",
 )
 
 cargo_build_script(

@@ -13,19 +13,18 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("//rust/private:common.bzl", "rust_common")
 load(
-    "@io_bazel_rules_rust//rust:private/rustc.bzl",
-    "CrateInfo",
+    "//rust/private:rust.bzl",
+    "crate_root_src",
+)
+load(
+    "//rust/private:rustc.bzl",
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
-    "get_cc_toolchain",
 )
-load(
-    "@io_bazel_rules_rust//rust:private/rust.bzl",
-    "crate_root_src",
-)
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
 _rust_extensions = [
     "rs",
@@ -43,15 +42,22 @@ def _rust_sources(target, rule):
     return [src for src in srcs if src.extension in _rust_extensions]
 
 def _clippy_aspect_impl(target, ctx):
-    if CrateInfo not in target:
+    if rust_common.crate_info not in target:
         return []
     rust_srcs = _rust_sources(target, ctx.rule)
-    if rust_srcs == []:
-        return []
 
     toolchain = find_toolchain(ctx)
-    crate_info = target[CrateInfo]
-    root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    crate_info = target[rust_common.crate_info]
+    crate_type = crate_info.type
+
+    if crate_info.is_test:
+        root = crate_info.root
+    else:
+        if rust_srcs == []:
+            # nothing to do
+            return []
+        root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
 
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -61,11 +67,12 @@ def _clippy_aspect_impl(target, ctx):
         toolchain,
     )
 
-    compile_inputs, out_dir, build_env_file, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
         toolchain,
+        cc_toolchain,
         crate_info,
         dep_info,
         build_info,
@@ -75,8 +82,6 @@ def _clippy_aspect_impl(target, ctx):
     # This file is necessary because "ctx.actions.run" mandates an output.
     clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
 
-    cc_toolchain, feature_configuration = get_cc_toolchain(ctx)
-
     args, env = construct_arguments(
         ctx,
         ctx.file,
@@ -84,26 +89,35 @@ def _clippy_aspect_impl(target, ctx):
         toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
+        crate_type,
         crate_info,
         dep_info,
         output_hash = determine_output_hash(root),
         rust_flags = [],
         out_dir = out_dir,
-        build_env_file = build_env_file,
+        build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         maker_path = clippy_marker.path,
         aspect = True,
+        emit = ["dep-info", "metadata"],
     )
 
-    # Deny the default-on clippy warning levels.
-    #
-    # If these are left as warnings, then Bazel will consider the execution
-    # result of the aspect to be "success", and Clippy won't be re-triggered
-    # unless the source file is modified.
-    args.add("-Dclippy::style")
-    args.add("-Dclippy::correctness")
-    args.add("-Dclippy::complexity")
-    args.add("-Dclippy::perf")
+    # Turn any warnings from clippy or rustc into an error, as otherwise
+    # Bazel will consider the execution result of the aspect to be "success",
+    # and Clippy won't be re-triggered unless the source file is modified.
+    if "__bindgen" in ctx.rule.attr.tags:
+        # bindgen-generated content is likely to trigger warnings, so
+        # only fail on clippy warnings
+        args.add("-Dclippy::style")
+        args.add("-Dclippy::correctness")
+        args.add("-Dclippy::complexity")
+        args.add("-Dclippy::perf")
+    else:
+        # fail on any warning
+        args.add("-Dwarnings")
+
+    if crate_info.is_test:
+        args.add("--test")
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
@@ -120,7 +134,7 @@ def _clippy_aspect_impl(target, ctx):
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
-#   bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+#   bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
@@ -130,15 +144,16 @@ rust_clippy_aspect = aspect(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_error_format": attr.label(default = "//:error_format"),
         "_process_wrapper": attr.label(
-            default = "@io_bazel_rules_rust//util/process_wrapper",
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
         ),
     },
     toolchains = [
-        "@io_bazel_rules_rust//rust:toolchain",
+        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     implementation = _clippy_aspect_impl,
@@ -152,7 +167,7 @@ As an example, if the following is defined in `hello_lib/BUILD`:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -169,7 +184,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect \
+$ bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
               --output_groups=clippy_checks //hello_lib:all
 ```
 """,
@@ -195,7 +210,7 @@ For example, given the following example targets:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",

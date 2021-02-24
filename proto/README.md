@@ -24,7 +24,7 @@ To use the Rust proto rules, add the following to your `WORKSPACE` file to add t
 external repositories for the Rust proto toolchain (in addition to the [rust rules setup](..)):
 
 ```python
-load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 ```
@@ -58,7 +58,7 @@ need to create your own toolchain. To do so you can create a BUILD
 file with your toolchain definition, for example:
 
 ```python
-load("@io_bazel_rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
+load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
 
 rust_proto_toolchain(
     name = "proto-toolchain-impl",
@@ -73,7 +73,7 @@ rust_proto_toolchain(
 toolchain(
     name = "proto-toolchain",
     toolchain = ":proto-toolchain-impl",
-    toolchain_type = "@io_bazel_rules_rust//proto:toolchain",
+    toolchain_type = "@rules_rust//proto:toolchain",
 )
 ```
 

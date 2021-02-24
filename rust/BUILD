@@ -6,6 +6,7 @@ exports_files([
     "known_shas.bzl",
     "repositories.bzl",
     "rust.bzl",
+    "defs.bzl",
     "toolchain.bzl",
 ])
 
@@ -17,6 +18,7 @@ bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
     deps = [
-        "@io_bazel_rules_rust//rust/platform:rules",
+        "//rust/platform:rules",
+        "//rust/private:rules",
     ],
 )

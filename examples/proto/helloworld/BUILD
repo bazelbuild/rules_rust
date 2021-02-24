@@ -1,6 +1,6 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@io_bazel_rules_rust//proto:proto.bzl", "rust_grpc_library")
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_test")
+load("@rules_rust//proto:proto.bzl", "rust_grpc_library")
+load("@rules_rust//rust:rust.bzl", "rust_test")
 
 proto_library(
     name = "helloworld",
@@ -21,5 +21,5 @@ rust_test(
         "//proto/helloworld/greeter_client",
         "//proto/helloworld/greeter_server",
     ],
-    deps = ["@io_bazel_rules_rust//tools/runfiles"],
+    deps = ["@rules_rust//tools/runfiles"],
 )

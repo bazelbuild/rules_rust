@@ -1,0 +1,15 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+filegroup(
+    name = "load_arbitrary_tool_test_src",
+    srcs = [
+        "@io_bazel_rules_rust_load_arbitrary_tool_test//:bin/cargo",
+    ],
+)
+
+build_test(
+    name = "load_arbitrary_tool_test",
+    targets = [
+        ":load_arbitrary_tool_test_src",
+    ],
+)

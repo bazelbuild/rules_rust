@@ -1,24 +1,28 @@
 ---
-default_targets: &default_targets
+default_linux_targets: &default_linux_targets
 - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
 - "..."
 - "@examples//..."
+# TODO: Switch manual tag to platform constraint after bazel 4.0.
+- "//test/versioned_dylib:versioned_dylib_test"
 # Bindgen currently only has a working toolchain for 18.04
 - "-@examples//ffi/rust_calling_c/simple/..."
 tasks:
   ubuntu1604:
-    build_targets: *default_targets
-    test_targets: *default_targets
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
   ubuntu1804:
-    build_targets: *default_targets
+    build_targets: *default_linux_targets
     test_targets:
       - "..."
       - "@examples//..."
+      # TODO: Switch manual tag to platform constraint after bazel 4.0.
+      - "//test/versioned_dylib:versioned_dylib_test"
   ubuntu2004:
     name: "Minimum Supported Version"
-    bazel: "3.0.0"
-    build_targets: *default_targets
-    test_targets: *default_targets
+    bazel: "3.5.0"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
   macos:
     osx_targets: &osx_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -82,7 +86,7 @@ tasks:
     platform: ubuntu1804
     working_directory: examples
     build_flags:
-    - "--aspects=@io_bazel_rules_rust//rust:rust.bzl%rust_clippy_aspect"
+    - "--aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect"
     - "--output_groups=clippy_checks"
     build_targets:
     - //...
@@ -92,4 +96,6 @@ tasks:
     shell_commands:
     - ./test/clippy/clippy_failure_test.sh
 
-buildifier: latest
+buildifier:
+  version: latest
+  warnings: "all"

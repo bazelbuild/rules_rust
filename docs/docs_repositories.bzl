@@ -12,7 +12,7 @@ def repositories(is_top_level = False):
     """
     maybe(
         native.local_repository,
-        name = "io_bazel_rules_rust",
+        name = "rules_rust",
         path = "..",
     )
 
@@ -20,8 +20,8 @@ def repositories(is_top_level = False):
         http_archive,
         name = "io_bazel_stardoc",
         urls = [
-            "https://github.com/bazelbuild/stardoc/archive/1ef781ced3b1443dca3ed05dec1989eca1a4e1cd.zip",
+            "https://github.com/bazelbuild/stardoc/archive/a0f330bcbae44ffc59d50a86a830a661b8d18acc.zip",
         ],
-        sha256 = "5d7191bb0800434a9192d8ac80cba4909e96dbb087c5d51f168fedd7bde7b525",
-        strip_prefix = "stardoc-1ef781ced3b1443dca3ed05dec1989eca1a4e1cd",
+        sha256 = "e12831c6c414325c99325726dd26dabd8ed4c9efa7b4f27b4d1d9594ec7dfc40",
+        strip_prefix = "stardoc-a0f330bcbae44ffc59d50a86a830a661b8d18acc",
     )

@@ -13,8 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@io_bazel_rules_rust//rust:private/rustc.bzl", "CrateInfo", "DepInfo")
-load("@io_bazel_rules_rust//rust:private/utils.bzl", "find_toolchain", "get_lib_name")
+load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:rustc.bzl", "DepInfo")
+load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -25,10 +26,10 @@ def _rust_doc_test_impl(ctx):
     Returns:
         list: A list containing a DefaultInfo provider
     """
-    if CrateInfo not in ctx.attr.dep:
+    if rust_common.crate_info not in ctx.attr.dep:
         fail("Expected rust library or binary.", "dep")
 
-    crate = ctx.attr.dep[CrateInfo]
+    crate = ctx.attr.dep[rust_common.crate_info]
 
     toolchain = find_toolchain(ctx)
 
@@ -192,12 +193,12 @@ rust_doc_test = rule(
                 "`rust_library` or `rust_binary` targets."
             ),
             mandatory = True,
-            providers = [CrateInfo],
+            providers = [rust_common.crate_info],
         ),
     },
     executable = True,
     test = True,
-    toolchains = ["@io_bazel_rules_rust//rust:toolchain"],
+    toolchains = [str(Label("//rust:toolchain"))],
     doc = """Runs Rust documentation tests.
 
 Example:
@@ -221,7 +222,7 @@ target that depends on the `hello_lib` `rust_library` target:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
+load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
 
 rust_library(
     name = "hello_lib",

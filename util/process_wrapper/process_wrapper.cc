@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -154,6 +155,10 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
       }
     }
   }
+
+  // Have the last values added take precedence over the first.
+  // This is simpler than needing to track duplicates and explicitly override them.
+  std::reverse(environment_block.begin(), environment_block.end());
 
   int exit_code = System::Exec(exec_path, arguments, environment_block,
                                stdout_file, stderr_file);

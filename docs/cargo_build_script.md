@@ -33,8 +33,8 @@ Then you want to use the build script in the following:
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
-load("@io_bazel_rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
+load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
 # This will run the build script from the root of the workspace, and
 # collect the outputs.
@@ -80,7 +80,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-deps"></a>deps |  The dependencies of the crate defined by <code>crate_name</code>.   |  <code>[]</code> |
 | <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  <code>{}</code> |
 | <a id="cargo_build_script-data"></a>data |  Files or tools needed by the build script.   |  <code>[]</code> |
-| <a id="cargo_build_script-links"></a>links |  <p align="center"> - </p>   |  <code>None</code> |
+| <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  <code>None</code> |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
 
 

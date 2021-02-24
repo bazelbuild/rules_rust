@@ -1,0 +1,20 @@
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "version_reporter",
+    srcs = ["src/main.rs"],
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+# See https://docs.bazel.build/versions/master/user-manual.html#workspace_status for more information.
+genrule(
+    name = "generate_rustc_env_file",
+    outs = ["rustc_env_file"],
+    cmd = "echo \"CARGO_PKG_VERSION=0.1.0-$$(awk '$$1 == \"BUILD_TIMESTAMP\" {print $$2}' bazel-out/volatile-status.txt)\" > $@",
+    stamp = True,
+)

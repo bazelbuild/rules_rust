@@ -1,0 +1,26 @@
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "hello_env",
+    srcs = ["src/main.rs"],
+    deps = ["@examples//hello_lib"],
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+genrule(
+    name = "generate_rustc_env_file",
+    outs = ["rustc_env_file"],
+    cmd = "echo CARGO_PKG_VERSION=1.2.3 >> $@ && echo GREETING=Howdy >> $@",
+)
+
+sh_test(
+    name = "output_test",
+    srcs = ["output_test.sh"],
+    args = ["$(location :hello_env)"],
+    data = [":hello_env"],
+)

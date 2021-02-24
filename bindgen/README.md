@@ -24,11 +24,11 @@ To use the Rust bindgen rules, add the following to your `WORKSPACE` file to add
 external repositories for the Rust bindgen toolchain (in addition to the [rust rules setup](..)):
 
 ```python
-load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
 ```
-This makes the default toolchain defined in [`@io_bazel_rules_rust`](./BUILD) available.
+This makes the default toolchain defined in [`@rules_rust`](./BUILD) available.
 
 [raze]: https://github.com/google/cargo-raze
 
@@ -57,7 +57,7 @@ need to create your own toolchain. To do so you can create a BUILD
 file with your [`rust_bindgen_toolchain`](../docs/index.md#rust_bindgen_toolchain) definition, for example:
 
 ```python
-load("@io_bazel_rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen-toolchain-impl",
@@ -70,7 +70,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen-toolchain",
     toolchain = "bindgen-toolchain-impl",
-    toolchain_type = "@io_bazel_rules_rust//bindgen:bindgen_toolchain",
+    toolchain_type = "@rules_rust//bindgen:bindgen_toolchain",
 )
 ```
 

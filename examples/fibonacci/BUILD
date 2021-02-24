@@ -1,5 +1,5 @@
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_benchmark",
     "rust_doc",
     "rust_doc_test",

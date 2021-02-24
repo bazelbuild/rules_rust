@@ -1,5 +1,6 @@
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
+    "rust_analyzer",
     "rust_doc",
     "rust_doc_test",
     "rust_library",
@@ -66,7 +67,7 @@ rust_library(
 )
 
 rust_test(
-    name = "hello_lib_test",
+    name = "hello-lib-test",
     crate = ":hello_lib",
 )
 
@@ -84,4 +85,9 @@ rust_doc(
 rust_doc_test(
     name = "hello_lib_doc_test",
     dep = ":hello_lib",
+)
+
+rust_analyzer(
+    name = "hello_rust_analyzer",
+    targets = [":hello_lib"],
 )

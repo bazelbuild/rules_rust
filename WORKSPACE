@@ -1,24 +1,32 @@
-workspace(name = "io_bazel_rules_rust")
+workspace(name = "rules_rust")
 
-load("@io_bazel_rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
 
-load("@io_bazel_rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
-load("@io_bazel_rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
 
-load("@io_bazel_rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//tools/rust_analyzer/raze:crates.bzl", "rules_rust_tools_rust_analyzer_fetch_remote_crates")
+
+rules_rust_tools_rust_analyzer_fetch_remote_crates()
+
+load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 
-load("@io_bazel_rules_rust//:workspace.bzl", "rust_workspace")
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
-rust_workspace()
+bazel_skylib_workspace()
+
+load("//test:deps.bzl", "io_bazel_rules_rust_test_deps")
+
+io_bazel_rules_rust_test_deps()
 
 # --- end stardoc
 
