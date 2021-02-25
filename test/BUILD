@@ -9,9 +9,17 @@ rule_test(
     rule = "@examples//hello_lib:hello_lib",
 )
 
+config_setting(
+    name = "is_windows",
+    constraint_values = ["@platforms//os:windows"],
+)
+
 rule_test(
     name = "hello_world_rule_test",
-    generates = ["hello_world"],
+    generates = select({
+        ":is_windows": ["hello_world.exe"],
+        "//conditions:default": ["hello_world"],
+    }),
     rule = "@examples//hello_world:hello_world",
 )
 
