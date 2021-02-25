@@ -1,18 +1,9 @@
 load("//rust:rust.bzl", "rust_binary")
-load(":installer.bzl", "installer")
 
 package(default_visibility = ["//visibility:public"])
 
 rust_binary(
     name = "launcher",
+    srcs = ["launcher_main.rs"],
     edition = "2018",
-    srcs = ["launcher_main.rs"]
-)
-
-installer(
-    name = "installer",
-    src = select({
-        "//rust/platform:windows": "launcher_installer.bat",
-        "//conditions:default": "launcher_installer.sh",
-    }),
 )

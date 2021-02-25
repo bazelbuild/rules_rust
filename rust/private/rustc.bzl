@@ -830,11 +830,12 @@ def _add_native_link_flags(args, dep_info, crate_type, cc_toolchain, feature_con
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
+    native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
+    args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
+
     if crate_type in ["lib", "rlib"]:
         return
 
-    native_libs = depset(transitive = [dep_info.transitive_dylibs, dep_info.transitive_staticlibs])
-    args.add_all(native_libs, map_each = _get_dirname, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(dep_info.transitive_dylibs, map_each = get_lib_name, format_each = "-ldylib=%s")
     args.add_all(dep_info.transitive_staticlibs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
