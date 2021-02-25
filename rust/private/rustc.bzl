@@ -663,6 +663,8 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         # by creating a symlink to the .rlib with a .a extension.
         dot_a = ctx.actions.declare_file(crate_info.name + ".a", sibling = crate_info.output)
         ctx.actions.symlink(output = dot_a, target_file = crate_info.output)
+
+        # TODO(hlopko): handle PIC/NOPIC correctly
         library_to_link = cc_common.create_library_to_link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -844,12 +846,22 @@ def _add_native_link_flags(args, dep_info, crate_type, cc_toolchain, feature_con
         # (for example libstdc++.so or libc++.so).
         args.add_all(
             cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+            map_each = _get_dirname,
+            format_each = "-Lnative=%s",
+        )
+        args.add_all(
+            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
             map_each = get_lib_name,
             format_each = "-ldylib=%s",
         )
     else:
         # For all other crate types we want to link C++ runtime library statically
         # (for example libstdc++.a or libc++.a).
+        args.add_all(
+            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+            map_each = _get_dirname,
+            format_each = "-Lnative=%s",
+        )
         args.add_all(
             cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
             map_each = get_lib_name,
