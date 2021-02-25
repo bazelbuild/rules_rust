@@ -28,7 +28,7 @@ def _assert_argv_contains_prefix_suffix(env, action, prefix, suffix):
             prefix = prefix,
             suffix = suffix,
             args = action.argv,
-        )
+        ),
     )
 
 def _lib_has_no_native_libs_test_impl(ctx):
@@ -103,11 +103,25 @@ def _bin_has_native_libs_test_impl(ctx):
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
+def _extract_linker_args(argv):
+    return [a for a in argv if a.startswith("link-arg=-Wl") or a.startswith("link-arg=-l") or a.startswith("-l")]
+
+def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+    action = actions[0]
+
+    # BUG: this should mention the alwayslink library, but doesn't
+    asserts.equals(env, _extract_linker_args(action.argv), ["-lstatic=native_dep"])
+    return analysistest.end(env)
+
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
+bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl)
 
 def _native_dep_test():
     rust_library(
@@ -141,9 +155,21 @@ def _native_dep_test():
         deps = [":native_dep"],
     )
 
+    rust_binary(
+        name = "bin_has_native_dep_and_alwayslink",
+        srcs = ["bin_using_native_dep.rs"],
+        deps = [":native_dep", ":alwayslink"],
+    )
+
     cc_library(
         name = "native_dep",
         srcs = ["native_dep.cc"],
+    )
+
+    cc_library(
+        name = "alwayslink",
+        srcs = ["alwayslink.cc"],
+        alwayslink = 1,
     )
 
     rlib_has_no_native_libs_test(
@@ -165,6 +191,10 @@ def _native_dep_test():
     bin_has_native_libs_test(
         name = "bin_has_native_libs_test",
         target_under_test = ":bin_has_native_dep",
+    )
+    bin_has_native_dep_and_alwayslink_test(
+        name = "bin_has_native_dep_and_alwayslink_test",
+        target_under_test = ":bin_has_native_dep_and_alwayslink",
     )
 
 def native_deps_test_suite(name):
