@@ -61,6 +61,7 @@ tasks:
     - "-//test/proto/..."
     - "-//tools/rust_analyzer/..."
     - "-//tools/runfiles/..."
+    - "-//test/rustfmt/..."
     - "@examples//..."
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
