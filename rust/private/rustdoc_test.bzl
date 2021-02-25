@@ -99,6 +99,7 @@ def _build_rustdoc_flags(dep_info, crate):
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
     link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
+    # TODO(hlopko): use the more robust logic you're from rustc.bzl also here, through a reasonable API.
     link_flags += ["-ldylib=" + get_lib_name(lib) for lib in d.transitive_dylibs.to_list()]
     link_search_flags += ["-Lnative={}".format(_dirname(lib.short_path)) for lib in d.transitive_dylibs.to_list()]
     link_flags += ["-lstatic=" + get_lib_name(lib) for lib in d.transitive_staticlibs.to_list()]

@@ -23,7 +23,7 @@ load(
     "expand_locations",
     "find_cc_toolchain",
     "get_lib_name",
-    "get_libs_for_static_executable",
+    "get_preferred_artifact",
     "relativize",
     "rule_attrs",
 )
@@ -172,7 +172,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            libs = get_libs_for_static_executable(dep)
+            linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+            libs = depset([get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries])
 
             transitive_dylibs.append(depset([
                 lib

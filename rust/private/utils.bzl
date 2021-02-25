@@ -118,19 +118,7 @@ def determine_output_hash(crate_root):
     """
     return repr(hash(crate_root.path))
 
-def get_libs_for_static_executable(dep):
-    """find the libraries used for linking a static executable.
-
-    Args:
-        dep (Target): A cc_library target.
-
-    Returns:
-        depset: A depset[File]
-    """
-    linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
-    return depset([_get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries])
-
-def _get_preferred_artifact(library_to_link):
+def get_preferred_artifact(library_to_link):
     """Get the first available library to link from a LibraryToLink object.
 
     Args:

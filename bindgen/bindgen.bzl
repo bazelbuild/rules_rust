@@ -16,7 +16,20 @@
 load("//rust:rust.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_toolchain", "get_libs_for_static_executable")
+load("//rust/private:utils.bzl", "find_toolchain", "get_preferred_artifact")
+
+# TODO(hlopko): use the more robust logic you're from rustc.bzl also here, through a reasonable API.
+def _get_libs_for_static_executable(dep):
+    """find the libraries used for linking a static executable.
+
+    Args:
+        dep (Target): A cc_library target.
+
+    Returns:
+        depset: A depset[File]
+    """
+    linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+    return depset([get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries])
 
 def rust_bindgen_library(
         name,
@@ -84,7 +97,7 @@ def _rust_bindgen_impl(ctx):
     output = ctx.outputs.out
 
     # libclang should only have 1 output file
-    libclang_dir = get_libs_for_static_executable(libclang).to_list()[0].dirname
+    libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
     include_directories = cc_lib[CcInfo].compilation_context.includes.to_list()
     quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes.to_list()
     system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
@@ -112,7 +125,7 @@ def _rust_bindgen_impl(ctx):
     }
 
     if libstdcxx:
-        env["LD_LIBRARY_PATH"] = ":".join([f.dirname for f in get_libs_for_static_executable(libstdcxx).to_list()])
+        env["LD_LIBRARY_PATH"] = ":".join([f.dirname for f in _get_libs_for_static_executable(libstdcxx).to_list()])
 
     ctx.actions.run(
         executable = bindgen_bin,
@@ -120,9 +133,9 @@ def _rust_bindgen_impl(ctx):
             [header],
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
-                get_libs_for_static_executable(libclang),
+                _get_libs_for_static_executable(libclang),
             ] + [
-                get_libs_for_static_executable(libstdcxx),
+                _get_libs_for_static_executable(libstdcxx),
             ] if libstdcxx else [],
         ),
         outputs = [unformatted_output],
