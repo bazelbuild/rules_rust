@@ -284,34 +284,20 @@ def _create_test_launcher(ctx, toolchain, output, providers):
         list: A list of providers similar to `rustc_compile_action` but with modified default info
     """
 
-    args = ctx.actions.args()
-
     # TODO: It's unclear if the toolchain is in the same configuration as the `_launcher` attribute
     # This should be investigated but for now, we generally assume if the target environment is windows,
     # the execution environment is windows.
     if toolchain.os == "windows":
         launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher.exe"))
-
-        # Because the windows target is a batch file, it expects native windows paths (with backslashes)
-        args.add_all([
-            ctx.executable._launcher.path.replace("/", "\\"),
-            launcher.path.replace("/", "\\"),
-        ])
     else:
         launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher"))
-        args.add_all([
-            ctx.executable._launcher,
-            launcher,
-        ])
 
     # Because returned executables must be created from the same rule, the
-    # launcher target is simply copied and exposed.
-    ctx.actions.run(
-        outputs = [launcher],
-        tools = [ctx.executable._launcher],
-        mnemonic = "GeneratingLauncher",
-        executable = ctx.executable._launcher_installer,
-        arguments = [args],
+    # launcher target is simply symlinked and exposed.
+    ctx.actions.symlink(
+        output = launcher,
+        target_file = ctx.executable._launcher,
+        is_executable = True,
     )
 
     # Get data attribute
@@ -665,14 +651,6 @@ _rust_test_attrs = {
         doc = _tidy("""
             A launcher executable for loading environment and argument files passed in via the `env` attribute
             and ensuring the variables are set for the underlying test executable.
-        """),
-    ),
-    "_launcher_installer": attr.label(
-        executable = True,
-        default = Label("//util/launcher:installer"),
-        cfg = "exec",
-        doc = _tidy("""
-            A helper script for creating an installer within the test rule.
         """),
     ),
 }
