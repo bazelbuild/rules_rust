@@ -18,7 +18,7 @@ load("//rust:rust.bzl", "rust_library")
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "find_toolchain", "get_preferred_artifact")
 
-# TODO(hlopko): use the more robust logic you're from rustc.bzl also here, through a reasonable API.
+# TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
     """find the libraries used for linking a static executable.
 
