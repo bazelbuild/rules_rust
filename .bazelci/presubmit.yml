@@ -56,6 +56,7 @@ tasks:
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
     - "..."
     - "-//bindgen/..."
+    - "-//test/load_arbitrary_tool/..."
     - "@examples//..."
     - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"

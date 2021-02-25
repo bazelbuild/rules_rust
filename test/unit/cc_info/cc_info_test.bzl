@@ -3,6 +3,9 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
+def _is_dylib_on_windows(ctx):
+    return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
+
 def _assert_cc_info_has_library_to_link(env, tut, type):
     asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
     cc_info = tut[CcInfo]
@@ -20,7 +23,10 @@ def _assert_cc_info_has_library_to_link(env, tut, type):
     if type  == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
         asserts.equals(env, None, library_to_link.interface_library)
-        asserts.true(env, library_to_link.resolved_symlink_dynamic_library != None)
+        if _is_dylib_on_windows(env.ctx):
+            asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
+        else:
+            asserts.true(env, library_to_link.resolved_symlink_dynamic_library != None)
         asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
         asserts.equals(env, None, library_to_link.static_library)
         asserts.equals(env, None, library_to_link.pic_static_library)
@@ -66,7 +72,9 @@ def _staticlib_provides_cc_info_test_impl(ctx):
 rlib_provides_cc_info_test = analysistest.make(_rlib_provides_cc_info_test_impl)
 bin_does_not_provide_cc_info_test = analysistest.make(_bin_does_not_provide_cc_info_test_impl)
 staticlib_provides_cc_info_test = analysistest.make(_staticlib_provides_cc_info_test_impl)
-cdylib_provides_cc_info_test = analysistest.make(_cdylib_provides_cc_info_test_impl)
+cdylib_provides_cc_info_test = analysistest.make(_cdylib_provides_cc_info_test_impl, attrs = {
+    "_windows": attr.label(default = Label("@platforms//os:windows")),
+})
 proc_macro_does_not_provide_cc_info_test = analysistest.make(_proc_macro_does_not_provide_cc_info_test_impl)
 
 def _cc_info_test():
