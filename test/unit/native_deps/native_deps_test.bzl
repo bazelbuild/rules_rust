@@ -1,6 +1,6 @@
 """Unittests for rust rules."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
@@ -18,12 +18,26 @@ def _assert_argv_contains(env, action, flag):
         "Expected {args} to contain {flag}".format(args = action.argv, flag = flag),
     )
 
+def _assert_argv_contains_prefix_suffix(env, action, prefix, suffix):
+    for found_flag in action.argv:
+        if found_flag.startswith(prefix) and found_flag.endswith(suffix):
+            return
+    unittest.fail(
+        env,
+        "Expected an arg with prefix '{prefix}' and suffix '{suffix}' in {args}".format(
+            prefix = prefix,
+            suffix = suffix,
+            args = action.argv,
+        )
+    )
+
 def _lib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
     _assert_argv_contains(env, action, "--crate-type=lib")
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains_not(env, action, "-lstatic=native_dep")
     _assert_argv_contains_not(env, action, "-ldylib=native_dep")
     return analysistest.end(env)
@@ -34,6 +48,7 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     actions = analysistest.target_actions(env)
     action = actions[0]
     _assert_argv_contains(env, action, "--crate-type=rlib")
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains_not(env, action, "-lstatic=native_dep")
     _assert_argv_contains_not(env, action, "-ldylib=native_dep")
     return analysistest.end(env)
@@ -43,6 +58,7 @@ def _dylib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains(env, action, "--crate-type=dylib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
@@ -52,6 +68,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains(env, action, "--crate-type=cdylib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
@@ -61,6 +78,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains(env, action, "--crate-type=staticlib")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
@@ -71,6 +89,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     actions = analysistest.target_actions(env)
     asserts.equals(env, 1, len(actions))
     action = actions[0]
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains(env, action, "--crate-type=proc-macro")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
@@ -80,6 +99,7 @@ def _bin_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
     action = actions[0]
+    _assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     _assert_argv_contains(env, action, "-lstatic=native_dep")
     return analysistest.end(env)
 
