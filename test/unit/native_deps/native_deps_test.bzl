@@ -104,7 +104,7 @@ def _bin_has_native_libs_test_impl(ctx):
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
-    return [a for a in argv if a.startswith("link-arg=-Wl") or a.startswith("link-arg=-l") or a.startswith("-l")]
+    return [a for a in argv if a.startswith("link-arg=") or a.startswith("link-arg=-l") or a.startswith("-l") or a.endswith(".lo") or a.endswith(".o")]
 
 def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -112,8 +112,24 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     actions = analysistest.target_actions(env)
     action = actions[0]
 
-    # BUG: this should mention the alwayslink library, but doesn't
-    asserts.equals(env, _extract_linker_args(action.argv), ["-lstatic=native_dep"])
+    if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+        ]
+    elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+        ]
+    else:
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=-Wl,--whole-archive",
+            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=-Wl,--no-whole-archive",
+        ]
+    asserts.equals(env, want, _extract_linker_args(action.argv))
     return analysistest.end(env)
 
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
@@ -121,7 +137,10 @@ staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_te
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
-bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl)
+bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
 
 def _native_dep_test():
     rust_library(

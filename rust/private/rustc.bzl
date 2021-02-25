@@ -821,16 +821,37 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _make_link_flags(lib):
-    args = []
-    f = get_preferred_artifact(lib)
-    if lib.alwayslink:
-        pass  # TODO
-    elif lib.static_library or lib.pic_static_library:
-        args.append("-lstatic=%s" % get_lib_name(f))
+def _portable_link_flags(lib):
+    if lib.static_library or lib.pic_static_library:
+        return ["-lstatic=%s" % get_lib_name(get_preferred_artifact(lib))]
     elif _is_dylib(lib):
-        args.append("-ldylib=%s" % get_lib_name(f))
-    return args
+        return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
+    return []
+
+def _make_link_flags_windows(lib):
+    if lib.alwayslink:
+        return ["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path]
+    return _portable_link_flags(lib)
+
+def _make_link_flags_darwin(lib):
+    if lib.alwayslink:
+        return [
+            "-C",
+            ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
+        ]
+    return _portable_link_flags(lib)
+
+def _make_link_flags_default(lib):
+    if lib.alwayslink:
+        return [
+            "-C",
+            "link-arg=-Wl,--whole-archive",
+            "-C",
+            ("link-arg=%s" % get_preferred_artifact(lib).path),
+            "-C",
+            "link-arg=-Wl,--no-whole-archive",
+        ]
+    return _portable_link_flags(lib)
 
 def _preferred_artifact_dirname(lib):
     return get_preferred_artifact(lib).dirname
@@ -852,7 +873,14 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
     if crate_type in ["lib", "rlib"]:
         return
 
-    args.add_all(dep_info.transitive_noncrates, map_each = _make_link_flags)
+    if toolchain.os == "windows":
+        make_link_flags = _make_link_flags_windows
+    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
+        make_link_flags = _make_link_flags_darwin
+    else:
+        make_link_flags = _make_link_flags_default
+
+    args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags)
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
