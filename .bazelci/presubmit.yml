@@ -1,4 +1,5 @@
 ---
+validate_config: 1
 default_linux_targets: &default_linux_targets
 - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
 - "..."
@@ -23,6 +24,9 @@ tasks:
     bazel: "3.5.0"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    include_json_profile:
+    - build
+    - test
   macos:
     osx_targets: &osx_targets
     - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -73,6 +77,9 @@ tasks:
     build_targets: *windows_targets
     test_targets: *windows_targets
   examples:
+    buildifier:
+      version: latest
+      warnings: "all"
     name: Examples
     platform: ubuntu1804
     working_directory: examples

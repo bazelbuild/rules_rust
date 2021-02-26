@@ -2,12 +2,14 @@ workspace(name = "examples")
 
 load(":examples_repositories.bzl", "repositories")
 
-repositories()
+repositories(
+    
+)
 
 load(":examples_deps.bzl", "deps")
 
 deps()
 
-load(":examples_transitive_deps.bzl", "transitive_deps")
+load(":examples_transitive_deps.bzl",                "transitive_deps")
 
 transitive_deps()
