@@ -600,7 +600,7 @@ def rustc_compile_action(
         ),
     )
 
-    dylibs = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list() if _is_dylib(toolchain, lib)]
+    dylibs = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list() if _is_dylib(lib)]
 
     runfiles = ctx.runfiles(
         files = dylibs + getattr(ctx.files, "data", []),
@@ -622,9 +622,8 @@ def rustc_compile_action(
         ),
     ]
 
-def _is_dylib(toolchain, dep):
-    lib = get_preferred_artifact(dep)
-    return lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]
+def _is_dylib(dep):
+    return not bool(dep.static_library or dep.pic_static_library)
 
 def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
@@ -749,7 +748,12 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    dylibs = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list() if _is_dylib(toolchain, lib)]
+    preferreds = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list()]
+
+    # TODO(augie): I don't understand why this can't just be filtering on
+    # _is_dylib(lib), but doing that causes failures on darwin and windows
+    # examples that otherwise work.
+    dylibs = [lib for lib in preferreds if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]]
     if not dylibs:
         return depset([])
     if toolchain.os != "linux":
@@ -824,7 +828,7 @@ def _make_link_flags(toolchain, lib):
         pass  # TODO
     elif lib.static_library or lib.pic_static_library:
         args.append("-lstatic=%s" % get_lib_name(f))
-    elif _is_dylib(toolchain, lib):
+    elif _is_dylib(lib):
         args.append("-ldylib=%s" % get_lib_name(f))
     return args
 
