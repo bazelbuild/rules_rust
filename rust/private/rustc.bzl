@@ -821,7 +821,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _make_link_flags(toolchain, lib):
+def _make_link_flags(lib):
     args = []
     f = get_preferred_artifact(lib)
     if lib.alwayslink:
@@ -852,8 +852,7 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
     if crate_type in ["lib", "rlib"]:
         return
 
-    for lib in dep_info.transitive_noncrates.to_list():
-        args.add_all(_make_link_flags(toolchain, lib))
+    args.add_all(dep_info.transitive_noncrates, map_each = _make_link_flags)
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
