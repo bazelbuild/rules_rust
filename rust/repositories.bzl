@@ -284,7 +284,6 @@ def BUILD_for_rustc_src():
 
     return _build_file_for_rustc_src
 
-
 _build_file_for_clippy_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 

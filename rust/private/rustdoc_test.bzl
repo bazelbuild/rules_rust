@@ -104,7 +104,7 @@ def _build_rustdoc_flags(dep_info, crate):
         is_static = bool(lib_to_link.static_library or lib_to_link.pic_static_library)
         f = get_preferred_artifact(lib_to_link)
         if not is_static:
-           link_flags.append("-ldylib=" + get_lib_name(f))
+            link_flags.append("-ldylib=" + get_lib_name(f))
         else:
             link_flags.append("-lstatic=" + get_lib_name(f))
         link_flags.append("-Lnative={}".format(_dirname(f.short_path)))

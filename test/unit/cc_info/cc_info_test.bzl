@@ -20,7 +20,7 @@ def _assert_cc_info_has_library_to_link(env, tut, type):
     asserts.equals(env, [], library_to_link.objects)
     asserts.equals(env, [], library_to_link.pic_objects)
 
-    if type  == "cdylib":
+    if type == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
         asserts.equals(env, None, library_to_link.interface_library)
         if _is_dylib_on_windows(env.ctx):

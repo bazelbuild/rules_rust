@@ -158,7 +158,6 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     asserts.equals(env, want, _extract_linker_args(action.argv))
     return analysistest.end(env)
 
-
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)

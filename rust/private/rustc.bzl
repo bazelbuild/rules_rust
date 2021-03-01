@@ -688,8 +688,10 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         linker_inputs = depset([link_input]),
     )
 
-    cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep]
-    cc_infos.append(CcInfo(linking_context = linking_context))
+    cc_infos = [CcInfo(linking_context = linking_context)]
+    for dep in ctx.attr.deps:
+        if CcInfo in dep:
+            cc_infos.append(dep[CcInfo])
 
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 

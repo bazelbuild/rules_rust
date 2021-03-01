@@ -8,8 +8,8 @@ package(default_visibility = ["//visibility:public"])
 rust_binary(
     name = "hello_env",
     srcs = ["src/main.rs"],
-    deps = ["@examples//hello_lib"],
     rustc_env_files = [":generate_rustc_env_file"],
+    deps = ["@examples//hello_lib"],
 )
 
 genrule(
