@@ -55,7 +55,7 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
-        "transitive_noncrates": "depset[LibraryToLink]: All transitive dependencies that aren't crates.",
+        "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
     },
 )
 
@@ -174,7 +174,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
-            transitive_noncrates.append(depset([lib for linker_input in linker_inputs for lib in linker_input.libraries]))
+            transitive_noncrates.append(depset(dep[CcInfo].linking_context.linker_inputs))
         elif BuildInfo in dep:
             if build_info:
                 fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
@@ -600,7 +600,7 @@ def rustc_compile_action(
         ),
     )
 
-    dylibs = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list() if _is_dylib(lib)]
+    dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]
 
     runfiles = ctx.runfiles(
         files = dylibs + getattr(ctx.files, "data", []),
@@ -748,7 +748,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    preferreds = [get_preferred_artifact(lib) for lib in dep_info.transitive_noncrates.to_list()]
+    preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
 
     # TODO(augie): I don't understand why this can't just be filtering on
     # _is_dylib(lib), but doing that causes failures on darwin and windows
@@ -828,33 +828,45 @@ def _portable_link_flags(lib):
         return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
     return []
 
-def _make_link_flags_windows(lib):
-    if lib.alwayslink:
-        return ["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path]
-    return _portable_link_flags(lib)
+def _make_link_flags_windows(linker_input):
+    ret = []
+    for lib in linker_input.libraries:
+        if lib.alwayslink:
+            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path])
+        else:
+            ret.extend(_portable_link_flags(lib))
+    return ret
 
-def _make_link_flags_darwin(lib):
-    if lib.alwayslink:
-        return [
-            "-C",
-            ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
-        ]
-    return _portable_link_flags(lib)
+def _make_link_flags_darwin(linker_input):
+    ret = []
+    for lib in linker_input.libraries:
+        if lib.alwayslink:
+            ret.extend([
+                "-C",
+                ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
+            ])
+        else:
+            ret.extend(_portable_link_flags(lib))
+    return ret
 
-def _make_link_flags_default(lib):
-    if lib.alwayslink:
-        return [
-            "-C",
-            "link-arg=-Wl,--whole-archive",
-            "-C",
-            ("link-arg=%s" % get_preferred_artifact(lib).path),
-            "-C",
-            "link-arg=-Wl,--no-whole-archive",
-        ]
-    return _portable_link_flags(lib)
+def _make_link_flags_default(linker_input):
+    ret = []
+    for lib in linker_input.libraries:
+        if lib.alwayslink:
+            ret.extend([
+                "-C",
+                "link-arg=-Wl,--whole-archive",
+                "-C",
+                ("link-arg=%s" % get_preferred_artifact(lib).path),
+                "-C",
+                "link-arg=-Wl,--no-whole-archive",
+            ])
+        else:
+            ret.extend(_portable_link_flags(lib))
+    return ret
 
-def _preferred_artifact_dirname(lib):
-    return get_preferred_artifact(lib).dirname
+def _libraries_dirnames(linker_input):
+    return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
 
 def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
@@ -868,7 +880,7 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _preferred_artifact_dirname, uniquify = True, format_each = "-Lnative=%s")
+    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
 
     if crate_type in ["lib", "rlib"]:
         return
