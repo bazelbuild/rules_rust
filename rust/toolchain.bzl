@@ -1,5 +1,111 @@
 """The rust_toolchain rule definition and implementation."""
 
+load(
+    "//rust/private:utils.bzl",
+    "find_cc_toolchain",
+)
+
+def _make_dota(ctx, f):
+    """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
+
+    Args:
+        ctx (ctx): The rule's context object.
+        f (File): The file to symlink.
+
+    Returns:
+        The symlink's File.
+    """
+    dot_a = ctx.actions.declare_file(f.basename + ".a", sibling = f)
+    ctx.actions.symlink(output = dot_a, target_file = f)
+    return dot_a
+
+def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
+    """Make the CcInfo (if possible) for libstd and allocator libraries.
+
+    Args:
+        ctx (ctx): The rule's context object.
+        rust_lib: The rust standard library.
+        allocator_library: The target to use for providing allocator functions.
+
+
+    Returns:
+        A CcInfo object for the required libraries, or None if no such libraries are available.
+    """
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    link_inputs = []
+    std_rlibs = [f for f in rust_lib.files.to_list() if f.basename.endswith(".rlib")]
+    if std_rlibs:
+        # std depends on everything
+        #
+        # core only depends on alloc, but we poke adler in there
+        # because that needs to be before miniz_oxide
+        #
+        # alloc depends on the allocator_library if it's configured, but we
+        # do that later.
+        dot_a_files = [_make_dota(ctx, f) for f in std_rlibs]
+
+        alloc_inputs = depset([
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = f,
+                pic_static_library = f,
+            )
+            for f in dot_a_files
+            if "alloc" in f.basename
+        ])
+        core_inputs = depset([
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = f,
+                pic_static_library = f,
+            )
+            for f in dot_a_files
+            if "core" in f.basename or "adler" in f.basename
+        ], transitive = [alloc_inputs], order = "topological")
+        between_core_and_std_inputs = depset([
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = f,
+                pic_static_library = f,
+            )
+            for f in dot_a_files
+            if "core" not in f.basename and "alloc" not in f.basename and "std" not in f.basename and not "adler" in f.basename
+        ], transitive = [core_inputs], order = "topological")
+        std_inputs = depset([
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = f,
+                pic_static_library = f,
+            )
+            for f in dot_a_files
+            if "std" in f.basename
+        ], transitive = [between_core_and_std_inputs], order = "topological")
+        link_inputs.append(cc_common.create_linker_input(
+            owner = rust_lib.label,
+            libraries = std_inputs,
+        ))
+
+    allocator_inputs = None
+    if allocator_library:
+        allocator_inputs = [allocator_library[CcInfo].linking_context.linker_inputs]
+
+    libstd_and_allocator_ccinfo = None
+    if link_inputs:
+        return CcInfo(linking_context = cc_common.create_linking_context(linker_inputs = depset(
+            link_inputs,
+            transitive = allocator_inputs,
+            order = "topological",
+        )))
+    return None
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -38,12 +144,17 @@ def _rust_toolchain_impl(ctx):
         default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
+        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
     )
     return [toolchain]
 
 rust_toolchain = rule(
     implementation = _rust_toolchain_impl,
+    fragments = ["cpp"],
     attrs = {
+        "allocator_library": attr.label(
+            doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
+        ),
         "binary_ext": attr.string(
             doc = "The extension for binaries created from rustc.",
             mandatory = True,
@@ -127,6 +238,9 @@ rust_toolchain = rule(
                 "The platform triple for the toolchains target environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
+        ),
+        "_cc_toolchain": attr.label(
+            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
         "_crosstool": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

@@ -6,11 +6,11 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_
 def _is_dylib_on_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
 
-def _assert_cc_info_has_library_to_link(env, tut, type):
+def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
     asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
     cc_info = tut[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    asserts.equals(env, len(linker_inputs), 1)
+    asserts.equals(env, len(linker_inputs), ccinfo_count)
     library_to_link = linker_inputs[0].libraries[0]
     asserts.equals(env, False, library_to_link.alwayslink)
 
@@ -42,7 +42,7 @@ def _assert_cc_info_has_library_to_link(env, tut, type):
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "rlib")
+    _assert_cc_info_has_library_to_link(env, tut, "rlib", 2)
     return analysistest.end(env)
 
 def _bin_does_not_provide_cc_info_test_impl(ctx):
@@ -60,13 +60,13 @@ def _proc_macro_does_not_provide_cc_info_test_impl(ctx):
 def _cdylib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "cdylib")
+    _assert_cc_info_has_library_to_link(env, tut, "cdylib", 1)
     return analysistest.end(env)
 
 def _staticlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "staticlib")
+    _assert_cc_info_has_library_to_link(env, tut, "staticlib", 1)
     return analysistest.end(env)
 
 rlib_provides_cc_info_test = analysistest.make(_rlib_provides_cc_info_test_impl)

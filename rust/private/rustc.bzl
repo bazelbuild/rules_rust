@@ -693,6 +693,10 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])
 
+    if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
+        # TODO: if we already have an rlib in our deps, we could skip this
+        cc_infos.append(toolchain.libstd_and_allocator_ccinfo)
+
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 
 def add_edition_flags(args, crate):
