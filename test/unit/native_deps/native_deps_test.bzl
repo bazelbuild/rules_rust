@@ -132,12 +132,43 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     asserts.equals(env, want, _extract_linker_args(action.argv))
     return analysistest.end(env)
 
+def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+    action = actions[0]
+
+    if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+        ]
+    elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+        ]
+    else:
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=-Wl,--whole-archive",
+            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=-Wl,--no-whole-archive",
+        ]
+    asserts.equals(env, want, _extract_linker_args(action.argv))
+    return analysistest.end(env)
+
+
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
 bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
+cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
@@ -191,6 +222,12 @@ def _native_dep_test():
         alwayslink = 1,
     )
 
+    rust_shared_library(
+        name = "cdylib_has_native_dep_and_alwayslink",
+        srcs = ["lib_using_native_dep.rs"],
+        deps = [":native_dep", ":alwayslink"],
+    )
+
     rlib_has_no_native_libs_test(
         name = "rlib_has_no_native_libs_test",
         target_under_test = ":rlib_has_no_native_dep",
@@ -215,6 +252,10 @@ def _native_dep_test():
         name = "bin_has_native_dep_and_alwayslink_test",
         target_under_test = ":bin_has_native_dep_and_alwayslink",
     )
+    cdylib_has_native_dep_and_alwayslink_test(
+        name = "cdylib_has_native_dep_and_alwayslink_test",
+        target_under_test = ":cdylib_has_native_dep_and_alwayslink",
+    )
 
 def native_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -232,5 +273,7 @@ def native_deps_test_suite(name):
             ":cdylib_has_native_libs_test",
             ":proc_macro_has_native_libs_test",
             ":bin_has_native_libs_test",
+            ":bin_has_native_dep_and_alwayslink_test",
+            ":cdylib_has_native_dep_and_alwayslink_test",
         ],
     )
