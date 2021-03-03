@@ -174,7 +174,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
-            transitive_noncrates.append(depset(dep[CcInfo].linking_context.linker_inputs))
+            transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
         elif BuildInfo in dep:
             if build_info:
                 fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
