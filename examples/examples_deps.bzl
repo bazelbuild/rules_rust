@@ -9,14 +9,9 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
-load("@rules_rust//cargo:repositories.bzl", "crate_universe_deps")
-load("@rules_rust//cargo:workspace.bzl", "crate", "crate_universe")
 
-
-def deps(is_top_level = False):
+def deps():
     """Define dependencies for `rules_rust` examples"""
-
-    examples_prefix = "@examples" if is_top_level else ""
 
     rust_repositories()
 
@@ -58,66 +53,3 @@ def deps(is_top_level = False):
     )
 
     rules_foreign_cc_dependencies()
-
-    crate_universe_deps()
-
-    crate_universe(
-        name = "crate_universe_basic_rust_deps",
-        packages = [
-            crate.spec(
-                name = "lazy_static",
-                semver = "=1.4",
-            ),
-        ],
-        supported_targets = [
-            "x86_64-apple-darwin",
-            "x86_64-unknown-linux-gnu",
-        ],
-    )
-
-    crate_universe(
-        name = "crate_universe_uses_proc_macro_rust_deps",
-        cargo_toml_files = [examples_prefix + "//crate_universe/uses_proc_macro:Cargo.toml"],
-        supported_targets = [
-            "x86_64-apple-darwin",
-            "x86_64-unknown-linux-gnu",
-        ],
-    )
-
-    crate_universe(
-        name = "crate_universe_uses_sys_crate_rust_deps",
-        cargo_toml_files = [examples_prefix + "//crate_universe/uses_sys_crate:Cargo.toml"],
-        lockfile = examples_prefix + "//crate_universe/uses_sys_crate:lockfile.lock",
-        packages = [
-            crate.spec(
-                name = "libc",
-                semver = "=0.2.76",
-            ),
-        ],
-        supported_targets = [
-            "x86_64-apple-darwin",
-            "x86_64-unknown-linux-gnu",
-        ],
-    )
-
-    crate_universe(
-        name = "crate_universe_has_aliased_deps_rust_deps",
-        cargo_toml_files = [examples_prefix + "//crate_universe/has_aliased_deps:Cargo.toml"],
-        overrides = {
-            "openssl-sys": crate.override(
-                extra_build_script_env_vars = {
-                    "OPENSSL_DIR": "../openssl/openssl",
-                },
-                extra_bazel_deps = {
-                    "cfg(all())": ["@openssl//:openssl"],
-                },
-                extra_build_script_bazel_data_deps = {
-                    "cfg(all())": ["@openssl//:openssl"],
-                },
-            ),
-        },
-        supported_targets = [
-            "x86_64-apple-darwin",
-            "x86_64-unknown-linux-gnu",
-        ],
-    )

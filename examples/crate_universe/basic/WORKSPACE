@@ -1,0 +1,32 @@
+local_repository(
+    name = "rules_rust",
+    path = "../../..",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+
+rust_repositories()
+
+load("@rules_rust//cargo:repositories.bzl", "crate_universe_deps")
+
+crate_universe_deps()
+
+load("@rules_rust//cargo:workspace.bzl", "crate", "crate_universe")
+
+crate_universe(
+    name = "rust_deps",
+    packages = [
+        crate.spec(
+            name = "lazy_static",
+            semver = "=1.4",
+        ),
+    ],
+    supported_targets = [
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
+
+load("@rust_deps//:defs.bzl", "pinned_rust_install")
+
+pinned_rust_install()

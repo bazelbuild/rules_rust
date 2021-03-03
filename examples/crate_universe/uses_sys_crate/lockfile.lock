@@ -1,5 +1,5 @@
 # rules_rust crate_universe file format 1
-# config hash d555ad6fce4572c24cb874f784ca32c0b4c5c6b6655c759f6b1381c0ef72667a
+# config hash 6194c33fc29701bfce95fa6d31095bf1268a7ae6aab060692153d2e9fcd34373
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 
@@ -7,7 +7,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def pinned_rust_install():
     http_archive(
-        name = "crate_universe_uses_sys_crate_rust_deps__bzip2__0_3_3",
+        name = "rust_deps__bzip2__0_3_3",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
@@ -35,8 +35,8 @@ rust_library(
     name = "bzip2",
     crate_type = "lib",
     deps = [
-        "@crate_universe_uses_sys_crate_rust_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
-        "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+        "@rust_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+        "@rust_deps__libc__0_2_76//:libc",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "src/lib.rs",
@@ -78,7 +78,7 @@ rust_library(
     )
 
     http_archive(
-        name = "crate_universe_uses_sys_crate_rust_deps__bzip2_sys__0_1_10_1_0_8",
+        name = "rust_deps__bzip2_sys__0_1_10_1_0_8",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
@@ -113,8 +113,8 @@ cargo_build_script(
     crate_root = "build.rs",
     edition = "2015",
     deps = [
-        "@crate_universe_uses_sys_crate_rust_deps__cc__1_0_66//:cc",
-        "@crate_universe_uses_sys_crate_rust_deps__pkg_config__0_3_19//:pkg_config",
+        "@rust_deps__cc__1_0_67//:cc",
+        "@rust_deps__pkg_config__0_3_19//:pkg_config",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -151,7 +151,7 @@ rust_library(
     crate_type = "lib",
     deps = [
         ":bzip2_sys_build_script",
-        "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+        "@rust_deps__libc__0_2_76//:libc",
     ],
     srcs = glob(["**/*.rs"]),
     crate_root = "lib.rs",
@@ -192,7 +192,7 @@ rust_library(
     )
 
     http_archive(
-        name = "crate_universe_uses_sys_crate_rust_deps__cc__1_0_66",
+        name = "rust_deps__cc__1_0_67",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
@@ -242,7 +242,7 @@ rust_binary(
         "WORKSPACE.bazel",
         "WORKSPACE",
     ]),
-    version = "1.0.66",
+    version = "1.0.67",
     tags = [
         "cargo-raze",
         "manual",
@@ -280,7 +280,7 @@ rust_library(
         "WORKSPACE.bazel",
         "WORKSPACE",
     ]),
-    version = "1.0.66",
+    version = "1.0.67",
     tags = [
         "cargo-raze",
         "manual",
@@ -298,14 +298,14 @@ rust_library(
 # Unsupported target "cxxflags" with type "test" omitted
 # Unsupported target "test" with type "test" omitted
 """,
-        sha256 = "4c0496836a84f8d0495758516b8621a622beb77c0fed418570e50764093ced48",
-        strip_prefix = "cc-1.0.66",
+        sha256 = "e3c69b077ad434294d3ce9f1f6143a2a4b89a8a2d54ef813d85003a4fd1137fd",
+        strip_prefix = "cc-1.0.67",
         type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/cc/1.0.66/download",
+        url = "https://crates.io/api/v1/crates/cc/1.0.67/download",
     )
 
     http_archive(
-        name = "crate_universe_uses_sys_crate_rust_deps__libc__0_2_76",
+        name = "rust_deps__libc__0_2_76",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
@@ -420,7 +420,7 @@ rust_library(
     )
 
     http_archive(
-        name = "crate_universe_uses_sys_crate_rust_deps__pkg_config__0_3_19",
+        name = "rust_deps__pkg_config__0_3_19",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
@@ -490,8 +490,8 @@ rust_library(
 
 
 CRATE_TARGET_NAMES = {
-    "bzip2": "@crate_universe_uses_sys_crate_rust_deps__bzip2__0_3_3//:bzip2",
-    "libc": "@crate_universe_uses_sys_crate_rust_deps__libc__0_2_76//:libc",
+    "bzip2": "@rust_deps__bzip2__0_3_3//:bzip2",
+    "libc": "@rust_deps__libc__0_2_76//:libc",
 }
 
 def crate(crate_name):
@@ -520,25 +520,25 @@ def all_proc_macro_deps():
 
 def crates_from(label):
     mapping = {
-        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [crate("bzip2")],
+        "//:Cargo.toml": [crate("bzip2")],
     }
     return mapping[_absolutify(label)]
 
 def dev_crates_from(label):
     mapping = {
-        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+        "//:Cargo.toml": [],
     }
     return mapping[_absolutify(label)]
 
 def build_crates_from(label):
     mapping = {
-        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+        "//:Cargo.toml": [],
     }
     return mapping[_absolutify(label)]
 
 def proc_macro_crates_from(label):
     mapping = {
-        "@examples//crate_universe/uses_sys_crate:Cargo.toml": [],
+        "//:Cargo.toml": [],
     }
     return mapping[_absolutify(label)]
 

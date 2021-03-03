@@ -6,7 +6,7 @@
 # bazel
 /bazel-*
 /examples/bazel-*
-/examples/*/bazel-*
+/examples/crate_universe/*/bazel-*
 /docs/bazel-*
 
 # rustfmt

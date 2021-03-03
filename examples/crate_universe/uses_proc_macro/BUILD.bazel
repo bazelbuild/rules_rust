@@ -3,7 +3,7 @@ load(
     "rust_binary",
 )
 
-load("@crate_universe_uses_proc_macro_rust_deps//:defs.bzl", "crate")
+load("@rust_deps//:defs.bzl", "crate")
 
 rust_binary(
     name = "uses_proc_macro",
