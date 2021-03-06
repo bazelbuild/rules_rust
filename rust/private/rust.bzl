@@ -789,13 +789,6 @@ rust_proc_macro = rule(
 )
 
 _rust_binary_attrs = {
-    "linker_script": attr.label(
-        doc = _tidy("""
-            Link script to forward into linker via rustc options.
-        """),
-        cfg = "exec",
-        allow_single_file = True,
-    ),
     "crate_type": attr.string(
         doc = _tidy("""
             Crate type that will be passed to `rustc` to be used for building this crate.
@@ -804,6 +797,13 @@ _rust_binary_attrs = {
             for WebAssembly targets (//rust/platform:wasi and //rust/platform:wasm).
         """),
         default = "bin",
+    ),
+    "linker_script": attr.label(
+        doc = _tidy("""
+            Link script to forward into linker via rustc options.
+        """),
+        cfg = "exec",
+        allow_single_file = True,
     ),
     "out_binary": attr.bool(),
 }
