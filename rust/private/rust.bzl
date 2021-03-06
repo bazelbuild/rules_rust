@@ -255,11 +255,11 @@ def _rust_binary_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_type = "bin",
+        crate_type = ctx.attr.crate_type,
         crate_info = rust_common.crate_info(
             name = crate_name,
-            type = "bin",
-            root = crate_root_src(ctx.attr, ctx.files.srcs, crate_type = "bin"),
+            type = ctx.attr.crate_type,
+            root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
             srcs = ctx.files.srcs,
             deps = ctx.attr.deps,
             proc_macro_deps = ctx.attr.proc_macro_deps,
@@ -795,6 +795,15 @@ _rust_binary_attrs = {
         """),
         cfg = "exec",
         allow_single_file = True,
+    ),
+    "crate_type": attr.string(
+        doc = _tidy("""
+            Crate type that will be passed to `rustc` to be used for building this crate.
+
+            This option is a temporary workaround and should be used only when building
+            for WebAssembly targets (//rust/platform:wasi and //rust/platform:wasm).
+        """),
+        default = "bin",
     ),
     "out_binary": attr.bool(),
 }
