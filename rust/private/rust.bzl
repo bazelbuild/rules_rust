@@ -664,6 +664,7 @@ rust_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust library crate.
 
@@ -739,6 +740,7 @@ rust_static_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust static library.
 
@@ -761,6 +763,7 @@ rust_shared_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust shared library.
 
@@ -783,6 +786,7 @@ rust_proc_macro = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust proc-macro crate.
         """),
@@ -809,6 +813,7 @@ rust_binary = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust binary crate.
 
@@ -907,6 +912,7 @@ rust_test = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust test crate.
 
@@ -1055,6 +1061,7 @@ rust_test_binary = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust test binary, without marking this rule as a Bazel test.
 
@@ -1078,6 +1085,7 @@ rust_benchmark = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = _tidy("""\
         Builds a Rust benchmark test.
 

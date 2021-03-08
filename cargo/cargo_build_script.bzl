@@ -243,6 +243,7 @@ _build_script_run = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
 )
 
 def cargo_build_script(
