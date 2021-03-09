@@ -43,4 +43,5 @@ rustfmt_generator = rule(
     toolchains = [
         str(Label("//rust:toolchain")),
     ],
+    incompatible_use_toolchain_transition = True,
 )

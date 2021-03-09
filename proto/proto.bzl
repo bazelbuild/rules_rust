@@ -310,6 +310,7 @@ rust_proto_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
 
