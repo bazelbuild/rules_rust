@@ -67,6 +67,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
         if partitioned_files_len != len(dot_a_files):
             partitioned = alloc_files + between_alloc_and_core_files + core_files + between_core_and_std_files + std_files
             for f in sorted(partitioned):
+                # buildifier: disable=print
                 print("File partitioned: {}".format(f.basename))
             fail("rust_toolchain couldn't properly partition rlibs in rust_lib. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
 
