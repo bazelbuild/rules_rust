@@ -1,4 +1,5 @@
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
+"""Unittest to verify ordering of rust stdlib in rust_library() CcInfo"""
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_library")
 
 def _categorize_library(name):
@@ -13,11 +14,11 @@ def _categorize_library(name):
         return "compiler_builtins"
     return "other"
 
-def _dedup_preserving_order(l):
+def _dedup_preserving_order(list):
     """Given a list, deduplicate its elements preserving order."""
     r = []
     seen = {}
-    for e in l:
+    for e in list:
         if e in seen:
             continue
         seen[e] = 1
@@ -27,9 +28,9 @@ def _dedup_preserving_order(l):
 def _libstd_ordering_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    libs = [l.static_library for li in tut[CcInfo].linking_context.linker_inputs.to_list() for l in li.libraries]
-    rlibs = [_categorize_library(l.basename) for l in libs if ".rlib" in l.basename]
-    set_to_check = _dedup_preserving_order([l for l in rlibs if l != "other"])
+    libs = [lib.static_library for li in tut[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries]
+    rlibs = [_categorize_library(lib.basename) for lib in libs if ".rlib" in lib.basename]
+    set_to_check = _dedup_preserving_order([lib for lib in rlibs if lib != "other"])
     asserts.equals(env, ["std", "core", "compiler_builtins", "alloc"], set_to_check)
     return analysistest.end(env)
 

@@ -1,7 +1,7 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
 def _assert_argv_contains_not(env, action, flag):
@@ -225,25 +225,6 @@ def _native_dep_test():
         name = "cdylib_has_native_dep_and_alwayslink",
         srcs = ["lib_using_native_dep.rs"],
         deps = [":native_dep", ":alwayslink"],
-    )
-
-    cc_library(
-        name = "alloc_shims",
-        srcs = ["alloc_shims.c"],
-    )
-
-    rust_library(
-        name = "print_hi_rust",
-        srcs = ["print_hi_rust.rs"],
-    )
-
-    cc_binary(
-        name = "cc_bin_uses_rust_library",
-        srcs = ["cc_bin_uses_rust_library.cc"],
-        deps = [
-            ":print_hi_rust",
-            ":alloc_shims",  # TODO: this should come in through the toolchain configuration
-        ],
     )
 
     rlib_has_no_native_libs_test(
