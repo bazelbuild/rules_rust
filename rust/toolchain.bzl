@@ -19,6 +19,15 @@ def _make_dota(ctx, f):
     ctx.actions.symlink(output = dot_a, target_file = f)
     return dot_a
 
+def _ltl(library, ctx, cc_toolchain, feature_configuration):
+    return cc_common.create_library_to_link(
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        static_library = library,
+        pic_static_library = library,
+    )
+
 def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
     """Make the CcInfo (if possible) for libstd and allocator libraries.
 
@@ -44,50 +53,47 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
         # do that later.
         dot_a_files = [_make_dota(ctx, f) for f in std_rlibs]
 
-        alloc_inputs = depset([
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                cc_toolchain = cc_toolchain,
-                static_library = f,
-                pic_static_library = f,
-            )
+        alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
+        between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
+        core_files = [f for f in dot_a_files if ("core" in f.basename or "adler" in f.basename) and "std" not in f.basename]
+        between_core_and_std_files = [
+            f
             for f in dot_a_files
-            if "alloc" in f.basename
-        ])
-        core_inputs = depset([
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                cc_toolchain = cc_toolchain,
-                static_library = f,
-                pic_static_library = f,
-            )
-            for f in dot_a_files
-            if "core" in f.basename or "adler" in f.basename
-        ], transitive = [alloc_inputs], order = "topological")
-        between_core_and_std_inputs = depset([
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                cc_toolchain = cc_toolchain,
-                static_library = f,
-                pic_static_library = f,
-            )
-            for f in dot_a_files
-            if "core" not in f.basename and "alloc" not in f.basename and "std" not in f.basename and not "adler" in f.basename
-        ], transitive = [core_inputs], order = "topological")
-        std_inputs = depset([
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                cc_toolchain = cc_toolchain,
-                static_library = f,
-                pic_static_library = f,
-            )
-            for f in dot_a_files
-            if "std" in f.basename
-        ], transitive = [between_core_and_std_inputs], order = "topological")
+            if "alloc" not in f.basename and "compiler_builtins" not in f.basename and "core" not in f.basename and "adler" not in f.basename and "std" not in f.basename
+        ]
+        std_files = [f for f in dot_a_files if "std" in f.basename]
+
+        partitioned_files_len = len(alloc_files) + len(between_alloc_and_core_files) + len(core_files) + len(between_core_and_std_files) + len(std_files)
+        if partitioned_files_len != len(dot_a_files):
+            partitioned = alloc_files + between_alloc_and_core_files + core_files + between_core_and_std_files + std_files
+            for f in sorted(partitioned):
+                print("File partitioned: {}".format(f.basename))
+            fail("rust_toolchain couldn't properly partition rlibs in rust_lib. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
+
+        alloc_inputs = depset(
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in alloc_files],
+        )
+        between_alloc_and_core_inputs = depset(
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in between_alloc_and_core_files],
+            transitive = [alloc_inputs],
+            order = "topological",
+        )
+        core_inputs = depset(
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in core_files],
+            transitive = [between_alloc_and_core_inputs],
+            order = "topological",
+        )
+        between_core_and_std_inputs = depset(
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in between_core_and_std_files],
+            transitive = [core_inputs],
+            order = "topological",
+        )
+        std_inputs = depset(
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in std_files],
+            transitive = [between_core_and_std_inputs],
+            order = "topological",
+        )
+
         link_inputs.append(cc_common.create_linker_input(
             owner = rust_lib.label,
             libraries = std_inputs,
