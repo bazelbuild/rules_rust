@@ -23,7 +23,28 @@ def _interleaving_cc_link_order_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _interleaving_rust_link_order_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    dep_info = tut[rust_common.dep_info]
+    # linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    # a = linker_inputs[0]
+    # b = linker_inputs[1]
+    # c = linker_inputs[2]
+    # d = linker_inputs[3]
+    # e = linker_inputs[4]
+
+    # asserts.equals(env, "a", a.owner.name)
+    # asserts.equals(env, "b", b.owner.name)
+    # asserts.equals(env, "c", c.owner.name)
+    # asserts.equals(env, "d", d.owner.name)
+    # asserts.equals(env, "e", e.owner.name)
+
+    return analysistest.end(env)
+
 interleaving_cc_link_order_test = analysistest.make(_interleaving_cc_link_order_test_impl)
+interleaving_rust_link_order_test = analysistest.make(_interleaving_rust_link_order_test_impl)
+
 
 def _interleaving_link_order_test():
     rust_library(
@@ -56,6 +77,11 @@ def _interleaving_link_order_test():
         target_under_test = ":a",
     )
 
+    interleaving_rust_link_order_test(
+        name = "interleaving_rust_link_order_test",
+        target_under_test = ":a",
+    )
+
 def interleaved_cc_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -68,5 +94,6 @@ def interleaved_cc_info_test_suite(name):
         name = name,
         tests = [
             ":interleaving_cc_link_order_test",
+            ":interleaving_rust_link_order_test",
         ],
     )
