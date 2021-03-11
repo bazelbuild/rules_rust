@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//rust:defs.bzl", "rust_library", "rust_common")
+load("//rust:defs.bzl", "rust_library")
 
 def _interleaving_cc_link_order_test_impl(ctx):
     env = analysistest.begin(ctx)
