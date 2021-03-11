@@ -38,7 +38,17 @@ DepInfo = provider(
         "direct_crates": "depset[CrateInfo]",
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crates": "depset[CrateInfo]",
+        "transitive_deps": "depset[SingleDepInfo]: All transitive dependencies (both native and crate).",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+    },
+)
+
+SingleDepInfo = provider(
+    doc = "A provider containing information about a single dependency.",
+    fields = {
+        "aliased_name": "str: name to be used instead of the one in CrateInfo",
+        "crate": "CrateInfo: single Crate dependency",
+        "native": "depset[LinkerInput]: All transitive dependencies of a C/C++ dependency (or rather anything that provides CcInfo).",
     },
 )

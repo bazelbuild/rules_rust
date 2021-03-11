@@ -60,6 +60,7 @@ def _clippy_aspect_impl(target, ctx):
         root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
 
     dep_info, build_info = collect_deps(
+        crate_info,
         ctx.label,
         crate_info.deps,
         crate_info.proc_macro_deps,

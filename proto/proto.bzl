@@ -48,6 +48,8 @@ load("//rust/private:rustc.bzl", "rustc_compile_action")
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
 
+EMPTY_DICT = {}
+
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
     fields = {
@@ -225,10 +227,10 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             srcs = depset(srcs),
             deps = depset(compile_deps),
             proc_macro_deps = depset([]),
-            aliases = {},
+            aliases = EMPTY_DICT,
             output = rust_lib,
             edition = proto_toolchain.edition,
-            rustc_env = {},
+            rustc_env = EMPTY_DICT,
             is_test = False,
         ),
         output_hash = output_hash,

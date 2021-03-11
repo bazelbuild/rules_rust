@@ -100,10 +100,11 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
+def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
+        crate_info (CrateInfo): CrateInfo of the current target.
         label (str): Label of the current target.
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
@@ -135,6 +136,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             )
 
     direct_crates = []
+    transitive_deps = []
     transitive_crates = []
     transitive_noncrates = []
     transitive_noncrate_libs = []
@@ -152,6 +154,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             ))
 
             transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
+            transitive_deps.append(dep[rust_common.dep_info].transitive_deps)
             transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
             transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
             transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
@@ -163,6 +166,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
             transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
+            transitive_deps.append(depset([rust_common.single_dep_info(crate = None, native = dep[CcInfo].linking_context.linker_inputs)]))
         elif BuildInfo in dep:
             if build_info:
                 fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
@@ -188,6 +192,11 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
             transitive_libs = transitive_libs.to_list(),
             transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
+            transitive_deps = depset(
+                direct = [rust_common.single_dep_info(crate = crate_info, native = None)],
+                transitive = transitive_deps,
+                order = "topological",
+            ),
         ),
         build_info,
     )
@@ -533,6 +542,7 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info = collect_deps(
+        crate_info,
         ctx.label,
         crate_info.deps,
         crate_info.proc_macro_deps,
@@ -598,7 +608,6 @@ def rustc_compile_action(
     out_binary = False
     if hasattr(ctx.attr, "out_binary"):
         out_binary = getattr(ctx.attr, "out_binary")
-
     return establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration) + [
         crate_info,
         dep_info,

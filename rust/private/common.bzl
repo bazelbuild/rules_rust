@@ -23,9 +23,10 @@ which exports the `rust_common` struct.
 In the Bazel lingo, `rust_common` gives the access to the Rust Sandwich API.
 """
 
-load(":providers.bzl", "CrateInfo", "DepInfo")
+load(":providers.bzl", "CrateInfo", "DepInfo", "SingleDepInfo")
 
 rust_common = struct(
     crate_info = CrateInfo,
     dep_info = DepInfo,
+    single_dep_info = SingleDepInfo,
 )
