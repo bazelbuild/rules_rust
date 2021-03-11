@@ -14,7 +14,7 @@
 
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "DepInfo", "add_crate_link_flags", "add_edition_flags")
+load("//rust/private:rustc.bzl", "add_crate_link_flags", "add_edition_flags")
 load("//rust/private:utils.bzl", "find_toolchain")
 
 _rust_doc_doc = """Generates code documentation.
@@ -66,7 +66,7 @@ def _rust_doc_impl(ctx):
         fail("Expected rust_library or rust_binary.", "dep")
 
     crate = ctx.attr.dep[rust_common.crate_info]
-    dep_info = ctx.attr.dep[DepInfo]
+    dep_info = ctx.attr.dep[rust_common.dep_info]
 
     toolchain = find_toolchain(ctx)
 

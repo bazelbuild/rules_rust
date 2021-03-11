@@ -2,12 +2,13 @@
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:rust.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "name_to_crate_name")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "BuildInfo", "DepInfo", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "expand_locations", "find_cc_toolchain", "find_toolchain")
@@ -161,11 +162,11 @@ def _build_script_impl(ctx):
     ])
     build_script_inputs = []
     for dep in ctx.attr.deps:
-        if DepInfo in dep and dep[DepInfo].dep_env:
-            dep_env_file = dep[DepInfo].dep_env
+        if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
+            dep_env_file = dep[rust_common.dep_info].dep_env
             args.add(dep_env_file.path)
             build_script_inputs.append(dep_env_file)
-            for dep_build_info in dep[DepInfo].transitive_build_infos.to_list():
+            for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
 
     ctx.actions.run(
@@ -211,7 +212,7 @@ _build_script_run = rule(
         ),
         "deps": attr.label_list(
             doc = "The Rust dependencies of the crate defined by `crate_name`",
-            providers = [DepInfo],
+            providers = [rust_common.dep_info],
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",

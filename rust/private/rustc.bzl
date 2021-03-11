@@ -47,18 +47,6 @@ AliasableDepInfo = provider(
     },
 )
 
-DepInfo = provider(
-    doc = "A provider containing information about a Crate's dependencies.",
-    fields = {
-        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
-        "direct_crates": "depset[CrateInfo]",
-        "transitive_build_infos": "depset[BuildInfo]",
-        "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
-        "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
-    },
-)
-
 _error_format_values = ["human", "json", "short"]
 
 ErrorFormatInfo = provider(
@@ -163,10 +151,10 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 dep = direct_dep,
             ))
 
-            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[DepInfo].transitive_crates]))
-            transitive_noncrates.append(dep[DepInfo].transitive_noncrates)
-            transitive_noncrate_libs.append(depset(dep[DepInfo].transitive_libs))
-            transitive_build_infos.append(dep[DepInfo].transitive_build_infos)
+            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
+            transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
+            transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
+            transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
 
@@ -190,7 +178,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     )
 
     return (
-        DepInfo(
+        rust_common.dep_info(
             direct_crates = depset(direct_crates),
             transitive_crates = transitive_crates_depset,
             transitive_noncrates = depset(

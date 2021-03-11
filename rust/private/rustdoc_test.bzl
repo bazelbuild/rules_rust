@@ -14,7 +14,6 @@
 
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "DepInfo")
 load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
 
 def _rust_doc_test_impl(ctx):
@@ -33,7 +32,7 @@ def _rust_doc_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    dep_info = ctx.attr.dep[DepInfo]
+    dep_info = ctx.attr.dep[rust_common.dep_info]
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.

@@ -30,3 +30,16 @@ CrateInfo = provider(
         "type": "str: The type of this crate. eg. lib or bin",
     },
 )
+
+
+DepInfo = provider(
+    doc = "A provider containing information about a Crate's dependencies.",
+    fields = {
+        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
+        "direct_crates": "depset[CrateInfo]",
+        "transitive_build_infos": "depset[BuildInfo]",
+        "transitive_crates": "depset[CrateInfo]",
+        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
+        "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+    },
+)
