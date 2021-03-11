@@ -1,4 +1,5 @@
 """Unittest to verify ordering of rust stdlib in rust_library() CcInfo"""
+
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_library")
 

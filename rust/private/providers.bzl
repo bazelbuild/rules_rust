@@ -31,7 +31,6 @@ CrateInfo = provider(
     },
 )
 
-
 DepInfo = provider(
     doc = "A provider containing information about a Crate's dependencies.",
     fields = {
