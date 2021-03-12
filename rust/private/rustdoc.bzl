@@ -70,8 +70,13 @@ def _rust_doc_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
+    directs = []
+    for single_dep_info in dep_info.transitive_deps.to_list():
+        if single_dep_info.crate:
+            directs.append(single_dep_info.crate.output)
+
     rustdoc_inputs = depset(
-        [c.output for c in dep_info.transitive_crates.to_list()] +
+        directs +
         [toolchain.rust_doc],
         transitive = [
             crate.srcs,

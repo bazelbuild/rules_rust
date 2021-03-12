@@ -137,8 +137,9 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
 
     direct_crates = []
     transitive_deps = []
-    transitive_crates = []
-    transitive_noncrates = []
+
+    # transitive_crates = []
+    # transitive_noncrates = []
     transitive_noncrate_libs = []
     transitive_build_infos = []
     build_info = None
@@ -153,19 +154,20 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
                 dep = direct_dep,
             ))
 
-            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
+            # transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
             transitive_deps.append(dep[rust_common.dep_info].transitive_deps)
-            transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
-            transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
+
+            # transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
+            # transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
             transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
-            libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
-            transitive_noncrate_libs.append(depset(libs))
-            transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
+            # linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+            # libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
+            # transitive_noncrate_libs.append(depset(libs))
+            # transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
             transitive_deps.append(depset([rust_common.single_dep_info(crate = None, native = dep[CcInfo].linking_context.linker_inputs)]))
         elif BuildInfo in dep:
             if build_info:
@@ -175,21 +177,32 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
-    transitive_crates_depset = depset(transitive = transitive_crates)
-    transitive_libs = depset(
-        [c.output for c in transitive_crates_depset.to_list()],
-        transitive = transitive_noncrate_libs,
-    )
+    # transitive_crates_depset = depset(transitive = transitive_crates)
+    transitive_libs = []
+    for c in depset(transitive = transitive_deps).to_list():
+        if c.crate:
+            transitive_libs.append(c.crate.output)
+        elif c.native:
+            linker_inputs = c.native.to_list()
+            libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
+            transitive_libs.extend(libs)
+        else:
+            fail("WAT?")
+
+    # transitive_libs = depset(
+    #     [c.output for c in transitive_crates_depset.to_list()],
+    #     transitive = transitive_noncrate_libs,
+    # )
 
     return (
         rust_common.dep_info(
             direct_crates = depset(direct_crates),
-            transitive_crates = transitive_crates_depset,
-            transitive_noncrates = depset(
-                transitive = transitive_noncrates,
-                order = "topological",  # dylib link flag ordering matters.
-            ),
-            transitive_libs = transitive_libs.to_list(),
+            # transitive_crates = transitive_crates_depset,
+            # transitive_noncrates = depset(
+            #     transitive = transitive_noncrates,
+            #     order = "topological",  # dylib link flag ordering matters.
+            # ),
+            transitive_libs = transitive_libs,
             transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
             transitive_deps = depset(
@@ -598,7 +611,15 @@ def rustc_compile_action(
         ),
     )
 
-    dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]
+    dylibs = []
+    for single_dep_info in dep_info.transitive_deps.to_list():
+        if single_dep_info.native:
+            for linker_input in single_dep_info.native.to_list():
+                for lib in linker_input.libraries:
+                    if _is_dylib(lib):
+                        dylibs.append(get_preferred_artifact(lib))
+
+    # dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]
 
     runfiles = ctx.runfiles(
         files = dylibs + getattr(ctx.files, "data", []),
@@ -751,7 +772,14 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
+    preferreds = []
+    for single_dep_info in dep_info.transitive_deps.to_list():
+        if single_dep_info.native:
+            for linker_input in single_dep_info.native.to_list():
+                for lib in linker_input.libraries:
+                    preferreds.append(get_preferred_artifact(lib))
+
+    # preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
 
     # TODO(augie): I don't understand why this can't just be filtering on
     # _is_dylib(lib), but doing that causes failures on darwin and windows
@@ -796,7 +824,7 @@ def add_crate_link_flags(args, dep_info):
     # nb. Crates are linked via --extern regardless of their crate_type
     args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
     args.add_all(
-        dep_info.transitive_crates,
+        dep_info.transitive_deps,
         map_each = _get_crate_dirname,
         uniquify = True,
         format_each = "-Ldependency=%s",
@@ -813,16 +841,19 @@ def _crate_to_link_flag(crate_info):
     """
     return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
 
-def _get_crate_dirname(crate):
+def _get_crate_dirname(single_dep_info):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
 
     Args:
-        crate (CrateInfo): A CrateInfo provider from the current rule
+        single_dep_info (SingleDepInfo): A CrateInfo provider from the current rule
 
     Returns:
-        str: The directory name of the the output File that will be produced.
+        [str]: The directory name of the the output File that will be produced.
     """
-    return crate.output.dirname
+    if single_dep_info.crate:
+        return [single_dep_info.crate.output.dirname]
+    else:
+        return []
 
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
@@ -831,45 +862,56 @@ def _portable_link_flags(lib):
         return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
     return []
 
-def _make_link_flags_windows(linker_input):
+def _make_link_flags_windows(single_dep_info):
     ret = []
-    for lib in linker_input.libraries:
-        if lib.alwayslink:
-            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path])
-        else:
-            ret.extend(_portable_link_flags(lib))
+    if single_dep_info.native:
+        for linker_input in single_dep_info.native.to_list():
+            for lib in linker_input.libraries:
+                if lib.alwayslink:
+                    ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path])
+                else:
+                    ret.extend(_portable_link_flags(lib))
     return ret
 
-def _make_link_flags_darwin(linker_input):
+def _make_link_flags_darwin(single_dep_info):
     ret = []
-    for lib in linker_input.libraries:
-        if lib.alwayslink:
-            ret.extend([
-                "-C",
-                ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
-            ])
-        else:
-            ret.extend(_portable_link_flags(lib))
+    if single_dep_info.native:
+        for linker_input in single_dep_info.native.to_list():
+            for lib in linker_input.libraries:
+                if lib.alwayslink:
+                    ret.extend([
+                        "-C",
+                        ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
+                    ])
+                else:
+                    ret.extend(_portable_link_flags(lib))
     return ret
 
-def _make_link_flags_default(linker_input):
+def _make_link_flags_default(single_dep_info):
     ret = []
-    for lib in linker_input.libraries:
-        if lib.alwayslink:
-            ret.extend([
-                "-C",
-                "link-arg=-Wl,--whole-archive",
-                "-C",
-                ("link-arg=%s" % get_preferred_artifact(lib).path),
-                "-C",
-                "link-arg=-Wl,--no-whole-archive",
-            ])
-        else:
-            ret.extend(_portable_link_flags(lib))
+    if single_dep_info.native:
+        for linker_input in single_dep_info.native.to_list():
+            for lib in linker_input.libraries:
+                if lib.alwayslink:
+                    ret.extend([
+                        "-C",
+                        "link-arg=-Wl,--whole-archive",
+                        "-C",
+                        ("link-arg=%s" % get_preferred_artifact(lib).path),
+                        "-C",
+                        "link-arg=-Wl,--no-whole-archive",
+                    ])
+                else:
+                    ret.extend(_portable_link_flags(lib))
     return ret
 
-def _libraries_dirnames(linker_input):
-    return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
+def _libraries_dirnames(single_dep_info):
+    dirnames = []
+    if single_dep_info.native:
+        for linker_input in single_dep_info.native.to_list():
+            for lib in linker_input.libraries:
+                dirnames.append(get_preferred_artifact(lib).dirname)
+    return dirnames
 
 def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
@@ -883,7 +925,7 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
+    args.add_all(dep_info.transitive_deps, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
 
     if crate_type in ["lib", "rlib"]:
         return
@@ -895,7 +937,7 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
     else:
         make_link_flags = _make_link_flags_default
 
-    args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags)
+    args.add_all(dep_info.transitive_deps, map_each = make_link_flags)
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically

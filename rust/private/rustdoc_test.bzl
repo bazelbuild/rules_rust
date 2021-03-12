@@ -96,18 +96,27 @@ def _build_rustdoc_flags(dep_info, crate):
 
     link_flags.append("--extern=" + crate.name + "=" + crate.output.short_path)
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
-    link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
-    # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
-    for lib_to_link in dep_info.transitive_noncrates.to_list():
-        is_static = bool(lib_to_link.static_library or lib_to_link.pic_static_library)
-        f = get_preferred_artifact(lib_to_link)
-        if not is_static:
-            link_flags.append("-ldylib=" + get_lib_name(f))
+    link_search_flags = []
+    for single_dep_input in d.transitive_deps.to_list():
+        if single_dep_input.crate:
+            link_search_flags.append("-Ldependency={}".format(_dirname(single_dep_input.crate.output.short_path)))
+        elif single_dep_input.native:
+            # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
+            for linker_input in single_dep_input.native.to_list():
+                for lib_to_link in linker_input.libraries:
+                    is_static = bool(lib_to_link.static_library or lib_to_link.pic_static_library)
+                    f = get_preferred_artifact(lib_to_link)
+                    if not is_static:
+                        link_flags.append("-ldylib=" + get_lib_name(f))
+                    else:
+                        link_flags.append("-lstatic=" + get_lib_name(f))
+                    link_flags.append("-Lnative={}".format(_dirname(f.short_path)))
+                    link_search_flags.append("-Lnative={}".format(_dirname(f.short_path)))
         else:
-            link_flags.append("-lstatic=" + get_lib_name(f))
-        link_flags.append("-Lnative={}".format(_dirname(f.short_path)))
-        link_search_flags.append("-Lnative={}".format(_dirname(f.short_path)))
+            fail("WAT")
+
+    # link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
     edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
 
