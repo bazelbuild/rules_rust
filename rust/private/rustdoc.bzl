@@ -71,10 +71,10 @@ def _rust_doc_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     rustdoc_inputs = depset(
-        crate.srcs +
         [c.output for c in dep_info.transitive_crates.to_list()] +
         [toolchain.rust_doc],
         transitive = [
+            crate.srcs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
         ],
@@ -105,7 +105,7 @@ def _rust_doc_impl(ctx):
         outputs = [output_dir],
         arguments = [args],
         mnemonic = "Rustdoc",
-        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
+        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs.to_list())),
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.

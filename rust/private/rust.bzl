@@ -226,9 +226,9 @@ def _rust_library_common(ctx, crate_type):
             name = crate_name,
             type = crate_type,
             root = crate_root,
-            srcs = ctx.files.srcs,
-            deps = ctx.attr.deps,
-            proc_macro_deps = ctx.attr.proc_macro_deps,
+            srcs = depset(ctx.files.srcs),
+            deps = depset(ctx.attr.deps),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
             edition = get_edition(ctx.attr, toolchain),
@@ -260,9 +260,9 @@ def _rust_binary_impl(ctx):
             name = crate_name,
             type = "bin",
             root = crate_root_src(ctx.attr, ctx.files.srcs, crate_type = "bin"),
-            srcs = ctx.files.srcs,
-            deps = ctx.attr.deps,
-            proc_macro_deps = ctx.attr.proc_macro_deps,
+            srcs = depset(ctx.files.srcs),
+            deps = depset(ctx.attr.deps),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
@@ -370,13 +370,13 @@ def _rust_test_common(ctx, toolchain, output):
         # Target is building the crate in `test` config
         # Build the test binary using the dependency's srcs.
         crate = ctx.attr.crate[rust_common.crate_info]
-        target = rust_common.crate_info(
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = crate_type,
             root = crate.root,
-            srcs = crate.srcs + ctx.files.srcs,
-            deps = crate.deps + ctx.attr.deps,
-            proc_macro_deps = crate.proc_macro_deps + ctx.attr.proc_macro_deps,
+            srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
+            deps = depset(ctx.attr.deps, transitive = [crate.deps]),
+            proc_macro_deps = depset( ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
             edition = crate.edition,
@@ -385,13 +385,13 @@ def _rust_test_common(ctx, toolchain, output):
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
-        target = rust_common.crate_info(
+        crate_info = rust_common.crate_info(
             name = crate_name,
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
-            srcs = ctx.files.srcs,
-            deps = ctx.attr.deps,
-            proc_macro_deps = ctx.attr.proc_macro_deps,
+            srcs = depset(ctx.files.srcs),
+            deps = depset(ctx.attr.deps),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
@@ -403,7 +403,7 @@ def _rust_test_common(ctx, toolchain, output):
         ctx = ctx,
         toolchain = toolchain,
         crate_type = crate_type,
-        crate_info = target,
+        crate_info = crate_info,
         rust_flags = ["--test"],
     )
 

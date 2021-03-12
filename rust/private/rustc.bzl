@@ -114,7 +114,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
     """
 
-    for dep in deps:
+    for dep in deps.to_list():
         if rust_common.crate_info in dep:
             if dep[rust_common.crate_info].type == "proc-macro":
                 fail(
@@ -123,7 +123,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                         dep.label,
                     ),
                 )
-    for dep in proc_macro_deps:
+    for dep in proc_macro_deps.to_list():
         type = dep[rust_common.crate_info].type
         if type != "proc-macro":
             fail(
@@ -142,7 +142,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     build_info = None
 
     aliases = {k.label: v for k, v in aliases.items()}
-    for dep in deps + proc_macro_deps:
+    for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
         if rust_common.crate_info in dep:
             # This dependency is a rust_library
             direct_dep = dep[rust_common.crate_info]
@@ -301,7 +301,6 @@ def collect_inputs(
     linker_depset = cc_toolchain.all_files
 
     compile_inputs = depset(
-        crate_info.srcs +
         getattr(files, "data", []) +
         getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
@@ -313,6 +312,7 @@ def collect_inputs(
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
             linker_depset,
+            crate_info.srcs,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
@@ -584,7 +584,7 @@ def rustc_compile_action(
             crate_info.type,
             ctx.label.name,
             formatted_version,
-            len(crate_info.srcs),
+            len(crate_info.srcs.to_list()),
         ),
     )
 

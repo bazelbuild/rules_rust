@@ -44,13 +44,13 @@ def _rust_doc_test_impl(ctx):
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
-        crate.srcs +
         [crate.output] +
         dep_info.transitive_libs +
         [toolchain.rust_doc] +
         [toolchain.rustc] +
         toolchain.crosstool_files,
         transitive = [
+            crate.srcs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
         ],
