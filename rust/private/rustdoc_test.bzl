@@ -98,12 +98,12 @@ def _build_rustdoc_flags(dep_info, crate):
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
 
     link_search_flags = []
-    for single_dep_input in d.transitive_deps.to_list():
-        if single_dep_input.crate:
-            link_search_flags.append("-Ldependency={}".format(_dirname(single_dep_input.crate.output.short_path)))
-        elif single_dep_input.native:
+    for single_dep_info in d.transitive_deps.to_list():
+        if single_dep_info.crate:
+            link_search_flags.append("-Ldependency={}".format(_dirname(single_dep_info.crate.output.short_path)))
+        elif single_dep_info.native:
             # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
-            for linker_input in single_dep_input.native.to_list():
+            for linker_input in single_dep_info.native.to_list():
                 for lib_to_link in linker_input.libraries:
                     is_static = bool(lib_to_link.static_library or lib_to_link.pic_static_library)
                     f = get_preferred_artifact(lib_to_link)
@@ -114,9 +114,7 @@ def _build_rustdoc_flags(dep_info, crate):
                     link_flags.append("-Lnative={}".format(_dirname(f.short_path)))
                     link_search_flags.append("-Lnative={}".format(_dirname(f.short_path)))
         else:
-            fail("WAT")
-
-    # link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
+            fail("Unexpected SingleDepInfo value: " + str(single_dep_info))
 
     edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
 

@@ -138,8 +138,6 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
     direct_crates = []
     transitive_deps = []
 
-    # transitive_crates = []
-    # transitive_noncrates = []
     transitive_noncrate_libs = []
     transitive_build_infos = []
     build_info = None
@@ -154,20 +152,13 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
                 dep = direct_dep,
             ))
 
-            # transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
             transitive_deps.append(dep[rust_common.dep_info].transitive_deps)
 
-            # transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
-            # transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
             transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            # linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
-            # libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
-            # transitive_noncrate_libs.append(depset(libs))
-            # transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
             transitive_deps.append(depset([rust_common.single_dep_info(crate = None, native = dep[CcInfo].linking_context.linker_inputs)]))
         elif BuildInfo in dep:
             if build_info:
@@ -179,29 +170,19 @@ def collect_deps(crate_info, label, deps, proc_macro_deps, aliases, toolchain):
 
     # transitive_crates_depset = depset(transitive = transitive_crates)
     transitive_libs = []
-    for c in depset(transitive = transitive_deps).to_list():
-        if c.crate:
-            transitive_libs.append(c.crate.output)
-        elif c.native:
-            linker_inputs = c.native.to_list()
+    for single_dep_info in depset(transitive = transitive_deps).to_list():
+        if single_dep_info.crate:
+            transitive_libs.append(single_dep_info.crate.output)
+        elif single_dep_info.native:
+            linker_inputs = single_dep_info.native.to_list()
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_libs.extend(libs)
         else:
-            fail("WAT?")
-
-    # transitive_libs = depset(
-    #     [c.output for c in transitive_crates_depset.to_list()],
-    #     transitive = transitive_noncrate_libs,
-    # )
+            fail("Unexpected SingleDepInfo value: " + str(single_dep_info))
 
     return (
         rust_common.dep_info(
             direct_crates = depset(direct_crates),
-            # transitive_crates = transitive_crates_depset,
-            # transitive_noncrates = depset(
-            #     transitive = transitive_noncrates,
-            #     order = "topological",  # dylib link flag ordering matters.
-            # ),
             transitive_libs = transitive_libs,
             transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
@@ -619,8 +600,6 @@ def rustc_compile_action(
                     if _is_dylib(lib):
                         dylibs.append(get_preferred_artifact(lib))
 
-    # dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]
-
     runfiles = ctx.runfiles(
         files = dylibs + getattr(ctx.files, "data", []),
         collect_data = True,
@@ -778,8 +757,6 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
             for linker_input in single_dep_info.native.to_list():
                 for lib in linker_input.libraries:
                     preferreds.append(get_preferred_artifact(lib))
-
-    # preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
 
     # TODO(augie): I don't understand why this can't just be filtering on
     # _is_dylib(lib), but doing that causes failures on darwin and windows
