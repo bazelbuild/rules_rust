@@ -47,18 +47,6 @@ AliasableDepInfo = provider(
     },
 )
 
-DepInfo = provider(
-    doc = "A provider containing information about a Crate's dependencies.",
-    fields = {
-        "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
-        "direct_crates": "depset[CrateInfo]",
-        "transitive_build_infos": "depset[BuildInfo]",
-        "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
-        "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
-    },
-)
-
 _error_format_values = ["human", "json", "short"]
 
 ErrorFormatInfo = provider(
@@ -126,7 +114,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
     """
 
-    for dep in deps:
+    for dep in deps.to_list():
         if rust_common.crate_info in dep:
             if dep[rust_common.crate_info].type == "proc-macro":
                 fail(
@@ -135,7 +123,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                         dep.label,
                     ),
                 )
-    for dep in proc_macro_deps:
+    for dep in proc_macro_deps.to_list():
         type = dep[rust_common.crate_info].type
         if type != "proc-macro":
             fail(
@@ -154,7 +142,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     build_info = None
 
     aliases = {k.label: v for k, v in aliases.items()}
-    for dep in deps + proc_macro_deps:
+    for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
         if rust_common.crate_info in dep:
             # This dependency is a rust_library
             direct_dep = dep[rust_common.crate_info]
@@ -163,10 +151,10 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 dep = direct_dep,
             ))
 
-            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[DepInfo].transitive_crates]))
-            transitive_noncrates.append(dep[DepInfo].transitive_noncrates)
-            transitive_noncrate_libs.append(depset(dep[DepInfo].transitive_libs))
-            transitive_build_infos.append(dep[DepInfo].transitive_build_infos)
+            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
+            transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
+            transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
+            transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
 
@@ -190,7 +178,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     )
 
     return (
-        DepInfo(
+        rust_common.dep_info(
             direct_crates = depset(direct_crates),
             transitive_crates = transitive_crates_depset,
             transitive_noncrates = depset(
@@ -313,7 +301,6 @@ def collect_inputs(
     linker_depset = cc_toolchain.all_files
 
     compile_inputs = depset(
-        crate_info.srcs +
         getattr(files, "data", []) +
         getattr(files, "compile_data", []) +
         dep_info.transitive_libs +
@@ -325,6 +312,7 @@ def collect_inputs(
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
             linker_depset,
+            crate_info.srcs,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
@@ -596,7 +584,7 @@ def rustc_compile_action(
             crate_info.type,
             ctx.label.name,
             formatted_version,
-            len(crate_info.srcs),
+            len(crate_info.srcs.to_list()),
         ),
     )
 
@@ -692,6 +680,10 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
     for dep in ctx.attr.deps:
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])
+
+    if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
+        # TODO: if we already have an rlib in our deps, we could skip this
+        cc_infos.append(toolchain.libstd_and_allocator_ccinfo)
 
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 

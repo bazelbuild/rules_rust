@@ -104,6 +104,15 @@ tasks:
     platform: ubuntu1804
     shell_commands:
     - ./test/clippy/clippy_failure_test.sh
+  ubuntu2004_clang:
+    name: Ubuntu 20.04 with Clang
+    platform: ubuntu2004
+    build_flags:
+      - "--repo_env=CC=clang"
+      # TODO(hlopko): Make this work (some tests were failing)
+      # - "--linkopt=-fuse-ld=lld"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
 
 buildifier:
   version: latest

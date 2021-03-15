@@ -14,7 +14,7 @@
 
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "DepInfo", "add_crate_link_flags", "add_edition_flags")
+load("//rust/private:rustc.bzl", "add_crate_link_flags", "add_edition_flags")
 load("//rust/private:utils.bzl", "find_toolchain")
 
 _rust_doc_doc = """Generates code documentation.
@@ -66,15 +66,15 @@ def _rust_doc_impl(ctx):
         fail("Expected rust_library or rust_binary.", "dep")
 
     crate = ctx.attr.dep[rust_common.crate_info]
-    dep_info = ctx.attr.dep[DepInfo]
+    dep_info = ctx.attr.dep[rust_common.dep_info]
 
     toolchain = find_toolchain(ctx)
 
     rustdoc_inputs = depset(
-        crate.srcs +
         [c.output for c in dep_info.transitive_crates.to_list()] +
         [toolchain.rust_doc],
         transitive = [
+            crate.srcs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
         ],
@@ -105,7 +105,7 @@ def _rust_doc_impl(ctx):
         outputs = [output_dir],
         arguments = [args],
         mnemonic = "Rustdoc",
-        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs)),
+        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs.to_list())),
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
@@ -176,4 +176,5 @@ rust_doc = rule(
         "rust_doc_zip": "%{name}.zip",
     },
     toolchains = [str(Label("//rust:toolchain"))],
+    incompatible_use_toolchain_transition = True,
 )

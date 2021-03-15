@@ -14,7 +14,6 @@
 
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "DepInfo")
 load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
 
 def _rust_doc_test_impl(ctx):
@@ -33,7 +32,7 @@ def _rust_doc_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    dep_info = ctx.attr.dep[DepInfo]
+    dep_info = ctx.attr.dep[rust_common.dep_info]
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
@@ -45,13 +44,13 @@ def _rust_doc_test_impl(ctx):
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
-        crate.srcs +
         [crate.output] +
         dep_info.transitive_libs +
         [toolchain.rust_doc] +
         [toolchain.rustc] +
         toolchain.crosstool_files,
         transitive = [
+            crate.srcs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
         ],
@@ -205,6 +204,7 @@ rust_doc_test = rule(
     executable = True,
     test = True,
     toolchains = [str(Label("//rust:toolchain"))],
+    incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
 
 Example:

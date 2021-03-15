@@ -222,9 +222,9 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             name = crate_name,
             type = "rlib",
             root = lib_rs,
-            srcs = srcs,
-            deps = compile_deps,
-            proc_macro_deps = [],
+            srcs = depset(srcs),
+            deps = depset(compile_deps),
+            proc_macro_deps = depset([]),
             aliases = {},
             output = rust_lib,
             edition = proto_toolchain.edition,
@@ -310,6 +310,7 @@ rust_proto_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
 
