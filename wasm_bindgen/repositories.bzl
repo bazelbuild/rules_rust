@@ -18,21 +18,23 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_crates")
 
 # buildifier: disable=unnamed-macro
-def rust_wasm_bindgen_repositories():
-    """Declare dependencies needed for wasm-bindgen.
+def rust_wasm_bindgen_repositories(register_default_toolchain = True):
+    """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
 
-    This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust \
-    repository. This makes the default toolchain `@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For \
-    more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+    Args:
+        register_default_toolchain (Label, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
+            (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
+            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
     """
 
     maybe(
         http_archive,
         name = "build_bazel_rules_nodejs",
-        sha256 = "dd4dc46066e2ce034cba0c81aa3e862b27e8e8d95871f567359f7a534cccb666",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.1.0/rules_nodejs-3.1.0.tar.gz"],
+        sha256 = "55a25a762fcf9c9b88ab54436581e671bc9f4f523cb5a1bd32459ebec7be68a8",
+        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.2.2/rules_nodejs-3.2.2.tar.gz"],
     )
 
-    rules_rust_wasm_bindgen_fetch_remote_crates()
-
-    native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))
+    # Load dependencies of the default toolchain and register it.
+    if register_default_toolchain:
+        rules_rust_wasm_bindgen_fetch_remote_crates()
+        native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))

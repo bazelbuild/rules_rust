@@ -11,7 +11,9 @@
 rust_wasm_bindgen(<a href="#rust_wasm_bindgen-name">name</a>, <a href="#rust_wasm_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_wasm_bindgen-wasm_file">wasm_file</a>)
 </pre>
 
-Generates javascript and typescript bindings for a webassembly module.
+Generates javascript and typescript bindings for a webassembly module using [wasm-bindgen][ws].
+
+[ws]: https://rustwasm.github.io/docs/wasm-bindgen/
 
 To use the Rust WebAssembly bindgen rules, add the following to your `WORKSPACE` file to add the
 external repositories for the Rust bindgen toolchain (in addition to the Rust rules setup):
@@ -22,7 +24,9 @@ load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositori
 rust_wasm_bindgen_repositories()
 ```
 
-An example of this rule in use can be seen at [@rules_rust//examples/wasm/...](../examples/wasm)
+For more details on `rust_wasm_bindgen_repositories`, see [here](#rust_wasm_bindgen_repositories).
+
+An example of this rule in use can be seen at [@rules_rust//examples/wasm](../examples/wasm)
 
 
 **ATTRIBUTES**
@@ -45,18 +49,19 @@ rust_wasm_bindgen_toolchain(<a href="#rust_wasm_bindgen_toolchain-name">name</a>
 
 The tools required for the `rust_wasm_bindgen` rule.
 
-You can also use your own version of wasm-bindgen using the toolchain rules below:
+In cases where users want to control or change the version of `wasm-bindgen` used by [rust_wasm_bindgen](#rust_wasm_bindgen),
+a unique toolchain can be created as in the example below:
 
 ```python
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
-    bindgen = "//my/raze:cargo_bin_wasm_bindgen",
+    bindgen = "//my/cargo_raze:cargo_bin_wasm_bindgen",
 )
 
 toolchain(
-    name = "wasm-bindgen-toolchain",
-    toolchain = "wasm-bindgen-toolchain-impl",
+    name = "wasm_bindgen_toolchain",
+    toolchain = "wasm_bindgen_toolchain_impl",
     toolchain_type = "@rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
 )
 ```
@@ -65,10 +70,12 @@ Now that you have your own toolchain, you need to register it by
 inserting the following statement in your `WORKSPACE` file:
 
 ```python
-register_toolchains("//my/toolchains:wasm-bindgen-toolchain")
+register_toolchains("//my/toolchains:wasm_bindgen_toolchain")
 ```
 
-For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
+For additional information, see the [Bazel toolchains documentation][toolchains].
+
+[toolchains]: https://docs.bazel.build/versions/master/toolchains.html
 
 
 **ATTRIBUTES**
@@ -77,7 +84,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_wasm_bindgen_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen-cli</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
 <a id="#rust_wasm_bindgen_repositories"></a>
@@ -85,12 +92,16 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 ## rust_wasm_bindgen_repositories
 
 <pre>
-rust_wasm_bindgen_repositories()
+rust_wasm_bindgen_repositories(<a href="#rust_wasm_bindgen_repositories-register_default_toolchain">register_default_toolchain</a>)
 </pre>
 
-Declare dependencies needed for wasm-bindgen.
+Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
 
-This macro will load crate dependencies of `wasm-bindgen` that are generated using [cargo raze][raze] inside the rules_rust     repository. This makes the default toolchain `@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain` available. For     more information on `wasm_bindgen` toolchains, see [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain).
+**PARAMETERS**
 
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_wasm_bindgen_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)     (<code>@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain</code>) is registered. This toolchain requires a set of dependencies     that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
