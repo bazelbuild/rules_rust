@@ -24,6 +24,7 @@ load(
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
+    "name_to_crate_name",
     "relativize",
     "rule_attrs",
 )
@@ -73,6 +74,7 @@ def _get_rustc_env(ctx, toolchain):
     return {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
+        "CARGO_CRATE_NAME": name_to_crate_name(ctx.label.name),
         "CARGO_PKG_AUTHORS": "",
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",

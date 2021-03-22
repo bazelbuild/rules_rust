@@ -195,3 +195,21 @@ def expand_locations(ctx, env, data):
         dict: A dict of environment variables with expanded location macros
     """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
+def name_to_crate_name(name):
+    """Converts a build target's name into the name of its associated crate.
+
+    Crate names cannot contain certain characters, such as -, which are allowed
+    in build target names. All illegal characters will be converted to
+    underscores.
+
+    This is a similar conversion as that which cargo does, taking a
+    `Cargo.toml`'s `package.name` and canonicalizing it
+
+    Args:
+        name (str): The name of the target.
+
+    Returns:
+        str: The name of the crate for this target.
+    """
+    return name.replace("-", "_")

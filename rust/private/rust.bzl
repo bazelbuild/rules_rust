@@ -15,7 +15,7 @@
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
-load("//rust/private:utils.bzl", "determine_output_hash", "expand_locations", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "expand_locations", "find_toolchain", "name_to_crate_name")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -1176,21 +1176,3 @@ rust_benchmark = rule(
         Run the benchmark test using: `bazel run //fibonacci:fibonacci_bench`.
         """),
 )
-
-def name_to_crate_name(name):
-    """Converts a build target's name into the name of its associated crate.
-
-    Crate names cannot contain certain characters, such as -, which are allowed
-    in build target names. All illegal characters will be converted to
-    underscores.
-
-    This is a similar conversion as that which cargo does, taking a
-    `Cargo.toml`'s `package.name` and canonicalizing it
-
-    Args:
-        name (str): The name of the target.
-
-    Returns:
-        str: The name of the crate for this target.
-    """
-    return name.replace("-", "_")
