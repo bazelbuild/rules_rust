@@ -33,7 +33,7 @@ rust_repositories()
 ```
 
 The rules are under active development, as such the lastest commit on the
-`main` branch should be used. `main` is only tested against `4.0.0` as the
+`main` branch should be used. `main` is only tested against `3.5.0` as the
 minimum supported version of Bazel. Though previous versions may still be
 supported in certain environments.
 
