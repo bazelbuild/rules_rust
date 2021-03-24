@@ -1,3 +1,5 @@
+# buildifier: disable=module-docstring
+
 DEFAULT_REPOSITORY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
 def _crate_universe_resolve_impl(repository_ctx):
@@ -18,6 +20,8 @@ def _crate_universe_resolve_impl(repository_ctx):
         toolchain_repo = "@rust_linux_x86_64"
     elif repository_ctx.os.name == "mac os x":
         toolchain_repo = "@rust_darwin_x86_64"
+    else:
+        fail("Could not locate resolver for OS " + repository_ctx.os.name)
     cargo_label = Label(toolchain_repo + "//:bin/cargo")
     rustc_label = Label(toolchain_repo + "//:bin/rustc")
 
@@ -74,6 +78,8 @@ def _crate_universe_resolve_impl(repository_ctx):
             resolver_path = repository_ctx.path(repository_ctx.attr._resolver_script_linux)
         elif repository_ctx.os.name == "mac os x":
             resolver_path = repository_ctx.path(repository_ctx.attr._resolver_script_darwin)
+        else:
+            fail("Could not locate resolver for OS " + repository_ctx.os.name)
 
     repository_ctx.file(input_path, content = input_content)
 
@@ -99,15 +105,16 @@ def _crate_universe_resolve_impl(repository_ctx):
     result = repository_ctx.execute(
         args,
         environment = {
-            "RUST_LOG": "info",
-
             # The resolver invokes `cargo metadata` which relies on `rustc` being on the $PATH
+            # See https://github.com/rust-lang/cargo/issues/8219
             "PATH": ":".join([str(b.dirname) for b in path_binaries]),
+
+            "RUST_LOG": "info",
         },
     )
     repository_ctx.delete(input_path)
     if result.stderr:
-        print("Output from resolver: " + result.stderr)
+        print("Output from resolver: " + result.stderr) # buildifier: disable=print
     if result.return_code != 0:
         fail("Error resolving deps:\n" + result.stdout + "\n" + result.stderr)
 
@@ -116,9 +123,13 @@ def _crate_universe_resolve_impl(repository_ctx):
 _crate_universe_resolve = repository_rule(
     implementation = _crate_universe_resolve_impl,
     attrs = {
-        "packages": attr.string_list(allow_empty = True),
         "cargo_toml_files": attr.label_list(),
+        "lockfile": attr.label(
+            allow_single_file = True,
+            mandatory = False,
+        ),
         "overrides": attr.string_dict(doc = """Mapping of crate name to crate.override(...) entries)
+        "packages": attr.string_list(allow_empty = True),
 
 Example:
 
@@ -160,17 +171,13 @@ Example:
 """),
         "repository_template": attr.string(),
         "supported_targets": attr.string_list(allow_empty = False),
-        "lockfile": attr.label(
-            allow_single_file = True,
-            mandatory = False,
-        ),
-        "_resolver_script_linux": attr.label(
-            default = "@crate_universe_resolver_linux//file:downloaded",
+        "_resolver_script_darwin": attr.label(
+            default = "@crate_universe_resolver_darwin//file:downloaded",
             executable = True,
             cfg = "host",
         ),
-        "_resolver_script_darwin": attr.label(
-            default = "@crate_universe_resolver_darwin//file:downloaded",
+        "_resolver_script_linux": attr.label(
+            default = "@crate_universe_resolver_linux//file:downloaded",
             executable = True,
             cfg = "host",
         ),

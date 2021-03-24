@@ -1,10 +1,10 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@rules_rust//rust:rust.bzl",
     "rust_binary",
 )
 load("@rust_deps//:defs.bzl", "crate")
+
+package(default_visibility = ["//visibility:public"])
 
 rust_binary(
     name = "uses_sys_crate",
