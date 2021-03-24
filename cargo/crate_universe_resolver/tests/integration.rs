@@ -50,9 +50,10 @@ def pinned_rust_install():
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -72,7 +73,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "lazy_static",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -194,7 +194,7 @@ edition = "2018"
 [dependencies]
 lazy_static = "=1.4.0"
 bytes = "=0.5.6"
-pin-project-lite = "=0.1.7"
+pin-project-lite = "=0.1.12"
 bitflags = "=1.2.1"
 
 # System dependency (libz-sys) and its transitive deps.
@@ -302,8 +302,8 @@ path = "src/main.rs"
             features: vec![],
         }],
         cargo: PathBuf::from(env!("CARGO")),
-        rust_rules_workspace_name:crate_universe_resolver::config::default_rules_rust_workspace_name(),
-        index_url:crate_universe_resolver::config::default_index_url(),
+        rust_rules_workspace_name: crate_universe_resolver::config::default_rules_rust_workspace_name(),
+        index_url: crate_universe_resolver::config::default_index_url(),
     };
 
     let want_output = r##"
@@ -317,9 +317,10 @@ def pinned_rust_install():
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -398,7 +399,6 @@ cargo_build_script(
 # buildifier: leave-alone
 rust_library(
     name = "bitflags",
-    crate_type = "lib",
     deps = [
         ":bitflags_build_script",
     ],
@@ -449,9 +449,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -474,7 +475,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "bytes",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -533,9 +533,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -596,7 +597,6 @@ rust_binary(
 # buildifier: leave-alone
 rust_library(
     name = "cc",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -646,9 +646,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -668,7 +669,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "lazy_static",
-    crate_type = "lib",
     deps = [
     ] + selects.with_or({
         # cfg(all())
@@ -739,9 +739,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -804,7 +805,6 @@ cargo_build_script(
 # buildifier: leave-alone
 rust_library(
     name = "libc",
-    crate_type = "lib",
     deps = [
         ":libc_build_script",
     ],
@@ -854,9 +854,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -923,7 +924,6 @@ cargo_build_script(
 # buildifier: leave-alone
 rust_library(
     name = "libz_sys",
-    crate_type = "lib",
     deps = [
         ":libz_sys_build_script",
         "@beep__libc__0_2_80//:libc",
@@ -970,13 +970,14 @@ rust_library(
     )
 
     http_archive(
-        name = "beep__pin_project_lite__0_1_7",
+        name = "beep__pin_project_lite__0_1_12",
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -996,7 +997,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "pin_project_lite",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -1017,7 +1017,7 @@ rust_library(
         "WORKSPACE.bazel",
         "WORKSPACE",
     ]),
-    version = "0.1.7",
+    version = "0.1.12",
     tags = [
         "cargo-raze",
         "manual",
@@ -1032,12 +1032,13 @@ rust_library(
 )
 # Unsupported target "compiletest" with type "test" omitted
 # Unsupported target "lint" with type "test" omitted
+# Unsupported target "proper_unpin" with type "test" omitted
 # Unsupported target "test" with type "test" omitted
 """,
-        sha256 = "282adbf10f2698a7a77f8e983a74b2d18176c19a7fd32a45446139ae7b02b715",
-        strip_prefix = "pin-project-lite-0.1.7",
+        sha256 = "257b64915a082f7811703966789728173279bdebb956b143dbcd23f6f970a777",
+        strip_prefix = "pin-project-lite-0.1.12",
         type = "tar.gz",
-        url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/pin-project-lite/pin-project-lite-0.1.7.crate",
+        url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/pin-project-lite/pin-project-lite-0.1.12.crate",
     )
 
     http_archive(
@@ -1045,9 +1046,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1067,7 +1069,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "pkg_config",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -1114,9 +1115,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1136,10 +1138,9 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "tokio",
-    crate_type = "lib",
     deps = [
         "@beep__bytes__0_5_6//:bytes",
-        "@beep__pin_project_lite__0_1_7//:pin_project_lite",
+        "@beep__pin_project_lite__0_1_12//:pin_project_lite",
     ] + selects.with_or({
         # cfg(unix)
         (
@@ -1310,9 +1311,10 @@ rust_library(
         # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1332,7 +1334,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "vcpkg",
-    crate_type = "lib",
     deps = [
     ],
     srcs = glob(["**/*.rs"]),
@@ -1381,7 +1382,7 @@ CRATE_TARGET_NAMES = {
     "lazy_static": "@beep__lazy_static__1_4_0//:lazy_static",
     "libc": "@beep__libc__0_2_80//:libc",
     "libz-sys": "@beep__libz_sys__1_1_2//:libz_sys",
-    "pin-project-lite": "@beep__pin_project_lite__0_1_7//:pin_project_lite",
+    "pin-project-lite": "@beep__pin_project_lite__0_1_12//:pin_project_lite",
     "pkg-config": "@beep__pkg_config__0_3_19//:pkg_config",
     "tokio": "@beep__tokio__0_2_22//:tokio",
     "vcpkg": "@beep__vcpkg__0_2_10//:vcpkg",
@@ -1540,9 +1541,10 @@ prost-types = { git = "https://github.com/danburkert/prost.git", rev = "4ded4a98
         strip_prefix = "",
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1563,7 +1565,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "prost",
-    crate_type = "lib",
     deps = [
         "@yep__bytes__0_5_6//:bytes",
     ],
@@ -1616,9 +1617,10 @@ rust_library(
         strip_prefix = "prost-build",
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1680,14 +1682,13 @@ cargo_build_script(
 # buildifier: leave-alone
 rust_library(
     name = "prost_build",
-    crate_type = "lib",
     deps = [
         ":prost_build_build_script",
         "@yep__bytes__0_5_6//:bytes",
         "@yep__heck__0_3_2//:heck",
         "@yep__itertools__0_9_0//:itertools",
         "@yep__log__0_4_14//:log",
-        "@yep__multimap__0_8_2//:multimap",
+        "@yep__multimap__0_8_3//:multimap",
         "@yep__petgraph__0_5_1//:petgraph",
         "@yep__prost__0_6_1//:prost",
         "@yep__prost_types__0_6_1//:prost_types",
@@ -1738,9 +1739,10 @@ rust_library(
         strip_prefix = "prost-derive",
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1758,9 +1760,8 @@ licenses([
 # Generated targets
 
 # buildifier: leave-alone
-rust_library(
+rust_proc_macro(
     name = "prost_derive",
-    crate_type = "proc-macro",
     deps = [
         "@yep__anyhow__1_0_33//:anyhow",
         "@yep__itertools__0_9_0//:itertools",
@@ -1813,9 +1814,10 @@ rust_library(
         strip_prefix = "prost-types",
         build_file_content = """# buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -1835,7 +1837,6 @@ licenses([
 # buildifier: leave-alone
 rust_library(
     name = "prost_types",
-    crate_type = "lib",
     deps = [
         "@yep__bytes__0_5_6//:bytes",
         "@yep__prost__0_6_1//:prost",
@@ -1956,7 +1957,7 @@ def pinned_rust_install():
     http_archive(
     name = "bitflags",
     # TODO: Allow configuring where rust_library comes from
-    build_file_content = """load("@rules_rust//rust:rust.bzl", "rust_library")
+    build_file_content = """load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
 cargo_build_script(
@@ -1984,7 +1985,6 @@ rust_library(
         "default"
     ],
     crate_root = "src/lib.rs",
-    crate_type = "lib",
     edition = "2015",
     proc_macro_deps = [],
     rustc_flags = [
@@ -2004,14 +2004,13 @@ rust_library(
     http_archive(
     name = "lazy_static",
     # TODO: Allow configuring where rust_library comes from
-    build_file_content = """load("@rules_rust//rust:rust.bzl", "rust_library")
+    build_file_content = """load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "lazy_static",
     srcs = glob(["**/*.rs"]),
     crate_features = [],
     crate_root = "src/lib.rs",
-    crate_type = "lib",
     edition = "2015",
     proc_macro_deps = [],
     rustc_flags = [

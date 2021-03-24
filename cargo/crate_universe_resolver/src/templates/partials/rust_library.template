@@ -11,9 +11,12 @@ alias(
 
 {% endif -%}
 # buildifier: leave-alone
+{%- if target.kind == "proc-macro" %}
+rust_proc_macro(
+{%- else %}
 rust_library(
+{%- endif %}
     name = "{{ target_name_sanitized }}",
-    crate_type = "{{ target.kind }}",
     deps = [
         {%- if crate.build_script_target %}
         ":{{ crate_name_sanitized }}_build_script",

@@ -185,6 +185,14 @@ def crate_universe(
         repository_template = None,
         supported_targets = [],
         lockfile = None):
+    """Resolve crates from a cargo repository which can be consumed as dependencies by targets using rules_rust.
+
+    This is currently highly experimental, and subject to breaking API changes without notice.
+
+    In order to actually use this rule, you will need to make available a built version of the rust binary in `cargo/crate_universe_resolver`
+    as an http_file with the name crate_universe_resolver_linux or crate_universe_resolver_darwin (whichever is appropriate for your platform).
+    """
+
     _crate_universe_resolve(
         name = name,
         packages = [package.to_json() for package in packages],
