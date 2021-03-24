@@ -1,5 +1,4 @@
 # buildifier: disable=module-docstring
-
 DEFAULT_REPOSITORY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
 def _crate_universe_resolve_impl(repository_ctx):
