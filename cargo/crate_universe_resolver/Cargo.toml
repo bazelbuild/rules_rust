@@ -1,6 +1,6 @@
 [package]
 name = "crate_universe_resolver"
-version = "0.2.0"
+version = "0.1.0-experimental"
 authors = [
   "Daniel Wagner-Hall <dwagnerhall@apple.com>",
   "Romain Chossart <romainchossart@gmail.com>",

@@ -336,7 +336,7 @@ checksum = "8aebca1129a03dc6dc2b127edd729435bbc4a37e1d5f4d7513165089ceb02634"
 
 [[package]]
 name = "crate_universe_resolver"
-version = "0.2.0"
+version = "0.1.0-experimental"
 dependencies = [
  "anyhow",
  "assert_cmd",
