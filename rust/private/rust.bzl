@@ -144,6 +144,48 @@ def crate_root_src(attr, srcs, crate_type):
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
 
+def _invalid_chars_in_crate_name(name):
+    """Returns any invalid chars in the given crate name.
+
+    Args:
+        name (str): Name to test.
+
+    Returns:
+        list: List of invalid characters in the crate name.
+    """
+
+    return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
+
+def _crate_name(label, attr):
+    """Returns the crate name to use for the current target.
+
+    Args:
+        label (Label): The label of the current target.
+        attr (struct): The attributes of the current target.
+
+    Returns:
+        str: The crate name to use for this target.
+    """
+    if attr.crate_name:
+        invalid_chars = _invalid_chars_in_crate_name(attr.crate_name)
+        if invalid_chars:
+            fail("Crate name '{}' contains invalid character(s): {}".format(
+                attr.crate_name,
+                " ".join(invalid_chars),
+            ))
+        return attr.crate_name
+
+    crate_name = name_to_crate_name(label.name)
+    invalid_chars = _invalid_chars_in_crate_name(crate_name)
+    if invalid_chars:
+        fail(
+            "Crate name '{}'".format(crate_name),
+            "derived from Bazel target name '{}'".format(label.name),
+            "contains invalid character(s): {}".format(" ".join(invalid_chars)),
+            "\nConsider adding a crate_name attribute to set a valid crate name",
+        )
+    return crate_name
+
 def _shortest_src_with_basename(srcs, basename):
     """Finds the shortest among the paths in srcs that match the desired basename.
 
@@ -236,7 +278,7 @@ def _rust_library_common(ctx, crate_type):
     # Determine unique hash for this rlib
     output_hash = determine_output_hash(crate_root)
 
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = _crate_name(ctx.label, ctx.attr)
     rust_lib_name = _determine_lib_name(
         crate_name,
         crate_type,
@@ -275,7 +317,7 @@ def _rust_binary_impl(ctx):
         list: A list of providers. See `rustc_compile_action`
     """
     toolchain = find_toolchain(ctx)
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = _crate_name(ctx.label, ctx.attr)
     _assert_correct_dep_mapping(ctx)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
@@ -393,7 +435,7 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = _crate_name(ctx.label, ctx.attr)
     crate_type = "bin"
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -549,6 +591,14 @@ _common_attrs = {
             Features are defined in the code using the `#[cfg(feature = "foo")]`
             configuration option. The features listed here will be passed to `rustc`
             with `--cfg feature="${feature_name}"` flags.
+        """),
+    ),
+    "crate_name": attr.string(
+        doc = _tidy("""
+            Crate name to use for this target.
+
+            This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.
+            Defaults to the target name, with any hyphens replaced by underscores.
         """),
     ),
     "crate_root": attr.label(
