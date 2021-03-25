@@ -128,7 +128,6 @@ _crate_universe_resolve = repository_rule(
             mandatory = False,
         ),
         "overrides": attr.string_dict(doc = """Mapping of crate name to crate.override(...) entries)
-        "packages": attr.string_list(allow_empty = True),
 
 Example:
 
@@ -168,6 +167,7 @@ Example:
     )
 
 """),
+        "packages": attr.string_list(allow_empty = True),
         "repository_template": attr.string(),
         "supported_targets": attr.string_list(allow_empty = False),
         "_resolver_script_darwin": attr.label(
