@@ -29,10 +29,7 @@ struct ServerInfo {
 
 macro_rules! assert_contains {
     ($s: expr, $e: expr) => {
-        assert!(
-            $s.find($e).is_some(),
-            format!("'{}' not found in '{}'", $e, $s)
-        );
+        assert!($s.find($e).is_some());
     };
 }
 
@@ -62,10 +59,7 @@ impl ServerInfo {
             }
         }
         println!("Started server on port {}", port);
-        ServerInfo {
-            process: c,
-            port,
-        }
+        ServerInfo { process: c, port }
     }
 
     fn run_client_impl(&self, arg: Option<String>) -> String {
