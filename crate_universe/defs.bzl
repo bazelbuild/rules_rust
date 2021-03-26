@@ -122,7 +122,8 @@ def _crate_universe_resolve_impl(repository_ctx):
     - The user then calls defs.bzl%pinned_rust_install().
 
     Environment Variables:
-        RULES_RUST_UPDATE_CRATE_UNIVERSE_LOCKFILE: Re-pin the lockfile if `true`.
+        REPIN: Re-pin the lockfile if set (useful for repinning deps from multiple rulesets).
+        RULES_RUST_REPIN: Re-pin the lockfile if set (useful for only repinning Rust deps).
         RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE: Override URL to use to download resolver binary - for local paths use a file:// URL.
     """
 
@@ -184,7 +185,8 @@ def _crate_universe_resolve_impl(repository_ctx):
     if lockfile_path != None:
         args.append("--lockfile")
         str(args.append(lockfile_path))
-    if repository_ctx.os.environ.get("RULES_RUST_UPDATE_CRATE_UNIVERSE_LOCKFILE", "false") == "true":
+    env_var_names = repository_ctx.os.environ.keys()
+    if "RULES_RUST_REPIN" in env_var_names or "REPIN" in env_var_names:
         args.append("--update-lockfile")
 
     path_binaries = [
