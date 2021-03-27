@@ -1,5 +1,24 @@
-# buildifier: disable=module-docstring
+"""A module defining the `crate_universe` rule"""
+
 DEFAULT_REPOSITORY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
+
+_INPUT_CONTENT_TEMPLATE = """{{
+  "repository_name": {name},
+  "packages": [
+      {packages}
+  ],
+  "cargo_toml_files": {{
+      {cargo_toml_files}
+  }},
+  "overrides": {{
+      {overrides}
+  }},
+  "repository_template": "{repository_template}",
+  "target_triples": [
+    {targets}
+  ],
+  "cargo": "{cargo}"
+}}"""
 
 def _crate_universe_resolve_impl(repository_ctx):
     """Entry-point repository to manage rust dependencies.
@@ -29,23 +48,7 @@ def _crate_universe_resolve_impl(repository_ctx):
         lockfile_path = repository_ctx.path(repository_ctx.attr.lockfile)
 
     # Yay hand-crafted JSON serialisation...
-    input_content = """{{
-  "repository_name": {name},
-  "packages": [
-      {packages}
-  ],
-  "cargo_toml_files": {{
-      {cargo_toml_files}
-  }},
-  "overrides": {{
-      {overrides}
-  }},
-  "repository_template": "{repository_template}",
-  "target_triples": [
-    {targets}
-  ],
-  "cargo": "{cargo}"
-}}""".format(
+    input_content = _INPUT_CONTENT_TEMPLATE.format(
         name = "\"{}\"".format(repository_ctx.attr.name),
         packages = ",\n".join([artifact for artifact in repository_ctx.attr.packages]),
         cargo_toml_files = ",\n".join(['"{}": "{}"'.format(ct, repository_ctx.path(ct)) for ct in repository_ctx.attr.cargo_toml_files]),
@@ -107,13 +110,12 @@ def _crate_universe_resolve_impl(repository_ctx):
             # The resolver invokes `cargo metadata` which relies on `rustc` being on the $PATH
             # See https://github.com/rust-lang/cargo/issues/8219
             "PATH": ":".join([str(b.dirname) for b in path_binaries]),
-
             "RUST_LOG": "info",
         },
     )
     repository_ctx.delete(input_path)
     if result.stderr:
-        print("Output from resolver: " + result.stderr) # buildifier: disable=print
+        print("Output from resolver: " + result.stderr)  # buildifier: disable=print
     if result.return_code != 0:
         fail("Error resolving deps:\n" + result.stdout + "\n" + result.stderr)
 
