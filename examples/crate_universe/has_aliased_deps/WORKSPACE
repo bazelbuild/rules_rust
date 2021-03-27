@@ -40,7 +40,7 @@ rust_repositories()
 #     executable = True,
 # )
 
-load("@rules_rust//cargo:workspace.bzl", "crate", "crate_universe")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crate_universe")
 
 crate_universe(
     name = "rust_deps",

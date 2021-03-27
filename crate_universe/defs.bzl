@@ -131,7 +131,7 @@ _crate_universe_resolve = repository_rule(
 
 Example:
 
-    load("@rules_rust//cargo:workspace.bzl", "rust_library", "crate")
+    load("@rules_rust//crate_universe:defs.bzl", "rust_library", "crate")
 
     rust_library(
         name = "mylib",
