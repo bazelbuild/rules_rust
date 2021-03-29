@@ -2,7 +2,7 @@
 
 ## Tour of the codebase
 
-We start at `def.bzl`, which invokes the resolver.
+We start at `defs.bzl`, which invokes the resolver.
 
 The resolver:
 
