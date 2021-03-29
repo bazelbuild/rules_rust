@@ -30,7 +30,7 @@ Then run a bazel build with this environment variable:
 RULES_RUST_RESOLVER_URL_OVERRIDE=file:///path/to/resolver/target/debug/resolver bazel build //whatever
 ```
 
-To get verbose logging, edit `def.bzl` to set `RUST_LOG` to `debug` or `trace` instead of `info`. In particular, that will print out the generated Cargo.toml, and the path to the generated workspace file.
+To get verbose logging, edit `defs.bzl` to set `RUST_LOG` to `debug` or `trace` instead of `info`. In particular, that will print out the generated Cargo.toml, and the path to the generated workspace file.
 
 Note that you may need to `bazel shutdown` between bazel commands. Hopefully not, but if you're seeing stale results, try it out. This only affects local development.
 
