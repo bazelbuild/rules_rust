@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
-use log::*;
 use crate_universe_resolver::config::Config;
+use log::*;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -90,10 +90,10 @@ fn main() -> anyhow::Result<()> {
     let renderer = consolidator.consolidate()?;
 
     trace!("Rendering output to: {:?}", output_path);
-    let output_file = std::fs::File::create(&output_path)
+    let mut output_file = std::fs::File::create(&output_path)
         .with_context(|| format!("Could not create output file {:?}", output_path))?;
     renderer
-        .render(&output_file)
+        .render(&mut output_file)
         .context("Could not render deps")?;
 
     if opt.update_lockfile {
