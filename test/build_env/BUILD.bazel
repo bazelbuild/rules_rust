@@ -1,11 +1,10 @@
 load(
-    "//rust:rust.bzl",
-    "rust_test",
-)
-
-load(
     "//cargo:cargo_build_script.bzl",
     "cargo_build_script",
+)
+load(
+    "//rust:rust.bzl",
+    "rust_test",
 )
 
 package(default_visibility = ["//visibility:public"])

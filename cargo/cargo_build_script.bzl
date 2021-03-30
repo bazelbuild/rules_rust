@@ -313,6 +313,7 @@ def cargo_build_script(
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
         **kwargs: Forwards to the underlying `rust_binary` rule.
     """
+
     # This duplicates the code in _build_script_impl because we need to make these available both when we invoke rustc (this code) and when we run the compiled build script (_build_script_impl).
     # https://github.com/bazelbuild/rules_rust/issues/661 will hopefully remove this duplication.
     rustc_env = dict(rustc_env)
