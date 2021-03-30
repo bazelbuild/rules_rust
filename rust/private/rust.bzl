@@ -31,6 +31,32 @@ def _assert_no_deprecated_attributes(ctx):
             "instead. If you used `cargo raze`, please use version 0.3.3 or later.",
         ]))
 
+def _assert_correct_dep_mapping(ctx):
+    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
+
+    Args:
+        ctx (ctx): The current rule's context object
+    """
+    for dep in ctx.attr.deps:
+        if rust_common.crate_info in dep:
+            if dep[rust_common.crate_info].type == "proc-macro":
+                fail(
+                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
+                        ctx.label,
+                        dep.label,
+                    ),
+                )
+    for dep in ctx.attr.proc_macro_deps:
+        type = dep[rust_common.crate_info].type
+        if type != "proc-macro":
+            fail(
+                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
+                    ctx.label,
+                    dep.label,
+                    type,
+                ),
+            )
+
 def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
     """See https://github.com/bazelbuild/rules_rust/issues/405
 
@@ -203,6 +229,7 @@ def _rust_library_common(ctx, crate_type):
     # Find lib.rs
     crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
+    _assert_correct_dep_mapping(ctx)
 
     toolchain = find_toolchain(ctx)
 
@@ -249,6 +276,7 @@ def _rust_binary_impl(ctx):
     """
     toolchain = find_toolchain(ctx)
     crate_name = name_to_crate_name(ctx.label.name)
+    _assert_correct_dep_mapping(ctx)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
@@ -363,6 +391,7 @@ def _rust_test_common(ctx, toolchain, output):
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
+    _assert_correct_dep_mapping(ctx)
 
     crate_name = name_to_crate_name(ctx.label.name)
     crate_type = "bin"

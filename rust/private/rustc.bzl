@@ -115,27 +115,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
     Returns:
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
     """
-
-    for dep in deps.to_list():
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
-                fail(
-                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
-                        label,
-                        dep.label,
-                    ),
-                )
-    for dep in proc_macro_deps.to_list():
-        type = dep[rust_common.crate_info].type
-        if type != "proc-macro":
-            fail(
-                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                    label,
-                    dep.label,
-                    type,
-                ),
-            )
-
     direct_crates = []
     transitive_crates = []
     transitive_noncrates = []
