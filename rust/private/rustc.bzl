@@ -392,13 +392,13 @@ def construct_arguments(
     # variables like `CARGO_BIN_EXE_${binary_name}` it will use the - version
     # not the _ version.  So we rename the rustc-generated file (with _s) to
     # have -s if needed.
-    maybe_rename = ""
+    emit_with_paths = emit
     if crate_info.type == "bin" and crate_info.output != None:
         generated_file = crate_info.name + toolchain.binary_ext
         src = "/".join([crate_info.output.dirname, generated_file])
         dst = crate_info.output.path
         if src != dst:
-            args.add_all(["--copy-output", src, dst])
+            emit_with_paths = [("link=" + dst if val == "link" else val) for val in emit]
 
     if maker_path != None:
         args.add("--touch-file", maker_path)
@@ -427,7 +427,7 @@ def construct_arguments(
     # For determinism to help with build distribution and such
     args.add("--remap-path-prefix=${pwd}=.")
 
-    args.add("--emit=" + ",".join(emit))
+    args.add("--emit=" + ",".join(emit_with_paths))
     args.add("--color=always")
     args.add("--target=" + toolchain.target_triple)
     if hasattr(ctx.attr, "crate_features"):
