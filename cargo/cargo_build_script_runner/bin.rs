@@ -91,7 +91,12 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(cc_path) = env::var_os("CC") {
-        command.env("CC", absolutify(&exec_root, cc_path));
+        let mut cc_path = absolutify(&exec_root, cc_path);
+        if let Some(sysroot_path) = env::var_os("SYSROOT") {
+            cc_path.push(" --sysroot=");
+            cc_path.push(absolutify(&exec_root, sysroot_path));
+        }
+        command.env("CC", cc_path);
     }
 
     if let Some(ar_path) = env::var_os("AR") {
