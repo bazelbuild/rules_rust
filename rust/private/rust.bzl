@@ -179,10 +179,10 @@ def _crate_name(label, attr):
     invalid_chars = _invalid_chars_in_crate_name(crate_name)
     if invalid_chars:
         fail(
-            "Crate name '{}'".format(crate_name),
-            "derived from Bazel target name '{}'".format(label.name),
-            "contains invalid character(s): {}".format(" ".join(invalid_chars)),
-            "\nConsider adding a crate_name attribute to set a valid crate name",
+            "Crate name '{}' ".format(crate_name) +
+            "derived from Bazel target name '{}' ".format(label.name) +
+            "contains invalid character(s): {}\n".format(" ".join(invalid_chars)) +
+            "Consider adding a crate_name attribute to set a valid crate name",
         )
     return crate_name
 
