@@ -113,7 +113,7 @@ def _build_script_impl(ctx):
             env["AR"] = ar_executable
 
     for f in ctx.attr.crate_features:
-        env["CARGO_FEATURE_" + name_to_crate_name(f).upper()] = "1"
+        env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
     env.update(expand_locations(
         ctx,
