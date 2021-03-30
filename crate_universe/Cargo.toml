@@ -14,6 +14,7 @@ edition = "2018"
 # Several of these dependencies need to be compatible with the version cargo-raze is using.
 
 anyhow = "1"
+# Until https://github.com/google/cargo-raze/pull/407 is merged:
 cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "ce46848b9af7c460fba160e7249bff95802a3a13", default-features = false }
 cargo_metadata = "0.13.1"
 cfg-expr = "0.7.4"
