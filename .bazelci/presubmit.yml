@@ -78,6 +78,18 @@ tasks:
     working_directory: examples
     test_targets:
     - //...
+  examples-worker:
+    name: Examples Persistent Worker
+    platform: ubuntu1804
+    working_directory: examples
+    build_flags:
+    - "--@rules_rust//rust:experimental-use-worker"
+    - "--worker_verbose"
+    test_flags:
+    - "--@rules_rust//rust:experimental-use-worker"
+    - "--worker_verbose"
+    test_targets:
+    - //...
   docs_linux:
     name: Docs
     platform: ubuntu1804

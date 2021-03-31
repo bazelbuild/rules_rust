@@ -90,3 +90,18 @@ bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:w
 
 `rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
 building WebAssembly code for the host target.
+
+## Persistent Worker support
+
+The rules ship with a persistent worker implementation that uses Rust's [incremental compilation](https://doc.rust-lang.org/edition-guide/rust-2018/the-compiler/incremental-compilation-for-faster-compiles.html) for faster build times when iterating on code.
+
+To enable this:
+
+Enable the protobuf rules by adding this to your WORKSPACE
+
+```
+load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+rust_proto_repositories()
+```
+
+In your build command, use the flag `--@rules_rust//rust:experimental-use-worker`. Optionally you can add this flag to your `.bazelrc` to always use this.

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -54,6 +55,9 @@ ErrorFormatInfo = provider(
     doc = "Set the --error-format flag for all rustc invocations",
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
+
+def _use_worker(ctx):
+    return hasattr(ctx.attr, "_use_worker") and ctx.attr._use_worker[BuildSettingInfo].value
 
 def _get_rustc_env(ctx, toolchain):
     """Gathers rustc environment variables
@@ -356,6 +360,9 @@ def construct_arguments(
 
     # Wrapper args first
     args = ctx.actions.args()
+    if _use_worker(ctx):
+        args.set_param_file_format("multiline")
+        args.use_param_file("@%s", use_always = True)
 
     for build_env_file in build_env_files:
         args.add("--env-file", build_env_file)
@@ -555,12 +562,30 @@ def rustc_compile_action(
     else:
         formatted_version = ""
 
+    executable = ctx.executable._process_wrapper
+    tools = []
+    arguments = [args]
+    execution_requirements = {}
+    if _use_worker(ctx):
+        tools = [executable]
+        arguments = [
+            "--compiler", executable.path,
+            "--compilation_mode", ctx.var["COMPILATION_MODE"],
+            args,
+        ]
+        executable = ctx.executable._persistent_worker
+        execution_requirements = {
+            "requires-worker-protocol": "proto",
+            "supports-workers": "1",
+        }
+
     ctx.actions.run(
-        executable = ctx.executable._process_wrapper,
+        executable = executable,
         inputs = compile_inputs,
         outputs = [crate_info.output],
         env = env,
-        arguments = [args],
+        tools = tools,
+        arguments = arguments,
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {}{} ({} files)".format(
             crate_info.type,
@@ -568,6 +593,7 @@ def rustc_compile_action(
             formatted_version,
             len(crate_info.srcs.to_list()),
         ),
+        execution_requirements = execution_requirements,
     )
 
     dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]

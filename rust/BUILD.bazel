@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,4 +22,9 @@ bzl_library(
         "//rust/platform:rules",
         "//rust/private:rules",
     ],
+)
+
+bool_flag(
+    name = "experimental-use-worker",
+    build_setting_default = False,
 )

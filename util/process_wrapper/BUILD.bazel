@@ -24,3 +24,11 @@ cc_binary(
     }),
     visibility = ["//visibility:public"],
 )
+
+exports_files([
+    "utils.h",
+    "utils.cc",
+    "system.h",
+    "system_windows.cc",
+    "system_posix.cc",
+])
