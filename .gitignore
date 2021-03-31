@@ -21,3 +21,6 @@
 # vscode
 .vscode
 *.code-workspace
+
+# BazelCI
+bazelci.py

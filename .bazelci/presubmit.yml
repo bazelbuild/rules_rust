@@ -1,12 +1,12 @@
 ---
 default_linux_targets: &default_linux_targets
-- "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-- "..."
-- "@examples//..."
-# TODO: Switch manual tag to platform constraint after bazel 4.0.
-- "//test/versioned_dylib:versioned_dylib_test"
-# Bindgen currently only has a working toolchain for 18.04
-- "-@examples//ffi/rust_calling_c/simple/..."
+  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+  - "..."
+  - "@examples//..."
+  # TODO: Switch manual tag to platform constraint after bazel 4.0.
+  - "//test/versioned_dylib:versioned_dylib_test"
+  # Bindgen currently only has a working toolchain for 18.04
+  - "-@examples//ffi/rust_calling_c/simple/..."
 tasks:
   ubuntu1604:
     build_targets: *default_linux_targets
@@ -25,51 +25,51 @@ tasks:
     test_targets: *default_linux_targets
   macos:
     osx_targets: &osx_targets
-    - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-    - "..."
-    - "@examples//..."
-    # Skip tests for dylib support on osx, since we don't support it yet.
-    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
-    - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-    - "-@examples//ffi/rust_calling_c/simple/..."
+      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+      - "..."
+      - "@examples//..."
+      # Skip tests for dylib support on osx, since we don't support it yet.
+      - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+      - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
+      - "-@examples//ffi/rust_calling_c/simple/..."
     build_targets: *osx_targets
     test_targets: *osx_targets
   rbe_ubuntu1604:
     test_targets:
-    - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-    - "..."
-    - "//test/..."
-    - "@examples//..."
-    - "-//test/conflicting_deps:conflicting_deps_test"
-    # rust_doc_test is likely not fully sandboxed
-    - "-//test/chained_direct_deps:mod3_doc_test"
-    - "-@examples//fibonacci:fibonacci_doc_test"
-    - "-@examples//hello_lib:hello_lib_doc_test"
-    - "-//tools/runfiles:runfiles_doc_test"
-    - "-@examples//ffi/rust_calling_c/simple/..."
-    # See https://github.com/bazelbuild/bazel/issues/9987
-    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+      - "..."
+      - "//test/..."
+      - "@examples//..."
+      - "-//test/conflicting_deps:conflicting_deps_test"
+      # rust_doc_test is likely not fully sandboxed
+      - "-//test/chained_direct_deps:mod3_doc_test"
+      - "-@examples//fibonacci:fibonacci_doc_test"
+      - "-@examples//hello_lib:hello_lib_doc_test"
+      - "-//tools/runfiles:runfiles_doc_test"
+      - "-@examples//ffi/rust_calling_c/simple/..."
+      # See https://github.com/bazelbuild/bazel/issues/9987
+      - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
   windows:
     build_flags:
-    - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
     windows_targets: &windows_targets
-    - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-    - "..."
-    - "-//bindgen/..."
-    - "-//test/load_arbitrary_tool/..."
-    - "-//test/test_env/..."
-    - "-//test/proto/..."
-    - "-//tools/rust_analyzer/..."
-    - "-//tools/runfiles/..."
-    - "-//test/rustfmt/..."
-    - "@examples//..."
-    - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
-    - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-    - "-@examples//ffi/rust_calling_c/simple/..."
-    - "-@examples//hello_sys/..."
-    - "-@examples//complex_sys/..."
-    - "-@examples//proto/..."
-    - "-@examples//wasm/..."
+      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+      - "..."
+      - "-//bindgen/..."
+      - "-//test/load_arbitrary_tool/..."
+      - "-//test/test_env/..."
+      - "-//test/proto/..."
+      - "-//tools/rust_analyzer/..."
+      - "-//tools/runfiles/..."
+      - "-//test/rustfmt/..."
+      - "@examples//..."
+      - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+      - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
+      - "-@examples//ffi/rust_calling_c/simple/..."
+      - "-@examples//hello_sys/..."
+      - "-@examples//complex_sys/..."
+      - "-@examples//proto/..."
+      - "-@examples//wasm/..."
     build_targets: *windows_targets
     test_targets: *windows_targets
   examples:
@@ -77,33 +77,29 @@ tasks:
     platform: ubuntu1804
     working_directory: examples
     test_targets:
-    - //...
+      - //...
   docs_linux:
     name: Docs
     platform: ubuntu1804
     working_directory: docs
     build_targets:
-    - //...
-  docs_macos:
-    name: Docs
-    platform: macos
-    working_directory: docs
-    build_targets:
-    - //...
+      - //...
+    run_targets:
+      - "//:test_docs"
   clippy_examples:
     name: Clippy on Examples
     platform: ubuntu1804
     working_directory: examples
     build_flags:
-    - "--aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect"
-    - "--output_groups=clippy_checks"
+      - "--aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect"
+      - "--output_groups=clippy_checks"
     build_targets:
-    - //...
+      - //...
   clippy_failure:
     name: Negative Clippy Tests
     platform: ubuntu1804
     shell_commands:
-    - ./test/clippy/clippy_failure_test.sh
+      - ./test/clippy/clippy_failure_test.sh
   ubuntu2004_clang:
     name: Ubuntu 20.04 with Clang
     platform: ubuntu2004
