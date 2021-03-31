@@ -74,6 +74,7 @@ def _get_rustc_env(ctx, toolchain):
     return {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
+        # TODO(martinboehme): Respect a `crate_name` attribute if present.
         "CARGO_CRATE_NAME": name_to_crate_name(ctx.label.name),
         "CARGO_PKG_AUTHORS": "",
         "CARGO_PKG_DESCRIPTION": "",
