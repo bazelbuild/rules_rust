@@ -156,11 +156,10 @@ def _invalid_chars_in_crate_name(name):
 
     return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
 
-def _crate_name(label, attr):
+def _crate_name(attr):
     """Returns the crate name to use for the current target.
 
     Args:
-        label (Label): The label of the current target.
         attr (struct): The attributes of the current target.
 
     Returns:
@@ -175,12 +174,12 @@ def _crate_name(label, attr):
             ))
         return attr.crate_name
 
-    crate_name = name_to_crate_name(label.name)
+    crate_name = name_to_crate_name(attr.name)
     invalid_chars = _invalid_chars_in_crate_name(crate_name)
     if invalid_chars:
         fail(
             "Crate name '{}' ".format(crate_name) +
-            "derived from Bazel target name '{}' ".format(label.name) +
+            "derived from Bazel target name '{}' ".format(attr.name) +
             "contains invalid character(s): {}\n".format(" ".join(invalid_chars)) +
             "Consider adding a crate_name attribute to set a valid crate name",
         )
@@ -278,7 +277,7 @@ def _rust_library_common(ctx, crate_type):
     # Determine unique hash for this rlib
     output_hash = determine_output_hash(crate_root)
 
-    crate_name = _crate_name(ctx.label, ctx.attr)
+    crate_name = _crate_name(ctx.attr)
     rust_lib_name = _determine_lib_name(
         crate_name,
         crate_type,
@@ -317,7 +316,7 @@ def _rust_binary_impl(ctx):
         list: A list of providers. See `rustc_compile_action`
     """
     toolchain = find_toolchain(ctx)
-    crate_name = _crate_name(ctx.label, ctx.attr)
+    crate_name = _crate_name(ctx.attr)
     _assert_correct_dep_mapping(ctx)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
@@ -435,7 +434,7 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
-    crate_name = _crate_name(ctx.label, ctx.attr)
+    crate_name = _crate_name(ctx.attr)
     crate_type = "bin"
     if ctx.attr.crate:
         # Target is building the crate in `test` config
