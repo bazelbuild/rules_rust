@@ -135,23 +135,6 @@ def get_preferred_artifact(library_to_link):
         library_to_link.dynamic_library
     )
 
-def rule_attrs(ctx, aspect):
-    """Gets a rule's attributes.
-
-    As per https://docs.bazel.build/versions/master/skylark/aspects.html when we're executing from an
-    aspect we need to get attributes of a rule differently to if we're not in an aspect.
-
-    Args:
-        ctx (ctx): A rule's context object
-        aspect (bool): Whether we're running in an aspect
-
-    Returns:
-        struct: A struct to access the values of the attributes for a
-            [rule_attributes](https://docs.bazel.build/versions/master/skylark/lib/rule_attributes.html#modules.rule_attributes)
-            object.
-    """
-    return ctx.rule.attr if aspect else ctx.attr
-
 def _expand_location(ctx, env, data):
     """A trivial helper for `_expand_locations`
 
@@ -195,3 +178,66 @@ def expand_locations(ctx, env, data):
         dict: A dict of environment variables with expanded location macros
     """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
+def name_to_crate_name(name):
+    """Converts a build target's name into the name of its associated crate.
+
+    Crate names cannot contain certain characters, such as -, which are allowed
+    in build target names. All illegal characters will be converted to
+    underscores.
+
+    This is a similar conversion as that which cargo does, taking a
+    `Cargo.toml`'s `package.name` and canonicalizing it
+
+    Note that targets can specify the `crate_name` attribute to customize their
+    crate name; in situations where this is important, use the
+    crate_name_from_attr() function instead.
+
+    Args:
+        name (str): The name of the target.
+
+    Returns:
+        str: The name of the crate for this target.
+    """
+    return name.replace("-", "_")
+
+def _invalid_chars_in_crate_name(name):
+    """Returns any invalid chars in the given crate name.
+
+    Args:
+        name (str): Name to test.
+
+    Returns:
+        list: List of invalid characters in the crate name.
+    """
+
+    return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
+
+def crate_name_from_attr(attr):
+    """Returns the crate name to use for the current target.
+
+    Args:
+        attr (struct): The attributes of the current target.
+
+    Returns:
+        str: The crate name to use for this target.
+    """
+    if hasattr(attr, "crate_name") and attr.crate_name:
+        invalid_chars = _invalid_chars_in_crate_name(attr.crate_name)
+        if invalid_chars:
+            fail("Crate name '{}' contains invalid character(s): {}".format(
+                attr.crate_name,
+                " ".join(invalid_chars),
+            ))
+        return attr.crate_name
+
+    crate_name = name_to_crate_name(attr.name)
+    invalid_chars = _invalid_chars_in_crate_name(crate_name)
+    if invalid_chars:
+        fail(
+            "Crate name '{}' ".format(crate_name) +
+            "derived from Bazel target name '{}' ".format(attr.name) +
+            "contains invalid character(s): {}\n".format(" ".join(invalid_chars)) +
+            "Consider adding a crate_name attribute to set a valid crate name",
+        )
+    return crate_name

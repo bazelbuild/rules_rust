@@ -15,7 +15,7 @@
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
-load("//rust/private:utils.bzl", "determine_output_hash", "expand_locations", "find_toolchain")
+load("//rust/private:utils.bzl", "crate_name_from_attr", "determine_output_hash", "expand_locations", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -30,6 +30,32 @@ def _assert_no_deprecated_attributes(ctx):
             "`out_dir_tar` is no longer supported, please use cargo/cargo_build_script.bzl ",
             "instead. If you used `cargo raze`, please use version 0.3.3 or later.",
         ]))
+
+def _assert_correct_dep_mapping(ctx):
+    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
+
+    Args:
+        ctx (ctx): The current rule's context object
+    """
+    for dep in ctx.attr.deps:
+        if rust_common.crate_info in dep:
+            if dep[rust_common.crate_info].type == "proc-macro":
+                fail(
+                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
+                        ctx.label,
+                        dep.label,
+                    ),
+                )
+    for dep in ctx.attr.proc_macro_deps:
+        type = dep[rust_common.crate_info].type
+        if type != "proc-macro":
+            fail(
+                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
+                    ctx.label,
+                    dep.label,
+                    type,
+                ),
+            )
 
 def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
     """See https://github.com/bazelbuild/rules_rust/issues/405
@@ -203,13 +229,14 @@ def _rust_library_common(ctx, crate_type):
     # Find lib.rs
     crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
+    _assert_correct_dep_mapping(ctx)
 
     toolchain = find_toolchain(ctx)
 
     # Determine unique hash for this rlib
     output_hash = determine_output_hash(crate_root)
 
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = crate_name_from_attr(ctx.attr)
     rust_lib_name = _determine_lib_name(
         crate_name,
         crate_type,
@@ -248,7 +275,8 @@ def _rust_binary_impl(ctx):
         list: A list of providers. See `rustc_compile_action`
     """
     toolchain = find_toolchain(ctx)
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = crate_name_from_attr(ctx.attr)
+    _assert_correct_dep_mapping(ctx)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
@@ -288,9 +316,9 @@ def _create_test_launcher(ctx, toolchain, output, providers):
     # This should be investigated but for now, we generally assume if the target environment is windows,
     # the execution environment is windows.
     if toolchain.os == "windows":
-        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher.exe"))
+        launcher = ctx.actions.declare_file(ctx.label.name + ".launcher.exe")
     else:
-        launcher = ctx.actions.declare_file(name_to_crate_name(ctx.label.name + ".launcher"))
+        launcher = ctx.actions.declare_file(ctx.label.name + ".launcher")
 
     # Because returned executables must be created from the same rule, the
     # launcher target is simply symlinked and exposed.
@@ -363,8 +391,9 @@ def _rust_test_common(ctx, toolchain, output):
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
+    _assert_correct_dep_mapping(ctx)
 
-    crate_name = name_to_crate_name(ctx.label.name)
+    crate_name = crate_name_from_attr(ctx.attr)
     crate_type = "bin"
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -376,7 +405,7 @@ def _rust_test_common(ctx, toolchain, output):
             root = crate.root,
             srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
             deps = depset(ctx.attr.deps, transitive = [crate.deps]),
-            proc_macro_deps = depset( ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
             edition = crate.edition,
@@ -421,7 +450,7 @@ def _rust_test_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     output = ctx.actions.declare_file(
-        name_to_crate_name(ctx.label.name) + toolchain.binary_ext,
+        ctx.label.name + toolchain.binary_ext,
     )
 
     return _rust_test_common(ctx, toolchain, output)
@@ -520,6 +549,14 @@ _common_attrs = {
             Features are defined in the code using the `#[cfg(feature = "foo")]`
             configuration option. The features listed here will be passed to `rustc`
             with `--cfg feature="${feature_name}"` flags.
+        """),
+    ),
+    "crate_name": attr.string(
+        doc = _tidy("""
+            Crate name to use for this target.
+
+            This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.
+            Defaults to the target name, with any hyphens replaced by underscores.
         """),
     ),
     "crate_root": attr.label(
@@ -1176,21 +1213,3 @@ rust_benchmark = rule(
         Run the benchmark test using: `bazel run //fibonacci:fibonacci_bench`.
         """),
 )
-
-def name_to_crate_name(name):
-    """Converts a build target's name into the name of its associated crate.
-
-    Crate names cannot contain certain characters, such as -, which are allowed
-    in build target names. All illegal characters will be converted to
-    underscores.
-
-    This is a similar conversion as that which cargo does, taking a
-    `Cargo.toml`'s `package.name` and canonicalizing it
-
-    Args:
-        name (str): The name of the target.
-
-    Returns:
-        str: The name of the crate for this target.
-    """
-    return name.replace("-", "_")

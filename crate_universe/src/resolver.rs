@@ -237,7 +237,6 @@ impl Resolver {
             output_buildfile_suffix: "".to_string(),
             default_gen_buildrs: true,
             registry: self.render_config.repository_template.clone(),
-            binary_deps: HashMap::default(),
             index_url: self.resolver_config.index_url.as_str().to_owned(),
             rust_rules_workspace_name: self.render_config.rules_rust_workspace_name.clone(),
             vendor_dir: "".to_string(),

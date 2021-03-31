@@ -84,6 +84,7 @@ def _clippy_aspect_impl(target, ctx):
 
     args, env = construct_arguments(
         ctx,
+        ctx.rule.attr,
         ctx.file,
         toolchain,
         toolchain.clippy_driver.path,
@@ -98,7 +99,6 @@ def _clippy_aspect_impl(target, ctx):
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         maker_path = clippy_marker.path,
-        aspect = True,
         emit = ["dep-info", "metadata"],
     )
 
