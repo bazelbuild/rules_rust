@@ -51,12 +51,12 @@ def _custom_crate_name_test_test_impl(ctx):
 
 def _invalid_default_crate_name_test_impl(ctx):
     env = analysistest.begin(ctx)
-    asserts.expect_failure(env, "contains invalid character(s)")
+    asserts.expect_failure(env, "contains invalid character(s): /")
     return analysistest.end(env)
 
 def _invalid_custom_crate_name_test_impl(ctx):
     env = analysistest.begin(ctx)
-    asserts.expect_failure(env, "contains invalid character(s)")
+    asserts.expect_failure(env, "contains invalid character(s): -")
     return analysistest.end(env)
 
 default_crate_name_library_test = analysistest.make(
