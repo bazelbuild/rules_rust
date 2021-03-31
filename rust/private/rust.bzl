@@ -405,7 +405,7 @@ def _rust_test_common(ctx, toolchain, output):
             root = crate.root,
             srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
             deps = depset(ctx.attr.deps, transitive = [crate.deps]),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
+            proc_macro_deps = depset( ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
             edition = crate.edition,
