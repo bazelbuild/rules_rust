@@ -165,7 +165,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
                 transitive = transitive_noncrates,
                 order = "topological",  # dylib link flag ordering matters.
             ),
-            transitive_libs = transitive_libs.to_list(),
+            transitive_libs = transitive_libs,
             transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
         ),
@@ -283,7 +283,6 @@ def collect_inputs(
     compile_inputs = depset(
         getattr(files, "data", []) +
         getattr(files, "compile_data", []) +
-        dep_info.transitive_libs +
         [toolchain.rustc] +
         toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
@@ -293,6 +292,7 @@ def collect_inputs(
             toolchain.rust_lib.files,
             linker_depset,
             crate_info.srcs,
+            dep_info.transitive_libs,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
