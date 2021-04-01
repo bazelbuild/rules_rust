@@ -39,7 +39,7 @@ def _assert_correct_dep_mapping(ctx):
     """
     for dep in ctx.attr.deps:
         if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
+            if dep[ rust_common.crate_info ].type == "proc-macro":
                 fail(
                     "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
                         ctx.label,
