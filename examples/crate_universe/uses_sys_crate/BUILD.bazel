@@ -1,8 +1,5 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_binary",
-)
-load("@rust_deps//:defs.bzl", "crate")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@uses_sys_crate_deps//:defs.bzl", "crate")
 
 package(default_visibility = ["//visibility:public"])
 

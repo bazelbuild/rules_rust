@@ -1,8 +1,5 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_binary",
-)
-load("@rust_deps//:defs.bzl", "crate")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@uses_proc_macro_deps//:defs.bzl", "crate")
 
 rust_binary(
     name = "uses_proc_macro",

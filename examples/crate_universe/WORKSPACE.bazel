@@ -1,0 +1,42 @@
+workspace(name = "rules_rust_examples_crate_universe")
+
+local_repository(
+    name = "rules_rust",
+    path = "../../..",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+
+rust_repositories()
+
+load("//basic:workspace.bzl", basic_deps = "deps")
+
+basic_deps()
+
+load("@basic_deps//:defs.bzl", basic_deps_pinned_rust_install = "pinned_rust_install")
+
+basic_deps_pinned_rust_install()
+
+load("//has_aliased_deps:workspace.bzl", has_aliased_deps_deps = "deps")
+
+has_aliased_deps_deps()
+
+load("@has_aliased_deps_deps//:defs.bzl", has_aliased_deps_deps_pinned_rust_install = "pinned_rust_install")
+
+has_aliased_deps_deps_pinned_rust_install()
+
+load("//uses_proc_macro:workspace.bzl", uses_proc_macro_deps = "deps")
+
+uses_proc_macro_deps()
+
+load("@uses_proc_macro_deps//:defs.bzl", uses_proc_macro_deps_pinned_rust_install = "pinned_rust_install")
+
+uses_proc_macro_deps_pinned_rust_install()
+
+load("//uses_sys_crate:workspace.bzl", uses_sys_crate_deps = "deps")
+
+uses_sys_crate_deps()
+
+load("@uses_sys_crate_deps//:defs.bzl", uses_sys_crate_deps_pinned_rust_install = "pinned_rust_install")
+
+uses_sys_crate_deps_pinned_rust_install()
