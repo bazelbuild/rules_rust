@@ -28,4 +28,3 @@ def assert_argv_contains_prefix_suffix(env, action, prefix, suffix):
             args = action.argv,
         ),
     )
-

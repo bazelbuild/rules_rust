@@ -8,6 +8,7 @@ def _default_crate_name_library_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
+
     # Note: Hyphens in crate name converted to underscores.
     assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_library")
     return analysistest.end(env)
@@ -23,6 +24,7 @@ def _default_crate_name_binary_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
+
     # Note: Hyphens in crate name converted to underscores.
     assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_binary")
     return analysistest.end(env)
@@ -38,6 +40,7 @@ def _default_crate_name_test_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     actions = analysistest.target_actions(env)
+
     # Note: Hyphens in crate name converted to underscores.
     assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_test")
     return analysistest.end(env)
@@ -60,23 +63,31 @@ def _invalid_custom_crate_name_test_impl(ctx):
     return analysistest.end(env)
 
 default_crate_name_library_test = analysistest.make(
-    _default_crate_name_library_test_impl)
+    _default_crate_name_library_test_impl,
+)
 custom_crate_name_library_test = analysistest.make(
-    _custom_crate_name_library_test_impl)
+    _custom_crate_name_library_test_impl,
+)
 default_crate_name_binary_test = analysistest.make(
-    _default_crate_name_binary_test_impl)
+    _default_crate_name_binary_test_impl,
+)
 custom_crate_name_binary_test = analysistest.make(
-    _custom_crate_name_binary_test_impl)
+    _custom_crate_name_binary_test_impl,
+)
 default_crate_name_test_test = analysistest.make(
-    _default_crate_name_test_test_impl)
+    _default_crate_name_test_test_impl,
+)
 custom_crate_name_test_test = analysistest.make(
-    _custom_crate_name_test_test_impl)
+    _custom_crate_name_test_test_impl,
+)
 invalid_default_crate_name_test = analysistest.make(
     _invalid_default_crate_name_test_impl,
-    expect_failure = True)
+    expect_failure = True,
+)
 invalid_custom_crate_name_test = analysistest.make(
     _invalid_custom_crate_name_test_impl,
-    expect_failure = True)
+    expect_failure = True,
+)
 
 def _crate_name_test():
     rust_library(
@@ -127,42 +138,42 @@ def _crate_name_test():
 
     default_crate_name_library_test(
         name = "default_crate_name_library_test",
-        target_under_test = ":default-crate-name-library"
+        target_under_test = ":default-crate-name-library",
     )
 
     custom_crate_name_library_test(
         name = "custom_crate_name_library_test",
-        target_under_test = ":custom-crate-name-library"
+        target_under_test = ":custom-crate-name-library",
     )
 
     default_crate_name_binary_test(
         name = "default_crate_name_binary_test",
-        target_under_test = ":default-crate-name-binary"
+        target_under_test = ":default-crate-name-binary",
     )
 
     custom_crate_name_binary_test(
         name = "custom_crate_name_binary_test",
-        target_under_test = ":custom-crate-name-binary"
+        target_under_test = ":custom-crate-name-binary",
     )
 
     default_crate_name_test_test(
         name = "default_crate_name_test_test",
-        target_under_test = ":default-crate-name-test"
+        target_under_test = ":default-crate-name-test",
     )
 
     custom_crate_name_test_test(
         name = "custom_crate_name_test_test",
-        target_under_test = ":custom-crate-name-test"
+        target_under_test = ":custom-crate-name-test",
     )
 
     invalid_default_crate_name_test(
         name = "invalid_default_crate_name_test",
-        target_under_test = ":invalid/default-crate-name"
+        target_under_test = ":invalid/default-crate-name",
     )
 
     invalid_custom_crate_name_test(
         name = "invalid_custom_crate_name_test",
-        target_under_test = ":invalid-custom-crate-name"
+        target_under_test = ":invalid-custom-crate-name",
     )
 
 def crate_name_test_suite(name):
