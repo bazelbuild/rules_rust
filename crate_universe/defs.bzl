@@ -1,5 +1,7 @@
 """A module defining the `crate_universe` rule"""
 
+load(":deps.bzl", _crate_universe_deps = "crate_universe_deps")
+
 DEFAULT_REPOSITORY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
 _INPUT_CONTENT_TEMPLATE = """{{
@@ -20,6 +22,96 @@ _INPUT_CONTENT_TEMPLATE = """{{
   "cargo": "{cargo}"
 }}"""
 
+_CPU_ARCH_ERROR_MSG = """\
+Command failed with exit code '{code}': {args}
+----------stdout:
+{stdout}
+----------stderr:
+{stderr}
+"""
+
+def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
+    """Detect the host CPU architecture
+
+    Args:
+        repository_ctx (repository_ctx): The repository rule's context object
+        expected_archs (list): A list of expected architecture strings
+        is_windows (bool, optional): If true, the cpu lookup will use the windows method (`wmic` vs `uname`)
+
+    Returns:
+        str: The host's CPU architecture
+    """
+    if is_windows:
+        arguments = ["wmic", "os", "get", "osarchitecture"]
+    else:
+        arguments = ["uname", "-m"]
+
+    result = repository_ctx.execute(arguments)
+
+    if result.return_code:
+        fail(_CPU_ARCH_ERROR_MSG.format(
+            code = result.return_code,
+            args = arguments,
+            stdout = result.stdout,
+            stderr = result.stderr,
+        ))
+
+    if is_windows:
+        # Example output:
+        # OSArchitecture
+        # 64-bit
+        lines = result.stdout.split("\n")
+        arch = lines[1]
+    else:
+        arch = result.stdout.strip("\n")
+
+    if not arch in expected_archs:
+        fail("{} is not a expected cpu architecture. {}".format(
+            arch,
+            expected_archs,
+        ))
+
+    return arch
+
+def _get_host_info(repository_ctx):
+    """Query host information for the appropriate triple and toolchain repo name
+
+    Args:
+        repository_ctx (repository_ctx): The rule's repository_ctx
+
+    Returns:
+        tuple: A tuple containing a triple (str) and repository name (str)
+    """
+
+    # Detect the host's cpu architecture
+
+    supported_architectures = {
+        "linux": ["aarch64", "x86_64"],
+        "macos": ["aarch64", "x86_64"],
+        "windows": ["x86_64"],
+    }
+
+    # The expected file extension of crate resolver binaries
+    extension = ""
+
+    if "linux" in repository_ctx.os.name:
+        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["linux"])
+        resolver_triple = "{}-unknown-linux-gnu".format(cpu)
+        toolchain_repo = "@rust_linux_{}".format(cpu)
+    elif "mac" in repository_ctx.os.name:
+        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["macos"])
+        resolver_triple = "{}-apple-darwin".format(cpu)
+        toolchain_repo = "@rust_darwin_{}".format(cpu)
+    elif "win" in repository_ctx.os.name:
+        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["windows"], True)
+        resolver_triple = "{}-pc-windows-gnu".format(cpu)
+        toolchain_repo = "@rust_windows_{}".format(cpu)
+        extension = ".exe"
+    else:
+        fail("Could not locate resolver for OS " + repository_ctx.os.name)
+
+    return (resolver_triple, toolchain_repo, extension)
+
 def _crate_universe_resolve_impl(repository_ctx):
     """Entry-point repository to manage rust dependencies.
 
@@ -34,14 +126,33 @@ def _crate_universe_resolve_impl(repository_ctx):
         RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE: Override URL to use to download resolver binary - for local paths use a file:// URL.
     """
 
-    if repository_ctx.os.name == "linux":
-        toolchain_repo = "@rust_linux_x86_64"
-    elif repository_ctx.os.name == "mac os x":
-        toolchain_repo = "@rust_darwin_x86_64"
-    else:
-        fail("Could not locate resolver for OS " + repository_ctx.os.name)
+    # Get info about the current host's tool locations
+    resolver_triple, toolchain_repo, extension = _get_host_info(repository_ctx)
+
     cargo_label = Label(toolchain_repo + "//:bin/cargo")
     rustc_label = Label(toolchain_repo + "//:bin/rustc")
+
+    # Allow for an an override environment variable to define a url to a binary
+    resolver_url = repository_ctx.os.environ.get("RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE", None)
+    resolver_sha = repository_ctx.os.environ.get("RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256", None)
+    if resolver_url:
+        if resolver_url.startswith("file://"):
+            sha256_result = repository_ctx.execute(["sha256sum", resolver_url[7:]])
+            resolver_sha = sha256_result.stdout[:64]
+
+        resolver_path = repository_ctx.path("resolver")
+        repository_ctx.download(
+            url = resolver_url,
+            sha256 = resolver_sha,
+            output = resolver_path,
+            executable = True,
+        )
+    else:
+        resolver_label = Label("@rules_rust_crate_universe__{}//file:resolver{}".format(
+            resolver_triple,
+            extension,
+        ))
+        resolver_path = repository_ctx.path(resolver_label)
 
     lockfile_path = None
     if repository_ctx.attr.lockfile:
@@ -59,30 +170,6 @@ def _crate_universe_resolve_impl(repository_ctx):
     )
 
     input_path = "_{name}.json".format(name = repository_ctx.attr.name)
-
-    # For debugging or working on changes to the resolver, you can set something like:
-    #   export RULES_RUST_RESOLVER_URL_OVERRIDE=file:///path/to/rules_rust/cargo/crate_universe_resolver/target/release/resolver
-    resolver_url = repository_ctx.os.environ.get("RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE", None)
-    if resolver_url and resolver_url.startswith("file://"):
-        sha256_result = repository_ctx.execute(["sha256sum", resolver_url[7:]])
-        resolver_sha = sha256_result.stdout[:64]
-
-        resolver_path = repository_ctx.path("resolver")
-        repository_ctx.download(
-            url = resolver_url,
-            sha256 = resolver_sha,
-            output = resolver_path,
-            executable = True,
-        )
-    else:
-        # TODO: Avoid downloading both the linux and darwin one each time.
-        if repository_ctx.os.name == "linux":
-            resolver_path = repository_ctx.path(repository_ctx.attr._resolver_script_linux)
-        elif repository_ctx.os.name == "mac os x":
-            resolver_path = repository_ctx.path(repository_ctx.attr._resolver_script_darwin)
-        else:
-            fail("Could not locate resolver for OS " + repository_ctx.os.name)
-
     repository_ctx.file(input_path, content = input_content)
 
     args = [
@@ -122,16 +209,10 @@ def _crate_universe_resolve_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel")
 
 _crate_universe_resolve = repository_rule(
-    implementation = _crate_universe_resolve_impl,
-    attrs = {
-        "cargo_toml_files": attr.label_list(),
-        "lockfile": attr.label(
-            allow_single_file = True,
-            mandatory = False,
-        ),
-        "overrides": attr.string_dict(doc = """Mapping of crate name to crate.override(...) entries)
+    doc = """\
+A rule for downloading Rust dependencies (crates).
 
-Example:
+`override` Example:
 
     load("@rules_rust//crate_universe:defs.bzl", "rust_library", "crate")
 
@@ -167,22 +248,46 @@ Example:
             ),
         },
     )
-
-"""),
-        "packages": attr.string_list(allow_empty = True),
-        "repository_template": attr.string(),
-        "supported_targets": attr.string_list(allow_empty = False),
-        "_resolver_script_darwin": attr.label(
-            default = "@crate_universe_resolver_darwin//file:downloaded",
-            executable = True,
-            cfg = "host",
+""",
+    implementation = _crate_universe_resolve_impl,
+    attrs = {
+        "cargo_toml_files": attr.label_list(
+            doc = "",
         ),
-        "_resolver_script_linux": attr.label(
-            default = "@crate_universe_resolver_linux//file:downloaded",
-            executable = True,
-            cfg = "host",
+        "lockfile": attr.label(
+            doc = "",
+            allow_single_file = True,
+            mandatory = False,
+        ),
+        "overrides": attr.string_dict(
+            doc = "Mapping of crate name to `crate.override(...)` entries)",
+        ),
+        "packages": attr.string_list(
+            doc = "",
+            allow_empty = True,
+        ),
+        "repository_template": attr.string(
+            doc = "",
+        ),
+        "supported_targets": attr.string_list(
+            doc = "",
+            allow_empty = False,
+        ),
+        "_resolvers": attr.label_list(
+            doc = "A list of resolver binaries for various platforms",
+            default = [
+                "@rules_rust_crate_universe__aarch64-apple-darwin//:resolver",
+                "@rules_rust_crate_universe__aarch64-unknown-linux-gnu//:resolver",
+                "@rules_rust_crate_universe__x86_64-apple-darwin//:resolver",
+                "@rules_rust_crate_universe__x86_64-pc-windows-gnu//:resolver.exe",
+                "@rules_rust_crate_universe__x86_64-unknown-linux-gnu//:resolver",
+            ],
         ),
     },
+    environ = [
+        "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE",
+        "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256",
+    ],
 )
 
 def crate_universe(
@@ -264,3 +369,6 @@ crate = struct(
     spec = _spec,
     override = _override,
 )
+
+# Reexport the dependencies macro
+crate_universe_deps = _crate_universe_deps

@@ -1,0 +1,3 @@
+# When building in CI, a bazelrc file may be generated for overriding
+# the binary used by crate_universe
+try-import %workspace%/crate_universe.bazelrc

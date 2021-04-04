@@ -14,10 +14,11 @@ load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+DEFAULT_RUST_VERSION = "1.51.0"
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = "1.51.0",
+        version = DEFAULT_RUST_VERSION,
         iso_date = None,
         rustfmt_version = None,
         edition = None,
