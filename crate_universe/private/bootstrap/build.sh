@@ -10,8 +10,8 @@ else
 fi
 
 # All supported targets
-if [[ -n "$@" ]]; then
-    TARGETS=($@)
+if [[ $# -gt 0 ]]; then
+    TARGETS=("$@")
 elif [[ -n "${TARGET:-}" ]]; then
     TARGETS=("${TARGET}")
 else
@@ -67,7 +67,7 @@ fi
 
 # Because --target-dir does not work, we change directories and move built binaries after the fact
 # https://github.com/rust-embedded/cross/issues/272
-pushd "$(dirname ${MANIFEST})"
+pushd "$(dirname "${MANIFEST}")"
 
 # Build all binaries
 for target in ${TARGETS[@]}; do
@@ -87,7 +87,7 @@ for target in ${TARGETS[@]}; do
     ${BUILD_TOOL} build --release --locked --target="${target}"
     
     # Install it into the rules_rust repository
-    install_path=${OUT_DIR}/${target}/release/${bin_name}
+    install_path="${OUT_DIR}/${target}/release/${bin_name}"
     mkdir -p "$(dirname "${install_path}")"
     cp -p "./target/${target}/release/${bin_name}" "${install_path}"
 done
