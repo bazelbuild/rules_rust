@@ -1,8 +1,8 @@
-use indoc::indoc;
-use maplit::{btreemap, btreeset};
 use crate_universe_resolver::config::Package;
 use crate_universe_resolver::parser::merge_cargo_tomls;
 use crate_universe_resolver::NamedTempFile;
+use indoc::indoc;
+use maplit::{btreemap, btreeset};
 use semver::VersionReq;
 use spectral::prelude::*;
 use std::collections::{BTreeMap, BTreeSet};

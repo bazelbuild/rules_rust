@@ -119,3 +119,13 @@ stardoc(
     symbol_names = [symbol for k in PAGES.keys() for symbol in PAGES[k]],
     deps = [":all_docs"],
 )
+
+sh_binary(
+    name = "update_docs",
+    srcs = ["update_docs.sh"],
+)
+
+sh_binary(
+    name = "test_docs",
+    srcs = ["test_docs.sh"],
+)

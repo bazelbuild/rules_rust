@@ -47,7 +47,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 def pinned_rust_install():
     http_archive(
         name = "beep__lazy_static__1_4_0",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -115,7 +114,6 @@ rust_library(
         url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/lazy_static/lazy_static-1.4.0.crate",
     )
 
-
 CRATE_TARGET_NAMES = {
     "lazy_static": "@beep__lazy_static__1_4_0//:lazy_static",
 }
@@ -145,25 +143,30 @@ def all_proc_macro_deps():
 
 def crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [crate("lazy_static")],
+        "//some:Cargo.toml": [
+            crate("lazy_static"),
+        ],
     }
     return mapping[_absolutify(label)]
 
 def dev_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
 def build_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
 def proc_macro_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
@@ -314,7 +317,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 def pinned_rust_install():
     http_archive(
         name = "beep__bitflags__1_2_1",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -446,7 +448,6 @@ rust_library(
 
     http_archive(
         name = "beep__bytes__0_5_6",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -530,7 +531,6 @@ rust_library(
 
     http_archive(
         name = "beep__cc__1_0_62",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -643,7 +643,6 @@ rust_library(
 
     http_archive(
         name = "beep__lazy_static__1_4_0",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -736,7 +735,6 @@ rust_library(
 
     http_archive(
         name = "beep__libc__0_2_80",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -851,7 +849,6 @@ rust_library(
 
     http_archive(
         name = "beep__libz_sys__1_1_2",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -971,7 +968,6 @@ rust_library(
 
     http_archive(
         name = "beep__pin_project_lite__0_1_12",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -1043,7 +1039,6 @@ rust_library(
 
     http_archive(
         name = "beep__pkg_config__0_3_19",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -1112,7 +1107,6 @@ rust_library(
 
     http_archive(
         name = "beep__tokio__0_2_22",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -1308,7 +1302,6 @@ rust_library(
 
     http_archive(
         name = "beep__vcpkg__0_2_10",
-        # TODO: Allow configuring where rust_library comes from
         build_file_content = """# buildifier: disable=load
 load(
     "@rules_rust//rust:defs.bzl",
@@ -1374,7 +1367,6 @@ rust_library(
         url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/vcpkg/vcpkg-0.2.10.crate",
     )
 
-
 CRATE_TARGET_NAMES = {
     "bitflags": "@beep__bitflags__1_2_1//:bitflags",
     "bytes": "@beep__bytes__0_5_6//:bytes",
@@ -1422,25 +1414,38 @@ def all_proc_macro_deps():
 
 def crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [crate("bitflags"), crate("bytes"), crate("cc"), crate("lazy_static"), crate("libc"), crate("libz-sys"), crate("pin-project-lite"), crate("pkg-config"), crate("vcpkg")],
+        "//some:Cargo.toml": [
+            crate("bitflags"),
+            crate("bytes"),
+            crate("cc"),
+            crate("lazy_static"),
+            crate("libc"),
+            crate("libz-sys"),
+            crate("pin-project-lite"),
+            crate("pkg-config"),
+            crate("vcpkg"),
+        ],
     }
     return mapping[_absolutify(label)]
 
 def dev_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
 def build_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
 def proc_macro_crates_from(label):
     mapping = {
-        "//some:Cargo.toml": [],
+        "//some:Cargo.toml": [
+        ],
     }
     return mapping[_absolutify(label)]
 
@@ -1499,7 +1504,6 @@ plist = "=1.0.0"
 }
 
 #[test]
-#[ignore] // This broke and it's not clear at all how or why
 fn git_deps() {
     let cargo_toml_file = NamedTempFile::with_str_content(
         "Cargo.toml",
@@ -1606,7 +1610,6 @@ rust_library(
 )
 """,
         remote = "https://github.com/danburkert/prost.git",
-        # TODO: tag?
         commit = "4ded4a98ef339da0b7babd4efee3fbe8adaf746b",
     )"###;
 
@@ -1650,7 +1653,7 @@ cargo_build_script(
     crate_root = "build.rs",
     edition = "2018",
     deps = [
-        "@yep__which__4_0_2//:which",
+        "@yep__which__4_1_0//:which",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -1728,7 +1731,6 @@ rust_library(
 )
 """,
         remote = "https://github.com/danburkert/prost.git",
-        # TODO: tag?
         commit = "4ded4a98ef339da0b7babd4efee3fbe8adaf746b",
     )"###;
 
@@ -1803,7 +1805,6 @@ rust_proc_macro(
 )
 """,
         remote = "https://github.com/danburkert/prost.git",
-        # TODO: tag?
         commit = "4ded4a98ef339da0b7babd4efee3fbe8adaf746b",
     )"###;
 
@@ -1875,7 +1876,6 @@ rust_library(
 )
 """,
         remote = "https://github.com/danburkert/prost.git",
-        # TODO: tag?
         commit = "4ded4a98ef339da0b7babd4efee3fbe8adaf746b",
     )"###;
 
@@ -1957,7 +1957,6 @@ path = "lib.rs"
 def pinned_rust_install():
     http_archive(
     name = "bitflags",
-    # TODO: Allow configuring where rust_library comes from
     build_file_content = """load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
@@ -2004,7 +2003,6 @@ rust_library(
 )
     http_archive(
     name = "lazy_static",
-    # TODO: Allow configuring where rust_library comes from
     build_file_content = """load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(

@@ -1,0 +1,92 @@
+CRATE_TARGET_NAMES = {
+    {%- for crate_data in crates %}
+    "{{crate_data.crate_context.pkg_name}}": "{{crate_to_label(repo_rule_name=repo_rule_name, package_name=crate_data.crate_context.pkg_name, package_version=crate_data.crate_context.pkg_version)}}",
+    {%- endfor %}
+}
+
+def crate(crate_name):
+    """Return the name of the target for the given crate.
+    """
+    target_name = CRATE_TARGET_NAMES.get(crate_name)
+    if target_name == None:
+        fail("Unknown crate name: {}".format(crate_name))
+    return target_name
+
+def all_deps():
+    """Return all standard dependencies explicitly listed in the Cargo.toml or packages list."""
+    return [
+        crate(crate_name) for crate_name in [
+            {%- for crate_data in crates %}
+            {%- if not crate_data.is_proc_macro %}
+            "{{crate_data.crate_context.pkg_name}}",
+            {%- endif %}
+            {%- endfor %}
+        ]
+    ]
+
+def all_proc_macro_deps():
+    """Return all proc-macro dependencies explicitly listed in the Cargo.toml or packages list."""
+    return [
+        crate(crate_name) for crate_name in [
+            {%- for crate_data in crates %}
+            {%- if crate_data.is_proc_macro %}
+            "{{crate_data.crate_context.pkg_name}}",
+            {%- endif %}
+            {%- endfor %}
+        ]
+    ]
+
+def crates_from(label):
+    mapping = {
+        {%- for label, crate_names in kind_to_labels_to_crate_names["Normal"] %}
+        "{{label}}": [
+            {%- for crate_name in crate_names %}
+            crate("{{crate_name}}"),
+            {%- endfor %}
+        ],
+        {%- endfor %}
+    }
+    return mapping[_absolutify(label)]
+
+def dev_crates_from(label):
+    mapping = {
+        {%- for label, crate_names in kind_to_labels_to_crate_names["Dev"] %}
+        "{{label}}": [
+            {%- for crate_name in crate_names %}
+            crate("{{crate_name}}"),
+            {%- endfor %}
+        ],
+        {%- endfor %}
+    }
+    return mapping[_absolutify(label)]
+
+def build_crates_from(label):
+    mapping = {
+        {%- for label, crate_names in kind_to_labels_to_crate_names["Build"] %}
+        "{{label}}": [
+            {%- for crate_name in crate_names %}
+            crate("{{crate_name}}"),
+            {%- endfor %}
+        ],
+        {%- endfor %}
+    }
+    return mapping[_absolutify(label)]
+
+def proc_macro_crates_from(label):
+    mapping = {
+        {%- for label, crate_names in kind_to_labels_to_crate_names["ProcMacro"] %}
+        "{{label}}": [
+            {%- for crate_name in crate_names %}
+            crate("{{crate_name}}"),
+            {%- endfor %}
+        ],
+        {%- endfor %}
+    }
+    return mapping[_absolutify(label)]
+
+def _absolutify(label):
+    if label.startswith("//") or label.startswith("@"):
+        return label
+    if label.startswith(":"):
+        return "//" + native.package_name() + label
+    return "//" + native.package_name() + ":" + label
