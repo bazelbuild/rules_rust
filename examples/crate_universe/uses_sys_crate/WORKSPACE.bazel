@@ -10,20 +10,38 @@ rust_repositories()
 # Need to have an http_file along the lines of:
 #
 # load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
-# 
+#
 # http_file(
 #     name = "crate_universe_resolver_darwin",
 #     urls = ["file:///PATH/TO/rules_rust/cargo/crate_universe_resolver/target/release/crate_universe_resolver"],
 #     sha256 = "FILL_ME_IN",
 #     executable = True,
 # )
-# 
+#
 # http_file(
 #     name = "crate_universe_resolver_linux",
 #     urls = ["file:///PATH/TO/rules_rust/cargo/crate_universe_resolver/target/release/crate_universe_resolver"],
 #     sha256 = "FILL_ME_IN",
 #     executable = True,
 # )
+
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crate_universe")
+
+crate_universe(
+    name = "rust_deps",
+    cargo_toml_files = ["//:Cargo.toml"],
+    lockfile = "//:lockfile.lock",
+    packages = [
+        crate.spec(
+            name = "libc",
+            semver = "=0.2.76",
+        ),
+    ],
+    supported_targets = [
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
 
 load("@rust_deps//:defs.bzl", "pinned_rust_install")
 

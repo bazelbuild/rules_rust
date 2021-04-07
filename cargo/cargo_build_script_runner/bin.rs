@@ -37,7 +37,6 @@ fn run_buildrs() -> Result<(), String> {
     let rustc = exec_root.join(&rustc_env);
     let Options {
         progname,
-        crate_name,
         crate_links,
         out_dir,
         envfile,
@@ -91,7 +90,12 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(cc_path) = env::var_os("CC") {
-        command.env("CC", absolutify(&exec_root, cc_path));
+        let mut cc_path = absolutify(&exec_root, cc_path);
+        if let Some(sysroot_path) = env::var_os("SYSROOT") {
+            cc_path.push(" --sysroot=");
+            cc_path.push(absolutify(&exec_root, sysroot_path));
+        }
+        command.env("CC", cc_path);
     }
 
     if let Some(ar_path) = env::var_os("AR") {
@@ -126,24 +130,6 @@ fn run_buildrs() -> Result<(), String> {
         )
     })?;
 
-    // The right way to set the dep env var is to use the links attribute from the
-    // Cargo.toml, but cargo_build_script didn't used to have a `links` attribute, so for
-    // backward-compatibility reasons, try to infer it from the name of the crate.
-    // TODO: remove this backward-compatibility fallback in next major version.
-    let crate_links = match crate_links.as_ref() {
-        "" => {
-            const SYS_CRATE_SUFFIX: &str = "-sys";
-            if crate_name.ends_with(SYS_CRATE_SUFFIX) {
-                crate_name
-                    .split_at(crate_name.rfind(SYS_CRATE_SUFFIX).unwrap())
-                    .0
-            } else {
-                &crate_name
-            }
-        }
-        crate_links => crate_links,
-    };
-
     write(
         &envfile,
         BuildScriptOutput::to_env(&buildrs_outputs, &exec_root.to_string_lossy()).as_bytes(),
@@ -151,7 +137,7 @@ fn run_buildrs() -> Result<(), String> {
     .expect(&format!("Unable to write file {:?}", envfile));
     write(
         &output_dep_env_path,
-        BuildScriptOutput::to_dep_env(&buildrs_outputs, crate_links, &exec_root.to_string_lossy())
+        BuildScriptOutput::to_dep_env(&buildrs_outputs, &crate_links, &exec_root.to_string_lossy())
             .as_bytes(),
     )
     .expect(&format!("Unable to write file {:?}", output_dep_env_path));
@@ -181,7 +167,6 @@ fn run_buildrs() -> Result<(), String> {
 /// A representation of expected command line arguments.
 struct Options {
     progname: String,
-    crate_name: String,
     crate_links: String,
     out_dir: String,
     envfile: String,
@@ -198,10 +183,9 @@ fn parse_args() -> Result<Options, String> {
     let mut args = env::args().skip(1);
 
     // TODO: we should consider an alternative to positional arguments.
-    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
+    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
         (
             Some(progname), 
-            Some(crate_name), 
             Some(crate_links), 
             Some(out_dir), 
             Some(envfile), 
@@ -213,7 +197,6 @@ fn parse_args() -> Result<Options, String> {
         ) => {
             Ok(Options{
                 progname,
-                crate_name,
                 crate_links,
                 out_dir,
                 envfile,
@@ -226,7 +209,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err("Usage: $0 progname crate_name out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
+            Err("Usage: $0 progname out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
         }
     }
 }
