@@ -18,8 +18,14 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/raze:crates.bzl", "rules_rust_proto_fetch_remote_crates")
 
 # buildifier: disable=unnamed-macro
-def rust_proto_repositories():
-    """Declare dependencies needed for proto compilation."""
+def rust_proto_repositories(register_default_toolchain = True):
+    """Declare dependencies needed for proto compilation.
+
+    Args:
+        register_default_toolchain (bool, optional): If True, the default [rust_proto_toolchain](#rust_proto_toolchain)
+            (`@rules_rust//proto:default-proto-toolchain`) is registered. This toolchain requires a set of dependencies
+            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+    """
     maybe(
         http_archive,
         name = "com_google_protobuf",
@@ -69,4 +75,5 @@ def rust_proto_repositories():
     rules_rust_proto_fetch_remote_crates()
 
     # Register toolchains
-    native.register_toolchains(str(Label("//proto:default-proto-toolchain")))
+    if register_default_toolchain:
+        native.register_toolchains(str(Label("//proto:default-proto-toolchain")))

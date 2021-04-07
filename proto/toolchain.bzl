@@ -17,8 +17,21 @@
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
 
-def generated_file_stem(f):
-    basename = f.rsplit("/", 2)[-1]
+def generated_file_stem(file_path):
+    """Returns the basename of a file without any extensions.
+
+    Example:
+    ```python
+    content.append("pub mod %s;" % _generated_file_stem(f))
+    ```
+
+    Args:
+        file_path (string): A path to a file
+
+    Returns:
+        string: The file stem of the filename
+    """
+    basename = file_path.rsplit("/", 2)[-1]
     basename = name_to_crate_name(basename)
     return basename.rsplit(".", 2)[0]
 
@@ -106,10 +119,12 @@ def rust_generate_proto(
 
 def _rust_proto_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(
-        protoc = ctx.executable.protoc,
-        proto_plugin = ctx.file.proto_plugin,
-        grpc_plugin = ctx.file.grpc_plugin,
         edition = ctx.attr.edition,
+        grpc_compile_deps = ctx.attr.grpc_compile_deps,
+        grpc_plugin = ctx.file.grpc_plugin,
+        proto_compile_deps = ctx.attr.proto_compile_deps,
+        proto_plugin = ctx.file.proto_plugin,
+        protoc = ctx.executable.protoc,
     )
 
 # Default dependencies needed to compile protobuf stubs.
@@ -124,9 +139,6 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
     Label("//proto/raze:tls_api_stub"),
 ]
 
-# TODO(damienmg): Once bazelbuild/bazel#6889 is fixed, reintroduce
-# proto_compile_deps and grpc_compile_deps and remove them from the
-# rust_proto_library and grpc_proto_library.
 rust_proto_toolchain = rule(
     implementation = _rust_proto_toolchain_impl,
     attrs = {
@@ -134,11 +146,21 @@ rust_proto_toolchain = rule(
             doc = "The edition used by the generated rust source.",
             default = "2015",
         ),
+        "grpc_compile_deps": attr.label_list(
+            doc = "The crates the generated grpc libraries depends on.",
+            cfg = "target",
+            default = GRPC_COMPILE_DEPS,
+        ),
         "grpc_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "exec",
             default = Label("//proto:protoc_gen_rust_grpc"),
+        ),
+        "proto_compile_deps": attr.label_list(
+            doc = "The crates the generated protobuf libraries depends on.",
+            cfg = "target",
+            default = PROTO_COMPILE_DEPS,
         ),
         "proto_plugin": attr.label(
             doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
