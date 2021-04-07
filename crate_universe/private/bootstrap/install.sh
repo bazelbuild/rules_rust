@@ -17,6 +17,6 @@ else
     install_name=resolver
 fi
 
-mkdir -p ${SCRIPT_DIR}/file
-touch ${SCRIPT_DIR}/file/BUILD.bazel
-cp ${SCRIPT_DIR}/bin/${TARGET}/release/${bin_name} ${SCRIPT_DIR}/file/${install_name}
+mkdir -p "${SCRIPT_DIR}/file"
+touch "${SCRIPT_DIR}/file/BUILD.bazel"
+cp "${SCRIPT_DIR}/bin/${TARGET}/release/${bin_name}" "${SCRIPT_DIR}/file/${install_name}"

@@ -90,7 +90,7 @@ for target in ${TARGETS[@]}; do
     
     # Install it into the rules_rust repository
     install_path=${OUT_DIR}/${target}/release/${bin_name}
-    mkdir -p "$(dirname ${install_path})"
-    cp -p ./target/${target}/release/${bin_name} ${install_path}
+    mkdir -p "$(dirname "${install_path}")"
+    cp -p "./target/${target}/release/${bin_name}" "${install_path}"
 done
 popd

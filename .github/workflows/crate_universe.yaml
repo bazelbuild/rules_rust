@@ -7,10 +7,7 @@ on:
     paths:
       # Only run these jobs if rust code has changed since they're time consuming
       - ".github/workflows/crate_universe.yaml"
-      - "crate_universe/**/*.lock"
-      - "crate_universe/**/*.rs"
-      - "crate_universe/**/*.sh"
-      - "crate_universe/**/*.toml"
+      - "crate_universe/**"
 
 defaults:
   run:
@@ -48,9 +45,9 @@ jobs:
       - run: |
           # Install cross
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            curl -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-apple-darwin.tar.gz
+            curl --fail -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-apple-darwin.tar.gz
           else
-            curl -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-unknown-linux-gnu.tar.gz
+            curl --fail -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-unknown-linux-gnu.tar.gz
           fi
           sudo tar -xf ~/cross.tar.gz -C /usr/local/bin/
           sudo chmod +x /usr/local/bin/cross
@@ -94,7 +91,7 @@ jobs:
           path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin
       - run: |
           # Ensure all files are executable
-          find . -type f -exec chmod +x {} \;
+          chmod +x ${{ github.workspace }}/crate_universe/private/bootstrap/bin/*/release/*
       - uses: actions/create-release@v1
         id: crate_universe_release
         env:
@@ -106,7 +103,7 @@ jobs:
           body: |
             From commit: ${{ github.sha }}
       # There must be a upload action for each platform triple we create
-      - name: "Upload aarch64-unknown-linux-gnu"
+      - name: "Upload aarch64-apple-darwin"
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
