@@ -1,0 +1,72 @@
+alias(
+    name = "cargo",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:cargo",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:cargo",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:cargo",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:cargo",
+    }),
+)
+
+alias(
+    name = "rustc",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustc",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustc",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustc",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustc",
+    }),
+)
+
+_COMMON_ENV = {
+    "CARGO": "$${PWD}/$(execpath :cargo)",
+    "DETECT_CHANGES": "true",
+    "RUSTC": "$${PWD}/$(execpath :rustc)",
+}
+
+_ENV = select({
+    "@rules_rust//rust/platform:aarch64-apple-darwin": dict(_COMMON_ENV.items() + {
+        "IS_WINDOWS": "false",
+        "TARGET": "aarch64-apple-darwin",
+    }.items()),
+    "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": dict(_COMMON_ENV.items() + {
+        "IS_WINDOWS": "false",
+        "TARGET": "aarch64-unknown-linux-gnu",
+    }.items()),
+    "@rules_rust//rust/platform:x86_64-apple-darwin": dict(_COMMON_ENV.items() + {
+        "IS_WINDOWS": "false",
+        "TARGET": "x86_64-apple-darwin",
+    }.items()),
+    "@rules_rust//rust/platform:x86_64-pc-windows-msvc": dict(_COMMON_ENV.items() + {
+        "IS_WINDOWS": "true",
+        "TARGET": "x86_64-pc-windows-gnu",
+    }.items()),
+    "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": dict(_COMMON_ENV.items() + {
+        "IS_WINDOWS": "false",
+        "TARGET": "x86_64-unknown-linux-gnu",
+    }.items()),
+})
+
+# Bootstrap the crate_universe resolver for the current exec platform
+sh_binary(
+    name = "build",
+    srcs = ["build.sh"],
+    data = [
+        ":cargo",
+        ":rustc",
+    ],
+    env = _ENV,
+    tags = ["requires-network"],
+)
+
+sh_binary(
+    name = "install",
+    srcs = ["install.sh"],
+    data = [
+        ":cargo",
+        ":rustc",
+    ],
+    env = _ENV,
+)

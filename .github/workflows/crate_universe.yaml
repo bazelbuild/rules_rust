@@ -1,0 +1,214 @@
+---
+name: Crate Universe CI+CD
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only run these jobs if rust code has changed since they're time consuming
+      - ".github/workflows/crate_universe.yaml"
+      - "crate_universe/**"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Create a job for each target triple
+        include:
+          - os: macos-10.15
+            env:
+              TARGET: "aarch64-apple-darwin"
+              EXTENSION: ""
+          - os: ubuntu-20.04
+            env:
+              TARGET: "aarch64-unknown-linux-gnu"
+              EXTENSION: ""
+          - os: macos-10.15
+            env:
+              TARGET: "x86_64-apple-darwin"
+              EXTENSION: ""
+          - os: ubuntu-20.04
+            env:
+              TARGET: "x86_64-pc-windows-gnu"
+              EXTENSION: ".exe"
+          - os: ubuntu-20.04
+            env:
+              TARGET: "x86_64-unknown-linux-gnu"
+              EXTENSION: ""
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          # Install cross
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            curl --fail -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-apple-darwin.tar.gz
+          else
+            curl --fail -Lo ~/cross.tar.gz https://github.com/rust-embedded/cross/releases/download/v0.2.1/cross-v0.2.1-x86_64-unknown-linux-gnu.tar.gz
+          fi
+          sudo tar -xf ~/cross.tar.gz -C /usr/local/bin/
+          sudo chmod +x /usr/local/bin/cross
+        if: matrix.os != 'windows-2019'
+      - run: |
+          # Install rust toolchains for host
+
+          # Detect the current version of rust
+          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/repositories.bzl | sed 's/DEFAULT_RUST_VERSION = "//' | sed 's/"//')"
+
+          rustup override set "${version}"
+          rustup update stable && rustup default stable
+      - run: |
+          # Setup macos build tooling
+          sudo xcode-select -s /Applications/Xcode_12.4.app/Contents/Developer/
+
+          # Set SDK environment variables
+          echo "SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path)" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version)" >> $GITHUB_ENV
+        if: matrix.os == 'macOS-10.15'
+      - run: |
+          # Build binaries
+          ./crate_universe/private/bootstrap/build.sh
+        env:
+          TARGET: "${{ matrix.env.TARGET }}"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "${{ matrix.env.TARGET }}"
+          path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${{ matrix.env.TARGET }}
+          if-no-files-found: error
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # Save the git credentials so we can commit back to the repo
+          persist-credentials: true
+      - uses: actions/download-artifact@v2
+        with:
+          path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin
+      - run: |
+          # Ensure all files are executable
+          chmod +x ${{ github.workspace }}/crate_universe/private/bootstrap/bin/*/release/*
+      - uses: actions/create-release@v1
+        id: crate_universe_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          prerelease: true
+          tag_name: crate_universe-${{ github.run_number }}
+          release_name: crate_universe-${{ github.run_number }}
+          body: |
+            From commit: ${{ github.sha }}
+      # There must be a upload action for each platform triple we create
+      - name: "Upload aarch64-apple-darwin"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          asset_name: crate_universe_resolver-aarch64-apple-darwin
+          asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/aarch64-apple-darwin/release/crate_universe_resolver
+          asset_content_type: application/octet-stream
+      - name: "Upload aarch64-unknown-linux-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          asset_name: crate_universe_resolver-aarch64-unknown-linux-gnu
+          asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/aarch64-unknown-linux-gnu/release/crate_universe_resolver
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-apple-darwin"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          asset_name: crate_universe_resolver-x86_64-apple-darwin
+          asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-apple-darwin/release/crate_universe_resolver
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-pc-windows-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          asset_name: crate_universe_resolver-x86_64-pc-windows-gnu.exe
+          asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-pc-windows-gnu/release/crate_universe_resolver.exe
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-unknown-linux-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          asset_name: crate_universe_resolver-x86_64-unknown-linux-gnu
+          asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-unknown-linux-gnu/release/crate_universe_resolver
+          asset_content_type: application/octet-stream
+      - run: |
+          # Write new defaults.bzl file
+          # Copy the new template
+          cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
+          
+          # Replace the url
+          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/{bin}"
+          sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
+
+          # Populate all sha256 values
+          TARGETS=(
+            aarch64-apple-darwin
+            aarch64-unknown-linux-gnu
+            x86_64-apple-darwin
+            x86_64-pc-windows-gnu
+            x86_64-unknown-linux-gnu
+          )
+          for triple in ${TARGETS[@]}; do
+            if [[ "${triple}" == *"windows"* ]]; then
+                bin_name=crate_universe_resolver.exe
+            else
+                bin_name=crate_universe_resolver
+            fi
+            sha256="$(shasum --algorithm 256 ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${triple}/release/${bin_name} | awk '{ print $1 }')"
+            sed -i "s|{${triple}--sha256}|${sha256}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
+          done
+        env:
+          URL: ${{ steps.crate_universe_release.outputs.html_url }}
+      - run: |
+          # Commit and push changes back to the repo
+          if [[ -z "$(git status --porcelain)" ]]; then 
+            echo "No change to any binaries" 
+            exit 0 
+          fi
+          
+          git stage ${GITHUB_WORKSPACE}/crate_universe/private/defaults.bzl && git status
+
+          # Setup git and commit back to the repo
+          git config user.email "rules_rust@googlegroups.com"
+          git config user.name "github-actions"
+
+          # Cache the current info
+          commit="$(git rev-parse HEAD)"
+          branch="$(git branch --show-current)"
+
+          # commit the change
+          git commit -m "github-actions: update crate_universe binaries from ${commit}"
+
+          # Attempt to push but compensate for potential issues where another PR would
+          # have been merged before this pipeline gets to this point.
+          for i in 1 2 3 4 5 ; do
+            {
+              git push origin "${branch}" && break
+            } || {
+              sleep 10
+              git pull --rebase
+            }
+          done
+
+          # Ensure we've pushed our commit
+          if [[ -n "$(git diff "${branch}..HEAD")" ]]; then
+            echo "Failed to push changes"
+            exit 1
+          fi

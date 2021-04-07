@@ -1,0 +1,8 @@
+# Bootstrapped binaries will go in `./bin`
+bin/
+
+# And to use the binaries as http_file repositories, we create
+file/
+
+# Bazel outputs
+bazel-*

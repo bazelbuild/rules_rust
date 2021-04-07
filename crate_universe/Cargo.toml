@@ -2,9 +2,9 @@
 name = "crate_universe_resolver"
 version = "0.1.0-experimental"
 authors = [
-  "Daniel Wagner-Hall <dwagnerhall@apple.com>",
-  "Romain Chossart <romainchossart@gmail.com>",
-  "Gibson Fahnestock <gib@apple.com>",
+    "Daniel Wagner-Hall <dwagnerhall@apple.com>",
+    "Romain Chossart <romainchossart@gmail.com>",
+    "Gibson Fahnestock <gib@apple.com>",
 ]
 edition = "2018"
 
@@ -14,9 +14,9 @@ edition = "2018"
 # Several of these dependencies need to be compatible with the version cargo-raze is using.
 
 anyhow = "1"
+cargo_metadata = "0.13.1"
 # Until https://github.com/google/cargo-raze/pull/407 is merged:
 cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "caaf8345046eee830ea89fc04771ee117bd835eb", default-features = false }
-cargo_metadata = "0.13.1"
 cfg-expr = "0.7.4"
 env_logger = "0.8"
 hex = "0.4"

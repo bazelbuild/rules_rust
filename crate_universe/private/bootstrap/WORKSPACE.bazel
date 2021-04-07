@@ -1,0 +1,10 @@
+workspace(name = "rules_rust_crate_universe_bootstrap")
+
+local_repository(
+    name = "rules_rust",
+    path = "../../..",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+
+rust_repositories()

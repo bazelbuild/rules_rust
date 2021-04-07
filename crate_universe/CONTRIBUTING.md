@@ -18,21 +18,20 @@ Some areas have unit testing, there are a few (very brittle) integration tests, 
 
 ## How to test local changes
 
-To use a local version, first build it:
+To use a local version, first bootstrap it:
 
 ```console
-crate_universe $ cargo build
+rules_rust $ ./bootstrap.sh
 ```
 
-Then run a bazel build with this environment variable:
+This will build `crate_universe_resolver` and generate a `crate_universe.bazelrc` file which contains
+[override_repository](https://docs.bazel.build/versions/master/command-line-reference.html#flag--override_repository)
+definitions fo the newly built binary. For more details on the build process, see
+[crate_universe/private/bootstrap/README.md](./private/bootstrap/README.md).
 
-```console
-RULES_RUST_RESOLVER_URL_OVERRIDE=file:///path/to/resolver/target/debug/resolver bazel build //whatever
-```
+To get verbose logging, edit `defs.bzl` to set `RUST_LOG` to `debug` or `trace` instead of `info`. In particular, that will print out the generated `Cargo.toml`, and the path to the generated workspace file.
 
-To get verbose logging, edit `defs.bzl` to set `RUST_LOG` to `debug` or `trace` instead of `info`. In particular, that will print out the generated Cargo.toml, and the path to the generated workspace file.
-
-Note that you may need to `bazel shutdown` between bazel commands. Hopefully not, but if you're seeing stale results, try it out. This only affects local development.
+Note that you may need to `bazel shutdown` between Bazel commands. Hopefully not, but if you're seeing stale results, try it out. This only affects local development.
 
 ## Testing
 
