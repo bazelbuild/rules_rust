@@ -18,7 +18,6 @@ Example:
 
 ```python
 load("//proto:proto.bzl", "rust_grpc_library")
-load("//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -33,7 +32,7 @@ rust_grpc_library(
 rust_binary(
     name = "my_service",
     srcs = ["my_service.rs"],
-    deps = [":rust"] + GRPC_COMPILE_DEPS,
+    deps = [":rust"],
 )
 ```
 
@@ -45,7 +44,7 @@ rust_binary(
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_grpc_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_grpc_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
-| <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf"), Label("//proto/raze:grpc"), Label("//proto/raze:tls_api"), Label("//proto/raze:tls_api_stub")] |
+| <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
 <a id="#rust_proto_library"></a>
@@ -62,7 +61,6 @@ Example:
 
 ```python
 load("@rules_rust//proto:proto.bzl", "rust_proto_library")
-load("@rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -77,7 +75,7 @@ proto_rust_library(
 rust_binary(
     name = "my_proto_binary",
     srcs = ["my_proto_binary.rs"],
-    deps = [":rust"] + PROTO_COMPILE_DEPS,
+    deps = [":rust"],
 )
 ```
 
@@ -89,7 +87,7 @@ rust_binary(
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_proto_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
-| <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf")] |
+| <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
 <a id="#rust_proto_toolchain"></a>
@@ -97,7 +95,8 @@ rust_binary(
 ## rust_proto_toolchain
 
 <pre>
-rust_proto_toolchain(<a href="#rust_proto_toolchain-name">name</a>, <a href="#rust_proto_toolchain-edition">edition</a>, <a href="#rust_proto_toolchain-grpc_plugin">grpc_plugin</a>, <a href="#rust_proto_toolchain-proto_plugin">proto_plugin</a>, <a href="#rust_proto_toolchain-protoc">protoc</a>)
+rust_proto_toolchain(<a href="#rust_proto_toolchain-name">name</a>, <a href="#rust_proto_toolchain-edition">edition</a>, <a href="#rust_proto_toolchain-grpc_compile_deps">grpc_compile_deps</a>, <a href="#rust_proto_toolchain-grpc_plugin">grpc_plugin</a>, <a href="#rust_proto_toolchain-proto_compile_deps">proto_compile_deps</a>,
+                     <a href="#rust_proto_toolchain-proto_plugin">proto_plugin</a>, <a href="#rust_proto_toolchain-protoc">protoc</a>)
 </pre>
 
 Declares a Rust Proto toolchain for use.
@@ -141,7 +140,9 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2015" |
+| <a id="rust_proto_toolchain-grpc_compile_deps"></a>grpc_compile_deps |  The crates the generated grpc libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf"), Label("//proto/raze:grpc"), Label("//proto/raze:tls_api"), Label("//proto/raze:tls_api_stub")] |
 | <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust_grpc |
+| <a id="rust_proto_toolchain-proto_compile_deps"></a>proto_compile_deps |  The crates the generated protobuf libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf")] |
 | <a id="rust_proto_toolchain-proto_plugin"></a>proto_plugin |  The location of the Rust protobuf compiler plugin used to generate rust sources.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust |
 | <a id="rust_proto_toolchain-protoc"></a>protoc |  The location of the <code>protoc</code> binary. It should be an executable target.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @com_google_protobuf//:protoc |
 
@@ -151,10 +152,16 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 ## rust_proto_repositories
 
 <pre>
-rust_proto_repositories()
+rust_proto_repositories(<a href="#rust_proto_repositories-register_default_toolchain">register_default_toolchain</a>)
 </pre>
 
 Declare dependencies needed for proto compilation.
 
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain)     (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies     that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
