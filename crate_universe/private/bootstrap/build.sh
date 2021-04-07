@@ -27,9 +27,7 @@ fi
 echo "TARGETS=${TARGETS[@]}"
 
 # Specify the path to the cargo manifest
-if [[ -z "${MANIFEST:-}" ]]; then
-    MANIFEST="${SCRIPT_DIR}/../../Cargo.toml"
-fi
+MANIFEST="${SCRIPT_DIR}/../../Cargo.toml"
 
 if [[ "${IS_WINDOWS:-}" == "true" ]]; then
     WIN_PWD="$(type -t cygpath > /dev/null && cygpath $(pwd) -w || pwd -W)"

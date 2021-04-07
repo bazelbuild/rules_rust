@@ -4,7 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 
-def crate_universe_bins(url_template = None, sha256s = None):
+def crate_universe_bins(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_SHA256_CHECKSUMS):
     """Defines repositories for crate universe binaries
 
     Args:
@@ -14,58 +14,25 @@ def crate_universe_bins(url_template = None, sha256s = None):
             platform triple of the associated binary.
     """
 
-    if not url_template:
-        url_template = DEFAULT_URL_TEMPLATE
-
-    if not sha256s:
-        sha256s = DEFAULT_SHA256_CHECKSUMS
-
     # If a repository declaration is added or removed from there, the same
-    # should occur in `defaults.bzl` and other relevant files.
-    maybe(
-        http_file,
-        name = "rules_rust_crate_universe__aarch64-apple-darwin",
-        downloaded_file_path = "resolver",
-        executable = True,
-        sha256 = sha256s.get("aarch64-apple-darwin"),
-        urls = [url_template.format(bin = "crate_universe_resolver-aarch64-apple-darwin")],
-    )
+    # should occur in `defaults.bzl` and `create_universe.yaml`.
+    triples = {
+        "aarch64-apple-darwin": "",
+        "aarch64-unknown-linux-gnu": "",
+        "x86_64-apple-darwin": "",
+        "x86_64-pc-windows-gnu": ".exe",
+        "x86_64-unknown-linux-gnu": "",
+    }
 
-    maybe(
-        http_file,
-        name = "rules_rust_crate_universe__aarch64-unknown-linux-gnu",
-        downloaded_file_path = "resolver",
-        executable = True,
-        sha256 = sha256s.get("aarch64-unknown-linux-gnu"),
-        urls = [url_template.format(bin = "crate_universe_resolver-aarch64-unknown-linux-gnu")],
-    )
-
-    maybe(
-        http_file,
-        name = "rules_rust_crate_universe__x86_64-apple-darwin",
-        downloaded_file_path = "resolver",
-        executable = True,
-        sha256 = sha256s.get("x86_64-apple-darwin"),
-        urls = [url_template.format(bin = "crate_universe_resolver-x86_64-apple-darwin")],
-    )
-
-    maybe(
-        http_file,
-        name = "rules_rust_crate_universe__x86_64-pc-windows-gnu",
-        downloaded_file_path = "resolver.exe",
-        executable = True,
-        sha256 = sha256s.get("x86_64-pc-windows-gnu"),
-        urls = [url_template.format(bin = "crate_universe_resolver-x86_64-pc-windows-gnu.exe")],
-    )
-
-    maybe(
-        http_file,
-        name = "rules_rust_crate_universe__x86_64-unknown-linux-gnu",
-        downloaded_file_path = "resolver",
-        executable = True,
-        sha256 = sha256s.get("x86_64-unknown-linux-gnu"),
-        urls = [url_template.format(bin = "crate_universe_resolver-x86_64-unknown-linux-gnu")],
-    )
+    for (triple, extension) in triples.items():
+        maybe(
+            http_file,
+            name = "rules_rust_crate_universe__{}".format(triple),
+            downloaded_file_path = "resolver{}".format(extension),
+            executable = True,
+            sha256 = sha256s.get(triple),
+            urls = [url_template.format(bin = "crate_universe_resolver-{}".format(triple))],
+        )
 
 def crate_universe_deps():
     """Define all dependencies for the crate_universe repository rule"""

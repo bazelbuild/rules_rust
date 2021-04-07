@@ -176,39 +176,39 @@ jobs:
           done
         env:
           URL: ${{ steps.crate_universe_release.outputs.html_url }}
-          NUMBER: ${{ github.run_number }}
       - run: |
           # Commit and push changes back to the repo
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git stage ${GITHUB_WORKSPACE}/crate_universe/private/defaults.bzl && git status
+          if [[ -z "$(git status --porcelain)" ]]; then 
+            echo "No change to any binaries" 
+            exit 0 
+          fi
+          
+          git stage ${GITHUB_WORKSPACE}/crate_universe/private/defaults.bzl && git status
 
-            # Setup git and commit back to the repo
-            git config user.email "rules_rust@googlegroups.com"
-            git config user.name "github-actions"
+          # Setup git and commit back to the repo
+          git config user.email "rules_rust@googlegroups.com"
+          git config user.name "github-actions"
 
-            # Cache the current info
-            commit="$(git rev-parse HEAD)"
-            branch="$(git branch --show-current)"
+          # Cache the current info
+          commit="$(git rev-parse HEAD)"
+          branch="$(git branch --show-current)"
 
-            # commit the change
-            git commit -m "github-actions: update crate_universe binaries from ${commit}"
+          # commit the change
+          git commit -m "github-actions: update crate_universe binaries from ${commit}"
 
-            # Attempt to push but compensate for potential issues where another PR would
-            # have been merged before this pipeline gets to this point.
-            for i in 1 2 3 4 5 ; do
-              {
-                git push origin "${branch}" && break
-              } || {
-                sleep 10
-                git pull
-              }
-            done
+          # Attempt to push but compensate for potential issues where another PR would
+          # have been merged before this pipeline gets to this point.
+          for i in 1 2 3 4 5 ; do
+            {
+              git push origin "${branch}" && break
+            } || {
+              sleep 10
+              git pull --rebase
+            }
+          done
 
-            # Ensure we've pushed our commit
-            if [[ -n "$(git diff "${branch}..HEAD")" ]]; then
-              echo "Failed to push changes"
-              exit 1
-            fi
-          else
-            echo "No change to any binaries"
+          # Ensure we've pushed our commit
+          if [[ -n "$(git diff "${branch}..HEAD")" ]]; then
+            echo "Failed to push changes"
+            exit 1
           fi

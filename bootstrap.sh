@@ -12,7 +12,7 @@ BOOTSTRAP_DIR="${SCRIPT_DIR}/crate_universe/private/bootstrap"
 
 # Go to root of rules_rust
 pushd "${SCRIPT_DIR}" &> /dev/null
-has_changes="$(git log origin/main.. -- crate_universe/**)"
+has_changes="$(git log origin/main.. -- crate_universe)"
 popd &> /dev/null
 
 # Only bootstrap the binary if there are changes
