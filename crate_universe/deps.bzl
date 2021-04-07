@@ -31,7 +31,7 @@ def crate_universe_bins(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_S
             downloaded_file_path = "resolver{}".format(extension),
             executable = True,
             sha256 = sha256s.get(triple),
-            urls = [url_template.format(bin = "crate_universe_resolver-{}".format(triple))],
+            urls = [url_template.format(bin = "crate_universe_resolver-{}{}".format(triple, extension))],
         )
 
 def crate_universe_deps():
