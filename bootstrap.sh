@@ -23,6 +23,7 @@ if [[ -n "${has_changes}" ]]; then
 
     # Generate a bazelrc file for ensuring we always use the resolver binary for the current host
     cat << EOF > "${SCRIPT_DIR}/crate_universe.bazelrc"
+common --announce_rc
 common --override_repository="rules_rust_crate_universe__aarch64-apple-darwin=${BOOTSTRAP_DIR}"
 common --override_repository="rules_rust_crate_universe__aarch64-unknown-linux-gnu=${BOOTSTRAP_DIR}"
 common --override_repository="rules_rust_crate_universe__x86_64-apple-darwin=${BOOTSTRAP_DIR}"
