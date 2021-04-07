@@ -152,7 +152,7 @@ jobs:
           # Write new defaults.bzl file
           # Copy the new template
           cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
-          
+
           # Replace the url
           url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/{bin}"
           sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
@@ -182,7 +182,7 @@ jobs:
             echo "No change to any binaries" 
             exit 0 
           fi
-          
+
           git stage ${GITHUB_WORKSPACE}/crate_universe/private/defaults.bzl && git status
 
           # Setup git and commit back to the repo
@@ -200,15 +200,12 @@ jobs:
           # have been merged before this pipeline gets to this point.
           for i in 1 2 3 4 5 ; do
             {
-              git push origin "${branch}" && break
+              git push origin "${branch}" && exit 0
             } || {
               sleep 10
               git pull --rebase
             }
           done
 
-          # Ensure we've pushed our commit
-          if [[ -n "$(git diff "${branch}..HEAD")" ]]; then
-            echo "Failed to push changes"
-            exit 1
-          fi
+          echo "Failed to push commit to to repo"
+          exit 1
