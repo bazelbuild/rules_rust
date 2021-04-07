@@ -5,7 +5,8 @@ set -euo pipefail
 if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
     DOCS_WORKSPACE="${BUILD_WORKSPACE_DIRECTORY}"
 else
-    # https://stackoverflow.com/a/246128/7768383
+    # Get the directory of the current script when not running under
+    # Bazel (as indicated by the lack of BUILD_WORKSPACE_DIRECTORY).
     DOCS_WORKSPACE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 fi
 
