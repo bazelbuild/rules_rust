@@ -1,7 +1,7 @@
 use cargo_raze::context::{CrateContext, CrateDependencyContext, CrateTargetedDepContext};
 use semver::Version;
+use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fs::File;
 use std::io::Write;
 use tera::{self, Context, Tera};
 
@@ -19,7 +19,7 @@ pub struct Renderer {
     config: RenderConfig,
     hash: String,
     internal_renderer: Tera,
-    transitive_packages: Vec<CrateContext>,
+    transitive_renderable_packages: Vec<RenderablePackage>,
     member_packages_version_mapping: Dependencies,
     label_to_crates: BTreeMap<String, BTreeSet<String>>,
 }
@@ -150,8 +150,41 @@ impl Renderer {
         label_to_crates: BTreeMap<String, BTreeSet<String>>,
     ) -> Renderer {
         let mut internal_renderer = Tera::new("src/not/a/dir/*").unwrap();
+
+        internal_renderer.register_function(
+            "crate_to_repo_rule_name",
+            |args: &HashMap<String, tera::Value>| {
+                let value = config::crate_to_repo_rule_name(
+                    string_arg(args, "repo_rule_name")?,
+                    string_arg(args, "package_name")?,
+                    string_arg(args, "package_version")?,
+                );
+                Ok(tera::Value::String(value))
+            },
+        );
+
+        internal_renderer.register_function(
+            "crate_to_label",
+            |args: &HashMap<String, tera::Value>| {
+                let value = config::crate_to_label(
+                    string_arg(args, "repo_rule_name")?,
+                    string_arg(args, "package_name")?,
+                    string_arg(args, "package_version")?,
+                );
+                Ok(tera::Value::String(value))
+            },
+        );
+
         internal_renderer
             .add_raw_templates(vec![
+                (
+                    "templates/lockfile.template",
+                    include_str!("templates/lockfile.template"),
+                ),
+                (
+                    "templates/helper_functions.template",
+                    include_str!("templates/helper_functions.template"),
+                ),
                 (
                     "templates/partials/build_script.template",
                     include_str!("templates/partials/build_script.template"),
@@ -198,35 +231,28 @@ impl Renderer {
                     "templates/partials/default_data_dependencies.template",
                     include_str!("templates/partials/default_data_dependencies.template"),
                 ),
+                (
+                    "templates/partials/git_repository.template",
+                    include_str!("templates/partials/git_repository.template"),
+                ),
+                (
+                    "templates/partials/http_archive.template",
+                    include_str!("templates/partials/http_archive.template"),
+                ),
             ])
             .unwrap();
 
-        Self {
-            config,
-            hash,
-            internal_renderer,
-            transitive_packages,
-            member_packages_version_mapping,
-            label_to_crates,
-        }
-    }
+        let transitive_renderable_packages = transitive_packages
+            .into_iter()
+            .map(|mut crate_context| {
+                let per_triple_metadata = get_per_triple_metadata(&crate_context);
 
-    pub fn render(&self, mut output_file: &File) -> anyhow::Result<()> {
-        let build_files = self
-            .transitive_packages
-            .iter()
-            .map(|package| {
-                let mut package = package;
-                let per_triple_metadata = get_per_triple_metadata(&package);
-
-                let mut backing_package;
-                if let Some(git_repo) = &package.source_details.git_data {
+                if let Some(git_repo) = &crate_context.source_details.git_data {
                     if let Some(prefix_to_strip) = &git_repo.path_to_crate_root {
-                        backing_package = package.clone();
-                        for mut target in backing_package
+                        for mut target in crate_context
                             .targets
                             .iter_mut()
-                            .chain(backing_package.build_script_target.iter_mut())
+                            .chain(crate_context.build_script_target.iter_mut())
                         {
                             let path = Path::new(&target.path);
                             let prefix_to_strip_path = Path::new(prefix_to_strip);
@@ -237,240 +263,159 @@ impl Renderer {
                                 .unwrap()
                                 .to_owned();
                         }
-
-                        package = &backing_package;
                     }
                 }
 
-                let mut context = Context::new();
-                context.insert("crate", &package);
-                context.insert("targeted_metadata", &per_triple_metadata);
-                let rendered_crate_build_file = self
-                    .internal_renderer
-                    .render("templates/crate.BUILD.template", &context)?;
-                // TODO: Write test which has transitive deps on two proc-macro2 0.1.10 and 1.0.21 which differ in build-script-having-ness.
-                Ok((
-                    (package.pkg_name.clone(), package.pkg_version.clone()),
-                    rendered_crate_build_file,
-                ))
+                let is_proc_macro = crate_context
+                    .targets
+                    .iter()
+                    .any(|target| target.kind == "proc-macro");
+
+                RenderablePackage {
+                    crate_context,
+                    per_triple_metadata,
+                    is_proc_macro,
+                }
             })
-            .collect::<Result<HashMap<_, _>, tera::Error>>()?;
+            .collect();
 
-        write!(
-            output_file,
-            r#"# rules_rust crate_universe file format 1
-# config hash {hash}
-
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-def pinned_rust_install():
-"#,
-            hash = self.hash,
-        )?;
-        for package in &self.transitive_packages {
-            let package_version = format!("{}", package.pkg_version);
-            if let Some(git_repo) = &package.source_details.git_data {
-                write!(
-                    output_file,
-                    r#"    new_git_repository(
-        name = "{repository_name}",
-        strip_prefix = "{strip_prefix}",
-        build_file_content = """{build_file_content}""",
-        remote = "{git_remote}",
-        # TODO: tag?
-        commit = "{git_commit}",
-    )
-
-"#,
-                    // TODO: Don't copy this implementation from workspace_path_and_default_target
-                    repository_name =
-                        config::crate_to_repo_rule_name(&self.config.repo_rule_name, &package.pkg_name, &package_version),
-                    build_file_content = build_files
-                        .get(&(package.pkg_name.clone(), package.pkg_version.clone()))
-                        .unwrap(),
-                    git_remote = git_repo.remote,
-                    git_commit = git_repo.commit,
-                    strip_prefix = git_repo.path_to_crate_root.clone().unwrap_or_default(),
-                )?;
-            } else {
-                write!(
-                    output_file,
-                    r#"    http_archive(
-        name = "{repository_name}",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """{build_file_content}""",{maybe_crate_sha256}
-        strip_prefix = "{name}-{version}",
-        type = "tar.gz",
-        url = "{url}",
-    )
-
-"#,
-                    // TODO: Don't copy this implementation from workspace_path_and_default_target
-                    repository_name =
-                        config::crate_to_repo_rule_name(&self.config.repo_rule_name, &package.pkg_name, &package_version),
-                    name = package.pkg_name,
-                    version = package.pkg_version,
-                    maybe_crate_sha256 = if let Some(crate_sha256) = &package.sha256 {
-                        format!("\n        sha256 = \"{}\",", crate_sha256)
-                    } else {
-                        String::new()
-                    },
-                    url = self
-                        .config
-                        .repository_template
-                        .replace("{crate}", &package.pkg_name)
-                        .replace("{version}", &package.pkg_version.to_string()),
-                    build_file_content = build_files
-                        .get(&(package.pkg_name.clone(), package.pkg_version.clone()))
-                        .unwrap(),
-                )?;
-            }
+        Self {
+            config,
+            hash,
+            internal_renderer,
+            transitive_renderable_packages,
+            member_packages_version_mapping,
+            label_to_crates,
         }
+    }
+
+    pub fn render<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
+        self.render_workspaces(output)?;
+        writeln!(output, "")?;
+        self.render_helper_functions(output)
+    }
+
+    // Visible for testing
+    pub fn render_workspaces<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
+        let mut context = Context::new();
+        context.insert("lockfile_hash", &self.hash);
+        context.insert("crates", &self.transitive_renderable_packages);
+        context.insert("repo_rule_name", &self.config.repo_rule_name);
+        context.insert("repository_http_template", &self.config.repository_template);
+        let rendered_repository_rules = self
+            .internal_renderer
+            .render("templates/lockfile.template", &context)?;
+
+        write!(output, "{}", &rendered_repository_rules)?;
+
+        Ok(())
+    }
+
+    // Visible for testing
+    pub fn render_helper_functions<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
+        let mut crate_repo_names_inner = BTreeMap::new();
+        crate_repo_names_inner.extend(&self.member_packages_version_mapping.normal);
+        crate_repo_names_inner.extend(&self.member_packages_version_mapping.build);
+        crate_repo_names_inner.extend(&self.member_packages_version_mapping.dev);
+
+        let renderable_packages: Vec<_> = self
+            .transitive_renderable_packages
+            .iter()
+            .filter(|krate| {
+                crate_repo_names_inner.get(&krate.crate_context.pkg_name)
+                    == Some(&&krate.crate_context.pkg_version)
+            })
+            .collect();
 
         let (proc_macro_crates, default_crates): (Vec<_>, Vec<_>) = self
             .member_packages_version_mapping
             .normal
             .iter()
             .partition(|(name, version)| {
-                self.transitive_packages
-                    .iter()
-                    .find(|package| *package.pkg_name == **name && package.pkg_version == **version)
-                    // UNWRAP: cargo-metadata should ensure any package we're looking up is in the transitive packages.
-                    .unwrap()
-                    .targets
-                    .iter()
-                    .any(|target| target.kind == "proc-macro")
+                self.transitive_renderable_packages.iter().any(|package| {
+                    *package.crate_context.pkg_name == **name
+                        && package.crate_context.pkg_version == **version
+                        && package.is_proc_macro
+                })
             });
 
-        let mut crate_repo_names_inner = BTreeMap::new();
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.normal);
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.build);
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.dev);
+        let mut kind_to_labels_to_crate_names = BTreeMap::new();
+        kind_to_labels_to_crate_names
+            .insert(Kind::Normal, self.label_to_crate_names(&default_crates));
+        kind_to_labels_to_crate_names.insert(
+            Kind::Dev,
+            self.label_to_crate_names(&self.member_packages_version_mapping.dev.iter().collect()),
+        );
+        kind_to_labels_to_crate_names.insert(
+            Kind::Build,
+            self.label_to_crate_names(&self.member_packages_version_mapping.build.iter().collect()),
+        );
+        kind_to_labels_to_crate_names.insert(
+            Kind::ProcMacro,
+            self.label_to_crate_names(&proc_macro_crates),
+        );
 
-        // Now, create the crate() macro for the user.
-        write!(
-            output_file,
-            r##"
-CRATE_TARGET_NAMES = {{
-{crate_repo_names_inner}}}
+        let mut context = Context::new();
+        context.insert("crates", &renderable_packages);
+        context.insert("repo_rule_name", &self.config.repo_rule_name);
+        context.insert(
+            "kind_to_labels_to_crate_names",
+            &kind_to_labels_to_crate_names,
+        );
+        let rendered_helper_functions = self
+            .internal_renderer
+            .render("templates/helper_functions.template", &context)?;
 
-def crate(crate_name):
-    """Return the name of the target for the given crate.
-    """
-    target_name = CRATE_TARGET_NAMES.get(crate_name)
-    if target_name == None:
-        fail("Unknown crate name: {{}}".format(crate_name))
-    return target_name
+        write!(output, "{}", &rendered_helper_functions)?;
 
-def all_deps():
-    """Return all standard dependencies explicitly listed in the Cargo.toml or packages list."""
-    return [
-        crate(crate_name) for crate_name in [{crate_names}
-        ]
-    ]
-
-def all_proc_macro_deps():
-    """Return all proc-macro dependencies explicitly listed in the Cargo.toml or packages list."""
-    return [
-        crate(crate_name) for crate_name in [{proc_macro_crate_names}
-        ]
-    ]
-
-def crates_from(label):
-    mapping = {{
-        {label_to_crates}
-    }}
-    return mapping[_absolutify(label)]
-
-def dev_crates_from(label):
-    mapping = {{
-        {label_to_dev_crates}
-    }}
-    return mapping[_absolutify(label)]
-
-def build_crates_from(label):
-    mapping = {{
-        {label_to_build_crates}
-    }}
-    return mapping[_absolutify(label)]
-
-def proc_macro_crates_from(label):
-    mapping = {{
-        {label_to_proc_macro_crates}
-    }}
-    return mapping[_absolutify(label)]
-
-def _absolutify(label):
-    if label.startswith("//") or label.startswith("@"):
-        return label
-    if label.startswith(":"):
-        return "//" + native.package_name() + label
-    return "//" + native.package_name() + ":" + label
-"##,
-            crate_repo_names_inner = crate_repo_names_inner
-                .iter()
-                .map(|(crate_name, crate_version)| format!(
-                    r#"    "{}": "{}",{newline}"#,
-                    crate_name,
-                    config::crate_to_label(&self.config.repo_rule_name, &crate_name, &crate_version.to_string()),
-                    newline = '\n',
-                ))
-                .collect::<Vec<String>>()
-                .join(""),
-            crate_names = default_crates
-                .iter()
-                .map(|(crate_name, _crate_version)| format!(
-                    r#"{newline}            "{}","#,
-                    crate_name,
-                    newline = '\n'
-                ))
-                .collect::<Vec<String>>()
-                .join(""),
-            proc_macro_crate_names = proc_macro_crates
-                .iter()
-                .map(|(crate_name, _crate_version)| format!(
-                    r#"{newline}            "{}","#,
-                    crate_name,
-                    newline = '\n'
-                ))
-                .collect::<Vec<String>>()
-                .join(""),
-            label_to_crates =
-                label_to_crates(&default_crates, &self.label_to_crates).join("\n    "),
-            label_to_dev_crates = label_to_crates(
-                &self.member_packages_version_mapping.dev.iter().collect(),
-                &self.label_to_crates,
-            )
-            .join("\n    "),
-            label_to_build_crates = label_to_crates(
-                &self.member_packages_version_mapping.build.iter().collect(),
-                &self.label_to_crates
-            )
-            .join("\n    "),
-            label_to_proc_macro_crates =
-                label_to_crates(&proc_macro_crates, &self.label_to_crates).join("\n    "),
-        )?;
         Ok(())
+    }
+
+    fn label_to_crate_names(
+        &self,
+        crates: &Vec<(&String, &Version)>,
+    ) -> BTreeMap<String, Vec<String>> {
+        let crate_names: HashSet<&String> = crates.iter().map(|(name, _)| *name).collect();
+        self.label_to_crates
+            .iter()
+            .map(|(label, all_crates)| {
+                let value = all_crates
+                    .iter()
+                    .filter(|crate_name| crate_names.contains(crate_name))
+                    .map(|crate_name| crate_name.to_owned())
+                    .collect::<Vec<_>>();
+                (label.clone(), value)
+            })
+            .collect()
     }
 }
 
-fn label_to_crates(
-    crates: &Vec<(&String, &Version)>,
-    label_to_crates: &BTreeMap<String, BTreeSet<String>>,
-) -> Vec<String> {
-    let crate_names: HashSet<&String> = crates.iter().map(|(name, _)| *name).collect();
-    label_to_crates
-        .iter()
-        .map(|(label, all_crates)| {
-            let values = all_crates
-                .iter()
-                .filter(|crate_name| crate_names.contains(crate_name))
-                .map(|crate_name| format!(r#"crate("{}")"#, crate_name))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!(r#""{label}": [{values}],"#, label = label, values = values)
-        })
-        .collect::<Vec<_>>()
+fn string_arg<'a, 'b>(
+    args: &'a HashMap<String, tera::Value>,
+    name: &'b str,
+) -> Result<&'a str, tera::Error> {
+    let value = args
+        .get(name)
+        .ok_or_else(|| tera::Error::msg(&format!("Missing argument {:?}", name)))?;
+    value.as_str().ok_or_else(|| {
+        tera::Error::msg(&format!(
+            "Wrong argument type, expected string for {:?}",
+            name
+        ))
+    })
+}
+
+#[derive(Serialize)]
+struct RenderablePackage {
+    crate_context: CrateContext,
+    per_triple_metadata: BTreeMap<String, CrateTargetedDepContext>,
+    is_proc_macro: bool,
+}
+
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+enum Kind {
+    Normal,
+    Dev,
+    Build,
+    ProcMacro,
 }
