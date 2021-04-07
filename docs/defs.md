@@ -6,6 +6,7 @@
 * [rust_proc_macro](#rust_proc_macro)
 * [rust_benchmark](#rust_benchmark)
 * [rust_test](#rust_test)
+* [rust_test_suite](#rust_test_suite)
 
 <a id="#rust_benchmark"></a>
 
@@ -617,5 +618,69 @@ Run the test with `bazel build //hello_lib:hello_lib_test`.
 | <a id="rust_test-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.   | List of strings | optional | [] |
 | <a id="rust_test-srcs"></a>srcs |  List of Rust <code>.rs</code> source files used to build the library.<br><br>If <code>srcs</code> contains more than one file, then there must be a file either named <code>lib.rs</code>. Otherwise, <code>crate_root</code> must be set to the source file that is the root of the crate to be passed to rustc to build this crate.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="rust_test-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
+
+
+<a id="#rust_test_suite"></a>
+
+## rust_test_suite
+
+<pre>
+rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
+</pre>
+
+A rule for creating a test suite for a set of `rust_test` targets.
+
+This rule can be used for setting up typical rust [integration tests][it]. Given the following
+directory structure:
+
+```text
+[crate]/
+    BUILD.bazel
+    src/
+        lib.rs
+        main.rs
+    tests/
+        integrated_test_a.rs
+        integrated_test_b.rs
+        integrated_test_c.rs
+        patterns/
+            fibonacci_test.rs
+```
+
+The rule can be used to generate [rust_test](#rust_test) targets for each source file under `tests`
+and a [test_suite][ts] which encapsulates all tests.
+
+```python
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test_suite")
+
+rust_library(
+    name = "math_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_binary(
+    name = "math_bin",
+    srcs = ["src/main.rs"],
+)
+
+rust_test_suite(
+    name = "integrated_tests_suite",
+    srcs = glob(["tests/**"]),
+    deps = [":math_lib"],
+)
+```
+
+[it]: https://doc.rust-lang.org/rust-by-example/testing/integration_testing.html
+[ts]: https://docs.bazel.build/versions/master/be/general.html#test_suite
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_test_suite-name"></a>name |  The name of the <code>test_suite</code>.   |  none |
+| <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically <code>glob(["tests/**/*.rs"])</code>.   |  none |
+| <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments. Args from [rust_test](#rust_test) are parsed out and shared     between all tests while [common attributes](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)     are shared between the test targets and <code>test_suite</code>.   |  none |
 
 

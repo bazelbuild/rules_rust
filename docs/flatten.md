@@ -24,6 +24,7 @@
 * [rust_shared_library](#rust_shared_library)
 * [rust_static_library](#rust_static_library)
 * [rust_test](#rust_test)
+* [rust_test_suite](#rust_test_suite)
 * [rust_toolchain](#rust_toolchain)
 * [rust_toolchain_repository](#rust_toolchain_repository)
 * [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
@@ -1437,6 +1438,70 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components.     Requires version to be "nightly". Defaults to False.   |  <code>False</code> |
 | <a id="rust_repository_set-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. See     [rust_repositories](#rust_repositories) for more details.   |  <code>None</code> |
 | <a id="rust_repository_set-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']   |  <code>["https://static.rust-lang.org/dist/{}.tar.gz"]</code> |
+
+
+<a id="#rust_test_suite"></a>
+
+## rust_test_suite
+
+<pre>
+rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
+</pre>
+
+A rule for creating a test suite for a set of `rust_test` targets.
+
+This rule can be used for setting up typical rust [integration tests][it]. Given the following
+directory structure:
+
+```text
+[crate]/
+    BUILD.bazel
+    src/
+        lib.rs
+        main.rs
+    tests/
+        integrated_test_a.rs
+        integrated_test_b.rs
+        integrated_test_c.rs
+        patterns/
+            fibonacci_test.rs
+```
+
+The rule can be used to generate [rust_test](#rust_test) targets for each source file under `tests`
+and a [test_suite][ts] which encapsulates all tests.
+
+```python
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test_suite")
+
+rust_library(
+    name = "math_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_binary(
+    name = "math_bin",
+    srcs = ["src/main.rs"],
+)
+
+rust_test_suite(
+    name = "integrated_tests_suite",
+    srcs = glob(["tests/**"]),
+    deps = [":math_lib"],
+)
+```
+
+[it]: https://doc.rust-lang.org/rust-by-example/testing/integration_testing.html
+[ts]: https://docs.bazel.build/versions/master/be/general.html#test_suite
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_test_suite-name"></a>name |  The name of the <code>test_suite</code>.   |  none |
+| <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically <code>glob(["tests/**/*.rs"])</code>.   |  none |
+| <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments. Args from [rust_test](#rust_test) are parsed out and shared     between all tests while [common attributes](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)     are shared between the test targets and <code>test_suite</code>.   |  none |
 
 
 <a id="#rust_wasm_bindgen_repositories"></a>
