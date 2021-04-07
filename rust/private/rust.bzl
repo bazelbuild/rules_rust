@@ -521,18 +521,36 @@ def _tidy(doc_string):
     Returns:
         str: A string optimized for stardoc rendering
     """
-    return "\n".join([line.strip() for line in doc_string.splitlines()])
+    lines = doc_string.splitlines()
+    if not lines:
+        return doc_string
+
+    # If the first line is empty, use the second line
+    first_line = lines[0]
+    if not first_line:
+        first_line = lines[1]
+
+    # Detect how much space prepends the first line and subtract that from all lines
+    space_count = len(first_line) - len(first_line.lstrip())
+
+    # If there are no leading spaces, do not alter the docstring
+    if space_count == 0:
+        return doc_string
+    else:
+        # Remove the leading block of spaces from the current line
+        block = " " * space_count
+        return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
 
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
-        doc = _tidy("""
+        doc = _tidy("""\
             Remap crates to a new name or moniker for linkage to this target
 
             These are other `rust_library` targets and will be presented as the new name given.
         """),
     ),
     "compile_data": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of files used by this rule at compile time.
 
             This attribute can be used to specify any data files that are embedded into
@@ -543,7 +561,7 @@ _common_attrs = {
         allow_files = True,
     ),
     "crate_features": attr.string_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of features to enable for this crate.
 
             Features are defined in the code using the `#[cfg(feature = "foo")]`
@@ -552,7 +570,7 @@ _common_attrs = {
         """),
     ),
     "crate_name": attr.string(
-        doc = _tidy("""
+        doc = _tidy("""\
             Crate name to use for this target.
 
             This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.
@@ -560,7 +578,7 @@ _common_attrs = {
         """),
     ),
     "crate_root": attr.label(
-        doc = _tidy("""
+        doc = _tidy("""\
             The file that will be passed to `rustc` to be used for building this crate.
 
             If `crate_root` is not set, then this rule will look for a `lib.rs` file (or `main.rs` for rust_binary)
@@ -569,7 +587,7 @@ _common_attrs = {
         allow_single_file = [".rs"],
     ),
     "data": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of files used by this rule at compile time and runtime.
 
             If including data at compile time with include_str!() and similar,
@@ -579,7 +597,7 @@ _common_attrs = {
         allow_files = True,
     ),
     "deps": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of other libraries to be linked to this library target.
 
             These can be either other `rust_library` targets or `cc_library` targets if
@@ -601,14 +619,14 @@ _common_attrs = {
     # This fails for remote execution, which needs cfg="exec", and there isn't anything like
     # `@local_config_platform//:exec` exposed.
     "proc_macro_deps": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of `rust_library` targets with kind `proc-macro` used to help build this library target.
         """),
         cfg = "exec",
         providers = [rust_common.crate_info],
     ),
     "rustc_env": attr.string_dict(
-        doc = _tidy("""
+        doc = _tidy("""\
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
 
             rust_test()/rust_binary() rules can use $(rootpath //package:target) to pass in the
@@ -619,7 +637,7 @@ _common_attrs = {
         """),
     ),
     "rustc_env_files": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             Files containing additional environment variables to set for rustc.
 
             These files should  contain a single variable per line, of format
@@ -638,7 +656,7 @@ _common_attrs = {
     #     doc = "This name will also be used as the name of the crate built by this rule.",
     # `),
     "srcs": attr.label_list(
-        doc = _tidy("""
+        doc = _tidy("""\
             List of Rust `.rs` source files used to build the library.
 
             If `srcs` contains more than one file, then there must be a file either
@@ -666,7 +684,7 @@ _common_attrs = {
 _rust_test_attrs = {
     "crate": attr.label(
         mandatory = False,
-        doc = _tidy("""
+        doc = _tidy("""\
             Target inline tests declared in the given crate
 
             These tests are typically those that would be held out under
@@ -675,7 +693,7 @@ _rust_test_attrs = {
     ),
     "env": attr.string_dict(
         mandatory = False,
-        doc = _tidy("""
+        doc = _tidy("""\
             Specifies additional environment variables to set when the test is executed by bazel test.
             Values are subject to `$(execpath)` and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
@@ -685,7 +703,7 @@ _rust_test_attrs = {
         executable = True,
         default = Label("//util/launcher:launcher"),
         cfg = "exec",
-        doc = _tidy("""
+        doc = _tidy("""\
             A launcher executable for loading environment and argument files passed in via the `env` attribute
             and ensuring the variables are set for the underlying test executable.
         """),
@@ -831,7 +849,7 @@ rust_proc_macro = rule(
 
 _rust_binary_attrs = {
     "crate_type": attr.string(
-        doc = _tidy("""
+        doc = _tidy("""\
             Crate type that will be passed to `rustc` to be used for building this crate.
 
             This option is a temporary workaround and should be used only when building
@@ -840,7 +858,7 @@ _rust_binary_attrs = {
         default = "bin",
     ),
     "linker_script": attr.label(
-        doc = _tidy("""
+        doc = _tidy("""\
             Link script to forward into linker via rustc options.
         """),
         cfg = "exec",
