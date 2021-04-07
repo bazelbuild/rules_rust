@@ -146,15 +146,15 @@ dependencies = [
 
 [[package]]
 name = "cargo-raze"
-version = "0.11.0"
-source = "git+https://github.com/UebelAndre/cargo-raze.git?rev=ce46848b9af7c460fba160e7249bff95802a3a13#ce46848b9af7c460fba160e7249bff95802a3a13"
+version = "0.12.0"
+source = "git+https://github.com/UebelAndre/cargo-raze.git?rev=caaf8345046eee830ea89fc04771ee117bd835eb#caaf8345046eee830ea89fc04771ee117bd835eb"
 dependencies = [
  "anyhow",
  "cargo-lock",
  "cargo-platform",
  "cargo_metadata 0.12.3",
  "cargo_toml",
- "cfg-expr 0.6.0",
+ "cfg-expr",
  "glob",
  "itertools",
  "log",
@@ -209,15 +209,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "toml",
-]
-
-[[package]]
-name = "cfg-expr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb4f9cf6cb58661f5cdcda0240ab42788e009bd957ba56c1367aa01c7c6fbc05"
-dependencies = [
- "smallvec",
 ]
 
 [[package]]
@@ -287,7 +278,7 @@ dependencies = [
  "assert_cmd",
  "cargo-raze",
  "cargo_metadata 0.13.1",
- "cfg-expr 0.7.4",
+ "cfg-expr",
  "env_logger",
  "hex",
  "indoc",
@@ -1076,9 +1067,9 @@ checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 
 [[package]]
 name = "spdx"
-version = "0.3.6"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e6b6cc773b635ad64a05f00367c6f66d06a8708f7360f67c41d446dacdd0a0f"
+checksum = "55ebe4f76cacc83caff34a6ad8731a260d5d1213bdedc655968c62f6cbc92783"
 dependencies = [
  "lazy_static",
  "regex",
