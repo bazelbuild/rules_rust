@@ -525,8 +525,13 @@ def _tidy(doc_string):
     if not lines:
         return doc_string
 
+    # If the first line is empty, use the second line
+    first_line = lines[0]
+    if not first_line:
+        first_line = lines[1]
+
     # Detect how much space prepends the first line and subtract that from all lines
-    space_count = len(lines[0]) - len(lines[0].lstrip())
+    space_count = len(first_line) - len(first_line.lstrip())
 
     # If there are no leading spaces, do not alter the docstring
     if space_count == 0:
