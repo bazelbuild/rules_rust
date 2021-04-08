@@ -15,6 +15,7 @@ defaults:
 
 jobs:
   build:
+    if: ${{ github.repository_owner == bazelbuild }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -79,6 +80,7 @@ jobs:
           path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${{ matrix.env.TARGET }}
           if-no-files-found: error
   release:
+    if: ${{ github.repository_owner == bazelbuild }}
     needs: build
     runs-on: ubuntu-latest
     steps:
