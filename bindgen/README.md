@@ -16,7 +16,7 @@ These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings t
 [rust]: http://www.rust-lang.org/
 [bindgen]: https://github.com/rust-lang/rust-bindgen
 
-See the [bindgen example](../examples/ffi/rust_calling_c/simple/BUILD#L9) for a more complete example of use.
+See the [bindgen example](../examples/ffi/rust_calling_c/simple/BUILD.bazel#L9) for a more complete example of use.
 
 ### Setup
 
