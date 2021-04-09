@@ -35,8 +35,6 @@ rust_proto_repositories()
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//proto:toolchain.bzl",
-    "GRPC_COMPILE_DEPS",
-    "PROTO_COMPILE_DEPS",
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
@@ -214,6 +212,12 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         output_hash,
     ))
 
+    # Gather all dependencies for compilation
+    compile_action_deps = depset(
+        compile_deps +
+        proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
+    )
+
     return rustc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
@@ -223,7 +227,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             type = "rlib",
             root = lib_rs,
             srcs = depset(srcs),
-            deps = depset(compile_deps),
+            deps = compile_action_deps,
             proc_macro_deps = depset([]),
             aliases = {},
             output = rust_lib,
@@ -286,7 +290,6 @@ rust_proto_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
-            default = PROTO_COMPILE_DEPS,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -310,6 +313,8 @@ rust_proto_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
+    # the version of Bazel that issue was closed on as the min supported version
     incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
@@ -318,7 +323,6 @@ Example:
 
 ```python
 load("@rules_rust//proto:proto.bzl", "rust_proto_library")
-load("@rules_rust//proto:toolchain.bzl", "PROTO_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -333,7 +337,7 @@ proto_rust_library(
 rust_binary(
     name = "my_proto_binary",
     srcs = ["my_proto_binary.rs"],
-    deps = [":rust"] + PROTO_COMPILE_DEPS,
+    deps = [":rust"],
 )
 ```
 """,
@@ -364,7 +368,6 @@ rust_grpc_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
-            default = GRPC_COMPILE_DEPS,
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
@@ -388,6 +391,9 @@ rust_grpc_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
+    # the version of Bazel that issue was closed on as the min supported version
+    incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 
@@ -395,7 +401,6 @@ Example:
 
 ```python
 load("//proto:proto.bzl", "rust_grpc_library")
-load("//proto:toolchain.bzl", "GRPC_COMPILE_DEPS")
 
 proto_library(
     name = "my_proto",
@@ -410,7 +415,7 @@ rust_grpc_library(
 rust_binary(
     name = "my_service",
     srcs = ["my_service.rs"],
-    deps = [":rust"] + GRPC_COMPILE_DEPS,
+    deps = [":rust"],
 )
 ```
 """,

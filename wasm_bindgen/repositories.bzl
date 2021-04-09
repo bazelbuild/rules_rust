@@ -22,7 +22,7 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
     """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
 
     Args:
-        register_default_toolchain (Label, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
+        register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
             (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
             that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
     """
