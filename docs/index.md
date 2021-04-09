@@ -90,3 +90,28 @@ bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:w
 
 `rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
 building WebAssembly code for the host target.
+
+## Incremental Compilation
+
+There is an experimental flag that enables incremental compilation, which can
+considerably speed up rebuilds during development.
+
+Targets built with incremental compilation enabled will have sandboxing
+disabled, so enabling this option is trading off some of Bazel's hermeticity in
+the name of performance. This option is not recommended for CI or release
+builds.
+
+To enable incremental compilation, add the following argument to your bazel
+build command, adjusting the directory path to one that suits:
+
+    --@rules_rust//:experimental_incremental_base=/home/user/cache/bazel_incremental
+
+A separate flag allows you to control which crates are incrementally compiled.
+The default is:
+
+    --@rules_rust//:experimental_incremental_prefixes=//,-//vendored
+
+This will incrementally compile any crates in the local workspace, but exclude
+other repositories like `@raze__*`, and anything in the //vendored package. This
+behaviour is similar to cargo, which only incrementally compiles the local
+workspace.

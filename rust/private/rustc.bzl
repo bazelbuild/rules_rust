@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -44,6 +45,22 @@ AliasableDepInfo = provider(
     fields = {
         "dep": "CrateInfo",
         "name": "str",
+    },
+)
+
+IncrementalInfo = provider(
+    doc = "Data relating to incremental compilation.",
+    fields = {
+        "base": "string: base folder to store incremental build products",
+        "prefixes": "IncrementalPrefixInfo: prefixes to include and exclude",
+    },
+)
+
+IncrementalPrefixInfo = provider(
+    doc = "Prefixes to include and exclude in incremental compilation.",
+    fields = {
+        "exclude": "List[string]: prefixes that will exclude a label if matched",
+        "include": "List[string]: prefixes that will include a label if matched",
     },
 )
 
@@ -492,7 +509,8 @@ def rustc_compile_action(
         crate_info,
         output_hash = None,
         rust_flags = [],
-        environ = {}):
+        environ = {},
+        incremental_info = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -503,6 +521,7 @@ def rustc_compile_action(
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         environ (dict, optional): A set of makefile expandable environment variables for the action
+        incremental_info (str, optional): path to store incremental build products in.
 
     Returns:
         list: A list of the following providers:
@@ -554,14 +573,34 @@ def rustc_compile_action(
     else:
         formatted_version = ""
 
+    if (incremental_info and
+        incremental_info.base and
+        _want_incremental_compile(ctx.label, incremental_info.prefixes)):
+        incremental_dir = "{}/{}_{}".format(
+            incremental_info.base,
+            ctx.var["COMPILATION_MODE"],
+            toolchain.target_triple,
+        )
+        args.add("--codegen", "incremental=" + incremental_dir)
+
+        # with sandboxing enabled, subsequent rustc invocations will crash,
+        # as it doesn't expect the source files to have moved
+        execution_requirements = {"no-sandbox": "1"}
+        mnemonic = "RustIncr"
+    else:
+        execution_requirements = {}
+        mnemonic = "Rustc"
+
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
         outputs = [crate_info.output],
         env = env,
         arguments = [args],
-        mnemonic = "Rustc",
-        progress_message = "Compiling Rust {} {}{} ({} files)".format(
+        mnemonic = mnemonic,
+        execution_requirements = execution_requirements,
+        progress_message = "Compiling {} {} {}{} ({} files)".format(
+            mnemonic,
             crate_info.type,
             ctx.label.name,
             formatted_version,
@@ -934,3 +973,75 @@ error_format = rule(
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
 )
+
+def _incremental_base_impl(ctx):
+    """Implementation for the incremental_base() rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        BuildSettingInfo: an object with a `value` attribute containing the string.
+    """
+    value = ctx.build_setting_value
+    return BuildSettingInfo(value = value)
+
+incremental_base = rule(
+    build_setting = config.string(flag = True),
+    implementation = _incremental_base_impl,
+    doc = "Declares a command line argument that accepts an arbitrary string.",
+)
+
+def _incremental_prefixes_impl(ctx):
+    """Implementation for the incremental_prefixes_flag() rule
+
+    Splits the provided string on commas, and then partitions prefixes starting
+    with a hypen into the exclude list, returning a provider with the include
+    and exclude list. The hypens are stripped from the entries in the exclude list.
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        (IncrementalPrefixInfo): a list of prefixes to include and exclude
+    """
+    values = ctx.build_setting_value.split(",")
+    include = []
+    exclude = []
+    for value in ctx.build_setting_value.split(","):
+        if not value:
+            continue
+        elif value.startswith("-"):
+            exclude.append(value[1:])
+        else:
+            include.append(value)
+    return IncrementalPrefixInfo(include = include, exclude = exclude)
+
+incremental_prefixes = rule(
+    build_setting = config.string(flag = True),
+    implementation = _incremental_prefixes_impl,
+    doc = """Declares a command line argument for incremental prefixes.
+    
+    See _incremental_prefixes_impl() for the details.
+    """,
+)
+
+def _want_incremental_compile(label, prefixes):
+    """True if the provided prefixes indicate the target should be incrementally compiled.
+
+    Args:
+        label (Label): the label for a given target
+        prefixes (IncrementalPrefixInfo): prefixes to include and exclude
+
+    Returns:
+        bool
+    """
+    label = str(label)
+    for prefix in prefixes.exclude:
+        if label.startswith(prefix):
+            return False
+    for prefix in prefixes.include:
+        if label.startswith(prefix):
+            return True
+
+    return False
