@@ -1141,7 +1141,7 @@ rust_test_binary = rule(
         """),
 )
 
-def rust_test_suite(name, srcs, tags = [], **kwargs):
+def rust_test_suite(name, srcs, **kwargs):
     """A rule for creating a test suite for a set of `rust_test` targets.
 
     This rule can be used for setting up typical rust [integration tests][it]. Given the following
@@ -1190,7 +1190,6 @@ def rust_test_suite(name, srcs, tags = [], **kwargs):
     Args:
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
-        tags (list): Tags for both the test suite and the underlying [rust_test](#rust_test) target.
         **kwargs (dict): Additional keyword arguments. Args from [rust_test](#rust_test) are parsed out and shared
             between all tests while [common attributes](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)
             are shared between the test targets and `test_suite`.
@@ -1201,12 +1200,12 @@ def rust_test_suite(name, srcs, tags = [], **kwargs):
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
 
-        # The test name should not end with `.rs` or have `/`.
-        test_name = src[:-3].replace("/", "_")
+        # The test name should not end with `.rs`
+        test_name = src[:-3]
         rust_test(
             name = test_name,
+            crate_name = test_name.replace("/", "_"),
             srcs = [src],
-            tags = tags,
             **kwargs
         )
         tests.append(test_name)
@@ -1214,7 +1213,7 @@ def rust_test_suite(name, srcs, tags = [], **kwargs):
     native.test_suite(
         name = name,
         tests = tests,
-        tags = tags,
+        tags = kwargs.get("tags", None),
     )
 
 rust_benchmark = rule(
