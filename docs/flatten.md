@@ -1445,7 +1445,7 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 ## rust_test_suite
 
 <pre>
-rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-tags">tags</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
+rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
 </pre>
 
 A rule for creating a test suite for a set of `rust_test` targets.
@@ -1501,7 +1501,6 @@ rust_test_suite(
 | :------------- | :------------- | :------------- |
 | <a id="rust_test_suite-name"></a>name |  The name of the <code>test_suite</code>.   |  none |
 | <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically <code>glob(["tests/**/*.rs"])</code>.   |  none |
-| <a id="rust_test_suite-tags"></a>tags |  Tags for both the test suite and the underlying [rust_test](#rust_test) target.   |  <code>[]</code> |
 | <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments. Args from [rust_test](#rust_test) are parsed out and shared     between all tests while [common attributes](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)     are shared between the test targets and <code>test_suite</code>.   |  none |
 
 
