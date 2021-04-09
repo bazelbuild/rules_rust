@@ -2,6 +2,8 @@
 
 ## How to use
 
+**Note**: `crate_universe` is experimental, and may have breaking API changes at any time. These instructions may also change without notice.
+
 Find the most up-to-date `crate_universe` release at https://github.com/bazelbuild/rules_rust/releases
 and add the `crate_universe_defaults.bzl` file to your workspace (eg
 `./3rdparty/rules_rust/crate_universe_defaults.bzl).
