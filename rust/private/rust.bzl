@@ -316,9 +316,11 @@ def _create_test_launcher(ctx, toolchain, output, providers):
     # This should be investigated but for now, we generally assume if the target environment is windows,
     # the execution environment is windows.
     if toolchain.os == "windows":
-        launcher = ctx.actions.declare_file(ctx.label.name + ".launcher.exe")
+        launcher_filename = ctx.label.name + ".launcher.exe"
     else:
-        launcher = ctx.actions.declare_file(ctx.label.name + ".launcher")
+        launcher_filename = ctx.label.name + ".launcher"
+
+    launcher = ctx.actions.declare_file(launcher_filename)
 
     # Because returned executables must be created from the same rule, the
     # launcher target is simply symlinked and exposed.
@@ -332,7 +334,7 @@ def _create_test_launcher(ctx, toolchain, output, providers):
     data = getattr(ctx.attr, "data", [])
 
     # Expand the environment variables and write them to a file
-    environ_file = ctx.actions.declare_file(launcher.basename + ".launchfiles/env")
+    environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
     environ = expand_locations(
         ctx,
         getattr(ctx.attr, "env", {}),
