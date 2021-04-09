@@ -4,8 +4,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 
-def crate_universe_bins(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_SHA256_CHECKSUMS):
-    """Defines repositories for crate universe binaries
+def crate_universe_deps(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_SHA256_CHECKSUMS):
+    """Define all dependencies for the crate_universe repository rule
 
     Args:
         url_template (str, optional): A template url for downloading binaries.
@@ -33,7 +33,3 @@ def crate_universe_bins(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_S
             sha256 = sha256s.get(triple),
             urls = [url_template.format(bin = "crate_universe_resolver-{}{}".format(triple, extension))],
         )
-
-def crate_universe_deps():
-    """Define all dependencies for the crate_universe repository rule"""
-    crate_universe_bins()

@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   build:
-    if: ${{ github.repository_owner == bazelbuild }}
+    if: ${{ github.repository_owner == 'bazelbuild' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -80,7 +80,7 @@ jobs:
           path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${{ matrix.env.TARGET }}
           if-no-files-found: error
   release:
-    if: ${{ github.repository_owner == bazelbuild }}
+    if: ${{ github.repository_owner == 'bazelbuild' }}
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -94,6 +94,46 @@ jobs:
       - run: |
           # Ensure all files are executable
           chmod +x ${{ github.workspace }}/crate_universe/private/bootstrap/bin/*/release/*
+      - run: |
+          # Write new defaults.bzl file
+          # Copy the new template
+          cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
+
+          # Replace the url
+          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/{bin}"
+          sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
+
+          # Populate all sha256 values
+          TARGETS=(
+            aarch64-apple-darwin
+            aarch64-unknown-linux-gnu
+            x86_64-apple-darwin
+            x86_64-pc-windows-gnu
+            x86_64-unknown-linux-gnu
+          )
+          for triple in ${TARGETS[@]}; do
+            if [[ "${triple}" == *"windows"* ]]; then
+                bin_name=crate_universe_resolver.exe
+            else
+                bin_name=crate_universe_resolver
+            fi
+            sha256="$(shasum --algorithm 256 ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${triple}/release/${bin_name} | awk '{ print $1 }')"
+            sed -i "s|{${triple}--sha256}|${sha256}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
+          done
+
+          cat << EOF > ${{ github.workspace }}/tag_message.txt
+          From commit: ${GITHUB_SHA}
+
+          \`crate_universe_defaults.bzl\`:
+
+          \`\`\`python
+          $(cat ${{ github.workspace }}/crate_universe/private/defaults.bzl)
+          \`\`\`
+          EOF
+        env:
+          # This url should match ${{ steps.crate_universe_release.outputs.html_url }} but because this step runs before
+          # `crate_universe_release` we hard code the url to be what we expect the release URL to be.
+          URL: https://github.com/bazelbuild/rules_rust/releases/download/crate_universe-${{ github.run_number }}
       - uses: actions/create-release@v1
         id: crate_universe_release
         env:
@@ -102,8 +142,7 @@ jobs:
           prerelease: true
           tag_name: crate_universe-${{ github.run_number }}
           release_name: crate_universe-${{ github.run_number }}
-          body: |
-            From commit: ${{ github.sha }}
+          body_path: ${{ github.workspace }}/tag_message.txt
       # There must be a upload action for each platform triple we create
       - name: "Upload aarch64-apple-darwin"
         uses: actions/upload-release-asset@v1
@@ -150,33 +189,3 @@ jobs:
           asset_name: crate_universe_resolver-x86_64-unknown-linux-gnu
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-unknown-linux-gnu/release/crate_universe_resolver
           asset_content_type: application/octet-stream
-      - run: |
-          # Write new defaults.bzl file
-          # Copy the new template
-          cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
-
-          # Replace the url
-          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/{bin}"
-          sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
-
-          # Populate all sha256 values
-          TARGETS=(
-            aarch64-apple-darwin
-            aarch64-unknown-linux-gnu
-            x86_64-apple-darwin
-            x86_64-pc-windows-gnu
-            x86_64-unknown-linux-gnu
-          )
-          for triple in ${TARGETS[@]}; do
-            if [[ "${triple}" == *"windows"* ]]; then
-                bin_name=crate_universe_resolver.exe
-            else
-                bin_name=crate_universe_resolver
-            fi
-            sha256="$(shasum --algorithm 256 ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${triple}/release/${bin_name} | awk '{ print $1 }')"
-            sed -i "s|{${triple}--sha256}|${sha256}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
-          done
-          echo "Generated crate_universe/private/defaults.bzl file:"
-          cat ${{ github.workspace }}/crate_universe/private/defaults.bzl
-        env:
-          URL: ${{ steps.crate_universe_release.outputs.html_url }}
