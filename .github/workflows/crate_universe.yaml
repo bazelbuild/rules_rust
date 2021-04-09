@@ -15,6 +15,7 @@ defaults:
 
 jobs:
   build:
+    if: ${{ github.repository_owner == bazelbuild }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -79,6 +80,7 @@ jobs:
           path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${{ matrix.env.TARGET }}
           if-no-files-found: error
   release:
+    if: ${{ github.repository_owner == bazelbuild }}
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -174,38 +176,7 @@ jobs:
             sha256="$(shasum --algorithm 256 ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${triple}/release/${bin_name} | awk '{ print $1 }')"
             sed -i "s|{${triple}--sha256}|${sha256}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
           done
+          echo "Generated crate_universe/private/defaults.bzl file:"
+          cat ${{ github.workspace }}/crate_universe/private/defaults.bzl
         env:
           URL: ${{ steps.crate_universe_release.outputs.html_url }}
-      - run: |
-          # Commit and push changes back to the repo
-          if [[ -z "$(git status --porcelain)" ]]; then 
-            echo "No change to any binaries" 
-            exit 0 
-          fi
-
-          git stage ${GITHUB_WORKSPACE}/crate_universe/private/defaults.bzl && git status
-
-          # Setup git and commit back to the repo
-          git config user.email "rules_rust@googlegroups.com"
-          git config user.name "github-actions"
-
-          # Cache the current info
-          commit="$(git rev-parse HEAD)"
-          branch="$(git branch --show-current)"
-
-          # commit the change
-          git commit -m "github-actions: update crate_universe binaries from ${commit}"
-
-          # Attempt to push but compensate for potential issues where another PR would
-          # have been merged before this pipeline gets to this point.
-          for i in 1 2 3 4 5 ; do
-            {
-              git push origin "${branch}" && exit 0
-            } || {
-              sleep 10
-              git pull --rebase
-            }
-          done
-
-          echo "Failed to push commit to to repo"
-          exit 1
