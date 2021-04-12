@@ -50,7 +50,10 @@ pub struct DepSpec {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VersionSpec {
-    Semver(VersionReq),
+    Semver {
+        version_req: VersionReq,
+        registry: Option<String>,
+    },
     Git {
         url: String,
         rev: Option<String>,
@@ -83,6 +86,7 @@ struct Ignored {
 }
 
 pub fn merge_cargo_tomls(
+    known_registry_names: &BTreeSet<String>,
     label_to_path: BTreeMap<String, PathBuf>,
     packages: Vec<AdditionalPackage>,
 ) -> anyhow::Result<(CargoToml, BTreeMap<String, BTreeSet<String>>)> {
@@ -116,6 +120,26 @@ pub fn merge_cargo_tomls(
             package: _,
             _ignored,
         } = cargo_toml;
+        for dep_spec in dependencies
+            .values()
+            .chain(build_dependencies.values())
+            .chain(dev_dependencies.values())
+        {
+            if let VersionSpec::Semver {
+                registry: Some(registry),
+                ..
+            } = &dep_spec.version
+            {
+                if !known_registry_names.contains(registry) {
+                    anyhow::bail!(
+                        "Saw dep for unknown registry {} - known registry names: {:?}",
+                        registry,
+                        known_registry_names
+                    );
+                }
+            }
+        }
+
         for (dep, dep_spec) in dependencies.into_iter() {
             if let VersionSpec::Local(_) = dep_spec.version {
                 // We ignore local deps.
@@ -211,12 +235,16 @@ pub fn merge_cargo_tomls(
             DepSpec {
                 default_features: true,
                 features: features.into_iter().collect(),
-                version: VersionSpec::Semver(VersionReq::parse(&semver).with_context(|| {
-                    format!(
-                        "Failed to parse semver requirement for package {}, semver: {}",
-                        name, semver
-                    )
-                })?),
+                version: VersionSpec::Semver {
+                    version_req: VersionReq::parse(&semver).with_context(|| {
+                        format!(
+                            "Failed to parse semver requirement for package {}, semver: {}",
+                            name, semver
+                        )
+                    })?,
+                    // TODO: Support custom registries for additional packages
+                    registry: None,
+                },
             },
         );
     }
@@ -339,8 +367,27 @@ impl DepSpec {
 
         match (&mut self.version, &other.version) {
             (v1, v2) if v1 == v2 => {}
-            (VersionSpec::Semver(v1), VersionSpec::Semver(v2)) => {
-                self.version = VersionSpec::Semver(VersionReq::parse(&format!("{}, {}", v1, v2))?)
+            (
+                VersionSpec::Semver {
+                    version_req: v1,
+                    registry: registry1,
+                },
+                VersionSpec::Semver {
+                    version_req: v2,
+                    registry: registry2,
+                },
+            ) => {
+                if registry1 != registry2 {
+                    return Err(anyhow!(
+                        "Can't merge the same package from different registries (saw registries {:?} and {:?})",
+                        registry1,
+                        registry2,
+                    ));
+                }
+                self.version = VersionSpec::Semver {
+                    version_req: VersionReq::parse(&format!("{}, {}", v1, v2))?,
+                    registry: registry1.clone(),
+                };
             }
             (v1 @ VersionSpec::Git { .. }, v2 @ VersionSpec::Git { .. }) => {
                 return Err(anyhow!(
@@ -377,11 +424,17 @@ impl DepSpec {
             toml::Value::Array(features.into_iter().map(toml::Value::String).collect()),
         );
         match version {
-            VersionSpec::Semver(version) => {
+            VersionSpec::Semver {
+                version_req,
+                registry,
+            } => {
                 v.insert(
                     String::from("version"),
-                    toml::Value::String(format!("{}", version)),
+                    toml::Value::String(format!("{}", version_req)),
                 );
+                if let Some(registry) = registry {
+                    v.insert(String::from("registry"), toml::Value::String(registry));
+                }
             }
             VersionSpec::Git { url, rev, tag } => {
                 v.insert(String::from("git"), toml::Value::String(url));

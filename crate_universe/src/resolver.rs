@@ -22,12 +22,15 @@ use url::Url;
 use crate::{
     consolidator::{Consolidator, ConsolidatorConfig, ConsolidatorOverride},
     renderer::RenderConfig,
+    serde_utils::{CargoConfig, Registry},
     NamedTempFile,
 };
 
 pub struct ResolverConfig {
     pub cargo: PathBuf,
-    pub index_url: Url,
+    pub default_registry_index_url: Url,
+    pub default_registry_download_url_template: String,
+    pub additional_registries: BTreeMap<String, Url>,
 }
 
 pub struct Resolver {
@@ -94,11 +97,16 @@ impl Resolver {
                 render_config:
                     RenderConfig {
                         repo_rule_name,
-                        crate_registry_template,
                         rules_rust_workspace_name,
                     },
                 consolidator_config: ConsolidatorConfig { overrides },
-                resolver_config: ResolverConfig { cargo, index_url },
+                resolver_config:
+                    ResolverConfig {
+                        cargo,
+                        default_registry_index_url,
+                        default_registry_download_url_template,
+                        additional_registries,
+                    },
 
                 // This is what we're computing.
                 digest: _ignored,
@@ -108,15 +116,21 @@ impl Resolver {
 
             hasher.update(repo_rule_name.as_str().as_bytes());
             hasher.update(b"\0");
-            hasher.update(crate_registry_template.as_str().as_bytes());
-            hasher.update(b"\0");
             hasher.update(rules_rust_workspace_name.as_bytes());
             hasher.update(b"\0");
 
             hasher.update(get_cargo_version(cargo)?);
             hasher.update(b"\0");
-            hasher.update(index_url.as_str().as_bytes());
+            hasher.update(default_registry_index_url.as_str().as_bytes());
             hasher.update(b"\0");
+            hasher.update(default_registry_download_url_template.as_bytes());
+            hasher.update(b"\0");
+            for (name, url) in additional_registries {
+                name.as_bytes();
+                hasher.update("b\0");
+                url.as_str().as_bytes();
+                hasher.update("b\0");
+            }
             for target_triple in target_triples {
                 hasher.update(target_triple);
                 hasher.update(b"\0");
@@ -222,15 +236,41 @@ impl Resolver {
         let merged_cargo_toml = NamedTempFile::with_str_content("Cargo.toml", &toml_str)
             .context("Writing intermediate Cargo.toml")?;
 
+        if !self.resolver_config.additional_registries.is_empty() {
+            let dot_cargo = merged_cargo_toml.path().parent().unwrap().join(".cargo");
+            std::fs::create_dir(&dot_cargo)?;
+
+            let config = CargoConfig {
+                registries: self
+                    .resolver_config
+                    .additional_registries
+                    .iter()
+                    .map(|(name, index)| {
+                        (
+                            name.to_owned(),
+                            Registry {
+                                index: index.clone(),
+                            },
+                        )
+                    })
+                    .collect(),
+            };
+            let generated_toml = toml::to_vec(&config)?;
+
+            std::fs::write(dot_cargo.join("config.toml"), generated_toml)?;
+        }
+
         // RazeMetadataFetcher only uses the scheme+host+port of this URL.
         // If it used the path, we'd run into issues escaping the {s and }s from the template,
         // but the scheme+host+port should be fine.
-        let crate_registry_template_url = Url::parse(&self.render_config.crate_registry_template)
-            .context("Parsing repository template URL")?;
+        let repository_template_url =
+            Url::parse(&self.resolver_config.default_registry_download_url_template)
+                .context("Parsing repository template URL")?;
+
         let md_fetcher = RazeMetadataFetcher::new(
             &self.resolver_config.cargo,
-            crate_registry_template_url,
-            self.resolver_config.index_url.clone(),
+            repository_template_url,
+            self.resolver_config.default_registry_index_url.clone(),
         );
         let metadata = md_fetcher
             .fetch_metadata(merged_cargo_toml.path().parent().unwrap(), None, None)
@@ -249,8 +289,15 @@ impl Resolver {
             crates: HashMap::default(),
             output_buildfile_suffix: "".to_string(),
             default_gen_buildrs: true,
-            registry: self.render_config.crate_registry_template.clone(),
-            index_url: self.resolver_config.index_url.as_str().to_owned(),
+            registry: self
+                .resolver_config
+                .default_registry_download_url_template
+                .clone(),
+            index_url: self
+                .resolver_config
+                .default_registry_index_url
+                .as_str()
+                .to_owned(),
             rust_rules_workspace_name: self.render_config.rules_rust_workspace_name.clone(),
             vendor_dir: "".to_string(),
             experimental_api: false,
@@ -289,6 +336,7 @@ impl Resolver {
     ) -> anyhow::Result<Dependencies> {
         let merged_cargo_metadata = MetadataCommand::new()
             .cargo_path(&self.resolver_config.cargo)
+            .current_dir(merged_cargo_toml.parent().unwrap())
             .manifest_path(merged_cargo_toml)
             .no_deps()
             .exec()

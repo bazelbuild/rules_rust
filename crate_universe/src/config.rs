@@ -52,26 +52,32 @@ pub struct Config {
     pub cargo_toml_files: BTreeMap<String, PathBuf>,
     pub overrides: HashMap<String, Override>,
 
-    /// Template of the URL from which to download crates, which are assumed to be gzip'd tar files.
-    /// This string may contain arbitrarily many instances of {crate} and {version} which will be
-    /// replaced by crate names and versions.
-    pub crate_registry_template: String,
-
     pub target_triples: BTreeSet<String>,
+
     pub cargo: PathBuf,
 
     #[serde(default = "default_rules_rust_workspace_name")]
     pub rust_rules_workspace_name: String,
-    #[serde(default = "default_index_url")]
-    pub index_url: Url,
+
+    #[serde(default = "default_default_registry_index_url")]
+    pub default_registry_index_url: Url,
+    /// Template of the URL from which to download crates, which are assumed to be gzip'd tar files.
+    /// This string may contain arbitrarily many instances of {crate} and {version} which will be
+    /// replaced by crate names and versions.
+    #[serde(default = "default_default_registry_download_url_template")]
+    pub default_registry_download_url_template: String,
+
+    pub additional_registries: BTreeMap<String, Url>,
 }
 
 impl Config {
     pub fn preprocess(mut self) -> anyhow::Result<Resolver> {
         self.packages.sort();
 
+        let known_registries: BTreeSet<_> = self.additional_registries.keys().cloned().collect();
+
         let (toml_contents, label_to_crates) =
-            merge_cargo_tomls(self.cargo_toml_files, self.packages)?;
+            merge_cargo_tomls(&known_registries, self.cargo_toml_files, self.packages)?;
 
         let overrides = self
             .overrides
@@ -97,12 +103,13 @@ impl Config {
             toml_contents.into(),
             ResolverConfig {
                 cargo: self.cargo,
-                index_url: self.index_url,
+                default_registry_index_url: self.default_registry_index_url,
+                default_registry_download_url_template: self.default_registry_download_url_template,
+                additional_registries: self.additional_registries,
             },
             ConsolidatorConfig { overrides },
             RenderConfig {
                 repo_rule_name: self.repository_name.clone(),
-                crate_registry_template: self.crate_registry_template.clone(),
                 rules_rust_workspace_name: self.rust_rules_workspace_name.clone(),
             },
             self.target_triples,
@@ -138,6 +145,10 @@ pub fn default_rules_rust_workspace_name() -> String {
     String::from("rules_rust")
 }
 
-pub fn default_index_url() -> Url {
+fn default_default_registry_index_url() -> Url {
     Url::parse("https://github.com/rust-lang/crates.io-index").expect("Invalid default index URL")
+}
+
+fn default_default_registry_download_url_template() -> String {
+    String::from("https://crates.io/api/v1/crates/{crate}/{version}/download")
 }
