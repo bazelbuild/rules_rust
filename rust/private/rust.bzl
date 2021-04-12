@@ -1190,9 +1190,8 @@ def rust_test_suite(name, srcs, **kwargs):
     Args:
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
-        **kwargs (dict): Additional keyword arguments. Args from [rust_test](#rust_test) are parsed out and shared
-            between all tests while [common attributes](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes)
-            are shared between the test targets and `test_suite`.
+        **kwargs (dict): Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The
+            `tags` argument is also passed to the generated `test_suite` target.
     """
     tests = []
 
