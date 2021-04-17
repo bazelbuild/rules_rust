@@ -14,6 +14,14 @@ load(":known_shas.bzl", "FILE_KEY_TO_SHA")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+DEFAULT_TOOLCHAIN_TRIPLES = {
+    "aarch64-apple-darwin": "rust_darwin_aarch64",
+    "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
+    "x86_64-apple-darwin": "rust_darwin_x86_64",
+    "x86_64-pc-windows-msvc": "rust_windows_x86_64",
+    "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
+    "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
+}
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
 DEFAULT_RUST_VERSION = "1.51.0"
@@ -80,82 +88,19 @@ def rust_repositories(
         ],
     )
 
-    rust_repository_set(
-        name = "rust_linux_x86_64",
-        exec_triple = "x86_64-unknown-linux-gnu",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
-        dev_components = dev_components,
-        sha256s = sha256s,
-        urls = urls,
-    )
-
-    rust_repository_set(
-        name = "rust_linux_aarch64",
-        exec_triple = "aarch64-unknown-linux-gnu",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
-        dev_components = dev_components,
-        sha256s = sha256s,
-        urls = urls,
-    )
-
-    rust_repository_set(
-        name = "rust_darwin_x86_64",
-        exec_triple = "x86_64-apple-darwin",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
-        dev_components = dev_components,
-        sha256s = sha256s,
-        urls = urls,
-    )
-
-    rust_repository_set(
-        name = "rust_darwin_aarch64",
-        exec_triple = "aarch64-apple-darwin",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
-        dev_components = dev_components,
-        sha256s = sha256s,
-        urls = urls,
-    )
-
-    rust_repository_set(
-        name = "rust_freebsd_x86_64",
-        exec_triple = "x86_64-unknown-freebsd",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
-        dev_components = dev_components,
-        sha256s = sha256s,
-        urls = urls,
-    )
-
-    rust_repository_set(
-        name = "rust_windows_x86_64",
-        exec_triple = "x86_64-pc-windows-msvc",
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-        version = version,
-        iso_date = iso_date,
-        rustfmt_version = rustfmt_version,
-        sha256s = sha256s,
-        edition = edition,
-        urls = urls,
-    )
+    for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
+        rust_repository_set(
+            name = name,
+            exec_triple = exec_triple,
+            extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
+            version = version,
+            iso_date = iso_date,
+            rustfmt_version = rustfmt_version,
+            edition = edition,
+            dev_components = dev_components,
+            sha256s = sha256s,
+            urls = urls,
+        )
 
 def _check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense."""

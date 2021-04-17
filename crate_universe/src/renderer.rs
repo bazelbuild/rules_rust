@@ -1,29 +1,37 @@
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
-    io::Write,
+    fs::File,
+    io::{BufReader, Write},
     path::Path,
 };
 
+use anyhow::Context;
 use cargo_raze::context::{CrateContext, CrateDependencyContext, CrateTargetedDepContext};
 use semver::Version;
-use serde::Serialize;
-use tera::{self, Context, Tera};
+use serde::{Deserialize, Serialize};
+use tera::{self, Tera};
 
 use crate::{config, resolver::Dependencies};
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct RenderConfig {
     pub repo_rule_name: String,
-    pub repository_template: String,
+    pub crate_registry_template: String,
     pub rules_rust_workspace_name: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+struct RenderContext {
+    pub config: RenderConfig,
+    pub hash: String,
+    pub transitive_renderable_packages: Vec<RenderablePackage>,
+    pub member_packages_version_mapping: Dependencies,
+    pub label_to_crates: BTreeMap<String, BTreeSet<String>>,
+}
+
 pub struct Renderer {
-    config: RenderConfig,
-    hash: String,
+    context: RenderContext,
     internal_renderer: Tera,
-    transitive_renderable_packages: Vec<RenderablePackage>,
-    member_packages_version_mapping: Dependencies,
-    label_to_crates: BTreeMap<String, BTreeSet<String>>,
 }
 
 // Get default and targeted metadata, collated per Bazel condition (which corresponds to a triple).
@@ -144,13 +152,7 @@ fn empty_deps_context() -> CrateDependencyContext {
 }
 
 impl Renderer {
-    pub fn new(
-        config: RenderConfig,
-        hash: String,
-        transitive_packages: Vec<CrateContext>,
-        member_packages_version_mapping: Dependencies,
-        label_to_crates: BTreeMap<String, BTreeSet<String>>,
-    ) -> Renderer {
+    fn new_tera() -> Tera {
         let mut internal_renderer = Tera::new("src/not/a/dir/*").unwrap();
 
         internal_renderer.register_function(
@@ -244,6 +246,16 @@ impl Renderer {
             ])
             .unwrap();
 
+        internal_renderer
+    }
+
+    pub fn new(
+        config: RenderConfig,
+        hash: String,
+        transitive_packages: Vec<CrateContext>,
+        member_packages_version_mapping: Dependencies,
+        label_to_crates: BTreeMap<String, BTreeSet<String>>,
+    ) -> Renderer {
         let transitive_renderable_packages = transitive_packages
             .into_iter()
             .map(|mut crate_context| {
@@ -282,28 +294,56 @@ impl Renderer {
             .collect();
 
         Self {
-            config,
-            hash,
-            internal_renderer,
-            transitive_renderable_packages,
-            member_packages_version_mapping,
-            label_to_crates,
+            context: RenderContext {
+                config,
+                hash,
+                transitive_renderable_packages,
+                member_packages_version_mapping,
+                label_to_crates,
+            },
+            internal_renderer: Renderer::new_tera(),
         }
+    }
+
+    pub fn new_from_lockfile(lockfile: &Path) -> anyhow::Result<Renderer> {
+        // Open the file in read-only mode with buffer.
+        let file = File::open(lockfile)?;
+        let reader = BufReader::new(file);
+
+        Ok(Self {
+            context: serde_json::from_reader(reader)?,
+            internal_renderer: Renderer::new_tera(),
+        })
     }
 
     pub fn render<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
         self.render_workspaces(output)?;
         writeln!(output, "")?;
-        self.render_helper_functions(output)
+        self.render_helper_functions(output)?;
+
+        Ok(())
     }
 
-    // Visible for testing
+    pub fn render_lockfile(&self, lockfile_path: &Path) -> anyhow::Result<()> {
+        let mut lockfile_file = std::fs::File::create(lockfile_path)
+            .with_context(|| format!("Could not create lockfile file: {:?}", lockfile_path))?;
+        let content = serde_json::to_string_pretty(&self.context)
+            .with_context(|| format!("Could not seralize render context: {:?}", self.context))?;
+        write!(lockfile_file, "{}\n", &content)?;
+
+        Ok(())
+    }
+
+    // TODO: Public for `tests/renderer.rs`, unit tests should added here instead
     pub fn render_workspaces<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
-        let mut context = Context::new();
-        context.insert("lockfile_hash", &self.hash);
-        context.insert("crates", &self.transitive_renderable_packages);
-        context.insert("repo_rule_name", &self.config.repo_rule_name);
-        context.insert("repository_http_template", &self.config.repository_template);
+        let mut context = tera::Context::new();
+        context.insert("lockfile_hash", &self.context.hash);
+        context.insert("crates", &self.context.transitive_renderable_packages);
+        context.insert("repo_rule_name", &self.context.config.repo_rule_name);
+        context.insert(
+            "repository_http_template",
+            &self.context.config.crate_registry_template,
+        );
         let rendered_repository_rules = self
             .internal_renderer
             .render("templates/lockfile.template", &context)?;
@@ -313,14 +353,15 @@ impl Renderer {
         Ok(())
     }
 
-    // Visible for testing
+    // TODO: Public for `tests/renderer.rs`, unit tests should added here instead
     pub fn render_helper_functions<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
         let mut crate_repo_names_inner = BTreeMap::new();
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.normal);
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.build);
-        crate_repo_names_inner.extend(&self.member_packages_version_mapping.dev);
+        crate_repo_names_inner.extend(&self.context.member_packages_version_mapping.normal);
+        crate_repo_names_inner.extend(&self.context.member_packages_version_mapping.build);
+        crate_repo_names_inner.extend(&self.context.member_packages_version_mapping.dev);
 
         let renderable_packages: Vec<_> = self
+            .context
             .transitive_renderable_packages
             .iter()
             .filter(|krate| {
@@ -330,15 +371,19 @@ impl Renderer {
             .collect();
 
         let (proc_macro_crates, default_crates): (Vec<_>, Vec<_>) = self
+            .context
             .member_packages_version_mapping
             .normal
             .iter()
             .partition(|(name, version)| {
-                self.transitive_renderable_packages.iter().any(|package| {
-                    *package.crate_context.pkg_name == **name
-                        && package.crate_context.pkg_version == **version
-                        && package.is_proc_macro
-                })
+                self.context
+                    .transitive_renderable_packages
+                    .iter()
+                    .any(|package| {
+                        *package.crate_context.pkg_name == **name
+                            && package.crate_context.pkg_version == **version
+                            && package.is_proc_macro
+                    })
             });
 
         let mut kind_to_labels_to_crate_names = BTreeMap::new();
@@ -346,20 +391,34 @@ impl Renderer {
             .insert(Kind::Normal, self.label_to_crate_names(&default_crates));
         kind_to_labels_to_crate_names.insert(
             Kind::Dev,
-            self.label_to_crate_names(&self.member_packages_version_mapping.dev.iter().collect()),
+            self.label_to_crate_names(
+                &self
+                    .context
+                    .member_packages_version_mapping
+                    .dev
+                    .iter()
+                    .collect(),
+            ),
         );
         kind_to_labels_to_crate_names.insert(
             Kind::Build,
-            self.label_to_crate_names(&self.member_packages_version_mapping.build.iter().collect()),
+            self.label_to_crate_names(
+                &self
+                    .context
+                    .member_packages_version_mapping
+                    .build
+                    .iter()
+                    .collect(),
+            ),
         );
         kind_to_labels_to_crate_names.insert(
             Kind::ProcMacro,
             self.label_to_crate_names(&proc_macro_crates),
         );
 
-        let mut context = Context::new();
+        let mut context = tera::Context::new();
         context.insert("crates", &renderable_packages);
-        context.insert("repo_rule_name", &self.config.repo_rule_name);
+        context.insert("repo_rule_name", &self.context.config.repo_rule_name);
         context.insert(
             "kind_to_labels_to_crate_names",
             &kind_to_labels_to_crate_names,
@@ -378,7 +437,8 @@ impl Renderer {
         crates: &Vec<(&String, &Version)>,
     ) -> BTreeMap<String, Vec<String>> {
         let crate_names: HashSet<&String> = crates.iter().map(|(name, _)| *name).collect();
-        self.label_to_crates
+        self.context
+            .label_to_crates
             .iter()
             .map(|(label, all_crates)| {
                 let value = all_crates
@@ -389,6 +449,10 @@ impl Renderer {
                 (label.clone(), value)
             })
             .collect()
+    }
+
+    pub fn matches_digest(&self, digest: &str) -> bool {
+        self.context.hash == digest
     }
 }
 
@@ -407,7 +471,7 @@ fn string_arg<'a, 'b>(
     })
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 struct RenderablePackage {
     crate_context: CrateContext,
     per_triple_metadata: BTreeMap<String, CrateTargetedDepContext>,

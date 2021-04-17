@@ -31,7 +31,7 @@ lazy_static = "=1.4.0"
         repository_name: "beep".to_owned(),
         cargo_toml_files: btreemap! { String::from("//some:Cargo.toml") => cargo_toml_file.path().to_path_buf() },
         overrides: Default::default(),
-        repository_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
+        crate_registry_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
         target_triples: vec!["x86_64-apple-darwin".to_owned()],
         packages: vec![],
         cargo: PathBuf::from(env!("CARGO")),
@@ -293,7 +293,7 @@ path = "src/main.rs"
         repository_name: "beep".to_owned(),
         cargo_toml_files: btreemap! { String::from("//some:Cargo.toml") => cargo_toml_file.path().to_path_buf() },
         overrides,
-        repository_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
+        crate_registry_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
         target_triples: vec![
             "x86_64-apple-darwin".to_owned(),
             "x86_64-unknown-linux-gnu".to_owned(),
@@ -1482,7 +1482,7 @@ plist = "=1.0.0"
         repository_name: "hurrah".to_owned(),
         cargo_toml_files: btreemap! { String::from("//some:Cargo.toml") => cargo_toml_file.path().to_path_buf() },
         overrides: Default::default(),
-        repository_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
+        crate_registry_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
         target_triples: vec!["x86_64-apple-darwin".to_owned()],
         packages: vec![],
         cargo: PathBuf::from(env!("CARGO")),
@@ -1533,7 +1533,7 @@ prost-types = { git = "https://github.com/danburkert/prost.git", rev = "4ded4a98
         repository_name: "yep".to_owned(),
         cargo_toml_files: btreemap! { String::from("//some:Cargo.toml") => cargo_toml_file.path().to_path_buf() },
         overrides: Default::default(),
-        repository_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
+        crate_registry_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
         target_triples: vec!["x86_64-apple-darwin".to_owned()],
         packages: vec![],
         cargo: PathBuf::from(env!("CARGO")),
@@ -1944,7 +1944,7 @@ path = "lib.rs"
         repository_name: "another".to_owned(),
         cargo_toml_files: btreemap! { String::from("//some/other:Cargo.toml") => workspace_cargo_toml },
         overrides: Default::default(),
-        repository_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
+        crate_registry_template: "https://crates-io.s3-us-west-1.amazonaws.com/crates/crates/{crate}/{crate}-{version}.crate".to_owned(),
         target_triples: vec!["x86_64-apple-darwin".to_owned()],
         packages: vec![],
         cargo: PathBuf::from(env!("CARGO")),
@@ -2029,12 +2029,16 @@ rust_library(
 }
 
 fn test(config: &Config) -> Assert {
+    let temp_repository_dir = tempfile::TempDir::new().unwrap();
+
     Command::cargo_bin(env!("CARGO_PKG_NAME"))
         .unwrap()
         .arg("--input_path")
         .arg("/dev/stdin")
         .arg("--output_path")
         .arg("/dev/stdout")
+        .arg("--repository_dir")
+        .arg(temp_repository_dir.as_ref())
         .arg("--repo-name")
         .arg("whatever")
         .write_stdin(serde_json::to_string(&config).unwrap())

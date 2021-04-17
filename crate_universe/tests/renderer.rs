@@ -12,7 +12,7 @@ fn single_git_repository() {
     let renderer = Renderer::new(
         RenderConfig {
             repo_rule_name: String::from("rule_prefix"),
-            repository_template: String::from(
+            crate_registry_template: String::from(
                 "https://crates.io/api/v1/crates/{crate}/{version}/download",
             ),
             rules_rust_workspace_name: String::from("rules_rust"),
@@ -63,7 +63,7 @@ fn single_http_archive() {
     let renderer = Renderer::new(
         RenderConfig {
             repo_rule_name: String::from("rule_prefix"),
-            repository_template: String::from(
+            crate_registry_template: String::from(
                 "https://crates.io/api/v1/crates/{crate}/{version}/download",
             ),
             rules_rust_workspace_name: String::from("rules_rust"),
@@ -122,7 +122,7 @@ fn crate_helper_function_mapping() {
     let renderer = Renderer::new(
         RenderConfig {
             repo_rule_name: String::from("rule_prefix"),
-            repository_template: String::from(
+            crate_registry_template: String::from(
                 "https://crates.io/api/v1/crates/{crate}/{version}/download",
             ),
             rules_rust_workspace_name: String::from("rules_rust"),
@@ -254,6 +254,7 @@ fn lazy_static_crate_context(git: bool) -> CrateContext {
         workspace_path_to_crate: String::from("UNUSED"),
         workspace_member_dependents: vec![],
         workspace_member_dev_dependents: vec![],
+        workspace_member_build_dependents: vec![],
         is_workspace_member_dependency: false,
         is_binary_dependency: false,
         targets: vec![BuildableTarget {

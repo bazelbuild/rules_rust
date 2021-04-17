@@ -16,7 +16,7 @@ edition = "2018"
 anyhow = "1"
 cargo_metadata = "0.13.1"
 # Until https://github.com/google/cargo-raze/pull/407 is merged:
-cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "caaf8345046eee830ea89fc04771ee117bd835eb", default-features = false }
+cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "0ef1bc28252b7458f214cd69ea6adff0c22ab019", default-features = false }
 cfg-expr = "0.7.4"
 env_logger = "0.8"
 hex = "0.4"
@@ -39,3 +39,4 @@ assert_cmd = "1"
 maplit = "1"
 predicates = "1"
 spectral = "0.6"
+tempfile = "3.2.0"

@@ -15,6 +15,7 @@ use cargo_raze::{
 };
 use log::trace;
 use semver::{Version, VersionReq};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use url::Url;
 
@@ -47,7 +48,7 @@ pub struct ResolvedArtifactsWithMetadata {
     pub member_packages_version_mapping: HashMap<String, Version>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Dependencies {
     pub normal: BTreeMap<String, Version>,
     pub build: BTreeMap<String, Version>,
@@ -93,7 +94,7 @@ impl Resolver {
                 render_config:
                     RenderConfig {
                         repo_rule_name,
-                        repository_template,
+                        crate_registry_template,
                         rules_rust_workspace_name,
                     },
                 consolidator_config: ConsolidatorConfig { overrides },
@@ -107,7 +108,7 @@ impl Resolver {
 
             hasher.update(repo_rule_name.as_str().as_bytes());
             hasher.update(b"\0");
-            hasher.update(repository_template.as_str().as_bytes());
+            hasher.update(crate_registry_template.as_str().as_bytes());
             hasher.update(b"\0");
             hasher.update(rules_rust_workspace_name.as_bytes());
             hasher.update(b"\0");
@@ -189,6 +190,12 @@ impl Resolver {
                 if env_name == "CARGO_HOME" {
                     continue;
                 }
+                if env_name == "CARGO" {
+                    continue;
+                }
+                if env_name == "RUSTC" {
+                    continue;
+                }
                 // We hope that other env vars don't cause problems...
                 if env_name.starts_with("CARGO") && env_name != "CARGO_NET_GIT_FETCH_WITH_CLI" {
                     eprintln!("Warning: You have the {} environment variable set - this may affect your crate_universe output", env_name);
@@ -218,11 +225,11 @@ impl Resolver {
         // RazeMetadataFetcher only uses the scheme+host+port of this URL.
         // If it used the path, we'd run into issues escaping the {s and }s from the template,
         // but the scheme+host+port should be fine.
-        let repository_template_url = Url::parse(&self.render_config.repository_template)
+        let crate_registry_template_url = Url::parse(&self.render_config.crate_registry_template)
             .context("Parsing repository template URL")?;
         let md_fetcher = RazeMetadataFetcher::new(
             &self.resolver_config.cargo,
-            repository_template_url,
+            crate_registry_template_url,
             self.resolver_config.index_url.clone(),
         );
         let metadata = md_fetcher
@@ -242,7 +249,7 @@ impl Resolver {
             crates: HashMap::default(),
             output_buildfile_suffix: "".to_string(),
             default_gen_buildrs: true,
-            registry: self.render_config.repository_template.clone(),
+            registry: self.render_config.crate_registry_template.clone(),
             index_url: self.resolver_config.index_url.as_str().to_owned(),
             rust_rules_workspace_name: self.render_config.rules_rust_workspace_name.clone(),
             vendor_dir: "".to_string(),

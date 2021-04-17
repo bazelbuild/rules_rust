@@ -56,8 +56,7 @@ pub struct Config {
     /// Template of the URL from which to download crates, which are assumed to be gzip'd tar files.
     /// This string may contain arbitrarily many instances of {crate} and {version} which will be
     /// replaced by crate names and versions.
-    #[serde(default = "default_repository_template")]
-    pub repository_template: String,
+    pub crate_registry_template: String,
 
     pub target_triples: Vec<String>,
     pub cargo: PathBuf,
@@ -104,7 +103,7 @@ impl Config {
             ConsolidatorConfig { overrides },
             RenderConfig {
                 repo_rule_name: self.repository_name.clone(),
-                repository_template: self.repository_template.clone(),
+                crate_registry_template: self.crate_registry_template.clone(),
                 rules_rust_workspace_name: self.rust_rules_workspace_name.clone(),
             },
             self.target_triples,
@@ -142,8 +141,4 @@ pub fn default_rules_rust_workspace_name() -> String {
 
 pub fn default_index_url() -> Url {
     Url::parse("https://github.com/rust-lang/crates.io-index").expect("Invalid default index URL")
-}
-
-fn default_repository_template() -> String {
-    String::from("https://crates.io/api/v1/crates/{crate}/{version}/download")
 }
