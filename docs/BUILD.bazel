@@ -21,6 +21,7 @@ bzl_library(
         "@rules_rust//:rules",
         "@rules_rust//bindgen:rules",
         "@rules_rust//cargo:rules",
+        "@rules_rust//crate_universe:rules",
         "@rules_rust//proto:rules",
         "@rules_rust//rust:rules",
         "@rules_rust//wasm_bindgen:rules",
@@ -30,6 +31,10 @@ bzl_library(
 PAGES = {
     "cargo_build_script": [
         "cargo_build_script",
+    ],
+    "crate_universe": [
+        "crate_universe",
+        "crate",
     ],
     "defs": [
         "rust_binary",

@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct ConsolidatorOverride {
     // Mapping of environment variables key -> value.
-    pub extra_rust_env_vars: BTreeMap<String, String>,
+    pub extra_rustc_env_vars: BTreeMap<String, String>,
     // Mapping of environment variables key -> value.
     pub extra_build_script_env_vars: BTreeMap<String, String>,
     // Mapping of target triple or spec -> extra bazel target dependencies.
@@ -239,7 +239,7 @@ impl Consolidator {
                 // Add extra environment variables.
                 pkg.raze_settings
                     .additional_env
-                    .extend(overryde.extra_rust_env_vars.into_iter());
+                    .extend(overryde.extra_rustc_env_vars.into_iter());
                 // Add extra build script environment variables.
                 pkg.raze_settings
                     .buildrs_additional_environment_variables

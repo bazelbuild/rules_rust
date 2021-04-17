@@ -138,7 +138,7 @@ impl Resolver {
             for (
                 crate_name,
                 ConsolidatorOverride {
-                    extra_rust_env_vars,
+                    extra_rustc_env_vars,
                     extra_build_script_env_vars,
                     extra_bazel_deps,
                     extra_bazel_data_deps,
@@ -150,7 +150,7 @@ impl Resolver {
             {
                 hasher.update(crate_name);
                 hasher.update(b"\0");
-                for (env_key, env_val) in extra_rust_env_vars {
+                for (env_key, env_val) in extra_rustc_env_vars {
                     hasher.update(env_key);
                     hasher.update(b"\0");
                     hasher.update(env_val);

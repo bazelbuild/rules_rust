@@ -17,6 +17,11 @@ load(
     _cargo_build_script = "cargo_build_script",
 )
 load(
+    "@rules_rust//crate_universe:defs.bzl",
+    _crate = "crate",
+    _crate_universe = "crate_universe",
+)
+load(
     "@rules_rust//proto:proto.bzl",
     _rust_grpc_library = "rust_grpc_library",
     _rust_proto_library = "rust_proto_library",
@@ -101,3 +106,6 @@ rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
 
 rust_clippy = _rust_clippy
 rust_analyzer = _rust_analyzer
+
+crate_universe = _crate_universe
+crate = _crate

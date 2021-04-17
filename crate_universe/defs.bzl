@@ -181,7 +181,6 @@ def _crate_universe_resolve_impl(repository_ctx):
     if repository_ctx.attr.lockfile:
         lockfile_path = repository_ctx.path(repository_ctx.attr.lockfile)
 
-    # Yay hand-crafted JSON serialisation...
     input_content = _input_content_template(
         ctx = repository_ctx,
         name = repository_ctx.attr.name,
@@ -236,70 +235,44 @@ A rule for downloading Rust dependencies (crates).
 Environment Variables:
 - `REPIN`: Re-pin the lockfile if set (useful for repinning deps from multiple rulesets).
 - `RULES_RUST_REPIN`: Re-pin the lockfile if set (useful for only repinning Rust deps).
-- `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE`: Override URL to use to download resolver binary - for local paths use a `file://` URL.
-
-`override` Example:
-
-```python
-load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
-
-crate_universe(
-    name = "mylib",
-    # [...]
-    overrides = {
-        "tokio": crate.override(
-            extra_rust_env_vars = {
-                "MY_ENV_VAR": "MY_ENV_VALUE",
-            },
-            extra_build_script_env_vars = {
-                "MY_BUILD_SCRIPT_ENV_VAR": "MY_ENV_VALUE",
-            },
-            extra_bazel_deps = {
-                # Extra dependencies are per target. They are additive.
-                "cfg(unix)": ["@somerepo//:foo"],  # cfg() predicate.
-                "x86_64-apple-darwin": ["@somerepo//:bar"],  # Specific triple.
-                "cfg(all())": ["@somerepo//:baz"],  # Applies to all targets ("regular dependency").
-            },
-            extra_build_script_bazel_deps = {
-                # Extra dependencies are per target. They are additive.
-                "cfg(unix)": ["@buildscriptdep//:foo"],
-                "x86_64-apple-darwin": ["@buildscriptdep//:bar"],
-                "cfg(all())": ["@buildscriptdep//:baz"],
-            },
-            extra_bazel_data_deps = {
-                # ...
-            },
-            extra_build_script_bazel_data_deps = {
-                # ...
-            },
-        ),
-    },
-)
-```
+- `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE`: Override URL to use to download resolver binary 
+    - for local paths use a `file://` URL.
+- `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256`: An optional sha256 value for the binary at the override url location.
 """,
     implementation = _crate_universe_resolve_impl,
     attrs = {
         "cargo_toml_files": attr.label_list(
-            doc = "",
+            doc = "A list of Cargo manifests (`Cargo.toml` files).",
+            allow_files = True,
         ),
         "crate_registry_template": attr.string(
-            doc = "A Crate registry url template. This must contain `{version}` and `{crate}` templates",
+            doc = "A Crate registry url template. This must contain `{version}` and `{crate}` templates.",
             default = DEFAULT_CRATE_REGISTRY_TEMPLATE,
         ),
         "lockfile": attr.label(
-            doc = "",
+            doc = (
+                "The path to a file which stores pinned information about the generate dependency graph. " +
+                "this target must be a file and will be updated by the repository rule when the `REPIN` " +
+                "environment variable is set."
+            ),
             allow_single_file = True,
             mandatory = False,
         ),
         "overrides": attr.string_dict(
-            doc = "Mapping of crate name to `crate.override(...)` entries)",
+            doc = (
+                "Mapping of crate name to specification overrides. See [crate.override](#crateoverride) " +
+                " for more details."
+            ),
         ),
         "packages": attr.string_list(
-            doc = "",
+            doc = "A list of crate specifications. See [crate.spec](#cratespec) for more details.",
             allow_empty = True,
         ),
         "resolver_download_url_template": attr.string(
-            doc = "URL template from which to download the resolver binary. {host_triple} and {extension} will be filled in according to the host platform.",
+            doc = (
+                "URL template from which to download the resolver binary. {host_triple} and {extension} will be " +
+                "filled in according to the host platform."
+            ),
             default = DEFAULT_URL_TEMPLATE,
         ),
         "resolver_sha256s": attr.string_dict(
@@ -307,7 +280,10 @@ crate_universe(
             default = DEFAULT_SHA256_CHECKSUMS,
         ),
         "supported_targets": attr.string_list(
-            doc = "",
+            doc = (
+                "A list of supported [platform triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) " +
+                "to consider when resoliving dependencies."
+            ),
             allow_empty = False,
             default = DEFAULT_TOOLCHAIN_TRIPLES.keys(),
         ),
@@ -322,20 +298,108 @@ def _spec(
         name,
         semver,
         features = None):
+    """A simple crate definition
+
+    example:
+
+    ```python
+    load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
+
+    crate_universe(
+        name = "spec_example",
+        packages = [
+            crate.spec(
+                name = "lazy_static",
+                semver = "=1.4",
+            ),
+        ],
+    )
+    ```
+
+    Args:
+        name (str): The name of the crate as it would appear in a crate registry.
+        semver (str): The desired version ([semver](https://semver.org/)) of the crate
+        features (list, optional): A list of desired [features](https://doc.rust-lang.org/cargo/reference/features.html).
+
+    Returns:
+        str: A json encoded struct of crate info
+    """
     return json.encode(struct(
         name = name,
         semver = semver,
-        features = features if features else [],
+        features = features or [],
     ))
 
 def _override(
-        extra_rust_env_vars = None,
-        extra_build_script_env_vars = None,
-        extra_bazel_deps = None,
-        extra_build_script_bazel_deps = None,
         extra_bazel_data_deps = None,
+        extra_bazel_deps = None,
         extra_build_script_bazel_data_deps = None,
+        extra_build_script_bazel_deps = None,
+        extra_build_script_env_vars = None,
+        extra_rustc_env_vars = None,
         features_to_remove = []):
+    """A map of overrides for a particular crate
+
+    example:
+
+    ```python
+    load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
+
+    crate_universe(
+        name = "override_example",
+        # [...]
+        overrides = {
+            "tokio": crate.override(
+                extra_rustc_env_vars = {
+                    "MY_ENV_VAR": "MY_ENV_VALUE",
+                },
+                extra_build_script_env_vars = {
+                    "MY_BUILD_SCRIPT_ENV_VAR": "MY_ENV_VALUE",
+                },
+                extra_bazel_deps = {
+                    # Extra dependencies are per target. They are additive.
+                    "cfg(unix)": ["@somerepo//:foo"],  # cfg() predicate.
+                    "x86_64-apple-darwin": ["@somerepo//:bar"],  # Specific triple.
+                    "cfg(all())": ["@somerepo//:baz"],  # Applies to all targets ("regular dependency").
+                },
+                extra_build_script_bazel_deps = {
+                    # Extra dependencies are per target. They are additive.
+                    "cfg(unix)": ["@buildscriptdep//:foo"],
+                    "x86_64-apple-darwin": ["@buildscriptdep//:bar"],
+                    "cfg(all())": ["@buildscriptdep//:baz"],
+                },
+                extra_bazel_data_deps = {
+                    # ...
+                },
+                extra_build_script_bazel_data_deps = {
+                    # ...
+                },
+            ),
+        },
+    )
+    ```
+
+    Args:
+        extra_bazel_data_deps (dict, optional): Targets to add to the `data` attribute
+            of the generated target (eg: [rust_library.data](./defs.md#rust_library-data)).
+        extra_bazel_deps (dict, optional): Targets to add to the `deps` attribute
+            of the generated target (eg: [rust_library.deps](./defs.md#rust_library-data)).
+        extra_rustc_env_vars (dict, optional): Environment variables to add to the `rustc_env`
+            attribute for the generated target (eg: [rust_library.rustc_env](./defs.md#rust_library-rustc_env)).
+        extra_build_script_bazel_data_deps (dict, optional): Targets to add to the
+            [data](./cargo_build_script.md#cargo_build_script-data) attribute of the generated
+            `cargo_build_script` target.
+        extra_build_script_bazel_deps (dict, optional): Targets to add to the
+            [deps](./cargo_build_script.md#cargo_build_script-deps) attribute of the generated
+            `cargo_build_script` target.
+        extra_build_script_env_vars (dict, optional): Environment variables to add to the
+            [build_script_env](./cargo_build_script.md#cargo_build_script-build_script_env)
+            attribute of the generated `cargo_build_script` target.
+        features_to_remove (list, optional): A list of features to remove from a generated target.
+
+    Returns:
+        str: A json encoded struct of crate overrides
+    """
     for (dep_key, dep_val) in [
         (extra_bazel_deps, extra_bazel_deps),
         (extra_build_script_bazel_deps, extra_build_script_bazel_deps),
@@ -351,12 +415,12 @@ def _override(
                     fail("The {} values should be lists of strings".format(dep_key))
 
     return json.encode(struct(
-        extra_rust_env_vars = extra_rust_env_vars if extra_rust_env_vars else {},
-        extra_build_script_env_vars = extra_build_script_env_vars if extra_build_script_env_vars else {},
-        extra_bazel_deps = extra_bazel_deps if extra_bazel_deps else {},
-        extra_build_script_bazel_deps = extra_build_script_bazel_deps if extra_build_script_bazel_deps else {},
-        extra_bazel_data_deps = extra_bazel_data_deps if extra_bazel_data_deps else {},
-        extra_build_script_bazel_data_deps = extra_build_script_bazel_data_deps if extra_build_script_bazel_data_deps else {},
+        extra_rustc_env_vars = extra_rustc_env_vars or {},
+        extra_build_script_env_vars = extra_build_script_env_vars or {},
+        extra_bazel_deps = extra_bazel_deps or {},
+        extra_build_script_bazel_deps = extra_build_script_bazel_deps or {},
+        extra_bazel_data_deps = extra_bazel_data_deps or {},
+        extra_build_script_bazel_data_deps = extra_build_script_bazel_data_deps or {},
         features_to_remove = features_to_remove,
     ))
 

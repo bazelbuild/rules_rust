@@ -25,7 +25,7 @@ pub struct Package {
 #[serde(deny_unknown_fields)]
 pub struct Override {
     // Mapping of environment variables key -> value.
-    pub extra_rust_env_vars: BTreeMap<String, String>,
+    pub extra_rustc_env_vars: BTreeMap<String, String>,
     // Mapping of environment variables key -> value.
     pub extra_build_script_env_vars: BTreeMap<String, String>,
     // Mapping of target triple or spec -> extra bazel target dependencies.
@@ -81,7 +81,7 @@ impl Config {
                 (
                     krate,
                     ConsolidatorOverride {
-                        extra_rust_env_vars: overryde.extra_rust_env_vars,
+                        extra_rustc_env_vars: overryde.extra_rustc_env_vars,
                         extra_build_script_env_vars: overryde.extra_build_script_env_vars,
                         extra_bazel_deps: overryde.extra_bazel_deps,
                         extra_build_script_bazel_deps: overryde.extra_build_script_bazel_deps,
