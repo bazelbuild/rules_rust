@@ -1,14 +1,18 @@
-use crate::config::Package as AdditionalPackage;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    convert::{TryFrom, TryInto},
+    fs::read_to_string,
+    path::PathBuf,
+};
+
 use anyhow::{anyhow, Context};
 use indoc::indoc;
 use log::*;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Deserializer};
-use std::collections::{BTreeMap, BTreeSet};
-use std::convert::{TryFrom, TryInto};
-use std::fs::read_to_string;
-use std::path::PathBuf;
 use toml::Value;
+
+use crate::config::Package as AdditionalPackage;
 
 #[derive(Debug, Deserialize)]
 // We deny unknown fields so that when new fields are encountered, we need to explicitly decide

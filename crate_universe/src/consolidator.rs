@@ -4,13 +4,15 @@ use anyhow::anyhow;
 use cargo_raze::context::{
     BuildableDependency, CrateContext, CrateDependencyContext, CrateTargetedDepContext,
 };
+use cargo_raze::util::{generate_bazel_conditions, get_matching_bazel_triples};
+use cfg_expr::targets::get_builtin_target_by_triple;
 use itertools::Itertools;
 use semver::Version;
 
-use crate::renderer::{RenderConfig, Renderer};
-use crate::resolver::Dependencies;
-use cargo_raze::util::{generate_bazel_conditions, get_matching_bazel_triples};
-use cfg_expr::targets::get_builtin_target_by_triple;
+use crate::{
+    renderer::{RenderConfig, Renderer},
+    resolver::Dependencies,
+};
 
 #[derive(Debug, Default)]
 pub struct ConsolidatorOverride {

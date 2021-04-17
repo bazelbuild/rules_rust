@@ -1,22 +1,28 @@
-use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::path::{Path, PathBuf};
-use std::process::Stdio;
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet, HashMap},
+    path::{Path, PathBuf},
+    process::Stdio,
+};
 
+use anyhow::Context;
 use cargo_metadata::{DependencyKind, Metadata, MetadataCommand};
-use cargo_raze::context::CrateContext;
-use cargo_raze::metadata::RazeMetadataFetcher;
-use cargo_raze::planning::{BuildPlanner, BuildPlannerImpl};
-use cargo_raze::settings::{GenMode, RazeSettings};
+use cargo_raze::{
+    context::CrateContext,
+    metadata::RazeMetadataFetcher,
+    planning::{BuildPlanner, BuildPlannerImpl},
+    settings::{GenMode, RazeSettings},
+};
 use log::trace;
 use semver::{Version, VersionReq};
 use sha2::{Digest, Sha256};
-
-use crate::consolidator::{Consolidator, ConsolidatorConfig, ConsolidatorOverride};
-use crate::renderer::RenderConfig;
-use crate::NamedTempFile;
-use anyhow::Context;
 use url::Url;
+
+use crate::{
+    consolidator::{Consolidator, ConsolidatorConfig, ConsolidatorOverride},
+    renderer::RenderConfig,
+    NamedTempFile,
+};
 
 pub struct ResolverConfig {
     pub cargo: PathBuf,

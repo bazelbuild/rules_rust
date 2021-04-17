@@ -1,14 +1,18 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::path::PathBuf;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    path::PathBuf,
+};
 
 use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::consolidator::{ConsolidatorConfig, ConsolidatorOverride};
-use crate::parser::merge_cargo_tomls;
-use crate::renderer::RenderConfig;
-use crate::resolver::{Resolver, ResolverConfig};
+use crate::{
+    consolidator::{ConsolidatorConfig, ConsolidatorOverride},
+    parser::merge_cargo_tomls,
+    renderer::RenderConfig,
+    resolver::{Resolver, ResolverConfig},
+};
 
 #[derive(Debug, Deserialize, Serialize, Ord, Eq, PartialOrd, PartialEq)]
 pub struct Package {

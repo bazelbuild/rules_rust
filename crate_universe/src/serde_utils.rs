@@ -1,10 +1,11 @@
+use std::{collections::BTreeSet, fmt, path::PathBuf, str::FromStr};
+
+use serde::{
+    de::{self, Error, MapAccess, Visitor},
+    Deserialize,
+};
+
 use crate::parser::{DepSpec, VersionSpec};
-use serde::de::{Error, MapAccess, Visitor};
-use serde::{de, Deserialize};
-use std::collections::BTreeSet;
-use std::fmt;
-use std::path::PathBuf;
-use std::str::FromStr;
 
 // Work around https://github.com/serde-rs/serde/issues/368
 const fn always_true() -> bool {

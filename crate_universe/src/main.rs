@@ -1,8 +1,11 @@
+use std::{
+    io::{BufRead, BufReader},
+    path::PathBuf,
+};
+
 use anyhow::{anyhow, Context};
 use crate_universe_resolver::config::Config;
 use log::*;
-use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 // Options which don't affect the contents of the generated should be on this struct.

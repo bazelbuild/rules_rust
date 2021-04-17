@@ -1,13 +1,15 @@
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    io::Write,
+    path::Path,
+};
+
 use cargo_raze::context::{CrateContext, CrateDependencyContext, CrateTargetedDepContext};
 use semver::Version;
 use serde::Serialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::io::Write;
 use tera::{self, Context, Tera};
 
-use crate::config;
-use crate::resolver::Dependencies;
-use std::path::Path;
+use crate::{config, resolver::Dependencies};
 
 pub struct RenderConfig {
     pub repo_rule_name: String,
