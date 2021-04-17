@@ -1,545 +1,603 @@
-# rules_rust crate_universe file format 1
-# config hash b916e44c6b9880f343f36afe6306a62a91143212d5a24f94ad1170df9b5f6a9e
-
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-def pinned_rust_install():
-    http_archive(
-        name = "uses_sys_crate_deps__bzip2__0_3_3",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
-])
-
-# Generated targets
-
-# buildifier: leave-alone
-rust_library(
-    name = "bzip2",
-    deps = [
-        "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
-        "@uses_sys_crate_deps__libc__0_2_76//:libc",
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "0.3.3",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+{
+  "config": {
+    "repo_rule_name": "uses_sys_crate_deps",
+    "crate_registry_template": "https://crates.io/api/v1/crates/{crate}/{version}/download",
+    "rules_rust_workspace_name": "rules_rust"
+  },
+  "hash": "b916e44c6b9880f343f36afe6306a62a91143212d5a24f94ad1170df9b5f6a9e",
+  "transitive_renderable_packages": [
+    {
+      "crate_context": {
+        "pkg_name": "bzip2",
+        "pkg_version": "0.3.3",
+        "edition": "2015",
+        "raze_settings": {
+          "additional_deps": [],
+          "skipped_deps": [],
+          "extra_aliased_targets": [],
+          "additional_flags": [],
+          "additional_env": {},
+          "gen_buildrs": null,
+          "data_attr": null,
+          "data_dependencies": [],
+          "compile_data_attr": null,
+          "build_data_dependencies": [],
+          "buildrs_additional_environment_variables": {},
+          "buildrs_additional_deps": [],
+          "patch_args": [],
+          "patch_cmds": [],
+          "patch_cmds_win": [],
+          "patch_tool": null,
+          "patches": [],
+          "additional_build_file": null
         },
-    }),
-)
-# Unsupported target "tokio" with type "test" omitted
-""",
-        strip_prefix = "bzip2-0.3.3",
-        type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/bzip2/0.3.3/download",
-    )
-
-    http_archive(
-        name = "uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
-])
-
-# Generated targets
-# buildifier: disable=load-on-top
-load(
-    "@rules_rust//cargo:cargo_build_script.bzl",
-    "cargo_build_script",
-)
-
-# buildifier: leave-alone
-cargo_build_script(
-    name = "bzip2_sys_build_script",
-    srcs = glob(["**/*.rs"]),
-    crate_root = "build.rs",
-    edition = "2015",
-    deps = [
-        "@uses_sys_crate_deps__cc__1_0_67//:cc",
-        "@uses_sys_crate_deps__pkg_config__0_3_19//:pkg_config",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    crate_features = [
-    ],
-    build_script_env = {
+        "canonical_additional_build_file": null,
+        "default_deps": {
+          "dependencies": [
+            {
+              "buildable_target": "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+              "name": "bzip2-sys",
+              "version": "0.1.10+1.0.8",
+              "is_proc_macro": false
+            },
+            {
+              "buildable_target": "@uses_sys_crate_deps__libc__0_2_76//:libc",
+              "name": "libc",
+              "version": "0.2.76",
+              "is_proc_macro": false
+            }
+          ],
+          "proc_macro_dependencies": [],
+          "data_dependencies": [],
+          "build_dependencies": [
+            {
+              "buildable_target": "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+              "name": "bzip2-sys",
+              "version": "0.1.10+1.0.8",
+              "is_proc_macro": false
+            }
+          ],
+          "build_proc_macro_dependencies": [],
+          "build_data_dependencies": [],
+          "dev_dependencies": [],
+          "aliased_dependencies": []
+        },
+        "targeted_deps": [],
+        "license": {
+          "name": "MIT from expression \"MIT OR Apache-2.0\"",
+          "rating": "notice"
+        },
+        "features": [],
+        "workspace_path_to_crate": "@uses_sys_crate_deps__bzip2__0_3_3//",
+        "workspace_member_dependents": [
+          ""
+        ],
+        "workspace_member_dev_dependents": [],
+        "workspace_member_build_dependents": [],
+        "is_workspace_member_dependency": true,
+        "is_binary_dependency": false,
+        "targets": [
+          {
+            "kind": "lib",
+            "name": "bzip2",
+            "path": "src/lib.rs",
+            "edition": "2015"
+          },
+          {
+            "kind": "test",
+            "name": "tokio",
+            "path": "tests/tokio.rs",
+            "edition": "2015"
+          }
+        ],
+        "build_script_target": null,
+        "links": null,
+        "source_details": {
+          "git_data": null
+        },
+        "sha256": "42b7c3cbf0fa9c1b82308d57191728ca0256cb821220f4e2fd410a72ade26e3b",
+        "registry_url": "https://crates.io/api/v1/crates/bzip2/0.3.3/download",
+        "expected_build_path": "remote/BUILD.bzip2-0.3.3.bazel",
+        "lib_target_name": "bzip2",
+        "is_proc_macro": false
+      },
+      "per_triple_metadata": {
+        "//conditions:default": {
+          "target": "Default",
+          "deps": {
+            "dependencies": [
+              {
+                "buildable_target": "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+                "name": "bzip2-sys",
+                "version": "0.1.10+1.0.8",
+                "is_proc_macro": false
+              },
+              {
+                "buildable_target": "@uses_sys_crate_deps__libc__0_2_76//:libc",
+                "name": "libc",
+                "version": "0.2.76",
+                "is_proc_macro": false
+              }
+            ],
+            "proc_macro_dependencies": [],
+            "data_dependencies": [],
+            "build_dependencies": [
+              {
+                "buildable_target": "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//:bzip2_sys",
+                "name": "bzip2-sys",
+                "version": "0.1.10+1.0.8",
+                "is_proc_macro": false
+              }
+            ],
+            "build_proc_macro_dependencies": [],
+            "build_data_dependencies": [],
+            "dev_dependencies": [],
+            "aliased_dependencies": []
+          },
+          "conditions": [
+            "//conditions:default"
+          ]
+        }
+      },
+      "is_proc_macro": false
     },
-    links = "bzip2",
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    version = "0.1.10+1.0.8",
-    visibility = ["//visibility:private"],
-)
-
-
-# buildifier: leave-alone
-rust_library(
-    name = "bzip2_sys",
-    deps = [
-        ":bzip2_sys_build_script",
-        "@uses_sys_crate_deps__libc__0_2_76//:libc",
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "lib.rs",
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "0.1.10+1.0.8",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+    {
+      "crate_context": {
+        "pkg_name": "bzip2-sys",
+        "pkg_version": "0.1.10+1.0.8",
+        "edition": "2015",
+        "raze_settings": {
+          "additional_deps": [],
+          "skipped_deps": [],
+          "extra_aliased_targets": [],
+          "additional_flags": [],
+          "additional_env": {},
+          "gen_buildrs": null,
+          "data_attr": null,
+          "data_dependencies": [],
+          "compile_data_attr": null,
+          "build_data_dependencies": [],
+          "buildrs_additional_environment_variables": {},
+          "buildrs_additional_deps": [],
+          "patch_args": [],
+          "patch_cmds": [],
+          "patch_cmds_win": [],
+          "patch_tool": null,
+          "patches": [],
+          "additional_build_file": null
         },
-    }),
-)
-""",
-        strip_prefix = "bzip2-sys-0.1.10+1.0.8",
-        type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/bzip2-sys/0.1.10+1.0.8/download",
-    )
-
-    http_archive(
-        name = "uses_sys_crate_deps__cc__1_0_67",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
-])
-
-# Generated targets
-
-# buildifier: leave-alone
-rust_binary(
-    # Prefix bin name to disambiguate from (probable) collision with lib name
-    # N.B.: The exact form of this is subject to change.
-    name = "cargo_bin_gcc_shim",
-    deps = [
-        # Binaries get an implicit dependency on their crate's lib
-        ":cc",
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/bin/gcc-shim.rs",
-    edition = "2018",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "1.0.67",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+        "canonical_additional_build_file": null,
+        "default_deps": {
+          "dependencies": [
+            {
+              "buildable_target": "@uses_sys_crate_deps__libc__0_2_76//:libc",
+              "name": "libc",
+              "version": "0.2.76",
+              "is_proc_macro": false
+            }
+          ],
+          "proc_macro_dependencies": [],
+          "data_dependencies": [],
+          "build_dependencies": [
+            {
+              "buildable_target": "@uses_sys_crate_deps__cc__1_0_67//:cc",
+              "name": "cc",
+              "version": "1.0.67",
+              "is_proc_macro": false
+            },
+            {
+              "buildable_target": "@uses_sys_crate_deps__pkg_config__0_3_19//:pkg_config",
+              "name": "pkg-config",
+              "version": "0.3.19",
+              "is_proc_macro": false
+            }
+          ],
+          "build_proc_macro_dependencies": [],
+          "build_data_dependencies": [],
+          "dev_dependencies": [],
+          "aliased_dependencies": []
         },
-    }),
-)
-
-# buildifier: leave-alone
-rust_library(
-    name = "cc",
-    deps = [
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    edition = "2018",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "1.0.67",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+        "targeted_deps": [],
+        "license": {
+          "name": "MIT from expression \"MIT OR Apache-2.0\"",
+          "rating": "notice"
         },
-    }),
-)
-# Unsupported target "cc_env" with type "test" omitted
-# Unsupported target "cflags" with type "test" omitted
-# Unsupported target "cxxflags" with type "test" omitted
-# Unsupported target "test" with type "test" omitted
-""",
-        strip_prefix = "cc-1.0.67",
-        type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/cc/1.0.67/download",
-    )
-
-    http_archive(
-        name = "uses_sys_crate_deps__libc__0_2_76",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
-])
-
-# Generated targets
-# buildifier: disable=load-on-top
-load(
-    "@rules_rust//cargo:cargo_build_script.bzl",
-    "cargo_build_script",
-)
-
-# buildifier: leave-alone
-cargo_build_script(
-    name = "libc_build_script",
-    srcs = glob(["**/*.rs"]),
-    crate_root = "build.rs",
-    edition = "2015",
-    deps = [
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    crate_features = [
-      "default",
-      "std",
-    ],
-    build_script_env = {
+        "features": [],
+        "workspace_path_to_crate": "@uses_sys_crate_deps__bzip2_sys__0_1_10_1_0_8//",
+        "workspace_member_dependents": [],
+        "workspace_member_dev_dependents": [],
+        "workspace_member_build_dependents": [],
+        "is_workspace_member_dependency": false,
+        "is_binary_dependency": false,
+        "targets": [
+          {
+            "kind": "lib",
+            "name": "bzip2_sys",
+            "path": "lib.rs",
+            "edition": "2015"
+          }
+        ],
+        "build_script_target": {
+          "kind": "custom-build",
+          "name": "build-script-build",
+          "path": "build.rs",
+          "edition": "2015"
+        },
+        "links": "bzip2",
+        "source_details": {
+          "git_data": null
+        },
+        "sha256": "17fa3d1ac1ca21c5c4e36a97f3c3eb25084576f6fc47bf0139c1123434216c6c",
+        "registry_url": "https://crates.io/api/v1/crates/bzip2-sys/0.1.10+1.0.8/download",
+        "expected_build_path": "remote/BUILD.bzip2-sys-0.1.10+1.0.8.bazel",
+        "lib_target_name": "bzip2_sys",
+        "is_proc_macro": false
+      },
+      "per_triple_metadata": {
+        "//conditions:default": {
+          "target": "Default",
+          "deps": {
+            "dependencies": [
+              {
+                "buildable_target": "@uses_sys_crate_deps__libc__0_2_76//:libc",
+                "name": "libc",
+                "version": "0.2.76",
+                "is_proc_macro": false
+              }
+            ],
+            "proc_macro_dependencies": [],
+            "data_dependencies": [],
+            "build_dependencies": [
+              {
+                "buildable_target": "@uses_sys_crate_deps__cc__1_0_67//:cc",
+                "name": "cc",
+                "version": "1.0.67",
+                "is_proc_macro": false
+              },
+              {
+                "buildable_target": "@uses_sys_crate_deps__pkg_config__0_3_19//:pkg_config",
+                "name": "pkg-config",
+                "version": "0.3.19",
+                "is_proc_macro": false
+              }
+            ],
+            "build_proc_macro_dependencies": [],
+            "build_data_dependencies": [],
+            "dev_dependencies": [],
+            "aliased_dependencies": []
+          },
+          "conditions": [
+            "//conditions:default"
+          ]
+        }
+      },
+      "is_proc_macro": false
     },
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    version = "0.2.76",
-    visibility = ["//visibility:private"],
-)
-
-
-# buildifier: leave-alone
-rust_library(
-    name = "libc",
-    deps = [
-        ":libc_build_script",
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "0.2.76",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-        "default",
-        "std",
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+    {
+      "crate_context": {
+        "pkg_name": "cc",
+        "pkg_version": "1.0.67",
+        "edition": "2018",
+        "raze_settings": {
+          "additional_deps": [],
+          "skipped_deps": [],
+          "extra_aliased_targets": [],
+          "additional_flags": [],
+          "additional_env": {},
+          "gen_buildrs": null,
+          "data_attr": null,
+          "data_dependencies": [],
+          "compile_data_attr": null,
+          "build_data_dependencies": [],
+          "buildrs_additional_environment_variables": {},
+          "buildrs_additional_deps": [],
+          "patch_args": [],
+          "patch_cmds": [],
+          "patch_cmds_win": [],
+          "patch_tool": null,
+          "patches": [],
+          "additional_build_file": null
         },
-    }),
-)
-# Unsupported target "const_fn" with type "test" omitted
-""",
-        strip_prefix = "libc-0.2.76",
-        type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/libc/0.2.76/download",
-    )
-
-    http_archive(
-        name = "uses_sys_crate_deps__pkg_config__0_3_19",
-        # TODO: Allow configuring where rust_library comes from
-        build_file_content = """# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
-])
-
-# Generated targets
-
-# buildifier: leave-alone
-rust_library(
-    name = "pkg_config",
-    deps = [
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "0.3.19",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
+        "canonical_additional_build_file": null,
+        "default_deps": {
+          "dependencies": [],
+          "proc_macro_dependencies": [],
+          "data_dependencies": [],
+          "build_dependencies": [],
+          "build_proc_macro_dependencies": [],
+          "build_data_dependencies": [],
+          "dev_dependencies": [],
+          "aliased_dependencies": []
         },
-    }),
-)
-# Unsupported target "test" with type "test" omitted
-""",
-        strip_prefix = "pkg-config-0.3.19",
-        type = "tar.gz",
-        url = "https://crates.io/api/v1/crates/pkg-config/0.3.19/download",
-    )
-
-
-CRATE_TARGET_NAMES = {
-    "bzip2": "@uses_sys_crate_deps__bzip2__0_3_3//:bzip2",
-    "libc": "@uses_sys_crate_deps__libc__0_2_76//:libc",
+        "targeted_deps": [],
+        "license": {
+          "name": "MIT from expression \"MIT OR Apache-2.0\"",
+          "rating": "notice"
+        },
+        "features": [],
+        "workspace_path_to_crate": "@uses_sys_crate_deps__cc__1_0_67//",
+        "workspace_member_dependents": [],
+        "workspace_member_dev_dependents": [],
+        "workspace_member_build_dependents": [],
+        "is_workspace_member_dependency": false,
+        "is_binary_dependency": false,
+        "targets": [
+          {
+            "kind": "bin",
+            "name": "gcc-shim",
+            "path": "src/bin/gcc-shim.rs",
+            "edition": "2018"
+          },
+          {
+            "kind": "lib",
+            "name": "cc",
+            "path": "src/lib.rs",
+            "edition": "2018"
+          },
+          {
+            "kind": "test",
+            "name": "cc_env",
+            "path": "tests/cc_env.rs",
+            "edition": "2018"
+          },
+          {
+            "kind": "test",
+            "name": "cflags",
+            "path": "tests/cflags.rs",
+            "edition": "2018"
+          },
+          {
+            "kind": "test",
+            "name": "cxxflags",
+            "path": "tests/cxxflags.rs",
+            "edition": "2018"
+          },
+          {
+            "kind": "test",
+            "name": "test",
+            "path": "tests/test.rs",
+            "edition": "2018"
+          }
+        ],
+        "build_script_target": null,
+        "links": null,
+        "source_details": {
+          "git_data": null
+        },
+        "sha256": "e3c69b077ad434294d3ce9f1f6143a2a4b89a8a2d54ef813d85003a4fd1137fd",
+        "registry_url": "https://crates.io/api/v1/crates/cc/1.0.67/download",
+        "expected_build_path": "remote/BUILD.cc-1.0.67.bazel",
+        "lib_target_name": "cc",
+        "is_proc_macro": false
+      },
+      "per_triple_metadata": {
+        "//conditions:default": {
+          "target": "Default",
+          "deps": {
+            "dependencies": [],
+            "proc_macro_dependencies": [],
+            "data_dependencies": [],
+            "build_dependencies": [],
+            "build_proc_macro_dependencies": [],
+            "build_data_dependencies": [],
+            "dev_dependencies": [],
+            "aliased_dependencies": []
+          },
+          "conditions": [
+            "//conditions:default"
+          ]
+        }
+      },
+      "is_proc_macro": false
+    },
+    {
+      "crate_context": {
+        "pkg_name": "libc",
+        "pkg_version": "0.2.76",
+        "edition": "2015",
+        "raze_settings": {
+          "additional_deps": [],
+          "skipped_deps": [],
+          "extra_aliased_targets": [],
+          "additional_flags": [],
+          "additional_env": {},
+          "gen_buildrs": null,
+          "data_attr": null,
+          "data_dependencies": [],
+          "compile_data_attr": null,
+          "build_data_dependencies": [],
+          "buildrs_additional_environment_variables": {},
+          "buildrs_additional_deps": [],
+          "patch_args": [],
+          "patch_cmds": [],
+          "patch_cmds_win": [],
+          "patch_tool": null,
+          "patches": [],
+          "additional_build_file": null
+        },
+        "canonical_additional_build_file": null,
+        "default_deps": {
+          "dependencies": [],
+          "proc_macro_dependencies": [],
+          "data_dependencies": [],
+          "build_dependencies": [],
+          "build_proc_macro_dependencies": [],
+          "build_data_dependencies": [],
+          "dev_dependencies": [],
+          "aliased_dependencies": []
+        },
+        "targeted_deps": [],
+        "license": {
+          "name": "MIT from expression \"MIT OR Apache-2.0\"",
+          "rating": "notice"
+        },
+        "features": [
+          "default",
+          "std"
+        ],
+        "workspace_path_to_crate": "@uses_sys_crate_deps__libc__0_2_76//",
+        "workspace_member_dependents": [
+          ""
+        ],
+        "workspace_member_dev_dependents": [],
+        "workspace_member_build_dependents": [],
+        "is_workspace_member_dependency": true,
+        "is_binary_dependency": false,
+        "targets": [
+          {
+            "kind": "lib",
+            "name": "libc",
+            "path": "src/lib.rs",
+            "edition": "2015"
+          },
+          {
+            "kind": "test",
+            "name": "const_fn",
+            "path": "tests/const_fn.rs",
+            "edition": "2015"
+          }
+        ],
+        "build_script_target": {
+          "kind": "custom-build",
+          "name": "build-script-build",
+          "path": "build.rs",
+          "edition": "2015"
+        },
+        "links": null,
+        "source_details": {
+          "git_data": null
+        },
+        "sha256": "755456fae044e6fa1ebbbd1b3e902ae19e73097ed4ed87bb79934a867c007bc3",
+        "registry_url": "https://crates.io/api/v1/crates/libc/0.2.76/download",
+        "expected_build_path": "remote/BUILD.libc-0.2.76.bazel",
+        "lib_target_name": "libc",
+        "is_proc_macro": false
+      },
+      "per_triple_metadata": {
+        "//conditions:default": {
+          "target": "Default",
+          "deps": {
+            "dependencies": [],
+            "proc_macro_dependencies": [],
+            "data_dependencies": [],
+            "build_dependencies": [],
+            "build_proc_macro_dependencies": [],
+            "build_data_dependencies": [],
+            "dev_dependencies": [],
+            "aliased_dependencies": []
+          },
+          "conditions": [
+            "//conditions:default"
+          ]
+        }
+      },
+      "is_proc_macro": false
+    },
+    {
+      "crate_context": {
+        "pkg_name": "pkg-config",
+        "pkg_version": "0.3.19",
+        "edition": "2015",
+        "raze_settings": {
+          "additional_deps": [],
+          "skipped_deps": [],
+          "extra_aliased_targets": [],
+          "additional_flags": [],
+          "additional_env": {},
+          "gen_buildrs": null,
+          "data_attr": null,
+          "data_dependencies": [],
+          "compile_data_attr": null,
+          "build_data_dependencies": [],
+          "buildrs_additional_environment_variables": {},
+          "buildrs_additional_deps": [],
+          "patch_args": [],
+          "patch_cmds": [],
+          "patch_cmds_win": [],
+          "patch_tool": null,
+          "patches": [],
+          "additional_build_file": null
+        },
+        "canonical_additional_build_file": null,
+        "default_deps": {
+          "dependencies": [],
+          "proc_macro_dependencies": [],
+          "data_dependencies": [],
+          "build_dependencies": [],
+          "build_proc_macro_dependencies": [],
+          "build_data_dependencies": [],
+          "dev_dependencies": [],
+          "aliased_dependencies": []
+        },
+        "targeted_deps": [],
+        "license": {
+          "name": "MIT from expression \"MIT OR Apache-2.0\"",
+          "rating": "notice"
+        },
+        "features": [],
+        "workspace_path_to_crate": "@uses_sys_crate_deps__pkg_config__0_3_19//",
+        "workspace_member_dependents": [],
+        "workspace_member_dev_dependents": [],
+        "workspace_member_build_dependents": [],
+        "is_workspace_member_dependency": false,
+        "is_binary_dependency": false,
+        "targets": [
+          {
+            "kind": "lib",
+            "name": "pkg-config",
+            "path": "src/lib.rs",
+            "edition": "2015"
+          },
+          {
+            "kind": "test",
+            "name": "test",
+            "path": "tests/test.rs",
+            "edition": "2015"
+          }
+        ],
+        "build_script_target": null,
+        "links": null,
+        "source_details": {
+          "git_data": null
+        },
+        "sha256": "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c",
+        "registry_url": "https://crates.io/api/v1/crates/pkg-config/0.3.19/download",
+        "expected_build_path": "remote/BUILD.pkg-config-0.3.19.bazel",
+        "lib_target_name": "pkg-config",
+        "is_proc_macro": false
+      },
+      "per_triple_metadata": {
+        "//conditions:default": {
+          "target": "Default",
+          "deps": {
+            "dependencies": [],
+            "proc_macro_dependencies": [],
+            "data_dependencies": [],
+            "build_dependencies": [],
+            "build_proc_macro_dependencies": [],
+            "build_data_dependencies": [],
+            "dev_dependencies": [],
+            "aliased_dependencies": []
+          },
+          "conditions": [
+            "//conditions:default"
+          ]
+        }
+      },
+      "is_proc_macro": false
+    }
+  ],
+  "member_packages_version_mapping": {
+    "normal": {
+      "bzip2": "0.3.3",
+      "libc": "0.2.76"
+    },
+    "build": {},
+    "dev": {}
+  },
+  "label_to_crates": {
+    "//uses_sys_crate:Cargo.toml": [
+      "bzip2"
+    ]
+  }
 }
-
-def crate(crate_name):
-    """Return the name of the target for the given crate.
-    """
-    target_name = CRATE_TARGET_NAMES.get(crate_name)
-    if target_name == None:
-        fail("Unknown crate name: {}".format(crate_name))
-    return target_name
-
-def all_deps():
-    """Return all standard dependencies explicitly listed in the Cargo.toml or packages list."""
-    return [
-        crate(crate_name) for crate_name in [
-            "bzip2",
-            "libc",
-        ]
-    ]
-
-def all_proc_macro_deps():
-    """Return all proc-macro dependencies explicitly listed in the Cargo.toml or packages list."""
-    return [
-        crate(crate_name) for crate_name in [
-        ]
-    ]
-
-def crates_from(label):
-    mapping = {
-        "//uses_sys_crate:Cargo.toml": [crate("bzip2")],
-    }
-    return mapping[_absolutify(label)]
-
-def dev_crates_from(label):
-    mapping = {
-        "//uses_sys_crate:Cargo.toml": [],
-    }
-    return mapping[_absolutify(label)]
-
-def build_crates_from(label):
-    mapping = {
-        "//uses_sys_crate:Cargo.toml": [],
-    }
-    return mapping[_absolutify(label)]
-
-def proc_macro_crates_from(label):
-    mapping = {
-        "//uses_sys_crate:Cargo.toml": [],
-    }
-    return mapping[_absolutify(label)]
-
-def _absolutify(label):
-    if label.startswith("//") or label.startswith("@"):
-        return label
-    if label.startswith(":"):
-        return "//" + native.package_name() + label
-    return "//" + native.package_name() + ":" + label
