@@ -147,7 +147,7 @@ dependencies = [
 [[package]]
 name = "cargo-raze"
 version = "0.12.0"
-source = "git+https://github.com/UebelAndre/cargo-raze.git?rev=0ef1bc28252b7458f214cd69ea6adff0c22ab019#0ef1bc28252b7458f214cd69ea6adff0c22ab019"
+source = "git+https://github.com/UebelAndre/cargo-raze.git?rev=1e9949fd209056bfd7e35b4374b7b345f2920def#1e9949fd209056bfd7e35b4374b7b345f2920def"
 dependencies = [
  "anyhow",
  "cargo-lock",
