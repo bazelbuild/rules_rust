@@ -203,8 +203,8 @@ def _crate_universe_resolve_impl(repository_ctx):
         resolver_path,
         "--input_path",
         input_path,
-        "--repository_dir",
-        repository_ctx.path("."),
+        "--output_path",
+        repository_ctx.path("defs.bzl"),
         "--repo-name",
         repository_ctx.attr.name,
     ]

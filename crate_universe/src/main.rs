@@ -17,9 +17,7 @@ struct Opt {
     #[structopt(long = "input_path", parse(from_os_str))]
     input_path: PathBuf,
     #[structopt(long = "output_path", parse(from_os_str))]
-    output_path: Option<PathBuf>,
-    #[structopt(long = "repository_dir", parse(from_os_str))]
-    repository_dir: PathBuf,
+    output_path: PathBuf,
     #[structopt(long = "lockfile", parse(from_os_str))]
     lockfile: Option<PathBuf>,
     #[structopt(long = "update-lockfile")]
@@ -67,21 +65,9 @@ fn reuse_lockfile(config: Config, lockfile: &Path, opt: &Opt) -> anyhow::Result<
         "# }));
     }
 
-    // TODO: Instead of explicitly passing a single file, allow a directory to be passed
-    // so each dependency can render it's own build file and we can avoid monolithic
-    // outputs. `output_path` should be removed in the future.
-    if let Some(output_path) = &opt.output_path {
-        let mut output_file = std::fs::File::create(&output_path)
-            .with_context(|| format!("Could not create output file {:?}", output_path))?;
-
-        renderer.render(&mut output_file)
-    } else {
-        let def_bzl_path = opt.repository_dir.join("defs.bzl");
-        let mut def_bzl_file = std::fs::File::create(&def_bzl_path)
-            .with_context(|| format!("Could not create output file {:?}", def_bzl_path))?;
-
-        renderer.render(&mut def_bzl_file)
-    }
+    let mut output_file = std::fs::File::create(&opt.output_path)
+        .with_context(|| format!("Could not create output file {:?}", opt.output_path))?;
+    renderer.render(&mut output_file)
 }
 
 fn generate_dependencies(config: Config, opt: &Opt) -> anyhow::Result<()> {
@@ -97,23 +83,9 @@ fn generate_dependencies(config: Config, opt: &Opt) -> anyhow::Result<()> {
     trace!("Consolidating overrides");
     let renderer = consolidator.consolidate()?;
 
-    // TODO: Instead of explicitly passing a single file, allow a directory to be passed
-    // so each dependency can render it's own build file and we can avoid monolithic
-    // outputs. `output_path` should be removed in the future.
-    if let Some(output_path) = &opt.output_path {
-        let mut output_file = std::fs::File::create(&output_path)
-            .with_context(|| format!("Could not create output file {:?}", output_path))?;
-
-        trace!("Rendering output to: {}", &output_path.display());
-        renderer.render(&mut output_file)?;
-    } else {
-        let def_bzl_path = opt.repository_dir.join("defs.bzl");
-        let mut def_bzl_file = std::fs::File::create(&def_bzl_path)
-            .with_context(|| format!("Could not create output file {:?}", def_bzl_path))?;
-
-        trace!("Rendering output to: {}", &def_bzl_path.display());
-        renderer.render(&mut def_bzl_file)?;
-    }
+    let mut output_file = std::fs::File::create(&opt.output_path)
+        .with_context(|| format!("Could not create output file {:?}", opt.output_path))?;
+    renderer.render(&mut output_file)?;
 
     let lockfile = &opt.lockfile;
 
