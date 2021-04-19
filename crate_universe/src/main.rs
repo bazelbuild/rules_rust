@@ -62,7 +62,7 @@ fn reuse_lockfile(config: Config, lockfile: &Path, opt: &Opt) -> anyhow::Result<
     if !renderer.matches_digest(&resolver.digest()?) {
         return Err(anyhow!(indoc! { r#"
             "rules_rust_external: Lockfile at {} is out of date, please either:
-            1. Re-run bazel with the environment variable `RULES_RUST_UPDATE_CRATE_UNIVERSE_LOCKFILE=true`, to update the lockfile
+            1. Re-run bazel with the environment variable `RULES_RUST_REPIN=true`, to update the lockfile
             2. Remove the `lockfile` attribute from the `crate_universe` repository rule with name \"{}\" to use floating dependency versions", lockfile.display(), opt.repo_name
         "# }));
     }
