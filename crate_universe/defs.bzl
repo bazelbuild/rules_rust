@@ -1,7 +1,7 @@
 """A module defining the `crate_universe` rule"""
 
+load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
-load(":deps.bzl", _crate_universe_deps = "crate_universe_deps")
 
 DEFAULT_CRATE_REGISTRY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
@@ -165,20 +165,17 @@ def _crate_universe_resolve_impl(repository_ctx):
         if resolver_url.startswith("file://"):
             sha256_result = repository_ctx.execute(["sha256sum", resolver_url[7:]])
             resolver_sha = sha256_result.stdout[:64]
-
-        resolver_path = repository_ctx.path("resolver")
-        repository_ctx.download(
-            url = resolver_url,
-            sha256 = resolver_sha,
-            output = resolver_path,
-            executable = True,
-        )
     else:
-        resolver_label = Label("@rules_rust_crate_universe__{}//file:resolver{}".format(
-            resolver_triple,
-            extension,
-        ))
-        resolver_path = repository_ctx.path(resolver_label)
+        resolver_url = repository_ctx.attr.resolver_download_url_template.format(host_triple = resolver_triple, extension = extension)
+        resolver_sha = repository_ctx.attr.resolver_sha256s.get(resolver_triple, None)
+
+    resolver_path = repository_ctx.path("resolver")
+    repository_ctx.download(
+        url = resolver_url,
+        sha256 = resolver_sha,
+        output = resolver_path,
+        executable = True,
+    )
 
     lockfile_path = None
     if repository_ctx.attr.lockfile:
@@ -301,20 +298,18 @@ crate_universe(
             doc = "",
             allow_empty = True,
         ),
+        "resolver_download_url_template": attr.string(
+            doc = "URL template from which to download the resolver binary. {host_triple} and {extension} will be filled in according to the host platform.",
+            default = DEFAULT_URL_TEMPLATE,
+        ),
+        "resolver_sha256s": attr.string_dict(
+            doc = "Dictionary of host_triple -> sha256 for resolver binary.",
+            default = DEFAULT_SHA256_CHECKSUMS,
+        ),
         "supported_targets": attr.string_list(
             doc = "",
             allow_empty = False,
             default = DEFAULT_TOOLCHAIN_TRIPLES.keys(),
-        ),
-        "_resolvers": attr.label_list(
-            doc = "A list of resolver binaries for various platforms",
-            default = [
-                "@rules_rust_crate_universe__aarch64-apple-darwin//:resolver",
-                "@rules_rust_crate_universe__aarch64-unknown-linux-gnu//:resolver",
-                "@rules_rust_crate_universe__x86_64-apple-darwin//:resolver",
-                "@rules_rust_crate_universe__x86_64-pc-windows-gnu//:resolver.exe",
-                "@rules_rust_crate_universe__x86_64-unknown-linux-gnu//:resolver",
-            ],
         ),
     },
     environ = [
@@ -369,6 +364,3 @@ crate = struct(
     spec = _spec,
     override = _override,
 )
-
-# Reexport the dependencies macro
-crate_universe_deps = _crate_universe_deps

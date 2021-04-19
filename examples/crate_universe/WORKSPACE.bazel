@@ -2,16 +2,12 @@ workspace(name = "rules_rust_examples_crate_universe")
 
 local_repository(
     name = "rules_rust",
-    path = "../../..",
+    path = "../..",
 )
 
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
-
-load("@rules_rust//crate_universe:defs.bzl", "crate_universe_deps")
-
-crate_universe_deps()
 
 load("//basic:workspace.bzl", basic_deps = "deps")
 

@@ -4,10 +4,6 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
 
-load("@rules_rust//crate_universe:deps.bzl", "crate_universe_deps")
-
-crate_universe_deps()
-
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()

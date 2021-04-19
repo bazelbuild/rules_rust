@@ -100,7 +100,7 @@ jobs:
           cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
 
           # Replace the url
-          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/{bin}"
+          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/crate_universe_resolver-{host_triple}{extension}"
           sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
 
           # Populate all sha256 values
