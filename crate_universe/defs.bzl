@@ -244,9 +244,9 @@ Environment Variables:
 `override` Example:
 
 ```python
-load("@rules_rust//crate_universe:defs.bzl", "rust_library", "crate")
+load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
 
-rust_library(
+crate_universe(
     name = "mylib",
     # [...]
     overrides = {
