@@ -4,7 +4,7 @@
     "crate_registry_template": "https://crates.io/api/v1/crates/{crate}/{version}/download",
     "rules_rust_workspace_name": "rules_rust"
   },
-  "hash": "67e4feb9693e25cfb3ad9c4c64948935784f27f942432bf194b4ab9cff61a7f6",
+  "hash": "b916e44c6b9880f343f36afe6306a62a91143212d5a24f94ad1170df9b5f6a9e",
   "transitive_renderable_packages": [
     {
       "crate_context": {
