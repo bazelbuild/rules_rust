@@ -9,6 +9,9 @@ pub mod renderer;
 pub mod resolver;
 mod serde_utils;
 
+#[cfg(test)]
+mod testing;
+
 pub struct NamedTempFile(tempfile::TempDir, PathBuf);
 
 impl NamedTempFile {
