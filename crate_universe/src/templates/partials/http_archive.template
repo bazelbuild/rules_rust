@@ -1,6 +1,6 @@
     http_archive(
         name = "{{repository_name}}",
-        build_file_content = """{%- include "templates/crate.BUILD.template" %}""",
+        build_file = Label("//:BUILD.{{crate.pkg_name}}-{{crate.pkg_version}}.bazel"),
         {%- if crate.sha256 %}
         sha256 = "{{crate.sha256}}",
         {%- endif %}

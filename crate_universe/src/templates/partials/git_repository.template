@@ -1,7 +1,7 @@
     new_git_repository(
         name = "{{ repository_name }}",
         strip_prefix = "{{ repo.path_to_crate_root }}",
-        build_file_content = """{%- include "templates/crate.BUILD.template" %}""",
+        build_file = Label("//:BUILD.{{crate.pkg_name}}-{{crate.pkg_version}}.bazel"),
         remote = "{{ repo.remote }}",
         commit = "{{ repo.commit }}",
     )

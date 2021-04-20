@@ -35,25 +35,22 @@ fn single_git_repository() {
 
     let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-    let expected_repository_rule = format!(
-        r###"# rules_rust crate_universe file format 1
+    let expected_repository_rule = r###"# rules_rust crate_universe file format 1
 # config hash 598
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def pinned_rust_install():
     new_git_repository(
         name = "rule_prefix__lazy_static__1_4_0",
         strip_prefix = "",
-        build_file_content = """{}""",
+        build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
         remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
         commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
     )
-"###,
-        LAZY_STATIC_BUILD_FILE_CONTENT
-    );
+
+"###;
 
     assert_eq!(output, expected_repository_rule);
 }
@@ -87,26 +84,23 @@ fn single_http_archive() {
     let output = String::from_utf8(output).expect("Non-UTF8 output");
 
     // TODO: Don't unconditionally load new_git_repository and http_archive
-    let expected_repository_rule = format!(
-        r###"# rules_rust crate_universe file format 1
+    let expected_repository_rule = r###"# rules_rust crate_universe file format 1
 # config hash 598
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def pinned_rust_install():
     http_archive(
         name = "rule_prefix__lazy_static__1_4_0",
-        build_file_content = """{}""",
+        build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
         sha256 = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646",
         strip_prefix = "lazy_static-1.4.0",
         type = "tar.gz",
         url = "https://crates.io/api/v1/crates/lazy_static/1.4.0/download",
     )
-"###,
-        LAZY_STATIC_BUILD_FILE_CONTENT
-    );
+
+"###;
 
     assert_eq!(output, expected_repository_rule);
 }
@@ -269,67 +263,5 @@ fn lazy_static_crate_context(git: bool) -> CrateContext {
         is_proc_macro: false,
     }
 }
-
-// TODO: Make these files buildifier-compliant when generated to remote the buildifier comments.
-// TODO: Conditionally add loads and attributes only if needed
-const LAZY_STATIC_BUILD_FILE_CONTENT: &str = r###"# buildifier: disable=load
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
-    "rust_proc_macro",
-    "rust_test",
-)
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
-package(default_visibility = [
-    "//visibility:public",
-])
-
-licenses([
-    "restricted",  # no license
-])
-
-# Generated targets
-
-# buildifier: leave-alone
-rust_library(
-    name = "lazy_static",
-    deps = [
-    ],
-    srcs = glob(["**/*.rs"]),
-    crate_root = "src/lib.rs",
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    data = glob(["**"], exclude=[
-        # These can be manually added with overrides if needed.
-
-        # If you run `cargo build` in this dir, the target dir can get very big very quick.
-        "target/**",
-
-        # These are not vendored from the crate - we exclude them to avoid busting caches
-        # when we change how we generate BUILD files and such.
-        "BUILD.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-    ]),
-    version = "1.4.0",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-    crate_features = [
-    ],
-    aliases = select({
-        # Default
-        "//conditions:default": {
-        },
-    }),
-)
-"###;
 
 // TODO: Add more tests for build_file_content

@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::Context;
 use cargo_raze::context::{CrateContext, CrateDependencyContext, CrateTargetedDepContext};
+use config::crate_to_repo_rule_name;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tera::{self, Tera};
@@ -182,8 +183,8 @@ impl Renderer {
         internal_renderer
             .add_raw_templates(vec![
                 (
-                    "templates/lockfile.template",
-                    include_str!("templates/lockfile.template"),
+                    "templates/defs.bzl.template",
+                    include_str!("templates/defs.bzl.template"),
                 ),
                 (
                     "templates/helper_functions.template",
@@ -206,8 +207,8 @@ impl Renderer {
                     include_str!("templates/partials/common_attrs.template"),
                 ),
                 (
-                    "templates/crate.BUILD.template",
-                    include_str!("templates/crate.BUILD.template"),
+                    "templates/BUILD.crate.bazel.template",
+                    include_str!("templates/BUILD.crate.bazel.template"),
                 ),
                 (
                     "templates/partials/targeted_aliases.template",
@@ -316,10 +317,16 @@ impl Renderer {
         })
     }
 
-    pub fn render<Out: Write>(&self, output: &mut Out) -> anyhow::Result<()> {
-        self.render_workspaces(output)?;
-        writeln!(output, "")?;
-        self.render_helper_functions(output)?;
+    pub fn render(&self, repository_dir: &Path) -> anyhow::Result<()> {
+        let defs_bzl_path = repository_dir.join("defs.bzl");
+        let mut defs_bzl_file = std::fs::File::create(&defs_bzl_path)
+            .with_context(|| format!("Could not create output file {}", defs_bzl_path.display()))?;
+
+        self.render_workspaces(&mut defs_bzl_file)?;
+        writeln!(defs_bzl_file, "")?;
+        self.render_helper_functions(&mut defs_bzl_file)?;
+
+        self.render_crates(repository_dir)?;
 
         Ok(())
     }
@@ -330,6 +337,42 @@ impl Renderer {
         let content = serde_json::to_string_pretty(&self.context)
             .with_context(|| format!("Could not seralize render context: {:?}", self.context))?;
         write!(lockfile_file, "{}\n", &content)?;
+
+        Ok(())
+    }
+
+    /// Render `BUILD.bazel` files for all dependencies into the repository directory.
+    fn render_crates(&self, repository_dir: &Path) -> anyhow::Result<()> {
+        for crate_data in &self.context.transitive_renderable_packages {
+            let mut context = tera::Context::new();
+            context.insert("crate", &crate_data.crate_context);
+            context.insert("per_triple_metadata", &crate_data.per_triple_metadata);
+            context.insert("repo_rule_name", &self.context.config.repo_rule_name);
+            context.insert(
+                "repository_name",
+                &crate_to_repo_rule_name(
+                    &self.context.config.repo_rule_name,
+                    &crate_data.crate_context.pkg_name,
+                    &crate_data.crate_context.pkg_version.to_string(),
+                ),
+            );
+            let build_file_content = self
+                .internal_renderer
+                .render("templates/BUILD.crate.bazel.template", &context)?;
+
+            let build_file_path = repository_dir.join(format!(
+                // This must match the format found in the repository rule templates
+                "BUILD.{}-{}.bazel",
+                crate_data.crate_context.pkg_name, crate_data.crate_context.pkg_version
+            ));
+            let mut build_file = File::create(&build_file_path).with_context(|| {
+                format!(
+                    "Could not create lockfile file: {}",
+                    build_file_path.display()
+                )
+            })?;
+            write!(build_file, "{}\n", &build_file_content)?;
+        }
 
         Ok(())
     }
@@ -346,7 +389,7 @@ impl Renderer {
         );
         let rendered_repository_rules = self
             .internal_renderer
-            .render("templates/lockfile.template", &context)?;
+            .render("templates/defs.bzl.template", &context)?;
 
         write!(output, "{}", &rendered_repository_rules)?;
 

@@ -16,8 +16,8 @@ struct Opt {
     repo_name: String,
     #[structopt(long = "input_path", parse(from_os_str))]
     input_path: PathBuf,
-    #[structopt(long = "output_path", parse(from_os_str))]
-    output_path: PathBuf,
+    #[structopt(long = "repository_dir", parse(from_os_str))]
+    repository_dir: PathBuf,
     #[structopt(long = "lockfile", parse(from_os_str))]
     lockfile: Option<PathBuf>,
     #[structopt(long = "update-lockfile")]
@@ -65,9 +65,7 @@ fn reuse_lockfile(config: Config, lockfile: &Path, opt: &Opt) -> anyhow::Result<
         "# }));
     }
 
-    let mut output_file = std::fs::File::create(&opt.output_path)
-        .with_context(|| format!("Could not create output file {:?}", opt.output_path))?;
-    renderer.render(&mut output_file)
+    renderer.render(&opt.repository_dir)
 }
 
 fn generate_dependencies(config: Config, opt: &Opt) -> anyhow::Result<()> {
@@ -83,9 +81,7 @@ fn generate_dependencies(config: Config, opt: &Opt) -> anyhow::Result<()> {
     trace!("Consolidating overrides");
     let renderer = consolidator.consolidate()?;
 
-    let mut output_file = std::fs::File::create(&opt.output_path)
-        .with_context(|| format!("Could not create output file {:?}", opt.output_path))?;
-    renderer.render(&mut output_file)?;
+    renderer.render(&opt.repository_dir)?;
 
     let lockfile = &opt.lockfile;
 
