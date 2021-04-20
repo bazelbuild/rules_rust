@@ -367,7 +367,7 @@ impl Renderer {
             ));
             let mut build_file = File::create(&build_file_path).with_context(|| {
                 format!(
-                    "Could not create lockfile file: {}",
+                    "Could not create BUILD file: {}",
                     build_file_path.display()
                 )
             })?;
