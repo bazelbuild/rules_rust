@@ -569,9 +569,6 @@ mod tests {
 
         // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
-            # rules_rust crate_universe file format 1
-            # config hash 598
-
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -604,9 +601,6 @@ mod tests {
 
         // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
-            # rules_rust crate_universe file format 1
-            # config hash 598
-            
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
             
