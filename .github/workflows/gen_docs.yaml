@@ -1,0 +1,18 @@
+name: Generate Documenation Pages
+on:
+  push:
+    branches:
+      - main
+jobs:
+  generate:
+    if: ${{ github.repository_owner == 'bazelbuild' }}
+    name: Generate Docs
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install bazelisk
+        run: .github/workflows/scripts/install_bazelisk.sh
+        env:
+          USE_BAZEL_VERSION: 4.0.0
+      - name: Generate and Push
+        run: .github/workflows/scripts/publish_docs.sh

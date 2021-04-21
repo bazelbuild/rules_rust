@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euxo pipefail
 
 if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
     DOCS_WORKSPACE="${BUILD_WORKSPACE_DIRECTORY}"
@@ -13,15 +13,7 @@ fi
 pushd "${DOCS_WORKSPACE}" &> /dev/null
 # It's important to clean the workspace so we don't end up with unintended
 # docs artifacts in the new commit.
-bazel clean \
-&& bazel build //... \
-&& cp bazel-bin/*.md . \
-&& chmod 0644 *.md
-
-if [ -n "$(git status --porcelain)" ]; then 
-    git status
-    echo '/docs is out of date. Please run `./docs/update_docs.sh` from the root of rules_rust and push the results' >&2
-    exit 1
-fi
+bazel clean
+bazel build //...
 
 popd &> /dev/null
