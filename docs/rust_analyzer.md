@@ -21,6 +21,8 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
 rust_analyzer_deps()
 ```
 
+You'll also need to ensure any `rust_repository` or `rust_repositories` calls in your `WORKSPACE` file set the arg `include_rustc_src` to `True`.
+
 Then, add a rule to the root `BUILD` file like the following.
 
 ```python

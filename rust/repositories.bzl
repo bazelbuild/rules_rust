@@ -34,6 +34,7 @@ def rust_repositories(
         edition = None,
         dev_components = False,
         sha256s = None,
+        include_rustc_src = False,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
@@ -60,6 +61,7 @@ def rust_repositories(
         edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
+        include_rustc_src (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
     """
 
@@ -99,6 +101,7 @@ def rust_repositories(
             edition = edition,
             dev_components = dev_components,
             sha256s = sha256s,
+            include_rustc_src = include_rustc_src,
             urls = urls,
         )
 
@@ -285,7 +288,7 @@ rust_toolchain(
     cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
     rustc_lib = "@{workspace_name}//:rustc_lib",
-    rustc_src  = "@{workspace_name}//:rustc_src",
+    rustc_src = {rustc_src},
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
@@ -303,6 +306,7 @@ def BUILD_for_rust_toolchain(
         name,
         exec_triple,
         target_triple,
+        include_rustc_src,
         stdlib_linkflags = None,
         default_edition = "2015"):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
@@ -312,6 +316,7 @@ def BUILD_for_rust_toolchain(
         name (str): The name of the toolchain declaration
         exec_triple (str): The rust-style target that this compiler runs on
         target_triple (str): The rust-style target triple of the tool
+        include_rustc_src (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -324,12 +329,17 @@ def BUILD_for_rust_toolchain(
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
 
+    rustc_src = "None"
+    if include_rustc_src:
+        rustc_src = "\"@{workspace_name}//:rustc_src\"".format(workspace_name = workspace_name)
+
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         workspace_name = workspace_name,
         binary_ext = system_to_binary_ext(system),
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
+        rustc_src = rustc_src,
         stdlib_linkflags = stdlib_linkflags,
         system = system,
         default_edition = default_edition,
@@ -538,6 +548,7 @@ def _load_rust_stdlib(ctx, target_triple):
             target_triple = target_triple,
         ),
         exec_triple = ctx.attr.exec_triple,
+        include_rustc_src = ctx.attr.include_rustc_src,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
@@ -588,7 +599,10 @@ def _rust_toolchain_repository_impl(ctx):
 
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    build_components = [_load_rust_compiler(ctx), _load_rust_src(ctx)]
+    build_components = [_load_rust_compiler(ctx)]
+
+    if ctx.attr.include_rustc_src:
+        build_components.append(_load_rust_src(ctx))
 
     if ctx.attr.rustfmt_version:
         build_components.append(_load_rustfmt(ctx))
@@ -648,6 +662,10 @@ rust_toolchain_repository = repository_rule(
         "extra_target_triples": attr.string_list(
             doc = "Additional rust-style targets that this set of toolchains should support.",
         ),
+        "include_rustc_src": attr.bool(
+            doc = "Whether to download and unpack the rustc source files. These are very large, and slow to unpack, but are required to support rust analyzer.",
+            default = False,
+        ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
         ),
@@ -700,6 +718,7 @@ def rust_repository_set(
         name,
         version,
         exec_triple,
+        include_rustc_src = False,
         extra_target_triples = [],
         iso_date = None,
         rustfmt_version = None,
@@ -717,6 +736,7 @@ def rust_repository_set(
         name (str): The name of the generated repository
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         exec_triple (str): The Rust-style target that this compiler runs on
+        include_rustc_src (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         extra_target_triples (list, optional): Additional rust-style targets that this set of
             toolchains should support. Defaults to [].
         iso_date (str, optional): The date of the tool. Defaults to None.
@@ -733,6 +753,7 @@ def rust_repository_set(
     rust_toolchain_repository(
         name = name,
         exec_triple = exec_triple,
+        include_rustc_src = include_rustc_src,
         extra_target_triples = extra_target_triples,
         iso_date = iso_date,
         toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
