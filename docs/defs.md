@@ -681,6 +681,6 @@ rust_test_suite(
 | :------------- | :------------- | :------------- |
 | <a id="rust_test_suite-name"></a>name |  The name of the <code>test_suite</code>.   |  none |
 | <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically <code>glob(["tests/**/*.rs"])</code>.   |  none |
-| <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The     <code>tags</code> argument is also passed to the generated <code>test_suite</code> target.   |  none |
+| <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The <code>tags</code> argument is also passed to the generated <code>test_suite</code> target.   |  none |
 
 
