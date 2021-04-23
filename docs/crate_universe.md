@@ -28,8 +28,8 @@ Environment Variables:
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="crate_universe-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="crate_universe-cargo_toml_files"></a>cargo_toml_files |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="crate_universe-crate_registry_template"></a>crate_registry_template |  A Crate registry url template. This must contain <code>{version}</code> and <code>{crate}</code> templates.   | String | optional | "https://crates.io/api/v1/crates/{crate}/{version}/download" |
-| <a id="crate_universe-lockfile"></a>lockfile |  The path to a file which stores pinned information about the generate dependency graph. this target must be a file and will be updated by the repository rule when the <code>REPIN</code> environment variable is set.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="crate_universe-crate_registry_template"></a>crate_registry_template |  A template for where to download crates from for the default crate registry. This must contain <code>{version}</code> and <code>{crate}</code> templates.   | String | optional | "https://crates.io/api/v1/crates/{crate}/{version}/download" |
+| <a id="crate_universe-lockfile"></a>lockfile |  The path to a file which stores pinned information about the generated dependency graph. this target must be a file and will be updated by the repository rule when the <code>REPIN</code> environment variable is set. If this is not set, dependencies will be re-resolved more often, setting this allows caching resolves, but will error if the cache is stale.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="crate_universe-overrides"></a>overrides |  Mapping of crate name to specification overrides. See [crate.override](#crateoverride)  for more details.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crate_universe-packages"></a>packages |  A list of crate specifications. See [crate.spec](#cratespec) for more details.   | List of strings | optional | [] |
 | <a id="crate_universe-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
@@ -46,9 +46,9 @@ Environment Variables:
 crate.spec(<a href="#crate.spec-name">name</a>, <a href="#crate.spec-semver">semver</a>, <a href="#crate.spec-features">features</a>)
 </pre>
 
-A simple crate definition
+A simple crate definition for use in the `crate_universe` rule.
 
-example:
+Example:
 
 ```python
 load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
@@ -87,7 +87,7 @@ crate.override(<a href="#crate.override-extra_bazel_data_deps">extra_bazel_data_
 
 A map of overrides for a particular crate
 
-example:
+Example:
 
 ```python
 load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
