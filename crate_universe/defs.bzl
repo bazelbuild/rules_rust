@@ -251,9 +251,10 @@ Environment Variables:
         ),
         "lockfile": attr.label(
             doc = (
-                "The path to a file which stores pinned information about the generate dependency graph. " +
+                "The path to a file which stores pinned information about the generated dependency graph. " +
                 "this target must be a file and will be updated by the repository rule when the `REPIN` " +
-                "environment variable is set."
+                "environment variable is set.\n" +
+                "If this is not set, dependencies will be re-resolved more often, setting this allows caching resolves, but will error if the cache is stale.
             ),
             allow_single_file = True,
             mandatory = False,
@@ -298,9 +299,9 @@ def _spec(
         name,
         semver,
         features = None):
-    """A simple crate definition
+    """A simple crate definition for use in the `crate_universe` rule.
 
-    example:
+    Example:
 
     ```python
     load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
@@ -340,7 +341,7 @@ def _override(
         features_to_remove = []):
     """A map of overrides for a particular crate
 
-    example:
+    Example:
 
     ```python
     load("@rules_rust//crate_universe:defs.bzl", "crate_universe", "crate")
