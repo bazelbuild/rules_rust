@@ -246,7 +246,7 @@ Environment Variables:
             allow_files = True,
         ),
         "crate_registry_template": attr.string(
-            doc = "A Crate registry url template. This must contain `{version}` and `{crate}` templates.",
+            doc = "A template for where to download crates from for the default crate registry. This must contain `{version}` and `{crate}` templates.",
             default = DEFAULT_CRATE_REGISTRY_TEMPLATE,
         ),
         "lockfile": attr.label(
