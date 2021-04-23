@@ -13,6 +13,6 @@ rust_binary(
 sh_test(
     name = "test",
     srcs = ["test.sh"],
-    args = ["$(location :basic)"],
+    args = ["$(rootpath :basic)"],
     data = [":basic"],
 )

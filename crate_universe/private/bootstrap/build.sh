@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -xeuo pipefail
 
 # Find the location of the script
 if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
@@ -29,16 +29,9 @@ echo "TARGETS=${TARGETS[@]}"
 # Specify the path to the cargo manifest
 MANIFEST="${SCRIPT_DIR}/../../Cargo.toml"
 
-if [[ "${IS_WINDOWS:-}" == "true" ]]; then
-    WIN_PWD="$(type -t cygpath > /dev/null && cygpath $(pwd) -w || pwd -W)"
-    # Resolve absolute paths that could potentially be in the cargo and rustc vars
-    CARGO="$(echo ${CARGO-cargo} | sed "s^\${PWD}^${WIN_PWD}^")"
-    RUSTC="$(echo ${RUSTC-rustc} | sed "s^\${PWD}^${WIN_PWD}^")"
-else
-    # Resolve absolute paths that could potentially be in the cargo and rustc vars
-    CARGO="$(echo ${CARGO-cargo} | sed "s^\${PWD}^${PWD}^")"
-    RUSTC="$(echo ${RUSTC-rustc} | sed "s^\${PWD}^${PWD}^")"
-fi
+# Resolve absolute paths that could potentially be in the cargo and rustc vars
+CARGO="$(echo ${CARGO-cargo} | sed "s^\${PWD}^${PWD}^")"
+RUSTC="$(echo ${RUSTC-rustc} | sed "s^\${PWD}^${PWD}^")"
 
 # If there are multiple targets or we're in github CI, ensure `cross` is installed
 if [[ "${#TARGETS[@]}" != 1 || -n "${GITHUB_WORKFLOW:-}" ]]; then
@@ -59,7 +52,7 @@ fi
 
 # Fetch cargo dependencies in advance to streamline the build process
 echo "Fetch cargo dependencies"
-${CARGO} fetch --manifest-path=${MANIFEST}
+${CARGO} fetch --manifest-path="${MANIFEST}"
 
 if [[ -z "${OUT_DIR:-}" ]]; then
     OUT_DIR="${SCRIPT_DIR}/bin"
