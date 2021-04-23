@@ -46,6 +46,8 @@ crate_universe(<a href="#crate_universe-name">name</a>, <a href="#crate_universe
 
 A rule for downloading Rust dependencies (crates).
 
+__WARNING__: This rule experimental and subject to change without warning.
+
 Environment Variables:
 - `REPIN`: Re-pin the lockfile if set (useful for repinning deps from multiple rulesets).
 - `RULES_RUST_REPIN`: Re-pin the lockfile if set (useful for only repinning Rust deps).
@@ -1369,6 +1371,8 @@ crate.spec(<a href="#crate.spec-name">name</a>, <a href="#crate.spec-semver">sem
 
 A simple crate definition for use in the `crate_universe` rule.
 
+__WARNING__: This rule experimental and subject to change without warning.
+
 Example:
 
 ```python
@@ -1407,6 +1411,8 @@ crate.override(<a href="#crate.override-extra_bazel_data_deps">extra_bazel_data_
 </pre>
 
 A map of overrides for a particular crate
+
+__WARNING__: This rule experimental and subject to change without warning.
 
 Example:
 
