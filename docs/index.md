@@ -49,6 +49,11 @@ supported in certain environments.
 
 You can also browse the [full API in one page](flatten.md).
 
+### Experimental rules
+
+- [crate_universe](crate_universe.md): A repository rule for fetching dependencies from a crate registry.
+- [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
+
 ## Specifying Rust version
 
 To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
