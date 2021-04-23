@@ -253,8 +253,8 @@ Environment Variables:
             doc = (
                 "The path to a file which stores pinned information about the generated dependency graph. " +
                 "this target must be a file and will be updated by the repository rule when the `REPIN` " +
-                "environment variable is set.\n" +
-                "If this is not set, dependencies will be re-resolved more often, setting this allows caching resolves, but will error if the cache is stale.
+                "environment variable is set. If this is not set, dependencies will be re-resolved more " +
+                "often, setting this allows caching resolves, but will error if the cache is stale."
             ),
             allow_single_file = True,
             mandatory = False,
