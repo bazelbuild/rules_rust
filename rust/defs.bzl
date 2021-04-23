@@ -40,6 +40,8 @@ load(
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _incremental_base = "incremental_base",
+    _incremental_prefixes = "incremental_prefixes",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -90,6 +92,12 @@ rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 error_format = _error_format
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+experimental_incremental_base = _incremental_base
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+experimental_incremental_prefixes = _incremental_prefixes
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common

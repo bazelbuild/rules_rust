@@ -13,8 +13,9 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "rustc_compile_action")
+load("//rust/private:rustc.bzl", "IncrementalInfo", "IncrementalPrefixInfo", "rustc_compile_action")
 load("//rust/private:utils.bzl", "crate_name_from_attr", "determine_output_hash", "expand_locations", "find_toolchain")
 
 # TODO(marco): Separate each rule into its own file.
@@ -96,6 +97,24 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
         name = name,
         lib_hash = lib_hash,
         extension = extension,
+    )
+
+def incremental_info(attr):
+    """Extract incremental compilation info from common rule attributes.
+
+    Expects to find the following attributes:
+
+        _incremental_base
+        _incremental_prefixes
+
+    Returns:
+        IncrementalInfo: incremental compilation configuration
+    """
+    prefixes = attr._incremental_prefixes[IncrementalPrefixInfo]
+    base = attr._incremental_base[BuildSettingInfo].value
+    return IncrementalInfo(
+        prefixes = prefixes,
+        base = base,
     )
 
 def get_edition(attr, toolchain):
@@ -263,6 +282,7 @@ def _rust_library_common(ctx, crate_type):
             is_test = False,
         ),
         output_hash = output_hash,
+        incremental_info = incremental_info(ctx.attr),
     )
 
 def _rust_binary_impl(ctx):
@@ -297,6 +317,7 @@ def _rust_binary_impl(ctx):
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
         ),
+        incremental_info = incremental_info(ctx.attr),
     )
 
 def _create_test_launcher(ctx, toolchain, output, providers):
@@ -436,6 +457,7 @@ def _rust_test_common(ctx, toolchain, output):
         crate_type = crate_type,
         crate_info = crate_info,
         rust_flags = ["--test"],
+        incremental_info = incremental_info(ctx.attr),
     )
 
     return _create_test_launcher(ctx, toolchain, output, providers)
@@ -675,6 +697,8 @@ _common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_error_format": attr.label(default = "//:error_format"),
+    "_incremental_base": attr.label(default = "//:experimental_incremental_base"),
+    "_incremental_prefixes": attr.label(default = "//:experimental_incremental_prefixes"),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,
