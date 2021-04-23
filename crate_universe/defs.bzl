@@ -232,6 +232,8 @@ crate_universe = repository_rule(
     doc = """\
 A rule for downloading Rust dependencies (crates).
 
+__WARNING__: This rule experimental and subject to change without warning.
+
 Environment Variables:
 - `REPIN`: Re-pin the lockfile if set (useful for repinning deps from multiple rulesets).
 - `RULES_RUST_REPIN`: Re-pin the lockfile if set (useful for only repinning Rust deps).
@@ -301,6 +303,8 @@ def _spec(
         features = None):
     """A simple crate definition for use in the `crate_universe` rule.
 
+    __WARNING__: This rule experimental and subject to change without warning.
+
     Example:
 
     ```python
@@ -340,6 +344,8 @@ def _override(
         extra_rustc_env_vars = None,
         features_to_remove = []):
     """A map of overrides for a particular crate
+
+    __WARNING__: This rule experimental and subject to change without warning.
 
     Example:
 
