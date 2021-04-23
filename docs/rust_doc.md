@@ -1,6 +1,7 @@
-# Rust rules
-* [rust_doc](#rust_doc)
-* [rust_doc_test](#rust_doc_test)
+# Rust Doc
+
+- [rust_doc](#rust_doc)
+- [rust_doc_test](#rust_doc_test)
 
 <a id="#rust_doc"></a>
 

@@ -1,5 +1,6 @@
-# Rust rules
-* [cargo_build_script](#cargo_build_script)
+# Cargo Build Script
+
+- [cargo_build_script](#cargo_build_script)
 
 <a id="#cargo_build_script"></a>
 

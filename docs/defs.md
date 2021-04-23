@@ -1,12 +1,13 @@
-# Rust rules
-* [rust_binary](#rust_binary)
-* [rust_library](#rust_library)
-* [rust_static_library](#rust_static_library)
-* [rust_shared_library](#rust_shared_library)
-* [rust_proc_macro](#rust_proc_macro)
-* [rust_benchmark](#rust_benchmark)
-* [rust_test](#rust_test)
-* [rust_test_suite](#rust_test_suite)
+# Defs
+
+- [rust_binary](#rust_binary)
+- [rust_library](#rust_library)
+- [rust_static_library](#rust_static_library)
+- [rust_shared_library](#rust_shared_library)
+- [rust_proc_macro](#rust_proc_macro)
+- [rust_benchmark](#rust_benchmark)
+- [rust_test](#rust_test)
+- [rust_test_suite](#rust_test_suite)
 
 <a id="#rust_benchmark"></a>
 

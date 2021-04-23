@@ -1,6 +1,7 @@
-# Rust rules
-* [rust_analyzer](#rust_analyzer)
-* [rust_analyzer_aspect](#rust_analyzer_aspect)
+# Rust Analyzer
+
+- [rust_analyzer](#rust_analyzer)
+- [rust_analyzer_aspect](#rust_analyzer_aspect)
 
 <a id="#rust_analyzer"></a>
 

@@ -1,6 +1,7 @@
-# Rust rules
-* [crate_universe](#crate_universe)
-* [crate](#crate)
+# Crate Universe
+
+- [crate_universe](#crate_universe)
+- [crate](#crate)
 
 <a id="#crate_universe"></a>
 

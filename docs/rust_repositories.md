@@ -1,9 +1,10 @@
-# Rust rules
-* [rust_repositories](#rust_repositories)
-* [rust_repository_set](#rust_repository_set)
-* [rust_toolchain](#rust_toolchain)
-* [rust_toolchain_repository](#rust_toolchain_repository)
-* [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
+# Rust Repositories
+
+- [rust_repositories](#rust_repositories)
+- [rust_repository_set](#rust_repository_set)
+- [rust_toolchain](#rust_toolchain)
+- [rust_toolchain_repository](#rust_toolchain_repository)
+- [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
 
 <a id="#rust_toolchain"></a>
 

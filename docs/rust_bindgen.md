@@ -1,8 +1,9 @@
-# Rust rules
-* [rust_bindgen_library](#rust_bindgen_library)
-* [rust_bindgen_repositories](#rust_bindgen_repositories)
-* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
-* [rust_bindgen](#rust_bindgen)
+# Rust Bindgen
+
+- [rust_bindgen_library](#rust_bindgen_library)
+- [rust_bindgen_repositories](#rust_bindgen_repositories)
+- [rust_bindgen_toolchain](#rust_bindgen_toolchain)
+- [rust_bindgen](#rust_bindgen)
 
 <a id="#rust_bindgen"></a>
 
