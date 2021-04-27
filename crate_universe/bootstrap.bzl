@@ -75,7 +75,7 @@ def _crate_universe_resolver_bootstrapping_impl(repository_ctx):
     ))
 
 _crate_universe_resolver_bootstrapping = repository_rule(
-    doc = "A rule for bootstrapping a crate_universe_resolver binary",
+    doc = "A rule for bootstrapping a crate_universe_resolver binary using [Cargo](https://doc.rust-lang.org/cargo/)",
     implementation = _crate_universe_resolver_bootstrapping_impl,
     attrs = {
         "lockfile": attr.label(
