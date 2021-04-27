@@ -8,7 +8,6 @@
 /examples/bazel-*
 /examples/crate_universe/*/bazel-*
 /docs/bazel-*
-crate_universe.bazelrc
 
 # rustfmt
 *.rs.bk
