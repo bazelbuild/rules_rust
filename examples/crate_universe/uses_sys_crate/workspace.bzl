@@ -6,7 +6,6 @@ def deps():
     crate_universe(
         name = "uses_sys_crate_deps",
         cargo_toml_files = ["//uses_sys_crate:Cargo.toml"],
-        lockfile = "//uses_sys_crate:lockfile.lock",
         packages = [
             crate.spec(
                 name = "libc",
