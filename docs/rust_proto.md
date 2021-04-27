@@ -1,9 +1,9 @@
 # Rust Proto
 
-- [rust_grpc_library](#rust_grpc_library)
-- [rust_proto_library](#rust_proto_library)
-- [rust_proto_repositories](#rust_proto_repositories)
-- [rust_proto_toolchain](#rust_proto_toolchain)
+* [rust_grpc_library](#rust_grpc_library)
+* [rust_proto_library](#rust_proto_library)
+* [rust_proto_repositories](#rust_proto_repositories)
+* [rust_proto_toolchain](#rust_proto_toolchain)
 
 <a id="#rust_grpc_library"></a>
 

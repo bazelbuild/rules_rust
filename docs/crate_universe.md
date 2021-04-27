@@ -1,7 +1,7 @@
 # Crate Universe
 
-- [crate_universe](#crate_universe)
-- [crate](#crate)
+* [crate_universe](#crate_universe)
+* [crate](#crate)
 
 <a id="#crate_universe"></a>
 

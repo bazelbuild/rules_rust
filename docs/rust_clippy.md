@@ -1,7 +1,7 @@
 # Rust Clippy
 
-- [rust_clippy](#rust_clippy)
-- [rust_clippy_aspect](#rust_clippy_aspect)
+* [rust_clippy](#rust_clippy)
+* [rust_clippy_aspect](#rust_clippy_aspect)
 
 <a id="#rust_clippy"></a>
 
