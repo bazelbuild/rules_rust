@@ -51,7 +51,7 @@ def _crate_universe_resolver_bootstrapping_impl(repository_ctx):
         "--target-dir",
         repository_dir,
         "--manifest-path",
-        repository_ctx.path(repository_ctx.attr.manifest),
+        repository_ctx.path(repository_ctx.attr.cargo_toml),
     ]
 
     repository_ctx.report_progress("bootstrapping crate_universe_resolver")
@@ -78,12 +78,12 @@ _crate_universe_resolver_bootstrapping = repository_rule(
     doc = "A rule for bootstrapping a crate_universe_resolver binary using [Cargo](https://doc.rust-lang.org/cargo/)",
     implementation = _crate_universe_resolver_bootstrapping_impl,
     attrs = {
-        "lockfile": attr.label(
+        "cargo_lockfile": attr.label(
             doc = "The lockfile of the crate_universe resolver",
             allow_single_file = ["Cargo.lock"],
             default = Label("//crate_universe:Cargo.lock"),
         ),
-        "manifest": attr.label(
+        "cargo_toml": attr.label(
             doc = "The path of the crate_universe resolver manifest (`Cargo.toml` file)",
             allow_single_file = ["Cargo.toml"],
             default = Label("//crate_universe:Cargo.toml"),
