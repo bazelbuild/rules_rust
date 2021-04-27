@@ -59,7 +59,6 @@ def _crate_universe_resolver_bootstrapping_impl(repository_ctx):
         args,
         environment = {
             "RUSTC": str(rustc_path),
-            "RUST_LOG": "info",
         },
         quiet = False,
     )
