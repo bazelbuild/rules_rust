@@ -134,7 +134,7 @@ genrule(
     name = "flatten_header_vm",
     outs = ["flatten_header.vm"],
     cmd = ">$@ echo '# Rust rules\n\n%s\n'" % "\n".join(
-        sorted(["- [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k].symbols]),
+        sorted(["* [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k].symbols]),
     ),
     output_to_bindir = True,
 )
