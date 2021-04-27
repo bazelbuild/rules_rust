@@ -19,11 +19,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_rust",
-    sha256 = "e6d835ee673f388aa5b62dc23d82db8fc76497e93fa47d8a4afe97abaf09b10d",
-    strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
+    sha256 = "18c0a02a007cd26c3f5b4d21dc26a80af776ef755460028a796bc61c649fdf3f",
+    strip_prefix = "rules_rust-467a301fd665db344803c1d8a2401ec2bf8c74ce",
     urls = [
-        # Master branch as of 2021-01-27
-        "https://github.com/bazelbuild/rules_rust/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
+        # Master branch as of 2021-04-23
+        "https://github.com/bazelbuild/rules_rust/archive/467a301fd665db344803c1d8a2401ec2bf8c74ce.tar.gz",
     ],
 )
 
@@ -44,7 +44,7 @@ supported in certain environments.
 - [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating WebAssembly bindings, see the section about [WebAssembly](#webassembly).
+- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 - [cargo_build_script](cargo_build_script.md): a rule to run [`build.rs` script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) from Bazel.
 
 You can also browse the [full API in one page](flatten.md).
@@ -76,22 +76,5 @@ rust_repositories(rustfmt_version = "1.51.0")
 
 ## External Dependencies
 
-Currently the most common approach to managing external dependencies is using
+Currently, the most common approach to managing external dependencies is using
 [cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.
-
-## WebAssembly
-
-To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@rules_rust//rust/platform:wasm` flag.
-
-```command
-bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasm
-```
-
-To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@rules_rust//rust/platform:wasi` flag.
-
-```command
-bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasi
-```
-
-`rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
-building WebAssembly code for the host target.
