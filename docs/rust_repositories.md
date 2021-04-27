@@ -1,4 +1,5 @@
-# Rust rules
+# Rust Repositories
+
 * [rust_repositories](#rust_repositories)
 * [rust_repository_set](#rust_repository_set)
 * [rust_toolchain](#rust_toolchain)

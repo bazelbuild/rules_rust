@@ -1,4 +1,5 @@
-# Rust rules
+# Rust Clippy
+
 * [rust_clippy](#rust_clippy)
 * [rust_clippy_aspect](#rust_clippy_aspect)
 

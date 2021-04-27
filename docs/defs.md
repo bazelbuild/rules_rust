@@ -1,4 +1,5 @@
-# Rust rules
+# Defs
+
 * [rust_binary](#rust_binary)
 * [rust_library](#rust_library)
 * [rust_static_library](#rust_static_library)

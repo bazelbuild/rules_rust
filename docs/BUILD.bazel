@@ -1,5 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("//:page.bzl", "gen_header", "page")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -28,81 +29,104 @@ bzl_library(
     ],
 )
 
-PAGES = {
-    "cargo_build_script": [
-        "cargo_build_script",
-    ],
-    "crate_universe": [
-        "crate_universe",
-        "crate",
-    ],
-    "defs": [
-        "rust_binary",
-        "rust_library",
-        "rust_static_library",
-        "rust_shared_library",
-        "rust_proc_macro",
-        "rust_benchmark",
-        "rust_test",
-        "rust_test_suite",
-    ],
-    "rust_analyzer": [
-        "rust_analyzer",
-        "rust_analyzer_aspect",
-    ],
-    "rust_bindgen": [
-        "rust_bindgen_library",
-        "rust_bindgen_repositories",
-        "rust_bindgen_toolchain",
-        "rust_bindgen",
-    ],
-    "rust_clippy": [
-        "rust_clippy",
-        "rust_clippy_aspect",
-    ],
-    "rust_doc": [
-        "rust_doc",
-        "rust_doc_test",
-    ],
-    "rust_proto": [
-        "rust_grpc_library",
-        "rust_proto_library",
-        "rust_proto_repositories",
-        "rust_proto_toolchain",
-    ],
-    "rust_repositories": [
-        "rust_repositories",
-        "rust_repository_set",
-        "rust_toolchain",
-        "rust_toolchain_repository",
-        "rust_toolchain_repository_proxy",
-    ],
-    "rust_wasm_bindgen": [
-        "rust_wasm_bindgen_repositories",
-        "rust_wasm_bindgen_toolchain",
-        "rust_wasm_bindgen",
-    ],
-}
+PAGES = dict([
+    page(
+        name = "cargo_build_script",
+        symbols = [
+            "cargo_build_script",
+        ],
+    ),
+    page(
+        name = "crate_universe",
+        symbols = [
+            "crate_universe",
+            "crate",
+        ],
+    ),
+    page(
+        name = "defs",
+        symbols = [
+            "rust_binary",
+            "rust_library",
+            "rust_static_library",
+            "rust_shared_library",
+            "rust_proc_macro",
+            "rust_benchmark",
+            "rust_test",
+            "rust_test_suite",
+        ],
+    ),
+    page(
+        name = "rust_analyzer",
+        header_template = ":rust_analyzer.vm",
+        symbols = [
+            "rust_analyzer",
+            "rust_analyzer_aspect",
+        ],
+    ),
+    page(
+        name = "rust_bindgen",
+        symbols = [
+            "rust_bindgen_library",
+            "rust_bindgen_repositories",
+            "rust_bindgen_toolchain",
+            "rust_bindgen",
+        ],
+    ),
+    page(
+        name = "rust_clippy",
+        symbols = [
+            "rust_clippy",
+            "rust_clippy_aspect",
+        ],
+    ),
+    page(
+        name = "rust_doc",
+        symbols = [
+            "rust_doc",
+            "rust_doc_test",
+        ],
+    ),
+    page(
+        name = "rust_proto",
+        symbols = [
+            "rust_grpc_library",
+            "rust_proto_library",
+            "rust_proto_repositories",
+            "rust_proto_toolchain",
+        ],
+    ),
+    page(
+        name = "rust_repositories",
+        symbols = [
+            "rust_repositories",
+            "rust_repository_set",
+            "rust_toolchain",
+            "rust_toolchain_repository",
+            "rust_toolchain_repository_proxy",
+        ],
+    ),
+    page(
+        name = "rust_wasm_bindgen",
+        header_template = ":rust_wasm_bindgen.vm",
+        symbols = [
+            "rust_wasm_bindgen_repositories",
+            "rust_wasm_bindgen_toolchain",
+            "rust_wasm_bindgen",
+        ],
+    ),
+])
 
-[
-    genrule(
-        name = "%s_header_vm" % k,
-        outs = ["%s_header.vm" % k],
-        cmd = ">$@ echo '# Rust rules\n%s'" % "\n".join(
-            ["* [{rule}](#{rule})".format(rule = v) for v in PAGES[k]],
-        ),
-        output_to_bindir = True,
-    )
-    for k in PAGES.keys()
-]
+# Generate headers for each page
+[gen_header(page = p) for p in PAGES.values()]
 
 [
     stardoc(
         name = "%s_md" % k,
         out = "%s.md" % k,
-        header_template = ":%s_header_vm" % k,
-        input = ":all.bzl",
-        symbol_names = PAGES[k],
+        header_template = ":%s_gen_header_vm" % k,
+        input = ":symbols.bzl",
+        symbol_names = PAGES[k].symbols,
         deps = [":all_docs"],
     )
     for k in PAGES.keys()
@@ -112,7 +136,7 @@ genrule(
     name = "flatten_header_vm",
     outs = ["flatten_header.vm"],
     cmd = ">$@ echo '# Rust rules\n\n%s\n'" % "\n".join(
-        sorted(["* [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k]]),
+        sorted(["* [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k].symbols]),
     ),
     output_to_bindir = True,
 )
@@ -121,8 +145,8 @@ stardoc(
     name = "flatten_md",
     out = "flatten.md",
     header_template = ":flatten_header_vm",
-    input = ":all.bzl",
-    symbol_names = [symbol for k in PAGES.keys() for symbol in PAGES[k]],
+    input = ":symbols.bzl",
+    symbol_names = sorted([symbol for k in PAGES.keys() for symbol in PAGES[k].symbols]),
     deps = [":all_docs"],
 )
 

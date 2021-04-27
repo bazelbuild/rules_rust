@@ -1,4 +1,5 @@
-# Rust rules
+# Rust Bindgen
+
 * [rust_bindgen_library](#rust_bindgen_library)
 * [rust_bindgen_repositories](#rust_bindgen_repositories)
 * [rust_bindgen_toolchain](#rust_bindgen_toolchain)

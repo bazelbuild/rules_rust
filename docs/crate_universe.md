@@ -1,4 +1,5 @@
-# Rust rules
+# Crate Universe
+
 * [crate_universe](#crate_universe)
 * [crate](#crate)
 
