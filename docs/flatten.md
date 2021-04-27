@@ -83,6 +83,7 @@ rust_analyzer(<a href="#rust_analyzer-name">name</a>, <a href="#rust_analyzer-ta
 
 Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
 
+
 **ATTRIBUTES**
 
 

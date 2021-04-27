@@ -4,6 +4,25 @@
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
 
+
+## Overview
+
+To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@rules_rust//rust/platform:wasm` flag.
+
+```command
+bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasm
+```
+
+To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@rules_rust//rust/platform:wasi` flag.
+
+```command
+bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasi
+```
+
+`rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
+building WebAssembly code for the host target.
+
+
 <a id="#rust_wasm_bindgen"></a>
 
 ## rust_wasm_bindgen
