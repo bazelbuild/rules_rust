@@ -37,7 +37,7 @@ def gen_header(page):
     ]
 
     # Add table of contents
-    cmd.extend(["echo '- [{rule}](#{rule})' >> $@".format(rule = s) for s in page.symbols])
+    cmd.extend(["echo '* [{rule}](#{rule})' >> $@".format(rule = s) for s in page.symbols])
 
     # Render an optional header
     if page.header_template:
