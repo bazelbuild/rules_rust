@@ -1,20 +1,18 @@
 ---
-name: Crate Universe CI+CD
+name: Release
 on:
-  push:
-    branches:
-      - main
-    paths:
-      # Only run these jobs if rust code has changed since they're time consuming
-      - ".github/workflows/crate_universe.yaml"
-      - "crate_universe/**"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The new version to release"
+        required: true
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  build:
+  crate_universe_builds:
     if: ${{ github.repository_owner == 'bazelbuild' }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -43,6 +41,8 @@ jobs:
               EXTENSION: ""
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: "${{ github.base_ref }}"
       - run: |
           # Install cross
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
@@ -81,27 +81,36 @@ jobs:
           if-no-files-found: error
   release:
     if: ${{ github.repository_owner == 'bazelbuild' }}
-    needs: build
+    needs: crate_universe_builds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          # Save the git credentials so we can commit back to the repo
-          persist-credentials: true
+          ref: main
+      - run: |
+          # Write new releases file
+          cat << EOF > ${{ github.workspace }}/version.bzl
+          """The version of rules_rust."""
+
+          VERSION = "${{ github.event.inputs.version }}"
+          EOF
+      - run: |
+          # Get release candidate number
+          git fetch origin &> /dev/null
+          num_tags="$(git tag -l | grep "${{ github.event.inputs.version }}" | wc -l | xargs || true)"
+          echo "RELEASE_CANDIDATE_NUMBER=$( echo "${num_tags}" | python3 -c 'import sys; print(int(sys.stdin.read().strip()) + 1)')" >> $GITHUB_ENV
       - uses: actions/download-artifact@v2
         with:
           path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin
       - run: |
-          # Ensure all files are executable
-          chmod +x ${{ github.workspace }}/crate_universe/private/bootstrap/bin/*/release/*
-      - run: |
-          # Write new defaults.bzl file
+          # Write new crate_universe defaults.bzl file
           # Copy the new template
           cp ${{ github.workspace }}/crate_universe/private/defaults.bzl.template ${{ github.workspace }}/crate_universe/private/defaults.bzl
 
-          # Replace the url
-          url="$(echo $URL | sed 's|releases/tag/|releases/download/|')/crate_universe_resolver-{host_triple}{extension}"
+          # Generate the release URL
+          url="${URL_PREFIX}/crate_universe_resolver-{host_triple}{extension}"
           sed -i "s|{DEFAULT_URL_TEMPLATE}|${url}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
+          sed -i "s|{rc}|${RELEASE_CANDIDATE_NUMBER}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
 
           # Populate all sha256 values
           TARGETS=(
@@ -120,36 +129,25 @@ jobs:
             sha256="$(shasum --algorithm 256 ${{ github.workspace }}/crate_universe/private/bootstrap/bin/${triple}/release/${bin_name} | awk '{ print $1 }')"
             sed -i "s|{${triple}--sha256}|${sha256}|" ${{ github.workspace }}/crate_universe/private/defaults.bzl
           done
-
-          cat << EOF > ${{ github.workspace }}/tag_message.txt
-          From commit: ${GITHUB_SHA}
-
-          \`crate_universe_defaults.bzl\`:
-
-          \`\`\`python
-          $(cat ${{ github.workspace }}/crate_universe/private/defaults.bzl)
-          \`\`\`
-          EOF
         env:
-          # This url should match ${{ steps.crate_universe_release.outputs.html_url }} but because this step runs before
-          # `crate_universe_release` we hard code the url to be what we expect the release URL to be.
-          URL: https://github.com/bazelbuild/rules_rust/releases/download/crate_universe-${{ github.run_number }}
+          URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ github.event.inputs.version }}
       - uses: actions/create-release@v1
-        id: crate_universe_release
+        id: rules_rust_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           prerelease: true
-          tag_name: crate_universe-${{ github.run_number }}
-          release_name: crate_universe-${{ github.run_number }}
-          body_path: ${{ github.workspace }}/tag_message.txt
+          tag_name: ${{ github.event.inputs.version }}rc-${{ env.RELEASE_CANDIDATE_NUMBER }}
+          release_name: ${{ github.event.inputs.version }}rc-${{ env.RELEASE_CANDIDATE_NUMBER }}
+          body: ${{ github.event.inputs.version }}rc-${{ env.RELEASE_CANDIDATE_NUMBER }}
+          commitish: main
       # There must be a upload action for each platform triple we create
       - name: "Upload aarch64-apple-darwin"
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: crate_universe_resolver-aarch64-apple-darwin
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/aarch64-apple-darwin/release/crate_universe_resolver
           asset_content_type: application/octet-stream
@@ -158,7 +156,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: crate_universe_resolver-aarch64-unknown-linux-gnu
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/aarch64-unknown-linux-gnu/release/crate_universe_resolver
           asset_content_type: application/octet-stream
@@ -167,7 +165,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: crate_universe_resolver-x86_64-apple-darwin
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-apple-darwin/release/crate_universe_resolver
           asset_content_type: application/octet-stream
@@ -176,7 +174,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: crate_universe_resolver-x86_64-pc-windows-gnu.exe
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-pc-windows-gnu/release/crate_universe_resolver.exe
           asset_content_type: application/octet-stream
@@ -185,7 +183,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.crate_universe_release.outputs.upload_url }}
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: crate_universe_resolver-x86_64-unknown-linux-gnu
           asset_path: ${{ github.workspace }}/crate_universe/private/bootstrap/bin/x86_64-unknown-linux-gnu/release/crate_universe_resolver
           asset_content_type: application/octet-stream
+      - uses: peter-evans/create-pull-request@v3
+        with:
+          title: Release ${{ github.event.inputs.version }}
+          commit-message: release ${{ github.event.inputs.version }}
+          branch: release/${{ github.event.inputs.version }}
+          delete-branch: true
+          body: Release ${{ github.event.inputs.version }}
