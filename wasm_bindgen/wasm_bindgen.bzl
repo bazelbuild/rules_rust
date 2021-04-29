@@ -78,8 +78,20 @@ def _rust_wasm_bindgen_impl(ctx):
     toolchain = ctx.toolchains[Label("//wasm_bindgen:wasm_bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
 
+    bindgen_wasm_module = ctx.actions.declare_file(ctx.attr.name + "_bg.wasm")
+
+    js_out = [ctx.actions.declare_file(ctx.attr.name + ".js")]
+    ts_out = [ctx.actions.declare_file(ctx.attr.name + ".d.ts")]
+
+    if ctx.attr.target == "bundler":
+        js_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.js"))
+        ts_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.wasm.d.ts"))
+
+    outputs = [bindgen_wasm_module] + js_out + ts_out
+
     args = ctx.actions.args()
-    args.add("--out-dir", ctx.outputs.bindgen_wasm_module.dirname)
+    args.add("--target", ctx.attr.target)
+    args.add("--out-dir", bindgen_wasm_module.dirname)
     args.add("--out-name", ctx.attr.name)
     args.add_all(ctx.attr.bindgen_flags)
     args.add(ctx.file.wasm_file)
@@ -87,41 +99,20 @@ def _rust_wasm_bindgen_impl(ctx):
     ctx.actions.run(
         executable = bindgen_bin,
         inputs = [ctx.file.wasm_file],
-        outputs = [
-            ctx.outputs.bindgen_javascript_bindings,
-            ctx.outputs.bindgen_typescript_bindings,
-            ctx.outputs.bindgen_wasm_module,
-            ctx.outputs.javascript_bindings,
-            ctx.outputs.typescript_bindings,
-        ],
+        outputs = outputs,
         mnemonic = "RustWasmBindgen",
-        progress_message = "Generating WebAssembly bindings for {}..".format(ctx.file.wasm_file.path),
+        progress_message = "Generating WebAssembly bindings for {}...".format(ctx.file.wasm_file.path),
         arguments = [args],
     )
 
     # Return a structure that is compatible with the deps[] of a ts_library.
-    declarations = depset([
-        ctx.outputs.typescript_bindings,
-        ctx.outputs.bindgen_typescript_bindings,
-    ])
-    es5_sources = depset([
-        ctx.outputs.bindgen_javascript_bindings,
-        ctx.outputs.javascript_bindings,
-    ])
-    es6_sources = depset([
-        ctx.outputs.bindgen_javascript_bindings,
-        ctx.outputs.javascript_bindings,
-    ])
+    declarations = depset(ts_out)
+    es5_sources = depset(js_out)
+    es6_sources = depset(js_out)
 
     return [
         DefaultInfo(
-            files = depset([
-                ctx.outputs.bindgen_javascript_bindings,
-                ctx.outputs.bindgen_typescript_bindings,
-                ctx.outputs.bindgen_wasm_module,
-                ctx.outputs.javascript_bindings,
-                ctx.outputs.typescript_bindings,
-            ]),
+            files = depset(outputs),
         ),
         DeclarationInfo(
             declarations = declarations,
@@ -149,6 +140,11 @@ rust_wasm_bindgen = rule(
         "bindgen_flags": attr.string_list(
             doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
         ),
+        "target": attr.string(
+            doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
+            default = "bundler",
+            values = ["web", "bundler", "nodejs", "no-modules", "deno"],
+        ),
         "wasm_file": attr.label(
             doc = "The .wasm file to generate bindings for.",
             allow_single_file = True,
@@ -157,13 +153,6 @@ rust_wasm_bindgen = rule(
         "_allowlist_function_transition": attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
-    },
-    outputs = {
-        "bindgen_javascript_bindings": "%{name}_bg.js",
-        "bindgen_typescript_bindings": "%{name}_bg.wasm.d.ts",
-        "bindgen_wasm_module": "%{name}_bg.wasm",
-        "javascript_bindings": "%{name}.js",
-        "typescript_bindings": "%{name}.d.ts",
     },
     toolchains = [
         str(Label("//wasm_bindgen:wasm_bindgen_toolchain")),
