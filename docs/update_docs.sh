@@ -15,8 +15,10 @@ pushd "${DOCS_WORKSPACE}" &> /dev/null
 bazel clean \
 && bazel build //... \
 && cp bazel-bin/*.md . \
-&& chmod 0644 *.md \
-&& git add *.md \
-&& git commit -m "Regenerate documentation"
-popd &> /dev/null
+&& chmod 0644 *.md
 
+if [[ -z "${SKIP_COMMIT:-}" ]]; then
+    git add *.md && git commit -m "Regenerate documentation"
+fi
+
+popd &> /dev/null

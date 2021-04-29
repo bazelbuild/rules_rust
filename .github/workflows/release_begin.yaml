@@ -131,6 +131,9 @@ jobs:
           done
         env:
           URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ github.event.inputs.version }}
+      - run: |
+          # Update docs for release
+          SKIP_COMMIT=1 ${{ github.workspace }}/docs/update_docs.sh
       - uses: actions/create-release@v1
         id: rules_rust_release
         env:
