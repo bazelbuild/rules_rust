@@ -56,7 +56,7 @@ jobs:
             curl --fail -Lo "${resolver}" "${url}"
             sha256="$(shasum --algorithm 256 "${resolver}" | awk '{ print $1 }')"
 
-            if [[ -z "$(grep ${sha256} ${{ github.workspace }}/crate_universe/private/defaults.bzl)" ]]; then
+            if [[ -z "$(grep "\"${triple}\": \"${sha256}\"" ${{ github.workspace }}/crate_universe/private/defaults.bzl)" ]]; then
               echo "Unexpected sha256 value from `${url}`: got ${sha256}, expected value in `defaults.bzl`"
               exit 1
             fi
