@@ -41,6 +41,7 @@ supported in certain environments.
 
 - [defs](defs.md): standard rust rules for building and testing libraries and binaries.
 - [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
+- [rust_clippy](rust_clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
 - [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.

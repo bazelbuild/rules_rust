@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""A module defining clippy rules"""
+
 load("//rust/private:common.bzl", "rust_common")
-load(
-    "//rust/private:rust.bzl",
-    "crate_root_src",
-)
+load("//rust/private:rust.bzl", "crate_root_src")
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -26,35 +24,20 @@ load(
 )
 load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
-_rust_extensions = [
-    "rs",
-]
-
-def _is_rust_target(srcs):
-    return any([src.extension in _rust_extensions for src in srcs])
-
-def _rust_sources(target, rule):
-    srcs = []
-    if "srcs" in dir(rule.attr):
-        srcs += [f for src in rule.attr.srcs for f in src.files.to_list()]
-    if "hdrs" in dir(rule.attr):
-        srcs += [f for hdr in rule.attr.hdrs for f in hdr.files.to_list()]
-    return [src for src in srcs if src.extension in _rust_extensions]
-
 def _clippy_aspect_impl(target, ctx):
     if rust_common.crate_info not in target:
         return []
-    rust_srcs = _rust_sources(target, ctx.rule)
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_info = target[rust_common.crate_info]
+    rust_srcs = crate_info.srcs.to_list()
     crate_type = crate_info.type
 
     if crate_info.is_test:
         root = crate_info.root
     else:
-        if rust_srcs == []:
+        if not rust_srcs:
             # nothing to do
             return []
         root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
@@ -134,7 +117,7 @@ def _clippy_aspect_impl(target, ctx):
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
-#   bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
+#   bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
 #               --output_groups=clippy_checks \
 #               //...
 rust_clippy_aspect = aspect(
@@ -142,13 +125,20 @@ rust_clippy_aspect = aspect(
     host_fragments = ["cpp"],
     attrs = {
         "_cc_toolchain": attr.label(
+            doc = (
+                "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
+                "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
+            ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
-        "_error_format": attr.label(default = "//:error_format"),
+        "_error_format": attr.label(
+            doc = "The desired `--error-format` flags for clippy",
+            default = "//:error_format",
+        ),
         "_process_wrapper": attr.label(
+            doc = "A process wrapper for running clippy on all platforms",
             default = Label("//util/process_wrapper"),
             executable = True,
-            allow_single_file = True,
             cfg = "exec",
         ),
     },
@@ -163,12 +153,10 @@ Executes the clippy checker on specified targets.
 
 This aspect applies to existing rust_library, rust_test, and rust_binary rules.
 
-As an example, if the following is defined in `hello_lib/BUILD`:
+As an example, if the following is defined in `examples/hello_lib/BUILD.bazel`:
 
 ```python
-package(default_visibility = ["//visibility:public"])
-
-load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -185,7 +173,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect \
+$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
               --output_groups=clippy_checks //hello_lib:all
 ```
 """,
@@ -198,7 +186,11 @@ def _rust_clippy_rule_impl(ctx):
 rust_clippy = rule(
     implementation = _rust_clippy_rule_impl,
     attrs = {
-        "deps": attr.label_list(aspects = [rust_clippy_aspect]),
+        "deps": attr.label_list(
+            doc = "Rust targets to run clippy on.",
+            providers = [rust_common.crate_info],
+            aspects = [rust_clippy_aspect],
+        ),
     },
     doc = """\
 Executes the clippy checker on a specific target.
@@ -209,9 +201,7 @@ within the build system.
 For example, given the following example targets:
 
 ```python
-package(default_visibility = ["//visibility:public"])
-
-load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -228,6 +218,8 @@ rust_test(
 Rust clippy can be set as a build target with the following:
 
 ```python
+load("@rules_rust//rust:defs.bzl", "rust_clippy")
+
 rust_clippy(
     name = "hello_library_clippy",
     testonly = True,
