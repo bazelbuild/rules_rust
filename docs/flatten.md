@@ -381,9 +381,7 @@ Similar to `rust_clippy_aspect`, but allows specifying a list of dependencies wi
 For example, given the following example targets:
 
 ```python
-package(default_visibility = ["//visibility:public"])
-
-load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -400,6 +398,8 @@ rust_test(
 Rust clippy can be set as a build target with the following:
 
 ```python
+load("@rules_rust//rust:defs.bzl", "rust_clippy")
+
 rust_clippy(
     name = "hello_library_clippy",
     testonly = True,
@@ -417,7 +417,7 @@ rust_clippy(
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_clippy-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_clippy-deps"></a>deps |  -   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
+| <a id="rust_clippy-deps"></a>deps |  Rust targets to run clippy on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
 <a id="#rust_doc"></a>

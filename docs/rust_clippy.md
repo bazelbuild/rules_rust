@@ -3,6 +3,30 @@
 * [rust_clippy](#rust_clippy)
 * [rust_clippy_aspect](#rust_clippy_aspect)
 
+
+## Overview
+
+
+[Clippy][clippy] is a tool for catching common mistakes in [Rust][rust] code and improving it. An
+expansive list of lints and their justification can be found in their [documentation][docs].
+
+[clippy]: https://github.com/rust-lang/rust-clippy#readme
+[docs]: https://rust-lang.github.io/rust-clippy/
+[rust]: https://github.com/rust-lang/rust
+
+
+### Setup
+
+
+Simply add the following to the `.bazelrc` file in the root of your workspace:
+
+```text
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks
+```
+
+This will enable clippy on all [Rust targets](./defs.md).
+
 <a id="#rust_clippy"></a>
 
 ## rust_clippy
@@ -18,9 +42,7 @@ Similar to `rust_clippy_aspect`, but allows specifying a list of dependencies wi
 For example, given the following example targets:
 
 ```python
-package(default_visibility = ["//visibility:public"])
-
-load("@rules_rust//rust:rust.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "hello_lib",
@@ -37,6 +59,8 @@ rust_test(
 Rust clippy can be set as a build target with the following:
 
 ```python
+load("@rules_rust//rust:defs.bzl", "rust_clippy")
+
 rust_clippy(
     name = "hello_library_clippy",
     testonly = True,
@@ -54,6 +78,6 @@ rust_clippy(
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_clippy-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_clippy-deps"></a>deps |  -   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
+| <a id="rust_clippy-deps"></a>deps |  Rust targets to run clippy on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
