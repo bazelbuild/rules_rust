@@ -89,6 +89,15 @@ PAGES = dict([
         ],
     ),
     page(
+        name = "rust_fmt",
+        symbols = [
+            "rustfmt",
+            "rustfmt_aspect",
+            "rustfmt_check",
+            "rustfmt_check_aspect",
+        ],
+    ),
+    page(
         name = "rust_proto",
         symbols = [
             "rust_grpc_library",

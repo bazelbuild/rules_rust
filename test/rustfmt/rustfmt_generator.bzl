@@ -2,6 +2,9 @@
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "find_toolchain")
 
+# buildifier: disable=print
+print("WARNING: `rustfmt_generator` is deprecated. Instead, see https://bazelbuild.github.io/rules_rust/rustfmt.html")
+
 def _rustfmt_generator_impl(ctx):
     toolchain = find_toolchain(ctx)
     rustfmt_bin = toolchain.rustfmt
