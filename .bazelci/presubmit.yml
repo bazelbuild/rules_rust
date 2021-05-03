@@ -100,6 +100,20 @@ tasks:
     platform: ubuntu1804
     shell_commands:
       - ./test/clippy/clippy_failure_test.sh
+  rustfmt_examples:
+    name: Rustfmt on Examples
+    platform: ubuntu2004
+    working_directory: examples
+    build_flags:
+      - "--aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect"
+      - "--output_groups=rustfmt"
+    build_targets:
+      - //...
+  rustfmt_failure:
+    name: Negative Rustfmt Tests
+    platform: ubuntu2004
+    run_targets:
+      - "//test/rustfmt:test_runner"
   ubuntu2004_clang:
     name: Ubuntu 20.04 with Clang
     platform: ubuntu2004

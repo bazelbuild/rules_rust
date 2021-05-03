@@ -1,1 +1,0 @@
-fn example(){println!("test");}
