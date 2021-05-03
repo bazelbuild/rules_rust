@@ -30,9 +30,7 @@ def _clippy_aspect_impl(target, ctx):
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_info = target[rust_common.crate_info]
-    rust_srcs = crate_info.srcs.to_list()
     crate_type = crate_info.type
-    root = crate_info.root
 
     dep_info, build_info = collect_deps(
         ctx.label,
@@ -68,7 +66,7 @@ def _clippy_aspect_impl(target, ctx):
         crate_type,
         crate_info,
         dep_info,
-        output_hash = determine_output_hash(root),
+        output_hash = determine_output_hash(crate_info.root),
         rust_flags = [],
         out_dir = out_dir,
         build_env_files = build_env_files,
