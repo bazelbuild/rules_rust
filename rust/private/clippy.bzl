@@ -15,7 +15,6 @@
 """A module defining clippy rules"""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rust.bzl", "crate_root_src")
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -33,14 +32,7 @@ def _clippy_aspect_impl(target, ctx):
     crate_info = target[rust_common.crate_info]
     rust_srcs = crate_info.srcs.to_list()
     crate_type = crate_info.type
-
-    if crate_info.is_test:
-        root = crate_info.root
-    else:
-        if not rust_srcs:
-            # nothing to do
-            return []
-        root = crate_root_src(ctx.rule.attr, rust_srcs, crate_info.type)
+    root = crate_info.root
 
     dep_info, build_info = collect_deps(
         ctx.label,
