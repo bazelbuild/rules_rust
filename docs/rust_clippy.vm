@@ -2,12 +2,11 @@
 ## Overview
 ]]#
 
-[Clippy][clippy] is a tool for catching common mistakes in [Rust][rust] code and improving it. An
-expansive list of lints and their justification can be found in their [documentation][docs].
+[Clippy][clippy] is a tool for catching common mistakes in Rust code and improving it. An
+expansive list of lints and the justification can be found in their [documentation][docs].
 
 [clippy]: https://github.com/rust-lang/rust-clippy#readme
 [docs]: https://rust-lang.github.io/rust-clippy/
-[rust]: https://github.com/rust-lang/rust
 
 #[[
 ### Setup
