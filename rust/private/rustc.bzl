@@ -580,7 +580,7 @@ def rustc_compile_action(
     if hasattr(ctx.attr, "out_binary"):
         out_binary = getattr(ctx.attr, "out_binary")
 
-    info = [
+    providers = [
         crate_info,
         dep_info,
         DefaultInfo(
@@ -591,9 +591,9 @@ def rustc_compile_action(
         ),
     ]
     if toolchain.target_arch != "wasm32":
-        info += establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration)
+        providers += establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration)
 
-    return info
+    return providers
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
