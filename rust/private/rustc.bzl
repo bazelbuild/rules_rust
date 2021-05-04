@@ -133,7 +133,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
 
             transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
             transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
-            transitive_noncrate_libs.append(depset(dep[rust_common.dep_info].transitive_libs))
+            transitive_noncrate_libs.append(dep[rust_common.dep_info].transitive_libs)
             transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
         elif CcInfo in dep:
             # This dependency is a cc_library
