@@ -1,0 +1,22 @@
+#[[
+## Overview
+]]#
+
+[Clippy][clippy] is a tool for catching common mistakes in Rust code and improving it. An
+expansive list of lints and the justification can be found in their [documentation][docs].
+
+[clippy]: https://github.com/rust-lang/rust-clippy#readme
+[docs]: https://rust-lang.github.io/rust-clippy/
+
+#[[
+### Setup
+]]#
+
+Simply add the following to the `.bazelrc` file in the root of your workspace:
+
+```text
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks
+```
+
+This will enable clippy on all [Rust targets](./defs.md).

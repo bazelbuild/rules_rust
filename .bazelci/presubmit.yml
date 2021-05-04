@@ -91,7 +91,7 @@ tasks:
     platform: ubuntu1804
     working_directory: examples
     build_flags:
-      - "--aspects=@rules_rust//rust:rust.bzl%rust_clippy_aspect"
+      - "--aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect"
       - "--output_groups=clippy_checks"
     build_targets:
       - //...
