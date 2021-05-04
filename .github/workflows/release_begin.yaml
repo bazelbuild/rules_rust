@@ -89,11 +89,9 @@ jobs:
           ref: main
       - run: |
           # Write new releases file
-          cat << EOF > ${{ github.workspace }}/version.bzl
-          """The version of rules_rust."""
-
-          VERSION = "${{ github.event.inputs.version }}"
-          EOF
+          cat ${{ github.workspace }}/.github/version.bzl.template \
+          | sed 's/{VERSION}/${{ github.event.inputs.version }}/' \
+          > ${{ github.workspace }}/version.bzl
       - run: |
           # Get release candidate number
           git fetch origin &> /dev/null
