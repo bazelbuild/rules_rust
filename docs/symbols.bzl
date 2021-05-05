@@ -37,9 +37,11 @@ load(
 load(
     "@rules_rust//rust:defs.bzl",
     _rust_analyzer = "rust_analyzer",
+    _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
+    _rust_clippy_aspect = "rust_clippy_aspect",
     _rust_doc = "rust_doc",
     _rust_doc_test = "rust_doc_test",
     _rust_library = "rust_library",
@@ -105,7 +107,9 @@ rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
 
 rust_clippy = _rust_clippy
+rust_clippy_aspect = _rust_clippy_aspect
 rust_analyzer = _rust_analyzer
+rust_analyzer_aspect = _rust_analyzer_aspect
 
 crate_universe = _crate_universe
 crate = _crate
