@@ -80,12 +80,14 @@ fn run_buildrs() -> Result<(), String> {
                         command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
                     }
                     _ => {
-                        return Err("error: Wrong environment file format, should not happen".to_owned())
+                        return Err(
+                            "error: Wrong environment file format, should not happen".to_owned()
+                        )
                     }
                 }
             }
         } else {
-            return Err("error: Dependency environment file unreadable".to_owned())
+            return Err("error: Dependency environment file unreadable".to_owned());
         }
     }
 
@@ -117,18 +119,21 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    let (buildrs_outputs, process_output) = BuildScriptOutput::from_command(&mut command).map_err(|process_output| {
-        format!(
-            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
-            if let Some(exit_code) = process_output.status.code() {
-                format!(" with exit code {}", exit_code)
-            } else {
-                String::new()
-            },
-            String::from_utf8(process_output.stdout).expect("Failed to parse stdout of child process"),
-            String::from_utf8(process_output.stderr).expect("Failed to parse stdout of child process"),
-        )
-    })?;
+    let (buildrs_outputs, process_output) =
+        BuildScriptOutput::from_command(&mut command).map_err(|process_output| {
+            format!(
+                "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+                if let Some(exit_code) = process_output.status.code() {
+                    format!(" with exit code {}", exit_code)
+                } else {
+                    String::new()
+                },
+                String::from_utf8(process_output.stdout)
+                    .expect("Failed to parse stdout of child process"),
+                String::from_utf8(process_output.stderr)
+                    .expect("Failed to parse stdout of child process"),
+            )
+        })?;
 
     write(
         &envfile,
@@ -141,16 +146,10 @@ fn run_buildrs() -> Result<(), String> {
             .as_bytes(),
     )
     .expect(&format!("Unable to write file {:?}", output_dep_env_path));
-    write(
-        &stdout_path,
-        process_output.stdout,
-    )
-    .expect(&format!("Unable to write file {:?}", stdout_path));
-    write(
-        &stderr_path,
-        process_output.stderr,
-    )
-    .expect(&format!("Unable to write file {:?}", stderr_path));
+    write(&stdout_path, process_output.stdout)
+        .expect(&format!("Unable to write file {:?}", stdout_path));
+    write(&stderr_path, process_output.stderr)
+        .expect(&format!("Unable to write file {:?}", stderr_path));
 
     let CompileAndLinkFlags {
         compile_flags,
@@ -185,11 +184,11 @@ fn parse_args() -> Result<Options, String> {
     // TODO: we should consider an alternative to positional arguments.
     match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
         (
-            Some(progname), 
-            Some(crate_links), 
-            Some(out_dir), 
-            Some(envfile), 
-            Some(flagfile), 
+            Some(progname),
+            Some(crate_links),
+            Some(out_dir),
+            Some(envfile),
+            Some(flagfile),
             Some(linkflags),
             Some(output_dep_env_path),
             Some(stdout_path),

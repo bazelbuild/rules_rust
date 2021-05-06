@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use std::io::prelude::*;
-use std::fs::File;
 use std::env;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn main() {
     let bleh = env::var("CARGO_FEATURE_BLEH").unwrap();
@@ -22,11 +22,14 @@ fn main() {
     let data = std::fs::read("test.txt").unwrap();
     assert!(!bleh.is_empty());
     assert_eq!(some_env, "42");
-    println!(r#"cargo:rustc-env=FOO=BAR
+    println!(
+        r#"cargo:rustc-env=FOO=BAR
 cargo:rustc-env=BAR=FOO
 cargo:rustc-flags=--cfg=blah="bleh"
 cargo:rustc-flags=--cfg=data="{}"
-cargo:rustc-cfg=foobar"#, std::str::from_utf8(&data).unwrap());
+cargo:rustc-cfg=foobar"#,
+        std::str::from_utf8(&data).unwrap()
+    );
     let mut file = File::create(format!("{}/hello.world.txt", out_dir)).unwrap();
     file.write_all(b"Hello, world!").unwrap();
 }

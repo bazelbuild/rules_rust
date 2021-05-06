@@ -13,5 +13,9 @@
 // limitations under the License.
 
 fn main() {
-    println!("{} from version {}", env!("GREETING"), env!("CARGO_PKG_VERSION"));
+    println!(
+        "{} from version {}",
+        env!("GREETING"),
+        env!("CARGO_PKG_VERSION")
+    );
 }

@@ -1,4 +1,3 @@
-
 use external_crate::get_included_str;
 
 #[test]

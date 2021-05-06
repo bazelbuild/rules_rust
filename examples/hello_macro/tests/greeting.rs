@@ -17,8 +17,7 @@ extern crate hello_macro;
 use hello_macro::HelloWorld;
 
 #[derive(HelloWorld)]
-struct TestStruct {
-}
+struct TestStruct {}
 
 #[test]
 fn test_hello_world_macro() {

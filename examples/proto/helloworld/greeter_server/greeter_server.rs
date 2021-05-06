@@ -12,22 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate helloworld_proto;
 extern crate grpc;
+extern crate helloworld_proto;
 extern crate tls_api_stub;
 
-use std::thread;
 use std::env;
 use std::str::FromStr;
+use std::thread;
 
 use helloworld_proto::*;
 
 struct GreeterImpl;
 
 impl Greeter for GreeterImpl {
-    fn say_hello(&self, _m: grpc::RequestOptions, req: HelloRequest) -> grpc::SingleResponse<HelloReply> {
+    fn say_hello(
+        &self,
+        _m: grpc::RequestOptions,
+        req: HelloRequest,
+    ) -> grpc::SingleResponse<HelloReply> {
         let mut r = HelloReply::new();
-        let name = if req.get_name().is_empty() { "world" } else { req.get_name() };
+        let name = if req.get_name().is_empty() {
+            "world"
+        } else {
+            req.get_name()
+        };
         println!("greeting request from {}", name);
         r.set_message(format!("Hello {}", name));
         grpc::SingleResponse::completed(r)
