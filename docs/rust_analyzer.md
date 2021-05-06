@@ -101,3 +101,30 @@ Produces a rust-project.json for the given targets. Configure rust-analyzer to l
 | <a id="rust_analyzer-targets"></a>targets |  List of all targets to be included in the index   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
+<a id="#rust_analyzer_aspect"></a>
+
+## rust_analyzer_aspect
+
+<pre>
+rust_analyzer_aspect(<a href="#rust_analyzer_aspect-name">name</a>)
+</pre>
+
+Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json
+
+**ASPECT ATTRIBUTES**
+
+
+| Name | Type |
+| :------------- | :------------- |
+| deps| String |
+| proc_macro_deps| String |
+
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_analyzer_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
+
+

@@ -108,9 +108,7 @@ impl BuildScriptOutput {
 
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
     pub fn from_command(cmd: &mut Command) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
-        let child_output = cmd
-            .output()
-            .expect("Unable to start binary");
+        let child_output = cmd.output().expect("Unable to start binary");
         if child_output.status.success() {
             let reader = BufReader::new(child_output.stdout.as_slice());
             let output = Self::from_reader(reader);
@@ -125,7 +123,9 @@ impl BuildScriptOutput {
         v.iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::Env(env) = x {
-                    Some(Self::escape_for_serializing(Self::redact_exec_root(env, exec_root)))
+                    Some(Self::escape_for_serializing(Self::redact_exec_root(
+                        env, exec_root,
+                    )))
                 } else {
                     None
                 }

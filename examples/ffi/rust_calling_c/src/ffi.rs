@@ -23,7 +23,7 @@ pub struct Matrix {
 }
 
 // #[link(name = "native_matrix")] // Don't need this, BUILD file manages linking already.
-extern {
+extern "C" {
     pub fn matrix_new(rows: size_t, cols: size_t, data: *const u64) -> *mut Matrix;
     pub fn matrix_at(matrix: *const Matrix, row: size_t, col: size_t, n: *mut u64) -> c_int;
     pub fn matrix_set(matrix: *const Matrix, row: size_t, col: size_t, n: u64) -> c_int;

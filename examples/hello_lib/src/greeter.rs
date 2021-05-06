@@ -29,7 +29,9 @@ impl Greeter {
     /// let greeter = Greeter::new("Hello");
     /// ```
     pub fn new(greeting: &str) -> Greeter {
-        Greeter { greeting: greeting.to_string(), }
+        Greeter {
+            greeting: greeting.to_string(),
+        }
     }
 
     /// Returns the greeting as a string.

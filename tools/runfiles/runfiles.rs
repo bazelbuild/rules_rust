@@ -125,8 +125,7 @@ mod test {
     fn test_can_read_data_from_runfiles() {
         let r = Runfiles::create().unwrap();
 
-        let mut f =
-            File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+        let mut f = File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
 
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();
