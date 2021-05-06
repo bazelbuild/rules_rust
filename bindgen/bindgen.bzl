@@ -51,17 +51,23 @@ def rust_bindgen_library(
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
 
+    tags = kwargs.get("tags") or []
+    if "tags" in kwargs:
+        kwargs.pop("tags")
+
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
         clang_flags = clang_flags or [],
+        tags = tags,
     )
+
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        tags = ["__bindgen"],
+        tags = tags + ["__bindgen"],
         deps = [cc_lib],
         **kwargs
     )
