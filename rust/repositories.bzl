@@ -24,7 +24,7 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 }
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.51.0"
+DEFAULT_RUST_VERSION = "1.52.0"
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
