@@ -557,9 +557,7 @@ mod tests {
 
         let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-        // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
-            load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
             def pinned_rust_install():
@@ -589,11 +587,9 @@ mod tests {
 
         let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-        // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-            load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-            
+
             def pinned_rust_install():
                 new_git_repository(
                     name = "rule_prefix__lazy_static__1_4_0",
@@ -626,11 +622,7 @@ mod tests {
 
         let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-        // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
-            load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-            load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
             def pinned_rust_install():
                 pass
 
