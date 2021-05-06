@@ -714,8 +714,15 @@ _rust_test_attrs = {
     ),
 }
 
+_common_providers = [
+    rust_common.crate_info,
+    rust_common.dep_info,
+    DefaultInfo,
+]
+
 rust_library = rule(
     implementation = _rust_library_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -792,6 +799,7 @@ rust_library = rule(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -815,6 +823,7 @@ rust_static_library = rule(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -838,6 +847,7 @@ rust_shared_library = rule(
 
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -873,6 +883,7 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -970,6 +981,7 @@ rust_binary = rule(
 
 rust_test = rule(
     implementation = _rust_test_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,
@@ -1120,6 +1132,7 @@ rust_test = rule(
 
 rust_test_binary = rule(
     implementation = _rust_test_impl,
+    provides = _common_providers,
     attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,
