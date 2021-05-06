@@ -1,7 +1,22 @@
+{%- for crate_data in crates -%}
+{%- if crate_data.crate_context.source_details.git_data -%}
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+{%- break %}
+{%- endif %}
+{%- endfor %}
+{%- for crate_data in crates -%}
+{%- if not crate_data.crate_context.source_details.git_data -%}
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+{%- break %}
+{%- endif %}
+{%- endfor %}
+{%- if crates %}
 
+{% endif -%}
 def pinned_rust_install():
+{%- if not crates %}
+    pass
+{% endif %}
   {%- for crate_data in crates %}
     {%- set crate = crate_data.crate_context %}
     {%- set per_triple_metadata = crate_data.per_triple_metadata %}

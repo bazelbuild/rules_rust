@@ -537,20 +537,10 @@ mod tests {
 
     fn mock_renderer(git: bool) -> Renderer {
         Renderer::new(
-            RenderConfig {
-                repo_rule_name: String::from("rule_prefix"),
-                crate_registry_template: String::from(
-                    "https://crates.io/api/v1/crates/{crate}/{version}/download",
-                ),
-                rules_rust_workspace_name: String::from("rules_rust"),
-            },
+            default_render_config(),
             String::from("598"),
             vec![testing::lazy_static_crate_context(git)],
-            Dependencies {
-                normal: BTreeMap::new(),
-                build: BTreeMap::new(),
-                dev: BTreeMap::new(),
-            },
+            empty_dependencies(),
             BTreeMap::new(),
         )
     }
@@ -567,9 +557,7 @@ mod tests {
 
         let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-        // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
-            load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
             def pinned_rust_install():
@@ -599,11 +587,9 @@ mod tests {
 
         let output = String::from_utf8(output).expect("Non-UTF8 output");
 
-        // TODO: Don't unconditionally load new_git_repository and http_archive
         let expected_repository_rule = indoc! { r#"
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-            load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-            
+
             def pinned_rust_install():
                 new_git_repository(
                     name = "rule_prefix__lazy_static__1_4_0",
@@ -612,6 +598,33 @@ mod tests {
                     remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
                     commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
                 )
+
+            "# };
+
+        assert_eq!(output, expected_repository_rule);
+    }
+
+    #[test]
+    fn render_no_crates() {
+        let renderer = Renderer::new(
+            default_render_config(),
+            String::from("598"),
+            vec![],
+            empty_dependencies(),
+            BTreeMap::new(),
+        );
+
+        let mut output = Vec::new();
+
+        renderer
+            .render_workspaces(&mut output)
+            .expect("Error rendering");
+
+        let output = String::from_utf8(output).expect("Non-UTF8 output");
+
+        let expected_repository_rule = indoc! { r#"
+            def pinned_rust_install():
+                pass
 
             "# };
 
@@ -800,5 +813,23 @@ mod tests {
             "# },
             build_file_contents,
         );
+    }
+
+    fn default_render_config() -> RenderConfig {
+        RenderConfig {
+            repo_rule_name: String::from("rule_prefix"),
+            crate_registry_template: String::from(
+                "https://crates.io/api/v1/crates/{crate}/{version}/download",
+            ),
+            rules_rust_workspace_name: String::from("rules_rust"),
+        }
+    }
+
+    fn empty_dependencies() -> Dependencies {
+        Dependencies {
+            normal: BTreeMap::new(),
+            build: BTreeMap::new(),
+            dev: BTreeMap::new(),
+        }
     }
 }
