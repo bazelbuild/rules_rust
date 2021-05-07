@@ -11,8 +11,8 @@ use label_error::LabelError;
 pub fn analyze<'s>(input: &'s str) -> Result<Label<'s>> {
     let label = input;
     let (input, repository_name) = consume_repository_name(input, label)?;
-    let (input, package_name, implicit_target_name) = consume_package_name(input, label)?;
-    let name = consume_name(input, label, implicit_target_name)?;
+    let (input, package_name) = consume_package_name(input, label)?;
+    let name = consume_name(input, label)?;
     Ok(Label::new(repository_name, package_name, name))
 }
 
@@ -92,10 +92,7 @@ fn consume_repository_name<'s>(
     Ok((&input[slash_pos..], Some(repository_name)))
 }
 
-fn consume_package_name<'s>(
-    input: &'s str,
-    label: &'s str,
-) -> Result<(&'s str, Option<&'s str>, Option<&'s str>)> {
+fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, Option<&'s str>)> {
     let colon_pos = input.find(":");
     let start_pos;
     let mut is_absolute = false;
@@ -108,10 +105,10 @@ fn consume_package_name<'s>(
             if input.contains("//") {
                 return Err(LabelError(err(
                     label,
-                    "workspace name must start with '@'.",
+                    "'//' cannot appear in the middle of the label.",
                 )));
             }
-            return Ok((input, None, None));
+            return Ok((input, None));
         }
     };
 
@@ -120,22 +117,14 @@ fn consume_package_name<'s>(
         None => (&input[start_pos..], ""),
     };
     if package_name.is_empty() {
-        return Ok((rest, None, None));
+        return Ok((rest, None));
     }
     if package_name.contains("//") {
         return Err(LabelError(err(
             label,
-            "workspace name must start with '@'.",
+            "'//' cannot appear in the middle of the label.",
         )));
     }
-    let implicit_target_name = if is_absolute {
-        match package_name.rfind("/") {
-            Some(pos) => Some(&package_name[pos..]),
-            None => Some(package_name),
-        }
-    } else {
-        None
-    };
 
     if !package_name.chars().all(|c| {
         c.is_ascii_alphanumeric()
@@ -161,19 +150,24 @@ fn consume_package_name<'s>(
         )));
     }
 
-    Ok((rest, Some(package_name), implicit_target_name))
+    if rest.is_empty() && is_absolute {
+        // This label doesn't contain the target name, we have to use
+        // last segment of the package name as target name.
+        return Ok((
+            match package_name.rfind("/") {
+                Some(pos) => &package_name[pos..],
+                None => package_name,
+            },
+            Some(package_name),
+        ));
+    }
+
+    Ok((rest, Some(package_name)))
 }
 
-fn consume_name<'s>(
-    input: &'s str,
-    label: &'s str,
-    implicit_target_name: Option<&'s str>,
-) -> Result<&'s str> {
+fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<&'s str> {
     if input.is_empty() {
-        return match implicit_target_name {
-            Some(name) => Ok(name),
-            None => Err(LabelError(err(label, "empty target name."))),
-        };
+        return Err(LabelError(err(label, "empty target name.")));
     }
     let name = if input.starts_with(":") {
         &input[1..]
@@ -261,13 +255,13 @@ mod tests {
         assert_eq!(
             analyze("foo//bar"),
             Err(LabelError(
-                "foo//bar must be a legal label; workspace name must start with '@'.".to_string()
+                "foo//bar must be a legal label; '//' cannot appear in the middle of the label.".to_string()
             ))
         );
         assert_eq!(
             analyze("foo//bar:baz"),
             Err(LabelError(
-                "foo//bar:baz must be a legal label; workspace name must start with '@'."
+                "foo//bar:baz must be a legal label; '//' cannot appear in the middle of the label."
                     .to_string()
             ))
         );
