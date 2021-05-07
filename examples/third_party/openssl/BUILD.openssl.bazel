@@ -1,4 +1,4 @@
-load("@rules_foreign_cc//tools/build_defs:configure.bzl", "configure_make")
+load("@rules_foreign_cc//foreign_cc:configure.bzl", "configure_make")
 
 config_setting(
     name = "darwin",
@@ -33,7 +33,7 @@ configure_make(
         ":linux": {},
     }),
     lib_source = ":srcs",
-    shared_libraries = select({
+    out_shared_libs = select({
         ":darwin": [
             "libcrypto.dylib",
             "libssl.dylib",
@@ -43,7 +43,7 @@ configure_make(
             "libssl.so",
         ],
     }),
-    static_libraries = [
+    out_static_libs = [
         "libcrypto.a",
         "libssl.a",
     ],
