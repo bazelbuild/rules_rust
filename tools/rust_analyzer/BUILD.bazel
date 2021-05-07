@@ -8,5 +8,6 @@ rust_binary(
     deps = [
         "//tools/rust_analyzer/raze:anyhow",
         "//tools/rust_analyzer/raze:structopt",
+        "//util/label",
     ],
 )
