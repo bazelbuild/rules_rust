@@ -1,17 +1,58 @@
-load("@rules_rust//test/rustfmt:rustfmt_generator.bzl", "rustfmt_generator")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rustfmt_check")
 
-rustfmt_generator(
-    name = "formatted",
-    src = ":unformatted.rs",
+rust_binary(
+    name = "formatted_2018",
+    srcs = ["srcs/2018/formatted.rs"],
+    edition = "2018",
 )
 
-sh_test(
-    name = "rustfmt_test",
-    size = "small",
-    srcs = [":rustfmt_test.sh"],
-    data = [
-        ":formatted.rs",
-        ":unformatted.rs",
-    ],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
+rustfmt_check(
+    name = "check_formatted_2018",
+    testonly = True,
+    tags = ["manual"],
+    targets = [":formatted_2018"],
+)
+
+rust_binary(
+    name = "unformatted_2018",
+    srcs = ["srcs/2018/unformatted.rs"],
+    edition = "2018",
+)
+
+rustfmt_check(
+    name = "check_unformatted_2018",
+    testonly = True,
+    tags = ["manual"],
+    targets = [":unformatted_2018"],
+)
+
+rust_binary(
+    name = "formatted_2015",
+    srcs = ["srcs/2015/formatted.rs"],
+    edition = "2015",
+)
+
+rustfmt_check(
+    name = "check_formatted_2015",
+    testonly = True,
+    tags = ["manual"],
+    targets = [":formatted_2015"],
+)
+
+rust_binary(
+    name = "unformatted_2015",
+    srcs = ["srcs/2015/unformatted.rs"],
+    edition = "2015",
+)
+
+rustfmt_check(
+    name = "check_unformatted_2015",
+    testonly = True,
+    tags = ["manual"],
+    targets = [":unformatted_2015"],
+)
+
+sh_binary(
+    name = "test_runner",
+    srcs = ["rustfmt_failure_test.sh"],
 )

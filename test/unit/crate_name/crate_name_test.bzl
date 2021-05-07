@@ -126,14 +126,14 @@ def _crate_name_test():
     rust_library(
         name = "invalid/default-crate-name",
         srcs = ["lib.rs"],
-        tags = ["manual"],
+        tags = ["manual", "norustfmt"],
     )
 
     rust_library(
         name = "invalid-custom-crate-name",
         crate_name = "hyphens-not-allowed",
         srcs = ["lib.rs"],
-        tags = ["manual"],
+        tags = ["manual", "norustfmt"],
     )
 
     default_crate_name_library_test(

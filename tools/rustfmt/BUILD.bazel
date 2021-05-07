@@ -1,0 +1,32 @@
+load("//rust:defs.bzl", "rustfmt", "rustfmt_check")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["rustfmt.toml"])
+
+alias(
+    name = "rustfmt_bin",
+    actual = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustfmt_bin",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustfmt_bin",
+        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustfmt_bin",
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustfmt_bin",
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustfmt_bin",
+    }),
+)
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["srcs/**/*.rs"]),
+)
+
+rustfmt(
+    name = "rustfmt",
+)
+
+rustfmt_check(
+    name = "check",
+    targets = [
+        "rustfmt",
+    ],
+)
