@@ -17,6 +17,7 @@
 
 // posix headers
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -174,12 +175,18 @@ int System::Exec(const System::StrType &executable,
     }
   }
 
-  int err, exit_status = -1;
+  int err, exit_status;
   do {
     err = waitpid(child_pid, &exit_status, 0);
   } while (err == -1 && errno == EINTR);
 
-  return exit_status;
+  if (WIFEXITED(exit_status)) {
+    return WEXITSTATUS(exit_status);
+  } else if (WIFSIGNALED(exit_status)) {
+    raise(WTERMSIG(exit_status));
+  } else if (WIFSTOPPED(exit_status)) {
+    raise(WSTOPSIG(exit_status));
+  }
 }
 
 } // namespace process_wrapper
