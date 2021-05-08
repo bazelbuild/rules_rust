@@ -7,8 +7,11 @@ load("@examples//hello_sys/raze:crates.bzl", "rules_rust_examples_hello_sys_fetc
 load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto/prostgen:repositories.bzl", "rust_prostgen_repositories")
 load("@rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//tools/rust_analyzer/raze:crates.bzl", "rules_rust_tools_rust_analyzer_fetch_remote_crates")
+load("@examples//prostgen/raze:crates.bzl", "rules_rust_examples_prostgen_fetch_remote_crates")
 
 def deps():
     """Define dependencies for `rules_rust` examples"""
@@ -20,6 +23,10 @@ def deps():
     rust_wasm_bindgen_repositories()
 
     rust_proto_repositories()
+
+    rust_prostgen_repositories()
+
+    rules_rust_tools_rust_analyzer_fetch_remote_crates()
 
     # Example of `rust_repository_set`
     rust_repository_set(
@@ -39,6 +46,8 @@ def deps():
     rules_rust_examples_hello_sys_fetch_remote_crates()
 
     rules_rust_examples_complex_sys_repositories()
+
+    rules_rust_examples_prostgen_fetch_remote_crates()
 
     maybe(
         http_archive,

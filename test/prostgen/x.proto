@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package prostgen.test;
+
+import "test/prostgen/a.proto";
+import "test/prostgen/b.proto";
+
+message X {
+  A a = 1;
+  B b = 2;
+}

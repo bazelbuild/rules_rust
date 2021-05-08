@@ -1,0 +1,70 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//proto/prostgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "akamai" with type "example" omitted
+
+# Unsupported target "client" with type "example" omitted
+
+# Unsupported target "server" with type "example" omitted
+
+rust_library(
+    name = "h2",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.3.2",
+    # buildifier: leave-alone
+    deps = [
+        "@rules_rust_prostgen__bytes__1_0_1//:bytes",
+        "@rules_rust_prostgen__fnv__1_0_7//:fnv",
+        "@rules_rust_prostgen__futures_core__0_3_14//:futures_core",
+        "@rules_rust_prostgen__futures_sink__0_3_14//:futures_sink",
+        "@rules_rust_prostgen__futures_util__0_3_14//:futures_util",
+        "@rules_rust_prostgen__http__0_2_4//:http",
+        "@rules_rust_prostgen__indexmap__1_6_2//:indexmap",
+        "@rules_rust_prostgen__slab__0_4_3//:slab",
+        "@rules_rust_prostgen__tokio__1_5_0//:tokio",
+        "@rules_rust_prostgen__tokio_util__0_6_6//:tokio_util",
+        "@rules_rust_prostgen__tracing__0_1_25//:tracing",
+    ],
+)

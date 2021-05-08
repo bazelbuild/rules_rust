@@ -1,0 +1,64 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//proto/prostgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # Apache-2.0 from expression "Apache-2.0"
+])
+
+# Generated Targets
+
+# Unsupported target "build-script-build" with type "custom-build" omitted
+
+rust_library(
+    name = "prost_build",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.7.0",
+    # buildifier: leave-alone
+    deps = [
+        "@rules_rust_prostgen__bytes__1_0_1//:bytes",
+        "@rules_rust_prostgen__heck__0_3_2//:heck",
+        "@rules_rust_prostgen__itertools__0_9_0//:itertools",
+        "@rules_rust_prostgen__log__0_4_14//:log",
+        "@rules_rust_prostgen__multimap__0_8_3//:multimap",
+        "@rules_rust_prostgen__petgraph__0_5_1//:petgraph",
+        "@rules_rust_prostgen__prost__0_7_0//:prost",
+        "@rules_rust_prostgen__prost_types__0_7_0//:prost_types",
+        "@rules_rust_prostgen__tempfile__3_2_0//:tempfile",
+    ],
+)

@@ -1,0 +1,33 @@
+[package]
+name = "rules_rust_test_prostgen"
+version = "0.1.0"
+edition = "2018"
+
+# Mandatory (or Cargo tooling is unhappy)
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+tonic = { version = "=0.4.0", features = ["default", "transport"] }
+#tonic = { version = "=0.4.0", features = ["default", "tls", "tls-roots", "transport"] }
+
+[workspace.metadata.raze]
+workspace_path = "//test/prostgen/raze"
+rust_rules_workspace_name = "rules_rust"
+gen_workspace_prefix = "rules_rust_test_prostgen"
+package_aliases_dir = "raze"
+default_gen_buildrs = true
+genmode = "Remote"
+
+#[package.metadata.raze.crates.ring.'0.16.15']
+#gen_buildrs = false
+#data_attr = "glob([\"**/*.der\"])"
+#additional_deps = [
+#    # provided by the additional_build_file
+#    ":ring-core",
+#]
+#additional_build_file = "builds/ring-0.16.BUILD"
+
+#[package.metadata.raze.crates.webpki.'0.21.3']
+#gen_buildrs = false
+#data_attr = 'glob(["**/src/data/*"])'

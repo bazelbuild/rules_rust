@@ -1,0 +1,59 @@
+[package]
+name = "compile_with_bazel"
+version = "0.1.0"
+edition = "2018"
+
+# Mandatory (or Cargo tooling is unhappy)
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+anyhow = "=1.0.38"
+heck = "=0.3.2"
+#hyper = "=0.14.4"
+#syn= "=1.0.60"
+#proc-macro2= "=1.0.24"
+#proc-macro-error = "=1.0.4"
+prost = "=0.7.0"
+prost-derive = "=0.7.0"
+prost-build = "=0.7.0"
+prost-types = "=0.7.0"
+#ring = "=0.16.15"
+structopt = { version = "=0.3.13", default-features = false }
+thiserror = "=1.0.18"
+tonic = { version = "=0.4.0", features = ["default", "tls", "tls-roots", "transport"] }
+tonic-build = "=0.4.0"
+#tokio = { version = "=1.0.2", features = ["macros", "rt-multi-thread"] }
+
+[workspace.metadata.raze]
+workspace_path = "//proto/prostgen/raze"
+rust_rules_workspace_name = "rules_rust"
+gen_workspace_prefix = "rules_rust_prostgen"
+default_gen_buildrs = true
+genmode = "Remote"
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+
+[package.metadata.raze.crates.prost-build.'0.7.0']
+patches = [
+    "@rules_rust//proto/prostgen/raze/patches:prost-build-0.7.0.patch"
+]
+patch_args = ["-p1"]
+gen_buildrs = false
+
+[package.metadata.raze.crates.ring.'0.16.15']
+gen_buildrs = false
+data_attr = "glob([\"**/*.der\"])"
+additional_deps = [
+    # provided by the additional_build_file
+    ":ring-core",
+]
+additional_build_file = "builds/ring-0.16.BUILD"
+
+[package.metadata.raze.crates.webpki.'0.21.3']
+gen_buildrs = false
+data_attr = 'glob(["**/src/data/*"])'

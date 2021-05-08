@@ -1,0 +1,21 @@
+[package]
+name = "rules_rust_examples_prostgen"
+version = "0.1.0"
+edition = "2018"
+
+[[bin]]
+name = "rules_rust_examples_prostgen"
+path = "basic/main.rs"
+
+[package.metadata.raze]
+workspace_path = "//prostgen/raze"
+genmode = "Remote"
+gen_workspace_prefix = "rules_rust_examples_prostgen"
+rust_rules_workspace_name = "rules_rust"
+package_aliases_dir = "raze"
+default_gen_buildrs = true
+
+[dependencies]
+tonic = { version = "=0.4.0", features = ["default", "transport"] }
+tokio = { version = "=1.0.2", features = ["rt-multi-thread", "time", "fs", "macros", "net"] }
+reqwest = "0.11.1"

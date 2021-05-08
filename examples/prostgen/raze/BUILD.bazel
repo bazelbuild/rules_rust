@@ -1,0 +1,48 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "reqwest",
+    actual = "@rules_rust_examples_prostgen__reqwest__0_11_1//:reqwest",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "tokio",
+    actual = "@rules_rust_examples_prostgen__tokio__1_0_2//:tokio",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "tonic",
+    actual = "@rules_rust_examples_prostgen__tonic__0_4_0//:tonic",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+# Export file for Stardoc support
+exports_files(
+    [
+        "crates.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

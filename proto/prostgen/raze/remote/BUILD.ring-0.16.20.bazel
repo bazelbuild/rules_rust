@@ -1,0 +1,151 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//proto/prostgen/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "restricted",  # no license
+])
+
+# Generated Targets
+
+# Unsupported target "build-script-build" with type "custom-build" omitted
+
+rust_library(
+    name = "ring",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "alloc",
+        "default",
+        "dev_urandom_fallback",
+        "once_cell",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [] + glob(["**/*.der"]),
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.16.20",
+    # buildifier: leave-alone
+    deps = [
+        ":ring-core",
+        "@rules_rust_prostgen__untrusted__0_7_1//:untrusted",
+    ] + selects.with_or({
+        # cfg(any(target_arch = "x86", target_arch = "x86_64", all(any(target_arch = "aarch64", target_arch = "arm"), any(target_os = "android", target_os = "fuchsia", target_os = "linux"))))
+        (
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@rules_rust_prostgen__spin__0_5_2//:spin",
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(any(target_os = "android", target_os = "linux"))
+        (
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+            "@rules_rust_prostgen__libc__0_2_94//:libc",
+            "@rules_rust_prostgen__once_cell__1_7_2//:once_cell",
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(any(unix, windows))
+        (
+            "@rules_rust//rust/platform:aarch64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(target_os = "windows")
+        (
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            "@rules_rust_prostgen__winapi__0_3_9//:winapi",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+# Unsupported target "aead_tests" with type "test" omitted
+
+# Unsupported target "agreement_tests" with type "test" omitted
+
+# Unsupported target "constant_time_tests" with type "test" omitted
+
+# Unsupported target "digest_tests" with type "test" omitted
+
+# Unsupported target "ecdsa_tests" with type "test" omitted
+
+# Unsupported target "ed25519_tests" with type "test" omitted
+
+# Unsupported target "hkdf_tests" with type "test" omitted
+
+# Unsupported target "hmac_tests" with type "test" omitted
+
+# Unsupported target "pbkdf2_tests" with type "test" omitted
+
+# Unsupported target "quic_tests" with type "test" omitted
+
+# Unsupported target "rand_tests" with type "test" omitted
+
+# Unsupported target "rsa_tests" with type "test" omitted
+
+# Unsupported target "signature_tests" with type "test" omitted
+
+# Additional content from builds/ring-0.16.BUILD
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Based off of ring's build.rs file:
+# https://github.com/briansmith/ring/blob/master/build.rs
+cc_library(
+    name = "ring-core",
+    srcs = glob(
+        [
+            "**/*.h",
+            "**/*.c",
+            "**/*.inl",
+            "**/*x86_64*-elf.S",
+        ],
+        exclude = ["crypto/constant_time_test.c"],
+    ),
+    copts = [
+        "-fno-strict-aliasing",
+        "-fvisibility=hidden",
+    ],
+    includes = [
+        "include",
+    ],
+)

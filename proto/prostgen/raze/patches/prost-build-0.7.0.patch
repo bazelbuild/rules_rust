@@ -1,0 +1,22 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index c0c5724..8aad4e1 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -871,7 +871,7 @@
+ pub fn protoc() -> PathBuf {
+     match env::var_os("PROTOC") {
+         Some(protoc) => PathBuf::from(protoc),
+-        None => PathBuf::from(env!("PROTOC")),
++        None => PathBuf::from(std::env::var("PROTOC").expect("protoc not specified")),
+     }
+ }
+ 
+@@ -879,7 +879,7 @@
+ pub fn protoc_include() -> PathBuf {
+     match env::var_os("PROTOC_INCLUDE") {
+         Some(include) => PathBuf::from(include),
+-        None => PathBuf::from(env!("PROTOC_INCLUDE")),
++        None => PathBuf::from(option_env!("PROTOC_INCLUDE").unwrap_or(".")),
+     }
+ }
+ 

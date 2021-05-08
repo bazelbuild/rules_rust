@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package prostgen.test;
+
+message B {
+  int32 value = 1;
+}

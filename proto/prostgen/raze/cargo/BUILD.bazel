@@ -1,0 +1,111 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "anyhow",
+    actual = "@rules_rust_prostgen__anyhow__1_0_38//:anyhow",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "heck",
+    actual = "@rules_rust_prostgen__heck__0_3_2//:heck",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "prost",
+    actual = "@rules_rust_prostgen__prost__0_7_0//:prost",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "prost_build",
+    actual = "@rules_rust_prostgen__prost_build__0_7_0//:prost_build",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "prost_derive",
+    actual = "@rules_rust_prostgen__prost_derive__0_7_0//:prost_derive",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "prost_types",
+    actual = "@rules_rust_prostgen__prost_types__0_7_0//:prost_types",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "structopt",
+    actual = "@rules_rust_prostgen__structopt__0_3_13//:structopt",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "thiserror",
+    actual = "@rules_rust_prostgen__thiserror__1_0_18//:thiserror",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "tonic",
+    actual = "@rules_rust_prostgen__tonic__0_4_0//:tonic",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "tonic_build",
+    actual = "@rules_rust_prostgen__tonic_build__0_4_0//:tonic_build",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+# Export file for Stardoc support
+exports_files(
+    [
+        "crates.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

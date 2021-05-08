@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package verily.surgical.echo;
+
+service Echo {
+  // Returns the request unmodified.
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}
+
+message EchoRequest {
+  // A string that will be sent to, and returned by the server
+  string payload = 1;
+}
+
+message EchoResponse {
+  // The response, returned from the server that should be identical to the
+  // payload sent.  This is mostly a test comment for codegen.
+  string payload = 1;
+}
