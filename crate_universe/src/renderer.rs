@@ -366,10 +366,7 @@ impl Renderer {
                 crate_data.crate_context.pkg_name, crate_data.crate_context.pkg_version
             ));
             let mut build_file = File::create(&build_file_path).with_context(|| {
-                format!(
-                    "Could not create BUILD file: {}",
-                    build_file_path.display()
-                )
+                format!("Could not create BUILD file: {}", build_file_path.display())
             })?;
             write!(build_file, "{}\n", &build_file_content)?;
         }
@@ -597,6 +594,56 @@ mod tests {
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
                     remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
                     commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
+                )
+
+            "# };
+
+        assert_eq!(output, expected_repository_rule);
+    }
+
+    #[test]
+    fn render_http_and_git() {
+        let renderer = {
+            let mut renderer = mock_renderer(true);
+            renderer
+                .context
+                .transitive_renderable_packages
+                .push(RenderablePackage {
+                    crate_context: testing::maplit_crate_context(false),
+                    per_triple_metadata: BTreeMap::new(),
+                    is_proc_macro: false,
+                });
+            renderer
+        };
+
+        let mut output = Vec::new();
+
+        renderer
+            .render_workspaces(&mut output)
+            .expect("Error rendering");
+
+        let output = String::from_utf8(output).expect("Non-UTF8 output");
+
+        let expected_repository_rule = indoc! { r#"
+            load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+            load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+            def pinned_rust_install():
+                new_git_repository(
+                    name = "rule_prefix__lazy_static__1_4_0",
+                    strip_prefix = "",
+                    build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
+                    remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
+                    commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
+                )
+
+                http_archive(
+                    name = "rule_prefix__maplit__1_0_2",
+                    build_file = Label("//:BUILD.maplit-1.0.2.bazel"),
+                    sha256 = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d",
+                    strip_prefix = "maplit-1.0.2",
+                    type = "tar.gz",
+                    url = "https://crates.io/api/v1/crates/maplit/1.0.2/download",
                 )
 
             "# };
