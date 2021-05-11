@@ -210,6 +210,8 @@ Environment Variables:
         ),
     },
     environ = [
+        "REPIN",
+        "RULES_RUST_REPIN",
         "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE",
         "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256",
         BOOTSTRAP_ENV_VAR,
