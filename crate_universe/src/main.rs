@@ -51,6 +51,8 @@ fn main() -> anyhow::Result<()> {
 
 fn reuse_lockfile(config: Config, lockfile: &Path, opt: &Opt) -> anyhow::Result<()> {
     trace!("Preprocessing config");
+    let repository_name = config.repository_name.clone();
+
     let mut resolver = config.preprocess()?;
 
     let renderer = Renderer::new_from_lockfile(lockfile)?;
@@ -58,11 +60,15 @@ fn reuse_lockfile(config: Config, lockfile: &Path, opt: &Opt) -> anyhow::Result<
     // TODO: Add lockfile versioning and check that here
 
     if !renderer.matches_digest(&resolver.digest()?) {
-        return Err(anyhow!(indoc! { r#"
+        return Err(anyhow!(
+            indoc! { r#"
             "rules_rust_external: Lockfile at {} is out of date, please either:
-            1. Re-run bazel with the environment variable `RULES_RUST_REPIN=true`, to update the lockfile
-            2. Remove the `lockfile` attribute from the `crate_universe` repository rule with name \"{}\" to use floating dependency versions", lockfile.display(), opt.repo_name
-        "# }));
+            1. Re-run bazel with the environment variable `RULES_RUST_REPIN=true`, to update the lockfile.
+            2. Remove the `lockfile` attribute from the `crate_universe` repository rule with name `{}` to use floating dependency versions.
+        "# },
+            lockfile.display(),
+            repository_name,
+        ));
     }
 
     renderer.render(&opt.repository_dir)
