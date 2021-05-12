@@ -61,7 +61,8 @@ def rust_repositories(
         edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
+        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
+            See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
     """
 
@@ -586,7 +587,15 @@ def _rust_toolchain_repository_impl(ctx):
 
     _check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    if ctx.attr.include_rustc_srcs:
+    # Determing whether or not to include rustc sources in the toolchain. The environment
+    # variable will always take precedence over the attribute.
+    include_rustc_srcs_env = ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
+    if include_rustc_srcs_env != None:
+        include_rustc_srcs = include_rustc_srcs_env.lower() in ["true", "1"]
+    else:
+        include_rustc_srcs = ctx.attr.include_rustc_srcs
+
+    if include_rustc_srcs:
         _load_rust_src(ctx)
 
     build_components = [_load_rust_compiler(ctx)]
@@ -650,7 +659,13 @@ rust_toolchain_repository = repository_rule(
             doc = "Additional rust-style targets that this set of toolchains should support.",
         ),
         "include_rustc_srcs": attr.bool(
-            doc = "Whether to download and unpack the rustc source files. These are very large, and slow to unpack, but are required to support rust analyzer.",
+            doc = (
+                "Whether to download and unpack the rustc source files. These are very large, and " +
+                "slow to unpack, but are required to support rust analyzer. An environment variable " +
+                "`RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS` can also be used to control this attribute. " +
+                "This variable will take precedence over the hard coded attribute. Setting it to `true` to " +
+                "activates this attribute where all other values deactivate it."
+            ),
             default = False,
         ),
         "iso_date": attr.string(
@@ -675,6 +690,7 @@ rust_toolchain_repository = repository_rule(
         ),
     },
     implementation = _rust_toolchain_repository_impl,
+    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
 )
 
 rust_toolchain_repository_proxy = repository_rule(

@@ -16,9 +16,17 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
 rust_analyzer_deps()
 ```
 
-You'll also need to ensure any `rust_repository` or `rust_repositories` calls in your `WORKSPACE` file set the arg `include_rustc_src` to `True`.
+Next, add the following lines to the `.bazelrc` file of your workspace:
+```
+build --repo_env=RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS=true
+```
 
-Then, add a rule to the root `BUILD` file like the following.
+This will ensure rust source code is available to `rust-analyzer`. Users
+can also set `include_rustc_srcs = True` on any `rust_repository` or
+`rust_repositories` calls in the workspace but the environment variable
+has higher priority and can override the attribute.
+
+Finally, add a rule to the root `BUILD` file like the following.
 
 ```python
 load("@rules_rust//rust:defs.bzl", "rust_analyzer")
