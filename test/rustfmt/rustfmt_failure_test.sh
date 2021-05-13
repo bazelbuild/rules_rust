@@ -12,7 +12,7 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
   exit 1
 fi
 
-cd "${BUILD_WORKSPACE_DIRECTORY:-}"
+cd "${BUILD_WORKSPACE_DIRECTORY}"
 
 # Executes a bazel build command and handles the return value, exiting
 # upon seeing an error.
