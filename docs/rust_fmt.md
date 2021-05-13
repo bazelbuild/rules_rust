@@ -137,7 +137,7 @@ file in the root of any workspace which loads `rules_rust`.
 
 ```
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect
-build --output_groups=+rustfmt
+build --output_groups=+rustfmt_check
 ```
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
