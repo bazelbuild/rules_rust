@@ -18,9 +18,9 @@ pub fn analyze<'s>(input: &'s str) -> Result<Label<'s>> {
 
 #[derive(Debug, PartialEq)]
 pub struct Label<'s> {
-    repository_name: Option<&'s str>,
-    package_name: Option<&'s str>,
-    name: &'s str,
+    pub repository_name: Option<&'s str>,
+    pub package_name: Option<&'s str>,
+    pub name: &'s str,
 }
 
 type Result<T, E = LabelError> = core::result::Result<T, E>;
