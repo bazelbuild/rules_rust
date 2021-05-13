@@ -101,7 +101,7 @@ rustfmt_check_aspect = aspect(
     ],
     attrs = {
         "_process_wrapper": attr.label(
-            doc = "A process wrapper for running clippy on all platforms",
+            doc = "A process wrapper for running rustfmt on all platforms",
             cfg = "exec",
             executable = True,
             default = Label("//util/process_wrapper"),
