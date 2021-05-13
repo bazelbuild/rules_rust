@@ -191,7 +191,7 @@ fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtConfig {
     RustfmtConfig {
         edition: lines
             .pop_front()
-            .expect("There should always be 1 line in the manifest"),
+            .expect("There should always be at least 1 line in the manifest"),
         sources: lines.into(),
     }
 }
