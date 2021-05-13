@@ -53,7 +53,6 @@ load(
     _rustfmt = "rustfmt",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_check = "rustfmt_check",
-    _rustfmt_check_aspect = "rustfmt_check_aspect",
 )
 load(
     "@rules_rust//rust:repositories.bzl",
@@ -121,4 +120,3 @@ crate = _crate
 rustfmt = _rustfmt
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_check = _rustfmt_check
-rustfmt_check_aspect = _rustfmt_check_aspect

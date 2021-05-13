@@ -28,16 +28,7 @@ def _find_rustfmtable_srcs(target, ctx):
 
     return srcs
 
-def _rustfmt_aspect_impl(target, ctx):
-    srcs = _find_rustfmtable_srcs(target, ctx)
-
-    # If there are no formattable sources, do nothing.
-    if not srcs:
-        return []
-
-    # Parse the edition to use for formatting from the target
-    edition = target[rust_common.crate_info].edition
-
+def _generate_manifest(edition, srcs, ctx):
     # Gather the source paths to non-generated files
     src_paths = [src.path for src in srcs]
 
@@ -50,37 +41,10 @@ def _rustfmt_aspect_impl(target, ctx):
         ] + src_paths),
     )
 
-    return [
-        DefaultInfo(
-            files = depset([manifest]),
-        ),
-        OutputGroupInfo(
-            rustfmt_manifest = depset([manifest]),
-        ),
-    ]
+    return manifest
 
-rustfmt_aspect = aspect(
-    implementation = _rustfmt_aspect_impl,
-    doc = """\
-This aspect is used to gather information about a crate for use in rustfmt
-
-This aspect is used directly by [rustfmt](#rustfmt) targets to determine the
-appropriate flags to use when formatting Rust sources. For more details on how
-to format source code, see the [rustfmt](#rustfmt) rule.
-""",
-)
-
-def _rustfmt_check_aspect_impl(target, ctx):
-    srcs = _find_rustfmtable_srcs(target, ctx)
-
-    # If there are no formattable sources, do nothing.
-    if not srcs:
-        return []
-
+def _perform_check(edition, srcs, ctx):
     toolchain = find_toolchain(ctx)
-
-    # Parse the edition to use for formatting from the target
-    edition = target[rust_common.crate_info].edition
 
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
@@ -103,14 +67,51 @@ def _rustfmt_check_aspect_impl(target, ctx):
         mnemonic = "Rustfmt",
     )
 
+    return marker
+
+def _rustfmt_aspect_impl(target, ctx):
+    srcs = _find_rustfmtable_srcs(target, ctx)
+
+    # If there are no formattable sources, do nothing.
+    if not srcs:
+        return []
+
+    # Parse the edition to use for formatting from the target
+    edition = target[rust_common.crate_info].edition
+
+    manifest = _generate_manifest(edition, srcs, ctx)
+    marker = _perform_check(edition, srcs, ctx)
+
     return [
         OutputGroupInfo(
-            rustfmt_check = depset([marker]),
+            rustfmt_manifest = depset([manifest]),
+            rustfmt_checks = depset([marker]),
         ),
     ]
 
-rustfmt_check_aspect = aspect(
-    implementation = _rustfmt_check_aspect_impl,
+rustfmt_aspect = aspect(
+    implementation = _rustfmt_aspect_impl,
+    doc = """\
+This aspect is used to gather information about a crate for use in rustfmt and perform rustfmt checks
+
+Output Groups:
+
+- `rustfmt_manifest`: The `rustfmt_manifest` output is used directly by [rustfmt](#rustfmt) targets
+to determine the appropriate flags to use when formatting Rust sources. For more details on how to
+format source code, see the [rustfmt](#rustfmt) rule.
+
+- `rustfmt_checks`: Executes rustfmt in `--check` mode on the specified target. To enable this check
+for your workspace, simply add the following to the `.bazelrc` file in the root of any workspace
+which loads `rules_rust`:
+```
+build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build --output_groups=+rustfmt_checks
+```
+
+This aspect is executed on any target which provides the `CrateInfo` provider. However
+users may tag a target with `norustfmt` to have it skipped. Additionally, generated
+source files are also ignored by this aspect.
+""",
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -125,25 +126,10 @@ rustfmt_check_aspect = aspect(
         ),
     },
     incompatible_use_toolchain_transition = True,
-    doc = """\
-Executes rustfmt in `--check` mode on the specified target.
-
-To enable this aspect for your workspace, simply add the following to the `.bazelrc`
-file in the root of any workspace which loads `rules_rust`.
-
-```
-build --aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect
-build --output_groups=+rustfmt_check
-```
-
-This aspect is executed on any target which provides the `CrateInfo` provider. However
-users may tag a target with `norustfmt` to have it skipped. Additionally, generated
-source files are also ignored by this aspect.
-""",
 )
 
 def _rustfmt_check_impl(ctx):
-    files = depset([], transitive = [target[OutputGroupInfo].rustfmt_check for target in ctx.attr.targets])
+    files = depset([], transitive = [target[OutputGroupInfo].rustfmt_checks for target in ctx.attr.targets])
     return [DefaultInfo(files = files)]
 
 rustfmt_check = rule(
@@ -152,13 +138,13 @@ rustfmt_check = rule(
         "targets": attr.label_list(
             doc = "Rust targets to run rustfmt on.",
             providers = [rust_common.crate_info],
-            aspects = [rustfmt_check_aspect],
+            aspects = [rustfmt_aspect],
         ),
     },
     doc = """\
 A rule for defining a target which runs `rustfmt` in `--check` mode on an explicit list of targets
 
-For more information on the use of `rustfmt` directly, see [rustfmt_check_aspect](#rustfmt_check_aspect).
+For more information on the use of `rustfmt` directly, see [rustfmt_aspect](#rustfmt_aspect).
 """,
 )
 

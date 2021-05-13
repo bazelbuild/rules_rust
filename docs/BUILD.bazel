@@ -94,7 +94,6 @@ PAGES = dict([
             "rustfmt",
             "rustfmt_aspect",
             "rustfmt_check",
-            "rustfmt_check_aspect",
         ],
     ),
     page(

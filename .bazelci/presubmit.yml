@@ -105,8 +105,8 @@ tasks:
     platform: ubuntu2004
     working_directory: examples
     build_flags:
-      - "--aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect"
-      - "--output_groups=rustfmt"
+      - "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect"
+      - "--output_groups=rustfmt_checks"
     build_targets:
       - //...
   rustfmt_failure:
