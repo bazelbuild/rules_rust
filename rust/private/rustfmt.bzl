@@ -4,7 +4,16 @@ load(":common.bzl", "rust_common")
 load(":rust.bzl", "rust_binary")
 load(":utils.bzl", "find_toolchain")
 
-def _rustfmt_aspect_impl(target, ctx):
+def _find_rustfmtable_srcs(target, ctx):
+    """Parse a target for rustfmt formattable sources.
+
+    Args:
+        target (Target): The target the aspect is running on.
+        ctx (ctx): The aspect's context object.
+
+    Returns:
+        list: A list of formattable sources (`File`).
+    """
     if rust_common.crate_info not in target:
         return []
 
@@ -15,14 +24,30 @@ def _rustfmt_aspect_impl(target, ctx):
     crate_info = target[rust_common.crate_info]
 
     # Filter out any generated files
-    srcs = [src.path for src in crate_info.srcs.to_list() if src.is_source]
+    srcs = [src for src in crate_info.srcs.to_list() if src.is_source]
 
+    return srcs
+
+def _rustfmt_aspect_impl(target, ctx):
+    srcs = _find_rustfmtable_srcs(target, ctx)
+
+    # If there are no formattable sources, do nothing.
+    if not srcs:
+        return []
+
+    # Parse the edition to use for formatting from the target
+    edition = target[rust_common.crate_info].edition
+
+    # Gather the source paths to non-generated files
+    src_paths = [src.path for src in srcs]
+
+    # Write the rustfmt manifest
     manifest = ctx.actions.declare_file(ctx.label.name + ".rustfmt")
     ctx.actions.write(
         output = manifest,
         content = "\n".join([
-            crate_info.edition,
-        ] + srcs),
+            edition,
+        ] + src_paths),
     )
 
     return [
@@ -30,7 +55,7 @@ def _rustfmt_aspect_impl(target, ctx):
             files = depset([manifest]),
         ),
         OutputGroupInfo(
-            rustfmt = depset([manifest]),
+            rustfmt_manifest = depset([manifest]),
         ),
     ]
 
@@ -46,24 +71,16 @@ to format source code, see the [rustfmt](#rustfmt) rule.
 )
 
 def _rustfmt_check_aspect_impl(target, ctx):
-    if rust_common.crate_info not in target:
-        return []
+    srcs = _find_rustfmtable_srcs(target, ctx)
 
-    # Targets annotated with `norustfmt` will not be formatted
-    if "norustfmt" in ctx.rule.attr.tags:
-        return []
-
-    crate_info = target[rust_common.crate_info]
-
-    # Filter out any generated files
-    srcs = [src for src in crate_info.srcs.to_list() if src.is_source]
-
-    # Only run `rustfmt` if we actually have sources to format. Some rules may produce only
-    # generated sources for `CrateInfo` and these are not necessary to check.
+    # If there are no formattable sources, do nothing.
     if not srcs:
         return []
 
     toolchain = find_toolchain(ctx)
+
+    # Parse the edition to use for formatting from the target
+    edition = target[rust_common.crate_info].edition
 
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
@@ -73,7 +90,7 @@ def _rustfmt_check_aspect_impl(target, ctx):
     args.add("--")
     args.add(toolchain.rustfmt)
     args.add("--edition")
-    args.add(crate_info.edition)
+    args.add(edition)
     args.add("--check")
     args.add_all(srcs)
 
@@ -88,7 +105,7 @@ def _rustfmt_check_aspect_impl(target, ctx):
 
     return [
         OutputGroupInfo(
-            rustfmt = depset([marker]),
+            rustfmt_check = depset([marker]),
         ),
     ]
 
@@ -116,7 +133,7 @@ file in the root of any workspace which loads `rules_rust`.
 
 ```
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect
-build --output_groups=+rustfmt
+build --output_groups=+rustfmt_check
 ```
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
@@ -126,7 +143,7 @@ source files are also ignored by this aspect.
 )
 
 def _rustfmt_check_impl(ctx):
-    files = depset([], transitive = [target[OutputGroupInfo].rustfmt for target in ctx.attr.targets])
+    files = depset([], transitive = [target[OutputGroupInfo].rustfmt_check for target in ctx.attr.targets])
     return [DefaultInfo(files = files)]
 
 rustfmt_check = rule(

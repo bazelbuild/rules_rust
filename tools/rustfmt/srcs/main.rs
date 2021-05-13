@@ -71,7 +71,7 @@ fn build_rustfmt_targets(options: &Config, targets: &Vec<String>) {
     let build_args = vec![
         "build",
         "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect",
-        "--output_groups=+rustfmt",
+        "--output_groups=+rustfmt_manifest",
     ];
 
     let child = Command::new(&options.bazel)
