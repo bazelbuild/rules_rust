@@ -131,6 +131,18 @@ fn apply_rustfmt(options: &Config, targets: &Vec<String>) {
     }
 }
 
+/// Generate an absolute path to a file without resolving symlinks
+fn absolutify_existing<T: AsRef<Path>>(path: &T) -> std::io::Result<PathBuf> {
+    let absolute_path = if path.as_ref().is_absolute() {
+        path.as_ref().to_owned()
+    } else {
+        std::env::current_dir()
+            .expect("Failed to get working directory")
+            .join(path)
+    };
+    std::fs::metadata(&absolute_path).map(|_| absolute_path)
+}
+
 /// A struct containing details used for executing rustfmt.
 #[derive(Debug)]
 struct Config {
@@ -165,11 +177,9 @@ fn parse_args() -> Config {
             env::var("BAZEL_REAL")
             .unwrap_or_else(|_| "bazel".to_owned())
         ),
-        rustfmt: PathBuf::from(env!("RUSTFMT"))
-            .canonicalize()
+        rustfmt: absolutify_existing(&env!("RUSTFMT"))
             .expect("Unable to find rustfmt binary"),
-        config: PathBuf::from(env!("RUSTFMT_CONFIG"))
-            .canonicalize()
+        config: absolutify_existing(&env!("RUSTFMT_CONFIG"))
             .expect("Unable to find rustfmt config file"),
         package: env::args().nth(1),
     }
