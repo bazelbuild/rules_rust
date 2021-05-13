@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str;
 
+use label;
+
 fn main() {
     // Gather all command line and environment settings
     let options = parse_args();
@@ -22,20 +24,32 @@ const SUPPORTED_RULES: &str =
 
 /// Perform a `bazel` query to determine a list of Bazel targets which are to be formatted.
 fn query_rustfmt_targets(options: &Config) -> Vec<String> {
-    let scope = match &options.package {
-        Some(target) => {
-            if !target.ends_with(":all") && !target.ends_with("...") {
-                return vec![target.to_string()];
+    // Determine what packages to query
+    let scope = match options.packages.is_empty() {
+        true => "//...:all".to_owned(),
+        false => {
+            // Check to see if all the provided packages are actually targets
+            let is_all_targets = options
+                .packages
+                .iter()
+                .all(|pkg| match label::analyze(pkg) {
+                    Ok(tgt) => tgt.name != "all",
+                    Err(_) => false,
+                });
+
+            // Early return if a list of targets and not packages were provided
+            if is_all_targets {
+                return options.packages.clone();
             }
-            target
+
+            options.packages.join(" + ")
         }
-        None => "//...:all",
     };
 
     let query_args = vec![
         "query".to_owned(),
         format!(
-            r#"kind('{types}', {scope}) except attr(tags, 'norustfmt|manual', kind('{types}', {scope}))"#,
+            r#"kind('{types}', {scope}) except attr(tags, 'norustfmt', kind('{types}', {scope}))"#,
             types = SUPPORTED_RULES,
             scope = scope
         ),
@@ -71,7 +85,7 @@ fn build_rustfmt_targets(options: &Config, targets: &Vec<String>) {
     let build_args = vec![
         "build",
         "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect",
-        "--output_groups=+rustfmt_manifest",
+        "--output_groups=rustfmt_manifest",
     ];
 
     let child = Command::new(&options.bazel)
@@ -159,10 +173,10 @@ struct Config {
     /// https://rust-lang.github.io/rustfmt/
     pub config: PathBuf,
 
-    /// An optional command line flag used to control what targets
-    /// to format. Users are expected to either pass a Bazel label
-    /// or a package pattern (`//my/package/...`).
-    pub package: Option<String>,
+    /// Optionally, users can pass a list of targets/packages/scopes
+    /// (eg `//my:target` or `//my/pkg/...`) to control the targets
+    /// to be formatted.
+    pub packages: Vec<String>,
 }
 
 /// Parse command line arguments and environment variables to
@@ -181,7 +195,7 @@ fn parse_args() -> Config {
             .expect("Unable to find rustfmt binary"),
         config: absolutify_existing(&env!("RUSTFMT_CONFIG"))
             .expect("Unable to find rustfmt config file"),
-        package: env::args().nth(1),
+        packages: env::args().skip(1).collect(),
     }
 }
 

@@ -205,14 +205,19 @@ def rustfmt(name, config = Label("//tools/rustfmt:rustfmt.toml")):
     """
     rust_binary(
         name = name,
-        rustc_env = {
-            "RUSTFMT": "$(rootpath {})".format(Label("//tools/rustfmt:rustfmt_bin")),
-            "RUSTFMT_CONFIG": "$(rootpath {})".format(config),
-        },
         data = [
             config,
             Label("//tools/rustfmt:rustfmt_bin"),
         ],
-        srcs = [Label("//tools/rustfmt:srcs")],
+        deps = [
+            Label("//util/label"),
+        ],
+        rustc_env = {
+            "RUSTFMT": "$(rootpath {})".format(Label("//tools/rustfmt:rustfmt_bin")),
+            "RUSTFMT_CONFIG": "$(rootpath {})".format(config),
+        },
+        srcs = [
+            Label("//tools/rustfmt:srcs"),
+        ],
         edition = "2018",
     )
