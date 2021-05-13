@@ -3,7 +3,6 @@
 * [rustfmt](#rustfmt)
 * [rustfmt_aspect](#rustfmt_aspect)
 * [rustfmt_check](#rustfmt_check)
-* [rustfmt_check_aspect](#rustfmt_check_aspect)
 
 <a id="#rustfmt_check"></a>
 
@@ -15,7 +14,7 @@ rustfmt_check(<a href="#rustfmt_check-name">name</a>, <a href="#rustfmt_check-ta
 
 A rule for defining a target which runs `rustfmt` in `--check` mode on an explicit list of targets
 
-For more information on the use of `rustfmt` directly, see [rustfmt_check_aspect](#rustfmt_check_aspect).
+For more information on the use of `rustfmt` directly, see [rustfmt_aspect](#rustfmt_aspect).
 
 
 **ATTRIBUTES**
@@ -103,41 +102,20 @@ Note that generated sources will be ignored and targets tagged as `norustfmt` wi
 rustfmt_aspect(<a href="#rustfmt_aspect-name">name</a>)
 </pre>
 
-This aspect is used to gather information about a crate for use in rustfmt
+This aspect is used to gather information about a crate for use in rustfmt and perform rustfmt checks
 
-This aspect is used directly by [rustfmt](#rustfmt) targets to determine the
-appropriate flags to use when formatting Rust sources. For more details on how
-to format source code, see the [rustfmt](#rustfmt) rule.
+Output Groups:
 
+- `rustfmt_manifest`: The `rustfmt_manifest` output is used directly by [rustfmt](#rustfmt) targets
+to determine the appropriate flags to use when formatting Rust sources. For more details on how to
+format source code, see the [rustfmt](#rustfmt) rule.
 
-**ASPECT ATTRIBUTES**
-
-
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rustfmt_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
-
-
-<a id="#rustfmt_check_aspect"></a>
-
-## rustfmt_check_aspect
-
-<pre>
-rustfmt_check_aspect(<a href="#rustfmt_check_aspect-name">name</a>)
-</pre>
-
-Executes rustfmt in `--check` mode on the specified target.
-
-To enable this aspect for your workspace, simply add the following to the `.bazelrc`
-file in the root of any workspace which loads `rules_rust`.
-
+- `rustfmt_checks`: Executes rustfmt in `--check` mode on the specified target. To enable this check
+for your workspace, simply add the following to the `.bazelrc` file in the root of any workspace
+which loads `rules_rust`:
 ```
-build --aspects=@rules_rust//rust:defs.bzl%rustfmt_check_aspect
-build --output_groups=+rustfmt_check
+build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build --output_groups=+rustfmt_checks
 ```
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
@@ -154,6 +132,6 @@ source files are also ignored by this aspect.
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rustfmt_check_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
+| <a id="rustfmt_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
 
 
