@@ -80,7 +80,7 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
 
 /// Build a list of Bazel targets using the `rustfmt_aspect` to produce the
 /// arguments to use when formatting the sources of those targets.
-fn build_rustfmt_targets(options: &Config, targets: &Vec<String>) {
+fn generate_rustfmt_target_manifests(options: &Config, targets: &Vec<String>) {
     let build_args = vec![
         "build",
         "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect",
@@ -109,7 +109,7 @@ fn build_rustfmt_targets(options: &Config, targets: &Vec<String>) {
 fn apply_rustfmt(options: &Config, targets: &Vec<String>) {
     // Ensure the targets are first built and a manifest containing `rustfmt`
     // arguments are generated before formatting source files.
-    build_rustfmt_targets(&options, &targets);
+    generate_rustfmt_target_manifests(&options, &targets);
 
     for target in targets.iter() {
         // Replace any `:` characters and strip leading slashes
