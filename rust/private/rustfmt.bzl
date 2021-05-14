@@ -35,9 +35,9 @@ def _generate_manifest(edition, srcs, ctx):
     manifest = ctx.actions.declare_file(ctx.label.name + ".rustfmt")
     ctx.actions.write(
         output = manifest,
-        content = "\n".join([
+        content = "\n".join(src_paths + [
             edition,
-        ] + src_paths),
+        ]),
     )
 
     return manifest

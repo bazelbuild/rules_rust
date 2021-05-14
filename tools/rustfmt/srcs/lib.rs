@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -56,17 +55,22 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
         manifest.display()
     ));
 
-    let mut lines: VecDeque<String> = content
+    let mut lines: Vec<String> = content
         .split("\n")
         .into_iter()
         .filter(|s| !s.is_empty())
         .map(|s| s.to_owned())
         .collect();
 
+    let edition = lines
+        .pop()
+        .expect("There should always be at least 1 line in the manifest");
+    edition
+        .parse::<i32>()
+        .expect("The edition should be a numeric value. eg `2018`.");
+
     RustfmtManifest {
-        edition: lines
-            .pop_front()
-            .expect("There should always be at least 1 line in the manifest"),
-        sources: lines.into(),
+        edition: edition,
+        sources: lines,
     }
 }
