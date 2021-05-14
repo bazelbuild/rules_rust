@@ -17,3 +17,10 @@ error_format(
     build_setting_default = "human",
     visibility = ["//visibility:public"],
 )
+
+# This setting is used by the rustfmt rules. See https://bazelbuild.github.io/rules_rust/rust_fmt.html
+label_flag(
+    name = "rustfmt.toml",
+    build_setting_default = "//tools/rustfmt:rustfmt.toml",
+    visibility = ["//visibility:public"],
+)

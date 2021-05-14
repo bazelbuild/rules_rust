@@ -66,7 +66,7 @@ impl Runfiles {
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
-fn find_runfiles_dir() -> io::Result<PathBuf> {
+pub fn find_runfiles_dir() -> io::Result<PathBuf> {
     let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
 
     let mut binary_path = PathBuf::from(&exec_path);

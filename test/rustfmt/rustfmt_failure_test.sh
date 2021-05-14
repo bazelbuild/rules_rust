@@ -23,10 +23,10 @@ cd "${BUILD_WORKSPACE_DIRECTORY}"
 function check_build_result() {
   local ret=0
   echo -n "Testing ${2}... "
-  (bazel build //test/rustfmt:"${2}" &> /dev/null) || ret="$?" && true
+  (bazel test //test/rustfmt:"${2}" &> /dev/null) || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
     echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/rustfmt:${2}"
-    echo "  Run \"bazel build //test/rustfmt:${2}\" to see the output"
+    echo "  Run \"bazel test //test/rustfmt:${2}\" to see the output"
     exit 1
   else
     echo "OK"
@@ -34,18 +34,18 @@ function check_build_result() {
 }
 
 function test_all() {
-  local -r BUILD_OK=0
-  local -r BUILD_FAILED=1
+  local -r TEST_OK=0
+  local -r TEST_FAILED=3
 
-  check_build_result $BUILD_FAILED check_unformatted_2015
-  check_build_result $BUILD_FAILED check_unformatted_2018
-  check_build_result $BUILD_OK check_formatted_2015
-  check_build_result $BUILD_OK check_formatted_2018
+  check_build_result $TEST_FAILED test_unformatted_2015
+  check_build_result $TEST_FAILED test_unformatted_2018
+  check_build_result $TEST_OK test_formatted_2015
+  check_build_result $TEST_OK test_formatted_2018
 }
 
 function test_apply() {
-  local -r BUILD_OK=0
-  local -r BUILD_FAILED=1
+  local -r TEST_OK=0
+  local -r TEST_FAILED=3
 
   temp_dir="$(mktemp -d -t ci-XXXXXXXXXX)"
   new_workspace="${temp_dir}/rules_rust_test_rustfmt"
@@ -67,18 +67,18 @@ EOF
   # Format a specific target
   bazel run @rules_rust//tools/rustfmt -- //test/rustfmt:unformatted_2018
 
-  check_build_result $BUILD_FAILED check_unformatted_2015
-  check_build_result $BUILD_OK check_unformatted_2018
-  check_build_result $BUILD_OK check_formatted_2015
-  check_build_result $BUILD_OK check_formatted_2018
+  check_build_result $TEST_FAILED test_unformatted_2015
+  check_build_result $TEST_OK test_unformatted_2018
+  check_build_result $TEST_OK test_formatted_2015
+  check_build_result $TEST_OK test_formatted_2018
 
   # Format all targets
-  bazel run @rules_rust//tools/rustfmt
+  bazel run @rules_rust//tools/rustfmt --@rules_rust//:rustfmt.toml=//test/rustfmt:test_rustfmt.toml
 
-  check_build_result $BUILD_OK check_unformatted_2015
-  check_build_result $BUILD_OK check_unformatted_2018
-  check_build_result $BUILD_OK check_formatted_2015
-  check_build_result $BUILD_OK check_formatted_2018
+  check_build_result $TEST_OK test_unformatted_2015
+  check_build_result $TEST_OK test_unformatted_2018
+  check_build_result $TEST_OK test_formatted_2015
+  check_build_result $TEST_OK test_formatted_2018
 
   popd
 

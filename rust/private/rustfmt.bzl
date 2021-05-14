@@ -1,15 +1,14 @@
 """A module defining rustfmt rules"""
 
 load(":common.bzl", "rust_common")
-load(":rust.bzl", "rust_binary")
 load(":utils.bzl", "find_toolchain")
 
-def _find_rustfmtable_srcs(target, ctx):
+def _find_rustfmtable_srcs(target, aspect_ctx = None):
     """Parse a target for rustfmt formattable sources.
 
     Args:
         target (Target): The target the aspect is running on.
-        ctx (ctx): The aspect's context object.
+        aspect_ctx (ctx, optional): The aspect's context object.
 
     Returns:
         list: A list of formattable sources (`File`).
@@ -18,7 +17,7 @@ def _find_rustfmtable_srcs(target, ctx):
         return []
 
     # Targets annotated with `norustfmt` will not be formatted
-    if "norustfmt" in ctx.rule.attr.tags:
+    if aspect_ctx and "norustfmt" in aspect_ctx.rule.attr.tags:
         return []
 
     crate_info = target[rust_common.crate_info]
@@ -96,27 +95,18 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_manifest`: The `rustfmt_manifest` output is used directly by [rustfmt](#rustfmt) targets
-to determine the appropriate flags to use when formatting Rust sources. For more details on how to
-format source code, see the [rustfmt](#rustfmt) rule.
+- `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
+- `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
-- `rustfmt_checks`: Executes rustfmt in `--check` mode on the specified target. To enable this check
-for your workspace, simply add the following to the `.bazelrc` file in the root of any workspace
-which loads `rules_rust`:
-```
-build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
-build --output_groups=+rustfmt_checks
-```
+The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
+used at runtime.
+
+[cs]: https://rust-lang.github.io/rustfmt/
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
 users may tag a target with `norustfmt` to have it skipped. Additionally, generated
 source files are also ignored by this aspect.
 """,
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-    ],
     attrs = {
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustfmt on all platforms",
@@ -126,98 +116,60 @@ source files are also ignored by this aspect.
         ),
     },
     incompatible_use_toolchain_transition = True,
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+    ],
 )
 
-def _rustfmt_check_impl(ctx):
-    files = depset([], transitive = [target[OutputGroupInfo].rustfmt_checks for target in ctx.attr.targets])
-    return [DefaultInfo(files = files)]
+def _rustfmt_test_impl(ctx):
+    # The executable of a test target must be the output of an action in
+    # the rule implementation. This file is simply a symlink to the real
+    # rustfmt test runner.
+    runner = ctx.actions.declare_file("{}{}".format(
+        ctx.label.name,
+        ctx.executable._runner.extension,
+    ))
 
-rustfmt_check = rule(
-    implementation = _rustfmt_check_impl,
+    ctx.actions.symlink(
+        output = runner,
+        target_file = ctx.executable._runner,
+        is_executable = True,
+    )
+
+    manifests = [target[OutputGroupInfo].rustfmt_manifest for target in ctx.attr.targets]
+    srcs = [depset(_find_rustfmtable_srcs(target)) for target in ctx.attr.targets]
+
+    runfiles = ctx.runfiles(
+        transitive_files = depset(transitive = manifests + srcs),
+    )
+
+    runfiles = runfiles.merge(
+        ctx.attr._runner[DefaultInfo].default_runfiles,
+    )
+
+    return [DefaultInfo(
+        files = depset([runner]),
+        runfiles = runfiles,
+        executable = runner,
+    )]
+
+rustfmt_test = rule(
+    implementation = _rustfmt_test_impl,
+    doc = "A test rule for performing `rustfmt --check` on a set of targets",
     attrs = {
         "targets": attr.label_list(
-            doc = "Rust targets to run rustfmt on.",
+            doc = "Rust targets to run `rustfmt --check` on.",
             providers = [rust_common.crate_info],
             aspects = [rustfmt_aspect],
         ),
+        "_runner": attr.label(
+            doc = "The rustfmt test runner",
+            cfg = "exec",
+            executable = True,
+            default = Label("//tools/rustfmt:rustfmt_test"),
+        ),
     },
-    doc = """\
-A rule for defining a target which runs `rustfmt` in `--check` mode on an explicit list of targets
-
-For more information on the use of `rustfmt` directly, see [rustfmt_aspect](#rustfmt_aspect).
-""",
+    test = True,
 )
-
-def rustfmt(name, config = Label("//tools/rustfmt:rustfmt.toml")):
-    """A macro defining a [rustfmt](https://github.com/rust-lang/rustfmt#readme) runner.
-
-    This macro is used to generate a rustfmt binary which can be run to format the Rust source
-    files of `rules_rust` targets in the workspace. To define this target, simply load and call
-    it in a BUILD file.
-
-    eg: `//:BUILD.bazel`
-
-    ```python
-    load("@rules_rust//rust:defs.bzl", "rustfmt")
-
-    rustfmt(
-        name = "rustfmt",
-    )
-    ```
-
-    This now allows users to run `bazel run //:rustfmt` to format any target which provides `CrateInfo`.
-
-    This binary also supports accepts a [label](https://docs.bazel.build/versions/master/build-ref.html#labels) or
-    pattern (`//my/package/...`) to allow for more granular control over what targets get formatted. This
-    can be useful when dealing with larger projects as `rustfmt` can only be run on a target which successfully
-    builds. Given the following workspace layout:
-
-    ```
-    WORKSPACE.bazel
-    BUILD.bazel
-    package_a/
-        BUILD.bazel
-        src/
-            lib.rs
-            mod_a.rs
-            mod_b.rs
-    package_b/
-        BUILD.bazel
-        subpackage_1/
-            BUILD.bazel
-            main.rs
-        subpackage_2/
-            BUILD.bazel
-            main.rs
-    ```
-
-    Users can choose to only format the `rust_lib` target in `package_a` using `bazel run //:rustfmt -- //package_a:rust_lib`.
-    Additionally, users can format all of `package_b` using `bazel run //:rustfmt -- //package_b/...`.
-
-    Users not looking to add a custom `rustfmt` config can simply run the `@rules_rust//tools/rustfmt` to avoid defining their
-    own target.
-
-    Note that generated sources will be ignored and targets tagged as `norustfmt` will be skipped.
-
-    Args:
-        name (str): The name of the rustfmt runner
-        config (Label, optional): The [rustfmt config](https://rust-lang.github.io/rustfmt/) to use.
-    """
-    rust_binary(
-        name = name,
-        data = [
-            config,
-            Label("//tools/rustfmt:rustfmt_bin"),
-        ],
-        deps = [
-            Label("//util/label"),
-        ],
-        rustc_env = {
-            "RUSTFMT": "$(rootpath {})".format(Label("//tools/rustfmt:rustfmt_bin")),
-            "RUSTFMT_CONFIG": "$(rootpath {})".format(config),
-        },
-        srcs = [
-            Label("//tools/rustfmt:srcs"),
-        ],
-        edition = "2018",
-    )

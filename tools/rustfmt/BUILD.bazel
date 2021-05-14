@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rustfmt", "rustfmt_check")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -15,18 +15,46 @@ alias(
     }),
 )
 
-filegroup(
-    name = "srcs",
-    srcs = glob(["srcs/**/*.rs"]),
+rust_library(
+    name = "rustfmt_lib",
+    srcs = glob(
+        ["srcs/**/*.rs"],
+        exclude = ["srcs/**/*main.rs"],
+    ),
+    data = [
+        ":rustfmt_bin",
+        "//:rustfmt.toml",
+    ],
+    edition = "2018",
+    rustc_env = {
+        "RUSTFMT": "$(rootpath :rustfmt_bin)",
+        "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
+    },
 )
 
-rustfmt(
+rust_binary(
     name = "rustfmt",
+    srcs = [
+        "srcs/main.rs",
+    ],
+    data = [
+        "//:rustfmt.toml",
+    ],
+    edition = "2018",
+    deps = [
+        ":rustfmt_lib",
+        "//util/label",
+    ],
 )
 
-rustfmt_check(
-    name = "check",
-    targets = [
-        "rustfmt",
+rust_binary(
+    name = "rustfmt_test",
+    srcs = [
+        "srcs/test_main.rs",
+    ],
+    edition = "2018",
+    deps = [
+        ":rustfmt_lib",
+        "//tools/runfiles",
     ],
 )

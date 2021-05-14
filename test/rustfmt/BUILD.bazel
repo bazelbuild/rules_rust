@@ -1,4 +1,8 @@
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rustfmt_check")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rustfmt_test")
+
+exports_files([
+    "test_rustfmt.toml",
+])
 
 rust_binary(
     name = "formatted_2018",
@@ -6,10 +10,8 @@ rust_binary(
     edition = "2018",
 )
 
-rustfmt_check(
-    name = "check_formatted_2018",
-    testonly = True,
-    tags = ["manual"],
+rustfmt_test(
+    name = "test_formatted_2018",
     targets = [":formatted_2018"],
 )
 
@@ -19,9 +21,8 @@ rust_binary(
     edition = "2018",
 )
 
-rustfmt_check(
-    name = "check_unformatted_2018",
-    testonly = True,
+rustfmt_test(
+    name = "test_unformatted_2018",
     tags = ["manual"],
     targets = [":unformatted_2018"],
 )
@@ -32,10 +33,8 @@ rust_binary(
     edition = "2015",
 )
 
-rustfmt_check(
-    name = "check_formatted_2015",
-    testonly = True,
-    tags = ["manual"],
+rustfmt_test(
+    name = "test_formatted_2015",
     targets = [":formatted_2015"],
 )
 
@@ -45,9 +44,8 @@ rust_binary(
     edition = "2015",
 )
 
-rustfmt_check(
-    name = "check_unformatted_2015",
-    testonly = True,
+rustfmt_test(
+    name = "test_unformatted_2015",
     tags = ["manual"],
     targets = [":unformatted_2015"],
 )

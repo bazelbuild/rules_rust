@@ -90,10 +90,10 @@ PAGES = dict([
     ),
     page(
         name = "rust_fmt",
+        header_template = ":rust_fmt.vm",
         symbols = [
-            "rustfmt",
             "rustfmt_aspect",
-            "rustfmt_check",
+            "rustfmt_test",
         ],
     ),
     page(

@@ -50,9 +50,8 @@ load(
     _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
     _rust_test_suite = "rust_test_suite",
-    _rustfmt = "rustfmt",
     _rustfmt_aspect = "rustfmt_aspect",
-    _rustfmt_check = "rustfmt_check",
+    _rustfmt_test = "rustfmt_test",
 )
 load(
     "@rules_rust//rust:repositories.bzl",
@@ -117,6 +116,5 @@ rust_analyzer_aspect = _rust_analyzer_aspect
 crate_universe = _crate_universe
 crate = _crate
 
-rustfmt = _rustfmt
 rustfmt_aspect = _rustfmt_aspect
-rustfmt_check = _rustfmt_check
+rustfmt_test = _rustfmt_test

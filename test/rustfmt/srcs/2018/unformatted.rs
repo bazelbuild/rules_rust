@@ -1,7 +1,4 @@
-use std::future::Future;
-use std::sync::Arc;
-use std::task::{Context, Poll, Wake};
-use std::thread::{self, Thread};
+use std::future::Future; use std::sync::Arc; use std::task::{Context, Poll, Wake}; use std::thread::{self, Thread};
 /// A waker that wakes up the current thread when called.
 struct ThreadWaker(Thread);
 impl Wake for ThreadWaker {fn wake(self: Arc<Self>) {self.0.unpark();}}

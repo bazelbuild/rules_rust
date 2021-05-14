@@ -51,9 +51,8 @@ load(
 )
 load(
     "//rust/private:rustfmt.bzl",
-    _rustfmt = "rustfmt",
     _rustfmt_aspect = "rustfmt_aspect",
-    _rustfmt_check = "rustfmt_check",
+    _rustfmt_test = "rustfmt_test",
 )
 
 rust_library = _rust_library
@@ -107,11 +106,8 @@ rust_analyzer_aspect = _rust_analyzer_aspect
 rust_analyzer = _rust_analyzer
 # See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
 
-rustfmt = _rustfmt
-# See @rules_rust//rust/private:rustfmt.bzl for a complete description.
-
 rustfmt_aspect = _rustfmt_aspect
 # See @rules_rust//rust/private:rustfmt.bzl for a complete description.
 
-rustfmt_check = _rustfmt_check
+rustfmt_test = _rustfmt_test
 # See @rules_rust//rust/private:rustfmt.bzl for a complete description.
