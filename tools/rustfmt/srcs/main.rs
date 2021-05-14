@@ -135,6 +135,8 @@ fn apply_rustfmt(options: &Config, targets: &Vec<String>) {
             .current_dir(&options.workspace)
             .arg("--edition")
             .arg(rustfmt_config.edition)
+            .arg("--config-path")
+            .arg(&options.config)
             .args(rustfmt_config.sources)
             .status()
             .expect("Failed to run rustfmt");
