@@ -17,10 +17,6 @@ fn main() {
     apply_rustfmt(&options, &targets);
 }
 
-/// A set of supported rules for use in a `bazel query` when querying for Rust targets.
-const SUPPORTED_RULES: &'static str =
-    "rust_library|rust_proc_macro|rust_shared_library|rust_static_library|rust_binary|rust_test";
-
 /// Perform a `bazel` query to determine a list of Bazel targets which are to be formatted.
 fn query_rustfmt_targets(options: &Config) -> Vec<String> {
     // Determine what packages to query
@@ -49,7 +45,7 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
         "query".to_owned(),
         format!(
             r#"kind('{types}', {scope}) except attr(tags, 'norustfmt', kind('{types}', {scope}))"#,
-            types = SUPPORTED_RULES,
+            types = "^rust_",
             scope = scope
         ),
     ];
@@ -115,14 +111,19 @@ fn apply_rustfmt(options: &Config, targets: &Vec<String>) {
         // Replace any `:` characters and strip leading slashes
         let target_path = target.replace(":", "/").trim_start_matches("/").to_owned();
 
+        // Find a manifest for the current target. Not all targets will have one
+        let manifest = options.workspace.join("bazel-bin").join(format!(
+            "{}.{}",
+            &target_path,
+            rustfmt_lib::RUSTFMT_MANIFEST_EXTENSION,
+        ));
+
+        if !manifest.exists() {
+            continue;
+        }
+
         // Load the manifest containing rustfmt arguments
-        let rustfmt_config = rustfmt_lib::parse_rustfmt_manifest(
-            &options.workspace.join("bazel-bin").join(format!(
-                "{}.{}",
-                &target_path,
-                rustfmt_lib::RUSTFMT_MANIFEST_EXTENSION,
-            )),
-        );
+        let rustfmt_config = rustfmt_lib::parse_rustfmt_manifest(&manifest);
 
         // Ignore any targets which do not have source files. This can
         // occur in cases where all source files are generated.
