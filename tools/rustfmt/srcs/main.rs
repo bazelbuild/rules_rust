@@ -161,7 +161,8 @@ struct Config {
 
     /// Optionally, users can pass a list of targets/packages/scopes
     /// (eg `//my:target` or `//my/pkg/...`) to control the targets
-    /// to be formatted.
+    /// to be formatted. If empty, all targets in the workspace will
+    /// be formatted.
     pub packages: Vec<String>,
 }
 
