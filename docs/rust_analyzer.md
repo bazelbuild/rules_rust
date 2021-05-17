@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Analyzer
 
 * [rust_analyzer](#rust_analyzer)

@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Wasm Bindgen
 
 * [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)

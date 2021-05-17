@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Cargo Build Script
 
 * [cargo_build_script](#cargo_build_script)

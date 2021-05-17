@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Defs
 
 * [rust_binary](#rust_binary)
