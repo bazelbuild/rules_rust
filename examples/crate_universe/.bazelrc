@@ -1,0 +1,1 @@
+build --repo_env=RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP=true

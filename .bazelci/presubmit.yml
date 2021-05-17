@@ -112,8 +112,6 @@ tasks:
   crate_universe_examples_ubuntu2004:
     name: Crate Universe Examples
     platform: ubuntu2004
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
     build_targets:
       - "//..."
@@ -122,8 +120,6 @@ tasks:
   crate_universe_rbe_ubuntu1604:
     name: Crate Universe Examples
     platform: rbe_ubuntu1604
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
     build_targets:
       - "//..."
@@ -132,8 +128,6 @@ tasks:
   crate_universe_examples_macos:
     name: Crate Universe Examples
     platform: macos
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
     build_targets:
       - "//..."
@@ -142,8 +136,6 @@ tasks:
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
