@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Clippy
 
 * [rust_clippy](#rust_clippy)

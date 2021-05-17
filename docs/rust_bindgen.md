@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Bindgen
 
 * [rust_bindgen_library](#rust_bindgen_library)

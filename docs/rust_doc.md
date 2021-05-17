@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Doc
 
 * [rust_doc](#rust_doc)

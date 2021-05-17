@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Crate Universe
 
 * [crate_universe](#crate_universe)

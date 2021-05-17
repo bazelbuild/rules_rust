@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Proto
 
 * [rust_grpc_library](#rust_grpc_library)

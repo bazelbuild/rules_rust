@@ -32,18 +32,19 @@ def gen_header(page):
     # Set the top level header
     page_names = [w.capitalize() for w in page.name.split("_")]
     cmd = [
-        "echo '# {}' > $@".format(" ".join(page_names)),
-        "echo '' >> $@",
+        "echo '<!-- Generated with Stardoc: http://skydoc.bazel.build -->'",
+        "echo '# {}'".format(" ".join(page_names)),
+        "echo ''",
     ]
 
     # Add table of contents
-    cmd.extend(["echo '* [{rule}](#{rule})' >> $@".format(rule = s) for s in page.symbols])
+    cmd.extend(["echo '* [{rule}](#{rule})'".format(rule = s) for s in page.symbols])
 
     # Render an optional header
     if page.header_template:
         cmd.extend([
-            "echo '' >> $@",
-            "cat $(execpath {}) >> $@".format(page.header_template),
+            "echo ''",
+            "cat $(execpath {})".format(page.header_template),
         ])
         srcs = [page.header_template]
     else:
@@ -52,7 +53,7 @@ def gen_header(page):
     native.genrule(
         name = name,
         outs = outs,
-        cmd = "\n".join(cmd),
+        cmd = "{\n" + "\n".join(cmd) + "\n} > $@",
         srcs = srcs,
         output_to_bindir = True,
     )
