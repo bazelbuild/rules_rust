@@ -73,7 +73,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@rules_rust_bindgen__libc__0_2_77//:libc",
+            "@rules_rust_bindgen__libc__0_2_94//:libc",
         ],
         "//conditions:default": [],
     }) + selects.with_or({

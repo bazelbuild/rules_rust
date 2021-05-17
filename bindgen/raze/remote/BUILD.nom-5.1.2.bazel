@@ -71,7 +71,7 @@ rust_library(
     version = "5.1.2",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_bindgen__memchr__2_3_3//:memchr",
+        "@rules_rust_bindgen__memchr__2_4_0//:memchr",
     ],
 )
 

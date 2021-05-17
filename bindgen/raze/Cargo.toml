@@ -6,7 +6,7 @@ version = "0.0.1"
 path = "fake_rules_rust_bindgen_lib.rs"
 
 [dependencies]
-bindgen = "0.55.1"
+bindgen = "0.58.1"
 libloading = "=0.6.3"
 
 [package.metadata.raze]
@@ -17,7 +17,7 @@ rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "."
 default_gen_buildrs = false
 
-[package.metadata.raze.crates.bindgen.'0.55.1']
+[package.metadata.raze.crates.bindgen.'0.58.1']
 gen_buildrs = true
 extra_aliased_targets = ["cargo_bin_bindgen"]
 
