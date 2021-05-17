@@ -1,3 +1,4 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Fmt
 
 * [rustfmt_aspect](#rustfmt_aspect)
