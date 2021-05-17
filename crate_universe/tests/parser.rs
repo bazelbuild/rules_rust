@@ -40,7 +40,7 @@ fn parses_one_cargo_toml() {
     lazy_static = { version = ">=1.0.0, <2.0.0", default-features = true, features = [] }
     maplit = { version = ">=1.0.1, <2.0.0", default-features = true, features = [] }
     serde = { version = ">=1.0.0, <2.0.0", default-features = false, features = ["derive"] }
-    structopt = { version = ">=0.3.0, <0.4.0", default-features = true, features = [] }
+    structopt = { version = ">=0.3.0, <1.0.0", default-features = true, features = [] }
     "#};
 
     let want_labels_to_deps = btreemap! {
@@ -86,7 +86,7 @@ fn parses_one_cargo_toml() {
 
     assert_eq!(
         value.as_table().unwrap().get("dev-dependencies").unwrap(),
-        &r#"futures = { version = ">=0.1.0, <0.2.0", default-features = true, features = [] }"#
+        &r#"futures = { version = ">=0.1.0, <1.0.0", default-features = true, features = [] }"#
             .parse::<toml::Value>()
             .unwrap(),
     );
@@ -122,9 +122,9 @@ fn merges_two_cargo_tomls() {
     };
 
     let want_deps = indoc! {r#"
-    lazy_static = { version = ">=1.0.0, <2.0.0, >=1.1.0, <1.2.0", default-features = true, features = [] }
+    lazy_static = { version = ">=1.0.0, <2.0.0, >=1.1.0, <2.0.0", default-features = true, features = [] }
     maplit = { version = ">=1.0.1, <2.0.0", default-features = true, features = [] }
-    num_enum = { version = ">=0.5.0, <0.6.0", default-features = true, features = ["complex-expressions"] }
+    num_enum = { version = ">=0.5.0, <1.0.0", default-features = true, features = ["complex-expressions"] }
     serde = { version = ">=1.0.0, <2.0.0, >=1.0.57, <2.0.0", default-features = true, features = ["derive", "rc"] }
     "#};
 
