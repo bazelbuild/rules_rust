@@ -3,9 +3,6 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::str;
 
-use label;
-use rustfmt_lib;
-
 fn main() {
     // Gather all command line and environment settings
     let options = parse_args();
