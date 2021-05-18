@@ -65,7 +65,7 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
 
     str::from_utf8(&output.stdout)
         .expect("Invalid stream from command")
-        .split("\n")
+        .split('\n')
         .filter(|line| !line.is_empty())
         .map(|line| line.to_string())
         .collect()
@@ -73,7 +73,7 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
 
 /// Build a list of Bazel targets using the `rustfmt_aspect` to produce the
 /// arguments to use when formatting the sources of those targets.
-fn generate_rustfmt_target_manifests(options: &Config, targets: &Vec<String>) {
+fn generate_rustfmt_target_manifests(options: &Config, targets: &[String]) {
     let build_args = vec![
         "build",
         "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect",
@@ -99,14 +99,14 @@ fn generate_rustfmt_target_manifests(options: &Config, targets: &Vec<String>) {
 }
 
 /// Run rustfmt on a set of Bazel targets
-fn apply_rustfmt(options: &Config, targets: &Vec<String>) {
+fn apply_rustfmt(options: &Config, targets: &[String]) {
     // Ensure the targets are first built and a manifest containing `rustfmt`
     // arguments are generated before formatting source files.
     generate_rustfmt_target_manifests(&options, &targets);
 
     for target in targets.iter() {
         // Replace any `:` characters and strip leading slashes
-        let target_path = target.replace(":", "/").trim_start_matches("/").to_owned();
+        let target_path = target.replace(":", "/").trim_start_matches('/').to_owned();
 
         // Find a manifest for the current target. Not all targets will have one
         let manifest = options.workspace.join("bazel-bin").join(format!(
