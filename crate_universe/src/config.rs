@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     path::PathBuf,
 };
 
@@ -58,7 +58,7 @@ pub struct Config {
     /// replaced by crate names and versions.
     pub crate_registry_template: String,
 
-    pub target_triples: Vec<String>,
+    pub target_triples: HashSet<String>,
     pub cargo: PathBuf,
 
     #[serde(default = "default_rules_rust_workspace_name")]

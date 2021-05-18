@@ -1,6 +1,6 @@
 CRATE_TARGET_NAMES = {
-    {%- for crate_data in crates %}
-    "{{crate_data.crate_context.pkg_name}}": "{{crate_to_label(repo_rule_name=repo_rule_name, package_name=crate_data.crate_context.pkg_name, package_version=crate_data.crate_context.pkg_version)}}",
+    {%- for crate in crates %}
+    "{{crate.pkg_name}}": "{{crate_to_label(repo_rule_name=repo_rule_name, package_name=crate.pkg_name, package_version=crate.pkg_version)}}",
     {%- endfor %}
 }
 
@@ -16,9 +16,9 @@ def all_deps():
     """Return all standard dependencies explicitly listed in the Cargo.toml or packages list."""
     return [
         crate(crate_name) for crate_name in [
-            {%- for crate_data in crates %}
-            {%- if not crate_data.is_proc_macro %}
-            "{{crate_data.crate_context.pkg_name}}",
+            {%- for crate in crates %}
+            {%- if not crate.is_proc_macro %}
+            "{{crate.pkg_name}}",
             {%- endif %}
             {%- endfor %}
         ]
@@ -28,9 +28,9 @@ def all_proc_macro_deps():
     """Return all proc-macro dependencies explicitly listed in the Cargo.toml or packages list."""
     return [
         crate(crate_name) for crate_name in [
-            {%- for crate_data in crates %}
-            {%- if crate_data.is_proc_macro %}
-            "{{crate_data.crate_context.pkg_name}}",
+            {%- for crate in crates %}
+            {%- if crate.is_proc_macro %}
+            "{{crate.pkg_name}}",
             {%- endif %}
             {%- endfor %}
         ]

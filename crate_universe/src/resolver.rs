@@ -1,18 +1,12 @@
 use std::{
     borrow::Cow,
-    collections::{BTreeMap, BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     path::{Path, PathBuf},
     process::Stdio,
 };
 
 use anyhow::Context;
 use cargo_metadata::{DependencyKind, Metadata, MetadataCommand};
-use cargo_raze::{
-    context::CrateContext,
-    metadata::RazeMetadataFetcher,
-    planning::{BuildPlanner, BuildPlannerImpl},
-    settings::{GenMode, RazeSettings},
-};
 use log::trace;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
@@ -21,7 +15,11 @@ use url::Url;
 
 use crate::{
     consolidator::{Consolidator, ConsolidatorConfig, ConsolidatorOverride},
+    context::CrateContext,
+    metadata::RazeMetadataFetcher,
+    planning::{BuildPlanner, BuildPlannerImpl},
     renderer::RenderConfig,
+    settings::{GenMode, RazeSettings},
     NamedTempFile,
 };
 
@@ -35,7 +33,7 @@ pub struct Resolver {
     pub resolver_config: ResolverConfig,
     pub consolidator_config: ConsolidatorConfig,
     pub render_config: RenderConfig,
-    pub target_triples: Vec<String>,
+    pub target_triples: HashSet<String>,
     pub label_to_crates: BTreeMap<String, BTreeSet<String>>,
     digest: Option<String>,
 }
@@ -61,7 +59,7 @@ impl Resolver {
         resolver_config: ResolverConfig,
         consolidator_config: ConsolidatorConfig,
         render_config: RenderConfig,
-        target_triples: Vec<String>,
+        target_triples: HashSet<String>,
         label_to_crates: BTreeMap<String, BTreeSet<String>>,
     ) -> Resolver {
         Resolver {
@@ -222,18 +220,9 @@ impl Resolver {
         let merged_cargo_toml = NamedTempFile::with_str_content("Cargo.toml", &toml_str)
             .context("Writing intermediate Cargo.toml")?;
 
-        // RazeMetadataFetcher only uses the scheme+host+port of this URL.
-        // If it used the path, we'd run into issues escaping the {s and }s from the template,
-        // but the scheme+host+port should be fine.
-        let crate_registry_template_url = Url::parse(&self.render_config.crate_registry_template)
-            .context("Parsing repository template URL")?;
-        let md_fetcher = RazeMetadataFetcher::new(
-            &self.resolver_config.cargo,
-            crate_registry_template_url,
-            self.resolver_config.index_url.clone(),
-        );
+        let md_fetcher = RazeMetadataFetcher::new(&self.resolver_config.cargo);
         let metadata = md_fetcher
-            .fetch_metadata(merged_cargo_toml.path().parent().unwrap(), None, None)
+            .fetch_metadata(merged_cargo_toml.path().parent().unwrap(), None)
             .context("Failed fetching metadata")?;
 
         let raze_settings = RazeSettings {
@@ -274,7 +263,6 @@ impl Resolver {
             self.consolidator_config,
             self.render_config,
             digest,
-            self.target_triples,
             resolved_packages,
             member_packages_version_mapping?,
             self.label_to_crates,

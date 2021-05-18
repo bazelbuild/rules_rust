@@ -1,10 +1,8 @@
- select({
-{%- for condition, targeted_dep in per_triple_metadata %}
-        # {{ targeted_dep.target }}
-        "{{ condition }}": {
-            {%- for alias in targeted_dep.deps.aliased_dependencies %}
-            "{{alias.target}}": "{{alias.alias}}",
-            {%- endfor %}
-        },
+{%- for alias in crate.default_deps.aliased_dependencies %}
+        "{{alias.target}}": "{{alias.alias}}",
 {%- endfor %}
-    })
+{%- for dep in crate.targeted_deps %}
+{%- for alias in dep.deps.aliased_dependencies %}
+        "{{alias.target}}": "{{alias.alias}}",
+{%- endfor %}
+{%- endfor %}

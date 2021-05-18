@@ -15,20 +15,22 @@ edition = "2018"
 
 anyhow = "1"
 cargo_metadata = "0.13.1"
-# TODO: Use upstream once following changes are merged:
-# https://github.com/google/cargo-raze/pull/407
-# https://github.com/google/cargo-raze/pull/415
-cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "1e9949fd209056bfd7e35b4374b7b345f2920def", default-features = false }
+cargo_toml = "0.8.1"
+cargo-lock = "6.0.0"
+cargo-platform = "0.1.1"
 cfg-expr = "0.7.4"
 env_logger = "0.8"
 hex = "0.4"
 indoc = "1.0.2"
 itertools = "0.10"
 log = "0.4"
+pathdiff = "0.2.0"
 semver = { version = "0.11", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.9"
+slug = "0.1.4"
+spdx = "0.4.0"
 structopt = "0.3"
 tempfile = "3"
 tera = "1.6"

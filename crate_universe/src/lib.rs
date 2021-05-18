@@ -4,10 +4,16 @@ use std::io::Write;
 
 pub mod config;
 pub mod consolidator;
+pub mod context;
+pub mod error;
+pub mod metadata;
 pub mod parser;
+pub mod planning;
 pub mod renderer;
 pub mod resolver;
 mod serde_utils;
+pub mod settings;
+pub mod util;
 
 #[cfg(test)]
 mod testing;

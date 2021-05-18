@@ -6,13 +6,12 @@ use std::{
 };
 
 use anyhow::Context;
-use cargo_raze::context::{CrateContext, CrateDependencyContext, CrateTargetedDepContext};
 use config::crate_to_repo_rule_name;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tera::{self, Tera};
 
-use crate::{config, resolver::Dependencies};
+use crate::{config, context::CrateContext, resolver::Dependencies};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct RenderConfig {
@@ -25,7 +24,7 @@ pub struct RenderConfig {
 struct RenderContext {
     pub config: RenderConfig,
     pub hash: String,
-    pub transitive_renderable_packages: Vec<RenderablePackage>,
+    pub transitive_renderable_packages: Vec<CrateContext>,
     pub member_packages_version_mapping: Dependencies,
     pub label_to_crates: BTreeMap<String, BTreeSet<String>>,
 }
@@ -33,123 +32,6 @@ struct RenderContext {
 pub struct Renderer {
     context: RenderContext,
     internal_renderer: Tera,
-}
-
-// Get default and targeted metadata, collated per Bazel condition (which corresponds to a triple).
-// The default metadata is included in every triple.
-fn get_per_triple_metadata(package: &CrateContext) -> BTreeMap<String, CrateTargetedDepContext> {
-    let mut per_triple_metadata: BTreeMap<String, CrateTargetedDepContext> = BTreeMap::new();
-
-    // Always add a catch-all to cover the non-targeted dep case.
-    // We merge in the default_deps after the next loop.
-    per_triple_metadata.insert(
-        String::from("//conditions:default"),
-        CrateTargetedDepContext {
-            target: "Default".to_owned(),
-            deps: empty_deps_context(),
-            conditions: vec!["//conditions:default".to_owned()],
-        },
-    );
-
-    for dep_context in &package.targeted_deps {
-        dep_context.conditions.iter().for_each(|condition| {
-            let targeted_dep_ctx = per_triple_metadata.entry(condition.to_owned()).or_insert(
-                CrateTargetedDepContext {
-                    target: "".to_owned(),
-                    deps: empty_deps_context(),
-                    conditions: vec![condition.clone()],
-                },
-            );
-
-            // Mention all the targets that translated into the current condition (ie. current triplet).
-            targeted_dep_ctx
-                .target
-                .push_str(&format!(" {}", &dep_context.target));
-
-            targeted_dep_ctx
-                .deps
-                .dependencies
-                .extend(dep_context.deps.dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .proc_macro_dependencies
-                .extend(dep_context.deps.proc_macro_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .data_dependencies
-                .extend(dep_context.deps.data_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .build_dependencies
-                .extend(dep_context.deps.build_dependencies.iter().cloned());
-            targeted_dep_ctx.deps.build_proc_macro_dependencies.extend(
-                dep_context
-                    .deps
-                    .build_proc_macro_dependencies
-                    .iter()
-                    .cloned(),
-            );
-            targeted_dep_ctx
-                .deps
-                .build_data_dependencies
-                .extend(dep_context.deps.build_data_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .dev_dependencies
-                .extend(dep_context.deps.dev_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .aliased_dependencies
-                .extend(dep_context.deps.aliased_dependencies.iter().cloned());
-        });
-    }
-
-    // Now also add the non-targeted deps to each target.
-    for ctx in per_triple_metadata.values_mut() {
-        ctx.deps
-            .dependencies
-            .extend(package.default_deps.dependencies.iter().cloned());
-        ctx.deps
-            .proc_macro_dependencies
-            .extend(package.default_deps.proc_macro_dependencies.iter().cloned());
-        ctx.deps
-            .data_dependencies
-            .extend(package.default_deps.data_dependencies.iter().cloned());
-        ctx.deps
-            .build_dependencies
-            .extend(package.default_deps.build_dependencies.iter().cloned());
-        ctx.deps.build_proc_macro_dependencies.extend(
-            package
-                .default_deps
-                .build_proc_macro_dependencies
-                .iter()
-                .cloned(),
-        );
-        ctx.deps
-            .build_data_dependencies
-            .extend(package.default_deps.build_data_dependencies.iter().cloned());
-        ctx.deps
-            .dev_dependencies
-            .extend(package.default_deps.dev_dependencies.iter().cloned());
-        ctx.deps
-            .aliased_dependencies
-            .extend(package.default_deps.aliased_dependencies.iter().cloned());
-    }
-
-    per_triple_metadata
-}
-
-fn empty_deps_context() -> CrateDependencyContext {
-    CrateDependencyContext {
-        dependencies: vec![],
-        proc_macro_dependencies: vec![],
-        data_dependencies: vec![],
-        build_dependencies: vec![],
-        build_proc_macro_dependencies: vec![],
-        build_data_dependencies: vec![],
-        dev_dependencies: vec![],
-        aliased_dependencies: vec![],
-    }
 }
 
 impl Renderer {
@@ -257,48 +139,11 @@ impl Renderer {
         member_packages_version_mapping: Dependencies,
         label_to_crates: BTreeMap<String, BTreeSet<String>>,
     ) -> Renderer {
-        let transitive_renderable_packages = transitive_packages
-            .into_iter()
-            .map(|mut crate_context| {
-                let per_triple_metadata = get_per_triple_metadata(&crate_context);
-
-                if let Some(git_repo) = &crate_context.source_details.git_data {
-                    if let Some(prefix_to_strip) = &git_repo.path_to_crate_root {
-                        for mut target in crate_context
-                            .targets
-                            .iter_mut()
-                            .chain(crate_context.build_script_target.iter_mut())
-                        {
-                            let path = Path::new(&target.path);
-                            let prefix_to_strip_path = Path::new(prefix_to_strip);
-                            target.path = path
-                                .strip_prefix(prefix_to_strip_path)
-                                .unwrap()
-                                .to_str()
-                                .unwrap()
-                                .to_owned();
-                        }
-                    }
-                }
-
-                let is_proc_macro = crate_context
-                    .targets
-                    .iter()
-                    .any(|target| target.kind == "proc-macro");
-
-                RenderablePackage {
-                    crate_context,
-                    per_triple_metadata,
-                    is_proc_macro,
-                }
-            })
-            .collect();
-
         Self {
             context: RenderContext {
                 config,
                 hash,
-                transitive_renderable_packages,
+                transitive_renderable_packages: transitive_packages,
                 member_packages_version_mapping,
                 label_to_crates,
             },
@@ -343,17 +188,16 @@ impl Renderer {
 
     /// Render `BUILD.bazel` files for all dependencies into the repository directory.
     fn render_crates(&self, repository_dir: &Path) -> anyhow::Result<()> {
-        for crate_data in &self.context.transitive_renderable_packages {
+        for crate_context in &self.context.transitive_renderable_packages {
             let mut context = tera::Context::new();
-            context.insert("crate", &crate_data.crate_context);
-            context.insert("per_triple_metadata", &crate_data.per_triple_metadata);
+            context.insert("crate", &crate_context);
             context.insert("repo_rule_name", &self.context.config.repo_rule_name);
             context.insert(
                 "repository_name",
                 &crate_to_repo_rule_name(
                     &self.context.config.repo_rule_name,
-                    &crate_data.crate_context.pkg_name,
-                    &crate_data.crate_context.pkg_version.to_string(),
+                    &crate_context.pkg_name,
+                    &crate_context.pkg_version.to_string(),
                 ),
             );
             let build_file_content = self
@@ -363,7 +207,7 @@ impl Renderer {
             let build_file_path = repository_dir.join(format!(
                 // This must match the format found in the repository rule templates
                 "BUILD.{}-{}.bazel",
-                crate_data.crate_context.pkg_name, crate_data.crate_context.pkg_version
+                crate_context.pkg_name, crate_context.pkg_version
             ));
             let mut build_file = File::create(&build_file_path).with_context(|| {
                 format!("Could not create BUILD file: {}", build_file_path.display())
@@ -402,10 +246,7 @@ impl Renderer {
             .context
             .transitive_renderable_packages
             .iter()
-            .filter(|krate| {
-                crate_repo_names_inner.get(&krate.crate_context.pkg_name)
-                    == Some(&&krate.crate_context.pkg_version)
-            })
+            .filter(|ctx| crate_repo_names_inner.get(&ctx.pkg_name) == Some(&&ctx.pkg_version))
             .collect();
 
         let (proc_macro_crates, default_crates): (Vec<_>, Vec<_>) = self
@@ -418,8 +259,8 @@ impl Renderer {
                     .transitive_renderable_packages
                     .iter()
                     .any(|package| {
-                        *package.crate_context.pkg_name == **name
-                            && package.crate_context.pkg_version == **version
+                        *package.pkg_name == **name
+                            && package.pkg_version == **version
                             && package.is_proc_macro
                     })
             });
@@ -512,7 +353,6 @@ fn string_arg<'a, 'b>(
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 struct RenderablePackage {
     crate_context: CrateContext,
-    per_triple_metadata: BTreeMap<String, CrateTargetedDepContext>,
     is_proc_macro: bool,
 }
 
@@ -608,11 +448,7 @@ mod tests {
             renderer
                 .context
                 .transitive_renderable_packages
-                .push(RenderablePackage {
-                    crate_context: testing::maplit_crate_context(false),
-                    per_triple_metadata: BTreeMap::new(),
-                    is_proc_macro: false,
-                });
+                .push(testing::maplit_crate_context(false));
             renderer
         };
 
@@ -850,11 +686,8 @@ mod tests {
                     ],
                     crate_features = [
                     ],
-                    aliases = select({
-                        # Default
-                        "//conditions:default": {
-                        },
-                    }),
+                    aliases = {
+                    },
                 )
 
             "# },

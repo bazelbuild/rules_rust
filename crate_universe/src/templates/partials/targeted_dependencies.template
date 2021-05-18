@@ -1,11 +1,8 @@
-{%- for targeted_dep in crate.targeted_deps %}
-{%- if targeted_dep.deps.dependencies | length == 0 %}
-{%- continue %}
-{%- endif %} + selects.with_or({
+{% for targeted_dep in crate.targeted_deps %} + selects.with_or({
         # {{ targeted_dep.target }}
         (
-{%- for condition in targeted_dep.conditions %}
-            "{{ condition }}",
+{%- for platform_target in targeted_dep.platform_targets %}
+          "@rules_rust//rust/platform:{{platform_target}}",
 {%- endfor %}
         ): [
 {%- for dependency in targeted_dep.deps.dependencies %}

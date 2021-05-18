@@ -38,4 +38,6 @@
         "{{feature}}",
         {%- endfor %}
     ],
-    aliases = {%- include "templates/partials/targeted_aliases.template" %},
+    aliases = {
+        {%- include "templates/partials/targeted_aliases.template" %}
+    },
