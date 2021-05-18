@@ -1,0 +1,134 @@
+{# Cargo.toml
+[package]
+name = "test"
+version = "0.0.1"
+
+[lib]
+path = "not_a_file.rs"
+
+# Note: this does not resolve to anything. See note below
+[dependencies]
+test_dep = "0.0.1"
+#}
+{# 
+This Metadata has been hand crafted to represent a basic metadata dump where
+the package has one additional resolved dependency.
+#}
+{
+    "packages": [
+        {
+            "name": "test",
+            "version": "0.0.1",
+            "authors": [],
+            "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+            "source": null,
+            "description": null,
+            "dependencies": [
+                {
+                    "name": "test_dep",
+                    "source": null,
+                    "req": "0.0.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "license": null,
+            "license_file": null,
+            "targets": [
+                {
+                    "name": "test",
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "required-features": [],
+                    "src_path": "{{ mock_workspace }}/not_a_file.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/Cargo.toml",
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "publish": null
+        },
+        {
+            "name": "test_dep",
+            "version": "0.0.1",
+            "authors": [],
+            "id": "test_dep_id",
+            "source": null,
+            "description": null,
+            "dependencies": [],
+            "license": null,
+            "license_file": null,
+            "targets": [
+                {
+                    "name": "test",
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "required-features": [],
+                    "src_path": "{{ mock_workspace }}/not_a_file.rs",
+                    "edition": "2015",
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/Cargo.toml",
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "publish": null
+        }
+    ],
+    "workspace_members": [
+        "test 0.0.1 (path+file://{{ mock_workspace }})"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "test 0.0.1 (path+file://{{ mock_workspace }})",
+                "deps": [],
+                "dependencies": [
+                    "test_dep_id"
+                ],
+                "features": []
+            },
+            {
+                "id": "test_dep_id",
+                "deps": [],
+                "dependencies": [],
+                "features": []
+            }
+        ],
+        "root": "test 0.0.1 (path+file://{{ mock_workspace }})"
+    },
+    "workspace_root": "{{ mock_workspace }}",
+    "target_directory": "{{ mock_workspace }}/target",
+    "version": 1
+}

@@ -1,0 +1,626 @@
+{# Note that `{{version}}` is part of the metadata and must be escaped #}
+{# Cargo.toml
+[package]
+name = "build_produces_aliased_dependencies"
+version = "0.1.0"
+
+[lib]
+path = "not_a_file.rs"
+
+[dependencies]
+cargo-raze-alias-test = "0.1"
+#}
+{
+    "packages": [
+        {
+            "name": "build_produces_aliased_dependencies",
+            "version": "0.1.0",
+            "id": "build_produces_aliased_dependencies 0.1.0 (path+file://{{ mock_workspace }})",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [
+                {
+                    "name": "cargo-raze-alias-test",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "build_produces_aliased_dependencies",
+                    "src_path": "{{ mock_workspace }}/not_a_file.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "bin"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build_produces_aliased_dependencies",
+                    "src_path": "{{ mock_workspace }}/src/main.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ mock_workspace }}/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "cargo-raze-alias-test",
+            "version": "0.1.0",
+            "id": "cargo-raze-alias-test 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT",
+            "license_file": null,
+            "description": "Test crate for cargo-raze's alias test",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "log",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "log",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": null,
+                    "rename": "old_log_",
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "cargo-raze-alias-test",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/cargo-raze-alias-test-0.1.0/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/cargo-raze-alias-test-0.1.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Wyatt Calandro <wyatt@wcalandro.com>"
+            ],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "homepage": null,
+            "documentation": null,
+            "edition": "2018",
+            "links": null
+        },
+        {
+            "name": "cfg-if",
+            "version": "0.1.10",
+            "id": "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A macro to ergonomically define an item depending on a large number of #[cfg]\nparameters. Structured like an if-else chain, the first matching branch is the\nitem that gets emitted.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "compiler_builtins",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": "core",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "cfg-if",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/cfg-if-0.1.10/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "xcrate",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/cfg-if-0.1.10/tests/xcrate.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "rustc-dep-of-std": [
+                    "core",
+                    "compiler_builtins"
+                ]
+            },
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/cfg-if-0.1.10/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Alex Crichton <alex@alexcrichton.com>"
+            ],
+            "categories": [],
+            "keywords": [],
+            "readme": "README.md",
+            "repository": "https://github.com/alexcrichton/cfg-if",
+            "homepage": "https://github.com/alexcrichton/cfg-if",
+            "documentation": "https://docs.rs/cfg-if",
+            "edition": "2018",
+            "links": null
+        },
+        {
+            "name": "log",
+            "version": "0.3.9",
+            "id": "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A lightweight logging facade for Rust\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "log",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "log",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.3.9/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "default": [
+                    "use_std"
+                ],
+                "max_level_debug": [
+                    "log/max_level_debug"
+                ],
+                "max_level_error": [
+                    "log/max_level_error"
+                ],
+                "max_level_info": [
+                    "log/max_level_info"
+                ],
+                "max_level_off": [
+                    "log/max_level_off"
+                ],
+                "max_level_trace": [
+                    "log/max_level_trace"
+                ],
+                "max_level_warn": [
+                    "log/max_level_warn"
+                ],
+                "nightly": [],
+                "release_max_level_debug": [
+                    "log/release_max_level_debug"
+                ],
+                "release_max_level_error": [
+                    "log/release_max_level_error"
+                ],
+                "release_max_level_info": [
+                    "log/release_max_level_info"
+                ],
+                "release_max_level_off": [
+                    "log/release_max_level_off"
+                ],
+                "release_max_level_trace": [
+                    "log/release_max_level_trace"
+                ],
+                "release_max_level_warn": [
+                    "log/release_max_level_warn"
+                ],
+                "use_std": [
+                    "log/std"
+                ]
+            },
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.3.9/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "development-tools::debugging"
+            ],
+            "keywords": [],
+            "readme": "README.md",
+            "repository": "https://github.com/rust-lang/log",
+            "homepage": "https://github.com/rust-lang/log",
+            "documentation": "https://doc.rust-lang.org/log",
+            "edition": "2015",
+            "links": null
+        },
+        {
+            "name": "log",
+            "version": "0.4.13",
+            "id": "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "A lightweight logging facade for Rust\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "sval",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde_test",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "sval",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5.2",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [
+                        "test"
+                    ],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "log",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.4.13/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "filters",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.4.13/tests/filters.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "macros",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.4.13/tests/macros.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.4.13/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "kv_unstable": [],
+                "kv_unstable_std": [
+                    "kv_unstable",
+                    "std"
+                ],
+                "kv_unstable_sval": [
+                    "kv_unstable",
+                    "sval/fmt"
+                ],
+                "max_level_debug": [],
+                "max_level_error": [],
+                "max_level_info": [],
+                "max_level_off": [],
+                "max_level_trace": [],
+                "max_level_warn": [],
+                "release_max_level_debug": [],
+                "release_max_level_error": [],
+                "release_max_level_info": [],
+                "release_max_level_off": [],
+                "release_max_level_trace": [],
+                "release_max_level_warn": [],
+                "std": []
+            },
+            "manifest_path": "{{ crate_index_root }}/registry/src/github.com-1ecc6299db9ec823/log-0.4.13/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": [
+                            "std",
+                            "serde",
+                            "kv_unstable_sval"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "development-tools::debugging"
+            ],
+            "keywords": [
+                "logging"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/rust-lang/log",
+            "homepage": null,
+            "documentation": "https://docs.rs/log",
+            "edition": "2015",
+            "links": null
+        }
+    ],
+    "workspace_members": [
+        "build_produces_aliased_dependencies 0.1.0 (path+file://{{ mock_workspace }})"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "build_produces_aliased_dependencies 0.1.0 (path+file://{{ mock_workspace }})",
+                "dependencies": [
+                    "cargo-raze-alias-test 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cargo_raze_alias_test",
+                        "pkg": "cargo-raze-alias-test 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "cargo-raze-alias-test 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "old_log",
+                        "pkg": "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "log",
+                        "pkg": "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "log",
+                        "pkg": "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default",
+                    "use_std"
+                ]
+            },
+            {
+                "id": "log 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "std"
+                ]
+            }
+        ],
+        "root": "build_produces_aliased_dependencies 0.1.0 (path+file://{{ mock_workspace }})"
+    },
+    "target_directory": "{{ mock_workspace }}/target",
+    "version": 1,
+    "workspace_root": "{{ mock_workspace }}",
+    "metadata": null
+}
