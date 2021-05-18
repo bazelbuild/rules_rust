@@ -108,8 +108,8 @@ fn parse_config() -> anyhow::Result<Config> {
     let output = String::from_utf8_lossy(&output.stdout.as_slice());
     let bazel_info = output
         .trim()
-        .split("\n")
-        .map(|line| line.split_at(line.find(":").expect("missing `:` in bazel info output")))
+        .split('\n')
+        .map(|line| line.split_at(line.find(':').expect("missing `:` in bazel info output")))
         .map(|(k, v)| (k, (&v[1..]).trim()))
         .collect::<HashMap<_, _>>();
 
