@@ -13,7 +13,7 @@ With this in place, the following can be added to your `WORKSPACE.bazel` file.
 ```python
 load("//3rdparty/rules_rust:crate_universe_defaults.bzl", "DEFAULT_URL_TEMPLATE", "DEFAULT_SHA256_CHECKSUMS")
 
-load("@rules_rust//crate_universe:deps.bzl", "crate_universe_deps")
+load("@rules_rust//crate_universe:defs.bzl", "crate_universe_deps")
 
 crate_universe_deps(url_template = DEFAULT_URL_TEMPLATE, sha256s = DEFAULT_SHA256_CHECKSUMS)
 ```
