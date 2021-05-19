@@ -1,4 +1,4 @@
-load("//rust:rust.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary")
 
 rust_binary(
     name = "dir_zipper",

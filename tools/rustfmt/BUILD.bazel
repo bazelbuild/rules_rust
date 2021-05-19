@@ -60,7 +60,7 @@ rust_binary(
 )
 
 rust_clippy(
-    name = "rustfmt_clippy",
+    name = "clippy",
     testonly = True,
     visibility = ["//visibility:private"],
     deps = [

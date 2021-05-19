@@ -19,6 +19,7 @@ rust_binary(
     name = "unformatted_2018",
     srcs = ["srcs/2018/unformatted.rs"],
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rustfmt_test(
@@ -42,6 +43,7 @@ rust_binary(
     name = "unformatted_2015",
     srcs = ["srcs/2015/unformatted.rs"],
     edition = "2015",
+    tags = ["norustfmt"],
 )
 
 rustfmt_test(
