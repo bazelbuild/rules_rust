@@ -558,7 +558,7 @@ def _load_rustc_dev_nightly(ctx, target_triple):
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
-        tool_subdirectories = ["rustc-dev-{}".format(target_triple)],
+        tool_subdirectories = ["rustc-dev"],
         version = ctx.attr.version,
     )
 
