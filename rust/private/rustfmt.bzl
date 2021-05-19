@@ -61,9 +61,9 @@ def _perform_check(edition, srcs, ctx):
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
-        inputs = srcs,
+        inputs = srcs + [config],
         outputs = [marker],
-        tools = [toolchain.rustfmt, config],
+        tools = [toolchain.rustfmt],
         arguments = [args],
         mnemonic = "Rustfmt",
     )
