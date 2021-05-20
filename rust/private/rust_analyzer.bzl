@@ -66,6 +66,9 @@ def _rust_analyzer_aspect_impl(target, ctx):
     dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "proc_macro_deps"):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
+    if hasattr(ctx.rule.attr, "crate"):
+        dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
+
     transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
     crate_info = target[rust_common.crate_info]
@@ -102,7 +105,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     return None
 
 rust_analyzer_aspect = aspect(
-    attr_aspects = ["deps", "proc_macro_deps"],
+    attr_aspects = ["deps", "proc_macro_deps", "crate"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,

@@ -1,0 +1,4 @@
+load(":rust_analyzer_test.bzl", "rust_analyzer_test_suite")
+
+############################ UNIT TESTS #############################
+rust_analyzer_test_suite(name = "rust_analyzer_test_suite")
