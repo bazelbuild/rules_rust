@@ -553,12 +553,16 @@ def _load_rustc_dev_nightly(ctx, target_triple):
         target_triple: The rust-style target triple of the tool
     """
 
+    subdir_name = "rustc-dev"
+    if ctx.attr.iso_date < "2020-12-24":
+        subdir_name = "rustc-dev-{}".format(target_triple)
+
     load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
-        tool_subdirectories = ["rustc-dev-{}".format(target_triple)],
+        tool_subdirectories = [subdir_name],
         version = ctx.attr.version,
     )
 
