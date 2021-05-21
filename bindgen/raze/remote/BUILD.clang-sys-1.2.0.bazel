@@ -29,7 +29,6 @@ licenses([
 ])
 
 # Generated Targets
-# buildifier: disable=out-of-order-load
 # buildifier: disable=load-on-top
 load(
     "@rules_rust//cargo:cargo_build_script.bzl",
@@ -56,7 +55,6 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(["**"]),
     edition = "2015",
-    links = "clang",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -64,7 +62,7 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.0",
+    version = "1.2.0",
     visibility = ["//visibility:private"],
     deps = [
         "@rules_rust_bindgen__glob__0_3_0//:glob",
@@ -97,13 +95,13 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.0",
+    version = "1.2.0",
     # buildifier: leave-alone
     deps = [
         ":clang_sys_build_script",
         "@rules_rust_bindgen__glob__0_3_0//:glob",
-        "@rules_rust_bindgen__libc__0_2_77//:libc",
-        "@rules_rust_bindgen__libloading__0_6_3//:libloading",
+        "@rules_rust_bindgen__libc__0_2_94//:libc",
+        "@rules_rust_bindgen__libloading__0_7_0//:libloading",
     ],
 )
 

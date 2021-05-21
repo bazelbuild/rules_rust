@@ -44,7 +44,7 @@ def _generate_manifest(edition, srcs, ctx):
 
 def _perform_check(edition, srcs, ctx):
     toolchain = find_toolchain(ctx)
-
+    config = ctx.file._config
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
     args = ctx.actions.args()
@@ -52,6 +52,8 @@ def _perform_check(edition, srcs, ctx):
     args.add(marker)
     args.add("--")
     args.add(toolchain.rustfmt)
+    args.add("--config-path")
+    args.add(config)
     args.add("--edition")
     args.add(edition)
     args.add("--check")
@@ -59,7 +61,7 @@ def _perform_check(edition, srcs, ctx):
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
-        inputs = srcs,
+        inputs = srcs + [config],
         outputs = [marker],
         tools = [toolchain.rustfmt],
         arguments = [args],
@@ -108,6 +110,11 @@ users may tag a target with `norustfmt` to have it skipped. Additionally, genera
 source files are also ignored by this aspect.
 """,
     attrs = {
+        "_config": attr.label(
+            doc = "The `rustfmt.toml` file used for formatting",
+            allow_single_file = True,
+            default = Label("//:rustfmt.toml"),
+        ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustfmt on all platforms",
             cfg = "exec",

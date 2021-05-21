@@ -25,15 +25,13 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
 # Generated Targets
 
-# Unsupported target "thread_local" with type "bench" omitted
-
 rust_library(
-    name = "thread_local",
+    name = "version_check",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -48,9 +46,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.1",
+    version = "0.9.3",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_bindgen__lazy_static__1_4_0//:lazy_static",
     ],
 )

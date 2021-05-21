@@ -49,7 +49,7 @@ rust_library(
     version = "3.1.1",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_bindgen__libc__0_2_77//:libc",
+        "@rules_rust_bindgen__libc__0_2_94//:libc",
     ],
 )
 

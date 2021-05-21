@@ -47,7 +47,6 @@ rust_library(
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "aho-corasick",
-        "default",
         "memchr",
         "perf",
         "perf-cache",
@@ -55,7 +54,6 @@ rust_library(
         "perf-inline",
         "perf-literal",
         "std",
-        "thread_local",
         "unicode",
         "unicode-age",
         "unicode-bool",
@@ -68,7 +66,7 @@ rust_library(
     crate_root = "src/lib.rs",
     crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -76,13 +74,12 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.3.9",
+    version = "1.5.4",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_bindgen__aho_corasick__0_7_13//:aho_corasick",
-        "@rules_rust_bindgen__memchr__2_3_3//:memchr",
-        "@rules_rust_bindgen__regex_syntax__0_6_18//:regex_syntax",
-        "@rules_rust_bindgen__thread_local__1_0_1//:thread_local",
+        "@rules_rust_bindgen__aho_corasick__0_7_18//:aho_corasick",
+        "@rules_rust_bindgen__memchr__2_4_0//:memchr",
+        "@rules_rust_bindgen__regex_syntax__0_6_25//:regex_syntax",
     ],
 )
 
