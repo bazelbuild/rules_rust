@@ -17,6 +17,7 @@
 load(
     "//rust:defs.bzl",
     _error_format = "error_format",
+    _extra_codegen = "extra_codegen",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_benchmark = "rust_benchmark",
@@ -32,10 +33,6 @@ load(
     _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
     _rust_test_binary = "rust_test_binary",
-)
-load(
-    "//rust/private:rustc.bzl",
-    _extra_codegen = "extra_codegen",
 )
 
 def rust_library(**args):
