@@ -707,7 +707,7 @@ _rust_test_attrs = {
         mandatory = False,
         default = True,
         doc = _tidy("""\
-            Whether to use libtest (defaults to True).
+            Whether to use libtest.
         """),
     ),
     "_launcher": attr.label(
