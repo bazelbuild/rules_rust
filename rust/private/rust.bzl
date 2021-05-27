@@ -437,7 +437,7 @@ def _rust_test_common(ctx, toolchain, output):
         toolchain = toolchain,
         crate_type = crate_type,
         crate_info = crate_info,
-        rust_flags = ["--test"],
+        rust_flags = ["--test"] if ctx.attr.harness else ["--cfg", "test"],
     )
 
     return _create_test_launcher(ctx, toolchain, output, providers)
@@ -701,6 +701,13 @@ _rust_test_attrs = {
             Specifies additional environment variables to set when the test is executed by bazel test.
             Values are subject to `$(execpath)` and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+        """),
+    ),
+    "harness": attr.bool(
+        mandatory = False,
+        default = True,
+        doc = _tidy("""\
+            Whether to use libtest (defaults to True).
         """),
     ),
     "_launcher": attr.label(
