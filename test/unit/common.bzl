@@ -28,3 +28,49 @@ def assert_argv_contains_prefix_suffix(env, action, prefix, suffix):
             args = action.argv,
         ),
     )
+
+def assert_action_mnemonic(env, action, mnemonic):
+    if not action.mnemonic == mnemonic:
+        unittest.fail(
+            env,
+            "Expected the action to have the mnemonic '{expected}', but got '{actual}'".format(
+                expected = mnemonic,
+                actual = action.mnemonic,
+            ),
+        )
+
+def _startswith(list, prefix):
+    if len(list) < len(prefix):
+        return False
+    for pair in zip(list[:len(prefix) + 1], prefix):
+        if pair[0] != pair[1]:
+            return False
+    return True
+
+def assert_argv_contains_in_order(env, action, flags):
+    argv = action.argv
+    for idx in range(len(argv)):
+        if argv[idx] == flags[0]:
+            if _startswith(argv[idx:], flags):
+                return
+
+    unittest.fail(
+        env,
+        "Expected the to find '{expected}' within '{actual}'".format(
+            expected = flags,
+            actual = argv,
+        ),
+    )
+
+def assert_argv_contains_in_order_not(env, action, flags):
+    argv = action.argv
+    for idx in range(len(argv)):
+        if argv[idx] == flags[0]:
+            if _startswith(argv[idx:], flags):
+                unittest.fail(
+                    env,
+                    "Expected not the to find '{expected}' within '{actual}'".format(
+                        expected = flags,
+                        actual = argv,
+                    ),
+                )

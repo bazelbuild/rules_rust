@@ -1,4 +1,0 @@
-load(":test_harness_test.bzl", "test_harness_test_suite")
-
-############################ UNIT TESTS #############################
-test_harness_test_suite(name = "test_harness_test_suite")
