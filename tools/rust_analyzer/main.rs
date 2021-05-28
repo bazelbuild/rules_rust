@@ -20,16 +20,26 @@ fn main() -> anyhow::Result<()> {
     let execution_root = config
         .execution_root
         .as_ref()
-        .expect("failed to find execution root, is --workspace set correctly?");
+        .expect("failed to find execution root, is --execution-root set correctly?");
+    let bazel_bin = config
+        .bazel_bin
+        .as_ref()
+        .expect("failed to find execution root, is --bazel-bin set correctly?");
 
     build_rust_project_target(&config);
     let label = label::analyze(&config.bazel_analyzer_target)
         .with_context(|| "Cannot parse --bazel-analyzer-target")?;
 
-    let mut generated_rust_project = workspace_root.join("bazel-bin");
+    let mut generated_rust_project = bazel_bin.clone();
+
+    if let Some(repository_name) = label.repository_name {
+        generated_rust_project = generated_rust_project.join("external").join(repository_name);
+    }
+
     for package in label.packages() {
         generated_rust_project = generated_rust_project.join(package);
     }
+
     generated_rust_project = generated_rust_project.join("rust-project.json");
     let workspace_rust_project = workspace_root.join("rust-project.json");
 
@@ -119,6 +129,9 @@ fn parse_config() -> anyhow::Result<Config> {
     if config.execution_root.is_none() {
         config.execution_root = bazel_info.get("execution_root").map(Into::into);
     }
+    if config.bazel_bin.is_none() {
+        config.bazel_bin = bazel_info.get("bazel-bin").map(Into::into);
+    }
 
     Ok(config)
 }
@@ -132,6 +145,10 @@ struct Config {
     // If not specified, uses the result of `bazel info execution_root`.
     #[structopt(long)]
     execution_root: Option<PathBuf>,
+
+    // If not specified, uses the result of `bazel info bazel-bin`.
+    #[structopt(long)]
+    bazel_bin: Option<PathBuf>,
 
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
