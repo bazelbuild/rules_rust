@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_test")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_argv_contains_in_order", "assert_argv_contains_in_order_not", "assert_argv_contains_not")
+load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_argv_contains_not", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
 
 def _use_libtest_harness_rustc_flags_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -12,7 +12,7 @@ def _use_libtest_harness_rustc_flags_test_impl(ctx):
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains(env, action, "test/unit/use_libtest_harness/mytest.rs")
     assert_argv_contains(env, action, "--test")
-    assert_argv_contains_in_order_not(env, action, ["--cfg", "test"])
+    assert_list_contains_adjacent_elements_not(env, action.argv, ["--cfg", "test"])
     return analysistest.end(env)
 
 def _use_libtest_harness_rustc_noharness_flags_test_impl(ctx):
@@ -22,7 +22,7 @@ def _use_libtest_harness_rustc_noharness_flags_test_impl(ctx):
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains(env, action, "test/unit/use_libtest_harness/mytest_noharness.rs")
     assert_argv_contains_not(env, action, "--test")
-    assert_argv_contains_in_order(env, action, ["--cfg", "test"])
+    assert_list_contains_adjacent_elements(env, action.argv, ["--cfg", "test"])
     return analysistest.end(env)
 
 use_libtest_harness_rustc_flags_test = analysistest.make(_use_libtest_harness_rustc_flags_test_impl)

@@ -47,30 +47,30 @@ def _startswith(list, prefix):
             return False
     return True
 
-def assert_argv_contains_in_order(env, action, flags):
-    argv = action.argv
-    for idx in range(len(argv)):
-        if argv[idx] == flags[0]:
-            if _startswith(argv[idx:], flags):
+def assert_list_contains_adjacent_elements(env, list_under_test, adjacent_elements):
+    """Assert that list_under_test contains given adjacent flags."""
+    for idx in range(len(list_under_test)):
+        if list_under_test[idx] == adjacent_elements[0]:
+            if _startswith(list_under_test[idx:], adjacent_elements):
                 return
 
     unittest.fail(
         env,
         "Expected the to find '{expected}' within '{actual}'".format(
-            expected = flags,
-            actual = argv,
+            expected = adjacent_elements,
+            actual = list_under_test,
         ),
     )
 
-def assert_argv_contains_in_order_not(env, action, flags):
-    argv = action.argv
-    for idx in range(len(argv)):
-        if argv[idx] == flags[0]:
-            if _startswith(argv[idx:], flags):
+def assert_list_contains_adjacent_elements_not(env, list_under_test, adjacent_elements):
+    """Assert that list_under_test does not contains given adjacent flags."""
+    for idx in range(len(list_under_test)):
+        if list_under_test[idx] == adjacent_elements[0]:
+            if _startswith(list_under_test[idx:], adjacent_elements):
                 unittest.fail(
                     env,
                     "Expected not the to find '{expected}' within '{actual}'".format(
-                        expected = flags,
-                        actual = argv,
+                        expected = adjacent_elements,
+                        actual = list_under_test,
                     ),
                 )
