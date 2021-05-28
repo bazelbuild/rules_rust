@@ -48,7 +48,13 @@ def _startswith(list, prefix):
     return True
 
 def assert_list_contains_adjacent_elements(env, list_under_test, adjacent_elements):
-    """Assert that list_under_test contains given adjacent flags."""
+    """Assert that list_under_test contains given adjacent flags.
+
+    Args:
+          env: env from analysistest.begin(ctx).
+          list_under_test: list supposed to contain adjacent elements.
+          adjacent_elements: list of elements to be found inside list_under_test.
+    """
     for idx in range(len(list_under_test)):
         if list_under_test[idx] == adjacent_elements[0]:
             if _startswith(list_under_test[idx:], adjacent_elements):
@@ -63,7 +69,12 @@ def assert_list_contains_adjacent_elements(env, list_under_test, adjacent_elemen
     )
 
 def assert_list_contains_adjacent_elements_not(env, list_under_test, adjacent_elements):
-    """Assert that list_under_test does not contains given adjacent flags."""
+    """Assert that list_under_test does not contains given adjacent flags.
+
+    Args:
+          env: env from analysistest.begin(ctx).
+          list_under_test: list supposed not to contain adjacent elements.
+          adjacent_elements: list of elements not to be found inside list_under_test."""
     for idx in range(len(list_under_test)):
         if list_under_test[idx] == adjacent_elements[0]:
             if _startswith(list_under_test[idx:], adjacent_elements):
