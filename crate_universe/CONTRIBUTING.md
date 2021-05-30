@@ -21,7 +21,6 @@ Some areas have unit testing, there are a few (very brittle) integration tests, 
 To use a local version, first bootstrap it. See [crate_universe/private/bootstrap/README.md](./private/bootstrap/README.md) for instructions on how to do this.
 
 This will build `crate_universe_resolver` and configure bazel to use the binary you just built.
-definitions of the newly built binary.
 
 To get verbose logging, edit `defs.bzl` to set `RUST_LOG` to `debug` or `trace` instead of `info`. In particular, that will print out the generated `Cargo.toml`, and the path to the generated workspace file.
 
