@@ -43,7 +43,8 @@ rust_analyzer(
 rust_test(
     name = "rust_project_json_test",
     srcs = ["rust_project_json_test.rs"],
-    args = ["$(location :rust-project.json)"],
     data = [":rust-project.json"],
+    edition = "2018",
     harness = False,
+    deps = ["//tools/runfiles"],
 )
