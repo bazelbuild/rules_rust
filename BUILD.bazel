@@ -24,9 +24,3 @@ label_flag(
     build_setting_default = "//tools/rustfmt:rustfmt.toml",
     visibility = ["//visibility:public"],
 )
-
-alias(
-    name = "rustfmt",
-    actual = "//tools/rustfmt",
-    visibility = ["//visibility:public"],
-)
