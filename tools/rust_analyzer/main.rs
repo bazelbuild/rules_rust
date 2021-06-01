@@ -33,7 +33,9 @@ fn main() -> anyhow::Result<()> {
     let mut generated_rust_project = bazel_bin.clone();
 
     if let Some(repository_name) = label.repository_name {
-        generated_rust_project = generated_rust_project.join("external").join(repository_name);
+        generated_rust_project = generated_rust_project
+            .join("external")
+            .join(repository_name);
     }
 
     for package in label.packages() {
