@@ -19,7 +19,7 @@ configuration options can be found in the [Rustfmt GitHub Pages][rgp].
 
 
 Formatting your Rust targets' source code requires no setup outside of loading `rules_rust`
-in your workspace. Simply run `bazel run @rules_rust//tools/rustfmt` to format source code.
+in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source code.
 
 In addition to this formatter, a check can be added to your build phase using the [rustfmt_aspect](#rustfmt-aspect)
 aspect. Simply add the following to a `.bazelrc` file to enable this check.
