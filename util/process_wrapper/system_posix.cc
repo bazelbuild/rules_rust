@@ -184,11 +184,6 @@ int System::Exec(const System::StrType &executable,
     return WEXITSTATUS(exit_status);
   } else if (WIFSIGNALED(exit_status)) {
     raise(WTERMSIG(exit_status));
-#ifdef WCOREDUMP
-  } else if (WCOREDUMP(exit_status)) {
-    std::cerr << "process wrapper error: child process produced a core dump.\n";
-    return -1;
-#endif
   } else if (WIFSTOPPED(exit_status)) {
     raise(WSTOPSIG(exit_status));
   } else {
