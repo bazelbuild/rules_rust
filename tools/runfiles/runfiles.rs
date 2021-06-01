@@ -13,7 +13,7 @@
 //!     ```
 //!
 //! 2.  Import the runfiles library.
-//!     ```
+//!     ```ignore
 //!     extern crate runfiles;
 //!
 //!     use runfiles::Runfiles;
