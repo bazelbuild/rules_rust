@@ -33,17 +33,7 @@ function check_build_result() {
   fi
 }
 
-function test_all() {
-  local -r TEST_OK=0
-  local -r TEST_FAILED=3
-
-  check_build_result $TEST_FAILED test_unformatted_2015
-  check_build_result $TEST_FAILED test_unformatted_2018
-  check_build_result $TEST_OK test_formatted_2015
-  check_build_result $TEST_OK test_formatted_2018
-}
-
-function test_apply() {
+function test_all_and_apply() {
   local -r TEST_OK=0
   local -r TEST_FAILED=3
 
@@ -62,7 +52,20 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 EOF
 
+  # Drop the 'norustfmt' tags
+  if [ "$(uname)" == "Darwin" ]; then
+    SEDOPTS=(-i '' -e)
+  else
+    SEDOPTS=(-i)
+  fi
+  sed ${SEDOPTS[@]} 's/"norustfmt"//' "${new_workspace}/test/rustfmt/BUILD.bazel"
+
   pushd "${new_workspace}"
+
+  check_build_result $TEST_FAILED test_unformatted_2015
+  check_build_result $TEST_FAILED test_unformatted_2018
+  check_build_result $TEST_OK test_formatted_2015
+  check_build_result $TEST_OK test_formatted_2018
 
   # Format a specific target
   bazel run @rules_rust//tools/rustfmt -- //test/rustfmt:unformatted_2018
@@ -85,5 +88,4 @@ EOF
   rm -rf "${temp_dir}"
 }
 
-test_all
-test_apply
+test_all_and_apply

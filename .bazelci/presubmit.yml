@@ -11,6 +11,8 @@ tasks:
   ubuntu1604:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    build_flags:
+      - "--config=rustfmt"
   ubuntu1804:
     build_targets: *default_linux_targets
     test_targets:
@@ -18,11 +20,15 @@ tasks:
       - "@examples//..."
       # TODO: Switch manual tag to platform constraint after bazel 4.0.
       - "//test/versioned_dylib:versioned_dylib_test"
+    build_flags:
+      - "--config=rustfmt"
   ubuntu2004:
     name: "Minimum Supported Version"
     bazel: "3.5.0"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    build_flags:
+      - "--config=rustfmt"
   macos:
     osx_targets: &osx_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -34,6 +40,8 @@ tasks:
       - "-@examples//ffi/rust_calling_c/simple/..."
     build_targets: *osx_targets
     test_targets: *osx_targets
+    build_flags:
+      - "--config=rustfmt"
   rbe_ubuntu1604:
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -49,9 +57,12 @@ tasks:
       - "-@examples//ffi/rust_calling_c/simple/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
+    build_flags:
+      - "--config=rustfmt"
   windows:
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+      - "--config=rustfmt"
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
@@ -78,6 +89,8 @@ tasks:
     working_directory: examples
     test_targets:
       - //...
+    build_flags:
+      - "--config=rustfmt"
   docs_linux:
     name: Docs
     platform: ubuntu1804
@@ -100,15 +113,6 @@ tasks:
     platform: ubuntu1804
     shell_commands:
       - ./test/clippy/clippy_failure_test.sh
-  rustfmt_examples:
-    name: Rustfmt on Examples
-    platform: ubuntu2004
-    working_directory: examples
-    build_flags:
-      - "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect"
-      - "--output_groups=rustfmt_checks"
-    build_targets:
-      - //...
   rustfmt_failure:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
@@ -143,6 +147,8 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    build_flags:
+      - "--config=rustfmt"
   crate_universe_examples_macos:
     name: Crate Universe Examples
     platform: macos
@@ -153,6 +159,8 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    build_flags:
+      - "--config=rustfmt"
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
@@ -161,6 +169,7 @@ tasks:
     working_directory: examples/crate_universe
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+      - "--config=rustfmt"
     crate_universe_windows_targets: &crate_universe_windows_targets
       - "//..."
       # TODO: There are windows specific build issues in the generated

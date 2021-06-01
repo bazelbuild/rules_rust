@@ -16,6 +16,10 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
     if rust_common.crate_info not in target:
         return []
 
+    # Ignore external targets
+    if target.label.workspace_root.startswith("external"):
+        return []
+
     # Targets annotated with `norustfmt` will not be formatted
     if aspect_ctx and "norustfmt" in aspect_ctx.rule.attr.tags:
         return []
