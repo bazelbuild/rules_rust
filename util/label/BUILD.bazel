@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:rust.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "label",

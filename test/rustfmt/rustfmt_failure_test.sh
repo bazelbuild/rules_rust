@@ -54,10 +54,11 @@ EOF
 
   # Drop the 'norustfmt' tags
   if [ "$(uname)" == "Darwin" ]; then
-    sed -i '' -e 's/"norustfmt"//' "${new_workspace}/test/rustfmt/BUILD.bazel"
+    SEDOPTS=(-i '' -e)
   else
-    sed -i 's/"norustfmt"//' "${new_workspace}/test/rustfmt/BUILD.bazel"
+    SEDOPTS=(-i)
   fi
+  sed ${SEDOPTS[@]} 's/"norustfmt"//' "${new_workspace}/test/rustfmt/BUILD.bazel"
 
   pushd "${new_workspace}"
 
