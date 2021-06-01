@@ -1,0 +1,6 @@
+# `.bazelrc` is a Bazel configuration file.
+# https://docs.bazel.build/versions/master/best-practices.html#using-the-bazelrc-file
+
+# Enable rustfmt for all targets in the workspace
+build:rustfmt --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:rustfmt --output_groups=+rustfmt_checks
