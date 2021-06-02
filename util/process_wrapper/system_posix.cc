@@ -190,8 +190,8 @@ int System::Exec(const System::StrType &executable,
     std::cerr << "process wrapper error: failed to parse exit code of the "
                  "child process: "
               << exit_status << ".\n";
-    return -1;
   }
+  return -1;
 }
 
 }  // namespace process_wrapper
