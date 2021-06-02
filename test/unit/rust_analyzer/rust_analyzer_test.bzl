@@ -5,9 +5,9 @@ load("//rust:defs.bzl", "rust_analyzer", "rust_library")
 
 def _rust_analyzer_hello_world_test_impl(ctx):
     env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    asserts.true(env, len(tut.actions) == 1, "expected one action, got %s" % len(tut.actions))
-    action = tut.actions[0]
+    target = analysistest.target_under_test(env)
+    asserts.true(env, len(target.actions) == 1, "expected one action, got %s" % len(target.actions))
+    action = target.actions[0]
     outputs = action.outputs.to_list()
     asserts.true(env, len(outputs) == 1, "expected one output, got %s" % len(outputs))
     output = outputs[0]
