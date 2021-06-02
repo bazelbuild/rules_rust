@@ -13,6 +13,7 @@ cc_test(
     name = "native_matrix_test",
     srcs = ["matrix_test.c"],
     copts = ["-std=c99"],
+    linkstatic = 1,
     deps = [
         ":native_matrix",
     ],
