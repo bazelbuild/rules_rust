@@ -53,7 +53,6 @@ tasks:
       - "-//test/chained_direct_deps:mod3_doc_test"
       - "-@examples//fibonacci:fibonacci_doc_test"
       - "-@examples//hello_lib:hello_lib_doc_test"
-      - "-//tools/runfiles:runfiles_doc_test"
       - "-@examples//ffi/rust_calling_c/simple/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
@@ -71,7 +70,6 @@ tasks:
       - "-//test/test_env/..."
       - "-//test/proto/..."
       - "-//tools/rust_analyzer/..."
-      - "-//tools/runfiles/..."
       - "-//test/rustfmt/..."
       - "@examples//..."
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
