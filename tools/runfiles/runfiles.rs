@@ -33,6 +33,7 @@
 
 use std::collections::HashMap;
 use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -107,6 +108,10 @@ impl Runfiles {
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> io::Result<PathBuf> {
+    assert_ne!(
+        std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or(OsString::from("0")),
+        "1"
+    );
     let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
 
     let mut binary_path = PathBuf::from(&exec_path);
@@ -163,6 +168,10 @@ fn is_manifest_only() -> bool {
 }
 
 fn find_manifest_path() -> io::Result<PathBuf> {
+    assert_eq!(
+        std::env::var_os("RUNFILES_MANIFEST_ONLY").expect("RUNFILES_MANIFEST_ONLY was not set"),
+        OsString::from("1")
+    );
     match std::env::var_os("RUNFILES_MANIFEST_FILE") {
         Some(path) => Ok(path.into()),
         None => Err(
