@@ -8,5 +8,5 @@ fn test() {
     let generated_data2 = include_str!(env!("GENERATED_DATA_ABS"));
     assert_eq!(generated_data, generated_data2);
     // and we should be able to read (and thus execute) our tool
-    assert_eq!(std::fs::read(env!("SOME_TOOL")).unwrap().is_empty(), false);
+    assert!(!std::fs::read(env!("SOME_TOOL")).unwrap().is_empty());
 }
