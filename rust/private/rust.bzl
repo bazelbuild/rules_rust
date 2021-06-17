@@ -860,7 +860,10 @@ _rust_binary_attrs = {
         cfg = "exec",
         allow_single_file = True,
     ),
-    "out_binary": attr.bool(),
+    "out_binary": attr.bool(
+        doc = "Force a target, regardless of it's `crate_type`, to always mark the file as executable.",
+        default = False,
+    ),
 }
 
 rust_binary = rule(
