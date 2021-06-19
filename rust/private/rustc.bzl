@@ -427,8 +427,8 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
-    if hasattr(ctx.attr, "_extra_codegen") and crate_info.type != 'proc-macro':
-        args.add_all(['--codegen=' + x for x in ctx.attr._extra_codegen[ExtraCodegenInfo].extra_codegen])
+    if hasattr(ctx.attr, "_extra_codegen") and crate_info.type != "proc-macro":
+        args.add_all(["--codegen=" + x for x in ctx.attr._extra_codegen[ExtraCodegenInfo].extra_codegen])
 
     # For determinism to help with build distribution and such
     args.add("--remap-path-prefix=${pwd}=.")
