@@ -6,13 +6,181 @@ load(
     "system_to_binary_ext",
     "system_to_dylib_ext",
     "system_to_staticlib_ext",
-    "system_to_stdlib_linkflags",
     "triple_to_constraint_set",
     "triple_to_system",
 )
+load(":utils.bzl", "dedent")
 
-DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+
+_RUST_TOOLCHAIN_BUILD_CONTENTS = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+rust_toolchain(
+    name = "rust_toolchain",
+    allocator_library = {allocator_library},
+    binary_ext = "{binary_ext}",
+    default_edition = "{default_edition}",
+    dylib_ext = "{dylib_ext}",
+    iso_date = {iso_date},
+    os = "{os}",
+    rust_stdlib = "{rust_stdlib}",
+    rustc = "{rustc}",
+    rustc_lib = "{rustc_lib}",
+    rustc_srcs = {rustc_srcs},
+    rustdoc = "{rustdoc}",
+    staticlib_ext = "{staticlib_ext}",
+    stdlib_linkflags = {stdlib_linkflags},
+    target_triple = "{target_triple}",
+    exec_triple = "{exec_triple}",
+    version = {version},
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+    toolchain = ":rust_toolchain",
+    toolchain_type = "@rules_rust//rust:toolchain",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "{name}",
+    actual = ":toolchain",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_toolchain(
+        name,
+        allocator_library,
+        binary_ext,
+        default_edition,
+        dylib_ext,
+        exec_constraints,
+        exec_triple,
+        iso_date,
+        os,
+        rust_stdlib,
+        rustc_lib,
+        rustc_srcs,
+        rustc,
+        rustdoc,
+        staticlib_ext,
+        stdlib_linkflags,
+        target_constraints,
+        target_triple,
+        version):
+    return _RUST_TOOLCHAIN_BUILD_CONTENTS.format(
+        name = name,
+        allocator_library = allocator_library,
+        binary_ext = binary_ext,
+        default_edition = default_edition,
+        dylib_ext = dylib_ext,
+        exec_constraints = exec_constraints,
+        exec_triple = exec_triple,
+        iso_date = iso_date,
+        os = os,
+        rust_stdlib = rust_stdlib,
+        rustc = rustc,
+        rustc_lib = rustc_lib,
+        rustc_srcs = rustc_srcs,
+        rustdoc = rustdoc,
+        staticlib_ext = staticlib_ext,
+        stdlib_linkflags = stdlib_linkflags,
+        target_constraints = target_constraints,
+        target_triple = target_triple,
+        version = "\"{}\"".format(version) if version else None,
+    )
+
+_RUST_CARGO_TOOLCHAIN_BUILD_CONTENTS = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_cargo_toolchain")
+
+rust_cargo_toolchain(
+    name = "rust_cargo_toolchain",
+    cargo = "{cargo}",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "cargo_toolchain",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+    toolchain = ":rust_cargo_toolchain",
+    toolchain_type = "@rules_rust//rust:cargo_toolchain",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_cargo_toolchain(
+        cargo,
+        exec_constraints,
+        target_constraints):
+    return _RUST_CARGO_TOOLCHAIN_BUILD_CONTENTS.format(
+        cargo = cargo,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+_RUST_CLIPPY_TOOLCHAIN_BUILD_CONTENTS = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_clippy_toolchain")
+
+rust_clippy_toolchain(
+    name = "rust_clippy_toolchain",
+    clippy_driver = "{clippy}",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "clippy_toolchain",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+    toolchain = ":rust_clippy_toolchain",
+    toolchain_type = "@rules_rust//rust:clippy_toolchain",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_clippy_toolchain(
+        clippy,
+        exec_constraints,
+        target_constraints):
+    return _RUST_CLIPPY_TOOLCHAIN_BUILD_CONTENTS.format(
+        clippy = clippy,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+_RUST_RUSTFMT_TOOLCHAIN_BUILD_CONTENTS = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_rustfmt_toolchain")
+
+rust_rustfmt_toolchain(
+    name = "rust_rustfmt_toolchain",
+    rustfmt = "{rustfmt}",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "rustfmt_toolchain",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+    toolchain = ":rust_rustfmt_toolchain",
+    toolchain_type = "@rules_rust//rust:rustfmt_toolchain",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_rustfmt_toolchain(
+        exec_constraints,
+        rustfmt,
+        target_constraints):
+    return _RUST_RUSTFMT_TOOLCHAIN_BUILD_CONTENTS.format(
+        exec_constraints = exec_constraints,
+        rustfmt = rustfmt,
+        target_constraints = target_constraints,
+    )
 
 _build_file_for_compiler_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
@@ -45,7 +213,7 @@ filegroup(
 )
 """
 
-def BUILD_for_compiler(target_triple):
+def BUILD_for_rustc(target_triple):
     """Emits a BUILD file the compiler `.tar.gz`.
 
     Args:
@@ -116,8 +284,6 @@ def BUILD_for_rustfmt(target_triple):
     )
 
 _build_file_for_clippy_template = """\
-load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
-
 filegroup(
     name = "clippy_driver_bin",
     srcs = ["bin/clippy-driver{binary_ext}"],
@@ -140,8 +306,14 @@ def BUILD_for_clippy(target_triple):
 _build_file_for_stdlib_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
 
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "BUILD.bazel",
+])
+
 rust_stdlib_filegroup(
-    name = "rust_lib-{target_triple}",
+    name = "rust_std",
     srcs = glob(
         [
             "lib/rustlib/{target_triple}/lib/*.rlib",
@@ -151,7 +323,12 @@ rust_stdlib_filegroup(
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
         allow_empty = True,
     ),
-    visibility = ["//visibility:public"],
+)
+
+# Maintain legacy naming
+alias(
+    name = "rust_lib-{target_triple}",
+    actual = ":rust_std",
 )
 """
 
@@ -172,92 +349,79 @@ def BUILD_for_stdlib(target_triple):
         target_triple = target_triple,
     )
 
-_build_file_for_rust_toolchain_template = """\
-rust_toolchain(
-    name = "{toolchain_name}_impl",
-    rust_doc = "@{workspace_name}//:rustdoc",
-    rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
-    rustc = "@{workspace_name}//:rustc",
-    rustfmt = "@{workspace_name}//:rustfmt_bin",
-    cargo = "@{workspace_name}//:cargo",
-    clippy_driver = "@{workspace_name}//:clippy_driver_bin",
-    rustc_lib = "@{workspace_name}//:rustc_lib",
-    rustc_srcs = {rustc_srcs},
-    binary_ext = "{binary_ext}",
-    staticlib_ext = "{staticlib_ext}",
-    dylib_ext = "{dylib_ext}",
-    stdlib_linkflags = [{stdlib_linkflags}],
-    os = "{system}",
-    default_edition = "{default_edition}",
-    exec_triple = "{exec_triple}",
-    target_triple = "{target_triple}",
+_build_file_for_rustc_srcs_template = """\
+alias(
+    name = "rustc_srcs",
+    actual = "//lib/rustlib/src:rustc_srcs",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_toolchain(
-        workspace_name,
-        name,
-        exec_triple,
-        target_triple,
-        include_rustc_srcs,
-        stdlib_linkflags = None,
-        default_edition = "2015"):
-    """Emits a toolchain declaration to match an existing compiler and stdlib.
+def BUILD_for_rustc_srcs():
+    return _build_file_for_rustc_srcs_template
+
+def load_cargo(ctx):
+    """Loads a rustfmt binary and yields corresponding BUILD for it
 
     Args:
-        workspace_name (str): The name of the workspace that this toolchain resides in
-        name (str): The name of the toolchain declaration
-        exec_triple (str): The rust-style target that this compiler runs on
-        target_triple (str): The rust-style target triple of the tool
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
-        stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
-                                           stdlib, akin to BAZEL_LINKLIBS. Defaults to
-                                           None.
-        default_edition (str, optional): Default Rust edition. Defaults to "2015".
+        ctx (repository_ctx): The repository rule's context object
 
     Returns:
-        str: A rendered template of a `rust_toolchain` declaration
+        str: The BUILD file contents for this rustfmt binary
     """
-    system = triple_to_system(target_triple)
-    if stdlib_linkflags == None:
-        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
+    target_triple = ctx.attr.triple
 
-    rustc_srcs = "None"
-    if include_rustc_srcs:
-        rustc_srcs = "\"@{workspace_name}//lib/rustlib/src:rustc_srcs\"".format(workspace_name = workspace_name)
+    if ctx.attr.version in ("beta", "nightly"):
+        iso_date = ctx.attr.iso_date
+    else:
+        iso_date = None
 
-    return _build_file_for_rust_toolchain_template.format(
-        toolchain_name = name,
-        workspace_name = workspace_name,
-        binary_ext = system_to_binary_ext(system),
-        staticlib_ext = system_to_staticlib_ext(system),
-        dylib_ext = system_to_dylib_ext(system),
-        rustc_srcs = rustc_srcs,
-        stdlib_linkflags = stdlib_linkflags,
-        system = system,
-        default_edition = default_edition,
-        exec_triple = exec_triple,
+    load_arbitrary_tool(
+        ctx,
+        iso_date = iso_date,
         target_triple = target_triple,
+        tool_name = "cargo",
+        tool_subdirectories = ["cargo"],
+        version = ctx.attr.version,
+        sha256 = ctx.attr.sha256,
     )
 
-_build_file_for_toolchain_template = """\
-toolchain(
-    name = "{name}",
-    exec_compatible_with = {exec_constraint_sets_serialized},
-    target_compatible_with = {target_constraint_sets_serialized},
-    toolchain = "@{parent_workspace_name}//:{name}_impl",
-    toolchain_type = "@rules_rust//rust:toolchain",
-)
-"""
+    return BUILD_for_cargo(target_triple)
 
-def BUILD_for_toolchain(name, parent_workspace_name, exec_triple, target_triple):
-    return _build_file_for_toolchain_template.format(
-        name = name,
-        exec_constraint_sets_serialized = serialized_constraint_set_from_triple(exec_triple),
-        target_constraint_sets_serialized = serialized_constraint_set_from_triple(target_triple),
-        parent_workspace_name = parent_workspace_name,
+def load_clippy(ctx):
+    """Loads a rustfmt binary and yields corresponding BUILD for it
+
+    Args:
+        ctx (repository_ctx): The repository rule's context object
+
+    Returns:
+        str: The BUILD file contents for this rustfmt binary
+    """
+    target_triple = ctx.attr.triple
+
+    if ctx.attr.version in ("beta", "nightly"):
+        iso_date = ctx.attr.iso_date
+    else:
+        iso_date = None
+
+    load_arbitrary_tool(
+        ctx,
+        iso_date = iso_date,
+        target_triple = target_triple,
+        tool_name = "clippy",
+        tool_subdirectories = ["clippy-preview"],
+        version = ctx.attr.version,
+        sha256 = ctx.attr.sha256,
     )
+
+    # TODO: Clippy should have it's rpath set such that a standalone `rustc` toolchain
+    # can be used to provide dependencies needed at runtime. For now, just load another
+    # rustc binary with the expectation that Bazel will have cached the artifact and
+    # it only needs to be re-extracted.
+    return "\n".join([
+        load_rust_compiler(ctx),
+        BUILD_for_clippy(target_triple),
+    ])
 
 def load_rustfmt(ctx):
     """Loads a rustfmt binary and yields corresponding BUILD for it
@@ -268,9 +432,9 @@ def load_rustfmt(ctx):
     Returns:
         str: The BUILD file contents for this rustfmt binary
     """
-    target_triple = ctx.attr.exec_triple
+    target_triple = ctx.attr.triple
 
-    if ctx.attr.rustfmt_version in ("beta", "nightly"):
+    if ctx.attr.version in ("beta", "nightly"):
         iso_date = ctx.attr.iso_date
     else:
         iso_date = None
@@ -281,7 +445,8 @@ def load_rustfmt(ctx):
         target_triple = target_triple,
         tool_name = "rustfmt",
         tool_subdirectories = ["rustfmt-preview"],
-        version = ctx.attr.rustfmt_version,
+        version = ctx.attr.version,
+        sha256 = ctx.attr.sha256,
     )
 
     return BUILD_for_rustfmt(target_triple)
@@ -296,25 +461,26 @@ def load_rust_compiler(ctx):
         str: The BUILD file contents for this compiler and compiler library
     """
 
-    target_triple = ctx.attr.exec_triple
+    target_triple = ctx.attr.triple
     load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
-        tool_name = "rust",
-        tool_subdirectories = ["rustc", "clippy-preview", "cargo"],
+        tool_name = "rustc",
+        tool_subdirectories = ["rustc"],
         version = ctx.attr.version,
     )
 
-    compiler_build_file = BUILD_for_compiler(target_triple) + BUILD_for_clippy(target_triple) + BUILD_for_cargo(target_triple)
-
-    return compiler_build_file
+    return BUILD_for_rustc(target_triple)
 
 def load_rust_src(ctx):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
     Args:
         ctx (ctx): A repository_ctx.
+
+    Returns:
+        str: The BUILD file contents for this rustc-src artifact
     """
     tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
@@ -322,25 +488,26 @@ def load_rust_src(ctx):
 
     tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
     archive_path = tool_path + ".tar.gz"
-    ctx.download(
+    sha256s = getattr(ctx.attr, "sha256s", {})
+    sha256 = getattr(ctx.attr, "sha256") or sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or ""
+    ctx.download_and_extract(
         url,
-        output = archive_path,
-        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or "",
-    )
-    ctx.extract(
-        archive_path,
+        sha256 = sha256,
         output = "lib/rustlib/src",
         stripPrefix = "{}/rust-src/lib/rustlib/src/rust".format(tool_path),
     )
     ctx.file(
         "lib/rustlib/src/BUILD.bazel",
-        """\
-filegroup(
-    name = "rustc_srcs",
-    srcs = glob(["**/*"]),
-    visibility = ["//visibility:public"],
-)""",
+        dedent("""\
+            filegroup(
+                name = "rustc_srcs",
+                srcs = glob(["**/*"]),
+                visibility = ["//visibility:public"],
+            )
+        """),
     )
+
+    return BUILD_for_rustc_srcs()
 
 def load_rust_stdlib(ctx, target_triple):
     """Loads a rust standard library and yields corresponding BUILD for it
@@ -362,27 +529,7 @@ def load_rust_stdlib(ctx, target_triple):
         version = ctx.attr.version,
     )
 
-    toolchain_prefix = ctx.attr.toolchain_name_prefix or DEFAULT_TOOLCHAIN_NAME_PREFIX
-    stdlib_build_file = BUILD_for_stdlib(target_triple)
-
-    stdlib_linkflags = None
-    if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
-        stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
-
-    toolchain_build_file = BUILD_for_rust_toolchain(
-        name = "{toolchain_prefix}_{target_triple}".format(
-            toolchain_prefix = toolchain_prefix,
-            target_triple = target_triple,
-        ),
-        exec_triple = ctx.attr.exec_triple,
-        include_rustc_srcs = ctx.attr.include_rustc_srcs,
-        target_triple = target_triple,
-        stdlib_linkflags = stdlib_linkflags,
-        workspace_name = ctx.attr.name,
-        default_edition = ctx.attr.edition,
-    )
-
-    return stdlib_build_file + toolchain_build_file
+    return BUILD_for_stdlib(target_triple)
 
 def load_rustc_dev_nightly(ctx, target_triple):
     """Loads the nightly rustc dev component
@@ -548,3 +695,22 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             output = "",
             stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
+
+    # Cleanup the archive
+    ctx.execute(["rm", archive_path])
+
+_WORKSPACE = """\
+# rules_rust generated workspace
+workspace(name = "{}")
+"""
+
+def write_build_and_workspace(repository_ctx, build_file_content):
+    """Writes a BUILD and WORKSPACE file for a rules_rust generated repository
+
+    Args:
+        repository_ctx (repository_ctx): The rule's context object
+        build_file_content (str): The contents of the BUILD file
+    """
+
+    repository_ctx.file("BUILD.bazel", build_file_content)
+    repository_ctx.file("WORKSPACE.bazel", _WORKSPACE.format(repository_ctx.name))

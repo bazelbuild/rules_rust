@@ -60,6 +60,7 @@ def _crate_universe_resolver_bootstrapping_impl(repository_ctx):
         args,
         environment = {
             "RUSTC": str(tools.rustc),
+            "RUSTFLAGS": "--sysroot={}".format(tools.rust_stdlib),
         },
         quiet = False,
     )
@@ -95,10 +96,10 @@ _crate_universe_resolver_bootstrapping = repository_rule(
         "rust_toolchain_repository_template": attr.string(
             doc = (
                 "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
-                "will be replaced in the string if present."
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), `{tool} (eg. 'cargo'), " +
+                "`{cfg}` (eg. 'exec'), and `{arch}` (eg. 'aarch64') will be replaced in the string if present."
             ),
-            default = "rust_{system}_{arch}",
+            default = "rules_rust_{tool}_{version}_{triple}",
         ),
         "srcs": attr.label(
             doc = "Souces to the crate_universe resolver",

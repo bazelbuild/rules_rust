@@ -21,7 +21,8 @@ load(
     "collect_inputs",
     "construct_arguments",
 )
-load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
+load("//rust/private:toolchain_utils.bzl", "find_cc_toolchain", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash")
 
 def _get_clippy_ready_crate_info(target, aspect_ctx):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
@@ -54,6 +55,7 @@ def _clippy_aspect_impl(target, ctx):
         return []
 
     toolchain = find_toolchain(ctx)
+    clippy_toolchain = ctx.toolchains[Label("//rust:clippy_toolchain")]
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_type = crate_info.type
 
@@ -84,7 +86,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx.rule.attr,
         ctx.file,
         toolchain,
-        toolchain.clippy_driver.path,
+        clippy_toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
         crate_type,
@@ -130,7 +132,7 @@ def _clippy_aspect_impl(target, ctx):
         inputs = compile_inputs,
         outputs = [clippy_marker],
         env = env,
-        tools = [toolchain.clippy_driver],
+        tools = [clippy_toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
     )
@@ -171,6 +173,7 @@ rust_clippy_aspect = aspect(
         ),
     },
     toolchains = [
+        str(Label("//rust:clippy_toolchain")),
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],

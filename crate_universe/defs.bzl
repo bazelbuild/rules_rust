@@ -205,10 +205,10 @@ Environment Variables:
         "rust_toolchain_repository_template": attr.string(
             doc = (
                 "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
-                "will be replaced in the string if present."
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), `{tool} (eg. 'cargo'), " +
+                "`{cfg}` (eg. 'exec'), and `{arch}` (eg. 'aarch64') will be replaced in the string if present."
             ),
-            default = "rust_{system}_{arch}",
+            default = "rules_rust_{tool}_{version}_{triple}",
         ),
         "sha256s": attr.string_dict(
             doc = "The sha256 checksum of the desired rust artifacts",
@@ -219,7 +219,7 @@ Environment Variables:
                 "to consider when resoliving dependencies."
             ),
             allow_empty = False,
-            default = DEFAULT_TOOLCHAIN_TRIPLES.keys(),
+            default = DEFAULT_TOOLCHAIN_TRIPLES,
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",

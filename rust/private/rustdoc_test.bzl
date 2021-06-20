@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
+load("//rust/private:toolchain_utils.bzl", "find_sysroot", "find_toolchain")
+load("//rust/private:utils.bzl", "get_lib_name", "get_preferred_artifact")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -41,7 +41,7 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    flags = _build_rustdoc_flags(dep_info, crate_info)
+    flags = _build_rustdoc_flags(dep_info, crate_info, toolchain)
     if toolchain.os != "windows":
         rust_doc_test = _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info)
     else:
@@ -50,14 +50,14 @@ def _rust_doc_test_impl(ctx):
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
         [crate_info.output] +
-        [toolchain.rust_doc] +
+        [toolchain.rustdoc] +
         [toolchain.rustc] +
         toolchain.crosstool_files,
         transitive = [
             crate_info.srcs,
             dep_info.transitive_libs,
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
+            toolchain.rustc_lib,
+            toolchain.rust_lib,
         ],
     )
 
@@ -82,12 +82,13 @@ def _dirname(path_str):
     """
     return "/".join(path_str.split("/")[:-1])
 
-def _build_rustdoc_flags(dep_info, crate_info):
+def _build_rustdoc_flags(dep_info, crate_info, toolchain):
     """Constructs the rustdoc script used to test `crate`.
 
     Args:
         dep_info (DepInfo): The DepInfo provider
         crate_info (CrateInfo): The CrateInfo provider
+        toolchain (rust_toolchain): The rust toolchain
 
     Returns:
         list: A list of rustdoc flags (str)
@@ -116,6 +117,15 @@ def _build_rustdoc_flags(dep_info, crate_info):
 
     if crate_info.type == "proc-macro":
         link_flags.extend(["--extern", "proc_macro"])
+
+    sysroot = find_sysroot(toolchain, short_path = True)
+    if toolchain.os == "windows":
+        sysroot = sysroot.replace("/", "\\")
+
+    link_flags.extend([
+        "--sysroot=\"{}\"".format(sysroot),
+        "--target=\"{}\"".format(toolchain.target_triple),
+    ])
 
     edition_flags = ["--edition={}".format(crate_info.edition)] if crate_info.edition != "2015" else []
 
@@ -150,7 +160,7 @@ def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info):
     ctx.actions.write(
         output = rust_doc_test,
         content = _rustdoc_test_bash_script.format(
-            rust_doc = toolchain.rust_doc.short_path,
+            rust_doc = toolchain.rustdoc.short_path,
             crate_root = crate_info.root.path,
             crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
@@ -185,7 +195,7 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info):
     ctx.actions.write(
         output = rust_doc_test,
         content = _rustdoc_test_batch_script.format(
-            rust_doc = toolchain.rust_doc.short_path.replace("/", "\\"),
+            rust_doc = toolchain.rustdoc.short_path.replace("/", "\\"),
             crate_root = crate_info.root.path,
             crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
@@ -215,7 +225,9 @@ rust_doc_test = rule(
     },
     executable = True,
     test = True,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+    ],
     incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
 

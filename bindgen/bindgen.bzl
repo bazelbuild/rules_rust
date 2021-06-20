@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Rules for building Cc compatible targets via [bindgen](https://rust-lang.github.io/rust-bindgen/)"""
+
 load("//rust:rust.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_toolchain", "get_preferred_artifact")
+load("//rust/private:toolchain_utils.bzl", "find_toolchain")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -88,7 +92,7 @@ def _rust_bindgen_impl(ctx):
 
     toolchain = ctx.toolchains[Label("//bindgen:bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
-    rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
+    rustfmt_bin = toolchain.rustfmt or ctx.toolchains[Label("//rust:rustfmt_toolchain")].rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
     libstdcxx = toolchain.libstdcxx
@@ -198,6 +202,7 @@ rust_bindgen = rule(
     outputs = {"out": "%{name}.rs"},
     toolchains = [
         str(Label("//bindgen:bindgen_toolchain")),
+        str(Label("//rust:rustfmt_toolchain")),
         str(Label("//rust:toolchain")),
     ],
     incompatible_use_toolchain_transition = True,

@@ -9,7 +9,7 @@ def _toolchain_specifies_target_triple_test_impl(ctx):
 
     asserts.equals(env, None, toolchain_info.target_json)
     asserts.equals(env, "toolchain-test-triple", toolchain_info.target_flag_value)
-    asserts.equals(env, "toolchain-test-triple", toolchain_info.target_triple)
+    asserts.equals(env, "toolchain-test-triple", toolchain_info.triple)
 
     return analysistest.end(env)
 
@@ -19,7 +19,7 @@ def _toolchain_specifies_target_json_test_impl(ctx):
 
     asserts.equals(env, "toolchain-test-triple.json", toolchain_info.target_json.basename)
     asserts.equals(env, "test/unit/toolchain/toolchain-test-triple.json", toolchain_info.target_flag_value)
-    asserts.equals(env, "", toolchain_info.target_triple)
+    asserts.equals(env, "", toolchain_info.triple)
 
     return analysistest.end(env)
 
@@ -37,15 +37,23 @@ def _toolchain_test():
         srcs = ["toolchain-test-triple.json"],
     )
 
+    native.filegroup(
+        name = "mock_rustc_lib",
+        srcs = [],
+    )
+
     rust_toolchain(
         name = "rust_triple_toolchain",
         binary_ext = "",
         dylib_ext = ".so",
         os = "linux",
-        rust_lib = ":std_libs",
+        rust_stdlib = ":std_libs",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_triple = "toolchain-test-triple",
+        rustc = ":mock_rustc",
+        rustdoc = ":mock_rustdoc",
+        rustc_lib = ":mock_rustc_lib",
     )
 
     rust_toolchain(
@@ -53,10 +61,13 @@ def _toolchain_test():
         binary_ext = "",
         dylib_ext = ".so",
         os = "linux",
-        rust_lib = ":std_libs",
+        rust_stdlib = ":std_libs",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = ":target_json",
+        rustc = ":mock_rustc",
+        rustdoc = ":mock_rustdoc",
+        rustc_lib = ":mock_rustc_lib",
     )
 
     toolchain_specifies_target_triple_test(

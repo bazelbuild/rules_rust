@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "add_crate_link_flags", "add_edition_flags")
-load("//rust/private:utils.bzl", "find_toolchain")
+load("//rust/private:toolchain_utils.bzl", "find_toolchain")
 
 _rust_doc_doc = """Generates code documentation.
 
@@ -79,11 +78,11 @@ def _rust_doc_impl(ctx):
 
     rustdoc_inputs = depset(
         [c.output for c in dep_info.transitive_crates.to_list()] +
-        [toolchain.rust_doc],
+        [toolchain.rustdoc],
         transitive = [
             crate_info.srcs,
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
+            toolchain.rustc_lib,
+            toolchain.rust_stdlib,
         ],
     )
 
@@ -101,6 +100,13 @@ def _rust_doc_impl(ctx):
     # nb. rustdoc can't do anything with native link flags; we must omit them.
     add_crate_link_flags(args, dep_info)
 
+    # Gets the paths to the folders containing the standard library or libcore
+    rust_lib_files = depset(transitive = [toolchain.rust_stdlib, toolchain.rustc_lib])
+    rust_lib_paths = depset([file.dirname for file in rust_lib_files.to_list()]).to_list()
+
+    # Tell Rustc where to find the standard library
+    args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
+
     args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
     if ctx.file.html_in_header:
         args.add("--html-in-header", ctx.file.html_in_header)
@@ -110,7 +116,7 @@ def _rust_doc_impl(ctx):
         args.add("--html-after-content", ctx.file.html_after_content)
 
     ctx.actions.run(
-        executable = toolchain.rust_doc,
+        executable = toolchain.rustdoc,
         inputs = rustdoc_inputs,
         outputs = [output_dir],
         arguments = [args],
@@ -193,6 +199,8 @@ rust_doc = rule(
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+    ],
     incompatible_use_toolchain_transition = True,
 )

@@ -1,7 +1,6 @@
 """A module defining rustfmt rules"""
 
 load(":common.bzl", "rust_common")
-load(":utils.bzl", "find_toolchain")
 
 def _find_rustfmtable_srcs(target, aspect_ctx = None):
     """Parse a target for rustfmt formattable sources.
@@ -47,7 +46,7 @@ def _generate_manifest(edition, srcs, ctx):
     return manifest
 
 def _perform_check(edition, srcs, ctx):
-    toolchain = find_toolchain(ctx)
+    toolchain = ctx.toolchains[str(Label("//rust:rustfmt_toolchain"))]
     config = ctx.file._config
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
@@ -131,6 +130,7 @@ source files are also ignored by this aspect.
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
+        str(Label("//rust:rustfmt_toolchain")),
     ],
 )
 

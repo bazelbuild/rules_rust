@@ -1,49 +1,452 @@
-# buildifier: disable=module-docstring
+"""`rules_rust` uses a collection of repository rules to generate hermtic
+toolchains for execution and target environments. A large set of commonly
+used toolchains are defined simply by calling `rust_repositories` in your
+WORKSPACE file but toolchains can be defined more granularly by using
+`rust_repository_set` or any of the other underlying `rust_*_repository`
+repository rules with `rust_toolchain_repository`.
+"""
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
+    "//rust/platform:triple_mappings.bzl",
+    "SUPPORTED_PLATFORM_TRIPLES",
+    "system_to_binary_ext",
+    "system_to_dylib_ext",
+    "system_to_staticlib_ext",
+    "system_to_stdlib_linkflags",
+    "triple_to_constraint_set",
+    "triple_to_system",
+)
+load(
     "//rust/private:repository_utils.bzl",
-    "BUILD_for_toolchain",
+    "BUILD_for_rust_cargo_toolchain",
+    "BUILD_for_rust_clippy_toolchain",
+    "BUILD_for_rust_rustfmt_toolchain",
+    "BUILD_for_rust_toolchain",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
-    "DEFAULT_TOOLCHAIN_NAME_PREFIX",
     "check_version_valid",
+    "load_cargo",
+    "load_clippy",
     "load_llvm_tools",
     "load_rust_compiler",
     "load_rust_src",
     "load_rust_stdlib",
     "load_rustc_dev_nightly",
     "load_rustfmt",
+    "write_build_and_workspace",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
+load("//rust/private:utils.bzl", "dedent")
 
-# Reexport `load_arbitrary_tool` as it's currently in use in https://github.com/google/cargo-raze
+# Reexport to satisfy previsouly public API
 load_arbitrary_tool = _load_arbitrary_tool
 
-# Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
+# Note: Code in `.github/workflows/crate_universe.yaml` looks for this line,
+# if you remove it or change its format, you will also need to update that code.
 DEFAULT_RUST_VERSION = "1.53.0"
-DEFAULT_TOOLCHAIN_TRIPLES = {
-    "aarch64-apple-darwin": "rust_darwin_aarch64",
-    "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
-    "x86_64-apple-darwin": "rust_darwin_x86_64",
-    "x86_64-pc-windows-msvc": "rust_windows_x86_64",
-    "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
-    "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
-}
+DEFAULT_TOOLCHAIN_TRIPLES = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-freebsd",
+    "x86_64-unknown-linux-gnu",
+]
+DEFAULT_RUST_EDITION = "2015"
+
+def _rust_toolchain_repository_impl(repository_ctx):
+    iso_date = "\"{}\"".format(repository_ctx.attr.iso_date) if repository_ctx.attr.iso_date else None
+
+    # Define exec variables
+    rustc_repository = repository_ctx.attr.rustc_repository
+    exec_triple = repository_ctx.attr.exec_triple
+    include_rustc_srcs_env = repository_ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
+    if include_rustc_srcs_env != None:
+        include_rustc_srcs = include_rustc_srcs_env.lower() in ["true", "1"]
+    else:
+        include_rustc_srcs = repository_ctx.attr.include_rustc_srcs
+    rustc_srcs = "\"{}\"".format(repository_ctx.attr.rustc_srcs) if include_rustc_srcs else None
+
+    # Define target variables
+    target_triple = repository_ctx.attr.target_triple
+    target_system = triple_to_system(target_triple)
+    stdlib_repository = repository_ctx.attr.stdlib_repository
+    allocator_library = "\"{}\"".format(repository_ctx.attr.allocator_library) if repository_ctx.attr.allocator_library else None
+
+    stdlib_linkflags = None
+    if "BAZEL_RUST_STDLIB_LINKFLAGS" in repository_ctx.os.environ:
+        stdlib_linkflags = repository_ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
+    if stdlib_linkflags == None:
+        stdlib_linkflags = repository_ctx.attr.stdlib_linkflags
+
+    build_file_contents = [
+        BUILD_for_rust_toolchain(
+            name = repository_ctx.name,
+            allocator_library = allocator_library,
+            binary_ext = system_to_binary_ext(target_system),
+            default_edition = repository_ctx.attr.edition,
+            dylib_ext = system_to_dylib_ext(target_system),
+            exec_constraints = repository_ctx.attr.exec_compatible_with,
+            exec_triple = repository_ctx.attr.exec_triple,
+            iso_date = iso_date,
+            os = target_system,
+            rust_stdlib = "@{}//:rust_std".format(stdlib_repository),
+            rustc = "@{}//:rustc".format(rustc_repository),
+            rustc_lib = "@{}//:rustc_lib".format(rustc_repository),
+            rustc_srcs = rustc_srcs,
+            rustdoc = "@{}//:rustdoc".format(rustc_repository),
+            staticlib_ext = system_to_staticlib_ext(target_system),
+            stdlib_linkflags = stdlib_linkflags,
+            target_constraints = repository_ctx.attr.target_compatible_with,
+            target_triple = target_triple,
+            version = repository_ctx.attr.version,
+        ),
+    ]
+
+    if repository_ctx.attr.cargo:
+        build_file_contents.append(BUILD_for_rust_cargo_toolchain(
+            cargo = repository_ctx.attr.cargo,
+            exec_constraints = repository_ctx.attr.exec_compatible_with,
+            target_constraints = repository_ctx.attr.target_compatible_with,
+        ))
+
+    if repository_ctx.attr.clippy:
+        build_file_contents.append(BUILD_for_rust_clippy_toolchain(
+            clippy = repository_ctx.attr.clippy,
+            exec_constraints = repository_ctx.attr.exec_compatible_with,
+            target_constraints = repository_ctx.attr.target_compatible_with,
+        ))
+
+    if repository_ctx.attr.rustfmt:
+        build_file_contents.append(BUILD_for_rust_rustfmt_toolchain(
+            rustfmt = repository_ctx.attr.rustfmt,
+            exec_constraints = repository_ctx.attr.exec_compatible_with,
+            target_constraints = repository_ctx.attr.target_compatible_with,
+        ))
+
+    write_build_and_workspace(repository_ctx, "\n".join(build_file_contents))
+
+rust_toolchain_repository = repository_rule(
+    doc = dedent("""\
+    A repository rule for wiring together all tools and components required by a host/exec platform for compilation.
+
+    This rule can be used to represent any rustc platform with "host" tools. It creates a `rust_exec_toolchain` using
+    generated labels for it's dependencies to allow the toolchain to be registered without requiring that the components
+    are first downloaded. For more details on rustc platforms and host tools, see
+    [The rustc book](https://doc.rust-lang.org/stable/rustc/platform-support.html).
+    """),
+    attrs = {
+        "allocator_library": attr.label(
+            doc = "Target that provides allocator functions when rust_library targets are embedded in a `cc_binary`.",
+        ),
+        "cargo": attr.string(
+            doc = "The label of a Cargo binary from `rust_cargo_repository`",
+        ),
+        "clippy": attr.string(
+            doc = "The label of a Clippy binary from `rust_clippy_repository`",
+        ),
+        "edition": attr.string(
+            doc = "The rust edition to be used by default.",
+            default = DEFAULT_RUST_EDITION,
+        ),
+        "exec_compatible_with": attr.string_list(
+            doc = "A list of constraint_values that must be present in the execution platform for this target.",
+        ),
+        "exec_triple": attr.string(
+            doc = "The platform triple of the execution environment.",
+            mandatory = True,
+        ),
+        "include_rustc_srcs": attr.bool(
+            doc = (
+                "Whether to download and unpack the rustc source files. These are very large, and " +
+                "slow to unpack, but are required to support rust analyzer. An environment variable " +
+                "`RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS` can also be used to control this attribute. " +
+                "This variable will take precedence over the hard coded attribute. Setting it to `true` " +
+                "to activates this attribute where all other values deactivate it."
+            ),
+            default = False,
+        ),
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "rustc_repository": attr.string(
+            doc = "The repository name of `rust_rustc_repository`.",
+            mandatory = True,
+        ),
+        "rustc_srcs": attr.string(
+            doc = "The label of a `rustc_srcs` filegroup target from `rust_rustc_srcs_repository`.",
+        ),
+        "rustfmt": attr.string(
+            doc = "The label of a Rustfmt binary from `rust_rustfmt_repository`",
+        ),
+        "stdlib_linkflags": attr.string_list(
+            doc = "Additional linker libs used when rust-std lib is linked.",
+        ),
+        "stdlib_repository": attr.string(
+            doc = "The repository name for a `rust_stdlib_repository`.",
+            mandatory = True,
+        ),
+        "target_compatible_with": attr.string_list(
+            doc = (
+                "A list of constraint_values that must be present in the target platform for this target to " +
+                "be considered compatible."
+            ),
+        ),
+        "target_triple": attr.string(
+            doc = "The platform triple of the target environment.",
+            mandatory = True,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+    implementation = _rust_toolchain_repository_impl,
+    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
+)
+
+def _rust_rustc_repository_impl(repository_ctx):
+    """The implementation of the rust toolchain repository rule."""
+
+    check_version_valid(repository_ctx.attr.version, repository_ctx.attr.iso_date)
+
+    build_components = [load_rust_compiler(repository_ctx)]
+
+    # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
+    if repository_ctx.attr.version >= "1.45.0" or \
+       (repository_ctx.attr.version == "nightly" and repository_ctx.attr.iso_date > "2020-05-22"):
+        load_llvm_tools(repository_ctx, repository_ctx.attr.triple)
+
+    if repository_ctx.attr.dev_components:
+        load_rustc_dev_nightly(repository_ctx, repository_ctx.attr.triple)
+
+    write_build_and_workspace(repository_ctx, "\n".join(build_components))
+
+rust_rustc_repository = repository_rule(
+    doc = "must be a host toolchain",
+    attrs = {
+        "dev_components": attr.bool(
+            doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
+            default = False,
+        ),
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256s": attr.string_dict(
+            doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+        ),
+        "triple": attr.string(
+            doc = "The Rust-style target that this compiler runs on",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used " +
+                "to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+    implementation = _rust_rustc_repository_impl,
+)
+
+def _rust_stdlib_repository_impl(repository_ctx):
+    """The implementation of the rust-std target toolchain repository rule."""
+
+    check_version_valid(repository_ctx.attr.version, repository_ctx.attr.iso_date)
+
+    write_build_and_workspace(repository_ctx, load_rust_stdlib(repository_ctx, repository_ctx.attr.triple))
+
+rust_stdlib_repository = repository_rule(
+    doc = "A repository rule for fetching the `rust-std` ([Rust Standard Library](https://doc.rust-lang.org/std/)) artifact for the requested platform.",
+    attrs = {
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256s": attr.string_dict(
+            doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+        ),
+        "triple": attr.string(
+            doc = "The Rust-style target that this compiler runs on",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. " +
+                "These must contain the '{}' used to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+    implementation = _rust_stdlib_repository_impl,
+)
+
+def _rust_srcs_repository_impl(repository_ctx):
+    """The `rust_srcs_repository` repository rule implementation"""
+
+    write_build_and_workspace(repository_ctx, load_rust_src(repository_ctx))
+
+rust_srcs_repository = repository_rule(
+    doc = (
+        "A repository rule for fetching rustc sources. These are typically useful for things " +
+        "[rust-analyzer](https://rust-analyzer.github.io/)."
+    ),
+    implementation = _rust_srcs_repository_impl,
+    attrs = {
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256": attr.string(
+            doc = "The sha256 of the rustc-src artifact.",
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. " +
+                "These must contain the '{}' used to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+)
+
+def _rust_rustfmt_repository_impl(repository_ctx):
+    """The `rust_rustfmt_repository` repository rule implementation"""
+
+    write_build_and_workspace(repository_ctx, load_rustfmt(repository_ctx))
+
+rust_rustfmt_repository = repository_rule(
+    doc = (
+        "A repository rule for downloading a [Rustfmt](https://github.com/rust-lang/rustfmt#readme) artifact for " +
+        "use in a `rust_rustfmt_toolchain`."
+    ),
+    implementation = _rust_rustfmt_repository_impl,
+    attrs = {
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256": attr.string(
+            doc = "The sha256 of the rustfmt artifact.",
+        ),
+        "triple": attr.string(
+            doc = "The Rust-style target that this compiler runs on",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. " +
+                "These must contain the '{}' used to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+)
+
+def _rust_cargo_repository_impl(repository_ctx):
+    """The `rust_cargo_repository` repository rule implementation"""
+
+    write_build_and_workspace(repository_ctx, load_cargo(repository_ctx))
+
+rust_cargo_repository = repository_rule(
+    doc = (
+        "A repository rule for downloading a [Cargo](https://doc.rust-lang.org/cargo/) artifact for " +
+        "use in a `rust_cargo_toolchain`."
+    ),
+    implementation = _rust_cargo_repository_impl,
+    attrs = {
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256": attr.string(
+            doc = "The sha256 of the cargo artifact.",
+        ),
+        "triple": attr.string(
+            doc = "The Rust-style target that this compiler runs on",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. " +
+                "These must contain the '{}' used to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+)
+
+def _rust_clippy_repository_impl(repository_ctx):
+    """The `rust_clippy_repository` repository rule implementation"""
+
+    write_build_and_workspace(repository_ctx, load_clippy(repository_ctx))
+
+rust_clippy_repository = repository_rule(
+    doc = (
+        "A repository rule for defining a `rust_clippy_toolchain` from the requested version of " +
+        "[Clippy](https://github.com/rust-lang/rust-clippy#readme)"
+    ),
+    implementation = _rust_clippy_repository_impl,
+    attrs = {
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256": attr.string(
+            doc = "The sha256 of the clippy-driver artifact.",
+        ),
+        "triple": attr.string(
+            doc = "The Rust-style target that this compiler runs on",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = (
+                "A list of mirror urls containing the tools from the Rust-lang static file server. " +
+                "These must contain the '{}' used to substitute the tool being fetched (using .format)."
+            ),
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+)
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = DEFAULT_RUST_VERSION,
-        iso_date = None,
-        rustfmt_version = None,
-        edition = None,
         dev_components = False,
-        sha256s = None,
+        edition = DEFAULT_RUST_EDITION,
         include_rustc_srcs = False,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
-    """Emits a default set of toolchains for Linux, MacOS, and Freebsd
+        iso_date = None,
+        prefix = "rules_rust",
+        register_toolchains = True,
+        rustfmt_version = None,
+        sha256s = None,
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        version = DEFAULT_RUST_VERSION):
+    """Instantiate repositories and toolchains required by `rules_rust`.
 
-    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
-    other hosts or for additional target triples.
+    Skip this macro and call the [rust_exec_toolchain_repository](#rust_exec_toolchain_repository) or
+    [rust_target_toolchain_repository](#rust_target_toolchain_repository) rules directly if you need a
+    compiler for other hosts or for additional target triples.
 
     The `sha256` attribute represents a dict associating tool subdirectories to sha256 hashes. As an example:
     ```python
@@ -53,28 +456,26 @@ def rust_repositories(
         "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
     }
     ```
-    This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive \
-    list of known checksums..
-
-    See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
 
     Args:
-        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
-        iso_date (str, optional): The date of the nightly or beta release (or None, if the version is a specific version).
-        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
+        dev_components (bool, optional): Whether to download the rustc-dev components.
         edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
-        dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
-            See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer
+            support. See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs).
+            for more details
+        iso_date (str, optional): The date of the nightly or beta release (or None, if the version is a specific version).
+        prefix (str, optional): The prefix used for all generated repositories. Eg. `{prefix}_{repository}`.
+        register_toolchains (bool, optional): Whether or not to register any toolchains. Setting this to false will
+            allow for other repositories the rules depend on to get defined while allowing users to have full control
+            over their toolchains
+        rustfmt_version (str, optional): Same as `version` but is only used for `rustfmt`
+        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must
+            contain the '{}' used to substitute the tool being fetched (using .format).
+        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
     """
-
     if dev_components and version != "nightly":
         fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
-
-    if not rustfmt_version:
-        rustfmt_version = version
 
     maybe(
         http_archive,
@@ -95,241 +496,202 @@ def rust_repositories(
         ],
     )
 
-    for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        rust_repository_set(
-            name = name,
-            exec_triple = exec_triple,
-            extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-            version = version,
-            iso_date = iso_date,
-            rustfmt_version = rustfmt_version,
-            edition = edition,
-            dev_components = dev_components,
-            sha256s = sha256s,
-            include_rustc_srcs = include_rustc_srcs,
-            urls = urls,
-        )
+    if register_toolchains:
+        # Register all default exec triples
+        for exec_triple in DEFAULT_TOOLCHAIN_TRIPLES:
+            for target_triple in SUPPORTED_PLATFORM_TRIPLES:
+                rust_repository_set(
+                    prefix = prefix,
+                    dev_components = dev_components,
+                    edition = edition,
+                    exec_triple = exec_triple,
+                    include_rustc_srcs = include_rustc_srcs,
+                    iso_date = iso_date,
+                    rustfmt_iso_date = iso_date,
+                    sha256s = sha256s,
+                    target_triple = target_triple,
+                    urls = urls,
+                    version = version,
+                )
 
-def _rust_toolchain_repository_impl(ctx):
-    """The implementation of the rust toolchain repository rule."""
+        # Register a fake cc_toolchain for use in wasm_bindgen to allow for the config transition
+        # to the wasm target platform.
+        native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
 
-    check_version_valid(ctx.attr.version, ctx.attr.iso_date)
-
-    # Determing whether or not to include rustc sources in the toolchain. The environment
-    # variable will always take precedence over the attribute.
-    include_rustc_srcs_env = ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
-    if include_rustc_srcs_env != None:
-        include_rustc_srcs = include_rustc_srcs_env.lower() in ["true", "1"]
-    else:
-        include_rustc_srcs = ctx.attr.include_rustc_srcs
-
-    if include_rustc_srcs:
-        load_rust_src(ctx)
-
-    build_components = [load_rust_compiler(ctx)]
-
-    if ctx.attr.rustfmt_version:
-        build_components.append(load_rustfmt(ctx))
-
-    # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    if ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22"):
-        load_llvm_tools(ctx, ctx.attr.exec_triple)
-
-    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
-        build_components.append(load_rust_stdlib(ctx, target_triple))
-
-        # extra_target_triples contains targets such as wasm, which don't have rustc_dev components
-        if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
-            load_rustc_dev_nightly(ctx, target_triple)
-
-    ctx.file("WORKSPACE.bazel", "")
-    ctx.file("BUILD.bazel", "\n".join(build_components))
-
-def _rust_toolchain_repository_proxy_impl(ctx):
-    build_components = []
-    for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
-        build_components.append(BUILD_for_toolchain(
-            name = "{toolchain_prefix}_{target_triple}".format(
-                toolchain_prefix = ctx.attr.toolchain_name_prefix,
-                target_triple = target_triple,
-            ),
-            exec_triple = ctx.attr.exec_triple,
-            parent_workspace_name = ctx.attr.parent_workspace_name,
-            target_triple = target_triple,
-        ))
-
-    ctx.file("WORKSPACE.bazel", "")
-    ctx.file("BUILD.bazel", "\n".join(build_components))
-
-rust_toolchain_repository = repository_rule(
-    doc = (
-        "Composes a single workspace containing the toolchain components for compiling on a given " +
-        "platform to a series of target platforms.\n" +
-        "\n" +
-        "A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy " +
-        "invocation to declare its toolchains to Bazel; the indirection allows separating toolchain " +
-        "selection from toolchain fetching."
-    ),
-    attrs = {
-        "dev_components": attr.bool(
-            doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
-            default = False,
-        ),
-        "edition": attr.string(
-            doc = "The rust edition to be used by default.",
-            default = "2015",
-        ),
-        "exec_triple": attr.string(
-            doc = "The Rust-style target that this compiler runs on",
-            mandatory = True,
-        ),
-        "extra_target_triples": attr.string_list(
-            doc = "Additional rust-style targets that this set of toolchains should support.",
-        ),
-        "include_rustc_srcs": attr.bool(
-            doc = (
-                "Whether to download and unpack the rustc source files. These are very large, and " +
-                "slow to unpack, but are required to support rust analyzer. An environment variable " +
-                "`RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS` can also be used to control this attribute. " +
-                "This variable will take precedence over the hard coded attribute. Setting it to `true` to " +
-                "activates this attribute where all other values deactivate it."
-            ),
-            default = False,
-        ),
-        "iso_date": attr.string(
-            doc = "The date of the tool (or None, if the version is a specific version).",
-        ),
-        "rustfmt_version": attr.string(
-            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
-        ),
-        "sha256s": attr.string_dict(
-            doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
-        ),
-        "toolchain_name_prefix": attr.string(
-            doc = "The per-target prefix expected for the rust_toolchain declarations in the parent workspace.",
-        ),
-        "urls": attr.string_list(
-            doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
-            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        ),
-        "version": attr.string(
-            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
-            mandatory = True,
-        ),
-    },
-    implementation = _rust_toolchain_repository_impl,
-    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
-)
-
-rust_toolchain_repository_proxy = repository_rule(
-    doc = (
-        "Generates a toolchain-bearing repository that declares the toolchains from some other " +
-        "rust_toolchain_repository."
-    ),
-    attrs = {
-        "exec_triple": attr.string(
-            doc = "The Rust-style target triple for the compilation platform",
-            mandatory = True,
-        ),
-        "extra_target_triples": attr.string_list(
-            doc = "The Rust-style triples for extra compilation targets",
-        ),
-        "parent_workspace_name": attr.string(
-            doc = "The name of the other rust_toolchain_repository",
-            mandatory = True,
-        ),
-        "toolchain_name_prefix": attr.string(
-            doc = "The per-target prefix expected for the rust_toolchain declarations in the parent workspace.",
-        ),
-    },
-    implementation = _rust_toolchain_repository_proxy_impl,
-)
-
+# buildifier: disable=unnamed-macro
 def rust_repository_set(
-        name,
-        version,
+        prefix,
         exec_triple,
-        include_rustc_srcs = False,
-        extra_target_triples = [],
-        iso_date = None,
-        rustfmt_version = None,
-        edition = None,
+        target_triple,
+        allocator_library = None,
         dev_components = False,
+        edition = DEFAULT_RUST_EDITION,
+        exec_compatible_with = None,
+        include_rustc_srcs = False,
+        iso_date = None,
+        rustfmt_iso_date = None,
+        rustfmt_version = None,
         sha256s = None,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
-    """Assembles a remote repository for the given toolchain params, produces a proxy repository \
-    to contain the toolchain declaration, and registers the toolchains.
+        stdlib_linkflags = None,
+        target_compatible_with = None,
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        version = DEFAULT_RUST_VERSION):
+    """A repository rule for defining a [rust_exec_toolchain](#rust_exec_toolchain).
 
-    N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints) \
-    without actually downloading the toolchain.
+    This repository rule generates repositories for host tools (as described by [The rustc book][trc]) and wires
+    them into a `rust_exec_toolchain` target. Note that the `rust_exec_toolchain` only includes `rustc` and it's
+    dependencies. Additional host tools such as `Cargo`, `Clippy`, and `Rustfmt` are all declared as separate
+    toolchains. This rule should be used to define more customized exec toolchains than those created by
+    `rust_repositories`.
+
+    Repositories Created:
+    - [rust_cargo_repository](#rust_cargo_repository)
+    - [rust_clippy_repository](#rust_clippy_repository)
+    - [rust_rustc_repository](#rust_rustc_repository)
+    - [rust_rustfmt_repository](#rust_rustfmt_repository)
+    - [rust_srcs_repository](#rust_srcs_repository)
+
+    Toolchains Created:
+    - [rust_exec_toolchain](#rust_exec_toolchain)
+    - [rust_cargo_toolchain](#rust_cargo_toolchain)
+    - [rust_clippy_toolchain](#rust_clippy_toolchain)
+    - [rust_rustfmt_toolchain](#rust_rustfmt_toolchain)
+
+
+    [trc]: https://doc.rust-lang.org/stable/rustc/platform-support.html
 
     Args:
-        name (str): The name of the generated repository
-        version (str): The version of the tool among "nightly", "beta', or an exact version.
-        exec_triple (str): The Rust-style target that this compiler runs on
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
-        extra_target_triples (list, optional): Additional rust-style targets that this set of
-            toolchains should support. Defaults to [].
-        iso_date (str, optional): The date of the tool. Defaults to None.
-        rustfmt_version (str, optional):  The version of rustfmt to be associated with the
-            toolchain. Defaults to None.
-        edition (str, optional): The rust edition to be used by default (2015 (if None) or 2018).
-        dev_components (bool, optional): Whether to download the rustc-dev components.
-            Requires version to be "nightly". Defaults to False.
-        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
-            [rust_repositories](#rust_repositories) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        prefix (str): A common prefix for all generated repositories.
+        triple (str): The platform triple of the execution environment.
+        dev_components (bool, optional): [description]. Defaults to False.
+        edition (str, optional): The rust edition to be used by default.
+        exec_compatible_with (list, optional): Optional exec constraints for the toolchain. If unset, a default will be used
+            based on the value of `triple`. See `@rules_rust//rust/platform:triple_mappings.bzl` for more details.
+        include_rustc_srcs (bool, optional): Whether to download and unpack the
+            rustc source files. These are very large, and slow to unpack, but are required to support rust analyzer.
+        iso_date (str, optional): The date of the tool (or None, if the version is a specific version).
+        rustfmt_iso_date (str, optional): Similar to `iso_date` but specific to Rustfmt. If unspecified, `iso_date` will be used.
+        rustfmt_version (str, optional): Similar to `version` but specific to Rustfmt. If unspecified, `version` will be used.
+        sha256s (dict, optional): A dict associating tool subdirectories to sha256 hashes.
+        target_compatible_with (list, optional): Optional target constraints for the toolchain.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must
+            contain the '{}' used to substitute the tool being fetched (using .format).
+        version (str, optional): The version of the tool among \"nightly\", \"beta\", or an exact version.
     """
+    version_str = version if version not in ["nightly", "beta"] else "{}-{}".format(
+        version,
+        iso_date,
+    )
 
-    rust_toolchain_repository(
-        name = name,
-        exec_triple = exec_triple,
-        include_rustc_srcs = include_rustc_srcs,
-        extra_target_triples = extra_target_triples,
-        iso_date = iso_date,
-        toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
-        version = version,
-        rustfmt_version = rustfmt_version,
-        edition = edition,
+    rustc_repo_name = "{}_rustc_{}_{}".format(prefix, version_str, exec_triple)
+    rust_rustc_repository(
+        name = rustc_repo_name,
         dev_components = dev_components,
+        iso_date = iso_date,
         sha256s = sha256s,
+        triple = exec_triple,
+        urls = urls,
+        version = version,
+    )
+
+    # rustc_srcs are platform agnostic so it should be something
+    # defined once and shared accross various toolchains
+    rustc_srcs_name = "{}_rustc_srcs_{}".format(prefix, version_str)
+    maybe(
+        rust_srcs_repository,
+        name = rustc_srcs_name,
+        iso_date = iso_date,
+        sha256 = sha256s.get("rustc-src") if sha256s else None,
+        urls = urls,
+        version = version,
+    )
+
+    rustfmt_version_str = version_str
+    if rustfmt_version:
+        rustfmt_version_str = rustfmt_version if rustfmt_version not in ["nightly", "beta"] else "{}-{}".format(
+            rustfmt_version,
+            rustfmt_iso_date,
+        )
+
+    rustfmt_name = "{}_rustfmt_{}_{}".format(prefix, rustfmt_version_str, exec_triple)
+    rust_rustfmt_repository(
+        name = rustfmt_name,
+        iso_date = rustfmt_iso_date or iso_date,
+        triple = exec_triple,
+        version = rustfmt_version or version,
         urls = urls,
     )
 
-    rust_toolchain_repository_proxy(
-        name = name + "_toolchains",
-        exec_triple = exec_triple,
-        extra_target_triples = extra_target_triples,
-        parent_workspace_name = name,
-        toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
+    cargo_name = "{}_cargo_{}_{}".format(prefix, version_str, exec_triple)
+    rust_cargo_repository(
+        name = cargo_name,
+        iso_date = iso_date,
+        triple = exec_triple,
+        version = version,
+        urls = urls,
     )
 
-    all_toolchain_names = []
-    for target_triple in [exec_triple] + extra_target_triples:
-        all_toolchain_names.append("@{name}_toolchains//:{toolchain_name_prefix}_{triple}".format(
-            name = name,
-            toolchain_name_prefix = DEFAULT_TOOLCHAIN_NAME_PREFIX,
-            triple = target_triple,
-        ))
+    clippy_name = "{}_clippy_{}_{}".format(prefix, version_str, exec_triple)
+    rust_clippy_repository(
+        name = clippy_name,
+        iso_date = iso_date,
+        triple = exec_triple,
+        version = version,
+        urls = urls,
+    )
 
-    # Register toolchains
-    native.register_toolchains(*all_toolchain_names)
-    native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
+    stdlib_repo_name = "{}_stdlib_{}_{}".format(prefix, version_str, target_triple)
+    rust_stdlib_repository(
+        name = stdlib_repo_name,
+        iso_date = iso_date,
+        sha256s = sha256s,
+        triple = target_triple,
+        urls = urls,
+        version = version,
+    )
 
-    # Inform users that they should be using the canonical name if it's not detected
-    if "rules_rust" not in native.existing_rules():
-        message = "\n" + ("=" * 79) + "\n"
-        message += (
-            "It appears that you are trying to import rules_rust without using its\n" +
-            "canonical name, \"@rules_rust\" Please change your WORKSPACE file to\n" +
-            "import this repo with `name = \"rules_rust\"` instead."
-        )
+    if exec_compatible_with == None:
+        exec_compatible_with = triple_to_constraint_set(exec_triple)
 
-        if "io_bazel_rules_rust" in native.existing_rules():
-            message += "\n\n" + (
-                "Note that the previous name of \"@io_bazel_rules_rust\" is deprecated.\n" +
-                "See https://github.com/bazelbuild/rules_rust/issues/499 for context."
-            )
+    if target_compatible_with == None:
+        target_compatible_with = triple_to_constraint_set(target_triple)
 
-        message += "\n" + ("=" * 79)
-        fail(message)
+    stdlib_opts = stdlib_linkflags
+    if stdlib_opts == None:
+        stdlib_opts = system_to_stdlib_linkflags(triple_to_system(target_triple))
+
+    toolchain_name = "{prefix}_toolchain_{ver}_{exec}__{target}".format(
+        prefix = prefix,
+        ver = version_str,
+        exec = exec_triple,
+        target = target_triple,
+    )
+
+    rust_toolchain_repository(
+        name = toolchain_name,
+        allocator_library = allocator_library,
+        cargo = "@{}//:cargo".format(cargo_name),
+        clippy = "@{}//:clippy_driver_bin".format(clippy_name),
+        edition = edition,
+        exec_compatible_with = exec_compatible_with,
+        include_rustc_srcs = include_rustc_srcs,
+        iso_date = iso_date,
+        rustc_repository = rustc_repo_name,
+        rustc_srcs = "@{}//:rustc_srcs".format(rustc_srcs_name),
+        rustfmt = "@{}//:rustfmt_bin".format(rustfmt_name),
+        stdlib_linkflags = stdlib_opts,
+        stdlib_repository = stdlib_repo_name,
+        target_compatible_with = target_compatible_with,
+        exec_triple = exec_triple,
+        target_triple = target_triple,
+        version = version,
+    )
+    native.register_toolchains(*[
+        tool.format(toolchain_name)
+        for tool in [
+            "@{}//:toolchain",
+            "@{}//:cargo_toolchain",
+            "@{}//:clippy_toolchain",
+            "@{}//:rustfmt_toolchain",
+        ]
+    ])

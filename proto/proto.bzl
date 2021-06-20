@@ -44,7 +44,10 @@ load("//rust:rust.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:toolchain_utils.bzl", "find_toolchain")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "determine_output_hash")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",

@@ -11,7 +11,7 @@ bzl_library(
         "@build_bazel_rules_nodejs//internal/providers:bzl",
     ],
     deps = [
-        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:versions",
         "@rules_proto//proto:rules",
     ],
 )
@@ -117,12 +117,18 @@ PAGES = dict([
     page(
         name = "rust_repositories",
         symbols = [
+            "rust_cargo_repository",
+            "rust_cargo_toolchain",
+            "rust_clippy_repository",
+            "rust_clippy_toolchain",
             "rust_repositories",
             "rust_repository_set",
-            "rust_toolchain",
-            "rust_toolchain_repository",
-            "rust_toolchain_repository_proxy",
+            "rust_rustc_repository",
+            "rust_rustfmt_repository",
+            "rust_rustfmt_toolchain",
             "rust_stdlib_filegroup",
+            "rust_stdlib_repository",
+            "rust_toolchain",
         ],
     ),
     page(
