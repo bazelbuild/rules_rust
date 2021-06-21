@@ -25,12 +25,6 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
 load("//rust/private:utils.bzl", "find_toolchain")
 
-# We support only these rule kinds.
-_rust_rules = [
-    "rust_library",
-    "rust_binary",
-]
-
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
     fields = {
