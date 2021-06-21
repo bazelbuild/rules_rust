@@ -13,5 +13,5 @@ fn main() {
 
     // and we should be able to read (and thus execute) our tool
     let path = env::var("SOME_TOOL").unwrap();
-    assert_eq!(fs::read(&path).unwrap().is_empty(), false);
+    assert!(!fs::read(&path).unwrap().is_empty());
 }

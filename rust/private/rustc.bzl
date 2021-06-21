@@ -735,7 +735,12 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     dylibs = [lib for lib in preferreds if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]]
     if not dylibs:
         return depset([])
-    if toolchain.os != "linux":
+
+    # For darwin, dylibs compiled by Bazel will fail to be resolved at runtime
+    # without a version of Bazel that includes
+    # https://github.com/bazelbuild/bazel/pull/13427. This is known to not be
+    # included in Bazel 4.1 and below.
+    if toolchain.os != "linux" and toolchain.os != "darwin":
         fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.os,
             dep_info.transitive_noncrates,

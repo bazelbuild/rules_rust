@@ -25,11 +25,7 @@ def _assert_no_deprecated_attributes(ctx):
     Args:
         ctx (ctx): The current rule's context object
     """
-    if getattr(ctx.attr, "out_dir_tar", None):
-        fail(ctx, "".join([
-            "`out_dir_tar` is no longer supported, please use cargo/cargo_build_script.bzl ",
-            "instead. If you used `cargo raze`, please use version 0.3.3 or later.",
-        ]))
+    pass
 
 def _assert_correct_dep_mapping(ctx):
     """Forces a failure if proc_macro_deps and deps are mixed inappropriately
@@ -610,13 +606,6 @@ _common_attrs = {
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
-    ),
-    "out_dir_tar": attr.label(
-        doc = "__Deprecated__, do not use, see [#cargo_build_script] instead.",
-        allow_single_file = [
-            ".tar",
-            ".tar.gz",
-        ],
     ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.
