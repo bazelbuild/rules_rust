@@ -26,9 +26,9 @@ rust_analyzer(
     name = "rust_analyzer",
     testonly = True,
     targets = [
-        # it's significant that `mylib` goes before `mylib_test`.
-        ":mylib",
+        # it's significant that `mylib_test` goes before `mylib`.
         ":mylib_test",
+        ":mylib",
     ],
 )
 

@@ -20,6 +20,7 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
+load("@bazel_skylib//lib:collections.bzl", "collections")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
@@ -44,7 +45,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     toolchain = find_toolchain(ctx)
 
-    # Always add test & debug_assertions (like here: https://github.com/rust-analyzer/rust-analyzer/blob/505ff4070a3de962dbde66f08b6550cda2eb4eab/crates/project_model/src/lib.rs#L379-L381)
+    # Always add test & debug_assertions (like here:
+    # https://github.com/rust-analyzer/rust-analyzer/blob/505ff4070a3de962dbde66f08b6550cda2eb4eab/crates/project_model/src/lib.rs#L379-L381)
     cfgs = ["test", "debug_assertions"]
     if hasattr(ctx.rule.attr, "crate_features"):
         cfgs += ['feature="{}"'.format(f) for f in ctx.rule.attr.crate_features]
@@ -116,51 +118,79 @@ def _crate_id(crate_info):
     """
     return "ID-" + crate_info.root.path
 
-def create_crate(ctx, info, crate_mapping):
-    """Creates a crate in the rust-project.json format
+_DepRefInfo = provider(
+    doc = "RustAnalyzerInfo holds rust crate metadata for targets",
+    fields = {
+        "crate": "BuildInfo: build info for this crate if present",
+        "name": "List[String]: features or other compilation --cfg settings",
+    },
+)
+
+def _create_crate(ctx, infos, crate_mapping):
+    """Creates a crate in the rust-project.json format.
+
+    It can happen a single source file is present in multiple crates - there can
+    be a `rust_library` with a `lib.rs` file, and a `rust_test` for the `test`
+    module in that file. Tests can declare more dependencies than what library
+    had. Therefore we had to collect all RustAnalyzerInfos for a given crate
+    and take deps from all of them.
+
+    There's one exception - if the dependency is the same crate name as the
+    the crate being processed, we don't add it as a dependency to itself. This is
+    common and expected - `rust_test.crate` pointing to the `rust_library`.
 
     Args:
         ctx (ctx): The rule context
-        info (RustAnalyzerInfo): The crate RustAnalyzerInfo for the current crate
+        infos (list of RustAnalyzerInfos): RustAnalyzerInfos for the current crate
         crate_mapping (dict): A dict of {String:Int} that memoizes crates for deps.
 
     Returns:
         (dict) The crate rust-project.json representation
     """
+    canonical_info = infos[0]
+    crate_name = canonical_info.crate.name
     crate = dict()
-    crate["display_name"] = info.crate.name
-    crate["edition"] = info.crate.edition
+    crate["display_name"] = crate_name
+    crate["edition"] = canonical_info.crate.edition
     crate["env"] = {}
 
     # Switch on external/ to determine if crates are in the workspace or remote.
     # TODO: Some folks may want to override this for vendored dependencies.
-    if info.crate.root.path.startswith("external/"):
+    root_path = canonical_info.crate.root.path
+    root_dirname = canonical_info.crate.root.dirname
+    if root_path.startswith("external/"):
         crate["is_workspace_member"] = False
-        crate["root_module"] = _exec_root_tmpl + info.crate.root.path
-        crate_root = _exec_root_tmpl + info.crate.root.dirname
+        crate["root_module"] = _exec_root_tmpl + root_path
+        crate_root = _exec_root_tmpl + root_dirname
     else:
         crate["is_workspace_member"] = True
-        crate["root_module"] = info.crate.root.path
-        crate_root = info.crate.root.dirname
+        crate["root_module"] = root_path
+        crate_root = root_dirname
 
-    if info.build_info != None:
-        crate["env"].update({"OUT_DIR": _exec_root_tmpl + info.build_info.out_dir.path})
+    if canonical_info.build_info != None:
+        out_dir_path = canonical_info.build_info.out_dir.path
+        crate["env"].update({"OUT_DIR": _exec_root_tmpl + out_dir_path})
         crate["source"] = {
             # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
             "exclude_dirs": [],
-            "include_dirs": [crate_root, _exec_root_tmpl + info.build_info.out_dir.path],
+            "include_dirs": [crate_root, _exec_root_tmpl + out_dir_path],
         }
-    crate["env"].update(info.env)
+    crate["env"].update(canonical_info.env)
 
-    deps = [
-        {"crate": crate_mapping[_crate_id(d.crate)], "name": d.crate.name}
-        for d in info.deps
-    ]
+    duplicated_deps = []
+    for info in infos:
+        for dep in info.deps:
+            if dep.crate.name == crate_name:
+                continue
+            duplicated_deps.append(_DepRefInfo(crate = crate_mapping[_crate_id(dep.crate)], name = dep.crate.name))
+
+    deps = [{"crate": d.crate, "name": d.name} for d in collections.uniq(duplicated_deps)]
+
     crate["deps"] = deps
-    crate["cfg"] = info.cfgs
+    crate["cfg"] = canonical_info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple
-    if info.proc_macro_dylib_path != None:
-        crate["proc_macro_dylib_path"] = _exec_root_tmpl + info.proc_macro_dylib_path
+    if canonical_info.proc_macro_dylib_path != None:
+        crate["proc_macro_dylib_path"] = _exec_root_tmpl + canonical_info.proc_macro_dylib_path
     return crate
 
 # This implementation is incomplete because in order to get rustc env vars we
@@ -181,29 +211,33 @@ def _rust_analyzer_impl(ctx):
     if rust_toolchain.rustc_srcs.label.workspace_root:
         sysroot_src = _exec_root_tmpl + rust_toolchain.rustc_srcs.label.workspace_root + "/" + sysroot_src
 
-    # Gather all crates and their dependencies into an array.
-    # Dependencies are referenced by index, so leaves should come first.
-    crates = []
+    # Groups of RustAnalyzerInfos with the same _crate_id().
+    rust_analyzer_info_groups = []
+
+    # Dict from _crate_id() to the index of a RustAnalyzerInfo group in `rust_analyzer_info_groups`.
     crate_mapping = dict()
+
+    # Dependencies are referenced by index, so leaves should come first.
     idx = 0
     for target in ctx.attr.targets:
         if RustAnalyzerInfo not in target:
             continue
 
-        # Add this crate's transitive deps to the crate mapping and output.
-        for dep_info in target[RustAnalyzerInfo].transitive_deps.to_list():
-            crate_id = _crate_id(dep_info.crate)
+        for info in depset(
+            direct = [target[RustAnalyzerInfo]],
+            transitive = [target[RustAnalyzerInfo].transitive_deps],
+            order = "postorder",
+        ).to_list():
+            crate_id = _crate_id(info.crate)
             if crate_id not in crate_mapping:
                 crate_mapping[crate_id] = idx
+                rust_analyzer_info_groups.append([])
                 idx += 1
-                crates.append(create_crate(ctx, dep_info, crate_mapping))
+            rust_analyzer_info_groups[crate_mapping[crate_id]].append(info)
 
-        # Add this crate to the crate mapping and output.
-        crate_id = _crate_id(target[RustAnalyzerInfo].crate)
-        if crate_id not in crate_mapping:
-            crate_mapping[crate_id] = idx
-            idx += 1
-            crates.append(create_crate(ctx, target[RustAnalyzerInfo], crate_mapping))
+    crates = []
+    for group in rust_analyzer_info_groups:
+        crates.append(_create_crate(ctx, group, crate_mapping))
 
     # TODO(djmarcin): Use json module once bazel 4.0 is released.
     ctx.actions.write(output = ctx.outputs.filename, content = struct(
