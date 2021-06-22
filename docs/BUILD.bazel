@@ -12,6 +12,7 @@ bzl_library(
     ],
     deps = [
         "@rules_proto//proto:rules",
+        "@bazel_skylib//lib:collections",
     ],
 )
 
