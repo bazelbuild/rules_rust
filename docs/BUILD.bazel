@@ -11,8 +11,8 @@ bzl_library(
         "@build_bazel_rules_nodejs//internal/providers:bzl",
     ],
     deps = [
-        "@rules_proto//proto:rules",
         "@bazel_skylib//lib:collections",
+        "@rules_proto//proto:rules",
     ],
 )
 
