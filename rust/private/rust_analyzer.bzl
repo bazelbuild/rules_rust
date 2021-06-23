@@ -118,14 +118,6 @@ def _crate_id(crate_info):
     """
     return "ID-" + crate_info.root.path
 
-_DepRefInfo = provider(
-    doc = "RustAnalyzerInfo holds rust crate metadata for targets",
-    fields = {
-        "crate": "BuildInfo: build info for this crate if present",
-        "name": "List[String]: features or other compilation --cfg settings",
-    },
-)
-
 def _create_crate(ctx, infos, crate_mapping):
     """Creates a crate in the rust-project.json format.
 
@@ -177,16 +169,16 @@ def _create_crate(ctx, infos, crate_mapping):
         }
     crate["env"].update(canonical_info.env)
 
-    duplicated_deps = []
-    for info in infos:
-        for dep in info.deps:
-            if dep.crate.name == crate_name:
-                continue
-            duplicated_deps.append(_DepRefInfo(crate = crate_mapping[_crate_id(dep.crate)], name = dep.crate.name))
+    # Collect deduplicated pairs of (crate idx from crate_mapping, crate name).
+    # Using dict because we don't have sets in Starlark.
+    deps = {
+        (crate_mapping[_crate_id(dep.crate)], dep.crate.name): None
+        for info in infos
+        for dep in info.deps
+        if dep.crate.name != crate_name
+    }.keys()
 
-    deps = [{"crate": d.crate, "name": d.name} for d in collections.uniq(duplicated_deps)]
-
-    crate["deps"] = deps
+    crate["deps"] = [{"crate": d[0], "name": d[1]} for d in deps]
     crate["cfg"] = canonical_info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple
     if canonical_info.proc_macro_dylib_path != None:
