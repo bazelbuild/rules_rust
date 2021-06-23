@@ -20,7 +20,6 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("@bazel_skylib//lib:collections.bzl", "collections")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
