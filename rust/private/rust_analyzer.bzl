@@ -138,6 +138,8 @@ def _create_crate(ctx, infos, crate_mapping):
     Returns:
         (dict) The crate rust-project.json representation
     """
+    if len(infos) == 0:
+        fail("Expected to receive at least one crate to serialize to json, got 0.")
     canonical_info = infos[0]
     crate_name = canonical_info.crate.name
     crate = dict()
