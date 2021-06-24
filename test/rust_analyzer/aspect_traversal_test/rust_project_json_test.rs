@@ -17,7 +17,11 @@ mod tests {
             "proc_macro_dep",
             "extra_proc_macro_dep",
         ] {
-            assert!(content.contains(dep), "expected rust-project.json to contain {}.", dep);
+            assert!(
+                content.contains(dep),
+                "expected rust-project.json to contain {}.",
+                dep
+            );
         }
     }
 }
