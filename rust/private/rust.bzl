@@ -1210,8 +1210,9 @@ def rust_test_suite(name, srcs, **kwargs):
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
 
+        # Prefixed with `name` to allow parameterization with macros
         # The test name should not end with `.rs`
-        test_name = src[:-3]
+        test_name = name + src[:-3]
         rust_test(
             name = test_name,
             crate_name = test_name.replace("/", "_"),
