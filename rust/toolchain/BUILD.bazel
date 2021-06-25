@@ -1,0 +1,43 @@
+load("//rust/private:toolchain_utils.bzl", "toolchain_files")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_files(
+    name = "current_exec_cargo_files",
+    tool = "cargo",
+)
+
+toolchain_files(
+    name = "current_exec_clippy_files",
+    tool = "clippy",
+)
+
+toolchain_files(
+    name = "current_exec_rustc_files",
+    tool = "rustc",
+)
+
+toolchain_files(
+    name = "current_exec_rustdoc_files",
+    tool = "rustdoc",
+)
+
+toolchain_files(
+    name = "current_exec_rustfmt_files",
+    tool = "rustfmt",
+)
+
+toolchain_files(
+    name = "current_exec_rustc_lib_files",
+    tool = "rustc_lib",
+)
+
+toolchain_files(
+    name = "current_exec_rustc_srcs_files",
+    tool = "rustc_srcs",
+)
+
+toolchain_files(
+    name = "current_exec_rust_stdlib_files",
+    tool = "rust_stdlib",
+)
