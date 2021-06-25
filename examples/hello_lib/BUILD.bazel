@@ -83,7 +83,7 @@ rust_doc(
 )
 
 rust_doc_test(
-    name = "hello_lib_doc_test",
+    name = "doc_test",
     crate = ":hello_lib",
 )
 

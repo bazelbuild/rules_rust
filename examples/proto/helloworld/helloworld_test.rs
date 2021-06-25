@@ -37,7 +37,7 @@ impl ServerInfo {
     fn new() -> ServerInfo {
         let r = Runfiles::create().unwrap();
         let mut c =
-            Command::new(r.rlocation("examples/proto/helloworld/greeter_server/greeter_server"))
+            Command::new(r.rlocation("rules_rust_examples/proto/helloworld/greeter_server/greeter_server"))
                 .arg("0")
                 .stdout(Stdio::piped())
                 .spawn()
@@ -66,7 +66,7 @@ impl ServerInfo {
         let r = Runfiles::create().unwrap();
 
         let mut cmd0 =
-            Command::new(r.rlocation("examples/proto/helloworld/greeter_client/greeter_client"));
+            Command::new(r.rlocation("rules_rust_examples/proto/helloworld/greeter_client/greeter_client"));
         let cmd = cmd0.arg(format!("-p={}", self.port));
 
         let output = if let Some(s) = arg { cmd.arg(s) } else { cmd }

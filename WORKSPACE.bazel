@@ -1,22 +1,22 @@
 workspace(name = "rules_rust")
 
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+load("//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(include_rustc_srcs = True)
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+load("//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
 
-load("@rules_rust//tools/rust_analyzer/raze:crates.bzl", "rules_rust_tools_rust_analyzer_fetch_remote_crates")
+load("//tools/rust_analyzer/raze:crates.bzl", "rules_rust_tools_rust_analyzer_fetch_remote_crates")
 
 rules_rust_tools_rust_analyzer_fetch_remote_crates()
 
-load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 
@@ -52,37 +52,37 @@ rbe_autoconfig(name = "buildkite_config")
 # Load all dependencies for examples
 
 local_repository(
-    name = "examples",
+    name = "rules_rust_examples",
     path = "examples",
 )
 
-load("@examples//:examples_repositories.bzl", examples_repositories = "repositories")
+load("@rules_rust_examples//:examples_repositories.bzl", examples_repositories = "repositories")
 
 examples_repositories()
 
-load("@examples//:examples_deps.bzl", examples_deps = "deps")
+load("@rules_rust_examples//:examples_deps.bzl", examples_deps = "deps")
 
 examples_deps()
 
-load("@examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
+load("@rules_rust_examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
 
 examples_transitive_deps(is_top_level = True)
 
 # Load all dependencies for docs
 
 local_repository(
-    name = "docs",
+    name = "rules_rust_docs",
     path = "docs",
 )
 
-load("@docs//:docs_repositories.bzl", docs_repositories = "repositories")
+load("@rules_rust_docs//:docs_repositories.bzl", docs_repositories = "repositories")
 
 docs_repositories()
 
-load("@docs//:docs_deps.bzl", docs_deps = "deps")
+load("@rules_rust_docs//:docs_deps.bzl", docs_deps = "deps")
 
 docs_deps()
 
-load("@docs//:docs_transitive_deps.bzl", docs_transitive_deps = "transitive_deps")
+load("@rules_rust_docs//:docs_transitive_deps.bzl", docs_transitive_deps = "transitive_deps")
 
 docs_transitive_deps(is_top_level = True)

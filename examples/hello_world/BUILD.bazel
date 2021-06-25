@@ -9,7 +9,7 @@ package(default_visibility = ["//visibility:public"])
 rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
-    deps = ["@examples//hello_lib"],
+    deps = ["@rules_rust_examples//hello_lib"],
 )
 
 rust_doc(

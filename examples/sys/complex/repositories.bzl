@@ -14,5 +14,5 @@ def rules_rust_examples_complex_sys_repositories():
         strip_prefix = "openssl-OpenSSL_1_1_1d",
         urls = ["https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz"],
         sha256 = "23011a5cc78e53d0dc98dfa608c51e72bcd350aa57df74c5d5574ba4ffb62e74",
-        build_file = "@examples//third_party/openssl:BUILD.openssl.bazel",
+        build_file = "@rules_rust_examples//third_party/openssl:BUILD.openssl.bazel",
     )
