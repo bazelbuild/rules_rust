@@ -1,5 +1,59 @@
 """Helpers for constructing supported Rust platform triples"""
 
+# All T1 Platforms should be supported, but aren't, see inline notes.
+SUPPORTED_T1_PLATFORM_TRIPLES = [
+    "i686-apple-darwin",
+    "i686-pc-windows-msvc",
+    "i686-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
+    # and others using existing @platforms// config_values
+    #
+    #"i686-pc-windows-gnu",
+    #"x86_64-pc-windows-gnu",
+]
+
+# Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
+# See @rules_rust//rust/platform:triple_mappings.bzl for the complete list.
+SUPPORTED_T2_PLATFORM_TRIPLES = [
+    "aarch64-apple-darwin",
+    "aarch64-apple-ios",
+    "aarch64-linux-android",
+    "aarch64-unknown-linux-gnu",
+    "arm-unknown-linux-gnueabi",
+    "i686-linux-android",
+    "i686-unknown-freebsd",
+    "powerpc-unknown-linux-gnu",
+    "s390x-unknown-linux-gnu",
+    "wasm32-unknown-unknown",
+    "wasm32-wasi",
+    "x86_64-apple-ios",
+    "x86_64-linux-android",
+    "x86_64-unknown-freebsd",
+]
+
+SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
+
+SUPPORTED_CPU_ARCH = [
+    "aarch64",
+    "arm",
+    "i686",
+    "powerpc",
+    "s390x",
+    "x86_64",
+]
+
+SUPPORTED_SYSTEMS = [
+    "android",
+    "darwin",
+    "freebsd",
+    "ios",
+    "linux",
+    "windows",
+]
+
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "aarch64": "aarch64",
@@ -42,6 +96,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 }
 
 _SYSTEM_TO_BINARY_EXT = {
+    "android": "",
     "darwin": "",
     "emscripten": ".js",
     "freebsd": "",
@@ -56,6 +111,7 @@ _SYSTEM_TO_BINARY_EXT = {
 }
 
 _SYSTEM_TO_STATICLIB_EXT = {
+    "android": ".a",
     "darwin": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
@@ -67,6 +123,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
 }
 
 _SYSTEM_TO_DYLIB_EXT = {
+    "android": ".so",
     "darwin": ".dylib",
     "emscripten": ".js",
     "freebsd": ".so",
