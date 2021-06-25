@@ -11,13 +11,13 @@
 To build a `rust_binary` for `wasm32-unknown-unknown` target add the `--platforms=@rules_rust//rust/platform:wasm` flag.
 
 ```command
-bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasm
+bazel build @rules_rust_examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasm
 ```
 
 To build a `rust_binary` for `wasm32-wasi` target add the `--platforms=@rules_rust//rust/platform:wasi` flag.
 
 ```command
-bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasi
+bazel build @rules_rust_examples//hello_world_wasm --platforms=@rules_rust//rust/platform:wasi
 ```
 
 `rust_wasm_bindgen` will automatically transition to the `wasm` platform and can be used when
