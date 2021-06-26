@@ -75,8 +75,7 @@ tasks:
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
       - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
       - "-@examples//ffi/rust_calling_c/simple/..."
-      - "-@examples//hello_sys/..."
-      - "-@examples//complex_sys/..."
+      - "-@examples//sys/..."
       - "-@examples//proto/..."
       - "-@examples//wasm/..."
     build_targets: *windows_targets
