@@ -47,7 +47,7 @@ def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
             arch = "x86_64"
     else:
         arch = result.stdout.strip("\n")
-        
+
         # Correct the arm architecture for macos
         if "mac" in repository_ctx.os.name and arch == "arm64":
             arch = "aarch64"
