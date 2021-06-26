@@ -85,6 +85,9 @@ def _rust_doc_impl(ctx):
     args.add(crate.root.path)
     args.add("--crate-name", crate.name)
     args.add("--crate-type", crate.type)
+    if crate.type == "proc-macro":
+        args.add("--extern")
+        args.add("proc_macro")
     args.add("--output", output_dir.path)
     add_edition_flags(args, crate)
 

@@ -459,7 +459,8 @@ def construct_arguments(
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
-    if crate_info.type == "proc-macro" and crate_info.edition != "2015":
+    is_type_proc_macro = crate_info.type == "proc-macro" or crate_info.transitive_type == "proc-macro"
+    if is_type_proc_macro and crate_info.edition != "2015":
         args.add("--extern")
         args.add("proc_macro")
 
