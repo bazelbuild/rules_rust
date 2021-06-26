@@ -716,6 +716,24 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
 
     return input_files, out_dir, build_env_file, build_flags_files
 
+def _has_dylib_ext(file, dylib_ext):
+    """Determines whether or not the file in question the platform dynamic library extension
+
+    Args:
+        file (File): The file to check
+        dylib_ext (str): The extension (eg `.so`).
+
+    Returns:
+        bool: Whether or not file ends with the requested extension
+    """
+    if file.basename.endswith(dylib_ext):
+        return True
+    split = file.basename.split(".", 2)
+    if len(split) == 2:
+        if split[1] == dylib_ext[1:]:
+            return True
+    return False
+
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
@@ -732,7 +750,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     # TODO(augie): I don't understand why this can't just be filtering on
     # _is_dylib(lib), but doing that causes failures on darwin and windows
     # examples that otherwise work.
-    dylibs = [lib for lib in preferreds if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]]
+    dylibs = [lib for lib in preferreds if _has_dylib_ext(lib, toolchain.dylib_ext)]
     if not dylibs:
         return depset([])
 
