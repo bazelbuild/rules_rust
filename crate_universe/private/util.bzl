@@ -1,5 +1,8 @@
 """Utility functions for the crate_universe resolver"""
 
+load("//rust:repositories.bzl", "load_arbitrary_tool")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
+
 _CPU_ARCH_ERROR_MSG = """\
 Command failed with exit code '{code}': {args}
 ----------stdout:
@@ -61,14 +64,14 @@ def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
 
     return arch
 
-def get_host_info(repository_ctx):
-    """Query host information for the appropriate triple and toolchain repo name
+def get_host_triple(repository_ctx):
+    """Query host information for the appropriate triples for the crate_universe resolver
 
     Args:
         repository_ctx (repository_ctx): The rule's repository_ctx
 
     Returns:
-        tuple: A tuple containing a triple (str) and repository name (str)
+        tuple: The host triple and resolver triple
     """
 
     # Detect the host's cpu architecture
@@ -79,23 +82,60 @@ def get_host_info(repository_ctx):
         "windows": ["x86_64"],
     }
 
-    # The expected file extension of crate resolver binaries
-    extension = ""
-
     if "linux" in repository_ctx.os.name:
         cpu = _query_cpu_architecture(repository_ctx, supported_architectures["linux"])
+        host_triple = "{}-unknown-linux-gnu".format(cpu)
         resolver_triple = "{}-unknown-linux-gnu".format(cpu)
-        toolchain_repo = "@rust_linux_{}".format(cpu)
     elif "mac" in repository_ctx.os.name:
         cpu = _query_cpu_architecture(repository_ctx, supported_architectures["macos"])
+        host_triple = "{}-apple-darwin".format(cpu)
         resolver_triple = "{}-apple-darwin".format(cpu)
-        toolchain_repo = "@rust_darwin_{}".format(cpu)
     elif "win" in repository_ctx.os.name:
         cpu = _query_cpu_architecture(repository_ctx, supported_architectures["windows"], True)
+
+        # TODO: The resolver triple should be the same as the host but for the time being,
+        # the resolver is compiled with `-gnu` not `-msvc`.
+        host_triple = "{}-pc-windows-msvc".format(cpu)
         resolver_triple = "{}-pc-windows-gnu".format(cpu)
-        toolchain_repo = "@rust_windows_{}".format(cpu)
-        extension = ".exe"
     else:
         fail("Could not locate resolver for OS " + repository_ctx.os.name)
 
-    return (resolver_triple, toolchain_repo, extension)
+    return (host_triple, resolver_triple)
+
+def get_cargo_and_rustc(repository_ctx, host_triple):
+    """Download a cargo and rustc binary based on the host triple.
+
+    Args:
+        repository_ctx (repository_ctx): The rule's context object
+        host_triple (str): The host's platform triple
+
+    Returns:
+        struct: A struct containing the expected tools
+    """
+
+    if repository_ctx.attr.version in ("beta", "nightly"):
+        iso_date = repository_ctx.attr.iso_date
+    else:
+        iso_date = None
+
+    # Get info about the current host's tool locations
+    (host_triple, resolver_triple) = get_host_triple(repository_ctx)
+    extension = system_to_binary_ext(triple_to_system(host_triple))
+
+    # Fetch all required rust components
+    load_arbitrary_tool(
+        repository_ctx,
+        iso_date = iso_date,
+        target_triple = host_triple,
+        tool_name = "rust",
+        tool_subdirectories = ["rustc", "cargo", "rust-std-" + host_triple],
+        version = repository_ctx.attr.version,
+    )
+
+    cargo_path = repository_ctx.path("bin/cargo" + extension)
+    rustc_path = repository_ctx.path("bin/rustc" + extension)
+
+    return struct(
+        cargo = cargo_path,
+        rustc = rustc_path,
+    )

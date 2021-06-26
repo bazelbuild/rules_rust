@@ -1,8 +1,9 @@
 """A module defining the `crate_universe` rule"""
 
 load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
-load("//crate_universe/private:util.bzl", "get_host_info")
-load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
+load("//crate_universe/private:util.bzl", "get_cargo_and_rustc", "get_host_triple")
+load("//rust:repositories.bzl", "DEFAULT_RUST_VERSION", "DEFAULT_TOOLCHAIN_TRIPLES")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
 load(":bootstrap.bzl", "BOOTSTRAP_ENV_VAR")
 
 DEFAULT_CRATE_REGISTRY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
@@ -64,11 +65,9 @@ def _crate_universe_resolve_impl(repository_ctx):
     - The user then calls defs.bzl%pinned_rust_install().
     """
 
-    # Get info about the current host's tool locations
-    resolver_triple, toolchain_repo, extension = get_host_info(repository_ctx)
-
-    cargo_path = repository_ctx.path(Label(toolchain_repo + "//:bin/cargo" + extension))
-    rustc_path = repository_ctx.path(Label(toolchain_repo + "//:bin/rustc" + extension))
+    host_triple, resolver_triple = get_host_triple(repository_ctx)
+    tools = get_cargo_and_rustc(repository_ctx, host_triple)
+    extension = system_to_binary_ext(triple_to_system(host_triple))
 
     if BOOTSTRAP_ENV_VAR in repository_ctx.os.environ and not "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE" in repository_ctx.os.environ:
         resolver_label = Label("@rules_rust_crate_universe_bootstrap//:release/crate_universe_resolver" + extension)
@@ -108,7 +107,7 @@ def _crate_universe_resolve_impl(repository_ctx):
         overrides = repository_ctx.attr.overrides,
         registry_template = repository_ctx.attr.crate_registry_template,
         targets = repository_ctx.attr.supported_targets,
-        cargo_bin_path = cargo_path,
+        cargo_bin_path = tools.cargo,
     )
 
     input_path = "{name}.resolver_config.json".format(name = repository_ctx.attr.name)
@@ -135,8 +134,8 @@ def _crate_universe_resolve_impl(repository_ctx):
         environment = {
             # The resolver invokes `cargo metadata` which relies on `rustc` being on the $PATH
             # See https://github.com/rust-lang/cargo/issues/8219
-            "CARGO": str(cargo_path),
-            "RUSTC": str(rustc_path),
+            "CARGO": str(tools.cargo),
+            "RUSTC": str(tools.rustc),
             "RUST_LOG": "info",
         },
         quiet = False,
@@ -169,6 +168,9 @@ Environment Variables:
             doc = "A template for where to download crates from for the default crate registry. This must contain `{version}` and `{crate}` templates.",
             default = DEFAULT_CRATE_REGISTRY_TEMPLATE,
         ),
+        "iso_date": attr.string(
+            doc = "The iso_date of cargo binary the resolver should use. Note `version` must be `beta` or `nightly`",
+        ),
         "lockfile": attr.label(
             doc = (
                 "The path to a file which stores pinned information about the generated dependency graph. " +
@@ -200,6 +202,9 @@ Environment Variables:
             doc = "Dictionary of host_triple -> sha256 for resolver binary.",
             default = DEFAULT_SHA256_CHECKSUMS,
         ),
+        "sha256s": attr.string_dict(
+            doc = "The sha256 checksum of the desired rust artifacts",
+        ),
         "supported_targets": attr.string_list(
             doc = (
                 "A list of supported [platform triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) " +
@@ -207,6 +212,10 @@ Environment Variables:
             ),
             allow_empty = False,
             default = DEFAULT_TOOLCHAIN_TRIPLES.keys(),
+        ),
+        "version": attr.string(
+            doc = "The version of cargo the resolver should use",
+            default = DEFAULT_RUST_VERSION,
         ),
     },
     environ = [
