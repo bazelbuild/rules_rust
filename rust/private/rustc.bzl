@@ -21,6 +21,7 @@ load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
+    "expand_arg_locations",
     "expand_locations",
     "find_cc_toolchain",
     "get_lib_name",
@@ -440,7 +441,14 @@ def construct_arguments(
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
 
     args.add_all(rust_flags)
-    args.add_all(getattr(attr, "rustc_flags", []))
+    args.add_all(
+        expand_arg_locations(
+            ctx,
+            getattr(attr, "rustc_flags", []),
+            getattr(attr, "data", []) +
+            getattr(attr, "compile_data", []),
+        ),
+    )
     add_edition_flags(args, crate_info)
 
     # Link!

@@ -179,6 +179,23 @@ def expand_locations(ctx, env, data):
     """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
 
+def expand_arg_locations(ctx, args, data):
+    """Performs location-macro expansion on a list of string values.
+
+    See `expand_locations` for detailed documentation.
+
+    Args:
+        ctx (ctx): The rule's context object
+        args (list): A list we iterate over
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        list: A list of arguments with expanded location macros
+    """
+    return [_expand_location(ctx, arg, data) for arg in args]
+
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
 
