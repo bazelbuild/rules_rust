@@ -101,7 +101,7 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
+def collect_deps(label, deps, proc_macro_deps, aliases):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -109,7 +109,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        toolchain (rust_toolchain): The current `rust_toolchain`.
 
     Returns:
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
@@ -513,11 +512,10 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info = collect_deps(
-        ctx.label,
-        crate_info.deps,
-        crate_info.proc_macro_deps,
-        crate_info.aliases,
-        toolchain,
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
