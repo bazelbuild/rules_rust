@@ -243,7 +243,10 @@ def crate_name_from_attr(attr):
     return crate_name
 
 def dedent(doc_string):
-    """Tidy excess whitespace in docstrings to not break index.md
+    """Remove any common leading whitespace from every line in text.
+
+    This functionality is similar to python's `textwrap.dedent` functionality
+    https://docs.python.org/3/library/textwrap.html#textwrap.dedent
 
     Args:
         doc_string (str): A docstring style string
