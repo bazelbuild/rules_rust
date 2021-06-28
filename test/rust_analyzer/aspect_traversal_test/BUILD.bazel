@@ -45,6 +45,5 @@ rust_test(
     srcs = ["rust_project_json_test.rs"],
     data = [":rust-project.json"],
     edition = "2018",
-    use_libtest_harness = False,
     deps = ["//tools/runfiles"],
 )
