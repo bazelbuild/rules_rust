@@ -20,7 +20,7 @@
 error_format(<a href="#error_format-name">name</a>)
 </pre>
 
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with --@rules_rust//:error_format. See rustc documentation for valid values.
+Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
 
 **ATTRIBUTES**
 
@@ -38,7 +38,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 extra_codegen(<a href="#extra_codegen-name">name</a>)
 </pre>
 
-Add additional [--codegen](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) options from the command line with --@rules_rust//:extra_codegen. See rustc documentation for valid values. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead.
+Add additional [--codegen](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) options from the command line with `--@rules_rust//:extra_codegen`. See rustc documentation for valid values. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead.
 
 **ATTRIBUTES**
 
