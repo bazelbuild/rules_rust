@@ -52,6 +52,8 @@ load(
     _rust_test_suite = "rust_test_suite",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
+    _error_format = "error_format",
+    _extra_codegen = "extra_codegen",
 )
 load(
     "@rules_rust//rust:repositories.bzl",
@@ -118,3 +120,6 @@ crate = _crate
 
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
+
+error_format = _error_format
+extra_codegen = _extra_codegen
