@@ -971,7 +971,7 @@ def _extra_codegen_impl(ctx):
 
 extra_codegen = rule(
     doc = (
-        "Add additional [--codegen](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
+        "Add additional [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html) " +
         "options from the command line with `--@rules_rust//:extra_codegen`. See rustc documentation for valid values. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead."
