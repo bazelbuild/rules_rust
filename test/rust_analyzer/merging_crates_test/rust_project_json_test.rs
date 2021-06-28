@@ -1,8 +1,6 @@
-use runfiles::Runfiles;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use runfiles::Runfiles;
 
     #[test]
     fn test_deps_of_crate_and_its_test_are_merged() {
