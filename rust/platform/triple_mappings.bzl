@@ -36,24 +36,6 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
 
-SUPPORTED_CPU_ARCH = [
-    "aarch64",
-    "arm",
-    "i686",
-    "powerpc",
-    "s390x",
-    "x86_64",
-]
-
-SUPPORTED_SYSTEMS = [
-    "android",
-    "darwin",
-    "freebsd",
-    "ios",
-    "linux",
-    "windows",
-]
-
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "aarch64": "aarch64",

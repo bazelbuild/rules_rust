@@ -3,24 +3,40 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     ":triple_mappings.bzl",
-    "SUPPORTED_CPU_ARCH",
     "SUPPORTED_PLATFORM_TRIPLES",
-    "SUPPORTED_SYSTEMS",
     "cpu_arch_to_constraints",
     "system_to_constraints",
     "triple_to_constraint_set",
 )
 
+_SUPPORTED_CPU_ARCH = [
+    "aarch64",
+    "arm",
+    "i686",
+    "powerpc",
+    "s390x",
+    "x86_64",
+]
+
+_SUPPORTED_SYSTEMS = [
+    "android",
+    "darwin",
+    "freebsd",
+    "ios",
+    "linux",
+    "windows",
+]
+
 # buildifier: disable=unnamed-macro
 def declare_config_settings():
     """Helper function for declaring `config_setting`s"""
-    for cpu_arch in SUPPORTED_CPU_ARCH:
+    for cpu_arch in _SUPPORTED_CPU_ARCH:
         native.config_setting(
             name = cpu_arch,
             constraint_values = cpu_arch_to_constraints(cpu_arch),
         )
 
-    for system in SUPPORTED_SYSTEMS:
+    for system in _SUPPORTED_SYSTEMS:
         native.config_setting(
             name = system,
             constraint_values = system_to_constraints(system),
