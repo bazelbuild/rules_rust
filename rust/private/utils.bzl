@@ -152,7 +152,7 @@ def _expand_location(ctx, env, data):
             env = env.replace(directive, "${pwd}/" + directive)
     return ctx.expand_location(env, data)
 
-def expand_locations(ctx, env, data):
+def expand_env_locations(ctx, env, data):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},

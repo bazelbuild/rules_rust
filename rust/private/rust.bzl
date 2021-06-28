@@ -20,7 +20,7 @@ load(
     "crate_name_from_attr",
     "dedent",
     "determine_output_hash",
-    "expand_locations",
+    "expand_env_locations",
     "find_toolchain",
 )
 
@@ -340,7 +340,7 @@ def _create_test_launcher(ctx, toolchain, output, providers):
 
     # Expand the environment variables and write them to a file
     environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_locations(
+    environ = expand_env_locations(
         ctx,
         getattr(ctx.attr, "env", {}),
         data,

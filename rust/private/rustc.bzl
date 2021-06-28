@@ -22,7 +22,7 @@ load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
     "expand_arg_locations",
-    "expand_locations",
+    "expand_env_locations",
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
@@ -480,7 +480,7 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(expand_locations(
+    env.update(expand_env_locations(
         ctx,
         crate_info.rustc_env,
         data_paths,
