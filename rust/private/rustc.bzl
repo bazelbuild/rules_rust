@@ -960,7 +960,7 @@ def _error_format_impl(ctx):
 error_format = rule(
     doc = (
         "Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag from the command line with --@rules_rust//:error_format. See rustc documentation for valid values."
+        "flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values."
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
@@ -972,7 +972,7 @@ def _extra_codegen_impl(ctx):
 extra_codegen = rule(
     doc = (
         "Add additional [--codegen](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "options from the command line with --@rules_rust//:extra_codegen. See rustc documentation for valid values. " +
+        "options from the command line with `--@rules_rust//:extra_codegen`. See rustc documentation for valid values. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead."
     ),
