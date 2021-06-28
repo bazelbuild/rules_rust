@@ -11,11 +11,19 @@ genrule(
     cmd = "echo hello > $@",
 )
 
+# generate a file containing cfg flags
+genrule(
+    name = "flag_generator",
+    outs = ["generated_flag.data"],
+    cmd = "echo --cfg=test_flag > $@",
+)
+
 _data = [
     # we should be able to read non-generated source/data files
     "source.file",
     # and generated files as well
     "generated.data",
+    "generated_flag.data",
     # we should also be able to access external binaries
     # such as protoc.
     "@com_google_protobuf//:protoc",
@@ -46,6 +54,9 @@ rust_test(
         "SOME_TOOL": "$(rootpath @com_google_protobuf//:protoc)",
         "SOURCE_FILE": "$(rootpath source.file)",
     },
+    rustc_flags = [
+        "@$(location generated_flag.data)",
+    ],
     deps = [
         ":build",
     ],

@@ -439,14 +439,15 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
-
     args.add_all(rust_flags)
+
+    # Data file paths for location expansion
+    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
     args.add_all(
         expand_arg_locations(
             ctx,
             getattr(attr, "rustc_flags", []),
-            getattr(attr, "data", []) +
-            getattr(attr, "compile_data", []),
+            data_paths
         ),
     )
     add_edition_flags(args, crate_info)
@@ -482,8 +483,7 @@ def construct_arguments(
     env.update(expand_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(attr, "data", []) +
-        getattr(attr, "compile_data", []),
+        data_paths,
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
