@@ -106,7 +106,7 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
+def collect_deps(label, deps, proc_macro_deps, aliases):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -114,7 +114,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        toolchain (rust_toolchain): The current `rust_toolchain`.
 
     Returns:
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
@@ -520,11 +519,10 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info = collect_deps(
-        ctx.label,
-        crate_info.deps,
-        crate_info.proc_macro_deps,
-        crate_info.aliases,
-        toolchain,
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
@@ -723,6 +721,24 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
 
     return input_files, out_dir, build_env_file, build_flags_files
 
+def _has_dylib_ext(file, dylib_ext):
+    """Determines whether or not the file in question the platform dynamic library extension
+
+    Args:
+        file (File): The file to check
+        dylib_ext (str): The extension (eg `.so`).
+
+    Returns:
+        bool: Whether or not file ends with the requested extension
+    """
+    if file.basename.endswith(dylib_ext):
+        return True
+    split = file.basename.split(".", 2)
+    if len(split) == 2:
+        if split[1] == dylib_ext[1:]:
+            return True
+    return False
+
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
@@ -739,7 +755,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     # TODO(augie): I don't understand why this can't just be filtering on
     # _is_dylib(lib), but doing that causes failures on darwin and windows
     # examples that otherwise work.
-    dylibs = [lib for lib in preferreds if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]]
+    dylibs = [lib for lib in preferreds if _has_dylib_ext(lib, toolchain.dylib_ext)]
     if not dylibs:
         return depset([])
 

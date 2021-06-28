@@ -9,7 +9,6 @@ rust_binary(
     name = "hello_env",
     srcs = ["src/main.rs"],
     rustc_env_files = [":generate_rustc_env_file"],
-    deps = ["@examples//hello_lib"],
 )
 
 genrule(

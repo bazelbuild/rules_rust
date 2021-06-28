@@ -36,5 +36,5 @@ _load_arbitrary_tool_test = repository_rule(
 def load_arbitrary_tool_test():
     """Define the a test repository for ensuring `load_arbitrary_tool` has no attribute requirements"""
     _load_arbitrary_tool_test(
-        name = "io_bazel_rules_rust_load_arbitrary_tool_test",
+        name = "rules_rust_test_load_arbitrary_tool",
     )

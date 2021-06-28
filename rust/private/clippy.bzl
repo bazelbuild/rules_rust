@@ -33,11 +33,10 @@ def _clippy_aspect_impl(target, ctx):
     crate_type = crate_info.type
 
     dep_info, build_info = collect_deps(
-        ctx.label,
-        crate_info.deps,
-        crate_info.proc_macro_deps,
-        crate_info.aliases,
-        toolchain,
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
@@ -53,7 +52,7 @@ def _clippy_aspect_impl(target, ctx):
 
     # A marker file indicating clippy has executed successfully.
     # This file is necessary because "ctx.actions.run" mandates an output.
-    clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
+    clippy_marker = ctx.actions.declare_file(ctx.label.name + ".clippy.ok")
 
     args, env = construct_arguments(
         ctx,
