@@ -52,7 +52,7 @@ def _clippy_aspect_impl(target, ctx):
 
     # A marker file indicating clippy has executed successfully.
     # This file is necessary because "ctx.actions.run" mandates an output.
-    clippy_marker = ctx.actions.declare_file(ctx.label.name + "_clippy.ok")
+    clippy_marker = ctx.actions.declare_file(ctx.label.name + ".clippy.ok")
 
     args, env = construct_arguments(
         ctx,
