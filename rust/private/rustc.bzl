@@ -447,7 +447,7 @@ def construct_arguments(
         expand_arg_locations(
             ctx,
             getattr(attr, "rustc_flags", []),
-            data_paths
+            data_paths,
         ),
     )
     add_edition_flags(args, crate_info)
