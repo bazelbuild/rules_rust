@@ -36,6 +36,8 @@ load(
 )
 load(
     "@rules_rust//rust:defs.bzl",
+    _error_format = "error_format",
+    _extra_codegen = "extra_codegen",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_benchmark = "rust_benchmark",
@@ -52,8 +54,6 @@ load(
     _rust_test_suite = "rust_test_suite",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
-    _error_format = "error_format",
-    _extra_codegen = "extra_codegen",
 )
 load(
     "@rules_rust//rust:repositories.bzl",
