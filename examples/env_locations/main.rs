@@ -1,9 +1,5 @@
 #[test]
 fn test() {
-    // we should able to read rustc args from a generated file
-    if !cfg!(test_flag) {
-        unreachable!();
-    }
     // our source file should be readable
     let source_file = std::fs::read_to_string(env!("SOURCE_FILE")).unwrap();
     assert_eq!(source_file, "source\n");
