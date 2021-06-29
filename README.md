@@ -9,7 +9,11 @@ This repository provides rules for building [Rust](https://www.rust-lang.org/) p
 
 ## Community
 
+General discussions and announcements take place in the [GitHub Discussions](https://github.com/bazelbuild/rules_rust/discussions), but there are
+additional places where community members gather to discuss `rules_rust`.
+
 * Chat: [#rust](https://bazelbuild.slack.com/archives/CSV56UT0F) channel on Bazel Slack: [https://slack.bazel.build/](https://slack.bazel.build/)
+* **Archived** Developer mailing list: [groups.google.com/g/rules_rust](https://groups.google.com/g/rules_rust)
 
 ## Documentation
 
