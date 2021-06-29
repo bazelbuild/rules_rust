@@ -90,7 +90,7 @@ _crate_universe_resolver_bootstrapping = repository_rule(
             default = Label("//crate_universe:Cargo.toml"),
         ),
         "iso_date": attr.string(
-            doc = "The iso_date of cargo binary the resolver should use. Note `version` must be `beta` or `nightly`",
+            doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
         ),
         "rust_toolchain_repository_template": attr.string(
             doc = (
