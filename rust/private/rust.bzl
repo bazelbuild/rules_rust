@@ -266,6 +266,7 @@ def _rust_library_common(ctx, crate_type):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
+            compile_data = depset(ctx.files.compile_data),
         ),
         output_hash = output_hash,
     )
@@ -301,6 +302,7 @@ def _rust_binary_impl(ctx):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
+            compile_data = depset(ctx.files.compile_data),
         ),
     )
 
@@ -418,6 +420,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            compile_data = depset(crate.compile_data),
             wrapped_crate_type = crate.type,
         )
     else:
@@ -434,6 +437,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            compile_data = depset(ctx.files.compile_data),
         )
 
     providers = rustc_compile_action(

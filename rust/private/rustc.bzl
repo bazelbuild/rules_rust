@@ -267,7 +267,7 @@ def collect_inputs(
     Args:
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
-        files (list): A list of all inputs.
+        files (list): A list of all inputs (`ctx.files`).
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
@@ -281,9 +281,11 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
+    # Collect compile data from the crate's dependencies
+    transitive_compile_data = depset(transitive = [info.compile_data for info in dep_info.transitive_crates.to_list()])
+
     compile_inputs = depset(
         getattr(files, "data", []) +
-        getattr(files, "compile_data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
@@ -294,6 +296,8 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            transitive_compile_data,
+            crate_info.compile_data,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
