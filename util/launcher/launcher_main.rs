@@ -22,7 +22,7 @@ fn environ() -> BTreeMap<String, String> {
     let file = File::open(env_path).expect("Failed to load the environment file");
 
     // Variables will have the `${pwd}` variable replaced which is rendered by
-    // `@rules_rust//rust/private:util.bzl::expand_env_locations`
+    // `@rules_rust//rust/private:util.bzl::expand_dict_value_locations`
     let pwd = std::env::current_dir().expect("Failed to get current working directory");
     let pwd_str = pwd.to_string_lossy();
 
