@@ -441,7 +441,6 @@ def construct_arguments(
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
     args.add_all(rust_flags)
 
-    # Data file paths for location expansion
     data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
     args.add_all(
         expand_arg_locations(
