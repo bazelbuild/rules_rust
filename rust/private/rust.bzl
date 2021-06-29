@@ -266,7 +266,7 @@ def _rust_library_common(ctx, crate_type):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
-            transitive_type = None,
+            wrapped_crate_type = None,
         ),
         output_hash = output_hash,
     )
@@ -302,7 +302,7 @@ def _rust_binary_impl(ctx):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
-            transitive_type = None,
+            wrapped_crate_type = None,
         ),
     )
 
@@ -420,7 +420,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
-            transitive_type = crate.type,
+            wrapped_crate_type = crate.type,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -436,7 +436,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
-            transitive_type = None,
+            wrapped_crate_type = None,
         )
 
     providers = rustc_compile_action(
