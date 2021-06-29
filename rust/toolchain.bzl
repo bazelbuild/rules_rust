@@ -193,6 +193,7 @@ def _rust_toolchain_impl(ctx):
         rustfmt = ctx.file.rustfmt,
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
+        target_json = ctx.file.target_json,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
         rust_lib = ctx.attr.rust_lib,
@@ -295,6 +296,11 @@ rust_toolchain = rule(
                 "see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs"
             ),
             mandatory = True,
+        ),
+        "target_json": attr.label(
+            doc = ("Override the target_triple with a custom target specification. " +
+                   "For more details see: https://doc.rust-lang.org/rustc/targets/custom.html"),
+            allow_single_file = True,
         ),
         "target_triple": attr.string(
             doc = (

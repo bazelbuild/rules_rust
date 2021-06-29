@@ -429,7 +429,10 @@ def construct_arguments(
 
     args.add("--emit=" + ",".join(emit_with_paths))
     args.add("--color=always")
-    args.add("--target=" + toolchain.target_triple)
+    if toolchain.target_json != None:
+        args.add("--target=" + toolchain.target_json.path)
+    else:
+        args.add("--target=" + toolchain.target_triple)
     if hasattr(attr, "crate_features"):
         args.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
