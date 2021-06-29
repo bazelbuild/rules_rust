@@ -107,7 +107,7 @@ def get_host_triple(repository_ctx):
     return (host_triple, resolver_triple)
 
 def get_cargo_and_rustc(repository_ctx, host_triple):
-    """Download a cargo and rustc binary based on the host triple.
+    """Retrieve a cargo and rustc binary based on the host triple.
 
     Args:
         repository_ctx (repository_ctx): The rule's context object

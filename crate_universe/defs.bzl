@@ -169,7 +169,7 @@ Environment Variables:
             default = DEFAULT_CRATE_REGISTRY_TEMPLATE,
         ),
         "iso_date": attr.string(
-            doc = "The iso_date of cargo binary the resolver should use. Note `version` must be `beta` or `nightly`",
+            doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
         ),
         "lockfile": attr.label(
             doc = (
