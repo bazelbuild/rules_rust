@@ -42,6 +42,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 }
 
 _SYSTEM_TO_BINARY_EXT = {
+    "android": "",
     "darwin": "",
     "emscripten": ".js",
     "freebsd": "",
@@ -56,6 +57,7 @@ _SYSTEM_TO_BINARY_EXT = {
 }
 
 _SYSTEM_TO_STATICLIB_EXT = {
+    "android": ".a",
     "darwin": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
@@ -67,6 +69,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
 }
 
 _SYSTEM_TO_DYLIB_EXT = {
+    "android": ".so",
     "darwin": ".dylib",
     "emscripten": ".js",
     "freebsd": ".so",
