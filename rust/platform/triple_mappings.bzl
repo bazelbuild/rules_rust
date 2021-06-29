@@ -164,6 +164,24 @@ def triple_to_system(triple):
 
     return component_parts[2]
 
+def triple_to_arch(triple):
+    """Returns a system architecture name for a given platform triple
+
+    Args:
+        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+
+    Returns:
+        str: A cpu architecture
+    """
+    if triple == "wasm32-wasi":
+        return "wasi"
+
+    component_parts = triple.split("-")
+    if len(component_parts) < 3:
+        fail("Expected target triple to contain at least three sections separated by '-'")
+
+    return component_parts[0]
+
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]
 

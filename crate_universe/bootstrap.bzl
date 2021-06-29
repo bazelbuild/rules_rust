@@ -92,6 +92,14 @@ _crate_universe_resolver_bootstrapping = repository_rule(
         "iso_date": attr.string(
             doc = "The iso_date of cargo binary the resolver should use. Note `version` must be `beta` or `nightly`",
         ),
+        "rust_toolchain_repository_template": attr.string(
+            doc = (
+                "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
+                "will be replaced in the string if present."
+            ),
+            default = "rust_{system}_{arch}",
+        ),
         "srcs": attr.label(
             doc = "Souces to the crate_universe resolver",
             allow_files = True,

@@ -1,7 +1,11 @@
 """Utility functions for the crate_universe resolver"""
 
-load("//rust:repositories.bzl", "load_arbitrary_tool")
-load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
+load(
+    "//rust/platform:triple_mappings.bzl",
+    "system_to_binary_ext",
+    "triple_to_arch",
+    "triple_to_system",
+)
 
 _CPU_ARCH_ERROR_MSG = """\
 Command failed with exit code '{code}': {args}
@@ -114,26 +118,24 @@ def get_cargo_and_rustc(repository_ctx, host_triple):
     """
 
     if repository_ctx.attr.version in ("beta", "nightly"):
-        iso_date = repository_ctx.attr.iso_date
+        version_str = "{}-{}".format(repository_ctx.attr.version, repository_ctx.attr.iso_date)
     else:
-        iso_date = None
+        version_str = repository_ctx.attr.version
 
     # Get info about the current host's tool locations
     (host_triple, resolver_triple) = get_host_triple(repository_ctx)
-    extension = system_to_binary_ext(triple_to_system(host_triple))
+    system = triple_to_system(host_triple)
+    extension = system_to_binary_ext(system)
+    arch = triple_to_arch(host_triple)
 
-    # Fetch all required rust components
-    load_arbitrary_tool(
-        repository_ctx,
-        iso_date = iso_date,
-        target_triple = host_triple,
-        tool_name = "rust",
-        tool_subdirectories = ["rustc", "cargo", "rust-std-" + host_triple],
-        version = repository_ctx.attr.version,
-    )
+    rust_toolchain_repository = repository_ctx.attr.rust_toolchain_repository_template
+    rust_toolchain_repository = rust_toolchain_repository.replace("{version}", version_str)
+    rust_toolchain_repository = rust_toolchain_repository.replace("{system}", system)
+    rust_toolchain_repository = rust_toolchain_repository.replace("{triple}", host_triple)
+    rust_toolchain_repository = rust_toolchain_repository.replace("{arch}", arch)
 
-    cargo_path = repository_ctx.path("bin/cargo" + extension)
-    rustc_path = repository_ctx.path("bin/rustc" + extension)
+    cargo_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/cargo" + extension)))
+    rustc_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/rustc" + extension)))
 
     return struct(
         cargo = cargo_path,

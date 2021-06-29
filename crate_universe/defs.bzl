@@ -202,6 +202,14 @@ Environment Variables:
             doc = "Dictionary of host_triple -> sha256 for resolver binary.",
             default = DEFAULT_SHA256_CHECKSUMS,
         ),
+        "rust_toolchain_repository_template": attr.string(
+            doc = (
+                "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
+                "will be replaced in the string if present."
+            ),
+            default = "rust_{system}_{arch}",
+        ),
         "sha256s": attr.string_dict(
             doc = "The sha256 checksum of the desired rust artifacts",
         ),
