@@ -1,6 +1,6 @@
 """The rust_toolchain rule definition and implementation."""
 
-load("//rust/private:utils.bzl", "find_cc_toolchain")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
 
 RustStdLibInfo = provider(
     doc = (
@@ -121,7 +121,20 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     link_inputs = []
+
+    if not RustStdLibInfo in ctx.attr.rust_lib:
+        fail(dedent("""\
+            {} --
+            The `rust_lib` must be a `rust_stdlib_filegroup` target. This rule should be a simple
+            drop-in replacement for the previous `filegroup` that was expected. If for some reason the 
+            `rust_lib` target is provied from a custom rule, then this rule should return a `RustStdLibInfo`
+            provider. Both `rust_stdlib_filegroup` and `RustStdLibInfo` can be loaded from
+            `@rules_rust//rust:toolchain.bzl`. For any additional assistence pleas file an issue on the
+            GitHub project (https://github.com/bazelbuild/rules_rust) or reach out in the slack channel
+            (https://bazelbuild.slack.com/archives/CSV56UT0F).
+        """).format(ctx.label))
     rust_stdlib_info = ctx.attr.rust_lib[RustStdLibInfo]
+
     if rust_stdlib_info.std_rlibs:
         alloc_inputs = depset(
             [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.alloc_files],
