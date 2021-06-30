@@ -208,7 +208,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]".to_owned())
+            Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
         }
     }
 }
