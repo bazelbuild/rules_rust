@@ -281,9 +281,6 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
-    # Collect compile data from the crate's dependencies
-    transitive_compile_data = depset(transitive = [info.compile_data for info in dep_info.transitive_crates.to_list()])
-
     compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
@@ -296,7 +293,6 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
-            transitive_compile_data,
             crate_info.compile_data,
         ],
     )

@@ -12,10 +12,3 @@ rust_test(
     name = "compile_data_unit_test",
     crate = ":compile_data",
 )
-
-rust_test(
-    name = "compile_data_integration_test",
-    srcs = ["compile_data_test.rs"],
-    edition = "2018",
-    deps = [":compile_data"],
-)
