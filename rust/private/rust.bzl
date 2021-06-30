@@ -620,7 +620,14 @@ _common_attrs = {
         """),
     ),
     "rustc_flags": attr.string_list(
-        doc = "List of compiler flags passed to `rustc`.",
+        doc = dedent("""\
+            List of compiler flags passed to `rustc`.
+
+            These strings are subject to Make variable expansion for predefined
+            source/output path variables like `$location`, `$execpath`, and `$rootpath`.
+            This expansion is useful if you wish to pass a generated file of
+            arguments to rustc: `@$(location //:package:target)`.
+        """),
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
     # "name": attr.string(
