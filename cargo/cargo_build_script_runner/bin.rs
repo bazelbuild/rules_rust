@@ -168,9 +168,9 @@ struct Options {
     progname: String,
     crate_links: String,
     out_dir: String,
-    envfile: String,
-    flagfile: String,
-    linkflags: String,
+    env_file: String,
+    flag_file: String,
+    link_flags: String,
     output_dep_env_path: String,
     stdout_path: String,
     stderr_path: String,
@@ -187,9 +187,9 @@ fn parse_args() -> Result<Options, String> {
             Some(progname),
             Some(crate_links),
             Some(out_dir),
-            Some(envfile),
-            Some(flagfile),
-            Some(linkflags),
+            Some(env_file),
+            Some(flag_file),
+            Some(link_flags),
             Some(output_dep_env_path),
             Some(stdout_path),
             Some(stderr_path),
@@ -198,9 +198,9 @@ fn parse_args() -> Result<Options, String> {
                 progname,
                 crate_links,
                 out_dir,
-                envfile,
-                flagfile,
-                linkflags,
+                env_file,
+                flag_file,
+                link_flags,
                 output_dep_env_path,
                 stdout_path,
                 stderr_path,
@@ -208,7 +208,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err("Usage: $0 progname out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
+            Err("Usage: $0 progname crate_links out_dir env_file flag_file link_flags output_dep_env_path stdout_path stderr_path [arg1...argn]".to_owned())
         }
     }
 }
