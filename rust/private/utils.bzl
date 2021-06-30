@@ -182,6 +182,10 @@ def expand_dict_value_locations(ctx, env, data):
 def expand_list_element_locations(ctx, args, data):
     """Performs location-macro expansion on a list of string values.
 
+    $(execroot ...) and $(location ...) are prefixed with ${pwd},
+    which process_wrapper and build_script_runner will expand at run time
+    to the absolute path.
+
     See `expand_locations` for detailed documentation.
 
     Args:
