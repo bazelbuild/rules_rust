@@ -187,6 +187,7 @@ def _native_dep_test():
     cc_library(
         name = "native_dep",
         srcs = ["native_dep.cc"],
+        visibility = ["//test/unit:__subpackages__"],
     )
 
     cc_library(
