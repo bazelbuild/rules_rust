@@ -1,5 +1,7 @@
+cargo
+clippy
+llvm-tools
 rust
+rust-std
 rustc
 rustfmt
-rust-std
-llvm-tools

@@ -241,3 +241,35 @@ def crate_name_from_attr(attr):
             "Consider adding a crate_name attribute to set a valid crate name",
         )
     return crate_name
+
+def dedent(doc_string):
+    """Remove any common leading whitespace from every line in text.
+
+    This functionality is similar to python's `textwrap.dedent` functionality
+    https://docs.python.org/3/library/textwrap.html#textwrap.dedent
+
+    Args:
+        doc_string (str): A docstring style string
+
+    Returns:
+        str: A string optimized for stardoc rendering
+    """
+    lines = doc_string.splitlines()
+    if not lines:
+        return doc_string
+
+    # If the first line is empty, use the second line
+    first_line = lines[0]
+    if not first_line:
+        first_line = lines[1]
+
+    # Detect how much space prepends the first line and subtract that from all lines
+    space_count = len(first_line) - len(first_line.lstrip())
+
+    # If there are no leading spaces, do not alter the docstring
+    if space_count == 0:
+        return doc_string
+    else:
+        # Remove the leading block of spaces from the current line
+        block = " " * space_count
+        return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
