@@ -21,8 +21,8 @@ load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
-    "expand_list_element_locations",
     "expand_dict_value_locations",
+    "expand_list_element_locations",
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
