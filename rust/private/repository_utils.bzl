@@ -13,14 +13,6 @@ load(
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
-DEFAULT_TOOLCHAIN_TRIPLES = {
-    "aarch64-apple-darwin": "rust_darwin_aarch64",
-    "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
-    "x86_64-apple-darwin": "rust_darwin_x86_64",
-    "x86_64-pc-windows-msvc": "rust_windows_x86_64",
-    "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
-    "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
-}
 
 _build_file_for_compiler_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
