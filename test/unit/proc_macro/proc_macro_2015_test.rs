@@ -1,11 +1,8 @@
 extern crate proc_macro_lib_2015;
+use proc_macro_lib_2015::make_answer;
 
-use proc_macro_lib_2015::HelloWorld;
+make_answer!();
 
-#[derive(HelloWorld)]
-struct TestStruct {}
-
-#[test]
-fn test_hello_world_macro() {
-    let _ = TestStruct {};
+fn main() {
+    println!("{}", answer());
 }

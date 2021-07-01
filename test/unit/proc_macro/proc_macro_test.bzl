@@ -67,7 +67,7 @@ def _proc_macro_test():
     )
 
     proc_macro_2015_no_extern_flag_test(
-        name = "proc_macro_test_2015_no_extern_flag_test",
+        name = "proc_macro_wrapper_2015_no_extern_flag_test",
         target_under_test = ":proc_macro_lib_2015_unittest",
     )
 
@@ -77,7 +77,7 @@ def _proc_macro_test():
     )
 
     proc_macro_2018_extern_flag_test(
-        name = "proc_macro_test_2018_extern_flag_test",
+        name = "proc_macro_wrapper_2018_extern_flag_test",
         target_under_test = ":proc_macro_lib_2018_unittest",
     )
 
@@ -93,8 +93,8 @@ def proc_macro_test_suite(name):
         name = name,
         tests = [
             ":proc_macro_2015_no_extern_flag_test",
-            ":proc_macro_test_2015_no_extern_flag_test",
+            ":proc_macro_wrapper_2015_no_extern_flag_test",
             ":proc_macro_2018_extern_flag_test",
-            ":proc_macro_test_2018_extern_flag_test",
+            ":proc_macro_wrapper_2018_extern_flag_test",
         ],
     )

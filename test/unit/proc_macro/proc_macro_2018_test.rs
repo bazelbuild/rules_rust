@@ -1,9 +1,8 @@
-use proc_macro_lib_2018::HelloWorld;
+use proc_macro_lib_2018::make_answer;
 
-#[derive(HelloWorld)]
-struct TestStruct {}
+make_answer!();
 
 #[test]
-fn test_hello_world_macro() {
-    let _ = TestStruct {};
+fn test_answer_macro() {
+    println!("{}", answer());
 }
