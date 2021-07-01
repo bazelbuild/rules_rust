@@ -39,9 +39,9 @@ fn run_buildrs() -> Result<(), String> {
         progname,
         crate_links,
         out_dir,
-        envfile,
-        flagfile,
-        linkflags,
+        env_file,
+        compile_flags_file,
+        link_flags_file,
         output_dep_env_path,
         stdout_path,
         stderr_path,
@@ -136,10 +136,10 @@ fn run_buildrs() -> Result<(), String> {
         })?;
 
     write(
-        &envfile,
+        &env_file,
         BuildScriptOutput::to_env(&buildrs_outputs, &exec_root.to_string_lossy()).as_bytes(),
     )
-    .expect(&format!("Unable to write file {:?}", envfile));
+    .expect(&format!("Unable to write file {:?}", env_file));
     write(
         &output_dep_env_path,
         BuildScriptOutput::to_dep_env(&buildrs_outputs, &crate_links, &exec_root.to_string_lossy())
@@ -156,10 +156,10 @@ fn run_buildrs() -> Result<(), String> {
         link_flags,
     } = BuildScriptOutput::to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
 
-    write(&flagfile, compile_flags.as_bytes())
-        .expect(&format!("Unable to write file {:?}", flagfile));
-    write(&linkflags, link_flags.as_bytes())
-        .expect(&format!("Unable to write file {:?}", linkflags));
+    write(&compile_flags_file, compile_flags.as_bytes())
+        .expect(&format!("Unable to write file {:?}", compile_flags_file));
+    write(&link_flags_file, link_flags.as_bytes())
+        .expect(&format!("Unable to write file {:?}", link_flags_file));
     Ok(())
 }
 
@@ -168,9 +168,9 @@ struct Options {
     progname: String,
     crate_links: String,
     out_dir: String,
-    envfile: String,
-    flagfile: String,
-    linkflags: String,
+    env_file: String,
+    compile_flags_file: String,
+    link_flags_file: String,
     output_dep_env_path: String,
     stdout_path: String,
     stderr_path: String,
@@ -187,9 +187,9 @@ fn parse_args() -> Result<Options, String> {
             Some(progname),
             Some(crate_links),
             Some(out_dir),
-            Some(envfile),
-            Some(flagfile),
-            Some(linkflags),
+            Some(env_file),
+            Some(compile_flags_file),
+            Some(link_flags_file),
             Some(output_dep_env_path),
             Some(stdout_path),
             Some(stderr_path),
@@ -198,9 +198,9 @@ fn parse_args() -> Result<Options, String> {
                 progname,
                 crate_links,
                 out_dir,
-                envfile,
-                flagfile,
-                linkflags,
+                env_file,
+                compile_flags_file,
+                link_flags_file,
                 output_dep_env_path,
                 stdout_path,
                 stderr_path,
@@ -208,7 +208,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err("Usage: $0 progname out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
+            Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
         }
     }
 }
