@@ -28,7 +28,7 @@ load(":providers.bzl", "CrateInfo", "DepInfo")
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider
 
-    This macro should be used in place of directly creating a `CrateInfo`
+    This function should be used in place of directly creating a `CrateInfo`
     provider to improve API stability.
 
     Args:
