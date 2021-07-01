@@ -22,19 +22,13 @@ def _proc_macro_test_targets(edition):
             "proc_macro_{}.rs".format(edition),
         ],
         edition = edition,
+        visibility = ["//test:__subpackages__"],
     )
 
     rust_test(
         name = "wrapper_rule_for_macro_{}".format(edition),
         crate = ":proc_macro_{}".format(edition),
         edition = edition,
-    )
-
-    rust_test(
-        name = "proc_macro_{}_integration_test".format(edition),
-        srcs = ["proc_macro_{}_test.rs".format(edition)],
-        edition = edition,
-        proc_macro_deps = [":proc_macro_{}".format(edition)],
     )
 
 def _unit_test_impl(ctx, edition, is_wrapper):
