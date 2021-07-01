@@ -1,4 +1,4 @@
-use proc_macro_lib_2018::make_answer;
+use proc_macro_2018::make_answer;
 
 make_answer!();
 
