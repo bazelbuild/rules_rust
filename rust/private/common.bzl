@@ -25,7 +25,11 @@ In the Bazel lingo, `rust_common` gives the access to the Rust Sandwich API.
 
 load(":providers.bzl", "CrateInfo", "DepInfo")
 
+def _create_crate_info(**kwargs):
+    return CrateInfo(**kwargs)
+
 rust_common = struct(
+    create_crate_info = _create_crate_info,
     crate_info = CrateInfo,
     dep_info = DepInfo,
 )
