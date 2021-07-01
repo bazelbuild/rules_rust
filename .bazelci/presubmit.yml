@@ -8,11 +8,6 @@ default_linux_targets: &default_linux_targets
   # Bindgen currently only has a working toolchain for 18.04
   - "-@examples//ffi/rust_calling_c/simple/..."
 tasks:
-  ubuntu1604:
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
-    build_flags:
-      - "--config=rustfmt"
   ubuntu1804:
     build_targets: *default_linux_targets
     test_targets:
