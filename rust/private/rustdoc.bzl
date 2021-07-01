@@ -48,7 +48,7 @@ Example:
 
   rust_doc(
       name = "hello_lib_doc",
-      dep = ":hello_lib",
+      crate = ":hello_lib",
   )
   ```
 

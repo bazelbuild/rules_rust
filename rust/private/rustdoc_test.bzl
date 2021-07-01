@@ -249,7 +249,7 @@ rust_library(
 
 rust_doc_test(
     name = "hello_lib_doc_test",
-    dep = ":hello_lib",
+    crate = ":hello_lib",
 )
 ```
 

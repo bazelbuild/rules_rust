@@ -29,10 +29,10 @@ rust_benchmark(
 
 rust_doc(
     name = "fibonacci_doc",
-    dep = ":fibonacci",
+    crate = ":fibonacci",
 )
 
 rust_doc_test(
     name = "fibonacci_doc_test",
-    dep = ":fibonacci",
+    crate = ":fibonacci",
 )

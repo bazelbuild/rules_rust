@@ -38,10 +38,10 @@ rust_test(
 
 rust_doc(
     name = "proc_macro_lib_doc",
-    dep = ":proc_macro_lib",
+    crate = ":proc_macro_lib",
 )
 
 rust_doc_test(
     name = "doc_test",
-    dep = ":proc_macro_lib",
+    crate = ":proc_macro_lib",
 )

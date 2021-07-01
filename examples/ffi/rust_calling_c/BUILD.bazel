@@ -21,7 +21,7 @@ rust_test(
 
 rust_doc(
     name = "matrix_doc",
-    dep = ":matrix",
+    crate = ":matrix",
 )
 
 ## Do the same as above, but with a dynamic c library.
@@ -46,5 +46,5 @@ rust_test(
 
 rust_doc(
     name = "matrix_dylib_doc",
-    dep = ":matrix_dynamically_linked",
+    crate = ":matrix_dynamically_linked",
 )
