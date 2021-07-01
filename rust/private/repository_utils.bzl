@@ -138,7 +138,9 @@ def BUILD_for_clippy(target_triple):
     return _build_file_for_clippy_template.format(binary_ext = system_to_binary_ext(system))
 
 _build_file_for_stdlib_template = """\
-filegroup(
+load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
+
+rust_stdlib_filegroup(
     name = "rust_lib-{target_triple}",
     srcs = glob(
         [

@@ -8,7 +8,7 @@ load("//rust:rust.bzl", "rust_binary")
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "expand_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
+load("//rust/private:utils.bzl", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -117,7 +117,7 @@ def _build_script_impl(ctx):
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
-    env.update(expand_locations(
+    env.update(expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
         getattr(ctx.attr, "data", []) +

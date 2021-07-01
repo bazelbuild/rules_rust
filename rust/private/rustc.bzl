@@ -21,7 +21,8 @@ load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
-    "expand_locations",
+    "expand_dict_value_locations",
+    "expand_list_element_locations",
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
@@ -438,9 +439,16 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
-
     args.add_all(rust_flags)
-    args.add_all(getattr(attr, "rustc_flags", []))
+
+    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
+    args.add_all(
+        expand_list_element_locations(
+            ctx,
+            getattr(attr, "rustc_flags", []),
+            data_paths,
+        ),
+    )
     add_edition_flags(args, crate_info)
 
     # Link!
@@ -473,11 +481,10 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(expand_locations(
+    env.update(expand_dict_value_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(attr, "data", []) +
-        getattr(attr, "compile_data", []),
+        data_paths,
     ))
 
     # This empty value satisfies Clippy, which otherwise complains about the
