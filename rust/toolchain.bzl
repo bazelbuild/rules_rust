@@ -1,23 +1,7 @@
 """The rust_toolchain rule definition and implementation."""
 
+load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
-
-RustStdLibInfo = provider(
-    doc = (
-        "A collection of files either found within the `rust-stdlib` artifact or " +
-        "generated based on existing files."
-    ),
-    fields = {
-        "alloc_files": "List[File]: `.a` files related to the `alloc` module.",
-        "between_alloc_and_core_files": "List[File]: `.a` files related to the `compiler_builtins` module.",
-        "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
-        "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
-        "dot_a_files": "Depset[File]: Generated `.a` files",
-        "srcs": "List[Target]: The original `src` attribute.",
-        "std_files": "Depset[File]: `.a` files associated with the `std` module.",
-        "std_rlibs": "List[File]: All `.rlib` files",
-    },
-)
 
 def _make_dota(ctx, file):
     """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
@@ -75,7 +59,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         DefaultInfo(
             files = depset(ctx.files.srcs),
         ),
-        RustStdLibInfo(
+        rust_common.stdlib_info(
             std_rlibs = std_rlibs,
             dot_a_files = dot_a_files,
             between_alloc_and_core_files = between_alloc_and_core_files,
@@ -122,7 +106,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     link_inputs = []
 
-    if not RustStdLibInfo in ctx.attr.rust_lib:
+    if not rust_common.stdlib_info in ctx.attr.rust_lib:
         fail(dedent("""\
             {} --
             The `rust_lib` must be a target providing `rust_common.stdlib_info` 
@@ -130,7 +114,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
             
         """).format(ctx.label))
-    rust_stdlib_info = ctx.attr.rust_lib[RustStdLibInfo]
+    rust_stdlib_info = ctx.attr.rust_lib[rust_common.stdlib_info]
 
     if rust_stdlib_info.std_rlibs:
         alloc_inputs = depset(

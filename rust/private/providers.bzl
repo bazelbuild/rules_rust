@@ -42,3 +42,20 @@ DepInfo = provider(
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
     },
 )
+
+StdLibInfo = provider(
+    doc = (
+        "A collection of files either found within the `rust-stdlib` artifact or " +
+        "generated based on existing files."
+    ),
+    fields = {
+        "alloc_files": "List[File]: `.a` files related to the `alloc` module.",
+        "between_alloc_and_core_files": "List[File]: `.a` files related to the `compiler_builtins` module.",
+        "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
+        "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
+        "dot_a_files": "Depset[File]: Generated `.a` files",
+        "srcs": "List[Target]: The original `src` attribute.",
+        "std_files": "Depset[File]: `.a` files associated with the `std` module.",
+        "std_rlibs": "List[File]: All `.rlib` files",
+    },
+)
