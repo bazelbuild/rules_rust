@@ -25,6 +25,7 @@
 * [rust_repository_set](#rust_repository_set)
 * [rust_shared_library](#rust_shared_library)
 * [rust_static_library](#rust_static_library)
+* [rust_stdlib_filegroup](#rust_stdlib_filegroup)
 * [rust_test](#rust_test)
 * [rust_test_suite](#rust_test_suite)
 * [rust_toolchain](#rust_toolchain)
@@ -891,6 +892,25 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_static_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | [] |
 | <a id="rust_static_library-srcs"></a>srcs |  List of Rust <code>.rs</code> source files used to build the library.<br><br>If <code>srcs</code> contains more than one file, then there must be a file either named <code>lib.rs</code>. Otherwise, <code>crate_root</code> must be set to the source file that is the root of the crate to be passed to rustc to build this crate.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="rust_static_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
+
+
+<a id="#rust_stdlib_filegroup"></a>
+
+## rust_stdlib_filegroup
+
+<pre>
+rust_stdlib_filegroup(<a href="#rust_stdlib_filegroup-name">name</a>, <a href="#rust_stdlib_filegroup-srcs">srcs</a>)
+</pre>
+
+A dedicated filegroup-like rule for Rust stdlib artifacts.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_stdlib_filegroup-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="rust_stdlib_filegroup-srcs"></a>srcs |  The list of targets/files that are components of the rust-stdlib file group   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
 
 
 <a id="#rust_test"></a>
