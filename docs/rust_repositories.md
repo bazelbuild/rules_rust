@@ -6,6 +6,26 @@
 * [rust_toolchain](#rust_toolchain)
 * [rust_toolchain_repository](#rust_toolchain_repository)
 * [rust_toolchain_repository_proxy](#rust_toolchain_repository_proxy)
+* [rust_stdlib_filegroup](#rust_stdlib_filegroup)
+
+<a id="#rust_stdlib_filegroup"></a>
+
+## rust_stdlib_filegroup
+
+<pre>
+rust_stdlib_filegroup(<a href="#rust_stdlib_filegroup-name">name</a>, <a href="#rust_stdlib_filegroup-srcs">srcs</a>)
+</pre>
+
+A dedicated filegroup-like rule for Rust stdlib artifacts.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_stdlib_filegroup-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="rust_stdlib_filegroup-srcs"></a>srcs |  The list of targets/files that are components of the rust-stdlib file group   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
+
 
 <a id="#rust_toolchain"></a>
 
