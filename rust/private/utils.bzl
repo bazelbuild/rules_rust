@@ -167,6 +167,8 @@ def expand_dict_value_locations(ctx, env, data):
     as compilation happens in a separate sandbox folder, so when it comes time
     to read the file at runtime, the path is no longer valid.
 
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+
     Args:
         ctx (ctx): The rule's context object
         env (dict): A dict whose values we iterate over
@@ -186,7 +188,7 @@ def expand_list_element_locations(ctx, args, data):
     which process_wrapper and build_script_runner will expand at run time
     to the absolute path.
 
-    See `expand_locations` for detailed documentation.
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
 
     Args:
         ctx (ctx): The rule's context object

@@ -626,7 +626,7 @@ _common_attrs = {
             These strings are subject to Make variable expansion for predefined
             source/output path variables like `$location`, `$execpath`, and `$rootpath`.
             This expansion is useful if you wish to pass a generated file of
-            arguments to rustc: `@$(location //:package:target)`.
+            arguments to rustc: `@$(location //package:target)`.
         """),
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
