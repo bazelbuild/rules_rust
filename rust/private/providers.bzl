@@ -28,6 +28,10 @@ CrateInfo = provider(
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": "str: The type of this crate. eg. lib or bin",
+        "wrapped_crate_type": (
+            "str, optional: The original crate type for targets generated using a previously defined " +
+            "crate (typically tests using the `rust_test::crate` attribute)"
+        ),
     },
 )
 

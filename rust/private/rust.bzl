@@ -20,7 +20,7 @@ load(
     "crate_name_from_attr",
     "dedent",
     "determine_output_hash",
-    "expand_locations",
+    "expand_dict_value_locations",
     "find_toolchain",
 )
 
@@ -340,7 +340,7 @@ def _create_test_launcher(ctx, toolchain, output, providers):
 
     # Expand the environment variables and write them to a file
     environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_locations(
+    environ = expand_dict_value_locations(
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
@@ -418,6 +418,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            wrapped_crate_type = crate.type,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -620,7 +621,14 @@ _common_attrs = {
         """),
     ),
     "rustc_flags": attr.string_list(
-        doc = "List of compiler flags passed to `rustc`.",
+        doc = dedent("""\
+            List of compiler flags passed to `rustc`.
+
+            These strings are subject to Make variable expansion for predefined
+            source/output path variables like `$location`, `$execpath`, and `$rootpath`.
+            This expansion is useful if you wish to pass a generated file of
+            arguments to rustc: `@$(location //package:target)`.
+        """),
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
     # "name": attr.string(

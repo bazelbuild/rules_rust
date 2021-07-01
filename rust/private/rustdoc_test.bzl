@@ -109,6 +109,9 @@ def _build_rustdoc_flags(dep_info, crate):
         link_flags.append("-Lnative={}".format(_dirname(f.short_path)))
         link_search_flags.append("-Lnative={}".format(_dirname(f.short_path)))
 
+    if crate.type == "proc-macro":
+        link_flags.extend(["--extern", "proc_macro"])
+
     edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
 
     return link_search_flags + link_flags + edition_flags

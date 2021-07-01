@@ -37,6 +37,8 @@ def _create_crate_info(**kwargs):
     Returns:
         CrateInfo: A provider
     """
+    if not "wrapped_crate_type" in kwargs:
+        kwargs.update({"wrapped_crate_type": None})
     return CrateInfo(**kwargs)
 
 rust_common = struct(
