@@ -25,7 +25,7 @@ def _proc_macro_test_targets(edition):
     )
 
     rust_test(
-        name = "proc_macro_{}_unittest".format(edition),
+        name = "wrapper_rule_for_macro_{}".format(edition),
         crate = ":proc_macro_{}".format(edition),
         edition = edition,
     )
@@ -90,11 +90,11 @@ def _proc_macro_test():
     )
     extern_flag_not_passed_when_compiling_macro_wrapper_rule_2015_test(
         name = "extern_flag_not_passed_when_compiling_macro_wrapper_rule_2015",
-        target_under_test = ":proc_macro_2015_unittest",
+        target_under_test = ":wrapper_rule_for_macro_2015",
     )
     extern_flag_passed_when_compiling_macro_wrapper_rule_2018_test(
         name = "extern_flag_passed_when_compiling_macro_wrapper_rule_2018",
-        target_under_test = ":proc_macro_2018_unittest",
+        target_under_test = ":wrapper_rule_for_macro_2018",
     )
 
 def proc_macro_test_suite(name):
