@@ -125,6 +125,7 @@ def _rust_bindgen_impl(ctx):
 
     if libstdcxx:
         env["LD_LIBRARY_PATH"] = ":".join([f.dirname for f in _get_libs_for_static_executable(libstdcxx).to_list()])
+        # DYLD_LIBRARY_PATH is LD_LIBRARY_PATH on macOS.
         env["DYLD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"]
 
     ctx.actions.run(
