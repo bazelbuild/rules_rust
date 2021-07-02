@@ -23,11 +23,12 @@ load(
 )
 load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
-def _get_clippy_ready_crate_info(target):
+def _get_clippy_ready_crate_info(target, aspect_ctx):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
 
     Args:
         target (Target): The target the aspect is running on.
+        aspect_ctx (ctx, optional): The aspect's context object.
 
     Returns:
         CrateInfo, optional: A `CrateInfo` provider if clippy should be run or `None`.
@@ -37,6 +38,10 @@ def _get_clippy_ready_crate_info(target):
     if target.label.workspace_root.startswith("external"):
         return None
 
+    # Targets annotated with `noclippy` will not be formatted
+    if aspect_ctx and "noclippy" in aspect_ctx.rule.attr.tags:
+        return None
+
     # Obviously ignore any targets that don't contain `CrateInfo`
     if rust_common.crate_info not in target:
         return None
@@ -44,7 +49,7 @@ def _get_clippy_ready_crate_info(target):
     return target[rust_common.crate_info]
 
 def _clippy_aspect_impl(target, ctx):
-    crate_info = _get_clippy_ready_crate_info(target)
+    crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
         return []
 
