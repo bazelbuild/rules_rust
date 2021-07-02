@@ -132,6 +132,7 @@ def _rust_bindgen_impl(ctx):
 
     if libstdcxx:
         env["LD_LIBRARY_PATH"] = ":".join([f.dirname for f in _get_libs_for_static_executable(libstdcxx).to_list()])
+        env["DYLD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"]
 
     ctx.actions.run(
         executable = bindgen_bin,

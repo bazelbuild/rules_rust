@@ -24,11 +24,6 @@ def rust_bindgen_repositories():
     # nb. The bindgen rule itself should work on any platform.
     _bindgen_clang_repositories()
 
-    maybe(
-        _local_libstdcpp,
-        name = "local_libstdcpp",
-    )
-
     rules_rust_bindgen_fetch_remote_crates()
 
     native.register_toolchains(str(Label("//bindgen:default_bindgen_toolchain")))
@@ -85,29 +80,3 @@ def _bindgen_clang_repositories():
         build_file_content = _CLANG_BUILD_FILE.format("lib/libclang.dylib"),
         workspace_file_content = _COMMON_WORKSPACE.format("bindgen_clang_osx"),
     )
-
-_LIBSTDCPP_BUILD_FILE = """\
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-cc_library(
-  name = "libstdc++",
-  srcs = ["{}"],
-  visibility = ["//visibility:public"]
-)
-"""
-
-def _local_libstdcpp_impl(repository_ctx):
-    os = repository_ctx.os.name.lower()
-    if os == "linux":
-        repository_ctx.symlink("/usr/lib/x86_64-linux-gnu/libstdc++.so.6", "libstdc++.so.6")
-        repository_ctx.file("BUILD.bazel", _LIBSTDCPP_BUILD_FILE.format("libstdc++.so.6"))
-    elif os.startswith("mac"):
-        repository_ctx.symlink("/usr/lib/libstdc++.6.dylib", "libstdc++.6.dylib")
-        repository_ctx.file("BUILD.bazel", _LIBSTDCPP_BUILD_FILE.format("libstdc++.6.dylib"))
-    else:
-        fail(os + " is not supported.")
-    repository_ctx.file("WORKSPACE.bazel", _COMMON_WORKSPACE.format(repository_ctx.name))
-
-_local_libstdcpp = repository_rule(
-    implementation = _local_libstdcpp_impl,
-)
