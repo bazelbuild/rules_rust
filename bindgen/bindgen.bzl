@@ -134,9 +134,9 @@ def _rust_bindgen_impl(ctx):
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
                 _get_libs_for_static_executable(libclang),
-            ] + [
+            ] + ([
                 _get_libs_for_static_executable(libstdcxx),
-            ] if libstdcxx else [],
+            ] if libstdcxx else []),
         ),
         outputs = [unformatted_output],
         mnemonic = "RustBindgen",
@@ -226,7 +226,7 @@ rust_bindgen_toolchain = rule(
             providers = [CcInfo],
         ),
         "libstdcxx": attr.label(
-            doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If not specified, clang will attempt to use the system libraries.",
+            doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             mandatory = False,

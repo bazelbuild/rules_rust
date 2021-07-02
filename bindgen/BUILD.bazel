@@ -19,11 +19,11 @@ rust_bindgen_toolchain(
         "//conditions:default": "@bindgen_clang_linux//:clang",
     }),
     libclang = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:libclang.dylib",
-        "//conditions:default": "@bindgen_clang_linux//:libclang.so",
+        "//rust/platform:osx": "@bindgen_clang_osx//:libclang",
+        "//conditions:default": "@bindgen_clang_linux//:libclang",
     }),
     libstdcxx = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:lib/libc++.dylib",
+        "//rust/platform:osx": "@bindgen_clang_osx//:libc++",
         "//conditions:default": None,
     }),
 )
