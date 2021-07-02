@@ -752,6 +752,11 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
+
+    # Windows has no rpath equivalent, so always return an empty depset.
+    if toolchain.os == "windows":
+        return depset([])
+
     dylibs = [
         get_preferred_artifact(lib)
         for linker_input in dep_info.transitive_noncrates.to_list()
