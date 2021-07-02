@@ -29,10 +29,8 @@ tasks:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "@examples//..."
-      # Skip tests for dylib support on osx, since we don't support it yet.
+      # This test fails under bazel test but not when run directly due to -rpath issues.
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
-      - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-      - "-@examples//ffi/rust_calling_c/simple/..."
     build_targets: *osx_targets
     test_targets: *osx_targets
     build_flags:
