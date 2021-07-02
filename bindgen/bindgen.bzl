@@ -87,13 +87,6 @@ def _rust_bindgen_impl(ctx):
     rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
-
-    # TODO: This rule shouldn't need to depend on libstdc++
-    #  This rule requires an explicit dependency on a libstdc++ because
-    #    1. It is a runtime dependency of libclang.so
-    #    2. We cannot locate it in the cc_toolchain yet
-    #  Depending on how libclang.so was compiled, it may try to locate its libstdc++ dependency
-    #  in a way that makes our handling here unnecessary (eg. system /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
     libstdcxx = toolchain.libstdcxx
 
     # rustfmt is not where bindgen expects to find it, so we format manually
@@ -233,9 +226,10 @@ rust_bindgen_toolchain = rule(
             providers = [CcInfo],
         ),
         "libstdcxx": attr.label(
-            doc = "A cc_library that satisfies libclang's libstdc++ dependency.",
+            doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If not specified, clang will attempt to use the system libraries.",
             cfg = "exec",
             providers = [CcInfo],
+            mandatory = False,
         ),
         "rustfmt": attr.label(
             doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",

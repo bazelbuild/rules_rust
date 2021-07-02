@@ -24,7 +24,7 @@ rust_bindgen_toolchain(
     }),
     libstdcxx = select({
         "//rust/platform:osx": "@bindgen_clang_osx//:lib/libc++.dylib",
-        "//conditions:default": "@bindgen_clang_linux//:lib/libc++.so",
+        "//conditions:default": None,
     }),
 )
 
