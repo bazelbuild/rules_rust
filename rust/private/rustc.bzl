@@ -752,12 +752,12 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
-
-    # TODO(augie): I don't understand why this can't just be filtering on
-    # _is_dylib(lib), but doing that causes failures on darwin and windows
-    # examples that otherwise work.
-    dylibs = [lib for lib in preferreds if _has_dylib_ext(lib, toolchain.dylib_ext)]
+    dylibs = [
+        get_preferred_artifact(lib)
+        for linker_input in dep_info.transitive_noncrates.to_list()
+        for lib in linker_input.libraries
+        if _is_dylib(lib)
+    ]
     if not dylibs:
         return depset([])
 
