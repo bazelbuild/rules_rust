@@ -1,7 +1,7 @@
 # Rules Rust - Architecture
 
 In this file we describe how we think about the architecture
-of `rules_rust`. It's goal is to help contributors orient themselves, and to
+of `rules_rust`. Its goal is to help contributors orient themselves, and to
 document code restrictions and assumptions.
 
 In general we try to follow the common standard defined by
@@ -18,15 +18,15 @@ rules integrating with rules_rust.
 the core rules should be able to ignore all other packages.
 
 `//rust:defs.bzl` is the file that all users of `rules_rust` will be using.
-Everything in this file can be used (dependend on) and is supported  (though
+Everything in this file can be used (depended on) and is supported  (though
 stability is not currently guaranteed across commits, see
 [#600](https://github.com/bazelbuild/rules_rust/issues/600)). Typically this
-file reexports definitions from other files, typically from `//rust/private`.
+file re-exports definitions from other files, typically from `//rust/private`.
 Also other packages in `rules_rust` should access core rules through the public
 API only. We expect dogfooding our own APIs increases their
 quality.
 
-`//rust/private` package contains code rule implementation. This file can only
+`//rust/private` package contains code for rule implementation. This file can only
 depend on `//rust` and its subpackages. Exceptions are Bazel's builtin packages
 and public APIs of other rules (such as `rules_cc`). Depending on
 `//rust/private` from packages other than `//rust` is not supported, we reserve
