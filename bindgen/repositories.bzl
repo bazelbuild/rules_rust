@@ -24,11 +24,6 @@ def rust_bindgen_repositories():
     # nb. The bindgen rule itself should work on any platform.
     _bindgen_clang_repositories()
 
-    maybe(
-        _local_libstdcpp,
-        name = "local_libstdcpp",
-    )
-
     rules_rust_bindgen_fetch_remote_crates()
 
     native.register_toolchains(str(Label("//bindgen:default_bindgen_toolchain")))
@@ -48,19 +43,29 @@ http_archive(
 """
 
 _CLANG_BUILD_FILE = """\
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_import")
 
 package(default_visibility = ["//visibility:public"])
 
 sh_binary(
     name = "clang",
     srcs = ["bin/clang"],
-    data = glob(["lib/**"]),
 )
 
-cc_library(
+cc_import(
+    name = "libclang",
+    shared_library = "lib/libclang.{suffix}",
+)
+
+alias(
     name = "libclang.so",
-    srcs = ["{}"],
+    actual = ":libclang",
+    deprecation = "Use :libclang instead",
+)
+
+cc_import(
+    name = "libc++",
+    shared_library = "lib/libc++.{suffix}"
 )
 """
 
@@ -72,7 +77,7 @@ def _bindgen_clang_repositories():
         urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"],
         strip_prefix = "clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04",
         sha256 = "b25f592a0c00686f03e3b7db68ca6dc87418f681f4ead4df4745a01d9be63843",
-        build_file_content = _CLANG_BUILD_FILE.format("lib/libclang.so"),
+        build_file_content = _CLANG_BUILD_FILE.format(suffix = "so"),
         workspace_file_content = _COMMON_WORKSPACE.format("bindgen_clang_linux"),
     )
 
@@ -82,32 +87,6 @@ def _bindgen_clang_repositories():
         urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-apple-darwin.tar.xz"],
         strip_prefix = "clang+llvm-10.0.0-x86_64-apple-darwin",
         sha256 = "633a833396bf2276094c126b072d52b59aca6249e7ce8eae14c728016edb5e61",
-        build_file_content = _CLANG_BUILD_FILE.format("lib/libclang.dylib"),
+        build_file_content = _CLANG_BUILD_FILE.format(suffix = "dylib"),
         workspace_file_content = _COMMON_WORKSPACE.format("bindgen_clang_osx"),
     )
-
-_LIBSTDCPP_BUILD_FILE = """\
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-cc_library(
-  name = "libstdc++",
-  srcs = ["{}"],
-  visibility = ["//visibility:public"]
-)
-"""
-
-def _local_libstdcpp_impl(repository_ctx):
-    os = repository_ctx.os.name.lower()
-    if os == "linux":
-        repository_ctx.symlink("/usr/lib/x86_64-linux-gnu/libstdc++.so.6", "libstdc++.so.6")
-        repository_ctx.file("BUILD.bazel", _LIBSTDCPP_BUILD_FILE.format("libstdc++.so.6"))
-    elif os.startswith("mac"):
-        repository_ctx.symlink("/usr/lib/libstdc++.6.dylib", "libstdc++.6.dylib")
-        repository_ctx.file("BUILD.bazel", _LIBSTDCPP_BUILD_FILE.format("libstdc++.6.dylib"))
-    else:
-        fail(os + " is not supported.")
-    repository_ctx.file("WORKSPACE.bazel", _COMMON_WORKSPACE.format(repository_ctx.name))
-
-_local_libstdcpp = repository_rule(
-    implementation = _local_libstdcpp_impl,
-)

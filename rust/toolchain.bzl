@@ -109,11 +109,10 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
     if not rust_common.stdlib_info in ctx.attr.rust_lib:
         fail(dedent("""\
             {} --
-            The `rust_lib` must be a target providing `rust_common.stdlib_info` 
+            The `rust_lib` ({}) must be a target providing `rust_common.stdlib_info`
             (typically `rust_stdlib_filegroup` rule from @rules_rust//rust:defs.bzl).
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
-            
-        """).format(ctx.label))
+        """).format(ctx.label, ctx.attr.rust_lib))
     rust_stdlib_info = ctx.attr.rust_lib[rust_common.stdlib_info]
 
     if rust_stdlib_info.std_rlibs:
