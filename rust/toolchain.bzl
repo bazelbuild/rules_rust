@@ -83,6 +83,17 @@ rust_stdlib_filegroup = rule(
 )
 
 def _ltl(library, ctx, cc_toolchain, feature_configuration):
+    """A helper to generate `LibraryToLink` objects
+
+    Args:
+        library (File): A rust library file to link.
+        ctx (ctx): The rule's context object.
+        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used.
+        feature_configuration (feature_configuration): feature_configuration to be queried.
+
+    Returns:
+        LibraryToLink: A provider containing information about libraries to link.
+    """
     return cc_common.create_library_to_link(
         actions = ctx.actions,
         feature_configuration = feature_configuration,

@@ -484,9 +484,10 @@ def produce_tool_path(tool_name, target_triple, version):
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
-    This function sources the tool from the Rust-lang static file server. The index is available
-    at: https://static.rust-lang.org/dist/index.html (or the path specified by
-    "${STATIC_RUST_URL}/dist/index.html" if the STATIC_RUST_URL envinronment variable is set).
+    This function sources the tool from the Rust-lang static file server. The index is available at:
+    - https://static.rust-lang.org/dist/channel-rust-stable.toml
+    - https://static.rust-lang.org/dist/channel-rust-beta.toml
+    - https://static.rust-lang.org/dist/channel-rust-nightly.toml
 
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
