@@ -489,6 +489,10 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     - https://static.rust-lang.org/dist/channel-rust-beta.toml
     - https://static.rust-lang.org/dist/channel-rust-nightly.toml
 
+    The environment variable `STATIC_RUST_URL` can be used to replace the schema and hostname of
+    the URLs used for fetching assets. `https://static.rust-lang.org/dist/channel-rust-stable.toml`
+    becomes `${STATIC_RUST_URL}/dist/channel-rust-stable.toml`
+
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
         tool_name (str): The name of the given tool per the archive naming.
@@ -512,7 +516,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
 
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
-    # N.B. See https://static.rust-lang.org/dist/index.html to find the tool_suburl for a given
+    # View the indices mentioned in the docstring to find the tool_suburl for a given
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
