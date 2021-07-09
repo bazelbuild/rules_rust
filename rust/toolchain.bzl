@@ -41,6 +41,15 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
+        #
+        # The libraries panic_abort and panic_unwind are alternatives.
+        # The std by default requires panic_unwind. Exclude panic_abort if
+        # panic_unwind is present.
+        # TODO: provide a setting to choose between panic_abort and
+        # panic_unwind.
+        has_panic_unwind = [f for f in std_rlibs if "panic_unwind" in f.basename]
+        if has_panic_unwind:
+            std_rlibs = [f for f in std_rlibs if "panic_abort" not in f.basename]
         dot_a_files = [_make_dota(ctx, f, postfix = "-rlib") for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
