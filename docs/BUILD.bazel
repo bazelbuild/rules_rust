@@ -39,6 +39,7 @@ PAGES = dict([
     ),
     page(
         name = "crate_universe",
+        header_template = ":crate_universe.vm",
         symbols = [
             "crate_universe",
             "crate",
