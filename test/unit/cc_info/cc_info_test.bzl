@@ -102,6 +102,7 @@ def _cc_info_test():
         name = "proc_macro",
         srcs = ["proc_macro.rs"],
         edition = "2018",
+        deps = ["//test/unit/native_deps:native_dep"],
     )
 
     rlib_provides_cc_info_test(

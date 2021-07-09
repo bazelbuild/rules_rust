@@ -1,48 +1,32 @@
 """The rust_toolchain rule definition and implementation."""
 
-load(
-    "//rust/private:utils.bzl",
-    "find_cc_toolchain",
-)
+load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
 
-def _make_dota(ctx, f):
+def _make_dota(ctx, file):
     """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
 
     Args:
         ctx (ctx): The rule's context object.
-        f (File): The file to symlink.
+        file (File): The file to symlink.
 
     Returns:
         The symlink's File.
     """
-    dot_a = ctx.actions.declare_file(f.basename + ".a", sibling = f)
-    ctx.actions.symlink(output = dot_a, target_file = f)
+    dot_a = ctx.actions.declare_file(file.basename + ".a", sibling = file)
+    ctx.actions.symlink(output = dot_a, target_file = file)
     return dot_a
 
-def _ltl(library, ctx, cc_toolchain, feature_configuration):
-    return cc_common.create_library_to_link(
-        actions = ctx.actions,
-        feature_configuration = feature_configuration,
-        cc_toolchain = cc_toolchain,
-        static_library = library,
-        pic_static_library = library,
-    )
+def _rust_stdlib_filegroup_impl(ctx):
+    rust_lib = ctx.files.srcs
+    dot_a_files = []
+    between_alloc_and_core_files = []
+    core_files = []
+    between_core_and_std_files = []
+    std_files = []
+    alloc_files = []
 
-def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
-    """Make the CcInfo (if possible) for libstd and allocator libraries.
-
-    Args:
-        ctx (ctx): The rule's context object.
-        rust_lib: The rust standard library.
-        allocator_library: The target to use for providing allocator functions.
-
-
-    Returns:
-        A CcInfo object for the required libraries, or None if no such libraries are available.
-    """
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    link_inputs = []
-    std_rlibs = [f for f in rust_lib.files.to_list() if f.basename.endswith(".rlib")]
+    std_rlibs = [f for f in rust_lib if f.basename.endswith(".rlib")]
     if std_rlibs:
         # std depends on everything
         #
@@ -71,26 +55,98 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
                 print("File partitioned: {}".format(f.basename))
             fail("rust_toolchain couldn't properly partition rlibs in rust_lib. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
 
+    return [
+        DefaultInfo(
+            files = depset(ctx.files.srcs),
+        ),
+        rust_common.stdlib_info(
+            std_rlibs = std_rlibs,
+            dot_a_files = dot_a_files,
+            between_alloc_and_core_files = between_alloc_and_core_files,
+            core_files = core_files,
+            between_core_and_std_files = between_core_and_std_files,
+            std_files = std_files,
+            alloc_files = alloc_files,
+        ),
+    ]
+
+rust_stdlib_filegroup = rule(
+    doc = "A dedicated filegroup-like rule for Rust stdlib artifacts.",
+    implementation = _rust_stdlib_filegroup_impl,
+    attrs = {
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "The list of targets/files that are components of the rust-stdlib file group",
+            mandatory = True,
+        ),
+    },
+)
+
+def _ltl(library, ctx, cc_toolchain, feature_configuration):
+    """A helper to generate `LibraryToLink` objects
+
+    Args:
+        library (File): A rust library file to link.
+        ctx (ctx): The rule's context object.
+        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used.
+        feature_configuration (feature_configuration): feature_configuration to be queried.
+
+    Returns:
+        LibraryToLink: A provider containing information about libraries to link.
+    """
+    return cc_common.create_library_to_link(
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        static_library = library,
+        pic_static_library = library,
+    )
+
+def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
+    """Make the CcInfo (if possible) for libstd and allocator libraries.
+
+    Args:
+        ctx (ctx): The rule's context object.
+        rust_lib: The rust standard library.
+        allocator_library: The target to use for providing allocator functions.
+
+
+    Returns:
+        A CcInfo object for the required libraries, or None if no such libraries are available.
+    """
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    link_inputs = []
+
+    if not rust_common.stdlib_info in ctx.attr.rust_lib:
+        fail(dedent("""\
+            {} --
+            The `rust_lib` ({}) must be a target providing `rust_common.stdlib_info`
+            (typically `rust_stdlib_filegroup` rule from @rules_rust//rust:defs.bzl).
+            See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
+        """).format(ctx.label, ctx.attr.rust_lib))
+    rust_stdlib_info = ctx.attr.rust_lib[rust_common.stdlib_info]
+
+    if rust_stdlib_info.std_rlibs:
         alloc_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in alloc_files],
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.alloc_files],
         )
         between_alloc_and_core_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in between_alloc_and_core_files],
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_alloc_and_core_files],
             transitive = [alloc_inputs],
             order = "topological",
         )
         core_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in core_files],
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.core_files],
             transitive = [between_alloc_and_core_inputs],
             order = "topological",
         )
         between_core_and_std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in between_core_and_std_files],
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_core_and_std_files],
             transitive = [core_inputs],
             order = "topological",
         )
         std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in std_files],
+            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.std_files],
             transitive = [between_core_and_std_inputs],
             order = "topological",
         )

@@ -1,0 +1,5 @@
+load(":proc_macro_test.bzl", "proc_macro_test_suite")
+
+proc_macro_test_suite(
+    name = "proc_macro_test_suite",
+)

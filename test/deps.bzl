@@ -2,7 +2,7 @@
 
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
 
-def io_bazel_rules_rust_test_deps():
+def rules_rust_test_deps():
     """Load dependencies for rules_rust tests"""
 
     load_arbitrary_tool_test()

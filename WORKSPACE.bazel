@@ -24,9 +24,9 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
 
-load("//test:deps.bzl", "io_bazel_rules_rust_test_deps")
+load("//test:deps.bzl", "rules_rust_test_deps")
 
-io_bazel_rules_rust_test_deps()
+rules_rust_test_deps()
 
 # --- end stardoc
 

@@ -8,11 +8,6 @@ default_linux_targets: &default_linux_targets
   # Bindgen currently only has a working toolchain for 18.04
   - "-@examples//ffi/rust_calling_c/simple/..."
 tasks:
-  ubuntu1604:
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
-    build_flags:
-      - "--config=rustfmt"
   ubuntu1804:
     build_targets: *default_linux_targets
     test_targets:
@@ -34,10 +29,8 @@ tasks:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "@examples//..."
-      # Skip tests for dylib support on osx, since we don't support it yet.
+      # This test requires --incompatible_macos_set_install_name and Bazel 4.2.0+
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
-      - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
-      - "-@examples//ffi/rust_calling_c/simple/..."
     build_targets: *osx_targets
     test_targets: *osx_targets
     build_flags:
@@ -75,8 +68,7 @@ tasks:
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
       - "-@examples//ffi/rust_calling_c:matrix_dynamically_linked"
       - "-@examples//ffi/rust_calling_c/simple/..."
-      - "-@examples//hello_sys/..."
-      - "-@examples//complex_sys/..."
+      - "-@examples//sys/..."
       - "-@examples//proto/..."
       - "-@examples//wasm/..."
     build_targets: *windows_targets

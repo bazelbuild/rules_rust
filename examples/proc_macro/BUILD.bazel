@@ -1,0 +1,47 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_doc",
+    "rust_doc_test",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+rust_proc_macro(
+    name = "proc_macro_lib_2015",
+    srcs = [
+        "src/lib_2015.rs",
+    ],
+)
+
+rust_proc_macro(
+    name = "proc_macro_lib",
+    srcs = [
+        "src/lib.rs",
+    ],
+    edition = "2018",
+)
+
+rust_test(
+    name = "proc_macro_test",
+    crate = ":proc_macro_lib",
+    edition = "2018",
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    edition = "2018",
+    proc_macro_deps = [":proc_macro_lib"],
+)
+
+rust_doc(
+    name = "proc_macro_lib_doc",
+    crate = ":proc_macro_lib",
+)
+
+rust_doc_test(
+    name = "doc_test",
+    crate = ":proc_macro_lib",
+)

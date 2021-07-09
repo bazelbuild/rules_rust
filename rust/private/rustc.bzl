@@ -22,7 +22,8 @@ load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
-    "expand_locations",
+    "expand_dict_value_locations",
+    "expand_list_element_locations",
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
@@ -102,7 +103,7 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
+def collect_deps(label, deps, proc_macro_deps, aliases):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -110,7 +111,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, toolchain):
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        toolchain (rust_toolchain): The current `rust_toolchain`.
 
     Returns:
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
@@ -440,9 +440,16 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
-
     args.add_all(rust_flags)
-    args.add_all(getattr(attr, "rustc_flags", []))
+
+    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
+    args.add_all(
+        expand_list_element_locations(
+            ctx,
+            getattr(attr, "rustc_flags", []),
+            data_paths,
+        ),
+    )
     add_edition_flags(args, crate_info)
 
     # Link!
@@ -461,7 +468,9 @@ def construct_arguments(
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
-    if crate_info.type == "proc-macro" and crate_info.edition != "2015":
+    needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
+                                   crate_info.edition != "2015"
+    if needs_extern_proc_macro_flag:
         args.add("--extern")
         args.add("proc_macro")
 
@@ -473,11 +482,10 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(expand_locations(
+    env.update(expand_dict_value_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(attr, "data", []) +
-        getattr(attr, "compile_data", []),
+        data_paths,
     ))
 
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
@@ -513,11 +521,10 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info = collect_deps(
-        ctx.label,
-        crate_info.deps,
-        crate_info.proc_macro_deps,
-        crate_info.aliases,
-        toolchain,
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
@@ -716,6 +723,24 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
 
     return input_files, out_dir, build_env_file, build_flags_files
 
+def _has_dylib_ext(file, dylib_ext):
+    """Determines whether or not the file in question the platform dynamic library extension
+
+    Args:
+        file (File): The file to check
+        dylib_ext (str): The extension (eg `.so`).
+
+    Returns:
+        bool: Whether or not file ends with the requested extension
+    """
+    if file.basename.endswith(dylib_ext):
+        return True
+    split = file.basename.split(".", 2)
+    if len(split) == 2:
+        if split[1] == dylib_ext[1:]:
+            return True
+    return False
+
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
@@ -727,12 +752,17 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
 
-    # TODO(augie): I don't understand why this can't just be filtering on
-    # _is_dylib(lib), but doing that causes failures on darwin and windows
-    # examples that otherwise work.
-    dylibs = [lib for lib in preferreds if lib.basename.endswith(toolchain.dylib_ext) or lib.basename.split(".", 2)[1] == toolchain.dylib_ext[1:]]
+    # Windows has no rpath equivalent, so always return an empty depset.
+    if toolchain.os == "windows":
+        return depset([])
+
+    dylibs = [
+        get_preferred_artifact(lib)
+        for linker_input in dep_info.transitive_noncrates.to_list()
+        for lib in linker_input.libraries
+        if _is_dylib(lib)
+    ]
     if not dylibs:
         return depset([])
 

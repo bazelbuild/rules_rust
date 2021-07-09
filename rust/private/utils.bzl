@@ -152,7 +152,7 @@ def _expand_location(ctx, env, data):
             env = env.replace(directive, "${pwd}/" + directive)
     return ctx.expand_location(env, data)
 
-def expand_locations(ctx, env, data):
+def expand_dict_value_locations(ctx, env, data):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -167,6 +167,8 @@ def expand_locations(ctx, env, data):
     as compilation happens in a separate sandbox folder, so when it comes time
     to read the file at runtime, the path is no longer valid.
 
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+
     Args:
         ctx (ctx): The rule's context object
         env (dict): A dict whose values we iterate over
@@ -178,6 +180,27 @@ def expand_locations(ctx, env, data):
         dict: A dict of environment variables with expanded location macros
     """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
+def expand_list_element_locations(ctx, args, data):
+    """Performs location-macro expansion on a list of string values.
+
+    $(execroot ...) and $(location ...) are prefixed with ${pwd},
+    which process_wrapper and build_script_runner will expand at run time
+    to the absolute path.
+
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+
+    Args:
+        ctx (ctx): The rule's context object
+        args (list): A list we iterate over
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        list: A list of arguments with expanded location macros
+    """
+    return [_expand_location(ctx, arg, data) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
@@ -241,3 +264,35 @@ def crate_name_from_attr(attr):
             "Consider adding a crate_name attribute to set a valid crate name",
         )
     return crate_name
+
+def dedent(doc_string):
+    """Remove any common leading whitespace from every line in text.
+
+    This functionality is similar to python's `textwrap.dedent` functionality
+    https://docs.python.org/3/library/textwrap.html#textwrap.dedent
+
+    Args:
+        doc_string (str): A docstring style string
+
+    Returns:
+        str: A string optimized for stardoc rendering
+    """
+    lines = doc_string.splitlines()
+    if not lines:
+        return doc_string
+
+    # If the first line is empty, use the second line
+    first_line = lines[0]
+    if not first_line:
+        first_line = lines[1]
+
+    # Detect how much space prepends the first line and subtract that from all lines
+    space_count = len(first_line) - len(first_line.lstrip())
+
+    # If there are no leading spaces, do not alter the docstring
+    if space_count == 0:
+        return doc_string
+    else:
+        # Remove the leading block of spaces from the current line
+        block = " " * space_count
+        return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])

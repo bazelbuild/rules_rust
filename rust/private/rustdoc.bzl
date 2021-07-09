@@ -48,7 +48,7 @@ Example:
 
   rust_doc(
       name = "hello_lib_doc",
-      dep = ":hello_lib",
+      crate = ":hello_lib",
   )
   ```
 
@@ -62,11 +62,18 @@ def _rust_doc_impl(ctx):
     Args:
         ctx (ctx): The rule's context object
     """
-    if rust_common.crate_info not in ctx.attr.dep:
-        fail("Expected rust_library or rust_binary.", "dep")
 
-    crate = ctx.attr.dep[rust_common.crate_info]
-    dep_info = ctx.attr.dep[rust_common.dep_info]
+    if ctx.attr.crate and ctx.attr.dep:
+        fail("{} should only use the `crate` attribute. `dep` is deprecated".format(
+            ctx.label,
+        ))
+
+    crate = ctx.attr.crate or ctx.attr.dep
+    if not crate:
+        fail("{} is missing the `crate` attribute".format(ctx.label))
+
+    crate_info = crate[rust_common.crate_info]
+    dep_info = crate[rust_common.dep_info]
 
     toolchain = find_toolchain(ctx)
 
@@ -74,7 +81,7 @@ def _rust_doc_impl(ctx):
         [c.output for c in dep_info.transitive_crates.to_list()] +
         [toolchain.rust_doc],
         transitive = [
-            crate.srcs,
+            crate_info.srcs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
         ],
@@ -82,11 +89,14 @@ def _rust_doc_impl(ctx):
 
     output_dir = ctx.actions.declare_directory(ctx.label.name)
     args = ctx.actions.args()
-    args.add(crate.root.path)
-    args.add("--crate-name", crate.name)
-    args.add("--crate-type", crate.type)
+    args.add(crate_info.root.path)
+    args.add("--crate-name", crate_info.name)
+    args.add("--crate-type", crate_info.type)
+    if crate_info.type == "proc-macro":
+        args.add("--extern")
+        args.add("proc_macro")
     args.add("--output", output_dir.path)
-    add_edition_flags(args, crate)
+    add_edition_flags(args, crate_info)
 
     # nb. rustdoc can't do anything with native link flags; we must omit them.
     add_crate_link_flags(args, dep_info)
@@ -105,7 +115,10 @@ def _rust_doc_impl(ctx):
         outputs = [output_dir],
         arguments = [args],
         mnemonic = "Rustdoc",
-        progress_message = "Generating rustdoc for {} ({} files)".format(crate.name, len(crate.srcs.to_list())),
+        progress_message = "Generating rustdoc for {} ({} files)".format(
+            crate_info.name,
+            len(crate_info.srcs.to_list()),
+        ),
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
@@ -136,14 +149,19 @@ rust_doc = rule(
     doc = _rust_doc_doc,
     implementation = _rust_doc_impl,
     attrs = {
-        "dep": attr.label(
+        "crate": attr.label(
             doc = (
                 "The label of the target to generate code documentation for.\n" +
                 "\n" +
                 "`rust_doc` can generate HTML code documentation for the source files of " +
                 "`rust_library` or `rust_binary` targets."
             ),
-            mandatory = True,
+            providers = [rust_common.crate_info],
+            # TODO: Make this attribute mandatory once `dep` is removed
+        ),
+        "dep": attr.label(
+            doc = "__deprecated__: use `crate`",
+            providers = [rust_common.crate_info],
         ),
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",
