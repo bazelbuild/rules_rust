@@ -30,7 +30,7 @@ def _libstd_ordering_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     libs = [lib.static_library for li in tut[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries]
-    rlibs = [_categorize_library(lib.basename) for lib in libs if ".rlib" in lib.basename]
+    rlibs = [_categorize_library(lib.basename) for lib in libs if "-rlib" in lib.basename]
     set_to_check = _dedup_preserving_order([lib for lib in rlibs if lib != "other"])
     asserts.equals(env, ["std", "core", "compiler_builtins", "alloc"], set_to_check)
     return analysistest.end(env)

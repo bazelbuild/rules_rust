@@ -635,7 +635,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         # bazel hard-codes a check for endswith((".a", ".pic.a",
         # ".lib")) in create_library_to_link, so we work around that
         # by creating a symlink to the .rlib with a .a extension.
-        dot_a = ctx.actions.declare_file(crate_info.name + ".a", sibling = crate_info.output)
+        dot_a = ctx.actions.declare_file("lib" + crate_info.name + ".a", sibling = crate_info.output)
         ctx.actions.symlink(output = dot_a, target_file = crate_info.output)
 
         # TODO(hlopko): handle PIC/NOPIC correctly

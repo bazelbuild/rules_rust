@@ -3,18 +3,24 @@
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
 
-def _make_dota(ctx, file):
-    """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
+def _make_dota(ctx, rlib_file, postfix = ""):
+    """Add a .a symlink to an .rlib file, so it can be used as a staticlib.
+
+    The name of the symlink for crate.rlib is crate<postfix>.a.
 
     Args:
         ctx (ctx): The rule's context object.
-        file (File): The file to symlink.
+        rlib_file (File): The file to symlink, which must end in .rlib.
+        postfix (string): A postfix to append to the symlink name.
 
     Returns:
         The symlink's File.
     """
-    dot_a = ctx.actions.declare_file(file.basename + ".a", sibling = file)
-    ctx.actions.symlink(output = dot_a, target_file = file)
+    if not rlib_file.basename.endswith(".rlib"):
+        fail("file is not an .rlib: ", rlib_file.basename)
+    basename = rlib_file.basename[:-5]
+    dot_a = ctx.actions.declare_file(basename + postfix + ".a", sibling = rlib_file)
+    ctx.actions.symlink(output = dot_a, target_file = rlib_file)
     return dot_a
 
 def _rust_stdlib_filegroup_impl(ctx):
@@ -35,7 +41,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
-        dot_a_files = [_make_dota(ctx, f) for f in std_rlibs]
+        dot_a_files = [_make_dota(ctx, f, postfix = "-rlib") for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
