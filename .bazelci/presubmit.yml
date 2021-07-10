@@ -99,7 +99,7 @@ tasks:
     name: Negative Clippy Tests
     platform: ubuntu1804
     run_targets:
-      - "///test/clippy:clippy_failure_test"
+      - "//test/clippy:clippy_failure_test"
   rustfmt_failure:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
