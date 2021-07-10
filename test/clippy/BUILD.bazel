@@ -1,5 +1,5 @@
 load(
-    "//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_clippy",
     "rust_library",
