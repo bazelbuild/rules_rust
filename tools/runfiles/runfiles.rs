@@ -97,10 +97,9 @@ impl Runfiles {
             Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
             Mode::ManifestBased(path_mapping) => path_mapping
                 .get(path)
-                .expect(&format!(
-                    "Path {} not found among runfiles.",
-                    path.to_string_lossy()
-                ))
+                .unwrap_or_else(|| {
+                    panic!("Path {} not found among runfiles.", path.to_string_lossy())
+                })
                 .clone(),
         }
     }
@@ -109,10 +108,11 @@ impl Runfiles {
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> io::Result<PathBuf> {
     assert_ne!(
-        std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or(OsString::from("0")),
+        std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or_else(|| OsString::from("0")),
         "1"
     );
-    let exec_path = std::env::args().nth(0).expect("arg 0 was not set");
+    // Consume the first argument (argv[0])
+    let exec_path = std::env::args().next().expect("arg 0 was not set");
 
     let mut binary_path = PathBuf::from(&exec_path);
     loop {

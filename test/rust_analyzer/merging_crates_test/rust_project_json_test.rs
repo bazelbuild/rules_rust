@@ -9,7 +9,7 @@ mod tests {
             r.rlocation("rules_rust/test/rust_analyzer/merging_crates_test/rust-project.json");
 
         let content = std::fs::read_to_string(&rust_project_path)
-            .expect(&format!("couldn't open {:?}", &rust_project_path));
+            .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
 
         assert!(
             content.contains(r#""root_module":"test/rust_analyzer/merging_crates_test/mylib.rs","deps":[{"crate":0,"name":"lib_dep"},{"crate":2,"name":"extra_test_dep"}]"#),

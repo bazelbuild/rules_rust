@@ -8,7 +8,7 @@ use label_error::LabelError;
 ///
 /// TODO: validate . and .. in target name
 /// TODO: validate used characters in target name
-pub fn analyze<'s>(input: &'s str) -> Result<Label<'s>> {
+pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
     let label = input;
     let (input, repository_name) = consume_repository_name(input, label)?;
     let (input, package_name) = consume_package_name(input, label)?;
@@ -40,7 +40,7 @@ impl<'s> Label<'s> {
 
     pub fn packages(&self) -> Vec<&'s str> {
         match self.package_name {
-            Some(name) => name.split("/").collect(),
+            Some(name) => name.split('/').collect(),
             None => vec![],
         }
     }
@@ -57,13 +57,13 @@ fn consume_repository_name<'s>(
     input: &'s str,
     label: &'s str,
 ) -> Result<(&'s str, Option<&'s str>)> {
-    if !input.starts_with("@") {
+    if !input.starts_with('@') {
         return Ok((input, None));
     }
 
     let slash_pos = input
         .find("//")
-        .ok_or(err(label, "labels with repository must contain //."))?;
+        .ok_or_else(|| err(label, "labels with repository must contain //."))?;
     let repository_name = &input[1..slash_pos];
     if repository_name.is_empty() {
         return Ok((&input[1..], None));
@@ -93,7 +93,7 @@ fn consume_repository_name<'s>(
 }
 
 fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, Option<&'s str>)> {
-    let colon_pos = input.find(":");
+    let colon_pos = input.find(':');
     let start_pos;
     let mut is_absolute = false;
     if input.starts_with("//") {
@@ -143,7 +143,7 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
         a-z, 0-9, '/', '-', '.', ' ', '$', '(', ')' and '_'.",
         )));
     }
-    if package_name.ends_with("/") {
+    if package_name.ends_with('/') {
         return Err(LabelError(err(
             label,
             "package names may not end with '/'.",
@@ -154,7 +154,7 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
         // This label doesn't contain the target name, we have to use
         // last segment of the package name as target name.
         return Ok((
-            match package_name.rfind("/") {
+            match package_name.rfind('/') {
                 Some(pos) => &package_name[pos..],
                 None => package_name,
             },
@@ -169,15 +169,15 @@ fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<&'s str> {
     if input.is_empty() {
         return Err(LabelError(err(label, "empty target name.")));
     }
-    let name = if input.starts_with(":") {
-        &input[1..]
+    let name = if let Some(stripped) = input.strip_prefix(':') {
+        stripped
     } else {
         input
     };
     if name.is_empty() {
         return Err(LabelError(err(label, "empty target name.")));
     }
-    if name.starts_with("/") {
+    if name.starts_with('/') {
         return Err(LabelError(err(
             label,
             "target names may not start with '/'.",
