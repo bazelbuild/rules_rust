@@ -1,5 +1,5 @@
 /// Data loaded from compile data
-pub const COMPILE_DATA: &'static str = include_str!("compile_data.txt");
+pub const COMPILE_DATA: &str = include_str!("compile_data.txt");
 
 /// A test that is expected to be compiled from a target that does not
 /// directly populate the `compile_data` attribute
