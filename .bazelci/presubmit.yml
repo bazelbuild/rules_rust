@@ -17,6 +17,7 @@ tasks:
       - "//test/versioned_dylib:versioned_dylib_test"
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   ubuntu2004:
     name: "Minimum Supported Version"
     bazel: "3.5.0"
@@ -24,6 +25,7 @@ tasks:
     test_targets: *default_linux_targets
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   macos:
     osx_targets: &osx_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -35,6 +37,7 @@ tasks:
     test_targets: *osx_targets
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   rbe_ubuntu1604:
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -51,10 +54,12 @@ tasks:
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   windows:
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
+      - "--config=clippy"
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
@@ -81,6 +86,7 @@ tasks:
       - //...
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   docs_linux:
     name: Docs
     platform: ubuntu1804
@@ -89,20 +95,11 @@ tasks:
       - //...
     run_targets:
       - "//:test_docs"
-  clippy_examples:
-    name: Clippy on Examples
-    platform: ubuntu1804
-    working_directory: examples
-    build_flags:
-      - "--aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect"
-      - "--output_groups=clippy_checks"
-    build_targets:
-      - //...
   clippy_failure:
     name: Negative Clippy Tests
     platform: ubuntu1804
-    shell_commands:
-      - ./test/clippy/clippy_failure_test.sh
+    run_targets:
+      - "///test/clippy:clippy_failure_test"
   rustfmt_failure:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
@@ -112,6 +109,8 @@ tasks:
     name: Ubuntu 20.04 with Clang
     platform: ubuntu2004
     build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
       - "--repo_env=CC=clang"
       # TODO(hlopko): Make this work (some tests were failing)
       # - "--linkopt=-fuse-ld=lld"
@@ -127,6 +126,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
   crate_universe_rbe_ubuntu1604:
     name: Crate Universe Examples
     platform: rbe_ubuntu1604
@@ -139,6 +141,7 @@ tasks:
       - "//..."
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   crate_universe_examples_macos:
     name: Crate Universe Examples
     platform: macos
@@ -151,6 +154,7 @@ tasks:
       - "//..."
     build_flags:
       - "--config=rustfmt"
+      - "--config=clippy"
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
@@ -160,6 +164,7 @@ tasks:
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
+      - "--config=clippy"
     crate_universe_windows_targets: &crate_universe_windows_targets
       - "//..."
       # TODO: There are windows specific build issues in the generated

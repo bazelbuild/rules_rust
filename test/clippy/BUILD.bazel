@@ -50,18 +50,21 @@ rust_binary(
     name = "bad_binary",
     srcs = ["bad_src/main.rs"],
     edition = "2018",
+    tags = ["noclippy"],
 )
 
 rust_library(
     name = "bad_library",
     srcs = ["bad_src/lib.rs"],
     edition = "2018",
+    tags = ["noclippy"],
 )
 
 rust_test(
     name = "bad_test",
     srcs = ["bad_src/lib.rs"],
     edition = "2018",
+    tags = ["noclippy"],
 )
 
 # Clippy analysis of failing targets.
@@ -83,4 +86,9 @@ rust_clippy(
     testonly = True,
     tags = ["manual"],
     deps = [":bad_test"],
+)
+
+sh_binary(
+    name = "clippy_failure_test",
+    srcs = ["clippy_failure_test.sh"],
 )

@@ -194,7 +194,8 @@ $ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
 )
 
 def _rust_clippy_rule_impl(ctx):
-    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in ctx.attr.deps])
+    clippy_ready_targets = [dep for dep in ctx.attr.deps if "clippy_checks" in dir(dep[OutputGroupInfo])]
+    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in clippy_ready_targets])
     return [DefaultInfo(files = files)]
 
 rust_clippy = rule(
