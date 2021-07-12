@@ -50,6 +50,9 @@ def _rust_stdlib_filegroup_impl(ctx):
         has_panic_unwind = [f for f in std_rlibs if "panic_unwind" in f.basename]
         if has_panic_unwind:
             std_rlibs = [f for f in std_rlibs if "panic_abort" not in f.basename]
+
+        # We add "-rlib" to the names of the standard library static libraries
+        # to distinguish them from user defined libraries.
         dot_a_files = [_make_dota(ctx, f, postfix = "-rlib") for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
