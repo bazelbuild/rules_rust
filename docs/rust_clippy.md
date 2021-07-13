@@ -27,6 +27,8 @@ build --output_groups=+clippy_checks
 
 This will enable clippy on all [Rust targets](./defs.md).
 
+Note that targets tagged with `noclippy` will not perform clippy checks
+
 <a id="#rust_clippy"></a>
 
 ## rust_clippy
