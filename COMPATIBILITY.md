@@ -66,7 +66,7 @@ that anything directly accessible from this file is considered stable.
 `//rust/private/…` is not subject to the backwards compatibility policy. Content
 of this package is an implementation detail.
 
-`//cargo`, `//util`, `//tools`, `//test`, `//examples`, `//bindgen`, `//proto`
+`//cargo`, `//util`, `//tools`, `//test`, `//examples`, `//bindgen`, `//proto`, `//wasm_bindgen`
 and any packages not mentioned by this document are by default not subject to
 the backwards compatibility policy.
 
