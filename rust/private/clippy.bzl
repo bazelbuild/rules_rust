@@ -116,6 +116,8 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.add("--test")
 
+    # Upstream clippy requires one of these two filenames or it silently uses
+    # the default config. Enforce the naming so users are not confused.
     valid_config_file_names = [".clippy.toml", "clippy.toml"]
     if ctx.file._config.basename not in valid_config_file_names:
         fail("The clippy config file must be named one of: {}".format(valid_config_file_names))
