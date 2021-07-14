@@ -8,7 +8,7 @@ consensus between maintainers that the exception should be granted.
 ## What is a compatibility breaking change?
 
 A backwards compatible change has the property that a build that is green,
-correct, is using stable APIs of `rules_rust,` and is using a supported version
+correct, is using stable APIs of `rules_rust`, and is using a supported version
 of Bazel before the change is still green and correct after the change. In
 practice it means that users should not have to modify their project source
 files, their `BUILD` files, their `bzl` files, their `rust_toolchain`
