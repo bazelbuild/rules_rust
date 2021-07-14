@@ -1,6 +1,6 @@
 # `rules_rust` backwards compatibility policy
 
-This document defines the backwards compatibility policy for rules\_rust and
+This document defines the backwards compatibility policy for rules_rust and
 defines the process for making compatibility breaking changes. Any exception to
 this process will have to be thoroughly discussed and there will have to be a
 consensus between maintainers that the exception should be granted.
