@@ -84,7 +84,7 @@ bug fix is controversial.
 ## How to make a backwards incompatible change?
 
 1. Create a GitHub issue (example:
-[Split rust\_library into smaller rules#591](https://github.com/bazelbuild/rules_rust/issues/591)).
+[Split rust_library into smaller rules#591](https://github.com/bazelbuild/rules_rust/issues/591)).
 2. Describe the change, motivation for the change, provide migration
 instructions/tooling.
 3. Add a build setting into `//rust:incompatible.bzl` that removes the old
