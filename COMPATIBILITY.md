@@ -45,7 +45,7 @@ same. We hope red CI with the current rolling release will be rare.
 current Bazel rolling release to be be available to the current Bazel LTS
 release (because Bazel compatibility policy doesn't allow us to make that
 promise, and some new features of `rules_rust` require new Bazel features that
-are only available in Bazel rolling releases). `rules_rust` do promise that new
+are only available in Bazel rolling releases). `rules_rust` will aim that new
 features available to the current Bazel rolling release will be available to the
 next Bazel LTS release at latest.
 
