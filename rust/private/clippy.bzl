@@ -120,7 +120,7 @@ def _clippy_aspect_impl(target, ctx):
     if ctx.file._config.basename not in valid_config_file_names:
         fail("The clippy config file must be named one of: %s" % valid_config_file_names)
     env["CLIPPY_CONF_DIR"] = ctx.file._config.dirname
-    compile_inputs = depset([ctx.file._config], transitive = compile_inputs)
+    compile_inputs = depset([ctx.file._config], transitive = [compile_inputs])
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
