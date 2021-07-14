@@ -116,6 +116,12 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.add("--test")
 
+    valid_config_file_names = [".clippy.toml", "clippy.toml"]
+    if ctx.file._config.basename not in valid_config_file_names:
+        fail("The clippy config file must be named one of: %s" % valid_config_file_names)
+    env["CLIPPY_CONF_DIR"] = ctx.file._config.dirname
+    compile_inputs = depset([ctx.file._config], transitive = compile_inputs)
+
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
@@ -144,6 +150,11 @@ rust_clippy_aspect = aspect(
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_config": attr.label(
+            doc = "The `clippy.toml` file used for configuration",
+            allow_single_file = True,
+            default = Label("//:clippy.toml"),
         ),
         "_error_format": attr.label(
             doc = "The desired `--error-format` flags for clippy",
