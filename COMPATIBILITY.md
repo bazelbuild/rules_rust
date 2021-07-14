@@ -29,6 +29,12 @@ released. Users will be given at least one release where the old behavior is
 still present but deprecated to allow smooth migration of their project to the
 new behavior.
 
+### Compatibility before 1.0
+
+All minor version number releases before version 1.0 can be backwards incompatible.
+Backwards incompatible changes still have to follow the the process, but minimum
+time for migration is reduced to 2 weeks.
+
 ## What Bazel versions are supported?
 
 `rules_rust` support the current Bazel LTS at the time of a `rules_rust`
