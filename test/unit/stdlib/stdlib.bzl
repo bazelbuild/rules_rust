@@ -29,7 +29,7 @@ def _dedup_preserving_order(list):
 def _stdlibs(tut):
     """Given a target, return the list of its standard rust libraries."""
     libs = [lib.static_library for li in tut[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries]
-    stdlibs = [lib for lib in libs if (lib.basename.startswith("lib") and lib.basename.endswith("-rlib.a"))]
+    stdlibs = [lib for lib in libs if (tut.label.name not in lib.basename)]
     return stdlibs
 
 def _libstd_ordering_test_impl(ctx):
