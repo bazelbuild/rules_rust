@@ -311,7 +311,6 @@ def make_static_lib(ctx, rlib_file):
     Args:
         ctx (ctx): The rule's context object.
         rlib_file (File): The file to symlink, which must end in .rlib.
-        postfix (string): A postfix to append to the symlink name.
 
     Returns:
         The symlink's File.
