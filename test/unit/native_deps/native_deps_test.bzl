@@ -44,7 +44,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     action = actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/libnative_dep.a")
     return analysistest.end(env)
 
 def _staticlib_has_native_libs_test_impl(ctx):
@@ -54,7 +54,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     action = actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/libnative_dep.a")
     return analysistest.end(env)
 
 def _proc_macro_has_native_libs_test_impl(ctx):
@@ -65,7 +65,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     action = actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/libnative_dep.a")
     return analysistest.end(env)
 
 def _bin_has_native_libs_test_impl(ctx):
@@ -74,7 +74,7 @@ def _bin_has_native_libs_test_impl(ctx):
     actions = analysistest.target_actions(env)
     action = actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/libnative_dep.a")
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
@@ -98,7 +98,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
         ]
     else:
         want = [
-            "-lstatic=native_dep",
+            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
             "link-arg=-Wl,--no-whole-archive",
@@ -124,7 +124,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
         ]
     else:
         want = [
-            "-lstatic=native_dep",
+            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
             "link-arg=-Wl,--no-whole-archive",

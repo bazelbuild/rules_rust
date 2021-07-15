@@ -837,7 +837,7 @@ def _get_crate_dirname(crate):
 
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
-        return ["-lstatic=%s" % get_lib_name(get_preferred_artifact(lib))]
+        return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
     elif _is_dylib(lib):
         return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
     return []
