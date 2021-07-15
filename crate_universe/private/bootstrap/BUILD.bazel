@@ -1,29 +1,7 @@
-alias(
-    name = "cargo",
-    actual = select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:cargo",
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:cargo",
-        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:cargo",
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:cargo",
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:cargo",
-    }),
-)
-
-alias(
-    name = "rustc",
-    actual = select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustc",
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustc",
-        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustc",
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustc",
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustc",
-    }),
-)
-
 _COMMON_ENV = {
-    "CARGO": "$${PWD}/$(execpath :cargo)",
+    "CARGO": "$${PWD}/$(execpath //rust/toolchain:current_exec_cargo_files)",
     "DETECT_CHANGES": "true",
-    "RUSTC": "$${PWD}/$(execpath :rustc)",
+    "RUSTC": "$${PWD}/$(execpath //rust/toolchain:current_exec_rustc_files)",
 }
 
 _ENV = select({
