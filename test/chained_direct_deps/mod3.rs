@@ -25,7 +25,7 @@ pub fn greet_default() {
 /// );
 /// ```
 pub fn am_i_the_world(me: &str) -> bool {
-    return me == mod1::world();
+    me == mod1::world()
 }
 
 #[cfg(test)]

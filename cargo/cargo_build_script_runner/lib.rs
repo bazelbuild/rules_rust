@@ -94,7 +94,7 @@ impl BuildScriptOutput {
     }
 
     /// Converts a [BufReader] into a vector of [BuildScriptOutput] enums.
-    fn from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
+    fn outputs_from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
         let mut result = Vec::<BuildScriptOutput>::new();
         let mut line = String::new();
         while reader.read_line(&mut line).expect("Cannot read line") != 0 {
@@ -107,11 +107,13 @@ impl BuildScriptOutput {
     }
 
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
-    pub fn from_command(cmd: &mut Command) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
+    pub fn outputs_from_command(
+        cmd: &mut Command,
+    ) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
         let child_output = cmd.output().expect("Unable to start binary");
         if child_output.status.success() {
             let reader = BufReader::new(child_output.stdout.as_slice());
-            let output = Self::from_reader(reader);
+            let output = Self::outputs_from_reader(reader);
             Ok((output, child_output))
         } else {
             Err(child_output)
@@ -119,8 +121,9 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a list of environment variables.
-    pub fn to_env(v: &Vec<BuildScriptOutput>, exec_root: &str) -> String {
-        v.iter()
+    pub fn outputs_to_env(outputs: &[BuildScriptOutput], exec_root: &str) -> String {
+        outputs
+            .iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::Env(env) = x {
                     Some(Self::escape_for_serializing(Self::redact_exec_root(
@@ -135,9 +138,14 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a list of dependencies environment variables.
-    pub fn to_dep_env(v: &Vec<BuildScriptOutput>, crate_links: &str, exec_root: &str) -> String {
+    pub fn outputs_to_dep_env(
+        outputs: &[BuildScriptOutput],
+        crate_links: &str,
+        exec_root: &str,
+    ) -> String {
         let prefix = format!("DEP_{}_", crate_links.replace("-", "_").to_uppercase());
-        v.iter()
+        outputs
+            .iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::DepEnv(env) = x {
                     Some(format!(
@@ -154,11 +162,11 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a flagfile.
-    pub fn to_flags(v: &Vec<BuildScriptOutput>, exec_root: &str) -> CompileAndLinkFlags {
+    pub fn outputs_to_flags(outputs: &[BuildScriptOutput], exec_root: &str) -> CompileAndLinkFlags {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
 
-        for flag in v {
+        for flag in outputs {
             match flag {
                 BuildScriptOutput::Cfg(e) => compile_flags.push(format!("--cfg={}", e)),
                 BuildScriptOutput::Flags(e) => compile_flags.push(e.to_owned()),
@@ -214,7 +222,7 @@ cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader);
         assert_eq!(result.len(), 10);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
@@ -242,15 +250,15 @@ cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
         );
 
         assert_eq!(
-            BuildScriptOutput::to_dep_env(&result, "ssh2", "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_dep_env(&result, "ssh2", "/some/absolute/path"),
             "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::to_env(&result, "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
             "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::to_flags(&result, "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path"),
             CompileAndLinkFlags {
                 // -Lblah was output as a rustc-flags, so even though it probably _should_ be a link
                 // flag, we don't treat it like one.

@@ -26,7 +26,7 @@ fn ensure() -> Result<i32, Box<dyn error::Error>> {
     let optional_outputs = args().take(index).collect::<Vec<String>>();
     let exe = args().nth(index + 1).ok_or("no exe")?;
     let exe_args = args().skip(index + 2).collect::<Vec<String>>();
-    if exe_args.len() < 1 {
+    if exe_args.is_empty() {
         return Err("no exe args".into());
     }
     match Command::new(exe).args(exe_args).status()?.code() {
