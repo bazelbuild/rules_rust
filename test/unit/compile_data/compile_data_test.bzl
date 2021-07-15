@@ -32,7 +32,7 @@ def _wrapper_rule_propagates_to_crate_info_test_impl(ctx):
         ["test/unit/compile_data/compile_data.txt"],
     )
 
-def _wrapper_rule_propagates_and_joins_compiel_data_test_impl(ctx):
+def _wrapper_rule_propagates_and_joins_compile_data_test_impl(ctx):
     return _target_has_compile_data(
         ctx,
         [
@@ -43,10 +43,9 @@ def _wrapper_rule_propagates_and_joins_compiel_data_test_impl(ctx):
 
 compile_data_propagates_to_crate_info_test = analysistest.make(_compile_data_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_to_crate_info_test = analysistest.make(_wrapper_rule_propagates_to_crate_info_test_impl)
-wrapper_rule_propagates_and_joins_compiel_data_test = analysistest.make(_wrapper_rule_propagates_and_joins_compiel_data_test_impl)
+wrapper_rule_propagates_and_joins_compile_data_test = analysistest.make(_wrapper_rule_propagates_and_joins_compile_data_test_impl)
 
 def _define_test_targets():
-    # Note that this is the only target which assigns the `compile_data` attribute
     rust_library(
         name = "compile_data",
         srcs = ["compile_data.rs"],
@@ -85,8 +84,8 @@ def compile_data_test_suite(name):
         target_under_test = ":compile_data_unit_test",
     )
 
-    wrapper_rule_propagates_and_joins_compiel_data_test(
-        name = "wrapper_rule_propagates_and_joins_compiel_data_test",
+    wrapper_rule_propagates_and_joins_compile_data_test(
+        name = "wrapper_rule_propagates_and_joins_compile_data_test",
         target_under_test = ":test_compile_data_unit_test",
     )
 
@@ -95,6 +94,6 @@ def compile_data_test_suite(name):
         tests = [
             ":compile_data_propagates_to_crate_info_test",
             ":wrapper_rule_propagates_to_crate_info_test",
-            ":wrapper_rule_propagates_and_joins_compiel_data_test",
+            ":wrapper_rule_propagates_and_joins_compile_data_test",
         ],
     )
