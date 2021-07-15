@@ -55,6 +55,10 @@ def rust_bindgen_library(
     if "tags" in kwargs:
         kwargs.pop("tags")
 
+    deps = kwargs.get("deps") or []
+    if "deps" in kwargs:
+        kwargs.pop("deps")
+
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
@@ -68,7 +72,7 @@ def rust_bindgen_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
         tags = tags + ["__bindgen"],
-        deps = [cc_lib],
+        deps = deps + [cc_lib],
         **kwargs
     )
 
