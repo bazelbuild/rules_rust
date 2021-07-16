@@ -194,6 +194,7 @@ def _rust_toolchain_impl(ctx):
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
         target_json = ctx.file.target_json,
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json != None else ctx.attr.target_triple,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
         rust_lib = ctx.attr.rust_lib,
