@@ -894,8 +894,6 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
-
     if crate_type in ["lib", "rlib"]:
         return
 
