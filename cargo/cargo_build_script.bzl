@@ -129,7 +129,7 @@ def _build_script_impl(ctx):
             script,
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
-        ] + ctx.files.data,
+        ] + ctx.files.data + ([] if toolchain.target_json == None else [toolchain.target_json]),
         transitive = toolchain_tools,
     )
 
