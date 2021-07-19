@@ -187,6 +187,9 @@ def _rust_toolchain_impl(ctx):
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
+    if ctx.attr.target_triple and ctx.file.target_json != None:
+        fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
+
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
