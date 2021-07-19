@@ -20,10 +20,17 @@ cd "${BUILD_WORKSPACE_DIRECTORY}"
 # Takes two arguments:
 # ${1}: The expected return code.
 # ${2}: The target within "//test/clippy" to be tested.
+#
+# Optional third argument:
+# ${3}: The clippy.toml file to pass as an override.
 function check_build_result() {
   local ret=0
   echo -n "Testing ${2}... "
-  (bazel build //test/clippy:"${2}" &> /dev/null) || ret="$?" && true
+  ADDITIONAL_ARGS=()
+  if [[ -n "${3-}" ]]; then
+    ADDITIONAL_ARGS+=("--@rules_rust//:clippy.toml=${3}")
+  fi
+  (bazel build "${ADDITIONAL_ARGS[@]}" //test/clippy:"${2}" &> /dev/null) || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
     echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/clippy:${2}"
     echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
@@ -69,6 +76,10 @@ EOF
   check_build_result $BUILD_FAILED bad_binary_clippy
   check_build_result $BUILD_FAILED bad_library_clippy
   check_build_result $BUILD_FAILED bad_test_clippy
+
+  # Test that we can make the ok_library_clippy fail when using an extra config file.
+  # Proves that the config file is used and overrides default settings.
+  check_build_result $BUILD_FAILED ok_library_clippy //too_many_args:clippy.toml
 }
 
 test_all
