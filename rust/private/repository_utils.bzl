@@ -316,11 +316,11 @@ def load_rust_src(ctx):
     Args:
         ctx (ctx): A repository_ctx.
     """
-    tool_suburl = produce_tool_suburl("rustc", "src", ctx.attr.version, ctx.attr.iso_date)
+    tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
     url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
 
-    tool_path = produce_tool_path("rustc", "src", ctx.attr.version)
+    tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
     archive_path = tool_path + ".tar.gz"
     ctx.download(
         url,
@@ -330,7 +330,7 @@ def load_rust_src(ctx):
     ctx.extract(
         archive_path,
         output = "lib/rustlib/src",
-        stripPrefix = tool_path,
+        stripPrefix = "{}/rust-src/lib/rustlib/src/rust".format(tool_path),
     )
     ctx.file(
         "lib/rustlib/src/BUILD.bazel",
@@ -463,12 +463,12 @@ def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
         target_triple: The rust-style target triple of the tool
         version: The version of the tool among "nightly", "beta', or an exact version.
         iso_date: The date of the tool (or None, if the version is a specific version).
-    """
 
-    if iso_date:
-        return "{}/{}-{}-{}".format(iso_date, tool_name, version, target_triple)
-    else:
-        return "{}-{}-{}".format(tool_name, version, target_triple)
+    Returns:
+        str: The fully qualified url path for the specified tool.
+    """
+    path = produce_tool_path(tool_name, target_triple, version)
+    return iso_date + "/" + path if iso_date else path
 
 def produce_tool_path(tool_name, target_triple, version):
     """Produces a qualified Rust tool name
@@ -477,9 +477,15 @@ def produce_tool_path(tool_name, target_triple, version):
         tool_name: The name of the tool per static.rust-lang.org
         target_triple: The rust-style target triple of the tool
         version: The version of the tool among "nightly", "beta', or an exact version.
-    """
 
-    return "{}-{}-{}".format(tool_name, version, target_triple)
+    Returns:
+        str: The qualified path for the specified tool.
+    """
+    if not tool_name:
+        fail("No tool name was provided")
+    if not version:
+        fail("No tool version was provided")
+    return "-".join([e for e in [tool_name, version, target_triple] if e])
 
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
