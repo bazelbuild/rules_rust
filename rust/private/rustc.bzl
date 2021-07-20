@@ -58,7 +58,7 @@ ErrorFormatInfo = provider(
 )
 
 ExtraRustcFlagsInfo = provider(
-    doc = "Pass additional --codegen arguments for each value",
+    doc = "Pass each value as an additional flag to rustc invocations",
     fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
 )
 
@@ -498,11 +498,10 @@ def construct_arguments(
     env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
 
     # extra_rustc_flags are meant to apply across all code being compiled in the target
-    # configuration, not the exec configuration. Checking crate_info.type != "proc-macro"
-    # isn't perfect because it doesn't catch the libraries that proc-macros use, but I
-    # don't know how to determine that we are using the exec configuration.
-    # TODO(djmarcin): Determine how to know if we are running in the exec configuration.
-    if hasattr(ctx.attr, "_extra_rustc_flags") and crate_info.type != "proc-macro":
+    # configuration, not the exec configuration.
+    # TODO(djmarcin): Should these flags apply to cfg=exec targets as well? Or via a
+    # different flag. Also, is there a better way to determine cfg=exec?
+    if hasattr(ctx.attr, "_extra_rustc_flags") and ctx.genfiles_dir.path.find("-exec-") == -1:
         args.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
     return args, env
@@ -994,7 +993,7 @@ extra_rustc_flags = rule(
         "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
-        "These flags are not intended to apply to things built in the exec configuration such as proc macros."
+        "These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
     implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
