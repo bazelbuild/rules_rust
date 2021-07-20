@@ -991,10 +991,10 @@ def _extra_rustc_flags_impl(ctx):
 
 extra_rustc_flags = rule(
     doc = (
-        "Add additional [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html) " +
-        "options from the command line with `--@rules_rust//:extra_rustc_flags`. See rustc documentation for valid values. " +
+        "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
-        "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead."
+        "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
+        "These flags are not intended to apply to things built in the exec configuration such as proc macros."
     ),
     implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
