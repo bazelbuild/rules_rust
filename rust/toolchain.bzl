@@ -187,7 +187,7 @@ def _rust_toolchain_impl(ctx):
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
-    if ctx.attr.target_triple and ctx.file.target_json != None:
+    if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
     toolchain = platform_common.ToolchainInfo(
@@ -197,7 +197,7 @@ def _rust_toolchain_impl(ctx):
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
         target_json = ctx.file.target_json,
-        target_flag_value = ctx.file.target_json.path if ctx.file.target_json != None else ctx.attr.target_triple,
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
         rust_lib = ctx.attr.rust_lib,

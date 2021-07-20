@@ -287,7 +287,7 @@ def collect_inputs(
         [toolchain.rustc] +
         toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
-        ([] if toolchain.target_json == None else [toolchain.target_json]) +
+        ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
