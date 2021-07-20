@@ -1,5 +1,9 @@
+"""Unit tests for repository_utils.bzl."""
+
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//rust/private:repository_utils.bzl", "produce_tool_suburl", "produce_tool_path")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:repository_utils.bzl", "produce_tool_path", "produce_tool_suburl")
 
 def _produce_tool_suburl_test_impl(ctx):
     env = unittest.begin(ctx)
