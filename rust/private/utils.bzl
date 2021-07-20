@@ -296,3 +296,30 @@ def dedent(doc_string):
         # Remove the leading block of spaces from the current line
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
+
+def make_static_lib_symlink(actions, rlib_file):
+    """Add a .a symlink to an .rlib file.
+
+    The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
+    * `<name>.a`, if <name> starts with `lib`
+    * `lib<name>.a`, otherwise.
+
+    For example, the name of the symlink for
+    * `libcratea.rlib` is `libcratea.a`
+    * `crateb.rlib` is `libcrateb.a`.
+
+    Args:
+        actions (actions): The rule's context actions object.
+        rlib_file (File): The file to symlink, which must end in .rlib.
+
+    Returns:
+        The symlink's File.
+    """
+    if not rlib_file.basename.endswith(".rlib"):
+        fail("file is not an .rlib: ", rlib_file.basename)
+    basename = rlib_file.basename[:-5]
+    if not basename.startswith("lib"):
+        basename = "lib" + basename
+    dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+    actions.symlink(output = dot_a, target_file = rlib_file)
+    return dot_a

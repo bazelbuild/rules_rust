@@ -1,21 +1,7 @@
 """The rust_toolchain rule definition and implementation."""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
-
-def _make_dota(ctx, file):
-    """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
-
-    Args:
-        ctx (ctx): The rule's context object.
-        file (File): The file to symlink.
-
-    Returns:
-        The symlink's File.
-    """
-    dot_a = ctx.actions.declare_file(file.basename + ".a", sibling = file)
-    ctx.actions.symlink(output = dot_a, target_file = file)
-    return dot_a
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_lib = ctx.files.srcs
@@ -35,7 +21,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
-        dot_a_files = [_make_dota(ctx, f) for f in std_rlibs]
+        dot_a_files = [make_static_lib_symlink(ctx.actions, f) for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
@@ -140,13 +126,36 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
             transitive = [between_alloc_and_core_inputs],
             order = "topological",
         )
+
+        # The libraries panic_abort and panic_unwind are alternatives.
+        # The std by default requires panic_unwind.
+        # Exclude panic_abort if panic_unwind is present.
+        # TODO: Provide a setting to choose between panic_abort and panic_unwind.
+        filtered_between_core_and_std_files = rust_stdlib_info.between_core_and_std_files
+        has_panic_unwind = [
+            f
+            for f in filtered_between_core_and_std_files
+            if "panic_unwind" in f.basename
+        ]
+        if has_panic_unwind:
+            filtered_between_core_and_std_files = [
+                f
+                for f in filtered_between_core_and_std_files
+                if "panic_abort" not in f.basename
+            ]
         between_core_and_std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_core_and_std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in filtered_between_core_and_std_files
+            ],
             transitive = [core_inputs],
             order = "topological",
         )
         std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in rust_stdlib_info.std_files
+            ],
             transitive = [between_core_and_std_inputs],
             order = "topological",
         )
