@@ -4,7 +4,7 @@
 * [crate](#crate)
 * [crate_universe](#crate_universe)
 * [error_format](#error_format)
-* [extra_codegen](#extra_codegen)
+* [extra_rustc_flags](#extra_rustc_flags)
 * [rust_analyzer](#rust_analyzer)
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_benchmark](#rust_benchmark)
@@ -101,22 +101,22 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 | <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#extra_codegen"></a>
+<a id="#extra_rustc_flags"></a>
 
-## extra_codegen
+## extra_rustc_flags
 
 <pre>
-extra_codegen(<a href="#extra_codegen-name">name</a>)
+extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
 </pre>
 
-Add additional [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html) options from the command line with `--@rules_rust//:extra_codegen`. See rustc documentation for valid values. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead.
+Add additional [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html) options from the command line with `--@rules_rust//:extra_rustc_flags`. See rustc documentation for valid values. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead.
 
 **ATTRIBUTES**
 
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="extra_codegen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="#rust_analyzer"></a>

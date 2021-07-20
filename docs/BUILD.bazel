@@ -57,7 +57,7 @@ PAGES = dict([
             "rust_test",
             "rust_test_suite",
             "error_format",
-            "extra_codegen",
+            "extra_rustc_flags",
         ],
     ),
     page(

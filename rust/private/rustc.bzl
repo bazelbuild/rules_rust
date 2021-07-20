@@ -57,9 +57,9 @@ ErrorFormatInfo = provider(
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
-ExtraCodegenInfo = provider(
+ExtraRustcFlagsInfo = provider(
     doc = "Pass additional --codegen arguments for each value",
-    fields = {"extra_codegen": "List[string] Extra codegen arguments to pass"},
+    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
 )
 
 def _get_rustc_env(attr, toolchain):
@@ -429,8 +429,6 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     args.add("--codegen=opt-level=" + compilation_mode.opt_level)
     args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
-    if hasattr(ctx.attr, "_extra_codegen") and crate_info.type != "proc-macro":
-        args.add_all(["--codegen=" + x for x in ctx.attr._extra_codegen[ExtraCodegenInfo].extra_codegen])
 
     # For determinism to help with build distribution and such
     args.add("--remap-path-prefix=${pwd}=.")
@@ -498,6 +496,14 @@ def construct_arguments(
 
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
     env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
+
+    # extra_rustc_flags are meant to apply across all code being compiled in the target
+    # configuration, not the exec configuration. Checking crate_info.type != "proc-macro"
+    # isn't perfect because it doesn't catch the libraries that proc-macros use, but I
+    # don't know how to determine that we are using the exec configuration.
+    # TODO(djmarcin): Determine how to know if we are running in the exec configuration.
+    if hasattr(ctx.attr, "_extra_rustc_flags") and crate_info.type != "proc-macro":
+        args.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
     return args, env
 
@@ -980,16 +986,16 @@ error_format = rule(
     build_setting = config.string(flag = True),
 )
 
-def _extra_codegen_impl(ctx):
-    return ExtraCodegenInfo(extra_codegen = ctx.build_setting_value)
+def _extra_rustc_flags_impl(ctx):
+    return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
 
-extra_codegen = rule(
+extra_rustc_flags = rule(
     doc = (
         "Add additional [--codegen](https://doc.rust-lang.org/rustc/codegen-options/index.html) " +
-        "options from the command line with `--@rules_rust//:extra_codegen`. See rustc documentation for valid values. " +
+        "options from the command line with `--@rules_rust//:extra_rustc_flags`. See rustc documentation for valid values. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead."
     ),
-    implementation = _extra_codegen_impl,
+    implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
 )
