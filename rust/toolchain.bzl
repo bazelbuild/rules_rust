@@ -1,7 +1,7 @@
 """The rust_toolchain rule definition and implementation."""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_lib = ctx.files.srcs
@@ -21,7 +21,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
-        dot_a_files = [make_static_lib(ctx, f) for f in std_rlibs]
+        dot_a_files = [make_static_lib_symlink(ctx.actions, f) for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
@@ -132,16 +132,30 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
         # Exclude panic_abort if panic_unwind is present.
         # TODO: Provide a setting to choose between panic_abort and panic_unwind.
         filtered_between_core_and_std_files = rust_stdlib_info.between_core_and_std_files
-        has_panic_unwind = [f for f in filtered_between_core_and_std_files if "panic_unwind" in f.basename]
+        has_panic_unwind = [
+            f
+            for f in filtered_between_core_and_std_files
+            if "panic_unwind" in f.basename
+        ]
         if has_panic_unwind:
-            filtered_between_core_and_std_files = [f for f in filtered_between_core_and_std_files if "panic_abort" not in f.basename]
+            filtered_between_core_and_std_files = [
+                f
+                for f in filtered_between_core_and_std_files
+                if "panic_abort" not in f.basename
+            ]
         between_core_and_std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in filtered_between_core_and_std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in filtered_between_core_and_std_files
+            ],
             transitive = [core_inputs],
             order = "topological",
         )
         std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in rust_stdlib_info.std_files
+            ],
             transitive = [between_core_and_std_inputs],
             order = "topological",
         )

@@ -297,8 +297,8 @@ def dedent(doc_string):
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
 
-def make_static_lib(ctx, rlib_file):
-    """Add a .a symlink to an .rlib file, so it can be used as a staticlib.
+def make_static_lib_symlink(actions, rlib_file):
+    """Add a .a symlink to an .rlib file.
 
     The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
     * `<name>.a`, if <name> starts with `lib`
@@ -309,7 +309,7 @@ def make_static_lib(ctx, rlib_file):
     * `crateb.rlib` is `libcrateb.a`.
 
     Args:
-        ctx (ctx): The rule's context object.
+        actions (actions): The rule's context actions object.
         rlib_file (File): The file to symlink, which must end in .rlib.
 
     Returns:
@@ -320,6 +320,6 @@ def make_static_lib(ctx, rlib_file):
     basename = rlib_file.basename[:-5]
     if not basename.startswith("lib"):
         basename = "lib" + basename
-    dot_a = ctx.actions.declare_file(basename + ".a", sibling = rlib_file)
-    ctx.actions.symlink(output = dot_a, target_file = rlib_file)
+    dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+    actions.symlink(output = dot_a, target_file = rlib_file)
     return dot_a
