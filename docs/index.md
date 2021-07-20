@@ -2,8 +2,9 @@
 
 ## Overview
 
-This repository provides rules for building [Rust][rust] projects with [Bazel](https://bazel.build/).
+This repository provides rules for building [Rust][rust] projects with [Bazel][bazel].
 
+[bazel]: https://bazel.build/
 [rust]: http://www.rust-lang.org/
 
 <!-- TODO: Render generated docs on the github pages site again, https://bazelbuild.github.io/rules_rust/ -->
@@ -19,11 +20,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_rust",
-    sha256 = "18c0a02a007cd26c3f5b4d21dc26a80af776ef755460028a796bc61c649fdf3f",
-    strip_prefix = "rules_rust-467a301fd665db344803c1d8a2401ec2bf8c74ce",
+    sha256 = "224ebaf1156b6f2d3680e5b8c25191e71483214957dfecd25d0f29b2f283283b",
+    strip_prefix = "rules_rust-a814d859845c420fd105c629134c4a4cb47ba3f8",
     urls = [
-        # Master branch as of 2021-04-23
-        "https://github.com/bazelbuild/rules_rust/archive/467a301fd665db344803c1d8a2401ec2bf8c74ce.tar.gz",
+        # `main` branch as of 2021-06-15
+        "https://github.com/bazelbuild/rules_rust/archive/a814d859845c420fd105c629134c4a4cb47ba3f8.tar.gz",
     ],
 )
 
@@ -35,7 +36,7 @@ rust_repositories()
 The rules are under active development, as such the lastest commit on the
 `main` branch should be used. `main` is only tested against `3.5.0` as the
 minimum supported version of Bazel. Though previous versions may still be
-supported in certain environments.
+functional in certain environments.
 
 ## Rules
 

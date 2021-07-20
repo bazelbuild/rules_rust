@@ -1,4 +1,4 @@
-"""Unittest to verify ordering of rust stdlib in rust_library() CcInfo"""
+"""Unittest to verify contents and ordering of rust stdlib in rust_library() CcInfo"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_library")
@@ -26,16 +26,40 @@ def _dedup_preserving_order(list):
         r.append(e)
     return r
 
+def _stdlibs(tut):
+    """Given a target, return the list of its standard rust libraries."""
+    libs = [
+        lib.static_library
+        for li in tut[CcInfo].linking_context.linker_inputs.to_list()
+        for lib in li.libraries
+    ]
+    stdlibs = [lib for lib in libs if (tut.label.name not in lib.basename)]
+    return stdlibs
+
 def _libstd_ordering_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    libs = [lib.static_library for li in tut[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries]
-    rlibs = [_categorize_library(lib.basename) for lib in libs if ".rlib" in lib.basename]
-    set_to_check = _dedup_preserving_order([lib for lib in rlibs if lib != "other"])
+    stdlib_categories = [_categorize_library(lib.basename) for lib in _stdlibs(tut)]
+    set_to_check = _dedup_preserving_order([lib for lib in stdlib_categories if lib != "other"])
     asserts.equals(env, ["std", "core", "compiler_builtins", "alloc"], set_to_check)
     return analysistest.end(env)
 
 libstd_ordering_test = analysistest.make(_libstd_ordering_test_impl)
+
+def _libstd_panic_test_impl(ctx):
+    # The libraries panic_unwind and panic_abort are alternatives.
+    # Check that they don't occur together.
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    stdlibs = _stdlibs(tut)
+    has_panic_unwind = [lib for lib in stdlibs if "panic_unwind" in lib.basename]
+    if has_panic_unwind:
+        has_panic_abort = [lib for lib in stdlibs if "panic_abort" in lib.basename]
+        asserts.false(env, has_panic_abort)
+
+    return analysistest.end(env)
+
+libstd_panic_test = analysistest.make(_libstd_panic_test_impl)
 
 def _native_dep_test():
     rust_library(
@@ -48,7 +72,12 @@ def _native_dep_test():
         target_under_test = ":some_rlib",
     )
 
-def stdlib_ordering_suite(name):
+    libstd_panic_test(
+        name = "libstd_panic_test",
+        target_under_test = ":some_rlib",
+    )
+
+def stdlib_suite(name):
     """Entry-point macro called from the BUILD file.
 
     Args:
