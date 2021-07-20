@@ -26,6 +26,13 @@ extra_codegen(
     visibility = ["//visibility:public"],
 )
 
+# This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html
+label_flag(
+    name = "clippy.toml",
+    build_setting_default = "//tools/clippy:clippy.toml",
+    visibility = ["//visibility:public"],
+)
+
 # This setting is used by the rustfmt rules. See https://bazelbuild.github.io/rules_rust/rust_fmt.html
 label_flag(
     name = "rustfmt.toml",

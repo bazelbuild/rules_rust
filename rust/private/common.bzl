@@ -23,9 +23,27 @@ which exports the `rust_common` struct.
 In the Bazel lingo, `rust_common` gives the access to the Rust Sandwich API.
 """
 
-load(":providers.bzl", "CrateInfo", "DepInfo")
+load(":providers.bzl", "CrateInfo", "DepInfo", "StdLibInfo")
+
+def _create_crate_info(**kwargs):
+    """A constructor for a `CrateInfo` provider
+
+    This function should be used in place of directly creating a `CrateInfo`
+    provider to improve API stability.
+
+    Args:
+        **kwargs: An inital set of keyword arguments.
+
+    Returns:
+        CrateInfo: A provider
+    """
+    if not "wrapped_crate_type" in kwargs:
+        kwargs.update({"wrapped_crate_type": None})
+    return CrateInfo(**kwargs)
 
 rust_common = struct(
+    create_crate_info = _create_crate_info,
     crate_info = CrateInfo,
     dep_info = DepInfo,
+    stdlib_info = StdLibInfo,
 )

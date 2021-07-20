@@ -9,7 +9,7 @@ use std::vec::Vec;
 use std::os::unix::process::CommandExt;
 
 /// This string must match the one found in `_create_test_launcher`
-const LAUNCHFILES_ENV_PATH: &'static str = ".launchfiles/env";
+const LAUNCHFILES_ENV_PATH: &str = ".launchfiles/env";
 
 /// Load environment variables from a uniquly formatted
 fn environ() -> BTreeMap<String, String> {
@@ -17,12 +17,15 @@ fn environ() -> BTreeMap<String, String> {
 
     let mut key: Option<String> = None;
 
+    // Consume the first argument (argv[0])
+    let exe_path = std::env::args().next().expect("arg 0 was not set");
+
     // Load the environment file into a map
-    let env_path = std::env::args().nth(0).expect("arg 0 was not set") + LAUNCHFILES_ENV_PATH;
+    let env_path = exe_path + LAUNCHFILES_ENV_PATH;
     let file = File::open(env_path).expect("Failed to load the environment file");
 
     // Variables will have the `${pwd}` variable replaced which is rendered by
-    // `@rules_rust//rust/private:util.bzl::expand_locations`
+    // `@rules_rust//rust/private:util.bzl::expand_dict_value_locations`
     let pwd = std::env::current_dir().expect("Failed to get current working directory");
     let pwd_str = pwd.to_string_lossy();
 
@@ -47,7 +50,8 @@ fn environ() -> BTreeMap<String, String> {
 
 /// Locate the executable based on the name of the launcher executable
 fn executable() -> PathBuf {
-    let mut exec_path = std::env::args().nth(0).expect("arg 0 was not set");
+    // Consume the first argument (argv[0])
+    let mut exec_path = std::env::args().next().expect("arg 0 was not set");
     let stem_index = exec_path
         .rfind(".launcher")
         .expect("This executable should always contain `.launcher`");

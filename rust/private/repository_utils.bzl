@@ -13,14 +13,6 @@ load(
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
-DEFAULT_TOOLCHAIN_TRIPLES = {
-    "aarch64-apple-darwin": "rust_darwin_aarch64",
-    "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
-    "x86_64-apple-darwin": "rust_darwin_x86_64",
-    "x86_64-pc-windows-msvc": "rust_windows_x86_64",
-    "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
-    "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
-}
 
 _build_file_for_compiler_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
@@ -146,7 +138,9 @@ def BUILD_for_clippy(target_triple):
     return _build_file_for_clippy_template.format(binary_ext = system_to_binary_ext(system))
 
 _build_file_for_stdlib_template = """\
-filegroup(
+load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
+
+rust_stdlib_filegroup(
     name = "rust_lib-{target_triple}",
     srcs = glob(
         [
@@ -490,9 +484,14 @@ def produce_tool_path(tool_name, target_triple, version):
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
-    This function sources the tool from the Rust-lang static file server. The index is available
-    at: https://static.rust-lang.org/dist/index.html (or the path specified by
-    "${STATIC_RUST_URL}/dist/index.html" if the STATIC_RUST_URL envinronment variable is set).
+    This function sources the tool from the Rust-lang static file server. The index is available at:
+    - https://static.rust-lang.org/dist/channel-rust-stable.toml
+    - https://static.rust-lang.org/dist/channel-rust-beta.toml
+    - https://static.rust-lang.org/dist/channel-rust-nightly.toml
+
+    The environment variable `STATIC_RUST_URL` can be used to replace the schema and hostname of
+    the URLs used for fetching assets. `https://static.rust-lang.org/dist/channel-rust-stable.toml`
+    becomes `${STATIC_RUST_URL}/dist/channel-rust-stable.toml`
 
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
@@ -517,7 +516,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
 
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
-    # N.B. See https://static.rust-lang.org/dist/index.html to find the tool_suburl for a given
+    # View the indices mentioned in the docstring to find the tool_suburl for a given
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
     static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")

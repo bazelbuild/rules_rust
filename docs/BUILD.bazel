@@ -11,6 +11,7 @@ bzl_library(
         "@build_bazel_rules_nodejs//internal/providers:bzl",
     ],
     deps = [
+        "@bazel_skylib//lib:paths",
         "@rules_proto//proto:rules",
     ],
 )
@@ -38,6 +39,7 @@ PAGES = dict([
     ),
     page(
         name = "crate_universe",
+        header_template = ":crate_universe.vm",
         symbols = [
             "crate_universe",
             "crate",
@@ -115,6 +117,7 @@ PAGES = dict([
             "rust_toolchain",
             "rust_toolchain_repository",
             "rust_toolchain_repository_proxy",
+            "rust_stdlib_filegroup",
         ],
     ),
     page(

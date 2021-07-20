@@ -152,7 +152,7 @@ def _expand_location(ctx, env, data):
             env = env.replace(directive, "${pwd}/" + directive)
     return ctx.expand_location(env, data)
 
-def expand_locations(ctx, env, data):
+def expand_dict_value_locations(ctx, env, data):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -167,6 +167,8 @@ def expand_locations(ctx, env, data):
     as compilation happens in a separate sandbox folder, so when it comes time
     to read the file at runtime, the path is no longer valid.
 
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+
     Args:
         ctx (ctx): The rule's context object
         env (dict): A dict whose values we iterate over
@@ -178,6 +180,27 @@ def expand_locations(ctx, env, data):
         dict: A dict of environment variables with expanded location macros
     """
     return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+
+def expand_list_element_locations(ctx, args, data):
+    """Performs location-macro expansion on a list of string values.
+
+    $(execroot ...) and $(location ...) are prefixed with ${pwd},
+    which process_wrapper and build_script_runner will expand at run time
+    to the absolute path.
+
+    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+
+    Args:
+        ctx (ctx): The rule's context object
+        args (list): A list we iterate over
+        data (sequence of Targets): The targets which may be referenced by
+            location macros. This is expected to be the `data` attribute of
+            the target, though may have other targets or attributes mixed in.
+
+    Returns:
+        list: A list of arguments with expanded location macros
+    """
+    return [_expand_location(ctx, arg, data) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
@@ -273,3 +296,30 @@ def dedent(doc_string):
         # Remove the leading block of spaces from the current line
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
+
+def make_static_lib_symlink(actions, rlib_file):
+    """Add a .a symlink to an .rlib file.
+
+    The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
+    * `<name>.a`, if <name> starts with `lib`
+    * `lib<name>.a`, otherwise.
+
+    For example, the name of the symlink for
+    * `libcratea.rlib` is `libcratea.a`
+    * `crateb.rlib` is `libcrateb.a`.
+
+    Args:
+        actions (actions): The rule's context actions object.
+        rlib_file (File): The file to symlink, which must end in .rlib.
+
+    Returns:
+        The symlink's File.
+    """
+    if not rlib_file.basename.endswith(".rlib"):
+        fail("file is not an .rlib: ", rlib_file.basename)
+    basename = rlib_file.basename[:-5]
+    if not basename.startswith("lib"):
+        basename = "lib" + basename
+    dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+    actions.symlink(output = dot_a, target_file = rlib_file)
+    return dot_a

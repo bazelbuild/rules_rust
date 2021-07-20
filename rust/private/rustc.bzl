@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -21,10 +22,12 @@ load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
-    "expand_locations",
+    "expand_dict_value_locations",
+    "expand_list_element_locations",
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
+    "make_static_lib_symlink",
     "relativize",
 )
 
@@ -445,9 +448,16 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library
     args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
-
     args.add_all(rust_flags)
-    args.add_all(getattr(attr, "rustc_flags", []))
+
+    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
+    args.add_all(
+        expand_list_element_locations(
+            ctx,
+            getattr(attr, "rustc_flags", []),
+            data_paths,
+        ),
+    )
     add_edition_flags(args, crate_info)
 
     # Link!
@@ -466,7 +476,9 @@ def construct_arguments(
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(args, dep_info)
 
-    if crate_info.type == "proc-macro" and crate_info.edition != "2015":
+    needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
+                                   crate_info.edition != "2015"
+    if needs_extern_proc_macro_flag:
         args.add("--extern")
         args.add("proc_macro")
 
@@ -478,16 +490,14 @@ def construct_arguments(
                 env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
-    env.update(expand_locations(
+    env.update(expand_dict_value_locations(
         ctx,
         crate_info.rustc_env,
-        getattr(attr, "data", []) +
-        getattr(attr, "compile_data", []),
+        data_paths,
     ))
 
-    # This empty value satisfies Clippy, which otherwise complains about the
-    # sysroot being undefined.
-    env["SYSROOT"] = ""
+    # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
+    env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
 
     return args, env
 
@@ -633,8 +643,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         # bazel hard-codes a check for endswith((".a", ".pic.a",
         # ".lib")) in create_library_to_link, so we work around that
         # by creating a symlink to the .rlib with a .a extension.
-        dot_a = ctx.actions.declare_file(crate_info.name + ".a", sibling = crate_info.output)
-        ctx.actions.symlink(output = dot_a, target_file = crate_info.output)
+        dot_a = make_static_lib_symlink(ctx.actions, crate_info.output)
 
         # TODO(hlopko): handle PIC/NOPIC correctly
         library_to_link = cc_common.create_library_to_link(
@@ -750,12 +759,17 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
     Returns:
         depset: A set of relative paths from the output directory to each dependency
     """
-    preferreds = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries]
 
-    # TODO(augie): I don't understand why this can't just be filtering on
-    # _is_dylib(lib), but doing that causes failures on darwin and windows
-    # examples that otherwise work.
-    dylibs = [lib for lib in preferreds if _has_dylib_ext(lib, toolchain.dylib_ext)]
+    # Windows has no rpath equivalent, so always return an empty depset.
+    if toolchain.os == "windows":
+        return depset([])
+
+    dylibs = [
+        get_preferred_artifact(lib)
+        for linker_input in dep_info.transitive_noncrates.to_list()
+        for lib in linker_input.libraries
+        if _is_dylib(lib)
+    ]
     if not dylibs:
         return depset([])
 

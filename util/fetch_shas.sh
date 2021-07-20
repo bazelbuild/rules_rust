@@ -23,17 +23,10 @@ enumerate_keys() {
   do
     for TARGET in $TARGETS
     do
-      if [ "$TOOL" == "rustfmt" ]; then
-        for VERSION in $RUSTFMT_VERSIONS
-        do
-          echo "$TOOL-$VERSION-$TARGET"
-        done
-      else
-        for VERSION in $VERSIONS
-        do
-          echo "$TOOL-$VERSION-$TARGET"
-        done
-      fi
+      for VERSION in $VERSIONS
+      do
+        echo "$TOOL-$VERSION-$TARGET"
+      done
 
       for ISO_DATE in $BETA_ISO_DATES
       do

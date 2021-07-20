@@ -23,13 +23,38 @@ load(
 )
 load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
 
-def _clippy_aspect_impl(target, ctx):
+def _get_clippy_ready_crate_info(target, aspect_ctx):
+    """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
+
+    Args:
+        target (Target): The target the aspect is running on.
+        aspect_ctx (ctx, optional): The aspect's context object.
+
+    Returns:
+        CrateInfo, optional: A `CrateInfo` provider if clippy should be run or `None`.
+    """
+
+    # Ignore external targets
+    if target.label.workspace_root.startswith("external"):
+        return None
+
+    # Targets annotated with `noclippy` will not be formatted
+    if aspect_ctx and "noclippy" in aspect_ctx.rule.attr.tags:
+        return None
+
+    # Obviously ignore any targets that don't contain `CrateInfo`
     if rust_common.crate_info not in target:
+        return None
+
+    return target[rust_common.crate_info]
+
+def _clippy_aspect_impl(target, ctx):
+    crate_info = _get_clippy_ready_crate_info(target, ctx)
+    if not crate_info:
         return []
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    crate_info = target[rust_common.crate_info]
     crate_type = crate_info.type
 
     dep_info, build_info = collect_deps(
@@ -91,6 +116,14 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.add("--test")
 
+    # Upstream clippy requires one of these two filenames or it silently uses
+    # the default config. Enforce the naming so users are not confused.
+    valid_config_file_names = [".clippy.toml", "clippy.toml"]
+    if ctx.file._config.basename not in valid_config_file_names:
+        fail("The clippy config file must be named one of: {}".format(valid_config_file_names))
+    env["CLIPPY_CONF_DIR"] = "${{pwd}}/{}".format(ctx.file._config.dirname)
+    compile_inputs = depset([ctx.file._config], transitive = [compile_inputs])
+
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
@@ -119,6 +152,11 @@ rust_clippy_aspect = aspect(
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_config": attr.label(
+            doc = "The `clippy.toml` file used for configuration",
+            allow_single_file = True,
+            default = Label("//:clippy.toml"),
         ),
         "_error_format": attr.label(
             doc = "The desired `--error-format` flags for clippy",
@@ -170,7 +208,8 @@ $ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
 )
 
 def _rust_clippy_rule_impl(ctx):
-    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in ctx.attr.deps])
+    clippy_ready_targets = [dep for dep in ctx.attr.deps if "clippy_checks" in dir(dep[OutputGroupInfo])]
+    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in clippy_ready_targets])
     return [DefaultInfo(files = files)]
 
 rust_clippy = rule(

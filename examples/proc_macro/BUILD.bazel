@@ -9,14 +9,14 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 rust_proc_macro(
-    name = "proc_macro_lib",
+    name = "proc_macro_lib_2015",
     srcs = [
         "src/lib_2015.rs",
     ],
 )
 
 rust_proc_macro(
-    name = "proc_macro_lib_2018",
+    name = "proc_macro_lib",
     srcs = [
         "src/lib.rs",
     ],
@@ -38,10 +38,10 @@ rust_test(
 
 rust_doc(
     name = "proc_macro_lib_doc",
-    dep = ":proc_macro_lib",
+    crate = ":proc_macro_lib",
 )
 
 rust_doc_test(
     name = "doc_test",
-    dep = ":proc_macro_lib",
+    crate = ":proc_macro_lib",
 )

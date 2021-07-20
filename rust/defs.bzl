@@ -15,6 +15,10 @@
 """Public entry point to all Rust rules and supported APIs."""
 
 load(
+    "//rust:toolchain.bzl",
+    _rust_stdlib_filegroup = "rust_stdlib_filegroup",
+)
+load(
     "//rust/private:clippy.bzl",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
@@ -115,3 +119,6 @@ rustfmt_aspect = _rustfmt_aspect
 
 rustfmt_test = _rustfmt_test
 # See @rules_rust//rust/private:rustfmt.bzl for a complete description.
+
+rust_stdlib_filegroup = _rust_stdlib_filegroup
+# See @rules_rust//rust:toolchain.bzl for a complete description.

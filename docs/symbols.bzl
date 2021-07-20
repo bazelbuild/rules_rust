@@ -64,6 +64,7 @@ load(
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
+    _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
 )
 load(
@@ -98,6 +99,7 @@ rust_bindgen_repositories = _rust_bindgen_repositories
 rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
 rust_proto_repositories = _rust_proto_repositories
+rust_stdlib_filegroup = _rust_stdlib_filegroup
 
 cargo_build_script = _cargo_build_script
 

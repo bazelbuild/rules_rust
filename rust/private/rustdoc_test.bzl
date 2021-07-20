@@ -25,31 +25,36 @@ def _rust_doc_test_impl(ctx):
     Returns:
         list: A list containing a DefaultInfo provider
     """
-    if rust_common.crate_info not in ctx.attr.dep:
-        fail("Expected rust library or binary.", "dep")
+    if ctx.attr.crate and ctx.attr.dep:
+        fail("{} should only use the `crate` attribute. `dep` is deprecated".format(
+            ctx.label,
+        ))
 
-    crate = ctx.attr.dep[rust_common.crate_info]
+    crate = ctx.attr.crate or ctx.attr.dep
+    if not crate:
+        fail("{} is missing the `crate` attribute".format(ctx.label))
 
     toolchain = find_toolchain(ctx)
 
-    dep_info = ctx.attr.dep[rust_common.dep_info]
+    crate_info = crate[rust_common.crate_info]
+    dep_info = crate[rust_common.dep_info]
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    flags = _build_rustdoc_flags(dep_info, crate)
+    flags = _build_rustdoc_flags(dep_info, crate_info)
     if toolchain.os != "windows":
-        rust_doc_test = _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate)
+        rust_doc_test = _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info)
     else:
-        rust_doc_test = _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate)
+        rust_doc_test = _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info)
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
-        [crate.output] +
+        [crate_info.output] +
         [toolchain.rust_doc] +
         [toolchain.rustc] +
         toolchain.crosstool_files,
         transitive = [
-            crate.srcs,
+            crate_info.srcs,
             dep_info.transitive_libs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
@@ -77,12 +82,12 @@ def _dirname(path_str):
     """
     return "/".join(path_str.split("/")[:-1])
 
-def _build_rustdoc_flags(dep_info, crate):
+def _build_rustdoc_flags(dep_info, crate_info):
     """Constructs the rustdoc script used to test `crate`.
 
     Args:
         dep_info (DepInfo): The DepInfo provider
-        crate (CrateInfo): The CrateInfo provider
+        crate_info (CrateInfo): The CrateInfo provider
 
     Returns:
         list: A list of rustdoc flags (str)
@@ -94,7 +99,7 @@ def _build_rustdoc_flags(dep_info, crate):
     link_flags = []
     link_search_flags = []
 
-    link_flags.append("--extern=" + crate.name + "=" + crate.output.short_path)
+    link_flags.append("--extern=" + crate_info.name + "=" + crate_info.output.short_path)
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
     link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
@@ -109,7 +114,10 @@ def _build_rustdoc_flags(dep_info, crate):
         link_flags.append("-Lnative={}".format(_dirname(f.short_path)))
         link_search_flags.append("-Lnative={}".format(_dirname(f.short_path)))
 
-    edition_flags = ["--edition={}".format(crate.edition)] if crate.edition != "2015" else []
+    if crate_info.type == "proc-macro":
+        link_flags.extend(["--extern", "proc_macro"])
+
+    edition_flags = ["--edition={}".format(crate_info.edition)] if crate_info.edition != "2015" else []
 
     return link_search_flags + link_flags + edition_flags
 
@@ -124,14 +132,14 @@ set -e;
     {flags}
 """
 
-def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate):
+def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info):
     """Generates a helper script for executing a rustdoc test for unix systems
 
     Args:
         ctx (ctx): The `rust_doc_test` rule's context object
         toolchain (ToolchainInfo): A rustdoc toolchain
         flags (list): A list of rustdoc flags (str)
-        crate (CrateInfo): The CrateInfo provider
+        crate_info (CrateInfo): The CrateInfo provider
 
     Returns:
         File: An executable containing information for a rustdoc test
@@ -143,8 +151,8 @@ def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate):
         output = rust_doc_test,
         content = _rustdoc_test_bash_script.format(
             rust_doc = toolchain.rust_doc.short_path,
-            crate_root = crate.root.path,
-            crate_name = crate.name,
+            crate_root = crate_info.root.path,
+            crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
             flags = " \\\n    ".join(flags),
         ),
@@ -159,14 +167,14 @@ _rustdoc_test_batch_script = """\
     {flags}
 """
 
-def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
+def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info):
     """Generates a helper script for executing a rustdoc test for windows systems
 
     Args:
         ctx (ctx): The `rust_doc_test` rule's context object
         toolchain (ToolchainInfo): A rustdoc toolchain
         flags (list): A list of rustdoc flags (str)
-        crate (CrateInfo): The CrateInfo provider
+        crate_info (CrateInfo): The CrateInfo provider
 
     Returns:
         File: An executable containing information for a rustdoc test
@@ -178,8 +186,8 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
         output = rust_doc_test,
         content = _rustdoc_test_batch_script.format(
             rust_doc = toolchain.rust_doc.short_path.replace("/", "\\"),
-            crate_root = crate.root.path,
-            crate_name = crate.name,
+            crate_root = crate_info.root.path,
+            crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
             flags = " ^\n    ".join(flags),
         ),
@@ -190,14 +198,18 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate):
 rust_doc_test = rule(
     implementation = _rust_doc_test_impl,
     attrs = {
-        "dep": attr.label(
+        "crate": attr.label(
             doc = (
-                "The label of the target to run documentation tests for.\n" +
+                "The label of the target to generate code documentation for.\n" +
                 "\n" +
-                "`rust_doc_test` can run documentation tests for the source files of " +
+                "`rust_doc_test` can generate HTML code documentation for the source files of " +
                 "`rust_library` or `rust_binary` targets."
             ),
-            mandatory = True,
+            providers = [rust_common.crate_info],
+            # TODO: Make this attribute mandatory once `dep` is removed
+        ),
+        "dep": attr.label(
+            doc = "__deprecated__: use `crate`",
             providers = [rust_common.crate_info],
         ),
     },
@@ -237,7 +249,7 @@ rust_library(
 
 rust_doc_test(
     name = "hello_lib_doc_test",
-    dep = ":hello_lib",
+    crate = ":hello_lib",
 )
 ```
 

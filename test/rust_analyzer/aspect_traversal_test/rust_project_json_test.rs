@@ -9,7 +9,7 @@ mod tests {
             r.rlocation("rules_rust/test/rust_analyzer/aspect_traversal_test/rust-project.json");
 
         let content = std::fs::read_to_string(&rust_project_path)
-            .expect(&format!("couldn't open {:?}", &rust_project_path));
+            .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
 
         for dep in &[
             "lib_dep",

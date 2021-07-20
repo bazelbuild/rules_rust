@@ -36,6 +36,8 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
         asserts.equals(env, None, library_to_link.resolved_symlink_dynamic_library)
         asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
         asserts.true(env, library_to_link.static_library != None)
+        if type in ("rlib", "lib"):
+            asserts.true(env, library_to_link.static_library.basename.startswith("lib" + tut.label.name))
         asserts.true(env, library_to_link.pic_static_library != None)
         asserts.equals(env, library_to_link.static_library, library_to_link.pic_static_library)
 
@@ -102,6 +104,7 @@ def _cc_info_test():
         name = "proc_macro",
         srcs = ["proc_macro.rs"],
         edition = "2018",
+        deps = ["//test/unit/native_deps:native_dep"],
     )
 
     rlib_provides_cc_info_test(

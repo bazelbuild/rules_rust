@@ -20,7 +20,7 @@ load(
     "crate_name_from_attr",
     "dedent",
     "determine_output_hash",
-    "expand_locations",
+    "expand_dict_value_locations",
     "find_toolchain",
 )
 
@@ -254,7 +254,7 @@ def _rust_library_common(ctx, crate_type):
         ctx = ctx,
         toolchain = toolchain,
         crate_type = crate_type,
-        crate_info = rust_common.crate_info(
+        crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
             root = crate_root,
@@ -289,7 +289,7 @@ def _rust_binary_impl(ctx):
         ctx = ctx,
         toolchain = toolchain,
         crate_type = ctx.attr.crate_type,
-        crate_info = rust_common.crate_info(
+        crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
@@ -340,7 +340,7 @@ def _create_test_launcher(ctx, toolchain, output, providers):
 
     # Expand the environment variables and write them to a file
     environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_locations(
+    environ = expand_dict_value_locations(
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
@@ -406,7 +406,7 @@ def _rust_test_common(ctx, toolchain, output):
         # Target is building the crate in `test` config
         # Build the test binary using the dependency's srcs.
         crate = ctx.attr.crate[rust_common.crate_info]
-        crate_info = rust_common.crate_info(
+        crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
             root = crate.root,
@@ -418,10 +418,11 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            wrapped_crate_type = crate.type,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
-        crate_info = rust_common.crate_info(
+        crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
@@ -620,7 +621,14 @@ _common_attrs = {
         """),
     ),
     "rustc_flags": attr.string_list(
-        doc = "List of compiler flags passed to `rustc`.",
+        doc = dedent("""\
+            List of compiler flags passed to `rustc`.
+
+            These strings are subject to Make variable expansion for predefined
+            source/output path variables like `$location`, `$execpath`, and `$rootpath`.
+            This expansion is useful if you wish to pass a generated file of
+            arguments to rustc: `@$(location //package:target)`.
+        """),
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
     # "name": attr.string(
@@ -853,7 +861,14 @@ _rust_binary_attrs = {
         cfg = "exec",
         allow_single_file = True,
     ),
-    "out_binary": attr.bool(),
+    "out_binary": attr.bool(
+        doc = (
+            "Force a target, regardless of it's `crate_type`, to always mark the " +
+            "file as executable. This attribute is only used to support wasm targets but is " +
+            "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
+        ),
+        default = False,
+    ),
 }
 
 rust_binary = rule(

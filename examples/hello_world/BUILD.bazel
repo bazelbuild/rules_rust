@@ -14,5 +14,5 @@ rust_binary(
 
 rust_doc(
     name = "hello_world_doc",
-    dep = ":hello_world",
+    crate = ":hello_world",
 )

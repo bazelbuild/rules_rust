@@ -39,9 +39,9 @@ fn run_buildrs() -> Result<(), String> {
         progname,
         crate_links,
         out_dir,
-        envfile,
-        flagfile,
-        linkflags,
+        env_file,
+        compile_flags_file,
+        link_flags_file,
         output_dep_env_path,
         stdout_path,
         stderr_path,
@@ -50,10 +50,8 @@ fn run_buildrs() -> Result<(), String> {
 
     let out_dir_abs = exec_root.join(&out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
-    create_dir_all(&out_dir_abs).expect(&format!(
-        "Failed to make output directory: {:?}",
-        out_dir_abs
-    ));
+    create_dir_all(&out_dir_abs)
+        .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
 
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
@@ -119,47 +117,52 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    let (buildrs_outputs, process_output) =
-        BuildScriptOutput::from_command(&mut command).map_err(|process_output| {
-            format!(
-                "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
-                if let Some(exit_code) = process_output.status.code() {
-                    format!(" with exit code {}", exit_code)
-                } else {
-                    String::new()
-                },
-                String::from_utf8(process_output.stdout)
-                    .expect("Failed to parse stdout of child process"),
-                String::from_utf8(process_output.stderr)
-                    .expect("Failed to parse stdout of child process"),
-            )
-        })?;
+    let (buildrs_outputs, process_output) = BuildScriptOutput::outputs_from_command(&mut command)
+        .map_err(|process_output| {
+        format!(
+            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+            if let Some(exit_code) = process_output.status.code() {
+                format!(" with exit code {}", exit_code)
+            } else {
+                String::new()
+            },
+            String::from_utf8(process_output.stdout)
+                .expect("Failed to parse stdout of child process"),
+            String::from_utf8(process_output.stderr)
+                .expect("Failed to parse stdout of child process"),
+        )
+    })?;
 
     write(
-        &envfile,
-        BuildScriptOutput::to_env(&buildrs_outputs, &exec_root.to_string_lossy()).as_bytes(),
-    )
-    .expect(&format!("Unable to write file {:?}", envfile));
-    write(
-        &output_dep_env_path,
-        BuildScriptOutput::to_dep_env(&buildrs_outputs, &crate_links, &exec_root.to_string_lossy())
+        &env_file,
+        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy())
             .as_bytes(),
     )
-    .expect(&format!("Unable to write file {:?}", output_dep_env_path));
+    .unwrap_or_else(|_| panic!("Unable to write file {:?}", env_file));
+    write(
+        &output_dep_env_path,
+        BuildScriptOutput::outputs_to_dep_env(
+            &buildrs_outputs,
+            &crate_links,
+            &exec_root.to_string_lossy(),
+        )
+        .as_bytes(),
+    )
+    .unwrap_or_else(|_| panic!("Unable to write file {:?}", output_dep_env_path));
     write(&stdout_path, process_output.stdout)
-        .expect(&format!("Unable to write file {:?}", stdout_path));
+        .unwrap_or_else(|_| panic!("Unable to write file {:?}", stdout_path));
     write(&stderr_path, process_output.stderr)
-        .expect(&format!("Unable to write file {:?}", stderr_path));
+        .unwrap_or_else(|_| panic!("Unable to write file {:?}", stderr_path));
 
     let CompileAndLinkFlags {
         compile_flags,
         link_flags,
-    } = BuildScriptOutput::to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
+    } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
 
-    write(&flagfile, compile_flags.as_bytes())
-        .expect(&format!("Unable to write file {:?}", flagfile));
-    write(&linkflags, link_flags.as_bytes())
-        .expect(&format!("Unable to write file {:?}", linkflags));
+    write(&compile_flags_file, compile_flags.as_bytes())
+        .unwrap_or_else(|_| panic!("Unable to write file {:?}", compile_flags_file));
+    write(&link_flags_file, link_flags.as_bytes())
+        .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_flags_file));
     Ok(())
 }
 
@@ -168,9 +171,9 @@ struct Options {
     progname: String,
     crate_links: String,
     out_dir: String,
-    envfile: String,
-    flagfile: String,
-    linkflags: String,
+    env_file: String,
+    compile_flags_file: String,
+    link_flags_file: String,
     output_dep_env_path: String,
     stdout_path: String,
     stderr_path: String,
@@ -187,9 +190,9 @@ fn parse_args() -> Result<Options, String> {
             Some(progname),
             Some(crate_links),
             Some(out_dir),
-            Some(envfile),
-            Some(flagfile),
-            Some(linkflags),
+            Some(env_file),
+            Some(compile_flags_file),
+            Some(link_flags_file),
             Some(output_dep_env_path),
             Some(stdout_path),
             Some(stderr_path),
@@ -198,9 +201,9 @@ fn parse_args() -> Result<Options, String> {
                 progname,
                 crate_links,
                 out_dir,
-                envfile,
-                flagfile,
-                linkflags,
+                env_file,
+                compile_flags_file,
+                link_flags_file,
                 output_dep_env_path,
                 stdout_path,
                 stderr_path,
@@ -208,7 +211,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err("Usage: $0 progname out_dir envfile flagfile linkflagfile output_dep_env_path [arg1...argn]".to_owned())
+            Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
         }
     }
 }
@@ -243,7 +246,7 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
             if value.starts_with('"') && value.ends_with('"') && value.len() >= 2 {
                 values
                     .entry(key)
-                    .or_insert(vec![])
+                    .or_insert_with(Vec::new)
                     .push(value[1..(value.len() - 1)].to_owned());
             }
         }
