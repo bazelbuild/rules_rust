@@ -109,7 +109,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
 </pre>
 
-Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags are not intended to apply to things built in the exec configuration such as proc macros.
+Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc).
 
 **ATTRIBUTES**
 
