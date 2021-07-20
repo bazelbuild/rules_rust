@@ -17,8 +17,8 @@ def _toolchain_specifies_target_json_test_impl(ctx):
     env = analysistest.begin(ctx)
     toolchain_info = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
 
-    asserts.equals(env, "x86_64-unknown-linux-gnu.json", toolchain_info.target_json.basename)
-    asserts.equals(env, "test/unit/toolchain/x86_64-unknown-linux-gnu.json", toolchain_info.target_flag_value)
+    asserts.equals(env, "toolchain-test-triple.json", toolchain_info.target_json.basename)
+    asserts.equals(env, "test/unit/toolchain/toolchain-test-triple.json", toolchain_info.target_flag_value)
     asserts.equals(env, "", toolchain_info.target_triple)
 
     return analysistest.end(env)
@@ -34,7 +34,7 @@ def _toolchain_test():
 
     native.filegroup(
         name = "target_json",
-        srcs = ["x86_64-unknown-linux-gnu.json"],
+        srcs = ["toolchain-test-triple.json"],
     )
 
     rust_toolchain(
