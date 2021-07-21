@@ -99,11 +99,8 @@ follow cargo's behaviour are considered bug fixes.
 instructions/tooling.
 3. Add a build setting into `//rust:incompatible.bzl` that removes the old
 behavior (whenever possible) or changes the current behavior (when just
-removing old behavior is not possible). Users should not need to manually
-flip incompatible flags. If for a specific flag they do need to manually flip
-it, then in the first backwards incompatible release we make the flag be a
-noop, and only in the second backwards incompatible release we remove the
-flag.
+removing the old behavior is not possible). Ideally, users should not need to
+manually flip incompatible flags.
 4. Mention the link to the GitHub issue in error messages. Do not add a
 deprecation warning (warnings make the deprecation visible to every user
 building a project, not only to the maintainers of the project or the rules).
