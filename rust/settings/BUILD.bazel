@@ -7,3 +7,8 @@ incompatible_flag(
     build_setting_default = False,
     issue = "https://github.com/bazelbuild/rules_rust/issues/591",
 )
+
+bzl_library(
+    name = "rules",
+    srcs = glob(["**/*.bzl"]),
+)
