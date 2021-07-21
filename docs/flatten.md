@@ -3,6 +3,8 @@
 * [cargo_build_script](#cargo_build_script)
 * [crate](#crate)
 * [crate_universe](#crate_universe)
+* [fail_when_enabled](#fail_when_enabled)
+* [incompatible_flag](#incompatible_flag)
 * [rust_analyzer](#rust_analyzer)
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_benchmark](#rust_benchmark)
