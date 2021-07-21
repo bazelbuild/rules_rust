@@ -12,6 +12,7 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY}" ]]; then
 fi
 
 TOOLS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TOOLS.txt")"
+HOST_TOOLS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_HOST_TOOLS.txt")"
 TARGETS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TARGETS.txt")"
 VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_VERSIONS.txt")"
 BETA_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_BETA_ISO_DATES.txt")"
@@ -37,6 +38,14 @@ enumerate_keys() {
       do
         echo "$ISO_DATE/$TOOL-nightly-$TARGET"
       done
+    done
+  done
+
+  for HOST_TOOL in $HOST_TOOLS
+  do
+    for VERSION in $VERSIONS
+    do
+      echo "$HOST_TOOL-$VERSION"
     done
   done
 }
