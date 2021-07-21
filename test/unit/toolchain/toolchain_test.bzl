@@ -8,8 +8,8 @@ def _toolchain_specifies_target_triple_test_impl(ctx):
     toolchain_info = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
 
     asserts.equals(env, None, toolchain_info.target_json)
-    asserts.equals(env, "x86_64-unknown-linux-gnu", toolchain_info.target_flag_value)
-    asserts.equals(env, "x86_64-unknown-linux-gnu", toolchain_info.target_triple)
+    asserts.equals(env, "toolchain-test-triple", toolchain_info.target_flag_value)
+    asserts.equals(env, "toolchain-test-triple", toolchain_info.target_triple)
 
     return analysistest.end(env)
 
@@ -45,7 +45,7 @@ def _toolchain_test():
         rust_lib = ":std_libs",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
-        target_triple = "x86_64-unknown-linux-gnu",
+        target_triple = "toolchain-test-triple",
     )
 
     rust_toolchain(
