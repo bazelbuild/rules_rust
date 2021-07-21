@@ -4,7 +4,7 @@ See COMPATIBILITY.md for the backwards compatibility policy.
 """
 
 IncompatibleFlagInfo = provider(
-    doc = "Set the --error-format flag for all rustc invocations",
+    doc = "Provider for the current value of an incompatible flag.",
     fields = {
         "enabled": "(bool) whether the flag is enabled",
         "issue": "(string) link to the github issue associated with this flag",
@@ -19,7 +19,10 @@ incompatible_flag = rule(
     implementation = _incompatible_flag_impl,
     build_setting = config.bool(flag = True),
     attrs = {
-        "issue": attr.string(),
+        "issue": attr.string(
+            doc = "The link to the github issue associated with this flag",
+            mandatory = True,
+        ),
     },
 )
 
@@ -33,7 +36,10 @@ fail_when_enabled = rule(
     doc = "A rule that will fail analysis when a flag is enabled.",
     implementation = _fail_when_enabled_impl,
     attrs = {
-        "flag": attr.string(),
+        "flag": attr.string(
+            doc = "The incompatible flag to check",
+            mandatory = True,
+        ),
         "_split_rust_library": attr.label(default = "//rust/settings:split_rust_library"),
     },
 )
