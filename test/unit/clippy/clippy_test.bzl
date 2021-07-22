@@ -28,7 +28,7 @@ def _clippy_aspect_action_has_flag_impl(ctx, flags):
         )
 
     clippy_checks = target[OutputGroupInfo].clippy_checks.to_list()
-    if len(clippy_checks) > 1:
+    if len(clippy_checks) != 1:
         fail("clippy_checks is only expected to contain 1 file")
 
     # Ensure the arguments to generate the marker file are present in
