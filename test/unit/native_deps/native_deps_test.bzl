@@ -78,7 +78,13 @@ def _bin_has_native_libs_test_impl(ctx):
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
-    return [a for a in argv if a.startswith("link-arg=") or a.startswith("link-arg=-l") or a.startswith("-l") or a.endswith(".lo") or a.endswith(".o")]
+    return [a for a in argv if (
+        a.startswith("link-arg=") or
+        a.startswith("link-args=") or
+        a.startswith("-l") or
+        a.endswith(".lo") or
+        a.endswith(".o")
+    )]
 
 def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -103,7 +109,12 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
             "link-arg=-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, _extract_linker_args(action.argv))
+    individual_link_args = [
+        arg
+        for arg in _extract_linker_args(action.argv)
+        if arg.startswith("link-arg=")
+    ]
+    asserts.equals(env, want, individual_link_args)
     return analysistest.end(env)
 
 def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
@@ -243,6 +254,48 @@ def _native_dep_test():
         target_under_test = ":cdylib_has_native_dep_and_alwayslink",
     )
 
+def _linkopts_propagate_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+    action = actions[0]
+
+    # Ensure linkopts from direct (-Llinkoptdep1) and transitive
+    # (-Llinkoptdep2) dependencies are propagated.
+    linkopt_1_found = False
+    linkopt_2_found = False
+    for arg in _extract_linker_args(action.argv):
+        linkopt_1_found = linkopt_1_found or ("-Llinkoptdep1" in arg)
+        linkopt_2_found = linkopt_2_found or ("-Llinkoptdep2" in arg)
+    asserts.true(env, linkopt_1_found and linkopt_2_found)
+    return analysistest.end(env)
+
+linkopts_propagate_test = analysistest.make(_linkopts_propagate_test_impl)
+
+def _linkopts_test():
+    rust_binary(
+        name = "linkopts_rust_bin",
+        srcs = ["bin_using_native_dep.rs"],
+        deps = [":linkopts_native_dep_a"],
+    )
+
+    cc_library(
+        name = "linkopts_native_dep_a",
+        srcs = ["native_dep.cc"],
+        linkopts = ["-Llinkoptdep1"],
+        deps = [":linkopts_native_dep_b"],
+    )
+
+    cc_library(
+        name = "linkopts_native_dep_b",
+        linkopts = ["-Llinkoptdep2"],
+    )
+
+    linkopts_propagate_test(
+        name = "native_linkopts_propagate_test",
+        target_under_test = ":linkopts_rust_bin",
+    )
+
 def native_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -250,6 +303,7 @@ def native_deps_test_suite(name):
         name: Name of the macro.
     """
     _native_dep_test()
+    _linkopts_test()
 
     native.test_suite(
         name = name,
@@ -261,5 +315,6 @@ def native_deps_test_suite(name):
             ":bin_has_native_libs_test",
             ":bin_has_native_dep_and_alwayslink_test",
             ":cdylib_has_native_dep_and_alwayslink_test",
+            ":native_linkopts_propagate_test",
         ],
     )

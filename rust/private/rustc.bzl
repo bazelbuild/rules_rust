@@ -201,6 +201,14 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
             - (dict): Environment variables to be set for given action.
     """
     user_link_flags = get_cc_user_link_flags(ctx)
+
+    # Add linkopt's from dependencies. This includes linkopts from transitive
+    # dependencies since they get merged up.
+    for dep in ctx.attr.deps:
+        if CcInfo in dep and dep[CcInfo].linking_context:
+            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
+                for flag in linker_input.user_link_flags:
+                    user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
