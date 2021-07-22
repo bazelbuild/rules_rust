@@ -6,6 +6,8 @@ load(
     "rust_test",
 )
 
+package(default_visibility = ["//test:__subpackages__"])
+
 # Declaration of passing targets.
 
 rust_binary(
