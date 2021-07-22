@@ -61,6 +61,11 @@ load(
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
 )
 load(
+    "@rules_rust//rust/settings:incompatible.bzl",
+    _fail_when_enabled = "fail_when_enabled",
+    _incompatible_flag = "incompatible_flag",
+)
+load(
     "@rules_rust//rust:toolchain.bzl",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
@@ -73,11 +78,6 @@ load(
     "@rules_rust//wasm_bindgen:wasm_bindgen.bzl",
     _rust_wasm_bindgen = "rust_wasm_bindgen",
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
-)
-load(
-    "@rules_rust//rust/settings:incompatible.bzl",
-    _fail_when_enabled = "fail_when_enabled",
-    _incompatible_flag = "incompatible_flag",
 )
 
 rust_binary = _rust_binary
