@@ -838,9 +838,14 @@ def _get_crate_dirname(crate):
 
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
-        return ["-lstatic=%s" % get_lib_name(get_preferred_artifact(lib))]
+        return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
     elif _is_dylib(lib):
-        return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
+        # TODO: Consider switching dylibs to use -Clink-arg as above.
+        return [
+            "-Lnative=%s" % get_preferred_artifact(lib).dirname,
+            "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib)),
+        ]
+
     return []
 
 def _make_link_flags_windows(linker_input):
@@ -895,8 +900,6 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
-
     if crate_type in ["lib", "rlib"]:
         return
 
