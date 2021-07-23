@@ -7,49 +7,43 @@ load("//test/unit:common.bzl", "assert_argv_contains")
 def _default_crate_name_library_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
 
     # Note: Hyphens in crate name converted to underscores.
-    assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_library")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_library")
     return analysistest.end(env)
 
 def _custom_crate_name_library_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
-    assert_argv_contains(env, actions[0], "--crate-name=custom_name")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=custom_name")
     return analysistest.end(env)
 
 def _default_crate_name_binary_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
 
     # Note: Hyphens in crate name converted to underscores.
-    assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_binary")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_binary")
     return analysistest.end(env)
 
 def _custom_crate_name_binary_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
-    assert_argv_contains(env, actions[0], "--crate-name=custom_name")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=custom_name")
     return analysistest.end(env)
 
 def _default_crate_name_test_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
 
     # Note: Hyphens in crate name converted to underscores.
-    assert_argv_contains(env, actions[0], "--crate-name=default_crate_name_test")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_test")
     return analysistest.end(env)
 
 def _custom_crate_name_test_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
-    assert_argv_contains(env, actions[0], "--crate-name=custom_name")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=custom_name")
     return analysistest.end(env)
 
 def _invalid_default_crate_name_test_impl(ctx):
