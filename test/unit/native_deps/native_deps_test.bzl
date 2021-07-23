@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not", "assert_argv_contains_prefix_suffix")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not", "assert_argv_contains_prefix_suffix", "assert_list_contains_adjacent_elements")
 
 def _native_dep_lib_name(ctx):
     if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
@@ -257,17 +257,23 @@ def _native_dep_test():
 def _linkopts_propagate_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    actions = analysistest.target_actions(env)
-    action = actions[0]
+    action = tut.actions[0]
 
     # Ensure linkopts from direct (-Llinkoptdep1) and transitive
     # (-Llinkoptdep2) dependencies are propagated.
-    linkopt_1_found = False
-    linkopt_2_found = False
-    for arg in _extract_linker_args(action.argv):
-        linkopt_1_found = linkopt_1_found or ("-Llinkoptdep1" in arg)
-        linkopt_2_found = linkopt_2_found or ("-Llinkoptdep2" in arg)
-    asserts.true(env, linkopt_1_found and linkopt_2_found)
+    # Consistently with cc rules, dependency linkopts take precedence over
+    # dependent linkopts (i.e. dependency linkopts appear later in the command
+    # line).
+    linkopt_args = [
+        arg
+        for arg in _extract_linker_args(action.argv)
+        if arg.startswith("link-args")
+    ][0].split(" ")
+    assert_list_contains_adjacent_elements(
+        env,
+        linkopt_args,
+        ["-Llinkoptdep1", "-Llinkoptdep2"],
+    )
     return analysistest.end(env)
 
 linkopts_propagate_test = analysistest.make(_linkopts_propagate_test_impl)
