@@ -239,10 +239,12 @@ rust_toolchain = rule(
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "clippy_driver": attr.label(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "debug_info": attr.string_dict(
             doc = "Rustc debug info levels per opt level",
@@ -281,6 +283,7 @@ rust_toolchain = rule(
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
@@ -288,6 +291,7 @@ rust_toolchain = rule(
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
@@ -298,6 +302,7 @@ rust_toolchain = rule(
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "staticlib_ext": attr.string(
             doc = "The extension for static libraries created from rustc.",
