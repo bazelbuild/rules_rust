@@ -27,6 +27,7 @@ load(
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
+    "make_static_lib_symlink",
     "relativize",
 )
 
@@ -200,6 +201,14 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
             - (dict): Environment variables to be set for given action.
     """
     user_link_flags = get_cc_user_link_flags(ctx)
+
+    # Add linkopt's from dependencies. This includes linkopts from transitive
+    # dependencies since they get merged up.
+    for dep in ctx.attr.deps:
+        if CcInfo in dep and dep[CcInfo].linking_context:
+            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
+                for flag in linker_input.user_link_flags:
+                    user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -267,7 +276,7 @@ def collect_inputs(
     Args:
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
-        files (list): A list of all inputs.
+        files (list): A list of all inputs (`ctx.files`).
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
@@ -283,10 +292,10 @@ def collect_inputs(
 
     compile_inputs = depset(
         getattr(files, "data", []) +
-        getattr(files, "compile_data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
+        ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
@@ -294,6 +303,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            crate_info.compile_data,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
@@ -429,7 +439,7 @@ def construct_arguments(
 
     args.add("--emit=" + ",".join(emit_with_paths))
     args.add("--color=always")
-    args.add("--target=" + toolchain.target_triple)
+    args.add("--target=" + toolchain.target_flag_value)
     if hasattr(attr, "crate_features"):
         args.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
@@ -635,8 +645,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         # bazel hard-codes a check for endswith((".a", ".pic.a",
         # ".lib")) in create_library_to_link, so we work around that
         # by creating a symlink to the .rlib with a .a extension.
-        dot_a = ctx.actions.declare_file(crate_info.name + ".a", sibling = crate_info.output)
-        ctx.actions.symlink(output = dot_a, target_file = crate_info.output)
+        dot_a = make_static_lib_symlink(ctx.actions, crate_info.output)
 
         # TODO(hlopko): handle PIC/NOPIC correctly
         library_to_link = cc_common.create_library_to_link(
@@ -837,9 +846,14 @@ def _get_crate_dirname(crate):
 
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
-        return ["-lstatic=%s" % get_lib_name(get_preferred_artifact(lib))]
+        return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
     elif _is_dylib(lib):
-        return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
+        # TODO: Consider switching dylibs to use -Clink-arg as above.
+        return [
+            "-Lnative=%s" % get_preferred_artifact(lib).dirname,
+            "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib)),
+        ]
+
     return []
 
 def _make_link_flags_windows(linker_input):
@@ -894,8 +908,6 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
-
     if crate_type in ["lib", "rlib"]:
         return
 

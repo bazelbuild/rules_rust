@@ -77,7 +77,7 @@ def _build_script_impl(ctx):
         # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
         "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
         "RUSTC": toolchain.rustc.path,
-        "TARGET": toolchain.target_triple,
+        "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
 
@@ -129,7 +129,7 @@ def _build_script_impl(ctx):
             script,
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
-        ] + ctx.files.data,
+        ] + ctx.files.data + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
 

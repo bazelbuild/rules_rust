@@ -18,6 +18,7 @@ CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
+        "compile_data": "depset[File]: Compile data required by this crate.",
         "deps": "depset[Provider]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
@@ -39,7 +40,7 @@ DepInfo = provider(
     doc = "A provider containing information about a Crate's dependencies.",
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
-        "direct_crates": "depset[CrateInfo]",
+        "direct_crates": "depset[AliasableDepInfo]",
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",

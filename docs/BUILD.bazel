@@ -46,6 +46,13 @@ PAGES = dict([
         ],
     ),
     page(
+        name = "settings",
+        symbols = [
+            "incompatible_flag",
+            "fail_when_enabled",
+        ],
+    ),
+    page(
         name = "defs",
         symbols = [
             "rust_binary",

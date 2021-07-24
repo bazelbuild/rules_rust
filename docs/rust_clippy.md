@@ -29,6 +29,14 @@ This will enable clippy on all [Rust targets](./defs.md).
 
 Note that targets tagged with `noclippy` will not perform clippy checks
 
+To use a local clippy.toml, add the following flag to your `.bazelrc`. Note that due to
+the upstream implementation of clippy, this file must be named either `.clippy.toml` or
+`clippy.toml`. Using a custom config file requires Rust 1.34.0 or newer.
+
+```text
+build --@rules_rust//:clippy.toml=//:clippy.toml
+```
+
 <a id="#rust_clippy"></a>
 
 ## rust_clippy

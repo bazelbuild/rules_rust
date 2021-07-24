@@ -1,0 +1,15 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":incompatible.bzl", "incompatible_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+incompatible_flag(
+    name = "split_rust_library",
+    build_setting_default = False,
+    issue = "https://github.com/bazelbuild/rules_rust/issues/591",
+)
+
+bzl_library(
+    name = "rules",
+    srcs = glob(["**/*.bzl"]),
+)

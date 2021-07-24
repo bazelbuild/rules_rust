@@ -266,6 +266,7 @@ def _rust_library_common(ctx, crate_type):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
+            compile_data = depset(ctx.files.compile_data),
         ),
         output_hash = output_hash,
     )
@@ -301,6 +302,7 @@ def _rust_binary_impl(ctx):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
+            compile_data = depset(ctx.files.compile_data),
         ),
     )
 
@@ -404,8 +406,15 @@ def _rust_test_common(ctx, toolchain, output):
     crate_type = "bin"
     if ctx.attr.crate:
         # Target is building the crate in `test` config
-        # Build the test binary using the dependency's srcs.
         crate = ctx.attr.crate[rust_common.crate_info]
+
+        # Optionally join compile data
+        if crate.compile_data:
+            compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data])
+        else:
+            compile_data = depset(ctx.files.compile_data)
+
+        # Build the test binary using the dependency's srcs.
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
@@ -418,6 +427,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = crate.edition,
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            compile_data = compile_data,
             wrapped_crate_type = crate.type,
         )
     else:
@@ -434,6 +444,7 @@ def _rust_test_common(ctx, toolchain, output):
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
+            compile_data = depset(ctx.files.compile_data),
         )
 
     providers = rustc_compile_action(
@@ -860,7 +871,14 @@ _rust_binary_attrs = {
         cfg = "exec",
         allow_single_file = True,
     ),
-    "out_binary": attr.bool(),
+    "out_binary": attr.bool(
+        doc = (
+            "Force a target, regardless of it's `crate_type`, to always mark the " +
+            "file as executable. This attribute is only used to support wasm targets but is " +
+            "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
+        ),
+        default = False,
+    ),
 }
 
 rust_binary = rule(

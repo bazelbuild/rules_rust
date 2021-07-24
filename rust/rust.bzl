@@ -33,6 +33,7 @@ load(
     _rust_test = "rust_test",
     _rust_test_binary = "rust_test_binary",
 )
+load("//rust/settings:incompatible.bzl", "fail_when_enabled")
 
 def rust_library(**args):
     """Deprecated. Use the version from "@rules_rust//rust:defs.bzl" instead.
@@ -43,6 +44,11 @@ def rust_library(**args):
     Returns:
         a target.
     """
+    fail_when_enabled(
+        name = "fail_" + args["name"],
+        flag = "split_rust_library",
+    )
+
     if "crate_type" in args:
         crate_type = args.pop("crate_type")
         if crate_type in ["lib", "rlib", "dylib"]:

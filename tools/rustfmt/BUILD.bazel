@@ -4,17 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files(["rustfmt.toml"])
 
-alias(
-    name = "rustfmt_bin",
-    actual = select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": "@rust_darwin_aarch64//:rustfmt_bin",
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": "@rust_linux_aarch64//:rustfmt_bin",
-        "@rules_rust//rust/platform:x86_64-apple-darwin": "@rust_darwin_x86_64//:rustfmt_bin",
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": "@rust_windows_x86_64//:rustfmt_bin",
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": "@rust_linux_x86_64//:rustfmt_bin",
-    }),
-)
-
 rust_library(
     name = "rustfmt_lib",
     srcs = glob(
@@ -22,12 +11,12 @@ rust_library(
         exclude = ["srcs/**/*main.rs"],
     ),
     data = [
-        ":rustfmt_bin",
         "//:rustfmt.toml",
+        "//rust/toolchain:current_exec_rustfmt_files",
     ],
     edition = "2018",
     rustc_env = {
-        "RUSTFMT": "$(rootpath :rustfmt_bin)",
+        "RUSTFMT": "$(rootpath //rust/toolchain:current_exec_rustfmt_files)",
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
 )

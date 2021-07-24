@@ -1,21 +1,7 @@
 """The rust_toolchain rule definition and implementation."""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain")
-
-def _make_dota(ctx, file):
-    """Add a symlink for a file that ends in .a, so it can be used as a staticlib.
-
-    Args:
-        ctx (ctx): The rule's context object.
-        file (File): The file to symlink.
-
-    Returns:
-        The symlink's File.
-    """
-    dot_a = ctx.actions.declare_file(file.basename + ".a", sibling = file)
-    ctx.actions.symlink(output = dot_a, target_file = file)
-    return dot_a
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_lib = ctx.files.srcs
@@ -40,7 +26,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
-        dot_a_files = [_make_dota(ctx, f) for f in std_rlibs]
+        dot_a_files = [make_static_lib_symlink(ctx.actions, f) for f in std_rlibs]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
@@ -163,13 +149,36 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
             transitive = [between_alloc_and_core_inputs],
             order = "topological",
         )
+
+        # The libraries panic_abort and panic_unwind are alternatives.
+        # The std by default requires panic_unwind.
+        # Exclude panic_abort if panic_unwind is present.
+        # TODO: Provide a setting to choose between panic_abort and panic_unwind.
+        filtered_between_core_and_std_files = rust_stdlib_info.between_core_and_std_files
+        has_panic_unwind = [
+            f
+            for f in filtered_between_core_and_std_files
+            if "panic_unwind" in f.basename
+        ]
+        if has_panic_unwind:
+            filtered_between_core_and_std_files = [
+                f
+                for f in filtered_between_core_and_std_files
+                if "panic_abort" not in f.basename
+            ]
         between_core_and_std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_core_and_std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in filtered_between_core_and_std_files
+            ],
             transitive = [core_inputs],
             order = "topological",
         )
         std_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.std_files],
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in rust_stdlib_info.std_files
+            ],
             transitive = [between_core_and_std_inputs],
             order = "topological",
         )
@@ -217,12 +226,17 @@ def _rust_toolchain_impl(ctx):
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
+    if ctx.attr.target_triple and ctx.file.target_json:
+        fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
+
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
         rustfmt = ctx.file.rustfmt,
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
+        target_json = ctx.file.target_json,
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
         rust_lib = ctx.attr.rust_lib,
@@ -255,10 +269,12 @@ rust_toolchain = rule(
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "clippy_driver": attr.label(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "debug_info": attr.string_dict(
             doc = "Rustc debug info levels per opt level",
@@ -297,6 +313,7 @@ rust_toolchain = rule(
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
@@ -304,6 +321,7 @@ rust_toolchain = rule(
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
@@ -314,6 +332,7 @@ rust_toolchain = rule(
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "staticlib_ext": attr.string(
             doc = "The extension for static libraries created from rustc.",
@@ -325,6 +344,11 @@ rust_toolchain = rule(
                 "see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs"
             ),
             mandatory = True,
+        ),
+        "target_json": attr.label(
+            doc = ("Override the target_triple with a custom target specification. " +
+                   "For more details see: https://doc.rust-lang.org/rustc/targets/custom.html"),
+            allow_single_file = True,
         ),
         "target_triple": attr.string(
             doc = (
