@@ -325,6 +325,7 @@ rust_toolchain = rule(
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
+            cfg = "exec",
         ),
         "rustc_srcs": attr.label(
             doc = "The source code of rustc.",
