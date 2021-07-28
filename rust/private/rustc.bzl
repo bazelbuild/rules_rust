@@ -268,6 +268,7 @@ def collect_inputs(
         files,
         toolchain,
         cc_toolchain,
+        crate_type,
         crate_info,
         dep_info,
         build_info):
@@ -279,6 +280,7 @@ def collect_inputs(
         files (list): A list of all inputs (`ctx.files`).
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
+        crate_type (str): Crate type of the current target.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
@@ -290,11 +292,17 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
-    additional_transitive_inputs = depset([
-        additional_input
-        for linker_input in dep_info.transitive_noncrates.to_list()
-        for additional_input in linker_input.additional_inputs
-    ])
+    # Pass linker additional inputs (e.g., linker scripts) only for linking-like
+    # actions, not for example where the output is rlib. This avoids quadratic
+    # behavior where transitive noncrates are flattened on each transitive
+    # rust_library dependency.
+    additional_transitive_inputs = []
+    if crate_type == "bin":
+        additional_transitive_inputs = [
+            additional_input
+            for linker_input in dep_info.transitive_noncrates.to_list()
+            for additional_input in linker_input.additional_inputs
+        ]
 
     compile_inputs = depset(
         getattr(files, "data", []) +
@@ -309,7 +317,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
-            additional_transitive_inputs,
+            depset(additional_transitive_inputs),
             crate_info.compile_data,
         ],
     )
@@ -562,6 +570,7 @@ def rustc_compile_action(
         ctx.files,
         toolchain,
         cc_toolchain,
+        crate_type,
         crate_info,
         dep_info,
         build_info,
