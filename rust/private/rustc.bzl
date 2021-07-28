@@ -290,6 +290,12 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
+    additional_transitive_inputs = depset([
+        additional_input
+        for linker_input in dep_info.transitive_noncrates.to_list()
+        for additional_input in linker_input.additional_inputs
+    ])
+
     compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
@@ -303,6 +309,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            additional_transitive_inputs,
             crate_info.compile_data,
         ],
     )

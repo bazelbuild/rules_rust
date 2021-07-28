@@ -293,6 +293,34 @@ def _linkopts_test():
         target_under_test = ":linkopts_rust_bin",
     )
 
+def _additional_deps_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+    additional_inputs = [inp.basename for inp in action.inputs.to_list()]
+    asserts.true(env, "dynamic.lds" in additional_inputs)
+    return analysistest.end(env)
+
+additional_deps_test = analysistest.make(_additional_deps_test_impl)
+
+def _additional_deps_test():
+    rust_binary(
+        name = "additional_deps_rust_bin",
+        srcs = ["bin_using_native_dep.rs"],
+        deps = [":additional_deps_cc"],
+    )
+
+    cc_library(
+        name = "additional_deps_cc",
+        linkopts = ["-Wl,--dynamic-list=$(location :dynamic.lds)"],
+        deps = [":dynamic.lds"],
+    )
+
+    additional_deps_test(
+        name = "additional_deps_test",
+        target_under_test = ":additional_deps_rust_bin",
+    )
+
 def native_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -301,6 +329,7 @@ def native_deps_test_suite(name):
     """
     _native_dep_test()
     _linkopts_test()
+    _additional_deps_test()
 
     native.test_suite(
         name = name,
@@ -313,5 +342,6 @@ def native_deps_test_suite(name):
             ":bin_has_native_dep_and_alwayslink_test",
             ":cdylib_has_native_dep_and_alwayslink_test",
             ":native_linkopts_propagate_test",
+            ":additional_deps_test",
         ],
     )
