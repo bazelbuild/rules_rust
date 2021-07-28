@@ -312,7 +312,7 @@ def _additional_deps_test():
 
     cc_library(
         name = "additional_deps_cc",
-        linkopts = ["-Wl,--dynamic-list=$(location :dynamic.lds)"],
+        linkopts = ["-L$(location :dynamic.lds)"],
         deps = [":dynamic.lds"],
     )
 
