@@ -312,6 +312,7 @@ def _additional_deps_test():
 
     cc_library(
         name = "additional_deps_cc",
+        srcs = ["native_dep.cc"],
         linkopts = ["-L$(location :dynamic.lds)"],
         deps = [":dynamic.lds"],
     )
