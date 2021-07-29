@@ -503,7 +503,11 @@ def construct_arguments(
         if rust_common.crate_info in data:
             dep_crate_info = data[rust_common.crate_info]
             if dep_crate_info.type == "bin":
-                env["CARGO_BIN_EXE_" + dep_crate_info.output.basename] = dep_crate_info.output.short_path
+                # Trying to make CARGO_BIN_EXE_{} canonical across platform by strip out extension if exists
+                env_basename = dep_crate_info.output.basename
+                if len(dep_crate_info.output.extension) > 0:
+                    env_basename = env_basename[:-(1 + len(dep_crate_info.output.extension))]
+                env["CARGO_BIN_EXE_" + env_basename] = dep_crate_info.output.short_path
 
     # Update environment with user provided variables.
     env.update(expand_dict_value_locations(

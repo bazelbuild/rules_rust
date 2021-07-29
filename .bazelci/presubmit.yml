@@ -64,7 +64,6 @@ tasks:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "-//bindgen/..."
-      - "-//test/test_env/..."
       - "-//test/proto/..."
       - "-//tools/rust_analyzer/..."
       - "-//test/rustfmt/..."
