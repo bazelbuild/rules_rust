@@ -20,7 +20,7 @@ load(
 load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.53.0"
+DEFAULT_RUST_VERSION = "1.54.0"
 DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_darwin_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
