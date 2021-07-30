@@ -24,8 +24,8 @@ rust_library(
         "@rules_rust//rust/platform:linux": [
             ":print_linux.rs",
         ],
-        "@rules_rust//rust/platform:osx": [
-            ":print_osx.rs",
+        "@rules_rust//rust/platform:macos": [
+            ":print_macos.rs",
         ],
         "@rules_rust//rust/platform:windows": [
             ":print_windows.rs",
