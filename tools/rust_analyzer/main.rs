@@ -117,7 +117,7 @@ fn parse_config() -> anyhow::Result<Config> {
     }
 
     // Extract the output.
-    let output = String::from_utf8_lossy(&output.stdout.as_slice());
+    let output = String::from_utf8_lossy(output.stdout.as_slice());
     let bazel_info = output
         .trim()
         .split('\n')

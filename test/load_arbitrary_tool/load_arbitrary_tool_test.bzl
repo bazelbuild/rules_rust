@@ -4,17 +4,20 @@ load("//rust:repositories.bzl", "load_arbitrary_tool")
 def _load_arbitrary_tool_test_impl(repository_ctx):
     if "mac" in repository_ctx.os.name:
         target_triple = "x86_64-apple-darwin"
+        cargo_bin = "bin/cargo"
     elif "windows" in repository_ctx.os.name:
         target_triple = "x86_64-pc-windows-msvc"
+        cargo_bin = "bin/cargo.exe"
     else:
         target_triple = "x86_64-unknown-linux-gnu"
+        cargo_bin = "bin/cargo"
 
     # Download cargo
     load_arbitrary_tool(
         ctx = repository_ctx,
         tool_name = "cargo",
         tool_subdirectories = ["cargo"],
-        version = "1.52.1",
+        version = "1.53.0",
         iso_date = None,
         target_triple = target_triple,
     )
@@ -22,7 +25,7 @@ def _load_arbitrary_tool_test_impl(repository_ctx):
     repo_path = repository_ctx.path(".")
     repository_ctx.file(
         "{}/BUILD.bazel".format(repo_path),
-        content = "exports_files([\"bin/cargo\"])",
+        content = "exports_files([\"{}\"])".format(cargo_bin),
     )
 
 _load_arbitrary_tool_test = repository_rule(

@@ -290,6 +290,18 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
+    # Pass linker additional inputs (e.g., linker scripts) only for linking-like
+    # actions, not for example where the output is rlib. This avoids quadratic
+    # behavior where transitive noncrates are flattened on each transitive
+    # rust_library dependency.
+    additional_transitive_inputs = []
+    if crate_info.type in ("bin", "dylib", "cdylib"):
+        additional_transitive_inputs = [
+            additional_input
+            for linker_input in dep_info.transitive_noncrates.to_list()
+            for additional_input in linker_input.additional_inputs
+        ]
+
     compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
@@ -303,6 +315,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            depset(additional_transitive_inputs),
             crate_info.compile_data,
         ],
     )
@@ -321,7 +334,6 @@ def construct_arguments(
         tool_path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash,
@@ -340,7 +352,6 @@ def construct_arguments(
         tool_path (str): Path to rustc
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
-        crate_type (str): Crate type of the current target.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
         output_hash (str): The hashed path of the crate root
@@ -476,7 +487,7 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info)
@@ -518,7 +529,6 @@ def construct_arguments(
 def rustc_compile_action(
         ctx,
         toolchain,
-        crate_type,
         crate_info,
         output_hash = None,
         rust_flags = [],
@@ -528,7 +538,6 @@ def rustc_compile_action(
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current `rust_toolchain`
-        crate_type (str): Crate type of the current target
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
@@ -568,7 +577,6 @@ def rustc_compile_action(
         toolchain.rustc.path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash,

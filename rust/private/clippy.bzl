@@ -87,7 +87,6 @@ def _clippy_aspect_impl(target, ctx):
         toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash = determine_output_hash(crate_info.root),

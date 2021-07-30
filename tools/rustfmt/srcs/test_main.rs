@@ -89,7 +89,7 @@ fn parse_args() -> Config {
         rustfmt_config: rustfmt_lib::parse_rustfmt_config(),
         manifests: manifests
             .iter()
-            .map(|manifest| rustfmt_lib::parse_rustfmt_manifest(&manifest))
+            .map(|manifest| rustfmt_lib::parse_rustfmt_manifest(manifest))
             .collect(),
     }
 }
