@@ -295,7 +295,7 @@ def collect_inputs(
     # behavior where transitive noncrates are flattened on each transitive
     # rust_library dependency.
     additional_transitive_inputs = []
-    if crate_info.type == "bin":
+    if crate_info.type in ("bin", "dylib", "cdylib"):
         additional_transitive_inputs = [
             additional_input
             for linker_input in dep_info.transitive_noncrates.to_list()

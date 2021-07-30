@@ -293,21 +293,40 @@ def _linkopts_test():
         target_under_test = ":linkopts_rust_bin",
     )
 
-def _additional_deps_test_impl(ctx):
+def _check_additional_deps_test_impl(ctx, expect_additional_deps):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     additional_inputs = [inp.basename for inp in action.inputs.to_list()]
-    asserts.true(env, "dynamic.lds" in additional_inputs)
+    asserts.equals(env, "dynamic.lds" in additional_inputs, expect_additional_deps)
     return analysistest.end(env)
 
-additional_deps_test = analysistest.make(_additional_deps_test_impl)
+def _has_additional_deps_test_impl(ctx):
+    return _check_additional_deps_test_impl(ctx, expect_additional_deps = True)
+
+def _has_no_additional_deps_test_impl(ctx):
+    return _check_additional_deps_test_impl(ctx, expect_additional_deps = False)
+
+has_additional_deps_test = analysistest.make(_has_additional_deps_test_impl)
+has_no_additional_deps_test = analysistest.make(_has_no_additional_deps_test_impl)
 
 def _additional_deps_test():
     rust_binary(
-        name = "additional_deps_rust_bin",
+        name = "bin_additional_deps",
         srcs = ["bin_using_native_dep.rs"],
         deps = [":additional_deps_cc"],
+    )
+
+    rust_shared_library(
+        name = "cdylib_additional_deps",
+        srcs = ["lib_using_native_dep.rs"],
+        deps = [":additional_deps_cc"],
+    )
+
+    rust_library(
+        name = "lib_additional_deps",
+        srcs = ["lib_using_native_dep.rs"],
+        deps = ["additional_deps_cc"],
     )
 
     cc_library(
@@ -317,9 +336,19 @@ def _additional_deps_test():
         deps = [":dynamic.lds"],
     )
 
-    additional_deps_test(
-        name = "additional_deps_test",
-        target_under_test = ":additional_deps_rust_bin",
+    has_additional_deps_test(
+        name = "bin_has_additional_deps_test",
+        target_under_test = ":bin_additional_deps",
+    )
+
+    has_additional_deps_test(
+        name = "cdylib_has_additional_deps_test",
+        target_under_test = ":cdylib_additional_deps",
+    )
+
+    has_no_additional_deps_test(
+        name = "lib_has_no_additional_deps_test",
+        target_under_test = ":lib_additional_deps",
     )
 
 def native_deps_test_suite(name):
@@ -343,6 +372,8 @@ def native_deps_test_suite(name):
             ":bin_has_native_dep_and_alwayslink_test",
             ":cdylib_has_native_dep_and_alwayslink_test",
             ":native_linkopts_propagate_test",
-            ":additional_deps_test",
+            ":bin_has_additional_deps_test",
+            ":cdylib_has_additional_deps_test",
+            ":lib_has_no_additional_deps_test",
         ],
     )
