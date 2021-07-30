@@ -35,6 +35,10 @@ load(
     _rust_proto_toolchain = "rust_proto_toolchain",
 )
 load(
+    "@rules_rust//proto:transitive_repositories.bzl",
+    _rust_proto_transitive_repositories = "rust_proto_transitive_repositories",
+)
+load(
     "@rules_rust//rust:defs.bzl",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
@@ -103,6 +107,7 @@ rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
 rust_proto_repositories = _rust_proto_repositories
 rust_stdlib_filegroup = _rust_stdlib_filegroup
+rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
 cargo_build_script = _cargo_build_script
 

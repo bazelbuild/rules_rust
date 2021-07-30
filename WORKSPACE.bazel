@@ -8,6 +8,10 @@ load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
+load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+
+rust_proto_transitive_repositories()
+
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
@@ -85,4 +89,4 @@ docs_deps()
 
 load("@docs//:docs_transitive_deps.bzl", docs_transitive_deps = "transitive_deps")
 
-docs_transitive_deps(is_top_level = True)
+docs_transitive_deps()

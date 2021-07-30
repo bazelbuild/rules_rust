@@ -1,0 +1,14 @@
+diff --git a/BUILD b/BUILD
+index efc3d8e7f..77e3ea413 100644
+--- a/BUILD
++++ b/BUILD
+@@ -1236,3 +1236,9 @@ sh_test(
+         "update_file_lists.sh",
+     ],
+ )
++
++filegroup(
++    name = "bzl_srcs",
++    srcs = glob(["**/*.bzl"]),
++    visibility = ["//visibility:public"],
++)

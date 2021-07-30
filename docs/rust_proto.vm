@@ -18,6 +18,10 @@ external repositories for the Rust proto toolchain (in addition to the [rust rul
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
+
+load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+
+rust_proto_transitive_repositories()
 ```
 
 [raze]: https://github.com/google/cargo-raze
