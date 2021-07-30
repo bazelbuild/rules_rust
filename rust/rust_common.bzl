@@ -14,6 +14,7 @@
 
 """Module with Rust definitions required to write custom Rust rules."""
 
-load("//rust/private:providers.bzl", _CrateInfo = "CrateInfo")
+load("//rust/private:providers.bzl", _CrateInfo = "CrateInfo", _DepInfo = "DepInfo")
 
 CrateInfo = _CrateInfo
+DepInfo = _DepInfo
