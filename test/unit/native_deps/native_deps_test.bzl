@@ -293,6 +293,64 @@ def _linkopts_test():
         target_under_test = ":linkopts_rust_bin",
     )
 
+def _check_additional_deps_test_impl(ctx, expect_additional_deps):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+    additional_inputs = [inp.basename for inp in action.inputs.to_list()]
+    asserts.equals(env, "dynamic.lds" in additional_inputs, expect_additional_deps)
+    return analysistest.end(env)
+
+def _has_additional_deps_test_impl(ctx):
+    return _check_additional_deps_test_impl(ctx, expect_additional_deps = True)
+
+def _has_no_additional_deps_test_impl(ctx):
+    return _check_additional_deps_test_impl(ctx, expect_additional_deps = False)
+
+has_additional_deps_test = analysistest.make(_has_additional_deps_test_impl)
+has_no_additional_deps_test = analysistest.make(_has_no_additional_deps_test_impl)
+
+def _additional_deps_test():
+    rust_binary(
+        name = "bin_additional_deps",
+        srcs = ["bin_using_native_dep.rs"],
+        deps = [":additional_deps_cc"],
+    )
+
+    rust_shared_library(
+        name = "cdylib_additional_deps",
+        srcs = ["lib_using_native_dep.rs"],
+        deps = [":additional_deps_cc"],
+    )
+
+    rust_library(
+        name = "lib_additional_deps",
+        srcs = ["lib_using_native_dep.rs"],
+        deps = ["additional_deps_cc"],
+    )
+
+    cc_library(
+        name = "additional_deps_cc",
+        srcs = ["native_dep.cc"],
+        linkopts = ["-L$(location :dynamic.lds)"],
+        deps = [":dynamic.lds"],
+    )
+
+    has_additional_deps_test(
+        name = "bin_has_additional_deps_test",
+        target_under_test = ":bin_additional_deps",
+    )
+
+    has_additional_deps_test(
+        name = "cdylib_has_additional_deps_test",
+        target_under_test = ":cdylib_additional_deps",
+    )
+
+    has_no_additional_deps_test(
+        name = "lib_has_no_additional_deps_test",
+        target_under_test = ":lib_additional_deps",
+    )
+
 def native_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -301,6 +359,7 @@ def native_deps_test_suite(name):
     """
     _native_dep_test()
     _linkopts_test()
+    _additional_deps_test()
 
     native.test_suite(
         name = name,
@@ -313,5 +372,8 @@ def native_deps_test_suite(name):
             ":bin_has_native_dep_and_alwayslink_test",
             ":cdylib_has_native_dep_and_alwayslink_test",
             ":native_linkopts_propagate_test",
+            ":bin_has_additional_deps_test",
+            ":cdylib_has_additional_deps_test",
+            ":lib_has_no_additional_deps_test",
         ],
     )
