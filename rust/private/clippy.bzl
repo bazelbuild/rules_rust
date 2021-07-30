@@ -70,7 +70,6 @@ def _clippy_aspect_impl(target, ctx):
         ctx.rule.files,
         toolchain,
         cc_toolchain,
-        crate_type,
         crate_info,
         dep_info,
         build_info,
