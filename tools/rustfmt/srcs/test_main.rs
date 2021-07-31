@@ -33,7 +33,7 @@ fn run_rustfmt(options: &Config) {
                 rustfmt_lib::from_slash(runfiles.rlocation(rustfmt_lib::current_dir_name().join(p)))
             })
             .collect::<Vec<_>>();
-        println!("MANIFEST SOURCES: {:?}", &runfiles_sources);
+
         // Run rustfmt
         let status = Command::new(&options.rustfmt_config.rustfmt)
             .arg("--check")
