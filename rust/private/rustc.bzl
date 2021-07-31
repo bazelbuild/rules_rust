@@ -214,7 +214,7 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
         cc_toolchain = cc_toolchain,
         is_linking_dynamic_library = False,
         runtime_library_search_directories = rpaths,
-        user_link_flags = user_link_flags,
+        user_link_flags = depset(user_link_flags).to_list(),
     )
     link_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
