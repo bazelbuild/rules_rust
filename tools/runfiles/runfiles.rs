@@ -171,13 +171,15 @@ fn find_runfiles_dir() -> io::Result<PathBuf> {
     Err(make_io_error("failed to find .runfiles directory"))
 }
 
-fn walk_dir(dir: &PathBuf) -> Vec<PathBuf> {
+fn walk_dir(dir: &Path) -> Vec<PathBuf> {
     let mut files_list = Vec::new();
-    let mut dirs = vec![dir.clone()];
+    let mut dirs = vec![dir.to_path_buf()];
 
     while !dirs.is_empty() {
         let dir = dirs.pop().unwrap();
-        for entry in fs::read_dir(&dir).expect(&format!("Failed to read directory: {:?}", &dir)) {
+        for entry in
+            fs::read_dir(&dir).unwrap_or_else(|_| panic!("Failed to read directory: {:?}", &dir))
+        {
             let entry = entry.expect("Failed to read directory entry");
             let path = entry.path();
             if path.is_file() {
