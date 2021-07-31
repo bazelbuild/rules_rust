@@ -17,12 +17,24 @@ fn absolutify_existing<T: AsRef<Path>>(path: &T) -> std::io::Result<PathBuf> {
     std::fs::metadata(&absolute_path).map(|_| absolute_path)
 }
 
-fn current_dir_name() -> PathBuf {
+pub fn current_dir_name() -> PathBuf {
     PathBuf::from(
         PathBuf::from(std::env::current_dir().unwrap())
             .file_name()
             .unwrap(),
     )
+}
+
+pub fn from_slash(p: PathBuf) -> PathBuf {
+    let s = p
+        .to_string_lossy()
+        .chars()
+        .map(|c| match c {
+            '/' => std::path::MAIN_SEPARATOR,
+            c => c,
+        })
+        .collect::<String>();
+    PathBuf::from(s)
 }
 
 /// A struct containing details used for executing rustfmt.

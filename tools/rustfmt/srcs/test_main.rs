@@ -17,6 +17,8 @@ fn run_rustfmt(options: &Config) {
     // track whether or not a failure has occured when checking formatting.
     let mut is_failure: bool = false;
 
+    let runfiles = runfiles::Runfiles::create().expect("Failed to find runfiles");
+
     for manifest in options.manifests.iter() {
         // Ignore any targets which do not have source files. This can
         // occur in cases where all source files are generated.
@@ -24,6 +26,14 @@ fn run_rustfmt(options: &Config) {
             continue;
         }
 
+        let runfiles_sources = manifest
+            .sources
+            .iter()
+            .map(|p| {
+                rustfmt_lib::from_slash(runfiles.rlocation(rustfmt_lib::current_dir_name().join(p)))
+            })
+            .collect::<Vec<_>>();
+        println!("MANIFEST SOURCES: {:?}", &runfiles_sources);
         // Run rustfmt
         let status = Command::new(&options.rustfmt_config.rustfmt)
             .arg("--check")
@@ -31,7 +41,7 @@ fn run_rustfmt(options: &Config) {
             .arg(&manifest.edition)
             .arg("--config-path")
             .arg(&options.rustfmt_config.config)
-            .args(&manifest.sources)
+            .args(&runfiles_sources)
             .status()
             .expect("Failed to run rustfmt");
 
