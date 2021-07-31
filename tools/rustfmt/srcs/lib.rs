@@ -6,11 +6,7 @@ use std::path::{Path, PathBuf};
 pub const RUSTFMT_MANIFEST_EXTENSION: &str = "rustfmt";
 
 pub fn current_dir_name() -> PathBuf {
-    PathBuf::from(
-        PathBuf::from(std::env::current_dir().unwrap())
-            .file_name()
-            .unwrap(),
-    )
+    PathBuf::from(std::env::current_dir().unwrap().file_name().unwrap())
 }
 
 pub fn from_slash(p: PathBuf) -> PathBuf {
