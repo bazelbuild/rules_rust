@@ -103,10 +103,25 @@ impl Runfiles {
                 .clone(),
         }
     }
+
+    /// Returns a list of paths to all files in runfiles.
+    ///
+    /// Does not return directories.
+    /// The returned path may not be valid. The caller should check the path's
+    /// validity and that the path exists.
+    pub fn list_files(&self) -> Vec<PathBuf> {
+        match &self.mode {
+            Mode::DirectoryBased(runfiles_dir) => walk_dir(runfiles_dir),
+            Mode::ManifestBased(path_mapping) => path_mapping
+                .iter()
+                .map(|(_k, v)| PathBuf::from(v))
+                .collect::<Vec<_>>(),
+        }
+    }
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
-pub fn find_runfiles_dir() -> io::Result<PathBuf> {
+fn find_runfiles_dir() -> io::Result<PathBuf> {
     assert_ne!(
         std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or_else(|| OsString::from("0")),
         "1"
@@ -154,6 +169,25 @@ pub fn find_runfiles_dir() -> io::Result<PathBuf> {
     }
 
     Err(make_io_error("failed to find .runfiles directory"))
+}
+
+fn walk_dir(dir: &PathBuf) -> Vec<PathBuf> {
+    let mut files_list = Vec::new();
+    let mut dirs = vec![dir.clone()];
+
+    while !dirs.is_empty() {
+        let dir = dirs.pop().unwrap();
+        for entry in fs::read_dir(&dir).expect(&format!("Failed to read directory: {:?}", &dir)) {
+            let entry = entry.expect("Failed to read directory entry");
+            let path = entry.path();
+            if path.is_file() {
+                files_list.push(path);
+            } else if path.is_dir() {
+                dirs.push(path);
+            }
+        }
+    }
+    files_list
 }
 
 fn make_io_error(msg: &str) -> io::Error {
