@@ -17,6 +17,14 @@ fn absolutify_existing<T: AsRef<Path>>(path: &T) -> std::io::Result<PathBuf> {
     std::fs::metadata(&absolute_path).map(|_| absolute_path)
 }
 
+fn current_dir_name() -> PathBuf {
+    PathBuf::from(
+        PathBuf::from(std::env::current_dir().unwrap())
+            .file_name()
+            .unwrap(),
+    )
+}
+
 /// A struct containing details used for executing rustfmt.
 #[derive(Debug)]
 pub struct RustfmtConfig {
@@ -31,10 +39,11 @@ pub struct RustfmtConfig {
 /// Parse command line arguments and environment variables to
 /// produce config data for running rustfmt.
 pub fn parse_rustfmt_config() -> RustfmtConfig {
+    let runfiles = runfiles::Runfiles::create().expect("Failed to find runfiles");
+
     RustfmtConfig {
-        rustfmt: absolutify_existing(&env!("RUSTFMT")).expect("Unable to find rustfmt binary"),
-        config: absolutify_existing(&env!("RUSTFMT_CONFIG"))
-            .expect("Unable to find rustfmt config file"),
+        rustfmt: runfiles.rlocation(current_dir_name().join(&env!("RUSTFMT"))),
+        config: runfiles.rlocation(current_dir_name().join(&env!("RUSTFMT_CONFIG"))),
     }
 }
 

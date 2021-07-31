@@ -19,6 +19,9 @@ rust_library(
         "RUSTFMT": "$(rootpath //rust/toolchain:current_exec_rustfmt_files)",
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
+    deps = [
+        "//tools/runfiles",
+    ],
 )
 
 rust_binary(
