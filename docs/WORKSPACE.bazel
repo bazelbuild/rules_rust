@@ -1,4 +1,4 @@
-workspace(name = "io_bazel_rules_rust_docs")
+workspace(name = "rules_rust_docs")
 
 load(":docs_repositories.bzl", "repositories")
 

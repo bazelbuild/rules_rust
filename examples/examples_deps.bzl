@@ -10,6 +10,16 @@ load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 load("@rules_rust//rust:repositories.bzl", "rust_repositories", "rust_repository_set")
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
+_LIBC_BUILD_FILE_CONTENT = """\
+load("@rules_rust//rust:rust.bzl", "rust_library")
+
+rust_library(
+    name = "libc",
+    srcs = glob(["src/**/*.rs"]),
+    visibility = ["//visibility:public"],
+)
+"""
+
 def deps():
     """Define dependencies for `rules_rust` examples"""
 
@@ -43,7 +53,7 @@ def deps():
     maybe(
         http_archive,
         name = "libc",
-        build_file = "@examples//ffi:libc.BUILD",
+        build_file_content = _LIBC_BUILD_FILE_CONTENT,
         sha256 = "1ac4c2ac6ed5a8fb9020c166bc63316205f1dc78d4b964ad31f4f21eb73f0c6d",
         strip_prefix = "libc-0.2.20",
         urls = [
