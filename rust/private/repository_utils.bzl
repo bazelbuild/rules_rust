@@ -526,8 +526,11 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     # View the indices mentioned in the docstring to find the tool_suburl for a given
     # tool.
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
-    urls = ["{}/dist/{}.tar.gz".format(static_rust, tool_suburl)]
+    urls = []
+
+    static_rust_url_from_env = ctx.os.environ.get("STATIC_RUST_URL")
+    if static_rust_url_from_env:
+        urls.append("{}/dist/{}.tar.gz".format(static_rust_url_from_env, tool_suburl))
 
     for url in getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES):
         new_url = url.format(tool_suburl)
