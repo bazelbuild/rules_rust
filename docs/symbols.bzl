@@ -13,7 +13,8 @@ load(
     _rust_bindgen_repositories = "rust_bindgen_repositories",
 )
 load(
-    "@rules_rust//cargo:cargo_build_script.bzl",
+    "@rules_rust//cargo:defs.bzl",
+    _cargo_bootstrap_repository = "cargo_bootstrap_repository",
     _cargo_build_script = "cargo_build_script",
 )
 load(
@@ -110,6 +111,7 @@ rust_stdlib_filegroup = _rust_stdlib_filegroup
 rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
 cargo_build_script = _cargo_build_script
+cargo_bootstrap_repository = _cargo_bootstrap_repository
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain

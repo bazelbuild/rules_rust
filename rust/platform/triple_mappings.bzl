@@ -221,6 +221,23 @@ def triple_to_arch(triple):
 
     return component_parts[0]
 
+def triple_to_abi(triple):
+    """Returns a system abi name for a given platform triple
+
+    Args:
+        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+
+    Returns:
+        str: The triple's abi
+    """
+    component_parts = triple.split("-")
+    if len(component_parts) < 3:
+        fail("Expected target triple to contain at least three sections separated by '-'")
+
+    if len(component_parts) >= 4:
+        return component_parts[3]
+    return None
+
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]
 

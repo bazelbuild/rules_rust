@@ -37,4 +37,5 @@ def deps():
             "x86_64-apple-darwin",
             "x86_64-unknown-linux-gnu",
         ],
+        resolver = "@rules_rust_crate_universe_bootstrap//:crate_universe_resolver",
     )
