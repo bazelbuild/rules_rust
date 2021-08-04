@@ -49,6 +49,7 @@ load(
     _rust_shared_library = "rust_shared_library",
     _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
+    _rust_test_binary = "rust_test_binary",
     _rust_test_suite = "rust_test_suite",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
@@ -86,6 +87,7 @@ rust_static_library = _rust_static_library
 rust_shared_library = _rust_shared_library
 rust_proc_macro = _rust_proc_macro
 rust_test = _rust_test
+rust_test_binary = _rust_test_binary
 rust_test_suite = _rust_test_suite
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test

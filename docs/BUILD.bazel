@@ -62,6 +62,7 @@ PAGES = dict([
             "rust_proc_macro",
             "rust_benchmark",
             "rust_test",
+            "rust_test_binary",
             "rust_test_suite",
         ],
     ),
