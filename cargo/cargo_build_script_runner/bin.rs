@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs::{create_dir_all, read_to_string, write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn run_buildrs() -> Result<(), String> {
@@ -46,7 +46,11 @@ fn run_buildrs() -> Result<(), String> {
         stdout_path,
         stderr_path,
         input_dep_env_paths,
-    } = parse_args()?;
+        rustc_opts,
+    } = parse_args(None)?;
+
+    // First, compile the build script
+    compile_build_script(&rustc_opts)?;
 
     let out_dir_abs = exec_root.join(&out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
@@ -85,20 +89,34 @@ fn run_buildrs() -> Result<(), String> {
                 }
             }
         } else {
-            return Err("error: Dependency environment file unreadable".to_owned());
+            return Err(format!(
+                "error: Dependency environment file unreadable: {}",
+                dep_env_path
+            ));
         }
     }
 
-    if let Some(cc_path) = env::var_os("CC") {
+    for (key, value) in env::vars_os() {
+        if let Ok(key) = key.into_string() {
+            if key.starts_with("CARGO_BUILD_SCRIPT__") {
+                let var: String = key.chars().skip(20).collect();
+                command.env(var, value);
+            }
+        }
+    }
+
+    if let Some(cc_path) = env::var_os("CARGO_BUILD_SCRIPT__CC") {
         let mut cc_path = absolutify(&exec_root, cc_path);
-        if let Some(sysroot_path) = env::var_os("SYSROOT") {
+        if let Some(sysroot_path) = env::var_os("CARGO_BUILD_SCRIPT__SYSROOT") {
+            let abs_sysroot = absolutify(&exec_root, sysroot_path);
             cc_path.push(" --sysroot=");
-            cc_path.push(absolutify(&exec_root, sysroot_path));
+            cc_path.push(&abs_sysroot);
+            command.env("SYSROOT", abs_sysroot);
         }
         command.env("CC", cc_path);
     }
 
-    if let Some(ar_path) = env::var_os("AR") {
+    if let Some(ar_path) = env::var_os("CARGO_BUILD_SCRIPT__AR") {
         // The default OSX toolchain uses libtool as ar_executable not ar.
         // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
         // /usr/bin/ar which is probably good enough.
@@ -166,7 +184,15 @@ fn run_buildrs() -> Result<(), String> {
     Ok(())
 }
 
+/// Parsed arguments required for compiling the `build.rs` script
+#[derive(Debug)]
+struct RustcOptions {
+    rustc_path: PathBuf,
+    args: Vec<String>,
+}
+
 /// A representation of expected command line arguments.
+#[derive(Debug)]
 struct Options {
     progname: String,
     crate_links: String,
@@ -178,11 +204,17 @@ struct Options {
     stdout_path: String,
     stderr_path: String,
     input_dep_env_paths: Vec<String>,
+    rustc_opts: RustcOptions,
 }
 
 /// Parses positional comamnd line arguments into a well defined struct
-fn parse_args() -> Result<Options, String> {
-    let mut args = env::args().skip(1);
+fn parse_args(argv: Option<Vec<String>>) -> Result<Options, String> {
+    let arguments = match argv {
+        Some(argv) => argv,
+        None => env::args().skip(1).collect::<Vec<_>>(),
+    };
+
+    let mut args = arguments.into_iter();
 
     // TODO: we should consider an alternative to positional arguments.
     match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
@@ -197,6 +229,16 @@ fn parse_args() -> Result<Options, String> {
             Some(stdout_path),
             Some(stderr_path),
         ) => {
+            let mut input_dep_env_paths: Vec<String> = args.collect();
+            let separator_index = input_dep_env_paths.iter()
+                .position(|arg| arg == "--")
+                .expect("The arguments should contain a `--` value which splits the runner args and rustc args");
+            let rustc_args = input_dep_env_paths.split_off(separator_index);
+            if rustc_args.first().expect("rustc args should not be empty") != "--" {
+                return Err(format!("Could not find rustc args separator in args: {:?}", env::args().skip(1).collect::<Vec<String>>()));
+            }
+            let rustc_args = rustc_args[1..].to_vec();
+
             Ok(Options{
                 progname,
                 crate_links,
@@ -207,13 +249,43 @@ fn parse_args() -> Result<Options, String> {
                 output_dep_env_path,
                 stdout_path,
                 stderr_path,
-                input_dep_env_paths: args.collect(),
+                input_dep_env_paths,
+                rustc_opts: parse_compile_args(rustc_args)?,
             })
         }
         _ => {
             Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
         }
     }
+}
+
+fn parse_compile_args(argv: Vec<String>) -> Result<RustcOptions, String> {
+    if argv.is_empty() {
+        return Err("No arguments were provided".to_owned());
+    }
+
+    let rustc_path = PathBuf::from(
+        argv.first()
+            .expect("The arg list is not expected to be empty"),
+    );
+
+    Ok(RustcOptions {
+        rustc_path,
+        args: argv[1..].to_vec(),
+    })
+}
+
+fn compile_build_script(rustc_opts: &RustcOptions) -> Result<(), String> {
+    let status = Command::new(&rustc_opts.rustc_path)
+        .args(&rustc_opts.args)
+        .status()
+        .map_err(|err| format!("Failed to start rustc process: {}", err))?;
+
+    if !status.success() {
+        return Err(format!("Error running rustc: {:?}", status));
+    }
+
+    Ok(())
 }
 
 fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, String>, String> {
@@ -276,4 +348,105 @@ fn main() {
             1
         }
     });
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_parse_args() {
+        let args = vec![
+            "build_script",
+            "",
+            "build_script_.out_dir",
+            "build_script_.env",
+            "build_script_.flags",
+            "build_script_.linkflags",
+            "build_script_.depenv",
+            "build_script_.stdout.log",
+            "build_script_.stderr.log",
+            "--",
+            "rustc",
+            "--flag",
+        ]
+        .into_iter()
+        .map(|s| s.to_owned())
+        .collect();
+
+        let opts = parse_args(Some(args)).unwrap();
+        assert_eq!(opts.progname, "build_script");
+        assert_eq!(opts.crate_links, "");
+        assert_eq!(opts.out_dir, "build_script_.out_dir");
+        assert_eq!(opts.env_file, "build_script_.env");
+        assert_eq!(opts.compile_flags_file, "build_script_.flags");
+        assert_eq!(opts.link_flags_file, "build_script_.linkflags");
+        assert_eq!(opts.output_dep_env_path, "build_script_.depenv");
+        assert_eq!(opts.stdout_path, "build_script_.stdout.log");
+        assert_eq!(opts.stderr_path, "build_script_.stderr.log");
+        assert!(opts.input_dep_env_paths.is_empty());
+        assert_eq!(opts.rustc_opts.rustc_path, PathBuf::from("rustc"));
+        assert_eq!(opts.rustc_opts.args, vec!["--flag"]);
+    }
+
+    #[test]
+    fn test_parse_args_dep_envs() {
+        let args = vec![
+            "build_script",
+            "",
+            "build_script_.out_dir",
+            "build_script_.env",
+            "build_script_.flags",
+            "build_script_.linkflags",
+            "build_script_.depenv",
+            "build_script_.stdout.log",
+            "build_script_.stderr.log",
+            "crate_a_build_script_.depenv",
+            "crate_b_build_script_.depenv",
+            "--",
+            "rustc",
+            "--flag",
+        ]
+        .into_iter()
+        .map(|s| s.to_owned())
+        .collect();
+
+        let opts = parse_args(Some(args)).unwrap();
+        assert_eq!(opts.progname, "build_script");
+        assert_eq!(opts.crate_links, "");
+        assert_eq!(opts.out_dir, "build_script_.out_dir");
+        assert_eq!(opts.env_file, "build_script_.env");
+        assert_eq!(opts.compile_flags_file, "build_script_.flags");
+        assert_eq!(opts.link_flags_file, "build_script_.linkflags");
+        assert_eq!(opts.output_dep_env_path, "build_script_.depenv");
+        assert_eq!(opts.stdout_path, "build_script_.stdout.log");
+        assert_eq!(opts.stderr_path, "build_script_.stderr.log");
+        assert_eq!(
+            opts.input_dep_env_paths,
+            vec![
+                "crate_a_build_script_.depenv",
+                "crate_b_build_script_.depenv"
+            ]
+        );
+        assert_eq!(opts.rustc_opts.rustc_path, PathBuf::from("rustc"));
+        assert_eq!(opts.rustc_opts.args, vec!["--flag"]);
+    }
+
+    #[test]
+    fn test_parse_compile_args() {
+        let args = vec!["rustc", "--flag1", "--flag2"]
+            .into_iter()
+            .map(|s| s.to_owned())
+            .collect();
+
+        let opts = parse_compile_args(args).unwrap();
+        assert_eq!(opts.rustc_path, PathBuf::from("rustc"));
+        assert_eq!(opts.args, vec!["--flag1", "--flag2"]);
+    }
+
+    #[test]
+    fn test_parse_compile_args_empty() {
+        let opts = parse_compile_args(Vec::new());
+        assert!(opts.is_err());
+    }
 }

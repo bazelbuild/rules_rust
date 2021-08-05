@@ -528,7 +528,7 @@ def _rust_benchmark_impl(ctx):
         ),
     ]
 
-_common_attrs = {
+COMMON_ATTRS = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
             Remap crates to a new name or moniker for linkage to this target
@@ -668,7 +668,7 @@ _common_attrs = {
     ),
 }
 
-_rust_test_attrs = {
+RUST_TEST_ATTRS = {
     "crate": attr.label(
         mandatory = False,
         doc = dedent("""\
@@ -704,7 +704,7 @@ _rust_test_attrs = {
     ),
 }
 
-_common_providers = [
+COMMON_PROVIDERS = [
     rust_common.crate_info,
     rust_common.dep_info,
     DefaultInfo,
@@ -712,8 +712,8 @@ _common_providers = [
 
 rust_library = rule(
     implementation = _rust_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -789,8 +789,8 @@ rust_library = rule(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -813,8 +813,8 @@ rust_static_library = rule(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -837,8 +837,8 @@ rust_shared_library = rule(
 
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -851,7 +851,7 @@ rust_proc_macro = rule(
         """),
 )
 
-_rust_binary_attrs = {
+RUST_BINARY_ATTRS = {
     "crate_type": attr.string(
         doc = dedent("""\
             Crate type that will be passed to `rustc` to be used for building this crate.
@@ -880,8 +880,8 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items() + RUST_BINARY_ATTRS.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -978,9 +978,9 @@ rust_binary = rule(
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items() +
-                 _rust_test_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items() +
+                 RUST_TEST_ATTRS.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -1129,9 +1129,9 @@ rust_test = rule(
 
 rust_test_binary = rule(
     implementation = _rust_test_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items() +
-                 _rust_test_attrs.items()),
+    provides = COMMON_PROVIDERS,
+    attrs = dict(COMMON_ATTRS.items() +
+                 RUST_TEST_ATTRS.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -1230,7 +1230,7 @@ def rust_test_suite(name, srcs, **kwargs):
 
 rust_benchmark = rule(
     implementation = _rust_benchmark_impl,
-    attrs = _common_attrs,
+    attrs = COMMON_ATTRS,
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],

@@ -42,7 +42,7 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
         "query".to_owned(),
         format!(
             r#"kind('{types}', {scope}) except attr(tags, 'norustfmt', kind('{types}', {scope}))"#,
-            types = "^rust_",
+            types = r#"^(rust_|_cargo)"#,
             scope = scope
         ),
     ];

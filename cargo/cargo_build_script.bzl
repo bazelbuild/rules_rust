@@ -1,21 +1,30 @@
-# buildifier: disable=module-docstring
+"""A module dedicated to building Cargo's `build.rs` scripts in Bazel"""
+
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//rust:defs.bzl", "rust_binary", "rust_common")
+load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust/private:rust.bzl", "COMMON_ATTRS", "crate_root_src", "get_edition")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
+load("//rust/private:rustc.bzl", "BuildInfo", "collect_deps", "collect_inputs", "construct_arguments", "is_dylib")
 
-def get_cc_compile_env(cc_toolchain, feature_configuration):
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "crate_name_from_attr", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "get_preferred_artifact")
+
+_CARGO_BUILD_SCRIPT_PROVIDERS = [
+    BuildInfo,
+    OutputGroupInfo,
+    rust_common.crate_info,
+    rust_common.dep_info,
+]
+
+def _get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
 
     Args:
         cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
-
     Returns:
         dict: Returns environment variables to be set for given action.
     """
@@ -29,110 +38,57 @@ def get_cc_compile_env(cc_toolchain, feature_configuration):
         variables = compile_variables,
     )
 
-def _build_script_impl(ctx):
-    """The implementation for the `_build_script_run` rule.
+def _declare_build_script_outputs(ctx):
+    """Declare all files output by the cargo_build_script_runner
 
     Args:
-        ctx (ctx): The rules context object
+        ctx (ctx): The rule's context object
 
     Returns:
-        list: A list containing a BuildInfo provider
+        struct: A struct of File objects
     """
-    script = ctx.executable.script
-    toolchain = find_toolchain(ctx)
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     dep_env_out = ctx.actions.declare_file(ctx.label.name + ".depenv")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
-    manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
-    compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
-
     streams = struct(
         stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
         stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
     )
 
-    pkg_name = _name_to_pkg_name(ctx.label.name)
-
-    toolchain_tools = [
-        # Needed for rustc to function.
-        toolchain.rustc_lib.files,
-        toolchain.rust_lib.files,
-    ]
-
-    cc_toolchain = find_cpp_toolchain(ctx)
-
-    # Start with the default shell env, which contains any --action_env
-    # settings passed in on the command line.
-    env = dict(ctx.configuration.default_shell_env)
-
-    env.update({
-        "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
-        "CARGO_MANIFEST_DIR": manifest_dir,
-        "CARGO_PKG_NAME": pkg_name,
-        "HOST": toolchain.exec_triple,
-        "OPT_LEVEL": compilation_mode_opt_level,
-        # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
-        "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
-        "RUSTC": toolchain.rustc.path,
-        "TARGET": toolchain.target_flag_value,
-        # OUT_DIR is set by the runner itself, rather than on the action.
-    })
-
-    if ctx.attr.version:
-        version = ctx.attr.version.split("+")[0].split(".")
-        patch = version[2].split("-") if len(version) > 2 else [""]
-        env["CARGO_PKG_VERSION_MAJOR"] = version[0]
-        env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
-        env["CARGO_PKG_VERSION_PATCH"] = patch[0]
-        env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
-        env["CARGO_PKG_VERSION"] = ctx.attr.version
-
-    # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
-    # We hope that the linker env is sufficient for the whole cc_toolchain.
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    _, _, linker_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, None)
-    env.update(**linker_env)
-
-    # MSVC requires INCLUDE to be set
-    cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
-    include = cc_env.get("INCLUDE")
-    if include:
-        env["INCLUDE"] = include
-
-    if cc_toolchain:
-        toolchain_tools.append(cc_toolchain.all_files)
-
-        cc_executable = cc_toolchain.compiler_executable
-        if cc_executable:
-            env["CC"] = cc_executable
-        ar_executable = cc_toolchain.ar_executable
-        if ar_executable:
-            env["AR"] = ar_executable
-        if cc_toolchain.sysroot:
-            env["SYSROOT"] = cc_toolchain.sysroot
-
-    for f in ctx.attr.crate_features:
-        env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
-
-    env.update(expand_dict_value_locations(
-        ctx,
-        ctx.attr.build_script_env,
-        getattr(ctx.attr, "data", []) +
-        getattr(ctx.attr, "compile_data", []),
-    ))
-
-    tools = depset(
-        direct = [
-            script,
-            ctx.executable._cargo_build_script_runner,
-            toolchain.rustc,
-        ] + ctx.files.data + ([toolchain.target_json] if toolchain.target_json else []),
-        transitive = toolchain_tools,
+    return struct(
+        out_dir = out_dir,
+        env_out = env_out,
+        dep_env_out = dep_env_out,
+        flags_out = flags_out,
+        link_flags = link_flags,
+        streams = streams,
+        all = [
+            out_dir,
+            env_out,
+            dep_env_out,
+            flags_out,
+            link_flags,
+            streams.stdout,
+            streams.stderr,
+        ],
     )
 
-    links = ctx.attr.links or ""
+def _construct_build_script_args(ctx, crate_info, outputs):
+    """Generate arguments and inputs for the `cargo_build_script_runner`.
+
+    Args:
+        ctx (ctx): The rule's context object
+        crate_info (CrateInfo): The CrateInfo provider of the current build script.
+        outputs (struct): The outputs of of the `cargo_build_script_runner`. See `_declare_build_script_outputs`.
+
+    Returns:
+        tuple: A set of inputs for the build script action
+            - Args: Arguments specifically for the `cargo_build_script_runner`
+            - dict: Environment variables to apply to the action
+            - depset(File): Additional files required by the build script action.
+    """
 
     # dep_env_file contains additional environment variables coming from
     # direct dependency sys-crates' build scripts. These need to be made
@@ -141,109 +97,256 @@ def _build_script_impl(ctx):
     # for details.
     args = ctx.actions.args()
     args.add_all([
-        script.path,
-        links,
-        out_dir.path,
-        env_out.path,
-        flags_out.path,
-        link_flags.path,
-        dep_env_out.path,
-        streams.stdout.path,
-        streams.stderr.path,
+        "--",
+        ctx.executable._cargo_build_script_runner.path,
+        crate_info.output.path,
+        ctx.attr.links or "",
+        outputs.out_dir.path,
+        outputs.env_out.path,
+        outputs.flags_out.path,
+        outputs.link_flags.path,
+        outputs.dep_env_out.path,
+        outputs.streams.stdout.path,
+        outputs.streams.stderr.path,
     ])
-    build_script_inputs = []
+
+    extra_inputs = []
     for dep in ctx.attr.deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
             dep_env_file = dep[rust_common.dep_info].dep_env
+            extra_inputs.append(dep_env_file)
             args.add(dep_env_file.path)
-            build_script_inputs.append(dep_env_file)
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+                extra_inputs.append(dep_build_info.out_dir)
+
+    env = {
+        "CARGO_PKG_NAME": _name_to_pkg_name(ctx.attr.name),
+    }
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+
+    # MSVC requires INCLUDE to be set
+    cc_env = _get_cc_compile_env(cc_toolchain, feature_configuration)
+    include = cc_env.get("INCLUDE")
+    if include:
+        env["CARGO_BUILD_SCRIPT__INCLUDE"] = include
+
+    cc_executable = cc_toolchain.compiler_executable
+    if cc_executable:
+        env["CARGO_BUILD_SCRIPT__CC"] = cc_executable
+    ar_executable = cc_toolchain.ar_executable
+    if ar_executable:
+        env["CARGO_BUILD_SCRIPT__AR"] = ar_executable
+    if cc_toolchain.sysroot:
+        env["CARGO_BUILD_SCRIPT__SYSROOT"] = cc_toolchain.sysroot
+
+    return args, env, depset(extra_inputs)
+
+def _cargo_build_script_impl(ctx):
+    """The implementation for the `_build_script_run` rule.
+
+    Args:
+        ctx (ctx): The rules context object
+
+    Returns:
+        list: A list containing a BuildInfo provider
+    """
+    toolchain = find_toolchain(ctx)
+    crate_name = crate_name_from_attr(ctx.attr)
+    crate_type = "bin"
+    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+
+    crate_info = rust_common.create_crate_info(
+        name = crate_name,
+        type = crate_type,
+        root = crate_root_src(ctx.attr, ctx.files.srcs, crate_type = "bin"),
+        srcs = depset(ctx.files.srcs),
+        deps = depset(ctx.attr.deps),
+        proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+        aliases = ctx.attr.aliases,
+        output = output,
+        edition = get_edition(ctx.attr, toolchain),
+        rustc_env = ctx.attr.rustc_env,
+        is_test = False,
+        compile_data = depset(ctx.files.compile_data),
+    )
+
+    build_script_outputs = _declare_build_script_outputs(ctx)
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+
+    dep_info, build_info = collect_deps(
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
+    )
+
+    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
+        ctx = ctx,
+        file = ctx.file,
+        files = ctx.files,
+        toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        build_info = build_info,
+    )
+
+    # Start with the default shell env, which contains any --action_env
+    # settings passed in on the command line.
+    env = dict(ctx.configuration.default_shell_env)
+
+    args, rustc_env = construct_arguments(
+        ctx = ctx,
+        attr = ctx.attr,
+        file = ctx.file,
+        toolchain = toolchain,
+        tool_path = toolchain.rustc.path,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        output_hash = None,
+        rust_flags = [],
+        out_dir = out_dir,
+        build_env_files = build_env_files,
+        build_flags_files = build_flags_files,
+    )
+    env.update(rustc_env)
+
+    build_script_args, build_script_env, build_script_inputs = _construct_build_script_args(ctx, crate_info, build_script_outputs)
+    env.update(build_script_env)
+
+    data = ctx.attr.data + ctx.attr.compile_data
+    env.update(expand_dict_value_locations(
+        ctx,
+        ctx.attr.env,
+        data,
+    ))
+
+    if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
+        formatted_version = " v{}".format(ctx.attr.version)
+    else:
+        formatted_version = ""
 
     ctx.actions.run(
-        executable = ctx.executable._cargo_build_script_runner,
-        arguments = [args],
-        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out, streams.stdout, streams.stderr],
-        tools = tools,
-        inputs = build_script_inputs,
-        mnemonic = "CargoBuildScriptRun",
+        executable = ctx.executable._process_wrapper,
+        inputs = depset(transitive = [
+            compile_inputs,
+            build_script_inputs,
+        ]),
+        outputs = [crate_info.output] + build_script_outputs.all,
         env = env,
+        arguments = [
+            args.process_wrapper_flags,
+            build_script_args,
+            args.rustc_path,
+            args.rustc_flags,
+        ],
+        tools = [
+            ctx.executable._cargo_build_script_runner,
+        ],
+        mnemonic = "CargoBuildScriptRun",
+    )
+
+    dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if is_dylib(lib)]
+
+    runfiles = ctx.runfiles(
+        transitive_files = depset(dylibs + getattr(ctx.files, "data", [])),
     )
 
     return [
-        BuildInfo(
-            out_dir = out_dir,
-            rustc_env = env_out,
-            dep_env = dep_env_out,
-            flags = flags_out,
-            link_flags = link_flags,
+        DefaultInfo(
+            files = depset([crate_info.output]),
+            runfiles = runfiles,
+            executable = crate_info.output,
         ),
-        OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
+        BuildInfo(
+            out_dir = build_script_outputs.out_dir,
+            rustc_env = build_script_outputs.env_out,
+            dep_env = build_script_outputs.dep_env_out,
+            flags = build_script_outputs.flags_out,
+            link_flags = build_script_outputs.link_flags,
+            data = runfiles.files,
+        ),
+        OutputGroupInfo(streams = depset([
+            build_script_outputs.streams.stdout,
+            build_script_outputs.streams.stderr,
+        ])),
+        crate_info,
+        dep_info,
     ]
 
-_build_script_run = rule(
+_cargo_build_script = rule(
     doc = (
         "A rule for running a crate's `build.rs` files to generate build information " +
         "which is then used to determine how to compile said crate."
     ),
-    implementation = _build_script_impl,
-    attrs = {
-        "build_script_env": attr.string_dict(
-            doc = "Environment variables for build scripts.",
-        ),
-        "crate_features": attr.string_list(
-            doc = "The list of rust features that the build script should consider activated.",
-        ),
-        "data": attr.label_list(
-            doc = "Data or tools required by the build script.",
-            allow_files = True,
-        ),
-        "deps": attr.label_list(
-            doc = "The Rust dependencies of the crate",
-            providers = [rust_common.dep_info],
-        ),
-        "links": attr.string(
-            doc = "The name of the native library this crate links against.",
-        ),
-        # The source of truth will be the `cargo_build_script` macro until stardoc
-        # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
-        "script": attr.label(
-            doc = "The binary script to run, generally a `rust_binary` target.",
-            executable = True,
-            allow_files = True,
-            mandatory = True,
-            cfg = "exec",
-        ),
-        "version": attr.string(
-            doc = "The semantic version (semver) of the crate",
-        ),
-        "_cargo_build_script_runner": attr.label(
-            executable = True,
-            allow_files = True,
-            default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
-            cfg = "exec",
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-    },
+    implementation = _cargo_build_script_impl,
+    attrs = dict(
+        COMMON_ATTRS.items() + {
+            "env": attr.string_dict(
+                mandatory = False,
+                doc = dedent("""\
+                    Specifies additional environment variables to set when the test is executed by bazel test.
+                    Values are subject to `$(execpath)` and
+                    ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+                """),
+            ),
+            "links": attr.string(
+                doc = "The name of the native library this crate links against.",
+            ),
+            "_cargo_build_script_runner": attr.label(
+                executable = True,
+                allow_files = True,
+                default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
+                cfg = "exec",
+            ),
+            "_cc_toolchain": attr.label(
+                default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            ),
+        }.items(),
+    ),
+    provides = _CARGO_BUILD_SCRIPT_PROVIDERS,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
+    executable = True,
+)
+
+def _exec_cargo_build_script_wrapper_impl(ctx):
+    script = ctx.attr.script
+    return [
+        script[rust_common.crate_info],
+        script[rust_common.dep_info],
+        script[BuildInfo],
+        script[OutputGroupInfo],
+    ]
+
+_exec_cargo_build_script_wrapper = rule(
+    doc = "A rule which ensures the cargo build script is always run in the `exec` configuration",
+    implementation = _exec_cargo_build_script_wrapper_impl,
+    attrs = {
+        "script": attr.label(
+            doc = "The binary script to run, generally a `rust_binary` target.",
+            providers = [BuildInfo],
+            executable = True,
+            allow_files = True,
+            mandatory = True,
+            cfg = "exec",
+        ),
+    },
+    provides = _CARGO_BUILD_SCRIPT_PROVIDERS,
 )
 
 def cargo_build_script(
         name,
-        crate_features = [],
-        version = None,
-        deps = [],
         build_script_env = {},
-        data = [],
         links = None,
-        rustc_env = {},
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -276,15 +379,12 @@ def cargo_build_script(
     cargo_build_script(
         name = "build_script",
         srcs = ["build.rs"],
-        # Optional environment variables passed during build.rs compilation
-        rustc_env = {
-           "CARGO_PKG_VERSION": "0.1.2",
-        },
         # Optional environment variables passed during build.rs execution.
         # Note that as the build script's working directory is not execroot,
-        # execpath/location will return an absolute path, instead of a relative
-        # one.
-        build_script_env = {
+        # the `execpath`/`location` make variables will return an absolute path,
+        # instead of a relative one. For details on make variables see:
+        # https://docs.bazel.build/versions/main/be/make-variables.html#predefined_label_variables
+        env = {
             "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
         }
         # Optional data/tool dependencies
@@ -305,45 +405,47 @@ def cargo_build_script(
 
     Args:
         name (str): The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of _build_script.
-        crate_features (list, optional): A list of features to enable for the build script.
-        version (str, optional): The semantic version (semver) of the crate.
-        deps (list, optional): The dependencies of the crate.
-        build_script_env (dict, optional): Environment variables for build scripts.
-        data (list, optional): Files or tools needed by the build script.
+        build_script_env (dict, optional): __deprecated__: The `env` attribute should be used instead
         links (str, optional): Name of the native library this crate links against.
-        rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
-        **kwargs: Forwards to the underlying `rust_binary` rule.
+        **kwargs: Forwards to the underlying `rust_binary` rule. See the attributes of this rule for more details
     """
 
-    # This duplicates the code in _build_script_impl because we need to make these available both when we invoke rustc (this code) and when we run the compiled build script (_build_script_impl).
-    # https://github.com/bazelbuild/rules_rust/issues/661 will hopefully remove this duplication.
-    rustc_env = dict(rustc_env)
-    if "CARGO_PKG_NAME" not in rustc_env:
-        rustc_env["CARGO_PKG_NAME"] = _name_to_pkg_name(name)
-    if "CARGO_CRATE_NAME" not in rustc_env:
-        rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(_name_to_pkg_name(name))
+    env = kwargs.pop("env", {})
+    if build_script_env:
+        env.update(build_script_env)
 
-    rust_binary(
-        name = name + "_script_",
-        crate_features = crate_features,
-        version = version,
-        deps = deps,
-        data = data,
-        rustc_env = rustc_env,
+    build_script_name = _name_to_pkg_name(name) + "_build_script"
+    if build_script_name == name:
+        build_script_name += "_"
+
+    tags = kwargs.pop("tags", [])
+
+    _cargo_build_script(
+        name = build_script_name,
+        # build.rs scripts always use the name `build_script_build`
+        crate_name = kwargs.pop("crate_name", "build_script_build"),
+        env = env,
+        links = links,
+        tags = tags + (["manual"] if "manual" not in tags else []),
         **kwargs
     )
-    _build_script_run(
+
+    # The wrapper target is explicitly tagged to not run clippy or rustfmt to avoid having
+    # the same action run twice for the same data.
+    wrapper_tags = tags
+    if "noclippy" not in wrapper_tags:
+        wrapper_tags.append("noclippy")
+    if "norustfmt" not in wrapper_tags:
+        wrapper_tags.append("norustfmt")
+
+    _exec_cargo_build_script_wrapper(
         name = name,
-        script = ":%s_script_" % name,
-        crate_features = crate_features,
-        version = version,
-        build_script_env = build_script_env,
-        links = links,
-        deps = deps,
-        data = data,
+        script = build_script_name,
+        tags = wrapper_tags,
     )
 
 def _name_to_pkg_name(name):
+    name = name.rstrip("_")
     if name.endswith("_build_script"):
         return name[:-len("_build_script")]
     return name

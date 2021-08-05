@@ -28,12 +28,14 @@ load(
     "get_lib_name",
     "get_preferred_artifact",
     "make_static_lib_symlink",
+    "name_to_crate_name",
     "relativize",
 )
 
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
+        "data": "depset: A depset of additional data associated with the build",
         "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
         "flags": "File: file containing additional flags to pass to rustc",
         "link_flags": "File: file containing flags to pass to the linker",
@@ -57,15 +59,44 @@ ErrorFormatInfo = provider(
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
-def _get_rustc_env(attr, toolchain):
+def _get_rustc_env(ctx, attr, toolchain):
     """Gathers rustc environment variables
 
     Args:
+        ctx (ctx): The rule's context object
         attr (struct): The current target's attributes
         toolchain (rust_toolchain): The current target's rust toolchain context
 
     Returns:
         dict: Rustc environment variables
+    """
+
+    # So far there are no `rustc` environment variables. Should there ever be any
+    rustc_env = {}
+    cargo_env = _get_cargo_env(ctx, attr, toolchain)
+
+    # Ensure there are no duplicate variables
+    for key in rustc_env:
+        if key in cargo_env:
+            fail("The key {} is being set by both rustc and cargo env. Only one should be defined.")
+
+    return dict(rustc_env.items() + cargo_env.items())
+
+def _get_cargo_env(ctx, attr, toolchain):
+    """Gathers environment variables typically set by Cargo.
+
+    This allows for maximum compatibility between Bazel and Cargo builds
+
+    A list of environment variables can be found at:
+    https://doc.rust-lang.org/cargo/reference/environment-variables.html
+
+    Args:
+        ctx (ctx): The rule's context object
+        attr (struct): The current target's attributes
+        toolchain (rust_toolchain): The current target's rust toolchain context
+
+    Returns:
+        dict: Cargo environment variables
     """
     version = attr.version if hasattr(attr, "version") else "0.0.0"
     major, minor, patch = version.split(".", 2)
@@ -73,7 +104,8 @@ def _get_rustc_env(attr, toolchain):
         patch, pre = patch.split("-", 1)
     else:
         pre = ""
-    return {
+
+    environ = {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
         "CARGO_CRATE_NAME": crate_name_from_attr(attr),
@@ -86,7 +118,18 @@ def _get_rustc_env(attr, toolchain):
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
+        "HOST": toolchain.exec_triple,
+        "OPT_LEVEL": get_compilation_mode_opts(ctx, toolchain).opt_level,
+        "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
+        "RUSTC": "${pwd}/" + toolchain.rustc.path,
+        "RUSTDOC": "${pwd}/" + toolchain.rust_doc.path,
+        "TARGET": toolchain.target_flag_value,
     }
+
+    for feature in getattr(attr, "crate_features", []):
+        environ.update({"CARGO_FEATURE_" + name_to_crate_name(feature).upper(): "1"})
+
+    return environ
 
 def get_compilation_mode_opts(ctx, toolchain):
     """Gathers rustc flags for the current compilation mode (opt/debug)
@@ -114,7 +157,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
 
     Returns:
-        tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
+        tuple: Returns a tuple (DepInfo, [BuildInfo, optional]) of providers.
     """
     direct_crates = []
     transitive_crates = []
@@ -137,6 +180,14 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
             transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
             transitive_noncrate_libs.append(dep[rust_common.dep_info].transitive_libs)
             transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
+
+            # Some crates contain BuildInfo providers. These are typically `cargo_build_script` (`build.rs script`) targets.
+            # If this provider is found then it's tracked as a dependency separately of common the common DepInfo.
+            if BuildInfo in dep:
+                if build_info:
+                    fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
+                build_info = dep[BuildInfo]
+                transitive_build_infos.append(depset([build_info]))
         elif CcInfo in dep:
             # This dependency is a cc_library
 
@@ -145,11 +196,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
             transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
-        elif BuildInfo in dep:
-            if build_info:
-                fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
-            build_info = dep[BuildInfo]
-            transitive_build_infos.append(depset([build_info]))
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
 
@@ -270,7 +316,7 @@ def collect_inputs(
         cc_toolchain,
         crate_info,
         dep_info,
-        build_info):
+        build_info = None):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -281,7 +327,7 @@ def collect_inputs(
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
-        build_info (BuildInfo): The target Crate's build settings.
+        build_info (BuildInfo, optional): The target Crate's build settings.
 
     Returns:
         tuple: See `_process_build_scripts`
@@ -302,11 +348,26 @@ def collect_inputs(
             for additional_input in linker_input.additional_inputs
         ]
 
+    transitive_build_info_data = depset(transitive = [info.data for info in dep_info.transitive_build_infos.to_list()])
+
+    build_info_data = depset(
+        [
+            build_info.rustc_env,
+            build_info.flags,
+        ],
+        transitive = [
+            build_info.data,
+            transitive_build_info_data,
+        ],
+    ) if build_info else depset(
+        [],
+        transitive = [transitive_build_info_data],
+    )
+
     compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
-        ([build_info.rustc_env, build_info.flags] if build_info else []) +
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
@@ -315,6 +376,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            build_info_data,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
         ],
@@ -375,7 +437,11 @@ def construct_arguments(
 
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    env = _get_rustc_env(attr, toolchain)
+    env = _get_rustc_env(
+        ctx = ctx,
+        attr = attr,
+        toolchain = toolchain,
+    )
 
     # Wrapper args first
     process_wrapper_flags = ctx.actions.args()
@@ -559,31 +625,31 @@ def rustc_compile_action(
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
-        ctx,
-        ctx.file,
-        ctx.files,
-        toolchain,
-        cc_toolchain,
-        crate_info,
-        dep_info,
-        build_info,
+        ctx = ctx,
+        file = ctx.file,
+        files = ctx.files,
+        toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        build_info = build_info,
     )
 
     args, env = construct_arguments(
-        ctx,
-        ctx.attr,
-        ctx.file,
-        toolchain,
-        toolchain.rustc.path,
-        cc_toolchain,
-        feature_configuration,
-        crate_info,
-        dep_info,
-        output_hash,
-        rust_flags,
-        out_dir,
-        build_env_files,
-        build_flags_files,
+        ctx = ctx,
+        attr = ctx.attr,
+        file = ctx.file,
+        toolchain = toolchain,
+        tool_path = toolchain.rustc.path,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        output_hash = output_hash,
+        rust_flags = rust_flags,
+        out_dir = out_dir,
+        build_env_files = build_env_files,
+        build_flags_files = build_flags_files,
     )
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
@@ -606,7 +672,7 @@ def rustc_compile_action(
         ),
     )
 
-    dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if _is_dylib(lib)]
+    dylibs = [get_preferred_artifact(lib) for linker_input in dep_info.transitive_noncrates.to_list() for lib in linker_input.libraries if is_dylib(lib)]
 
     runfiles = ctx.runfiles(
         files = dylibs + getattr(ctx.files, "data", []),
@@ -632,7 +698,15 @@ def rustc_compile_action(
 
     return providers
 
-def _is_dylib(dep):
+def is_dylib(dep):
+    """Determine whether or not a dependency is a dynamic library
+
+    Args:
+        dep (LibraryToLink): The library to check
+
+    Returns:
+        bool: Whether or not the dependency is a dynamic library
+    """
     return not bool(dep.static_library or dep.pic_static_library)
 
 def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
@@ -790,7 +864,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
         get_preferred_artifact(lib)
         for linker_input in dep_info.transitive_noncrates.to_list()
         for lib in linker_input.libraries
-        if _is_dylib(lib)
+        if is_dylib(lib)
     ]
     if not dylibs:
         return depset([])
@@ -867,7 +941,7 @@ def _get_crate_dirname(crate):
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
         return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
-    elif _is_dylib(lib):
+    elif is_dylib(lib):
         # TODO: Consider switching dylibs to use -Clink-arg as above.
         return [
             "-Lnative=%s" % get_preferred_artifact(lib).dirname,
