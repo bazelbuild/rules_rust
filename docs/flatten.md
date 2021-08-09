@@ -85,6 +85,42 @@ Environment Variables:
 | <a id="crate_universe-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.54.0" |
 
 
+<a id="#error_format"></a>
+
+## error_format
+
+<pre>
+error_format(<a href="#error_format-name">name</a>)
+</pre>
+
+Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+
+
+<a id="#extra_rustc_flags"></a>
+
+## extra_rustc_flags
+
+<pre>
+extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
+</pre>
+
+Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc).
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+
+
 <a id="#fail_when_enabled"></a>
 
 ## fail_when_enabled
@@ -121,42 +157,6 @@ A rule defining an incompatible flag.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="incompatible_flag-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="incompatible_flag-issue"></a>issue |  The link to the github issue associated with this flag   | String | required |  |
-
-
-<a id="#error_format"></a>
-
-## error_format
-
-<pre>
-error_format(<a href="#error_format-name">name</a>)
-</pre>
-
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-
-
-<a id="#extra_rustc_flags"></a>
-
-## extra_rustc_flags
-
-<pre>
-extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
-</pre>
-
-Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc).
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="#rust_analyzer"></a>
