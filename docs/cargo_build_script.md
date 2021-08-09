@@ -8,8 +8,7 @@
 ## cargo_build_script
 
 <pre>
-cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>,
-                   <a href="#cargo_build_script-kwargs">kwargs</a>)
+cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -43,15 +42,12 @@ load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 cargo_build_script(
     name = "build_script",
     srcs = ["build.rs"],
-    # Optional environment variables passed during build.rs compilation
-    rustc_env = {
-       "CARGO_PKG_VERSION": "0.1.2",
-    },
     # Optional environment variables passed during build.rs execution.
     # Note that as the build script's working directory is not execroot,
-    # execpath/location will return an absolute path, instead of a relative
-    # one.
-    build_script_env = {
+    # the `execpath`/`location` make variables will return an absolute path,
+    # instead of a relative one. For details on make variables see:
+    # https://docs.bazel.build/versions/main/be/make-variables.html#predefined_label_variables
+    env = {
         "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
     }
     # Optional data/tool dependencies
@@ -76,13 +72,8 @@ The `hello_lib` target will be build with the flags and the environment variable
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of _build_script.   |  none |
-| <a id="cargo_build_script-crate_features"></a>crate_features |  A list of features to enable for the build script.   |  <code>[]</code> |
-| <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  <code>None</code> |
-| <a id="cargo_build_script-deps"></a>deps |  The dependencies of the crate.   |  <code>[]</code> |
-| <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  <code>{}</code> |
-| <a id="cargo_build_script-data"></a>data |  Files or tools needed by the build script.   |  <code>[]</code> |
+| <a id="cargo_build_script-build_script_env"></a>build_script_env |  __deprecated__: The <code>env</code> attribute should be used instead   |  <code>{}</code> |
 | <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  <code>None</code> |
-| <a id="cargo_build_script-rustc_env"></a>rustc_env |  Environment variables to set in rustc when compiling the build script.   |  <code>{}</code> |
-| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
+| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule. See the attributes of this rule for more details   |  none |
 
 
