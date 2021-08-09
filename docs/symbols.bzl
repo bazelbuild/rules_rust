@@ -68,6 +68,11 @@ load(
     _rust_toolchain = "rust_toolchain",
 )
 load(
+    "@rules_rust//rust/settings:incompatible.bzl",
+    _fail_when_enabled = "fail_when_enabled",
+    _incompatible_flag = "incompatible_flag",
+)
+load(
     "@rules_rust//wasm_bindgen:repositories.bzl",
     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
 )
@@ -125,3 +130,5 @@ rustfmt_test = _rustfmt_test
 
 error_format = _error_format
 extra_rustc_flags = _extra_rustc_flags
+fail_when_enabled = _fail_when_enabled
+incompatible_flag = _incompatible_flag

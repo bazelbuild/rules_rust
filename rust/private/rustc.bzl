@@ -207,6 +207,14 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
             - (dict): Environment variables to be set for given action.
     """
     user_link_flags = get_cc_user_link_flags(ctx)
+
+    # Add linkopt's from dependencies. This includes linkopts from transitive
+    # dependencies since they get merged up.
+    for dep in ctx.attr.deps:
+        if CcInfo in dep and dep[CcInfo].linking_context:
+            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
+                for flag in linker_input.user_link_flags:
+                    user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -288,11 +296,24 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
+    # Pass linker additional inputs (e.g., linker scripts) only for linking-like
+    # actions, not for example where the output is rlib. This avoids quadratic
+    # behavior where transitive noncrates are flattened on each transitive
+    # rust_library dependency.
+    additional_transitive_inputs = []
+    if crate_info.type in ("bin", "dylib", "cdylib"):
+        additional_transitive_inputs = [
+            additional_input
+            for linker_input in dep_info.transitive_noncrates.to_list()
+            for additional_input in linker_input.additional_inputs
+        ]
+
     compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
+        ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
@@ -300,6 +321,7 @@ def collect_inputs(
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
+            depset(additional_transitive_inputs),
             crate_info.compile_data,
         ],
     )
@@ -318,7 +340,6 @@ def construct_arguments(
         tool_path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash,
@@ -326,7 +347,6 @@ def construct_arguments(
         out_dir,
         build_env_files,
         build_flags_files,
-        maker_path = None,
         emit = ["dep-info", "link"]):
     """Builds an Args object containing common rustc flags
 
@@ -338,7 +358,6 @@ def construct_arguments(
         tool_path (str): Path to rustc
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
-        crate_type (str): Crate type of the current target.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
         output_hash (str): The hashed path of the crate root
@@ -346,12 +365,16 @@ def construct_arguments(
         out_dir (str): The path to the output directory for the target Crate.
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
-        maker_path (File): An optional clippy marker file
         emit (list): Values for the --emit flag to rustc.
 
     Returns:
         tuple: A tuple of the following items
-            - (Args): An Args object with common Rust flags
+            - (struct): A struct of arguments used to run the `Rustc` action
+                - process_wrapper_flags (Args): Arguments for the process wrapper
+                - rustc_path (Args): Arguments for invoking rustc via the process wrapper
+                - rustc_flags (Args): Rust flags for the Rust compiler
+                - all (list): A list of all `Args` objects in the order listed above.
+                    This is to be passed to the `arguments` parameter of actions
             - (dict): Common rustc environment variables
     """
     output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
@@ -361,12 +384,12 @@ def construct_arguments(
     env = _get_rustc_env(attr, toolchain)
 
     # Wrapper args first
-    args = ctx.actions.args()
+    process_wrapper_flags = ctx.actions.args()
 
     for build_env_file in build_env_files:
-        args.add("--env-file", build_env_file)
+        process_wrapper_flags.add("--env-file", build_env_file)
 
-    args.add_all(build_flags_files, before_each = "--arg-file")
+    process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
 
     # Certain rust build processes expect to find files from the environment
     # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
@@ -380,7 +403,7 @@ def construct_arguments(
     #
     # Since we cannot get the `exec_root` from starlark, we cheat a little and
     # use `${pwd}` which resolves the `exec_root` at action execution time.
-    args.add("--subst", "pwd=${pwd}")
+    process_wrapper_flags.add("--subst", "pwd=${pwd}")
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
@@ -407,57 +430,57 @@ def construct_arguments(
         if src != dst:
             emit_with_paths = [("link=" + dst if val == "link" else val) for val in emit]
 
-    if maker_path != None:
-        args.add("--touch-file", maker_path)
-
-    args.add("--")
-    args.add(tool_path)
+    # Arguments for launching rustc from the process wrapper
+    rustc_path = ctx.actions.args()
+    rustc_path.add("--")
+    rustc_path.add(tool_path)
 
     # Rustc arguments
-    args.add(crate_info.root)
-    args.add("--crate-name=" + crate_info.name)
-    args.add("--crate-type=" + crate_info.type)
+    rustc_flags = ctx.actions.args()
+    rustc_flags.add(crate_info.root)
+    rustc_flags.add("--crate-name=" + crate_info.name)
+    rustc_flags.add("--crate-type=" + crate_info.type)
     if hasattr(attr, "_error_format"):
-        args.add("--error-format=" + attr._error_format[ErrorFormatInfo].error_format)
+        rustc_flags.add("--error-format=" + attr._error_format[ErrorFormatInfo].error_format)
 
     # Mangle symbols to disambiguate crates with the same name
     extra_filename = "-" + output_hash if output_hash else ""
-    args.add("--codegen=metadata=" + extra_filename)
+    rustc_flags.add("--codegen=metadata=" + extra_filename)
     if output_dir:
-        args.add("--out-dir=" + output_dir)
-    args.add("--codegen=extra-filename=" + extra_filename)
+        rustc_flags.add("--out-dir=" + output_dir)
+    rustc_flags.add("--codegen=extra-filename=" + extra_filename)
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
-    args.add("--codegen=opt-level=" + compilation_mode.opt_level)
-    args.add("--codegen=debuginfo=" + compilation_mode.debug_info)
+    rustc_flags.add("--codegen=opt-level=" + compilation_mode.opt_level)
+    rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    args.add("--remap-path-prefix=${pwd}=.")
+    rustc_flags.add("--remap-path-prefix=${pwd}=.")
 
-    args.add("--emit=" + ",".join(emit_with_paths))
-    args.add("--color=always")
-    args.add("--target=" + toolchain.target_triple)
+    rustc_flags.add("--emit=" + ",".join(emit_with_paths))
+    rustc_flags.add("--color=always")
+    rustc_flags.add("--target=" + toolchain.target_flag_value)
     if hasattr(attr, "crate_features"):
-        args.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
+        rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
-        args.add(linker_script.path, format = "--codegen=link-arg=-T%s")
+        rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
     rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
 
     # Tell Rustc where to find the standard library
-    args.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
-    args.add_all(rust_flags)
+    rustc_flags.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
+    rustc_flags.add_all(rust_flags)
 
     data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
-    args.add_all(
+    rustc_flags.add_all(
         expand_list_element_locations(
             ctx,
             getattr(attr, "rustc_flags", []),
             data_paths,
         ),
     )
-    add_edition_flags(args, crate_info)
+    add_edition_flags(rustc_flags, crate_info)
 
     # Link!
     if "link" in emit:
@@ -467,19 +490,19 @@ def construct_arguments(
             rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
             ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
-            args.add("--codegen=linker=" + ld)
-            args.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+            rustc_flags.add("--codegen=linker=" + ld)
+            rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(args, dep_info)
+    add_crate_link_flags(rustc_flags, dep_info)
 
     needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
                                    crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
-        args.add("--extern")
-        args.add("proc_macro")
+        rustc_flags.add("--extern")
+        rustc_flags.add("proc_macro")
 
     # Make bin crate data deps available to tests.
     for data in getattr(attr, "data", []):
@@ -500,14 +523,22 @@ def construct_arguments(
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):
-        args.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+        rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+
+    # Create a struct which keeps the arguments separate so each may be tuned or
+    # replaced where necessary
+    args = struct(
+        process_wrapper_flags = process_wrapper_flags,
+        rustc_path = rustc_path,
+        rustc_flags = rustc_flags,
+        all = [process_wrapper_flags, rustc_path, rustc_flags],
+    )
 
     return args, env
 
 def rustc_compile_action(
         ctx,
         toolchain,
-        crate_type,
         crate_info,
         output_hash = None,
         rust_flags = [],
@@ -517,7 +548,6 @@ def rustc_compile_action(
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current `rust_toolchain`
-        crate_type (str): Crate type of the current target
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
@@ -557,7 +587,6 @@ def rustc_compile_action(
         toolchain.rustc.path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash,
@@ -577,7 +606,7 @@ def rustc_compile_action(
         inputs = compile_inputs,
         outputs = [crate_info.output],
         env = env,
-        arguments = [args],
+        arguments = args.all,
         mnemonic = "Rustc",
         progress_message = "Compiling Rust {} {}{} ({} files)".format(
             crate_info.type,
@@ -847,9 +876,14 @@ def _get_crate_dirname(crate):
 
 def _portable_link_flags(lib):
     if lib.static_library or lib.pic_static_library:
-        return ["-lstatic=%s" % get_lib_name(get_preferred_artifact(lib))]
+        return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
     elif _is_dylib(lib):
-        return ["-ldylib=%s" % get_lib_name(get_preferred_artifact(lib))]
+        # TODO: Consider switching dylibs to use -Clink-arg as above.
+        return [
+            "-Lnative=%s" % get_preferred_artifact(lib).dirname,
+            "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib)),
+        ]
+
     return []
 
 def _make_link_flags_windows(linker_input):
@@ -904,8 +938,6 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
 
     """
-    args.add_all(dep_info.transitive_noncrates, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
-
     if crate_type in ["lib", "rlib"]:
         return
 

@@ -46,6 +46,13 @@ PAGES = dict([
         ],
     ),
     page(
+        name = "settings",
+        symbols = [
+            "incompatible_flag",
+            "fail_when_enabled",
+        ],
+    ),
+    page(
         name = "defs",
         symbols = [
             "rust_binary",
@@ -102,6 +109,7 @@ PAGES = dict([
     ),
     page(
         name = "rust_proto",
+        header_template = ":rust_proto.vm",
         symbols = [
             "rust_grpc_library",
             "rust_proto_library",

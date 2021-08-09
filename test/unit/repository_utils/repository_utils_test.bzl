@@ -26,6 +26,25 @@ def _produce_tool_suburl_test_impl(ctx):
             target_triple = "x86_64-unknown-linux-gnu",
         ),
     )
+    asserts.equals(
+        env,
+        "2020-05-22/rust-src-nightly",
+        produce_tool_suburl(
+            iso_date = "2020-05-22",
+            tool_name = "rust-src",
+            version = "nightly",
+            target_triple = None,
+        ),
+    )
+    asserts.equals(
+        env,
+        "rust-src-nightly",
+        produce_tool_suburl(
+            tool_name = "rust-src",
+            version = "nightly",
+            target_triple = None,
+        ),
+    )
     return unittest.end(env)
 
 def _produce_tool_path_test_impl(ctx):
@@ -37,6 +56,15 @@ def _produce_tool_path_test_impl(ctx):
             tool_name = "rust-std",
             version = "nightly",
             target_triple = "x86_64-unknown-linux-gnu",
+        ),
+    )
+    asserts.equals(
+        env,
+        "rust-src-nightly",
+        produce_tool_path(
+            tool_name = "rust-src",
+            version = "nightly",
+            target_triple = None,
         ),
     )
     return unittest.end(env)

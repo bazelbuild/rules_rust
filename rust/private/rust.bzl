@@ -253,7 +253,6 @@ def _rust_library_common(ctx, crate_type):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_type = crate_type,
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
@@ -289,7 +288,6 @@ def _rust_binary_impl(ctx):
     return rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_type = ctx.attr.crate_type,
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = ctx.attr.crate_type,
@@ -450,7 +448,6 @@ def _rust_test_common(ctx, toolchain, output):
     providers = rustc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
-        crate_type = crate_type,
         crate_info = crate_info,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
     )

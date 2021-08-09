@@ -11,6 +11,11 @@ def _rust_stdlib_filegroup_impl(ctx):
     between_core_and_std_files = []
     std_files = []
     alloc_files = []
+    self_contained_files = [
+        file
+        for file in rust_lib
+        if file.basename.endswith(".o") and "self-contained" in file.path
+    ]
 
     std_rlibs = [f for f in rust_lib if f.basename.endswith(".rlib")]
     if std_rlibs:
@@ -53,6 +58,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             between_core_and_std_files = between_core_and_std_files,
             std_files = std_files,
             alloc_files = alloc_files,
+            self_contained_files = self_contained_files,
         ),
     ]
 
@@ -101,7 +107,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
         A CcInfo object for the required libraries, or None if no such libraries are available.
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    link_inputs = []
+    cc_infos = []
 
     if not rust_common.stdlib_info in ctx.attr.rust_lib:
         fail(dedent("""\
@@ -111,6 +117,23 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
         """).format(ctx.label, ctx.attr.rust_lib))
     rust_stdlib_info = ctx.attr.rust_lib[rust_common.stdlib_info]
+
+    if rust_stdlib_info.self_contained_files:
+        compilation_outputs = cc_common.create_compilation_outputs(
+            objects = depset(rust_stdlib_info.self_contained_files),
+        )
+
+        linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
+            name = ctx.label.name,
+            actions = ctx.actions,
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            compilation_outputs = compilation_outputs,
+        )
+
+        cc_infos.append(CcInfo(
+            linking_context = linking_context,
+        ))
 
     if rust_stdlib_info.std_rlibs:
         alloc_inputs = depset(
@@ -160,22 +183,29 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
             order = "topological",
         )
 
-        link_inputs.append(cc_common.create_linker_input(
+        link_inputs = cc_common.create_linker_input(
             owner = rust_lib.label,
             libraries = std_inputs,
+        )
+
+        allocator_inputs = None
+        if allocator_library:
+            allocator_inputs = [allocator_library[CcInfo].linking_context.linker_inputs]
+
+        cc_infos.append(CcInfo(
+            linking_context = cc_common.create_linking_context(
+                linker_inputs = depset(
+                    [link_inputs],
+                    transitive = allocator_inputs,
+                    order = "topological",
+                ),
+            ),
         ))
 
-    allocator_inputs = None
-    if allocator_library:
-        allocator_inputs = [allocator_library[CcInfo].linking_context.linker_inputs]
-
-    libstd_and_allocator_ccinfo = None
-    if link_inputs:
-        return CcInfo(linking_context = cc_common.create_linking_context(linker_inputs = depset(
-            link_inputs,
-            transitive = allocator_inputs,
-            order = "topological",
-        )))
+    if cc_infos:
+        return cc_common.merge_cc_infos(
+            direct_cc_infos = cc_infos,
+        )
     return None
 
 def _rust_toolchain_impl(ctx):
@@ -196,12 +226,17 @@ def _rust_toolchain_impl(ctx):
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
+    if ctx.attr.target_triple and ctx.file.target_json:
+        fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
+
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
         rustfmt = ctx.file.rustfmt,
         cargo = ctx.file.cargo,
         clippy_driver = ctx.file.clippy_driver,
+        target_json = ctx.file.target_json,
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
         rust_lib = ctx.attr.rust_lib,
@@ -234,10 +269,12 @@ rust_toolchain = rule(
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "clippy_driver": attr.label(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "debug_info": attr.string_dict(
             doc = "Rustc debug info levels per opt level",
@@ -276,6 +313,7 @@ rust_toolchain = rule(
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rust_lib": attr.label(
             doc = "The rust standard library.",
@@ -283,9 +321,11 @@ rust_toolchain = rule(
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
+            cfg = "exec",
         ),
         "rustc_srcs": attr.label(
             doc = "The source code of rustc.",
@@ -293,6 +333,7 @@ rust_toolchain = rule(
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
+            cfg = "exec",
         ),
         "staticlib_ext": attr.string(
             doc = "The extension for static libraries created from rustc.",
@@ -304,6 +345,11 @@ rust_toolchain = rule(
                 "see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs"
             ),
             mandatory = True,
+        ),
+        "target_json": attr.label(
+            doc = ("Override the target_triple with a custom target specification. " +
+                   "For more details see: https://doc.rust-lang.org/rustc/targets/custom.html"),
+            allow_single_file = True,
         ),
         "target_triple": attr.string(
             doc = (

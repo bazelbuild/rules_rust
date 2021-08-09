@@ -87,7 +87,6 @@ def _clippy_aspect_impl(target, ctx):
         toolchain.clippy_driver.path,
         cc_toolchain,
         feature_configuration,
-        crate_type,
         crate_info,
         dep_info,
         output_hash = determine_output_hash(crate_info.root),
@@ -95,7 +94,6 @@ def _clippy_aspect_impl(target, ctx):
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
-        maker_path = clippy_marker.path,
         emit = ["dep-info", "metadata"],
     )
 
@@ -105,16 +103,18 @@ def _clippy_aspect_impl(target, ctx):
     if "__bindgen" in ctx.rule.attr.tags:
         # bindgen-generated content is likely to trigger warnings, so
         # only fail on clippy warnings
-        args.add("-Dclippy::style")
-        args.add("-Dclippy::correctness")
-        args.add("-Dclippy::complexity")
-        args.add("-Dclippy::perf")
+        args.rustc_flags.add("-Dclippy::style")
+        args.rustc_flags.add("-Dclippy::correctness")
+        args.rustc_flags.add("-Dclippy::complexity")
+        args.rustc_flags.add("-Dclippy::perf")
     else:
         # fail on any warning
-        args.add("-Dwarnings")
+        args.rustc_flags.add("-Dwarnings")
 
     if crate_info.is_test:
-        args.add("--test")
+        args.rustc_flags.add("--test")
+
+    args.process_wrapper_flags.add("--touch-file", clippy_marker.path)
 
     # Upstream clippy requires one of these two filenames or it silently uses
     # the default config. Enforce the naming so users are not confused.
@@ -130,7 +130,7 @@ def _clippy_aspect_impl(target, ctx):
         outputs = [clippy_marker],
         env = env,
         tools = [toolchain.clippy_driver],
-        arguments = [args],
+        arguments = args.all,
         mnemonic = "Clippy",
     )
 

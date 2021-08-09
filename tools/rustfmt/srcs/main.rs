@@ -102,7 +102,7 @@ fn generate_rustfmt_target_manifests(options: &Config, targets: &[String]) {
 fn apply_rustfmt(options: &Config, targets: &[String]) {
     // Ensure the targets are first built and a manifest containing `rustfmt`
     // arguments are generated before formatting source files.
-    generate_rustfmt_target_manifests(&options, &targets);
+    generate_rustfmt_target_manifests(options, targets);
 
     for target in targets.iter() {
         // Replace any `:` characters and strip leading slashes

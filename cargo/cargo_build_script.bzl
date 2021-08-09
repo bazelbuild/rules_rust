@@ -1,8 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//rust:defs.bzl", "rust_common")
-load("//rust:rust.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
@@ -77,7 +76,7 @@ def _build_script_impl(ctx):
         # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
         "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
         "RUSTC": toolchain.rustc.path,
-        "TARGET": toolchain.target_triple,
+        "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
 
@@ -129,7 +128,7 @@ def _build_script_impl(ctx):
             script,
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
-        ] + ctx.files.data,
+        ] + ctx.files.data + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
 
