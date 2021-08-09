@@ -31,9 +31,10 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "cfg_if",
+    name = "unicode_bidi",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -46,10 +47,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.1.10",
+    version = "0.3.5",
     # buildifier: leave-alone
     deps = [
+        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
     ],
 )
-
-# Unsupported target "xcrate" with type "test" omitted

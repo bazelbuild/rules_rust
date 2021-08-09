@@ -86,7 +86,7 @@ rust_library(
         "@rules_rust_examples_complex_sys__cfg_if__1_0_0//:cfg_if",
         "@rules_rust_examples_complex_sys__foreign_types__0_3_2//:foreign_types",
         "@rules_rust_examples_complex_sys__lazy_static__1_4_0//:lazy_static",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
+        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
         "@rules_rust_examples_complex_sys__openssl_sys__0_9_60//:openssl_sys",
     ],
 )
