@@ -1127,32 +1127,6 @@ rust_test = rule(
 """),
 )
 
-rust_test_binary = rule(
-    implementation = _rust_test_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items() +
-                 _rust_test_attrs.items()),
-    executable = True,
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
-        Builds a Rust test binary, without marking this rule as a Bazel test.
-
-        **Warning**: This rule is currently experimental.
-
-        This should be used when you want to run the test binary from a different test
-        rule (such as [`sh_test`](https://docs.bazel.build/versions/master/be/shell.html#sh_test)),
-        and know that running the test binary directly will fail.
-
-        See `rust_test` for example usage.
-        """),
-)
-
 def rust_test_suite(name, srcs, **kwargs):
     """A rule for creating a test suite for a set of `rust_test` targets.
 
