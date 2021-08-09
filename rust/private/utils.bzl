@@ -336,5 +336,6 @@ def is_exec_configuration(ctx):
     Returns:
         True if the exec configuration is detected, False otherwise.
     """
+
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec-") == -1
