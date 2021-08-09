@@ -27,6 +27,7 @@ load(
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
+    "is_exec_configuration",
     "make_static_lib_symlink",
     "relativize",
 )
@@ -497,11 +498,8 @@ def construct_arguments(
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
     env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
 
-    # extra_rustc_flags are meant to apply across all code being compiled in the target
-    # configuration, not the exec configuration.
-    # TODO(djmarcin): Should these flags apply to cfg=exec targets as well? Or via a
-    # different flag. Also, is there a better way to determine cfg=exec?
-    if hasattr(ctx.attr, "_extra_rustc_flags") and ctx.genfiles_dir.path.find("-exec-") == -1:
+    # extra_rustc_flags apply to the target configuration, not the exec configuration.
+    if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):
         args.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
     return args, env
