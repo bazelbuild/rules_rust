@@ -83,7 +83,10 @@ fn args() -> Vec<String> {
     // Note that arguments from the args file always go first
     BufReader::new(file)
         .lines()
-        .map(|line| line.expect("Failed to read file").replace("${pwd}", &pwd_str))
+        .map(|line| {
+            line.expect("Failed to read file")
+                .replace("${pwd}", &pwd_str)
+        })
         .chain(std::env::args().skip(1))
         .collect()
 }
