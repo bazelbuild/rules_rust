@@ -45,10 +45,6 @@ tasks:
       - "//test/..."
       - "@examples//..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
-      - "-@examples//fibonacci:fibonacci_doc_test"
-      - "-@examples//hello_lib:hello_lib_doc_test"
       - "-@examples//ffi/rust_calling_c/simple/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-@examples//ffi/rust_calling_c:matrix_dylib_test"
