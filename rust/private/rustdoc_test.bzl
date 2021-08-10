@@ -15,6 +15,7 @@
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
+load("//util/launcher:launcher.bzl", "create_launcher")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -41,11 +42,7 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    flags = _build_rustdoc_flags(dep_info, crate_info)
-    if toolchain.os != "windows":
-        rust_doc_test = _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info)
-    else:
-        rust_doc_test = _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info)
+    flags = _build_rustdoc_flags(dep_info, crate_info, toolchain)
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
@@ -61,13 +58,26 @@ def _rust_doc_test_impl(ctx):
         ],
     )
 
-    return [DefaultInfo(
-        runfiles = ctx.runfiles(
-            files = compile_inputs.to_list(),
-            collect_data = True,
-        ),
-        executable = rust_doc_test,
-    )]
+    rustdoc = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    ctx.actions.symlink(
+        output = rustdoc,
+        target_file = toolchain.rust_doc,
+        is_executable = True,
+    )
+
+    return create_launcher(
+        ctx = ctx,
+        args = [
+            "--test",
+            crate_info.root.path,
+            "--crate-name={}".format(crate_info.name),
+        ] + flags,
+        toolchain = toolchain,
+        providers = [DefaultInfo(
+            runfiles = ctx.runfiles(transitive_files = compile_inputs),
+        )],
+        executable = rustdoc,
+    )
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some dependency issues or
 # generating docs will break.
@@ -82,12 +92,13 @@ def _dirname(path_str):
     """
     return "/".join(path_str.split("/")[:-1])
 
-def _build_rustdoc_flags(dep_info, crate_info):
+def _build_rustdoc_flags(dep_info, crate_info, toolchain):
     """Constructs the rustdoc script used to test `crate`.
 
     Args:
         dep_info (DepInfo): The DepInfo provider
         crate_info (CrateInfo): The CrateInfo provider
+        toolchain (rust_toolchain): The curret `rust_toolchain`.
 
     Returns:
         list: A list of rustdoc flags (str)
@@ -121,80 +132,6 @@ def _build_rustdoc_flags(dep_info, crate_info):
 
     return link_search_flags + link_flags + edition_flags
 
-_rustdoc_test_bash_script = """\
-#!/usr/bin/env bash
-
-set -e;
-
-{rust_doc} --test \\
-    {crate_root} \\
-    --crate-name={crate_name} \\
-    {flags}
-"""
-
-def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info):
-    """Generates a helper script for executing a rustdoc test for unix systems
-
-    Args:
-        ctx (ctx): The `rust_doc_test` rule's context object
-        toolchain (ToolchainInfo): A rustdoc toolchain
-        flags (list): A list of rustdoc flags (str)
-        crate_info (CrateInfo): The CrateInfo provider
-
-    Returns:
-        File: An executable containing information for a rustdoc test
-    """
-    rust_doc_test = ctx.actions.declare_file(
-        ctx.label.name + ".sh",
-    )
-    ctx.actions.write(
-        output = rust_doc_test,
-        content = _rustdoc_test_bash_script.format(
-            rust_doc = toolchain.rust_doc.short_path,
-            crate_root = crate_info.root.path,
-            crate_name = crate_info.name,
-            # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
-            flags = " \\\n    ".join(flags),
-        ),
-        is_executable = True,
-    )
-    return rust_doc_test
-
-_rustdoc_test_batch_script = """\
-{rust_doc} --test ^
-    {crate_root} ^
-    --crate-name={crate_name} ^
-    {flags}
-"""
-
-def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info):
-    """Generates a helper script for executing a rustdoc test for windows systems
-
-    Args:
-        ctx (ctx): The `rust_doc_test` rule's context object
-        toolchain (ToolchainInfo): A rustdoc toolchain
-        flags (list): A list of rustdoc flags (str)
-        crate_info (CrateInfo): The CrateInfo provider
-
-    Returns:
-        File: An executable containing information for a rustdoc test
-    """
-    rust_doc_test = ctx.actions.declare_file(
-        ctx.label.name + ".bat",
-    )
-    ctx.actions.write(
-        output = rust_doc_test,
-        content = _rustdoc_test_batch_script.format(
-            rust_doc = toolchain.rust_doc.short_path.replace("/", "\\"),
-            crate_root = crate_info.root.path,
-            crate_name = crate_info.name,
-            # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
-            flags = " ^\n    ".join(flags),
-        ),
-        is_executable = True,
-    )
-    return rust_doc_test
-
 rust_doc_test = rule(
     implementation = _rust_doc_test_impl,
     attrs = {
@@ -212,10 +149,20 @@ rust_doc_test = rule(
             doc = "__deprecated__: use `crate`",
             providers = [rust_common.crate_info],
         ),
+        "_launcher": attr.label(
+            executable = True,
+            default = Label("//util/launcher:launcher"),
+            cfg = "exec",
+            doc = (
+                "A launcher executable for loading environment and argument files passed in via the " +
+                "`env` attribute and ensuring the variables are set for the underlying test executable."
+            ),
+        ),
     },
-    executable = True,
     test = True,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+    ],
     incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
 

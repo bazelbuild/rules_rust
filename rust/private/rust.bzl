@@ -20,9 +20,9 @@ load(
     "crate_name_from_attr",
     "dedent",
     "determine_output_hash",
-    "expand_dict_value_locations",
     "find_toolchain",
 )
+load("//util/launcher:launcher.bzl", "create_launcher")
 
 # TODO(marco): Separate each rule into its own file.
 
@@ -304,88 +304,6 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _create_test_launcher(ctx, toolchain, output, providers):
-    """Create a process wrapper to ensure runtime environment variables are defined for the test binary
-
-    Args:
-        ctx (ctx): The rule's context object
-        toolchain (rust_toolchain): The current rust toolchain
-        output (File): The output File that will be produced, depends on crate type.
-        providers (list): Providers from a rust compile action. See `rustc_compile_action`
-
-    Returns:
-        list: A list of providers similar to `rustc_compile_action` but with modified default info
-    """
-
-    # TODO: It's unclear if the toolchain is in the same configuration as the `_launcher` attribute
-    # This should be investigated but for now, we generally assume if the target environment is windows,
-    # the execution environment is windows.
-    if toolchain.os == "windows":
-        launcher_filename = ctx.label.name + ".launcher.exe"
-    else:
-        launcher_filename = ctx.label.name + ".launcher"
-
-    launcher = ctx.actions.declare_file(launcher_filename)
-
-    # Because returned executables must be created from the same rule, the
-    # launcher target is simply symlinked and exposed.
-    ctx.actions.symlink(
-        output = launcher,
-        target_file = ctx.executable._launcher,
-        is_executable = True,
-    )
-
-    # Get data attribute
-    data = getattr(ctx.attr, "data", [])
-
-    # Expand the environment variables and write them to a file
-    environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_dict_value_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        data,
-    )
-
-    # Convert the environment variables into a list to be written into a file.
-    environ_list = []
-    for key, value in sorted(environ.items()):
-        environ_list.extend([key, value])
-
-    ctx.actions.write(
-        output = environ_file,
-        content = "\n".join(environ_list),
-    )
-
-    launcher_files = [environ_file]
-
-    # Replace the `DefaultInfo` provider in the returned list
-    default_info = None
-    for i in range(len(providers)):
-        if type(providers[i]) == "DefaultInfo":
-            default_info = providers[i]
-            providers.pop(i)
-            break
-
-    if not default_info:
-        fail("No DefaultInfo provider returned from `rustc_compile_action`")
-
-    providers.extend([
-        DefaultInfo(
-            files = default_info.files,
-            runfiles = default_info.default_runfiles.merge(
-                # The output is now also considered a runfile
-                ctx.runfiles(files = launcher_files + [output]),
-            ),
-            executable = launcher,
-        ),
-        OutputGroupInfo(
-            launcher_files = depset(launcher_files),
-            output = depset([output]),
-        ),
-    ])
-
-    return providers
-
 def _rust_test_common(ctx, toolchain, output):
     """Builds a Rust test binary.
 
@@ -452,7 +370,17 @@ def _rust_test_common(ctx, toolchain, output):
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
     )
 
-    return _create_test_launcher(ctx, toolchain, output, providers)
+    env = getattr(ctx.attr, "env", {})
+    data = getattr(ctx.attr, "data", [])
+
+    return create_launcher(
+        ctx = ctx,
+        toolchain = toolchain,
+        providers = providers,
+        env = env,
+        data = data,
+        executable = output,
+    )
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule

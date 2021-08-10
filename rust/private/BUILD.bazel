@@ -8,5 +8,6 @@ bzl_library(
     visibility = ["//rust:__subpackages__"],
     deps = [
         "//rust/platform:rules",
+        "//util/launcher:bzl_lib",
     ],
 )

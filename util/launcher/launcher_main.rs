@@ -11,6 +11,9 @@ use std::os::unix::process::CommandExt;
 /// This string must match the one found in `_create_test_launcher`
 const LAUNCHFILES_ENV_PATH: &str = ".launchfiles/env";
 
+/// This string must match the one found in `_create_test_launcher`
+const LAUNCHFILES_ARGS_PATH: &str = ".launchfiles/args";
+
 /// Load environment variables from a uniquly formatted
 fn environ() -> BTreeMap<String, String> {
     let mut environ = BTreeMap::new();
@@ -48,9 +51,10 @@ fn environ() -> BTreeMap<String, String> {
     environ
 }
 
-/// Locate the executable based on the name of the launcher executable
+/// Locate the underlying executable intended to be started under the launcher
 fn executable() -> PathBuf {
-    // Consume the first argument (argv[0])
+    // When no executable is provided explicitly via the launcher file, fallback
+    // to searching for the executable based on the name of the launcher itself.
     let mut exec_path = std::env::args().next().expect("arg 0 was not set");
     let stem_index = exec_path
         .rfind(".launcher")
@@ -67,7 +71,16 @@ fn executable() -> PathBuf {
 /// Parse the command line arguments but skip the first element which
 /// is the path to the test runner executable.
 fn args() -> Vec<String> {
-    std::env::args().skip(1).collect()
+    // Load the environment file into a map
+    let args_path = std::env::args().next().expect("arg 0 was not set") + LAUNCHFILES_ARGS_PATH;
+    let file = File::open(args_path).expect("Failed to load the environment file");
+
+    // Note that arguments from the args file always go first
+    BufReader::new(file)
+        .lines()
+        .map(|line| line.expect("Failed to read file"))
+        .chain(std::env::args().skip(1))
+        .collect()
 }
 
 /// Simply replace the current process with our test
@@ -85,13 +98,13 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
 /// so instead we allow the command to run in a subprocess.
 #[cfg(target_family = "windows")]
 fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String>) {
-    let output = Command::new(executable)
+    let result = Command::new(executable)
         .envs(environ.iter())
         .args(args)
-        .output()
+        .status()
         .expect("Failed to run process");
 
-    std::process::exit(output.status.code().unwrap_or(1));
+    std::process::exit(result.code().unwrap_or(1));
 }
 
 /// Main entrypoint

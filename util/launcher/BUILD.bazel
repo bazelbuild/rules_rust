@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:rust.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -6,4 +7,11 @@ rust_binary(
     name = "launcher",
     srcs = ["launcher_main.rs"],
     edition = "2018",
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(
+        ["**/*.bzl"],
+    ),
 )
