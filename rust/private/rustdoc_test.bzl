@@ -139,6 +139,14 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
     link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
 
+    # Gets the paths to the folders containing the standard library (or libcore)
+    rust_lib_files = depset(transitive = [toolchain.rust_lib.files, toolchain.rustc_lib.files])
+    rust_lib_paths = depset([file.short_path for file in rust_lib_files.to_list()]).to_list()
+    rust_lib_dirs = depset([file.rsplit("/", 1)[0] for file in rust_lib_paths]).to_list()
+
+    # Tell Rustc where to find the standard library
+    link_search_flags.extend(["-L ${{pwd}}/{}".format(lib) for lib in rust_lib_dirs])
+
     sysroot = find_sysroot(toolchain, short_path = True)
     if sysroot:
         link_search_flags.append("--sysroot=${{pwd}}/{}".format(sysroot))
