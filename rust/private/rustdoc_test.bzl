@@ -97,6 +97,7 @@ def _rust_doc_test_impl(ctx):
         env = env,
         toolchain = toolchain,
         providers = [DefaultInfo(
+            files = toolchain.rustc_lib.files,
             runfiles = ctx.runfiles(transitive_files = compile_inputs),
         )],
         executable = rustdoc,
