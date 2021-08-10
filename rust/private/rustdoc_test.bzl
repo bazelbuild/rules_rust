@@ -14,6 +14,7 @@
 
 # buildifier: disable=module-docstring
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:toolchain_utils.bzl", "find_sysroot")
 load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
 load("//util/launcher:launcher.bzl", "create_launcher")
 
@@ -113,6 +114,10 @@ def _build_rustdoc_flags(dep_info, crate_info, toolchain):
     link_flags.append("--extern=" + crate_info.name + "=" + crate_info.output.short_path)
     link_flags += ["--extern=" + c.name + "=" + c.dep.output.short_path for c in d.direct_crates.to_list()]
     link_search_flags += ["-Ldependency={}".format(_dirname(c.output.short_path)) for c in d.transitive_crates.to_list()]
+
+    sysroot = find_sysroot(toolchain, short_path = True)
+    if sysroot:
+        link_search_flags.extend(["--sysroot", "${{pwd}}/{}".format(sysroot)])
 
     # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
     for lib_to_link in dep_info.transitive_noncrates.to_list():

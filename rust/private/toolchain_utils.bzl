@@ -1,5 +1,31 @@
 """A module defining toolchain utilities"""
 
+def find_sysroot(rust_toolchain, short_path = False):
+    """Locate the sysroot for a given toolchain
+
+    Args:
+        rust_toolchain (rust_toolchain): A rust toolchain
+        short_path (bool): Whether or not to use a short path to the sysroot
+
+    Returns:
+        str, optional: The path of the toolchain's sysroot
+    """
+
+    # Sysroot is determined by using a rust stdlib file, expected to be at
+    # `${SYSROOT}/lib/rustlib/${target_triple}/lib`, and strip the known
+    # directories from the sysroot path.
+    rust_stdlib_files = rust_toolchain.rust_lib.files.to_list()
+    if rust_stdlib_files:
+        # Determine the sysroot by taking a rust stdlib file, expected to be `${sysroot}/lib`
+        if short_path:
+            split = rust_stdlib_files[0].short_path.rsplit("/", 5)
+        else:
+            split = rust_stdlib_files[0].path.rsplit("/", 5)
+        sysroot = split[0]
+        return sysroot
+
+    return None
+
 def _toolchain_files_impl(ctx):
     toolchain = ctx.toolchains[str(Label("//rust:toolchain"))]
 

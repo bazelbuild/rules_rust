@@ -75,10 +75,15 @@ fn args() -> Vec<String> {
     let args_path = std::env::args().next().expect("arg 0 was not set") + LAUNCHFILES_ARGS_PATH;
     let file = File::open(args_path).expect("Failed to load the environment file");
 
+    // Variables will have the `${pwd}` variable replaced which is rendered by
+    // `@rules_rust//rust/private:util.bzl::expand_dict_value_locations`
+    let pwd = std::env::current_dir().expect("Failed to get current working directory");
+    let pwd_str = pwd.to_string_lossy();
+
     // Note that arguments from the args file always go first
     BufReader::new(file)
         .lines()
-        .map(|line| line.expect("Failed to read file"))
+        .map(|line| line.expect("Failed to read file").replace("${pwd}", &pwd_str))
         .chain(std::env::args().skip(1))
         .collect()
 }
