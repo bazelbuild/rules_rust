@@ -170,6 +170,7 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
     toolchain_tools = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
+    print(cc_env)
 
     # MSVC requires INCLUDE to be set
     include = cc_env.get("INCLUDE")
