@@ -140,8 +140,8 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
 
     sysroot = find_sysroot(toolchain, short_path = True)
     if sysroot:
-        link_search_flags.extend(["--sysroot", "${{pwd}}/{}".format(sysroot)])
-    link_search_flags.extend(["--target", toolchain.target_flag_value])
+        link_search_flags.append("--sysroot=${{pwd}}/{}".format(sysroot))
+    link_search_flags.append("--target={}".format(toolchain.target_flag_value))
 
     # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
     for lib_to_link in dep_info.transitive_noncrates.to_list():
