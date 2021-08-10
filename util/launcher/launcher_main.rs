@@ -91,6 +91,22 @@ fn args() -> Vec<String> {
         .collect()
 }
 
+fn print_tree(start: &str) {
+    println!("Name: {}", start);
+    for path in std::fs::read_dir(&start).unwrap() {
+        let path_buf = path.unwrap().path();
+        if path_buf.is_file() {
+            println!("Name: {}", path_buf.display());
+        }
+    }
+    for path in std::fs::read_dir(&start).unwrap() {
+        let path_buf = path.unwrap().path();
+        if path_buf.is_dir() {
+            print_tree(path_buf.to_str().unwrap());
+        }
+    }
+}
+
 /// Simply replace the current process with our test
 #[cfg(target_family = "unix")]
 fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String>) {
@@ -100,10 +116,7 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
     println!("{:?}", executable);
 
     if environ.contains_key("SYSROOT") {
-        let paths = std::fs::read_dir(&environ["SYSROOT"]).unwrap();
-        for path in paths {
-            println!("Name: {}", path.unwrap().path().display())
-        }
+        print_tree(&environ["SYSROOT"]);
     }
 
     let error = Command::new(&executable)
@@ -122,13 +135,16 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
     println!("{:#?}", args);
     println!("{:#?}", environ);
     println!("{:?}", executable);
+    if environ.contains_key("SYSROOT") {
+        print_tree(&environ["SYSROOT"]);
+    }
     let result = Command::new(executable)
         .envs(environ.iter())
         .args(args)
         .status()
         .expect("Failed to run process");
 
-    println!("{:?}", result.code().unwrap_or(1234));
+    println!("Done: {:?}", result.code().unwrap_or(1234));
     std::process::exit(result.code().unwrap_or(1));
 }
 
