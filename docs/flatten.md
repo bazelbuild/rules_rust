@@ -23,6 +23,7 @@
 * [rust_proto_library](#rust_proto_library)
 * [rust_proto_repositories](#rust_proto_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
+* [rust_proto_transitive_repositories](#rust_proto_transitive_repositories)
 * [rust_repositories](#rust_repositories)
 * [rust_repository_set](#rust_repository_set)
 * [rust_shared_library](#rust_shared_library)
@@ -1604,6 +1605,20 @@ Declare dependencies needed for proto compilation.
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
+
+
+<a id="#rust_proto_transitive_repositories"></a>
+
+## rust_proto_transitive_repositories
+
+<pre>
+rust_proto_transitive_repositories()
+</pre>
+
+Load transitive dependencies of the `@rules_rust//proto` rules.
+
+This macro should be called immediately after the `rust_proto_repositories` macro.
+
 
 
 <a id="#rust_repositories"></a>

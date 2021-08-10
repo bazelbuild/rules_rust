@@ -28,6 +28,21 @@ def rust_proto_repositories(register_default_toolchain = True):
     """
     maybe(
         http_archive,
+        name = "rules_proto",
+        sha256 = "bc12122a5ae4b517fa423ea03a8d82ea6352d5127ea48cb54bc324e8ab78493c",
+        strip_prefix = "rules_proto-af6481970a34554c6942d993e194a9aed7987780",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/af6481970a34554c6942d993e194a9aed7987780.tar.gz",
+            "https://github.com/bazelbuild/rules_proto/archive/af6481970a34554c6942d993e194a9aed7987780.tar.gz",
+        ],
+        patch_args = ["-p1"],
+        patches = [
+            Label("//proto/patches:rules_proto-bzl_visibility.patch"),
+        ],
+    )
+
+    maybe(
+        http_archive,
         name = "com_google_protobuf",
         sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
         strip_prefix = "protobuf-3.10.0",
@@ -35,40 +50,9 @@ def rust_proto_repositories(register_default_toolchain = True):
             "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
             "https://github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
         ],
-    )
-
-    maybe(
-        http_archive,
-        name = "rules_python",
-        strip_prefix = "rules_python-0.0.1",
-        type = "zip",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_python/archive/0.0.1.zip",
-            "https://github.com/bazelbuild/rules_python/archive/0.0.1.zip",
-        ],
-        sha256 = "f73c0cf51c32c7aaeaf02669ed03b32d12f2d92e1b05699eb938a75f35a210f4",
-    )
-
-    maybe(
-        http_archive,
-        name = "six",
-        build_file = "@com_google_protobuf//:third_party/six.BUILD",
-        sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
-        urls = [
-            "https://mirror.bazel.build/pypi.python.org/packages/source/s/six/six-1.12.0.tar.gz",
-            "https://pypi.python.org/packages/source/s/six/six-1.12.0.tar.gz",
-        ],
-    )
-
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-        strip_prefix = "zlib-1.2.11",
-        urls = [
-            "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-            "https://zlib.net/zlib-1.2.11.tar.gz",
+        patch_args = ["-p1"],
+        patches = [
+            Label("//proto/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
         ],
     )
 
