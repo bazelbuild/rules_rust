@@ -110,6 +110,10 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
 /// so instead we allow the command to run in a subprocess.
 #[cfg(target_family = "windows")]
 fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String>) {
+    println!("{:?}", std::env::current_dir());
+    println!("{:#?}", args);
+    println!("{:#?}", environ);
+    println!("{:?}", executable);
     let result = Command::new(executable)
         .envs(environ.iter())
         .args(args)
