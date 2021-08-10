@@ -183,12 +183,13 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
         if cc_executable:
             env["CC"] = cc_executable
         ar_executable = cc_toolchain.ar_executable
-        # if ar_executable:
+        if ar_executable:
             # The default MacOS toolchain uses libtool as ar_executable not ar.
             # This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
             # /usr/bin/ar which is probably good enough.
-            # if not ar_executable.endswith("libtool"):
-            #     env["AR"] = ar_executable
+            if not ar_executable.endswith("libtool"):
+                env["AR"] = ar_executable
+                flags.extend(["-C", "linker={}".format(ar_executable)])
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
 
