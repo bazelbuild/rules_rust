@@ -143,9 +143,10 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
     rust_lib_files = depset(transitive = [toolchain.rust_lib.files, toolchain.rustc_lib.files])
     rust_lib_paths = depset([file.short_path for file in rust_lib_files.to_list()]).to_list()
     rust_lib_dirs = depset([file.rsplit("/", 1)[0] for file in rust_lib_paths]).to_list()
+    rust_lib_dirs = ["${{pwd}}/{}".format(lib) for lib in rust_lib_dirs]
 
     # Tell Rustc where to find the standard library
-    link_search_flags.extend(["-L ${{pwd}}/{}".format(lib) for lib in rust_lib_dirs])
+    link_search_flags.extend(["-L {}".format(lib) for lib in rust_lib_dirs])
 
     sysroot = find_sysroot(toolchain, short_path = True)
     if sysroot:
@@ -170,8 +171,11 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
 
     flags = link_search_flags + link_flags + edition_flags
 
+    # Start with the default shell env, which contains any --action_env
+    # settings passed in on the command line.
+    env = dict(ctx.configuration.default_shell_env)
+
     # Build a set of environment variables to use for the test
-    env = {}
     toolchain_tools = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
@@ -197,7 +201,9 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
 
-    env["SYSROOT"] = "${{pwd}}/{}".format(sysroot)
+    # env["SYSROOT"] = "${{pwd}}/{}".format(sysroot)
+    env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":".join(rust_lib_dirs)
+    env["DYLD_LIBRARY_PATH"] = env.get("DYLD_LIBRARY_PATH", "") + ":".join(rust_lib_dirs)
     return flags, env, toolchain_tools
 
 rust_doc_test = rule(

@@ -85,12 +85,12 @@ def _merge_providers(ctx, providers, launcher, launcher_files, executable = None
         )
 
     # buildifier: disable=print
-    print(ctx.label, default_info.default_runfiles.merge(
-        # The original executable is now also considered a runfile
-        ctx.runfiles(files = launcher_files + [
-            executable or default_info.files_to_run.executable,
-        ]),
-    ).files)
+    # print(ctx.label, default_info.default_runfiles.merge(
+    #     # The original executable is now also considered a runfile
+    #     ctx.runfiles(files = launcher_files + [
+    #         executable or default_info.files_to_run.executable,
+    #     ]),
+    # ).files)
 
     providers.extend([
         DefaultInfo(
