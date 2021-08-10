@@ -197,6 +197,7 @@ _build_script_run = rule(
         "data": attr.label_list(
             doc = "Data or tools required by the build script.",
             allow_files = True,
+            cfg = "exec",
         ),
         "deps": attr.label_list(
             doc = "The Rust dependencies of the crate",
