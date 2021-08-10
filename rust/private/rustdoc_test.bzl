@@ -13,10 +13,31 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:toolchain_utils.bzl", "find_sysroot")
-load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
+load("//rust/private:utils.bzl", "find_cc_toolchain", "find_toolchain", "get_lib_name", "get_preferred_artifact")
 load("//util/launcher:launcher.bzl", "create_launcher")
+
+def get_cc_compile_env(cc_toolchain, feature_configuration):
+    """Gather cc environment variables from the given `cc_toolchain`
+
+    Args:
+        cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
+
+    Returns:
+        dict: Returns environment variables to be set for given action.
+    """
+    compile_variables = cc_common.create_compile_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+    )
+    return cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = C_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -43,7 +64,7 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    flags = _build_rustdoc_flags(dep_info, crate_info, toolchain)
+    flags, env, toolchain_tools = _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain)
 
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
@@ -56,7 +77,7 @@ def _rust_doc_test_impl(ctx):
             dep_info.transitive_libs,
             toolchain.rustc_lib.files,
             toolchain.rust_lib.files,
-        ],
+        ] + toolchain_tools,
     )
 
     rustdoc = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
@@ -73,6 +94,7 @@ def _rust_doc_test_impl(ctx):
             crate_info.root.path,
             "--crate-name={}".format(crate_info.name),
         ] + flags,
+        env = env,
         toolchain = toolchain,
         providers = [DefaultInfo(
             runfiles = ctx.runfiles(transitive_files = compile_inputs),
@@ -93,10 +115,11 @@ def _dirname(path_str):
     """
     return "/".join(path_str.split("/")[:-1])
 
-def _build_rustdoc_flags(dep_info, crate_info, toolchain):
+def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
     """Constructs the rustdoc script used to test `crate`.
 
     Args:
+        ctx (ctx): The rule's context object.
         dep_info (DepInfo): The DepInfo provider
         crate_info (CrateInfo): The CrateInfo provider
         toolchain (rust_toolchain): The curret `rust_toolchain`.
@@ -135,7 +158,36 @@ def _build_rustdoc_flags(dep_info, crate_info, toolchain):
 
     edition_flags = ["--edition={}".format(crate_info.edition)] if crate_info.edition != "2015" else []
 
-    return link_search_flags + link_flags + edition_flags
+    flags = link_search_flags + link_flags + edition_flags
+
+    # Build a set of environment variables to use for the test
+    env = {}
+    toolchain_tools = []
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
+
+    # MSVC requires INCLUDE to be set
+    include = cc_env.get("INCLUDE")
+    if include:
+        env["INCLUDE"] = include
+
+    if cc_toolchain:
+        toolchain_tools.append(cc_toolchain.all_files)
+
+        cc_executable = cc_toolchain.compiler_executable
+        if cc_executable:
+            env["CC"] = cc_executable
+        ar_executable = cc_toolchain.ar_executable
+        if ar_executable:
+            # The default MacOS toolchain uses libtool as ar_executable not ar.
+            # This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
+            # /usr/bin/ar which is probably good enough.
+            if not ar_executable.endswith("libtool"):
+                env["AR"] = ar_executable
+        if cc_toolchain.sysroot:
+            env["SYSROOT"] = cc_toolchain.sysroot
+
+    return flags, env, toolchain_tools
 
 rust_doc_test = rule(
     implementation = _rust_doc_test_impl,
@@ -154,6 +206,9 @@ rust_doc_test = rule(
             doc = "__deprecated__: use `crate`",
             providers = [rust_common.crate_info],
         ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
         "_launcher": attr.label(
             executable = True,
             default = Label("//util/launcher:launcher"),
@@ -165,8 +220,10 @@ rust_doc_test = rule(
         ),
     },
     test = True,
+    fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
