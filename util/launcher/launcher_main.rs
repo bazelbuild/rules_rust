@@ -94,6 +94,10 @@ fn args() -> Vec<String> {
 /// Simply replace the current process with our test
 #[cfg(target_family = "unix")]
 fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String>) {
+    println!("{:?}", std::env::current_dir());
+    println!("{:#?}", args);
+    println!("{:#?}", environ);
+    println!("{:?}", executable);
     let error = Command::new(&executable)
         .envs(environ.iter())
         .args(args)
