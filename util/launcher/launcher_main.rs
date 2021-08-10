@@ -98,6 +98,14 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
     println!("{:#?}", args);
     println!("{:#?}", environ);
     println!("{:?}", executable);
+
+    if environ.contains_key("SYSROOT") {
+        let paths = std::fs::read_dir(&environ["SYSROOT"]).unwrap();
+        for path in paths {
+            println!("Name: {}", path.unwrap().path().display())
+        }
+    }
+
     let error = Command::new(&executable)
         .envs(environ.iter())
         .args(args)
@@ -120,6 +128,7 @@ fn exec(environ: BTreeMap<String, String>, executable: PathBuf, args: Vec<String
         .status()
         .expect("Failed to run process");
 
+    println!("{:?}", result.code().unwrap_or(1234));
     std::process::exit(result.code().unwrap_or(1));
 }
 

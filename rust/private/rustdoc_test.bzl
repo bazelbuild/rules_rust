@@ -188,6 +188,7 @@ def _build_rustdoc_flags(ctx, dep_info, crate_info, toolchain):
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
 
+    env["SYSROOT"] = "${{pwd}}/{}".format(sysroot)
     return flags, env, toolchain_tools
 
 rust_doc_test = rule(

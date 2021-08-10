@@ -84,6 +84,13 @@ def _merge_providers(ctx, providers, launcher, launcher_files, executable = None
             output = depset([executable or default_info.files_to_run.executable]),
         )
 
+    print(ctx.label, default_info.default_runfiles.merge(
+        # The original executable is now also considered a runfile
+        ctx.runfiles(files = launcher_files + [
+            executable or default_info.files_to_run.executable,
+        ]),
+    ).files)
+
     providers.extend([
         DefaultInfo(
             files = default_info.files,
