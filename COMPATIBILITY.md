@@ -60,9 +60,9 @@ first 3 months will support both Bazel LTS versions unless Bazel doesn't allow t
 
 ## What host platforms are supported?
 
-The only platform subject to backwards compatibility policy is
-`x86_64-unknown-linux-gnu`, as the only fully supported platform. Process for
-moving a best effort platform to a supported platform is consensus-based.
+Platforms subject to backwards compatibility policy are
+`x86_64-unknown-linux-gnu` and `x86_64-apple-darwin` (platforms supported by `rules_rust`).
+Process for moving a best effort platform to a supported platform is consensus-based.
 
 ## What are the stable APIs of `rules_rust`?
 
