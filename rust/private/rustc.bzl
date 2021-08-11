@@ -185,7 +185,7 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
+def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths, attrs = None):
     """Gathers cc_common linker information
 
     Args:
@@ -193,6 +193,8 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
+        attrs (struct, optional): Attributes to use instead of `ctx.attr`.
+
 
     Returns:
         tuple: A tuple of the following items:
@@ -200,11 +202,14 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths):
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
     """
+    if not attrs:
+        attrs = ctx.attr
+
     user_link_flags = get_cc_user_link_flags(ctx)
 
     # Add linkopt's from dependencies. This includes linkopts from transitive
     # dependencies since they get merged up.
-    for dep in ctx.attr.deps:
+    for dep in getattr(attrs, "deps", []):
         if CcInfo in dep and dep[CcInfo].linking_context:
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
                 for flag in linker_input.user_link_flags:
@@ -482,7 +487,7 @@ def construct_arguments(
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
             rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths)
+            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths, attr)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
@@ -559,31 +564,31 @@ def rustc_compile_action(
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
-        ctx,
-        ctx.file,
-        ctx.files,
-        toolchain,
-        cc_toolchain,
-        crate_info,
-        dep_info,
-        build_info,
+        ctx = ctx,
+        file = ctx.file,
+        files = ctx.files,
+        toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        build_info = build_info,
     )
 
     args, env = construct_arguments(
-        ctx,
-        ctx.attr,
-        ctx.file,
-        toolchain,
-        toolchain.rustc.path,
-        cc_toolchain,
-        feature_configuration,
-        crate_info,
-        dep_info,
-        output_hash,
-        rust_flags,
-        out_dir,
-        build_env_files,
-        build_flags_files,
+        ctx = ctx,
+        attr = ctx.attr,
+        file = ctx.file,
+        toolchain = toolchain,
+        tool_path = toolchain.rustc.path,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        output_hash = output_hash,
+        rust_flags = rust_flags,
+        out_dir = out_dir,
+        build_env_files = build_env_files,
+        build_flags_files = build_flags_files,
     )
 
     if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
