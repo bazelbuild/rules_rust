@@ -75,6 +75,11 @@ tasks:
       - "-@examples//sys/..."
       - "-@examples//proto/..."
       - "-@examples//wasm/..."
+      # rust_doc_test targets are currently broken on windows
+      # see: https://github.com/bazelbuild/rules_rust/issues/887
+      - "-@examples//hello_lib:hello_lib_doc_test"
+      - "-@examples//fibonacci:fibonacci_doc_test"
+      - "-//test/chained_direct_deps:mod3_doc_test"
     build_targets: *windows_targets
     test_targets: *windows_targets
   examples:
