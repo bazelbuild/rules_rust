@@ -9,10 +9,12 @@ bzl_library(
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
         "@build_bazel_rules_nodejs//internal/providers:bzl",
+        "@com_google_protobuf//:bzl_srcs",
     ],
     deps = [
         "@bazel_skylib//lib:paths",
-        "@rules_proto//proto:rules",
+        "@rules_proto//proto:defs",
+        "@rules_proto//proto:repositories",
     ],
 )
 
@@ -112,6 +114,7 @@ PAGES = dict([
             "rust_grpc_library",
             "rust_proto_library",
             "rust_proto_repositories",
+            "rust_proto_transitive_repositories",
             "rust_proto_toolchain",
         ],
     ),
