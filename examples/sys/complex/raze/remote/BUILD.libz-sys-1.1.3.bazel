@@ -55,10 +55,10 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "1.1.2",
+    version = "1.1.3",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_examples_complex_sys__cc__1_0_66//:cc",
+        "@rules_rust_examples_complex_sys__cc__1_0_69//:cc",
         "@rules_rust_examples_complex_sys__pkg_config__0_3_19//:pkg_config",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
@@ -66,7 +66,7 @@ cargo_build_script(
             "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
-            "@rules_rust_examples_complex_sys__vcpkg__0_2_11//:vcpkg",
+            "@rules_rust_examples_complex_sys__vcpkg__0_2_15//:vcpkg",
         ],
         "//conditions:default": [],
     }),
@@ -91,11 +91,11 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.1.2",
+    version = "1.1.3",
     # buildifier: leave-alone
     deps = [
         ":libz_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
+        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

@@ -50,9 +50,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.1.16",
+    version = "0.1.19",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__tinyvec__1_1_0//:tinyvec",
+        "@rules_rust_examples_complex_sys__tinyvec__1_3_1//:tinyvec",
     ],
 )

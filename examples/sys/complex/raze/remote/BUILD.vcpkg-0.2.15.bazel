@@ -31,7 +31,7 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "form_urlencoded",
+    name = "vcpkg",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -46,10 +46,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.0",
+    version = "0.2.15",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
-        "@rules_rust_examples_complex_sys__percent_encoding__2_1_0//:percent_encoding",
     ],
 )
