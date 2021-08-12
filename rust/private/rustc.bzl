@@ -185,15 +185,15 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths, attrs = None):
+def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
+        attr (struct): Attributes to use in gathering linker args
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
-        attrs (struct, optional): Attributes to use instead of `ctx.attr`.
 
 
     Returns:
@@ -202,14 +202,11 @@ def get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths, attrs 
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
     """
-    if not attrs:
-        attrs = ctx.attr
-
     user_link_flags = get_cc_user_link_flags(ctx)
 
     # Add linkopt's from dependencies. This includes linkopts from transitive
     # dependencies since they get merged up.
-    for dep in getattr(attrs, "deps", []):
+    for dep in getattr(attr, "deps", []):
         if CcInfo in dep and dep[CcInfo].linking_context:
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
                 for flag in linker_input.user_link_flags:
@@ -487,7 +484,7 @@ def construct_arguments(
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
             rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
-            ld, link_args, link_env = get_linker_and_args(ctx, cc_toolchain, feature_configuration, rpaths, attr)
+            ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
@@ -533,6 +530,7 @@ def construct_arguments(
 
 def rustc_compile_action(
         ctx,
+        attr,
         toolchain,
         crate_info,
         output_hash = None,
@@ -542,6 +540,7 @@ def rustc_compile_action(
 
     Args:
         ctx (ctx): The rule's context object
+        attr (struct): Attributes to use for the rust compile action
         toolchain (rust_toolchain): The current `rust_toolchain`
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
@@ -576,7 +575,7 @@ def rustc_compile_action(
 
     args, env = construct_arguments(
         ctx = ctx,
-        attr = ctx.attr,
+        attr = attr,
         file = ctx.file,
         toolchain = toolchain,
         tool_path = toolchain.rustc.path,
@@ -591,8 +590,8 @@ def rustc_compile_action(
         build_flags_files = build_flags_files,
     )
 
-    if hasattr(ctx.attr, "version") and ctx.attr.version != "0.0.0":
-        formatted_version = " v{}".format(ctx.attr.version)
+    if hasattr(attr, "version") and attr.version != "0.0.0":
+        formatted_version = " v{}".format(attr.version)
     else:
         formatted_version = ""
 
@@ -618,9 +617,9 @@ def rustc_compile_action(
         collect_data = True,
     )
 
-    out_binary = False
-    if hasattr(ctx.attr, "out_binary"):
-        out_binary = getattr(ctx.attr, "out_binary")
+    # TODO: Remove after some resolution to
+    # https://github.com/bazelbuild/rules_rust/issues/771
+    out_binary = getattr(attr, "out_binary", False)
 
     providers = [
         crate_info,
@@ -633,18 +632,19 @@ def rustc_compile_action(
         ),
     ]
     if toolchain.target_arch != "wasm32":
-        providers += establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration)
+        providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration)
 
     return providers
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
 
-def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configuration):
+def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
         ctx (ctx): The rule's context object
+        attr (struct): Attributes to use in gathering CcInfo
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
@@ -654,7 +654,17 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
         list: A list containing the CcInfo provider
     """
 
-    if crate_info.is_test or crate_info.type not in ("staticlib", "cdylib", "rlib", "lib") or getattr(ctx.attr, "out_binary", False):
+    # A test will not need to produce CcInfo as nothing can depend on test targets
+    if crate_info.is_test:
+        return []
+
+    # Only generate CcInfo for particular crate types
+    if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
+        return []
+
+    # TODO: Remove after some resolution to
+    # https://github.com/bazelbuild/rules_rust/issues/771
+    if getattr(attr, "out_binary", False):
         return []
 
     if crate_info.type == "staticlib":
@@ -703,7 +713,7 @@ def establish_cc_info(ctx, crate_info, toolchain, cc_toolchain, feature_configur
     )
 
     cc_infos = [CcInfo(linking_context = linking_context)]
-    for dep in ctx.attr.deps:
+    for dep in getattr(attr, "deps", []):
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])
 
