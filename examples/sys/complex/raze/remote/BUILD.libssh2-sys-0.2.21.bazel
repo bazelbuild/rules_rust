@@ -56,11 +56,11 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.20",
+    version = "0.2.21",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_examples_complex_sys__cc__1_0_66//:cc",
-        "@rules_rust_examples_complex_sys__libz_sys__1_1_2//:libz_sys",
+        "@rules_rust_examples_complex_sys__cc__1_0_69//:cc",
+        "@rules_rust_examples_complex_sys__libz_sys__1_1_3//:libz_sys",
         "@rules_rust_examples_complex_sys__pkg_config__0_3_19//:pkg_config",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
@@ -68,7 +68,7 @@ cargo_build_script(
             "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
-            "@rules_rust_examples_complex_sys__vcpkg__0_2_11//:vcpkg",
+            "@rules_rust_examples_complex_sys__vcpkg__0_2_15//:vcpkg",
         ],
         "//conditions:default": [],
     }) + selects.with_or({
@@ -115,12 +115,12 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.20",
+    version = "0.2.21",
     # buildifier: leave-alone
     deps = [
         ":libssh2_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
-        "@rules_rust_examples_complex_sys__libz_sys__1_1_2//:libz_sys",
+        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
+        "@rules_rust_examples_complex_sys__libz_sys__1_1_3//:libz_sys",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

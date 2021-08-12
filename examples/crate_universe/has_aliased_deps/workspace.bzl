@@ -20,13 +20,16 @@ def deps():
         overrides = {
             "openssl-sys": crate.override(
                 extra_build_script_env_vars = {
-                    "OPENSSL_DIR": "../openssl/openssl",
+                    "OPENSSL_DIR": "$(execpath @openssl//:gen_dir)",
                 },
                 extra_bazel_deps = {
                     "cfg(all())": ["@openssl//:openssl"],
                 },
                 extra_build_script_bazel_data_deps = {
-                    "cfg(all())": ["@openssl//:openssl"],
+                    "cfg(all())": [
+                        "@openssl//:openssl",
+                        "@openssl//:gen_dir",
+                    ],
                 },
             ),
         },

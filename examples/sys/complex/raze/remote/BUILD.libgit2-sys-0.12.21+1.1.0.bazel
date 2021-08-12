@@ -59,12 +59,12 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.12.18+1.1.0",
+    version = "0.12.21+1.1.0",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_examples_complex_sys__cc__1_0_66//:cc",
-        "@rules_rust_examples_complex_sys__libssh2_sys__0_2_20//:libssh2_sys",
-        "@rules_rust_examples_complex_sys__libz_sys__1_1_2//:libz_sys",
+        "@rules_rust_examples_complex_sys__cc__1_0_69//:cc",
+        "@rules_rust_examples_complex_sys__libssh2_sys__0_2_21//:libssh2_sys",
+        "@rules_rust_examples_complex_sys__libz_sys__1_1_3//:libz_sys",
         "@rules_rust_examples_complex_sys__pkg_config__0_3_19//:pkg_config",
     ] + selects.with_or({
         # cfg(unix)
@@ -115,13 +115,13 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.12.18+1.1.0",
+    version = "0.12.21+1.1.0",
     # buildifier: leave-alone
     deps = [
         ":libgit2_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
-        "@rules_rust_examples_complex_sys__libssh2_sys__0_2_20//:libssh2_sys",
-        "@rules_rust_examples_complex_sys__libz_sys__1_1_2//:libz_sys",
+        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
+        "@rules_rust_examples_complex_sys__libssh2_sys__0_2_21//:libssh2_sys",
+        "@rules_rust_examples_complex_sys__libz_sys__1_1_3//:libz_sys",
     ] + selects.with_or({
         # cfg(unix)
         (
