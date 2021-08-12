@@ -31,7 +31,7 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "idna",
+    name = "openssl_probe",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -46,15 +46,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.0",
+    version = "0.1.4",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
-        "@rules_rust_examples_complex_sys__unicode_bidi__0_3_4//:unicode_bidi",
-        "@rules_rust_examples_complex_sys__unicode_normalization__0_1_16//:unicode_normalization",
     ],
 )
-
-# Unsupported target "tests" with type "test" omitted
-
-# Unsupported target "unit" with type "test" omitted

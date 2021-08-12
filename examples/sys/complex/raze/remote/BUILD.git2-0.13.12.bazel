@@ -86,10 +86,10 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         "@rules_rust_examples_complex_sys__bitflags__1_2_1//:bitflags",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
-        "@rules_rust_examples_complex_sys__libgit2_sys__0_12_18_1_1_0//:libgit2_sys",
-        "@rules_rust_examples_complex_sys__log__0_4_13//:log",
-        "@rules_rust_examples_complex_sys__url__2_2_0//:url",
+        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
+        "@rules_rust_examples_complex_sys__libgit2_sys__0_12_21_1_1_0//:libgit2_sys",
+        "@rules_rust_examples_complex_sys__log__0_4_14//:log",
+        "@rules_rust_examples_complex_sys__url__2_2_2//:url",
     ] + selects.with_or({
         # cfg(all(unix, not(target_os = "macos")))
         (
@@ -107,7 +107,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@rules_rust_examples_complex_sys__openssl_probe__0_1_2//:openssl_probe",
+            "@rules_rust_examples_complex_sys__openssl_probe__0_1_4//:openssl_probe",
             "@rules_rust_examples_complex_sys__openssl_sys__0_9_60//:openssl_sys",
         ],
         "//conditions:default": [],

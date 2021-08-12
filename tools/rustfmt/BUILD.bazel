@@ -1,8 +1,12 @@
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
+load(":rustfmt_utils.bzl", "aspect_repository")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["rustfmt.toml"])
+exports_files([
+    "rustfmt.toml",
+    "rustfmt_utils.bzl",
+])
 
 rust_library(
     name = "rustfmt_lib",
@@ -30,6 +34,9 @@ rust_binary(
         "//:rustfmt.toml",
     ],
     edition = "2018",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+    },
     deps = [
         ":rustfmt_lib",
         "//util/label",
