@@ -55,8 +55,8 @@ are only available in Bazel rolling releases). `rules_rust` will aim that new
 features available to the current Bazel rolling release will be available to the
 next Bazel LTS release at latest.
 
-Whenever there is a new Bazel LTS release, all releases of `rules_rust` in the
-first 3 months will support both Bazel LTS versions unless Bazel doesn't allow this.
+Whenever there is a new Bazel LTS release, all releases of `rules_rust` will maintain
+support for the older LTS version for at least 3 months unless Bazel doesn't allow this.
 
 ## What host platforms are supported?
 
