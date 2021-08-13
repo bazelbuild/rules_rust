@@ -117,7 +117,7 @@ def _rust_wasm_bindgen_impl(ctx):
         DeclarationInfo(
             declarations = declarations,
             transitive_declarations = declarations,
-            type_blacklisted_declarations = depset([]),
+            type_blocklisted_declarations = depset([]),
         ),
         JSModuleInfo(
             direct_sources = es5_sources,
