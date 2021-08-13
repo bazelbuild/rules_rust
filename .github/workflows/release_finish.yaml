@@ -64,6 +64,11 @@ jobs:
         env:
           ARTIFACT_URL: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{env.RELEASE_VERSION}}rc-${{ env.RELEASE_CANDIDATE_NUMBER }}
           ARTIFACT_DIR: ${{ github.workspace }}/crate_universe/private/bootstrap/bin
+      - run: |
+          # Generate the release notes
+          sed 's/{version}/${{env.RELEASE_VERSION}}/' \
+            ${{ github.workspace }}/.github/release.txt.template \
+          > ${{ github.workspace }}/.github/release.txt
       - uses: actions/create-release@v1
         id: rules_rust_release
         env:
@@ -72,7 +77,7 @@ jobs:
           prerelease: true
           tag_name: ${{env.RELEASE_VERSION}}
           release_name: ${{env.RELEASE_VERSION}}
-          body: ${{env.RELEASE_VERSION}}
+          body_path: ${{ github.workspace }}/.github/release.txt
           commitish: ${{ github.base_ref }}
       # There must be a upload action for each platform triple we create
       - name: "Upload aarch64-apple-darwin"
