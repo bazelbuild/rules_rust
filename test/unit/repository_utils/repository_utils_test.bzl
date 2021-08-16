@@ -45,6 +45,16 @@ def _produce_tool_suburl_test_impl(ctx):
             target_triple = None,
         ),
     )
+    asserts.equals(
+        env,
+        "rust-src-1.54.0",
+        produce_tool_suburl(
+            iso_date = "2021-08-15",
+            tool_name = "rust-src",
+            version = "1.54.0",
+            target_triple = None,
+        ),
+    )
     return unittest.end(env)
 
 def _produce_tool_path_test_impl(ctx):
