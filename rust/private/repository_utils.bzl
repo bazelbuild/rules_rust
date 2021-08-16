@@ -271,14 +271,9 @@ def load_rustfmt(ctx):
     """
     target_triple = ctx.attr.exec_triple
 
-    if ctx.attr.rustfmt_version in ("beta", "nightly"):
-        iso_date = ctx.attr.iso_date
-    else:
-        iso_date = None
-
     load_arbitrary_tool(
         ctx,
-        iso_date = iso_date,
+        iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rustfmt",
         tool_subdirectories = ["rustfmt-preview"],
@@ -437,10 +432,6 @@ def check_version_valid(version, iso_date, param_prefix = ""):
     if version in ("beta", "nightly") and not iso_date:
         fail("{param_prefix}iso_date must be specified if version is 'beta' or 'nightly'".format(param_prefix = param_prefix))
 
-    if version not in ("beta", "nightly") and iso_date:
-        # buildifier: disable=print
-        print("{param_prefix}iso_date is ineffective if an exact version is specified".format(param_prefix = param_prefix))
-
 def serialized_constraint_set_from_triple(target_triple):
     """Returns a string representing a set of constraints
 
@@ -469,7 +460,7 @@ def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
         str: The fully qualified url path for the specified tool.
     """
     path = produce_tool_path(tool_name, target_triple, version)
-    return iso_date + "/" + path if iso_date else path
+    return iso_date + "/" + path if (iso_date and version in ("beta", "nightly")) else path
 
 def produce_tool_path(tool_name, target_triple, version):
     """Produces a qualified Rust tool name
@@ -516,11 +507,10 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
                                              .../etc
             tool_subdirectories = ["clippy-preview", "rustc"]
         version (str): The version of the tool among "nightly", "beta', or an exact version.
-        iso_date (str): The date of the tool (or None, if the version is a specific version).
+        iso_date (str): The date of the tool (ignored if the version is a specific version).
         target_triple (str): The rust-style target triple of the tool
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
     """
-
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
     # View the indices mentioned in the docstring to find the tool_suburl for a given
