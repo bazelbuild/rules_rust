@@ -460,10 +460,7 @@ def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
         str: The fully qualified url path for the specified tool.
     """
     path = produce_tool_path(tool_name, target_triple, version)
-    if version in ("beta", "nightly"):
-        return iso_date + "/" + path if iso_date else path
-    else:
-        return path
+    return iso_date + "/" + path if (iso_date and version in ("beta", "nightly")) else path
 
 def produce_tool_path(tool_name, target_triple, version):
     """Produces a qualified Rust tool name
