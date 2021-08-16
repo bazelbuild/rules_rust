@@ -60,7 +60,7 @@ def rust_repositories(
 
     Args:
         version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
-        iso_date (str, optional): The date of the nightly or beta release (or None, if the version is a specific version).
+        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
         rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
         edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
