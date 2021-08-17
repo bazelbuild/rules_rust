@@ -172,7 +172,6 @@ tasks:
       - "-//ffi/rust_calling_c:matrix_dylib_test"
       - "-//ffi/rust_calling_c:matrix_dynamically_linked"
       - "-//ffi/rust_calling_c/simple/..."
-      - "-//sys/..."
       - "-//proto/..."
       - "-//wasm/..."
       # rust_doc_test targets are currently broken on windows
@@ -228,7 +227,6 @@ tasks:
       - "//..."
       # TODO: There are windows specific build issues in the generated
       # dependencies. This should be fixed and all testing enabled.
-      - "-//has_aliased_deps/..."
       - "-//uses_proc_macro/..."
       - "-//uses_sys_crate/..."
     build_targets: *crate_universe_windows_targets
