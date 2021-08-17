@@ -50,6 +50,6 @@ rust_library(
     version = "0.3.5",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
+        "@complex_sys__matches__0_1_8//:matches",
     ],
 )

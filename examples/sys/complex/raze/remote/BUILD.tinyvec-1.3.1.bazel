@@ -54,7 +54,7 @@ rust_library(
     version = "1.3.1",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__tinyvec_macros__0_1_0//:tinyvec_macros",
+        "@complex_sys__tinyvec_macros__0_1_0//:tinyvec_macros",
     ],
 )
 

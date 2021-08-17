@@ -58,15 +58,15 @@ cargo_build_script(
     version = "1.1.3",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_examples_complex_sys__cc__1_0_69//:cc",
-        "@rules_rust_examples_complex_sys__pkg_config__0_3_19//:pkg_config",
+        "@complex_sys__cc__1_0_69//:cc",
+        "@complex_sys__pkg_config__0_3_19//:pkg_config",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (
             "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
-            "@rules_rust_examples_complex_sys__vcpkg__0_2_15//:vcpkg",
+            "@complex_sys__vcpkg__0_2_15//:vcpkg",
         ],
         "//conditions:default": [],
     }),
@@ -95,7 +95,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":libz_sys_build_script",
-        "@rules_rust_examples_complex_sys__libc__0_2_98//:libc",
+        "@complex_sys__libc__0_2_98//:libc",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

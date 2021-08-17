@@ -49,7 +49,7 @@ rust_library(
     version = "1.0.1",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
-        "@rules_rust_examples_complex_sys__percent_encoding__2_1_0//:percent_encoding",
+        "@complex_sys__matches__0_1_8//:matches",
+        "@complex_sys__percent_encoding__2_1_0//:percent_encoding",
     ],
 )

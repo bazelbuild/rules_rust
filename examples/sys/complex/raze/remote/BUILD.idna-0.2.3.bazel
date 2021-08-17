@@ -51,9 +51,9 @@ rust_library(
     version = "0.2.3",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
-        "@rules_rust_examples_complex_sys__unicode_bidi__0_3_5//:unicode_bidi",
-        "@rules_rust_examples_complex_sys__unicode_normalization__0_1_19//:unicode_normalization",
+        "@complex_sys__matches__0_1_8//:matches",
+        "@complex_sys__unicode_bidi__0_3_5//:unicode_bidi",
+        "@complex_sys__unicode_normalization__0_1_19//:unicode_normalization",
     ],
 )
 

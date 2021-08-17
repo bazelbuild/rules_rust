@@ -1,12 +1,12 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//sys/complex/raze:crates.bzl", "rules_rust_examples_complex_sys_fetch_remote_crates")
+load("//sys/complex/raze:crates.bzl", "complex_sys_fetch_remote_crates")
 
-def rules_rust_examples_complex_sys_repositories():
+def complex_sys_repositories():
     """Define repository dependencies for the `complex_sys` example"""
 
-    rules_rust_examples_complex_sys_fetch_remote_crates()
+    complex_sys_fetch_remote_crates()
 
     maybe(
         http_archive,
