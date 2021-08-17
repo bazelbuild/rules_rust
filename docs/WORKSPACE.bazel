@@ -1,13 +1,41 @@
 workspace(name = "rules_rust_docs")
 
-load(":docs_repositories.bzl", "repositories")
+local_repository(
+    name = "rules_rust",
+    path = "..",
+)
 
-repositories()
+load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
-load(":docs_deps.bzl", "deps")
+rust_repositories(include_rustc_srcs = True)
 
-deps()
+load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
-load(":docs_transitive_deps.bzl", "transitive_deps")
+rust_proto_repositories()
 
-transitive_deps()
+load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+
+rust_proto_transitive_repositories()
+
+load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+
+rust_wasm_bindgen_repositories()
+
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
+
+node_repositories()
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "io_bazel_stardoc",
+    sha256 = "ff10a8b1503f5606fab5aa5bc9ae267272c023af7789f03caef95b5ab3fe0df2",
+    strip_prefix = "stardoc-d93ee5347e2d9c225ad315094507e018364d5a67",
+    urls = [
+        "https://github.com/bazelbuild/stardoc/archive/d93ee5347e2d9c225ad315094507e018364d5a67.zip",
+    ],
+)
+
+load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
+
+stardoc_repositories()
