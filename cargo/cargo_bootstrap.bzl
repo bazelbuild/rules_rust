@@ -1,7 +1,7 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
 load("//cargo/private:cargo_utils.bzl", "get_cargo_and_rustc", "get_host_triple")
-load("//rust:repositories.bzl", "DEFAULT_RUST_VERSION")
+load("//rust:defs.bzl", "rust_common")
 
 _CARGO_BUILD_MODES = [
     "release",
@@ -184,7 +184,7 @@ cargo_bootstrap_repository = repository_rule(
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",
-            default = DEFAULT_RUST_VERSION,
+            default = rust_common.default_version,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

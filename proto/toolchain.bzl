@@ -14,6 +14,8 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
+load("//rust:defs.bzl", "rust_common")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
 
@@ -144,7 +146,7 @@ rust_proto_toolchain = rule(
     attrs = {
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",
-            default = "2015",
+            default = rust_common.default_edition,
         ),
         "grpc_compile_deps": attr.label_list(
             doc = "The crates the generated grpc libraries depends on.",
