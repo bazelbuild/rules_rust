@@ -23,7 +23,7 @@ def openssl_repositories():
 
     maybe(
         http_archive,
-        name = "nasm",
+        name = "nasm_windows",
         build_file = Label("//third_party/openssl:BUILD.nasm.bazel"),
         sha256 = "f5c93c146f52b4f1664fa3ce6579f961a910e869ab0dae431bd871bdd2584ef2",
         strip_prefix = "nasm-2.15.05",
@@ -35,7 +35,7 @@ def openssl_repositories():
 
     maybe(
         http_archive,
-        name = "perl",
+        name = "perl_windows",
         build_file = Label("//third_party/openssl:BUILD.perl.bazel"),
         sha256 = "aeb973da474f14210d3e1a1f942dcf779e2ae7e71e4c535e6c53ebabe632cc98",
         urls = [

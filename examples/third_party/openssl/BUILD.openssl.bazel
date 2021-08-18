@@ -44,8 +44,8 @@ alias(
 configure_make_variant(
     name = "openssl_msvc",
     build_data = [
-        "@nasm//:nasm",
-        "@perl//:perl",
+        "@nasm_windows//:nasm",
+        "@perl_windows//:perl",
     ],
     configure_command = "Configure",
     configure_in_place = True,
@@ -59,8 +59,8 @@ configure_make_variant(
     env = {
         # The Zi flag must be set otherwise OpenSSL fails to build due to missing .pdb files
         "CFLAGS": "-Zi",
-        "PATH": "$(dirname $(execpath @nasm//:nasm)):$PATH",
-        "PERL": "$(execpath @perl//:perl)",
+        "PATH": "$(dirname $(execpath @nasm_windows//:nasm)):$PATH",
+        "PERL": "$(execpath @perl_windows//:perl)",
     },
     lib_name = LIB_NAME,
     lib_source = ":all_srcs",
