@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "bzip2",
-    actual = "@rules_rust_examples_basic_sys__bzip2__0_3_3//:bzip2",
+    actual = "@basic_sys__bzip2__0_3_3//:bzip2",
     tags = [
         "cargo-raze",
         "manual",

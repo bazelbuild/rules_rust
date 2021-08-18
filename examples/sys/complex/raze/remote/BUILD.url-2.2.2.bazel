@@ -51,10 +51,10 @@ rust_library(
     version = "2.2.2",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__form_urlencoded__1_0_1//:form_urlencoded",
-        "@rules_rust_examples_complex_sys__idna__0_2_3//:idna",
-        "@rules_rust_examples_complex_sys__matches__0_1_8//:matches",
-        "@rules_rust_examples_complex_sys__percent_encoding__2_1_0//:percent_encoding",
+        "@complex_sys__form_urlencoded__1_0_1//:form_urlencoded",
+        "@complex_sys__idna__0_2_3//:idna",
+        "@complex_sys__matches__0_1_8//:matches",
+        "@complex_sys__percent_encoding__2_1_0//:percent_encoding",
     ],
 )
 

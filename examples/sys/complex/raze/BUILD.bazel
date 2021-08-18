@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "git2",
-    actual = "@rules_rust_examples_complex_sys__git2__0_13_12//:git2",
+    actual = "@complex_sys__git2__0_13_12//:git2",
     tags = [
         "cargo-raze",
         "manual",
@@ -23,7 +23,7 @@ alias(
 
 alias(
     name = "openssl",
-    actual = "@rules_rust_examples_complex_sys__openssl__0_10_32//:openssl",
+    actual = "@complex_sys__openssl__0_10_32//:openssl",
     tags = [
         "cargo-raze",
         "manual",
@@ -32,7 +32,7 @@ alias(
 
 alias(
     name = "openssl_sys",
-    actual = "@rules_rust_examples_complex_sys__openssl_sys__0_9_60//:openssl_sys",
+    actual = "@complex_sys__openssl_sys__0_9_60//:openssl_sys",
     tags = [
         "cargo-raze",
         "manual",

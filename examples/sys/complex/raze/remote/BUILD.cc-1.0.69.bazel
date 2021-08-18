@@ -53,7 +53,7 @@ rust_binary(
     # buildifier: leave-alone
     deps = [
         ":cc",
-        "@rules_rust_examples_complex_sys__jobserver__0_1_23//:jobserver",
+        "@complex_sys__jobserver__0_1_23//:jobserver",
     ],
 )
 
@@ -78,7 +78,7 @@ rust_library(
     version = "1.0.69",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__jobserver__0_1_23//:jobserver",
+        "@complex_sys__jobserver__0_1_23//:jobserver",
     ],
 )
 

@@ -81,7 +81,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":log_build_script",
-        "@rules_rust_examples_complex_sys__cfg_if__1_0_0//:cfg_if",
+        "@complex_sys__cfg_if__1_0_0//:cfg_if",
     ],
 )
 

@@ -14,7 +14,7 @@ openssl-sys = "=0.9.60"
 [package.metadata.raze]
 workspace_path = "//sys/complex/raze"
 genmode = "Remote"
-gen_workspace_prefix = "rules_rust_examples_complex_sys"
+gen_workspace_prefix = "complex_sys"
 rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "raze"
 default_gen_buildrs = true
