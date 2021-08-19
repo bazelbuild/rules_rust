@@ -1,6 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_toolchain",
@@ -20,7 +21,6 @@ load(
 load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.54.0"
 DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_darwin_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
@@ -32,7 +32,7 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = DEFAULT_RUST_VERSION,
+        version = rust_common.default_version,
         iso_date = None,
         rustfmt_version = None,
         edition = None,
@@ -177,7 +177,7 @@ rust_toolchain_repository = repository_rule(
         ),
         "edition": attr.string(
             doc = "The rust edition to be used by default.",
-            default = "2015",
+            default = rust_common.default_edition,
         ),
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",

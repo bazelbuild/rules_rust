@@ -2,7 +2,8 @@
 
 load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 load("//crate_universe/private:util.bzl", "get_cargo_and_rustc", "get_host_triple")
-load("//rust:repositories.bzl", "DEFAULT_RUST_VERSION", "DEFAULT_TOOLCHAIN_TRIPLES")
+load("//rust:defs.bzl", "rust_common")
+load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
 
 DEFAULT_CRATE_REGISTRY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
@@ -227,7 +228,7 @@ Environment Variables:
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",
-            default = DEFAULT_RUST_VERSION,
+            default = rust_common.default_version,
         ),
     },
     environ = [

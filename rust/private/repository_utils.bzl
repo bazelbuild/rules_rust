@@ -202,8 +202,8 @@ def BUILD_for_rust_toolchain(
         exec_triple,
         target_triple,
         include_rustc_srcs,
-        stdlib_linkflags = None,
-        default_edition = "2015"):
+        default_edition,
+        stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -212,10 +212,11 @@ def BUILD_for_rust_toolchain(
         exec_triple (str): The rust-style target that this compiler runs on
         target_triple (str): The rust-style target triple of the tool
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
+        default_edition (str): Default Rust edition.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
-        default_edition (str, optional): Default Rust edition. Defaults to "2015".
+
 
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
