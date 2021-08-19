@@ -52,7 +52,7 @@ rust_library(
     version = "2.2.1",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__rayon__1_5_0//:rayon",
+        "@rules_rust_wasm_bindgen__rayon__1_5_1//:rayon",
     ],
 )
 
