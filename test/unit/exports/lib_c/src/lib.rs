@@ -1,4 +1,4 @@
-// Symbols that `lib_b` exports are re-exports from `lib_a`.
+// This symbol is an export that `lib_b` exports are re-exports from `lib_a`.
 use lib_b::greeting_from;
 
 pub fn greeting_c() -> String {
