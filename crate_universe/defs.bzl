@@ -2,9 +2,9 @@
 
 load("//crate_universe/private:defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 load("//crate_universe/private:util.bzl", "get_cargo_and_rustc", "get_host_triple")
-load("//rust:repositories.bzl", "DEFAULT_RUST_VERSION", "DEFAULT_TOOLCHAIN_TRIPLES")
+load("//rust:defs.bzl", "rust_common")
+load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
-load(":bootstrap.bzl", "BOOTSTRAP_ENV_VAR")
 
 DEFAULT_CRATE_REGISTRY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
@@ -69,9 +69,8 @@ def _crate_universe_resolve_impl(repository_ctx):
     tools = get_cargo_and_rustc(repository_ctx, host_triple)
     extension = system_to_binary_ext(triple_to_system(host_triple))
 
-    if BOOTSTRAP_ENV_VAR in repository_ctx.os.environ and not "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE" in repository_ctx.os.environ:
-        resolver_label = Label("@rules_rust_crate_universe_bootstrap//:release/crate_universe_resolver" + extension)
-        resolver_path = repository_ctx.path(resolver_label)
+    if repository_ctx.attr.resolver:
+        resolver_path = repository_ctx.path(repository_ctx.attr.resolver)
     else:
         # Allow for an an override environment variable to define a url to a binary
         resolver_url = repository_ctx.os.environ.get("RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE", None)
@@ -191,6 +190,12 @@ Environment Variables:
             doc = "A list of crate specifications. See [crate.spec](#cratespec) for more details.",
             allow_empty = True,
         ),
+        "resolver": attr.label(
+            doc = (
+                "The label of a `crate_universe` resolver. Resolvers can be built using `cargo_bootstrap_repository` " +
+                "but if possible, it's recommended to stick with downloading a resoler via `resolver_download_url_template`."
+            ),
+        ),
         "resolver_download_url_template": attr.string(
             doc = (
                 "URL template from which to download the resolver binary. {host_triple} and {extension} will be " +
@@ -223,7 +228,7 @@ Environment Variables:
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",
-            default = DEFAULT_RUST_VERSION,
+            default = rust_common.default_version,
         ),
     },
     environ = [
@@ -231,7 +236,6 @@ Environment Variables:
         "RULES_RUST_REPIN",
         "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE",
         "RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256",
-        BOOTSTRAP_ENV_VAR,
     ],
 )
 

@@ -51,7 +51,7 @@ rust_library(
     version = "0.8.0",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__anyhow__1_0_36//:anyhow",
+        "@rules_rust_wasm_bindgen__anyhow__1_0_43//:anyhow",
         "@rules_rust_wasm_bindgen__wast__21_0_0//:wast",
         "@rules_rust_wasm_bindgen__wit_writer__0_2_0//:wit_writer",
     ],

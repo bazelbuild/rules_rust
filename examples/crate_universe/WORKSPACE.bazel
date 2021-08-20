@@ -5,6 +5,11 @@ local_repository(
     path = "../..",
 )
 
+local_repository(
+    name = "examples",
+    path = "../",
+)
+
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories()
@@ -67,9 +72,9 @@ rbe_autoconfig(name = "buildkite_config")
 
 http_archive(
     name = "rules_foreign_cc",
-    sha256 = "d39b6930a21aed518bf5403dbf333fff731de6314bd0d528f4df62366350a312",
-    strip_prefix = "rules_foreign_cc-98c88de5e0f57dd2a896dd595469ccd6bf97ceab",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/98c88de5e0f57dd2a896dd595469ccd6bf97ceab.tar.gz",
+    sha256 = "33a5690733c5cc2ede39cb62ebf89e751f2448e27f20c8b2fbbc7d136b166804",
+    strip_prefix = "rules_foreign_cc-0.5.1",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.5.1.tar.gz",
 )
 
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")

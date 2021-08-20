@@ -53,7 +53,7 @@ rust_library(
     version = "0.1.8",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__memchr__2_3_4//:memchr",
+        "@rules_rust_wasm_bindgen__memchr__2_4_1//:memchr",
     ],
 )
 

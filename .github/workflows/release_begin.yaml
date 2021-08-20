@@ -57,7 +57,7 @@ jobs:
           # Install rust toolchains for host
 
           # Detect the current version of rust
-          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/repositories.bzl | sed 's/DEFAULT_RUST_VERSION = "//' | sed 's/"//')"
+          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | sed 's/DEFAULT_RUST_VERSION = "//' | sed 's/"//')"
 
           rustup override set "${version}"
           rustup update stable && rustup default stable

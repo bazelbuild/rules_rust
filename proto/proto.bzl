@@ -220,6 +220,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
 
     return rustc_compile_action(
         ctx = ctx,
+        attr = ctx.attr,
         toolchain = find_toolchain(ctx),
         crate_info = rust_common.create_crate_info(
             name = crate_name,

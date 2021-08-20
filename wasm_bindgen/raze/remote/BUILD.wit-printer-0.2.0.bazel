@@ -51,8 +51,8 @@ rust_library(
     version = "0.2.0",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__anyhow__1_0_36//:anyhow",
-        "@rules_rust_wasm_bindgen__wasmprinter__0_2_18//:wasmprinter",
+        "@rules_rust_wasm_bindgen__anyhow__1_0_43//:anyhow",
+        "@rules_rust_wasm_bindgen__wasmprinter__0_2_28//:wasmprinter",
         "@rules_rust_wasm_bindgen__wit_parser__0_2_0//:wit_parser",
         "@rules_rust_wasm_bindgen__wit_schema_version__0_1_0//:wit_schema_version",
     ],

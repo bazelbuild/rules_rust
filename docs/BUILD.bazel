@@ -34,9 +34,10 @@ bzl_library(
 
 PAGES = dict([
     page(
-        name = "cargo_build_script",
+        name = "cargo",
         symbols = [
             "cargo_build_script",
+            "cargo_bootstrap_repository",
         ],
     ),
     page(

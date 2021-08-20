@@ -51,7 +51,7 @@ rust_library(
     version = "0.8.4",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__memchr__2_3_4//:memchr",
+        "@rules_rust_wasm_bindgen__memchr__2_4_1//:memchr",
         "@rules_rust_wasm_bindgen__safemem__0_3_3//:safemem",
     ] + selects.with_or({
         # cfg(any(unix, windows))

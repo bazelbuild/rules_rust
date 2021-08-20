@@ -1,0 +1,17 @@
+# The code here was picked up from the `rules_foreign_cc` openssl example
+# https://github.com/bazelbuild/rules_foreign_cc/tree/0.5.1/examples/third_party/openssl
+
+load("@bazel_skylib//rules:select_file.bzl", "select_file")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+)
+
+select_file(
+    name = "nasm",
+    srcs = ":all_srcs",
+    subpath = "nasm.exe",
+)

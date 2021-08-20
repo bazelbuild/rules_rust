@@ -62,10 +62,10 @@ rust_library(
     version = "0.4.19",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__libc__0_2_81//:libc",
+        "@rules_rust_wasm_bindgen__libc__0_2_99//:libc",
         "@rules_rust_wasm_bindgen__num_integer__0_1_44//:num_integer",
         "@rules_rust_wasm_bindgen__num_traits__0_2_14//:num_traits",
-        "@rules_rust_wasm_bindgen__time__0_1_44//:time",
+        "@rules_rust_wasm_bindgen__time__0_1_43//:time",
     ] + selects.with_or({
         # cfg(all(target_arch = "wasm32", not(any(target_os = "emscripten", target_os = "wasi"))))
         (
