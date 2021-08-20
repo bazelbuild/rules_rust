@@ -67,7 +67,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
     transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
     crate_info = target[rust_common.crate_info]
-    return [RustAnalyzerInfo(
+
+    rust_analyzer_info = RustAnalyzerInfo(
         crate = crate_info,
         cfgs = cfgs,
         env = getattr(ctx.rule.attr, "rustc_env", {}),
@@ -75,6 +76,17 @@ def _rust_analyzer_aspect_impl(target, ctx):
         transitive_deps = transitive_deps,
         proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
         build_info = build_info,
+    )
+
+    crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
+    ctx.actions.write(
+        output = crate_spec,
+        content = json.encode(_create_single_crate(ctx, rust_analyzer_info)),
+    )
+
+    return [rust_analyzer_info,
+    OutputGroupInfo(
+        rust_analyzer_crate_spec = depset([crate_spec]),
     )]
 
 def find_proc_macro_dylib_path(toolchain, target):
@@ -116,6 +128,52 @@ def _crate_id(crate_info):
         (string): This crate's unique stable id.
     """
     return "ID-" + crate_info.root.path
+
+def _create_single_crate(ctx, info):
+    """Creates a crate in the rust-project.json format.
+
+    Args:
+        ctx (ctx): The rule context
+        info (RustAnalyzerInfo): RustAnalyzerInfo for the current crate
+
+    Returns:
+        (dict) The crate rust-project.json representation
+    """
+    crate_name = info.crate.name
+    crate = dict()
+    crate["display_name"] = crate_name
+    crate["edition"] = info.crate.edition
+    crate["env"] = {}
+
+    # Switch on external/ to determine if crates are in the workspace or remote.
+    # TODO: Some folks may want to override this for vendored dependencies.
+    root_path = info.crate.root.path
+    root_dirname = info.crate.root.dirname
+    if root_path.startswith("external/"):
+        crate["is_workspace_member"] = False
+        crate["root_module"] = _exec_root_tmpl + root_path
+        crate_root = _exec_root_tmpl + root_dirname
+    else:
+        crate["is_workspace_member"] = True
+        crate["root_module"] = root_path
+        crate_root = root_dirname
+
+    if info.build_info != None:
+        out_dir_path = info.build_info.out_dir.path
+        crate["env"].update({"OUT_DIR": _exec_root_tmpl + out_dir_path})
+        crate["source"] = {
+            # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
+            "exclude_dirs": [],
+            "include_dirs": [crate_root, _exec_root_tmpl + out_dir_path],
+        }
+
+    crate["env"].update(info.env)
+    crate["deps"] = [_crate_id(dep.crate) for dep in info.deps]
+    crate["cfg"] = info.cfgs
+    crate["target"] = find_toolchain(ctx).target_triple
+    if info.proc_macro_dylib_path != None:
+        crate["proc_macro_dylib_path"] = _exec_root_tmpl + info.proc_macro_dylib_path
+    return crate
 
 def _create_crate(ctx, infos, crate_mapping):
     """Creates a crate in the rust-project.json format.
