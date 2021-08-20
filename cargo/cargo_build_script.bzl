@@ -334,6 +334,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         rustc_env = rustc_env,
+        tags = ["manual"],
         **kwargs
     )
     _build_script_run(
