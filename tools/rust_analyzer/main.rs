@@ -24,14 +24,15 @@ fn main() -> anyhow::Result<()> {
     let bazel_bin = config
         .bazel_bin
         .as_ref()
-        .expect("failed to find execution root, is --bazel-bin set correctly?");
+        .expect("failed to resolve path of bazel-bin directory, is --bazel-bin set correctly?");
 
-    build_rust_project_target(&config);
+    // TODO(djmarcin): Add a flag to skip generation.
+    build_rust_analyzer_crate_specs(&config);
+
     let label = label::analyze(&config.bazel_analyzer_target)
         .with_context(|| "Cannot parse --bazel-analyzer-target")?;
 
     let mut generated_rust_project = bazel_bin.clone();
-
     if let Some(repository_name) = label.repository_name {
         generated_rust_project = generated_rust_project
             .join("external")
@@ -66,11 +67,12 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn build_rust_project_target(config: &Config) {
+fn build_rust_analyzer_crate_specs(config: &Config) {
     let output = Command::new(&config.bazel)
         .current_dir(config.workspace.as_ref().unwrap())
         .arg("build")
-        .arg(&config.bazel_analyzer_target)
+        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+        .arg("--output_groups=rust_analyzer_crate_spec")
         .output()
         .expect("failed to execute bazel process");
     if !output.status.success() {

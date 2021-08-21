@@ -35,6 +35,7 @@ RustAnalyzerInfo = provider(
         "env": "Dict{String: String}: Environment variables, used for the `env!` macro",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
         "transitive_deps": "List[RustAnalyzerInfo]: transitive closure of dependencies",
+        "crate_specs": "List[File]: transitive closure of OutputGroupInfo files",
     },
 )
 
@@ -64,6 +65,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
     if hasattr(ctx.rule.attr, "crate"):
         dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
 
+    crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
     transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
     crate_info = target[rust_common.crate_info]
@@ -74,20 +76,20 @@ def _rust_analyzer_aspect_impl(target, ctx):
         env = getattr(ctx.rule.attr, "rustc_env", {}),
         deps = dep_infos,
         transitive_deps = transitive_deps,
+        crate_specs = depset(direct = [crate_spec], transitive = [dep.crate_specs for dep in dep_infos]),
         proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
         build_info = build_info,
     )
 
-    crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
     ctx.actions.write(
         output = crate_spec,
         content = json.encode(_create_single_crate(ctx, rust_analyzer_info)),
     )
 
-    return [rust_analyzer_info,
-    OutputGroupInfo(
-        rust_analyzer_crate_spec = depset([crate_spec]),
-    )]
+    return [
+        rust_analyzer_info,
+        OutputGroupInfo(rust_analyzer_crate_spec = rust_analyzer_info.crate_specs)
+    ]
 
 def find_proc_macro_dylib_path(toolchain, target):
     """Find the proc_macro_dylib_path of target. Returns None if target crate is not type proc-macro.
@@ -141,6 +143,7 @@ def _create_single_crate(ctx, info):
     """
     crate_name = info.crate.name
     crate = dict()
+    crate["crate_id"] = _crate_id(info.crate)
     crate["display_name"] = crate_name
     crate["edition"] = info.crate.edition
     crate["env"] = {}
