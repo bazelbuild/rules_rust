@@ -31,14 +31,14 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "version_check",
+    name = "cfg_if",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -46,8 +46,10 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.9.2",
+    version = "1.0.0",
     # buildifier: leave-alone
     deps = [
     ],
 )
+
+# Unsupported target "xcrate" with type "test" omitted

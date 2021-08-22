@@ -31,11 +31,10 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "quote",
+    name = "bitflags",
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
-        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -48,13 +47,12 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.9",
+    version = "1.3.2",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_28//:proc_macro2",
     ],
 )
 
-# Unsupported target "compiletest" with type "test" omitted
+# Unsupported target "basic" with type "test" omitted
 
-# Unsupported target "test" with type "test" omitted
+# Unsupported target "compile" with type "test" omitted

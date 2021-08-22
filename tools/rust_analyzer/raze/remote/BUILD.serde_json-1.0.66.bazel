@@ -37,7 +37,7 @@ load(
 )
 
 cargo_build_script(
-    name = "anyhow_build_script",
+    name = "serde_json_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
     },
@@ -55,14 +55,14 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.38",
+    version = "1.0.66",
     visibility = ["//visibility:private"],
     deps = [
     ],
 )
 
 rust_library(
-    name = "anyhow",
+    name = "serde_json",
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
@@ -79,35 +79,12 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.38",
+    version = "1.0.66",
     # buildifier: leave-alone
     deps = [
-        ":anyhow_build_script",
+        ":serde_json_build_script",
+        "@rules_rust_tools_rust_analyzer__itoa__0_4_8//:itoa",
+        "@rules_rust_tools_rust_analyzer__ryu__1_0_5//:ryu",
+        "@rules_rust_tools_rust_analyzer__serde__1_0_128//:serde",
     ],
 )
-
-# Unsupported target "compiletest" with type "test" omitted
-
-# Unsupported target "test_autotrait" with type "test" omitted
-
-# Unsupported target "test_backtrace" with type "test" omitted
-
-# Unsupported target "test_boxed" with type "test" omitted
-
-# Unsupported target "test_chain" with type "test" omitted
-
-# Unsupported target "test_context" with type "test" omitted
-
-# Unsupported target "test_convert" with type "test" omitted
-
-# Unsupported target "test_downcast" with type "test" omitted
-
-# Unsupported target "test_ffi" with type "test" omitted
-
-# Unsupported target "test_fmt" with type "test" omitted
-
-# Unsupported target "test_macros" with type "test" omitted
-
-# Unsupported target "test_repr" with type "test" omitted
-
-# Unsupported target "test_source" with type "test" omitted

@@ -25,17 +25,17 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "unencumbered",  # Unlicense from expression "Unlicense OR MIT"
 ])
 
 # Generated Targets
 
 rust_library(
-    name = "quote",
+    name = "aho_corasick",
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
-        "proc-macro",
+        "std",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -48,13 +48,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.9",
+    version = "0.7.18",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_28//:proc_macro2",
+        "@rules_rust_tools_rust_analyzer__memchr__2_4_1//:memchr",
     ],
 )
-
-# Unsupported target "compiletest" with type "test" omitted
-
-# Unsupported target "test" with type "test" omitted

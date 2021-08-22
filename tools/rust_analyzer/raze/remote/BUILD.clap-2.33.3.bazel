@@ -59,7 +59,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         "@rules_rust_tools_rust_analyzer__atty__0_2_14//:atty",
-        "@rules_rust_tools_rust_analyzer__bitflags__1_2_1//:bitflags",
+        "@rules_rust_tools_rust_analyzer__bitflags__1_3_2//:bitflags",
         "@rules_rust_tools_rust_analyzer__strsim__0_8_0//:strsim",
         "@rules_rust_tools_rust_analyzer__textwrap__0_11_0//:textwrap",
         "@rules_rust_tools_rust_analyzer__unicode_width__0_1_8//:unicode_width",

@@ -25,14 +25,16 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "unencumbered",  # Unlicense from expression "Unlicense OR MIT"
 ])
 
 # Generated Targets
 
 rust_library(
-    name = "heck",
+    name = "winapi_util",
     srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
     crate_features = [
     ],
     crate_root = "src/lib.rs",
@@ -46,9 +48,17 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.2",
+    version = "0.1.5",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__unicode_segmentation__1_7_1//:unicode_segmentation",
-    ],
+    ] + selects.with_or({
+        # cfg(windows)
+        (
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            "@rules_rust_tools_rust_analyzer__winapi__0_3_9//:winapi",
+        ],
+        "//conditions:default": [],
+    }),
 )

@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_clippy")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_clippy")
 
 rust_binary(
     name = "gen_rust_project",
@@ -6,10 +6,25 @@ rust_binary(
     edition = "2018",
     visibility = ["//visibility:public"],
     deps = [
+        ":gen_rust_project_lib",
         "//tools/rust_analyzer/raze:anyhow",
+        "//tools/rust_analyzer/raze:env_logger",
+        "//tools/rust_analyzer/raze:log",
         "//tools/rust_analyzer/raze:structopt",
         "//util/label",
     ],
+)
+
+rust_library(
+    name = "gen_rust_project_lib",
+    srcs = glob(["**/*.rs"], exclude = ["main.rs"]),
+    edition = "2018",
+    deps = [
+        "//tools/rust_analyzer/raze:anyhow",
+        "//tools/rust_analyzer/raze:log",
+        "//tools/rust_analyzer/raze:serde",
+        "//tools/rust_analyzer/raze:serde_json",
+    ]
 )
 
 rust_clippy(

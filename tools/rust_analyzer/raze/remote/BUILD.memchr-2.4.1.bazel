@@ -25,7 +25,7 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "unencumbered",  # Unlicense from expression "Unlicense OR MIT"
 ])
 
 # Generated Targets
@@ -37,13 +37,13 @@ load(
 )
 
 cargo_build_script(
-    name = "proc_macro2_build_script",
+    name = "memchr_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
     },
     crate_features = [
         "default",
-        "proc-macro",
+        "std",
     ],
     crate_root = "build.rs",
     data = glob(["**"]),
@@ -55,18 +55,18 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.24",
+    version = "2.4.1",
     visibility = ["//visibility:private"],
     deps = [
     ],
 )
 
 rust_library(
-    name = "proc_macro2",
+    name = "memchr",
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
-        "proc-macro",
+        "std",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -79,20 +79,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.24",
+    version = "2.4.1",
     # buildifier: leave-alone
     deps = [
-        ":proc_macro2_build_script",
-        "@rules_rust_tools_rust_analyzer__unicode_xid__0_2_1//:unicode_xid",
+        ":memchr_build_script",
     ],
 )
-
-# Unsupported target "comments" with type "test" omitted
-
-# Unsupported target "features" with type "test" omitted
-
-# Unsupported target "marker" with type "test" omitted
-
-# Unsupported target "test" with type "test" omitted
-
-# Unsupported target "test_fmt" with type "test" omitted
