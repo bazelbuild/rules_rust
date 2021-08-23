@@ -41,7 +41,7 @@ RustAnalyzerInfo = provider(
 
 def _rust_analyzer_aspect_impl(target, ctx):
     if OutputGroupInfo in target:
-        if 'rust_analyzer_sysroot_src' in target[OutputGroupInfo]:
+        if "rust_analyzer_sysroot_src" in target[OutputGroupInfo]:
             return [target[OutputGroupInfo]]
 
     if rust_common.crate_info not in target:
@@ -92,7 +92,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     return [
         rust_analyzer_info,
-        OutputGroupInfo(rust_analyzer_crate_spec = rust_analyzer_info.crate_specs)
+        OutputGroupInfo(rust_analyzer_crate_spec = rust_analyzer_info.crate_specs),
     ]
 
 def find_proc_macro_dylib_path(toolchain, target):
@@ -176,6 +176,7 @@ def _create_single_crate(ctx, info):
         }
 
     crate["env"].update(info.env)
+
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
     crate["cfg"] = info.cfgs
@@ -216,7 +217,7 @@ rust_analyzer_detect_sysroot = rule(
 
 def _rust_analyzer_impl(ctx):
     pass
-    
+
 rust_analyzer = rule(
     attrs = {
         "targets": attr.label_list(
