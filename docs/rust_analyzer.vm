@@ -45,7 +45,7 @@ A list of `rust_analyzer` compatible targets can be found by usign the following
 bazel query 'kind("rust_*library|rust_binary", //...:all)'
 ```
 
-WARNING: All rust_* targets provided to the root rust_analyzer must have `//visibility:public`.
+Note: __All `rust_*` targets provided to the root rust_analyzer must have `//visibility:public`.__
 
 Run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project` whenever
 dependencies change to regenerate the `rust-project.json` file. It should be
