@@ -113,9 +113,6 @@ struct Config {
     #[structopt(long, default_value = "@rules_rust", help = "The name of the rules_rust repository")]
     rules_rust: String,
 
-    #[structopt(long, default_value = "//:rust_analyzer", help = "Deprecated. If found, overrides --targets for historical reasons")]
-    bazel_analyzer_target: String,
-
-    #[structopt(long, default_value = "//...", help = "Comma-separated list of target patterns")]
+    #[structopt(long, default_value = "@//...", help = "Comma-separated list of target patterns")]
     targets: String,
 }

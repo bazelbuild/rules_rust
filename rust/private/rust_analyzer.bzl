@@ -184,75 +184,6 @@ def _create_single_crate(ctx, info):
         crate["proc_macro_dylib_path"] = _exec_root_tmpl + info.proc_macro_dylib_path
     return crate
 
-def _create_crate(ctx, infos, crate_mapping):
-    """Creates a crate in the rust-project.json format.
-
-    It can happen a single source file is present in multiple crates - there can
-    be a `rust_library` with a `lib.rs` file, and a `rust_test` for the `test`
-    module in that file. Tests can declare more dependencies than what library
-    had. Therefore we had to collect all RustAnalyzerInfos for a given crate
-    and take deps from all of them.
-
-    There's one exception - if the dependency is the same crate name as the
-    the crate being processed, we don't add it as a dependency to itself. This is
-    common and expected - `rust_test.crate` pointing to the `rust_library`.
-
-    Args:
-        ctx (ctx): The rule context
-        infos (list of RustAnalyzerInfos): RustAnalyzerInfos for the current crate
-        crate_mapping (dict): A dict of {String:Int} that memoizes crates for deps.
-
-    Returns:
-        (dict) The crate rust-project.json representation
-    """
-    if len(infos) == 0:
-        fail("Expected to receive at least one crate to serialize to json, got 0.")
-    canonical_info = infos[0]
-    crate_name = canonical_info.crate.name
-    crate = dict()
-    crate["display_name"] = crate_name
-    crate["edition"] = canonical_info.crate.edition
-    crate["env"] = {}
-
-    # Switch on external/ to determine if crates are in the workspace or remote.
-    # TODO: Some folks may want to override this for vendored dependencies.
-    root_path = canonical_info.crate.root.path
-    root_dirname = canonical_info.crate.root.dirname
-    if root_path.startswith("external/"):
-        crate["is_workspace_member"] = False
-        crate["root_module"] = _exec_root_tmpl + root_path
-        crate_root = _exec_root_tmpl + root_dirname
-    else:
-        crate["is_workspace_member"] = True
-        crate["root_module"] = root_path
-        crate_root = root_dirname
-
-    if canonical_info.build_info != None:
-        out_dir_path = canonical_info.build_info.out_dir.path
-        crate["env"].update({"OUT_DIR": _exec_root_tmpl + out_dir_path})
-        crate["source"] = {
-            # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
-            "exclude_dirs": [],
-            "include_dirs": [crate_root, _exec_root_tmpl + out_dir_path],
-        }
-    crate["env"].update(canonical_info.env)
-
-    # Collect deduplicated pairs of (crate idx from crate_mapping, crate name).
-    # Using dict because we don't have sets in Starlark.
-    deps = {
-        (crate_mapping[_crate_id(dep.crate)], dep.crate.name): None
-        for info in infos
-        for dep in info.deps
-        if dep.crate.name != crate_name
-    }.keys()
-
-    crate["deps"] = [{"crate": d[0], "name": d[1]} for d in deps]
-    crate["cfg"] = canonical_info.cfgs
-    crate["target"] = find_toolchain(ctx).target_triple
-    if canonical_info.proc_macro_dylib_path != None:
-        crate["proc_macro_dylib_path"] = _exec_root_tmpl + canonical_info.proc_macro_dylib_path
-    return crate
-
 def _rust_analyzer_detect_sysroot_impl(ctx):
     rust_toolchain = find_toolchain(ctx)
 
@@ -294,9 +225,10 @@ rust_analyzer = rule(
         ),
     },
     implementation = _rust_analyzer_impl,
+    deprecation = "This rule has no effect. Pass target patterns directly to @rules_rust//tools/rust_analyzer:gen_rust_project instead.",
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
-        Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
+        Deprecated: gen_rust_project can now create a rust-project.json without a rust_analyzer rule.
     """),
 )
