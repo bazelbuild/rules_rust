@@ -34,7 +34,6 @@ RustAnalyzerInfo = provider(
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict{String: String}: Environment variables, used for the `env!` macro",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
-        "transitive_deps": "List[RustAnalyzerInfo]: transitive closure of dependencies",
         "crate_specs": "List[File]: transitive closure of OutputGroupInfo files",
     },
 )
@@ -70,7 +69,6 @@ def _rust_analyzer_aspect_impl(target, ctx):
         dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
-    transitive_deps = depset(direct = dep_infos, order = "postorder", transitive = [dep.transitive_deps for dep in dep_infos])
 
     crate_info = target[rust_common.crate_info]
 
@@ -79,7 +77,6 @@ def _rust_analyzer_aspect_impl(target, ctx):
         cfgs = cfgs,
         env = getattr(ctx.rule.attr, "rustc_env", {}),
         deps = dep_infos,
-        transitive_deps = transitive_deps,
         crate_specs = depset(direct = [crate_spec], transitive = [dep.crate_specs for dep in dep_infos]),
         proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
         build_info = build_info,
