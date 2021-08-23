@@ -23,7 +23,7 @@ to Cargo.toml files.
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
-load("//rust/private:utils.bzl", "find_toolchain")
+load("//rust/private:utils.bzl", "dedent", "find_toolchain")
 
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
@@ -40,10 +40,21 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
+    print(target)
+    
     if rust_common.crate_info not in target:
         return []
 
     toolchain = find_toolchain(ctx)
+    # if not toolchain.rustc_srcs:
+    #     fail(
+    #         "Current Rust toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
+    #         "These are needed by rust analyzer.",
+    #         "If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
+    #     )
+    # sysroot_src = toolchain.rustc_srcs.label.package + "/library"
+    # if toolchain.rustc_srcs.label.workspace_root:
+    #     sysroot_src = _exec_root_tmpl + toolchain.rustc_srcs.label.workspace_root + "/" + sysroot_src
 
     # Always add test & debug_assertions (like here:
     # https://github.com/rust-analyzer/rust-analyzer/blob/505ff4070a3de962dbde66f08b6550cda2eb4eab/crates/project_model/src/lib.rs#L379-L381)
@@ -249,12 +260,7 @@ def _create_crate(ctx, infos, crate_mapping):
         crate["proc_macro_dylib_path"] = _exec_root_tmpl + canonical_info.proc_macro_dylib_path
     return crate
 
-# This implementation is incomplete because in order to get rustc env vars we
-# would need to actually execute the build graph and gather the output of
-# cargo_build_script rules. This would require a genrule to actually construct
-# the JSON, rather than being able to build it completly in starlark.
-# TODO(djmarcin): Run the cargo_build_scripts to gather env vars correctly.
-def _rust_analyzer_impl(ctx):
+def _rust_analyzer_detect_sysroot_impl(ctx):
     rust_toolchain = find_toolchain(ctx)
 
     if not rust_toolchain.rustc_srcs:
@@ -267,40 +273,26 @@ def _rust_analyzer_impl(ctx):
     if rust_toolchain.rustc_srcs.label.workspace_root:
         sysroot_src = _exec_root_tmpl + rust_toolchain.rustc_srcs.label.workspace_root + "/" + sysroot_src
 
-    # Groups of RustAnalyzerInfos with the same _crate_id().
-    rust_analyzer_info_groups = []
+    sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
+    ctx.actions.write(
+        output = sysroot_src_file,
+        content = sysroot_src,
+    )
 
-    # Dict from _crate_id() to the index of a RustAnalyzerInfo group in `rust_analyzer_info_groups`.
-    crate_mapping = dict()
+    return [OutputGroupInfo(rust_analyzer_sysroot_src = depset([sysroot_src_file]))]
 
-    # Dependencies are referenced by index, so leaves should come first.
-    idx = 0
-    for target in ctx.attr.targets:
-        if RustAnalyzerInfo not in target:
-            continue
+rust_analyzer_detect_sysroot = rule(
+    implementation = _rust_analyzer_detect_sysroot_impl,
+    toolchains = [str(Label("//rust:toolchain"))],
+    incompatible_use_toolchain_transition = True,
+    doc = dedent("""\
+        Detect the sysroot and store in a file for use by the gen_rust_project tool.
+    """),
+)
 
-        for info in depset(
-            direct = [target[RustAnalyzerInfo]],
-            transitive = [target[RustAnalyzerInfo].transitive_deps],
-            order = "postorder",
-        ).to_list():
-            crate_id = _crate_id(info.crate)
-            if crate_id not in crate_mapping:
-                crate_mapping[crate_id] = idx
-                rust_analyzer_info_groups.append([])
-                idx += 1
-            rust_analyzer_info_groups[crate_mapping[crate_id]].append(info)
-
-    crates = []
-    for group in rust_analyzer_info_groups:
-        crates.append(_create_crate(ctx, group, crate_mapping))
-
-    # TODO(djmarcin): Use json module once bazel 4.0 is released.
-    ctx.actions.write(output = ctx.outputs.filename, content = struct(
-        sysroot_src = sysroot_src,
-        crates = crates,
-    ).to_json())
-
+def _rust_analyzer_impl(ctx):
+    pass
+    
 rust_analyzer = rule(
     attrs = {
         "targets": attr.label_list(
@@ -308,13 +300,10 @@ rust_analyzer = rule(
             doc = "List of all targets to be included in the index",
         ),
     },
-    outputs = {
-        "filename": "rust-project.json",
-    },
     implementation = _rust_analyzer_impl,
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
-    doc = """\
-Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
-""",
+    doc = dedent("""\
+        Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
+    """),
 )

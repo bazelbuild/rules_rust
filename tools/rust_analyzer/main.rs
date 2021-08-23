@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
 
     let targets = config.targets.split(",").collect::<Vec<_>>();
 
-    // TODO(djmarcin): Add a flag to skip generation.
+    // Generate the crate specs and sysroot src.
     build_rust_analyzer_crate_specs(&config, &targets);
 
     let crate_specs = gen_rust_project_lib::aquery::get_crate_specs(&targets)?;
@@ -87,7 +87,8 @@ fn build_rust_analyzer_crate_specs(config: &Config, targets: &[&str]) {
         .current_dir(config.workspace.as_ref().unwrap())
         .arg("build")
         .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
-        .arg("--output_groups=rust_analyzer_crate_spec")
+        .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_sysroot_src")
+        .arg(format!("{}//tools/rust_analyzer:detect_sysroot", config.rules_rust))
         .args(targets)
         .output()
         .expect("failed to execute bazel process");
@@ -174,7 +175,10 @@ struct Config {
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
 
-    #[structopt(long, default_value = "//:rust_analyzer", help = "Deprecated. If found, overrides --targets for historical reasons.")]
+    #[structopt(long, default_value = "@rules_rust", help = "The name of the rules_rust repository")]
+    rules_rust: String,
+
+    #[structopt(long, default_value = "//:rust_analyzer", help = "Deprecated. If found, overrides --targets for historical reasons")]
     bazel_analyzer_target: String,
 
     #[structopt(long, default_value = "//...", help = "Comma-separated list of target patterns")]

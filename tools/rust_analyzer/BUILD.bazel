@@ -1,4 +1,7 @@
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_clippy")
+load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
+
+rust_analyzer_detect_sysroot(name = "detect_sysroot")
 
 rust_binary(
     name = "gen_rust_project",
