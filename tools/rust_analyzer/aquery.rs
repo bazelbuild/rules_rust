@@ -82,7 +82,7 @@ pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
     let artifacts = o.artifacts.iter().map(|a| (a.id, a)).collect::<HashMap<_,_>>();
     let path_fragments = o.path_fragments.iter().map(|pf| (pf.id, pf)).collect::<HashMap<_,_>>();
 
-    let mut crate_specs = Vec::new();
+    let mut crate_specs: Vec<CrateSpec> = Vec::new();
     for action in o.actions {
         for output_id in action.output_ids {
             let artifact = artifacts.get(&output_id).expect("internal consistency error in bazel output");
@@ -90,14 +90,29 @@ pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
 
             log::debug!("Found crate spec file: {:?}", path);
             if path.exists() {
-                crate_specs.push(serde_json::from_reader(File::open(path)?)?);
+                let spec = serde_json::from_reader(File::open(path)?)?;
+                log::debug!("{:?}", spec);
+                crate_specs.push(spec);
             } else {
                 log::warn!("File {} does not exist.", path.to_string_lossy());
             }
         }
     }
 
-    Ok(crate_specs)
+    // Deduplicate crate specs with the same ID. This happens when a rust_test depends on
+    // a rust_library, for example.
+    let mut deduped: HashMap<String, CrateSpec> = HashMap::new();
+    for cs in crate_specs {
+        if let Some(existing) = deduped.get_mut(&cs.crate_id) {
+            existing.deps.extend(cs.deps);
+            existing.deps.sort();
+            existing.deps.dedup();
+        } else {
+            deduped.insert(cs.crate_id.clone(), cs);
+        }
+    }
+
+    Ok(deduped.into_values().collect())
 }
 
 fn path_from_fragments(id: u32, fragments: &HashMap<u32, &PathFragment>) -> anyhow::Result<PathBuf> {

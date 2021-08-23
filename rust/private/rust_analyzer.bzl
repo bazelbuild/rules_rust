@@ -143,7 +143,8 @@ def _create_single_crate(ctx, info):
     """
     crate_name = info.crate.name
     crate = dict()
-    crate["crate_id"] = _crate_id(info.crate)
+    crate_id = _crate_id(info.crate)
+    crate["crate_id"] = crate_id
     crate["display_name"] = crate_name
     crate["edition"] = info.crate.edition
     crate["env"] = {}
@@ -171,7 +172,8 @@ def _create_single_crate(ctx, info):
         }
 
     crate["env"].update(info.env)
-    crate["deps"] = [_crate_id(dep.crate) for dep in info.deps]
+    # Omit when a crate appears to depend on itself (e.g. foo_test crates).
+    crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
     crate["cfg"] = info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple
     if info.proc_macro_dylib_path != None:
