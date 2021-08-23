@@ -1,4 +1,4 @@
-use log;
+use std::path::Path;
 use std::fs::File;
 use std::option::Option;
 use std::collections::HashMap;
@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Output {
     artifacts: Vec<Artifact>,
     actions: Vec<Action>,
@@ -14,14 +14,14 @@ struct Output {
     path_fragments: Vec<PathFragment>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Artifact {
     id: u32,
     #[serde(rename = "pathFragmentId")]
     path_fragment_id: u32,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct PathFragment {
     id: u32,
     label: String,
@@ -29,7 +29,7 @@ struct PathFragment {
     parent_id: Option<u32>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Action {
     #[serde(rename = "outputIds")]
     output_ids: Vec<u32>,
@@ -58,15 +58,15 @@ pub struct CrateSpecSource {
     pub include_dirs: Vec<String>,
 }
 
-pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
+pub fn get_crate_specs(bazel: &Path, workspace: &Path, execution_root: &Path, targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);    
     let target_pattern = targets.into_iter()
         .map(|t| format!("deps({})", t))
         .collect::<Vec<_>>()
         .join("+");
 
-    let aquery_output = Command::new("bazel")
-        // .current_dir(config.workspace.as_ref().unwrap())
+    let aquery_output = Command::new(bazel)
+        .current_dir(workspace)
         .arg("aquery")
         .arg("--include_aspects")
         .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
@@ -75,28 +75,12 @@ pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
         .arg("--output=jsonproto")
         .output()?;
 
-    let s = String::from_utf8(aquery_output.stdout)?;
-    log::trace!("Output: {}", s);
-    let o: Output = serde_json::from_str(&s)?;
-
-    let artifacts = o.artifacts.iter().map(|a| (a.id, a)).collect::<HashMap<_,_>>();
-    let path_fragments = o.path_fragments.iter().map(|pf| (pf.id, pf)).collect::<HashMap<_,_>>();
-
+    let crate_spec_files = parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
     let mut crate_specs: Vec<CrateSpec> = Vec::new();
-    for action in o.actions {
-        for output_id in action.output_ids {
-            let artifact = artifacts.get(&output_id).expect("internal consistency error in bazel output");
-            let path = path_from_fragments(artifact.path_fragment_id, &path_fragments)?;
-
-            log::debug!("Found crate spec file: {:?}", path);
-            if path.exists() {
-                let spec = serde_json::from_reader(File::open(path)?)?;
-                log::debug!("{:?}", spec);
-                crate_specs.push(spec);
-            } else {
-                log::warn!("File {} does not exist.", path.to_string_lossy());
-            }
-        }
+    for file in crate_spec_files {
+        let spec = serde_json::from_reader(File::open(file)?)?;
+        log::debug!("{:?}", spec);
+        crate_specs.push(spec);
     }
 
     // Deduplicate crate specs with the same ID. This happens when a rust_test depends on
@@ -113,6 +97,47 @@ pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
     }
 
     Ok(deduped.into_values().collect())
+}
+
+pub fn get_sysroot_src(bazel: &Path, workspace: &Path, execution_root: &Path, rules_rust: &str) -> anyhow::Result<String> {
+    let aquery_output = Command::new(bazel)
+    .current_dir(workspace)
+    .arg("aquery")
+    .arg("--include_aspects")
+    .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+    .arg("--output_groups=rust_analyzer_sysroot_src")
+    .arg(format!(r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//tools/rust_analyzer:detect_sysroot)"#, rules_rust))
+    .arg("--output=jsonproto")
+    .output()?;
+
+    let sysroot_src_files = parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
+    log::debug!("sysroot_src_files: {:?}", sysroot_src_files);
+    debug_assert!(sysroot_src_files.len() == 1);
+
+    Ok(std::fs::read_to_string(&sysroot_src_files[0])?)
+}
+
+fn parse_aquery_output_files(execution_root: &Path, s: String) -> anyhow::Result<Vec<PathBuf>> {
+    let o: Output = serde_json::from_str(&s)?;
+
+    let artifacts = o.artifacts.iter().map(|a| (a.id, a)).collect::<HashMap<_,_>>();
+    let path_fragments = o.path_fragments.iter().map(|pf| (pf.id, pf)).collect::<HashMap<_,_>>();
+
+    let mut output_files: Vec<PathBuf> = Vec::new();
+    for action in o.actions {
+        for output_id in action.output_ids {
+            let artifact = artifacts.get(&output_id).expect("internal consistency error in bazel output");
+            let path = path_from_fragments(artifact.path_fragment_id, &path_fragments)?;
+            let path = execution_root.join(path);
+            if path.exists() {
+                output_files.push(path);
+            } else {
+                log::warn!("Skipping missing crate_spec file: {:?}", path);
+            }
+        }
+    }
+
+    Ok(output_files)
 }
 
 fn path_from_fragments(id: u32, fragments: &HashMap<u32, &PathFragment>) -> anyhow::Result<PathBuf> {

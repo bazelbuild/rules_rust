@@ -1,6 +1,7 @@
 // Library for generating rust_project.json files from a Vec<CrateSpec>
 // See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
+use std::io::ErrorKind;
 use serde::Serialize;
 use std::collections::HashMap;
 use anyhow::anyhow;
@@ -48,9 +49,9 @@ pub struct Dependency {
     name: String,
 }
 
-pub fn generate_rust_project(execroot: &Path, crates: &Vec<CrateSpec>) -> anyhow::Result<RustProject> {
+pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyhow::Result<RustProject> {
     let mut p = RustProject {
-        sysroot_src: Some((execroot.to_string_lossy() + "/external/rust_linux_x86_64/lib/rustlib/src/library").to_string()),
+        sysroot_src: Some(sysroot_src.into()),
         crates: Vec::new(),
     };
 
@@ -69,7 +70,7 @@ pub fn generate_rust_project(execroot: &Path, crates: &Vec<CrateSpec>) -> anyhow
                 merged_crates_index.insert(c.crate_id.clone(), p.crates.len());
                 p.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
-                    root_module: c.root_module.replace("__EXEC_ROOT__", &execroot.to_string_lossy()),
+                    root_module: c.root_module.clone(),
                     edition: c.edition.clone(),
                     deps: c.deps.iter().map(|dep| {
                         let crate_index = *merged_crates_index.get(dep).expect("failed to find dependency on second lookup");
@@ -81,14 +82,14 @@ pub fn generate_rust_project(execroot: &Path, crates: &Vec<CrateSpec>) -> anyhow
                     }).collect(),
                     is_workspace_member: Some(c.is_workspace_member),
                     source: c.source.as_ref().map(|s| Source {
-                        exclude_dirs: s.exclude_dirs.iter().map(|d| d.replace("__EXEC_ROOT__", &execroot.to_string_lossy())).collect(),
-                        include_dirs: s.include_dirs.iter().map(|d| d.replace("__EXEC_ROOT__", &execroot.to_string_lossy())).collect(),
+                        exclude_dirs: s.exclude_dirs.iter().map(|d| d.clone()).collect(),
+                        include_dirs: s.include_dirs.iter().map(|d| d.clone()).collect(),
                     }),
                     cfg: c.cfg.clone(),
                     target: Some(c.target.clone()),
                     env: Some(c.env.clone()),
                     is_proc_macro: c.proc_macro_dylib_path.is_some(),
-                    proc_macro_dylib_path: c.proc_macro_dylib_path.as_ref().map(|p| p.replace("__EXEC_ROOT__", &execroot.to_string_lossy())),
+                    proc_macro_dylib_path: c.proc_macro_dylib_path.as_ref().map(|p| p.clone()),
                 });
             }
         }
@@ -104,6 +105,22 @@ pub fn generate_rust_project(execroot: &Path, crates: &Vec<CrateSpec>) -> anyhow
     Ok(p)
 }
 
-pub fn write_rust_project(w: &mut impl std::io::Write, rust_project: &RustProject) {
-    serde_json::to_writer(w, rust_project);
+pub fn write_rust_project(rust_project_path: &Path, execution_root: &Path, rust_project: &RustProject) -> anyhow::Result<()> {
+    let execution_root = execution_root.to_str().ok_or(anyhow!("execution_root is not valid UTF-8"))?;
+
+    // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
+    match std::fs::remove_file(rust_project_path) {
+        Ok(_) => {}
+        Err(err) if err.kind() == ErrorKind::NotFound => {}
+        Err(err) => { return Err(anyhow!("Unexpected error removing old rust-project.json: {}", err)) },
+    }
+
+    // Write the new rust-project.json file.
+
+    std::fs::write(
+        rust_project_path,
+        serde_json::to_string(rust_project)?.replace("__EXEC_ROOT__", &execution_root),
+    )?;
+
+    Ok(())
 }

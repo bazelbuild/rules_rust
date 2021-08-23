@@ -40,21 +40,14 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
-    print(target)
-    
+    if OutputGroupInfo in target:
+        if 'rust_analyzer_sysroot_src' in target[OutputGroupInfo]:
+            return [target[OutputGroupInfo]]
+
     if rust_common.crate_info not in target:
         return []
 
     toolchain = find_toolchain(ctx)
-    # if not toolchain.rustc_srcs:
-    #     fail(
-    #         "Current Rust toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
-    #         "These are needed by rust analyzer.",
-    #         "If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
-    #     )
-    # sysroot_src = toolchain.rustc_srcs.label.package + "/library"
-    # if toolchain.rustc_srcs.label.workspace_root:
-    #     sysroot_src = _exec_root_tmpl + toolchain.rustc_srcs.label.workspace_root + "/" + sysroot_src
 
     # Always add test & debug_assertions (like here:
     # https://github.com/rust-analyzer/rust-analyzer/blob/505ff4070a3de962dbde66f08b6550cda2eb4eab/crates/project_model/src/lib.rs#L379-L381)

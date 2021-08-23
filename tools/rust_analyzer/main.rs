@@ -1,15 +1,11 @@
 use anyhow::anyhow;
-use anyhow::Context;
 use std::collections::HashMap;
 use std::env;
-use std::fs;
-use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::Command;
 use structopt::StructOpt;
-use log;
-use gen_rust_project_lib::aquery::CrateSpec;
-use std::fs::File;
+use gen_rust_project_lib::generate_crate_and_sysroot_info;
+use gen_rust_project_lib::write_rust_project;
 
 // TODO(david): This shells out to an expected rule in the workspace root //:rust_analyzer that the user must define.
 // It would be more convenient if it could automatically discover all the rust code in the workspace if this target does not exist.
@@ -26,81 +22,27 @@ fn main() -> anyhow::Result<()> {
         .execution_root
         .as_ref()
         .expect("failed to find execution root, is --execution-root set correctly?");
-    let bazel_bin = config
-        .bazel_bin
-        .as_ref()
-        .expect("failed to resolve path of bazel-bin directory, is --bazel-bin set correctly?");
 
     let targets = config.targets.split(",").collect::<Vec<_>>();
 
     // Generate the crate specs and sysroot src.
-    build_rust_analyzer_crate_specs(&config, &targets);
+    generate_crate_and_sysroot_info(
+        &config.bazel,
+        &workspace_root,
+        &config.rules_rust,
+        &targets,
+    )?;
 
-    let crate_specs = gen_rust_project_lib::aquery::get_crate_specs(&targets)?;
-
-    let rust_project = gen_rust_project_lib::rust_project::generate_rust_project(execution_root, &crate_specs)?;
-
-    gen_rust_project_lib::rust_project::write_rust_project(&mut File::create("rust-project.json")?, &rust_project);
-
-    // let label = label::analyze(&config.bazel_analyzer_target)
-    //     .with_context(|| "Cannot parse --bazel-analyzer-target")?;
-
-    // let mut generated_rust_project = bazel_bin.clone();
-    // if let Some(repository_name) = label.repository_name {
-    //     generated_rust_project = generated_rust_project
-    //         .join("external")
-    //         .join(repository_name);
-    // }
-
-    // for package in label.packages() {
-    //     generated_rust_project = generated_rust_project.join(package);
-    // }
-
-    // generated_rust_project = generated_rust_project.join("rust-project.json");
-    // let workspace_rust_project = workspace_root.join("rust-project.json");
-
-    // // The generated_rust_project has a template string we must replace with the workspace name.
-    // let generated_json = fs::read_to_string(&generated_rust_project)
-    //     .expect("failed to read generated rust-project.json");
-
-    // // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
-    // match fs::remove_file(&workspace_rust_project) {
-    //     Ok(_) => {}
-    //     Err(err) if err.kind() == ErrorKind::NotFound => {}
-    //     Err(err) => panic!("Unexpected error removing old rust-project.json: {}", err),
-    // }
-
-    // // Write the new rust-project.json file.
-    // fs::write(
-    //     workspace_rust_project,
-    //     generated_json.replace("__EXEC_ROOT__", &execution_root.to_string_lossy()),
-    // )
-    // .expect("failed to write workspace rust-project.json");
+    // Use the generated files to write rust-project.json.
+    write_rust_project(        &config.bazel,
+        &workspace_root,
+        &config.rules_rust,
+        &targets,
+        &execution_root,
+        &workspace_root.join("rust-project.json"),
+)?;
 
     Ok(())
-}
-
-fn build_rust_analyzer_crate_specs(config: &Config, targets: &[&str]) {
-    log::debug!("Building rust_analyzer_crate_spec files for {:?}", &config.targets);
-
-    let output = Command::new(&config.bazel)
-        .current_dir(config.workspace.as_ref().unwrap())
-        .arg("build")
-        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
-        .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_sysroot_src")
-        .arg(format!("{}//tools/rust_analyzer:detect_sysroot", config.rules_rust))
-        .args(targets)
-        .output()
-        .expect("failed to execute bazel process");
-
-    if !output.status.success() {
-        panic!(
-            "bazel build failed:({}) of {:?}:\n{}",
-            output.status,
-            &config.bazel_analyzer_target,
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
 }
 
 // Parse the configuration flags and supplement with bazel info as needed.
@@ -151,9 +93,6 @@ fn parse_config() -> anyhow::Result<Config> {
     if config.execution_root.is_none() {
         config.execution_root = bazel_info.get("execution_root").map(Into::into);
     }
-    if config.bazel_bin.is_none() {
-        config.bazel_bin = bazel_info.get("bazel-bin").map(Into::into);
-    }
 
     Ok(config)
 }
@@ -167,10 +106,6 @@ struct Config {
     // If not specified, uses the result of `bazel info execution_root`.
     #[structopt(long)]
     execution_root: Option<PathBuf>,
-
-    // If not specified, uses the result of `bazel info bazel-bin`.
-    #[structopt(long)]
-    bazel_bin: Option<PathBuf>,
 
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
