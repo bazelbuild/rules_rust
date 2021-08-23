@@ -9,6 +9,7 @@ use std::process::Command;
 use structopt::StructOpt;
 use log;
 use gen_rust_project_lib::aquery::CrateSpec;
+use std::fs::File;
 
 // TODO(david): This shells out to an expected rule in the workspace root //:rust_analyzer that the user must define.
 // It would be more convenient if it could automatically discover all the rust code in the workspace if this target does not exist.
@@ -36,6 +37,10 @@ fn main() -> anyhow::Result<()> {
     build_rust_analyzer_crate_specs(&config, &targets);
 
     let crate_specs = gen_rust_project_lib::aquery::get_crate_specs(&targets)?;
+
+    let rust_project = gen_rust_project_lib::rust_project::generate_rust_project(execution_root, &crate_specs)?;
+
+    gen_rust_project_lib::rust_project::write_rust_project(&mut File::create("rust-project.json")?, &rust_project);
 
     // let label = label::analyze(&config.bazel_analyzer_target)
     //     .with_context(|| "Cannot parse --bazel-analyzer-target")?;

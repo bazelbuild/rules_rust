@@ -35,27 +35,27 @@ struct Action {
     output_ids: Vec<u32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CrateSpec {
-    crate_id: String,
-    display_name: String,
-    edition: String,
-    root_module: String,
-    is_workspace_member: bool,
-    deps: Vec<String>,
-    proc_macro_dylib_path: Option<String>,
-    source: Option<CrateSpecSource>,
-    cfg: Vec<String>,
-    env: HashMap<String, String>,
-    target: String,
+    pub crate_id: String,
+    pub display_name: String,
+    pub edition: String,
+    pub root_module: String,
+    pub is_workspace_member: bool,
+    pub deps: Vec<String>,
+    pub proc_macro_dylib_path: Option<String>,
+    pub source: Option<CrateSpecSource>,
+    pub cfg: Vec<String>,
+    pub env: HashMap<String, String>,
+    pub target: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CrateSpecSource {
-    exclude_dirs: Vec<String>,
-    include_dirs: Vec<String>,
+    pub exclude_dirs: Vec<String>,
+    pub include_dirs: Vec<String>,
 }
 
 pub fn get_crate_specs(targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
