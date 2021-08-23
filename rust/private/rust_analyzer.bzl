@@ -226,7 +226,6 @@ rust_analyzer = rule(
         ),
     },
     implementation = _rust_analyzer_impl,
-    deprecation = "This rule has no effect. Pass target patterns directly to @rules_rust//tools/rust_analyzer:gen_rust_project instead.",
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\

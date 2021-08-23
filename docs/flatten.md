@@ -160,7 +160,7 @@ A rule defining an incompatible flag.
 rust_analyzer(<a href="#rust_analyzer-name">name</a>, <a href="#rust_analyzer-targets">targets</a>)
 </pre>
 
-Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
+Deprecated: gen_rust_project can now create a rust-project.json without a rust_analyzer rule.
 
 
 **ATTRIBUTES**
