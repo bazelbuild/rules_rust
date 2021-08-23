@@ -1,11 +1,11 @@
 // Library for generating rust_project.json files from a Vec<CrateSpec>
 // See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use std::io::ErrorKind;
+use crate::aquery::CrateSpec;
+use anyhow::anyhow;
 use serde::Serialize;
 use std::collections::HashMap;
-use anyhow::anyhow;
-use crate::aquery::CrateSpec;
+use std::io::ErrorKind;
 use std::path::Path;
 
 #[derive(Serialize)]
@@ -49,7 +49,10 @@ pub struct Dependency {
     name: String,
 }
 
-pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyhow::Result<RustProject> {
+pub fn generate_rust_project(
+    sysroot_src: &str,
+    crates: &Vec<CrateSpec>,
+) -> anyhow::Result<RustProject> {
     let mut p = RustProject {
         sysroot_src: Some(sysroot_src.into()),
         crates: Vec::new(),
@@ -62,8 +65,19 @@ pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyh
     while !unmerged_crates.is_empty() {
         let num_unmerged = unmerged_crates.len();
         for c in unmerged_crates.iter() {
-            if c.deps.iter().any(|dep| !merged_crates_index.contains_key(dep)) {
-                log::trace!("Skipped crate {} because missing deps: {:?}", &c.crate_id, c.deps.iter().filter(|dep| !merged_crates_index.contains_key(*dep)).cloned().collect::<Vec<_>>());
+            if c.deps
+                .iter()
+                .any(|dep| !merged_crates_index.contains_key(dep))
+            {
+                log::trace!(
+                    "Skipped crate {} because missing deps: {:?}",
+                    &c.crate_id,
+                    c.deps
+                        .iter()
+                        .filter(|dep| !merged_crates_index.contains_key(*dep))
+                        .cloned()
+                        .collect::<Vec<_>>()
+                );
                 skipped_crates.push(c);
             } else {
                 log::trace!("Merging crate {}", &c.crate_id);
@@ -72,14 +86,24 @@ pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyh
                     display_name: Some(c.display_name.clone()),
                     root_module: c.root_module.clone(),
                     edition: c.edition.clone(),
-                    deps: c.deps.iter().map(|dep| {
-                        let crate_index = *merged_crates_index.get(dep).expect("failed to find dependency on second lookup");
-                        let dep_crate = &p.crates[crate_index as usize];
-                        Dependency {
-                            crate_index,
-                            name: dep_crate.display_name.as_ref().expect("all crates should have display_name").clone(),
-                        }
-                    }).collect(),
+                    deps: c
+                        .deps
+                        .iter()
+                        .map(|dep| {
+                            let crate_index = *merged_crates_index
+                                .get(dep)
+                                .expect("failed to find dependency on second lookup");
+                            let dep_crate = &p.crates[crate_index as usize];
+                            Dependency {
+                                crate_index,
+                                name: dep_crate
+                                    .display_name
+                                    .as_ref()
+                                    .expect("all crates should have display_name")
+                                    .clone(),
+                            }
+                        })
+                        .collect(),
                     is_workspace_member: Some(c.is_workspace_member),
                     source: c.source.as_ref().map(|s| Source {
                         exclude_dirs: s.exclude_dirs.iter().map(|d| d.clone()).collect(),
@@ -95,8 +119,14 @@ pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyh
         }
 
         if num_unmerged == skipped_crates.len() {
-            log::debug!("Did not make progress on {} unmerged crates. Crates: {:?}", skipped_crates.len(), skipped_crates);
-            return Err(anyhow!("Failed to make progress on building crate dependency graph"));
+            log::debug!(
+                "Did not make progress on {} unmerged crates. Crates: {:?}",
+                skipped_crates.len(),
+                skipped_crates
+            );
+            return Err(anyhow!(
+                "Failed to make progress on building crate dependency graph"
+            ));
         }
         std::mem::swap(&mut unmerged_crates, &mut skipped_crates);
         skipped_crates.clear();
@@ -105,18 +135,28 @@ pub fn generate_rust_project(sysroot_src: &str, crates: &Vec<CrateSpec>) -> anyh
     Ok(p)
 }
 
-pub fn write_rust_project(rust_project_path: &Path, execution_root: &Path, rust_project: &RustProject) -> anyhow::Result<()> {
-    let execution_root = execution_root.to_str().ok_or(anyhow!("execution_root is not valid UTF-8"))?;
+pub fn write_rust_project(
+    rust_project_path: &Path,
+    execution_root: &Path,
+    rust_project: &RustProject,
+) -> anyhow::Result<()> {
+    let execution_root = execution_root
+        .to_str()
+        .ok_or(anyhow!("execution_root is not valid UTF-8"))?;
 
     // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
     match std::fs::remove_file(rust_project_path) {
         Ok(_) => {}
         Err(err) if err.kind() == ErrorKind::NotFound => {}
-        Err(err) => { return Err(anyhow!("Unexpected error removing old rust-project.json: {}", err)) },
+        Err(err) => {
+            return Err(anyhow!(
+                "Unexpected error removing old rust-project.json: {}",
+                err
+            ))
+        }
     }
 
     // Write the new rust-project.json file.
-
     std::fs::write(
         rust_project_path,
         serde_json::to_string(rust_project)?.replace("__EXEC_ROOT__", &execution_root),

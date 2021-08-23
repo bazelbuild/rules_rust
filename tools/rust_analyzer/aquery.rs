@@ -1,10 +1,10 @@
-use std::path::Path;
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs::File;
 use std::option::Option;
-use std::collections::HashMap;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Output {
@@ -58,9 +58,15 @@ pub struct CrateSpecSource {
     pub include_dirs: Vec<String>,
 }
 
-pub fn get_crate_specs(bazel: &Path, workspace: &Path, execution_root: &Path, targets: &[&str]) -> anyhow::Result<Vec<CrateSpec>> {
-    log::debug!("Get crate specs with targets: {:?}", targets);    
-    let target_pattern = targets.into_iter()
+pub fn get_crate_specs(
+    bazel: &Path,
+    workspace: &Path,
+    execution_root: &Path,
+    targets: &[&str],
+) -> anyhow::Result<Vec<CrateSpec>> {
+    log::debug!("Get crate specs with targets: {:?}", targets);
+    let target_pattern = targets
+        .into_iter()
         .map(|t| format!("deps({})", t))
         .collect::<Vec<_>>()
         .join("+");
@@ -71,11 +77,15 @@ pub fn get_crate_specs(bazel: &Path, workspace: &Path, execution_root: &Path, ta
         .arg("--include_aspects")
         .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
         .arg("--output_groups=rust_analyzer_crate_spec")
-        .arg(format!(r#"outputs(".*[.]rust_analyzer_crate_spec",{})"#, target_pattern))
+        .arg(format!(
+            r#"outputs(".*[.]rust_analyzer_crate_spec",{})"#,
+            target_pattern
+        ))
         .arg("--output=jsonproto")
         .output()?;
 
-    let crate_spec_files = parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
+    let crate_spec_files =
+        parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
     let mut crate_specs: Vec<CrateSpec> = Vec::new();
     for file in crate_spec_files {
         let spec = serde_json::from_reader(File::open(file)?)?;
@@ -99,18 +109,27 @@ pub fn get_crate_specs(bazel: &Path, workspace: &Path, execution_root: &Path, ta
     Ok(deduped.into_values().collect())
 }
 
-pub fn get_sysroot_src(bazel: &Path, workspace: &Path, execution_root: &Path, rules_rust: &str) -> anyhow::Result<String> {
+pub fn get_sysroot_src(
+    bazel: &Path,
+    workspace: &Path,
+    execution_root: &Path,
+    rules_rust: &str,
+) -> anyhow::Result<String> {
     let aquery_output = Command::new(bazel)
-    .current_dir(workspace)
-    .arg("aquery")
-    .arg("--include_aspects")
-    .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
-    .arg("--output_groups=rust_analyzer_sysroot_src")
-    .arg(format!(r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//tools/rust_analyzer:detect_sysroot)"#, rules_rust))
-    .arg("--output=jsonproto")
-    .output()?;
+        .current_dir(workspace)
+        .arg("aquery")
+        .arg("--include_aspects")
+        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+        .arg("--output_groups=rust_analyzer_sysroot_src")
+        .arg(format!(
+            r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//tools/rust_analyzer:detect_sysroot)"#,
+            rules_rust
+        ))
+        .arg("--output=jsonproto")
+        .output()?;
 
-    let sysroot_src_files = parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
+    let sysroot_src_files =
+        parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
     log::debug!("sysroot_src_files: {:?}", sysroot_src_files);
     debug_assert!(sysroot_src_files.len() == 1);
 
@@ -120,13 +139,23 @@ pub fn get_sysroot_src(bazel: &Path, workspace: &Path, execution_root: &Path, ru
 fn parse_aquery_output_files(execution_root: &Path, s: String) -> anyhow::Result<Vec<PathBuf>> {
     let o: Output = serde_json::from_str(&s)?;
 
-    let artifacts = o.artifacts.iter().map(|a| (a.id, a)).collect::<HashMap<_,_>>();
-    let path_fragments = o.path_fragments.iter().map(|pf| (pf.id, pf)).collect::<HashMap<_,_>>();
+    let artifacts = o
+        .artifacts
+        .iter()
+        .map(|a| (a.id, a))
+        .collect::<HashMap<_, _>>();
+    let path_fragments = o
+        .path_fragments
+        .iter()
+        .map(|pf| (pf.id, pf))
+        .collect::<HashMap<_, _>>();
 
     let mut output_files: Vec<PathBuf> = Vec::new();
     for action in o.actions {
         for output_id in action.output_ids {
-            let artifact = artifacts.get(&output_id).expect("internal consistency error in bazel output");
+            let artifact = artifacts
+                .get(&output_id)
+                .expect("internal consistency error in bazel output");
             let path = path_from_fragments(artifact.path_fragment_id, &path_fragments)?;
             let path = execution_root.join(path);
             if path.exists() {
@@ -140,14 +169,18 @@ fn parse_aquery_output_files(execution_root: &Path, s: String) -> anyhow::Result
     Ok(output_files)
 }
 
-fn path_from_fragments(id: u32, fragments: &HashMap<u32, &PathFragment>) -> anyhow::Result<PathBuf> {
-    let path_fragment = fragments.get(&id).expect("internal consistency error in bazel output");
+fn path_from_fragments(
+    id: u32,
+    fragments: &HashMap<u32, &PathFragment>,
+) -> anyhow::Result<PathBuf> {
+    let path_fragment = fragments
+        .get(&id)
+        .expect("internal consistency error in bazel output");
 
     let buf = match path_fragment.parent_id {
-        Some(parent_id) => {
-            path_from_fragments(parent_id, fragments)?.join(PathBuf::from(&path_fragment.label.clone()))
-        },
-        None => PathBuf::from(&path_fragment.label.clone())
+        Some(parent_id) => path_from_fragments(parent_id, fragments)?
+            .join(PathBuf::from(&path_fragment.label.clone())),
+        None => PathBuf::from(&path_fragment.label.clone()),
     };
 
     Ok(buf)

@@ -1,11 +1,11 @@
 use anyhow::anyhow;
+use gen_rust_project_lib::generate_crate_and_sysroot_info;
+use gen_rust_project_lib::write_rust_project;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 use structopt::StructOpt;
-use gen_rust_project_lib::generate_crate_and_sysroot_info;
-use gen_rust_project_lib::write_rust_project;
 
 // TODO(david): This shells out to an expected rule in the workspace root //:rust_analyzer that the user must define.
 // It would be more convenient if it could automatically discover all the rust code in the workspace if this target does not exist.
@@ -26,21 +26,17 @@ fn main() -> anyhow::Result<()> {
     let targets = config.targets.split(",").collect::<Vec<_>>();
 
     // Generate the crate specs and sysroot src.
-    generate_crate_and_sysroot_info(
-        &config.bazel,
-        &workspace_root,
-        &config.rules_rust,
-        &targets,
-    )?;
+    generate_crate_and_sysroot_info(&config.bazel, &workspace_root, &config.rules_rust, &targets)?;
 
     // Use the generated files to write rust-project.json.
-    write_rust_project(        &config.bazel,
+    write_rust_project(
+        &config.bazel,
         &workspace_root,
         &config.rules_rust,
         &targets,
         &execution_root,
         &workspace_root.join("rust-project.json"),
-)?;
+    )?;
 
     Ok(())
 }
@@ -110,9 +106,17 @@ struct Config {
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
 
-    #[structopt(long, default_value = "@rules_rust", help = "The name of the rules_rust repository")]
+    #[structopt(
+        long,
+        default_value = "@rules_rust",
+        help = "The name of the rules_rust repository"
+    )]
     rules_rust: String,
 
-    #[structopt(long, default_value = "@//...", help = "Comma-separated list of target patterns")]
+    #[structopt(
+        long,
+        default_value = "@//...",
+        help = "Comma-separated list of target patterns"
+    )]
     targets: String,
 }
