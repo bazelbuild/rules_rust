@@ -15,9 +15,14 @@ fn run() {
     // Test the behavior of `rootpath` and that a binary can be found relative to current_dir
     let hello_world_bin =
         std::path::PathBuf::from(std::env::var_os("HELLO_WORLD_BIN_ROOTPATH").unwrap());
+
     assert_eq!(
         hello_world_bin.as_path(),
-        std::path::Path::new("test/test_env/hello-world"),
+        std::path::Path::new(if std::env::consts::OS == "windows" {
+            "test/test_env/hello-world.exe"
+        } else {
+            "test/test_env/hello-world"
+        })
     );
     assert!(!hello_world_bin.is_absolute());
     assert!(hello_world_bin.exists());

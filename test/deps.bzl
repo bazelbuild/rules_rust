@@ -10,6 +10,7 @@ load("@rules_rust//rust:rust.bzl", "rust_library")
 rust_library(
     name = "libc",
     srcs = glob(["src/**/*.rs"]),
+    edition = "2015",
     visibility = ["//visibility:public"],
 )
 """
