@@ -868,7 +868,7 @@ def _crate_to_link_flag(crate_info):
     Returns:
         list: Link flags for the current crate info
     """
-    return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
+    return ["--extern={}={}".format(crate_info.name, crate_info.dep.output.path)]
 
 def _get_crate_dirname(crate):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path

@@ -62,7 +62,7 @@ def rust_repositories(
         version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
         iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
         rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
-        edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
@@ -273,7 +273,7 @@ def rust_repository_set(
         iso_date (str, optional): The date of the tool. Defaults to None.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain. Defaults to None.
-        edition (str, optional): The rust edition to be used by default (2015 (if None) or 2018).
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (if None), or 2021).
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See

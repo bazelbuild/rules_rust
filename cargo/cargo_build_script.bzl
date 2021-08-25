@@ -251,6 +251,8 @@ def cargo_build_script(
         tools = [],
         links = None,
         rustc_env = {},
+        visibility = None,
+        tags = None,
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -320,6 +322,8 @@ def cargo_build_script(
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
+        visibility (list of label, optional): Visibility to apply to the generated build script output.
+        tags: (list of str, optional): Tags to apply to the generated build script output.
         **kwargs: Forwards to the underlying `rust_binary` rule.
     """
 
@@ -338,6 +342,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         rustc_env = rustc_env,
+        tags = ["manual"],
         **kwargs
     )
     _build_script_run(
@@ -350,6 +355,8 @@ def cargo_build_script(
         deps = deps,
         data = data,
         tools = tools,
+        visibility = visibility,
+        tags = tags,
     )
 
 def _name_to_pkg_name(name):
