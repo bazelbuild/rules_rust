@@ -1,5 +1,5 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Wasm Bindgen
+# Rust Wasm
 
 * [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
@@ -40,7 +40,7 @@ To use the Rust WebAssembly bindgen rules, add the following to your `WORKSPACE`
 external repositories for the Rust bindgen toolchain (in addition to the Rust rules setup):
 
 ```python
-load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//wasm:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 ```
@@ -84,7 +84,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "wasm_bindgen_toolchain",
     toolchain = "wasm_bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
+    toolchain_type = "@rules_rust//wasm:wasm_bindgen_toolchain",
 )
 ```
 
@@ -124,6 +124,6 @@ Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_wasm_bindgen_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) (<code>@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
+| <a id="rust_wasm_bindgen_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) (<code>@rules_rust//wasm:default_wasm_bindgen_toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
