@@ -47,7 +47,7 @@ functional in certain environments.
 - [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers).
   and [gRPC](https://grpc.io) stubs.
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
+- [rust_wasm](rust_wasm.md): rules for generating and interracting with [WebAssembly](https://www.rust-lang.org/what/wasm).
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
 
 You can also browse the [full API in one page](flatten.md).

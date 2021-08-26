@@ -1,0 +1,26 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//wasm:wasm_bindgen.bzl", "rust_wasm_bindgen_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(name = "wasm_bindgen_toolchain")
+
+bzl_library(
+    name = "rules",
+    srcs = glob(["**/*.bzl"]) + ["//wasm/raze:crates.bzl"],
+    deps = [
+        "//rust:rules",
+        "//wasm/private:bzl_lib",
+    ],
+)
+
+rust_wasm_bindgen_toolchain(
+    name = "default_wasm_bindgen_toolchain_impl",
+    bindgen = "//wasm/raze:cargo_bin_wasm_bindgen",
+)
+
+toolchain(
+    name = "default_wasm_bindgen_toolchain",
+    toolchain = "default_wasm_bindgen_toolchain_impl",
+    toolchain_type = "@rules_rust//wasm:wasm_bindgen_toolchain",
+)

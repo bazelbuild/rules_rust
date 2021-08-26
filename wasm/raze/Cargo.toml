@@ -1,0 +1,62 @@
+[package]
+name = "fake_rules_rust_wasm_bindgen_lib"
+version = "0.0.1"
+
+[lib]
+path = "fake_rules_rust_wasm_bindgen_lib.rs"
+
+[dependencies]
+wasm-bindgen = "0.2.76"
+
+[package.metadata.raze]
+genmode = "Remote"
+workspace_path = "//wasm/raze"
+gen_workspace_prefix = "rules_rust_wasm_bindgen"
+rust_rules_workspace_name = "rules_rust"
+package_aliases_dir = "."
+default_gen_buildrs = true
+
+[package.metadata.raze.binary_deps]
+wasm-bindgen-cli = "0.2.76"
+
+[package.metadata.raze.crates.curl-sys.'*']
+gen_buildrs = false
+
+[package.metadata.raze.crates.log.'<5']
+additional_flags = [
+    "--cfg=atomic_cas",
+    "--cfg=use_std",
+]
+
+[package.metadata.raze.crates.openssl-sys.'*']
+gen_buildrs = false
+additional_flags = [
+  # Vendored openssl is 1.0.2m
+  "--cfg=ossl101",
+  "--cfg=ossl102",
+  "--cfg=ossl102f",
+  "--cfg=ossl102h",
+  "--cfg=ossl110",
+  "--cfg=ossl110f",
+  "--cfg=ossl110g",
+  "--cfg=ossl111",
+  "--cfg=ossl111b",
+  "-l",
+  "dylib=ssl",
+  "-l",
+  "dylib=crypto",
+]
+
+[package.metadata.raze.crates.proc-macro2.'*']
+additional_flags = [
+    "--cfg=use_proc_macro",
+]
+
+[package.metadata.raze.crates.unicase.'*']
+additional_flags = [
+  "--cfg=__unicase__iter_cmp",
+  "--cfg=__unicase__defauler_hasher",
+]
+
+[package.metadata.raze.crates.wasm-bindgen-cli.'*']
+extra_aliased_targets = ["cargo_bin_wasm_bindgen"]

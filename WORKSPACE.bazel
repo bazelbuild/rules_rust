@@ -20,7 +20,7 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
 
 rust_analyzer_deps()
 
-load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("@rules_rust//wasm:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 

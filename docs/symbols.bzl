@@ -76,11 +76,11 @@ load(
     _incompatible_flag = "incompatible_flag",
 )
 load(
-    "@rules_rust//wasm_bindgen:repositories.bzl",
+    "@rules_rust//wasm:repositories.bzl",
     _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
 )
 load(
-    "@rules_rust//wasm_bindgen:wasm_bindgen.bzl",
+    "@rules_rust//wasm:wasm_bindgen.bzl",
     _rust_wasm_bindgen = "rust_wasm_bindgen",
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )

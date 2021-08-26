@@ -28,7 +28,7 @@ bzl_library(
         "@rules_rust//crate_universe:rules",
         "@rules_rust//proto:rules",
         "@rules_rust//rust:rules",
-        "@rules_rust//wasm_bindgen:rules",
+        "@rules_rust//wasm:rules",
     ],
 )
 
@@ -131,8 +131,8 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "rust_wasm_bindgen",
-        header_template = ":rust_wasm_bindgen.vm",
+        name = "rust_wasm",
+        header_template = ":rust_wasm.vm",
         symbols = [
             "rust_wasm_bindgen_repositories",
             "rust_wasm_bindgen_toolchain",
