@@ -70,6 +70,14 @@ load(
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
 )
+
+# buildifier: disable=bzl-visibility
+load(
+    "@rules_rust//rust/private:providers.bzl",
+    _CrateInfo = "CrateInfo",
+    _DepInfo = "DepInfo",
+    _StdLibInfo = "StdLibInfo",
+)
 load(
     "@rules_rust//rust/settings:incompatible.bzl",
     _fail_when_enabled = "fail_when_enabled",
@@ -135,3 +143,7 @@ rustfmt_test = _rustfmt_test
 
 incompatible_flag = _incompatible_flag
 fail_when_enabled = _fail_when_enabled
+
+CrateInfo = _CrateInfo
+DepInfo = _DepInfo
+StdLibInfo = _StdLibInfo
