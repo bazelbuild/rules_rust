@@ -6,6 +6,6 @@ fn main() {
 mod test {
     #[test]
     fn do_the_test() {
-        assert_eq!(43, simple_bindgen::SIMPLE_VALUE);
+        assert_eq!(42, simple_bindgen::SIMPLE_VALUE);
     }
 }

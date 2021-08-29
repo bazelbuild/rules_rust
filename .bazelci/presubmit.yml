@@ -139,9 +139,11 @@ tasks:
       # rust_doc_test is likely not fully sandboxed
       - "-//fibonacci:fibonacci_doc_test"
       - "-//hello_lib:hello_lib_doc_test"
-      - "-//ffi/rust_calling_c/simple/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
+      # The bindgen rules currently do not work on RBE
+      # see: https://github.com/bazelbuild/rules_rust/issues/919
+      - "-//bindgen/..."
     build_targets: *rbe_examples_targets
     test_targets: *rbe_examples_targets
     build_flags: *aspects_flags
@@ -170,8 +172,12 @@ tasks:
       - "//..."
       - "-//ffi/rust_calling_c:matrix_dylib_test"
       - "-//ffi/rust_calling_c:matrix_dynamically_linked"
-      - "-//ffi/rust_calling_c/simple/..."
+      # The bindgen rules currently do not work on windows
+      # see: https://github.com/bazelbuild/rules_rust/issues/919
+      - "-//bindgen/..."
+      # The proto rules do not work on windows
       - "-//proto/..."
+      # The wasm rules do not work on windows
       - "-//wasm/..."
       # rust_doc_test targets are currently broken on windows
       # see: https://github.com/bazelbuild/rules_rust/issues/887
