@@ -96,7 +96,8 @@ def rust_repositories(
     )
 
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        rust_repository_set(
+        maybe(
+            rust_repository_set,
             name = name,
             exec_triple = exec_triple,
             extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
