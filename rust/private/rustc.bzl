@@ -715,6 +715,11 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     )
 
     cc_infos = [CcInfo(linking_context = linking_context)]
+
+    # Staticlibs don't need deps in the linking_context.
+    if crate_info.type == "staticlib":
+        return cc_infos
+
     for dep in getattr(attr, "deps", []):
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])
