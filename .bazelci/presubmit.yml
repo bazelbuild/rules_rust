@@ -149,13 +149,14 @@ tasks:
     name: Examples
     platform: macos
     working_directory: examples
+    build_flags:
+      # Required for //ffi/rust_calling_c:matrix_dylib_test
+      - "--incompatible_macos_set_install_name"
     build_targets:
       - "//..."
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # This test requires --incompatible_macos_set_install_name and Bazel 4.2.0+
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
     build_flags: *aspects_flags
   windows_examples:
     name: Examples
