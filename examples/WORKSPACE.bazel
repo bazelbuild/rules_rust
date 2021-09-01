@@ -82,6 +82,10 @@ local_repository(
     path = "cargo_manifest_dir/external_crate",
 )
 
+load("//benchmarking:deps.bzl", "benchmarking_deps")
+
+benchmarking_deps()
+
 _LIBC_BUILD_FILE_CONTENT = """\
 load("@rules_rust//rust:rust.bzl", "rust_library")
 
