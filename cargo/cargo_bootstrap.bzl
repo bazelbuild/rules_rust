@@ -1,6 +1,6 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
-load("//cargo/private:cargo_utils.bzl", "get_cargo_and_rustc", "get_host_triple")
+load("//cargo/private:cargo_utils.bzl", "get_host_triple", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
 
 _CARGO_BUILD_MODES = [
@@ -27,6 +27,7 @@ def cargo_bootstrap(
         binary,
         cargo_manifest,
         environment = {},
+        sysroot = None,
         quiet = False,
         build_mode = "release",
         target_dir = None):
@@ -39,6 +40,7 @@ def cargo_bootstrap(
         binary (str): The binary to build (the `--bin` parameter for Cargo).
         cargo_manifest (path): The path to a Cargo manifest (Cargo.toml file).
         environment (dict): Environment variables to use during execution.
+        sysroot (path, optional): The path to the Rust sysroot.
         quiet (bool, optional): Whether or not to print output from the Cargo command.
         build_mode (str, optional): The build mode to use
         target_dir (path, optional): The directory in which to produce build outputs
@@ -69,14 +71,17 @@ def cargo_bootstrap(
     if build_mode == "release":
         args.append("--release")
 
-    env = dict({
+    env = {
         "RUSTC": str(rustc_bin),
-    }.items() + environment.items())
+    }
+
+    if sysroot:
+        env.update({"RUSTFLAGS": "--sysroot={}".format(sysroot)})
 
     repository_ctx.report_progress("Cargo Bootstrapping {}".format(binary))
     result = repository_ctx.execute(
         args,
-        environment = env,
+        environment = dict(env.items() + environment.items()),
         quiet = quiet,
     )
 
@@ -174,7 +179,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         version_str = repository_ctx.attr.version
 
     host_triple = get_host_triple(repository_ctx)
-    tools = get_cargo_and_rustc(
+    tools = get_rust_tools(
         repository_ctx = repository_ctx,
         toolchain_repository_template = repository_ctx.attr.rust_toolchain_repository_template,
         host_triple = host_triple,
@@ -191,6 +196,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         repository_ctx,
         cargo_bin = tools.cargo,
         rustc_bin = tools.rustc,
+        sysroot = tools.rust_stdlib,
         binary = binary_name,
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
@@ -250,10 +256,11 @@ cargo_bootstrap_repository = repository_rule(
         "rust_toolchain_repository_template": attr.string(
             doc = (
                 "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
-                "will be replaced in the string if present."
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'rustc') will be replaced in the " +
+                "string if present."
             ),
-            default = "rust_{system}_{arch}",
+            default = "rules_rust_{version}_{triple}_{cfg}_{tool}",
         ),
         "srcs": attr.label_list(
             doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",

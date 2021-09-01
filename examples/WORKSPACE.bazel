@@ -34,23 +34,32 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Workspace examples
 ###############################################################################
 
-# buildifier: disable=same-origin-load
-load("@rules_rust//rust:repositories.bzl", "rust_repository_set")
+load("@rules_rust//rust:toolchain_repositories.bzl", "rust_exec_toolchain_repository", "rust_target_toolchain_repository")
 
-# `rust_repository_set` is the core repository rule for downloading and defining
-# a rust_toolchain. Should there be a need for a customized toolchain, this macro can
-# be used to define and register one.
-rust_repository_set(
-    name = "fake_toolchain_for_test_of_sha256",
+# Example of `rust_exec_toolchain_repository`
+rust_exec_toolchain_repository(
+    name = "rules_rust_example_exec",
     edition = "2018",
-    exec_triple = "x86_64-unknown-linux-gnu",
-    extra_target_triples = [],
-    rustfmt_version = "1.4.12",
+    rustfmt_iso_date = "2021-06-16",
+    rustfmt_version = "nightly",
     sha256s = {
         "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
         "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
         "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
     },
+    triple = "x86_64-unknown-linux-gnu",
+    version = "1.46.0",
+)
+
+# Example of `rust_target_toolchain_repository`
+rust_target_toolchain_repository(
+    name = "rules_rust_example_target",
+    sha256s = {
+        "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+        "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+        "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+    },
+    triple = "x86_64-unknown-linux-gnu",
     version = "1.46.0",
 )
 

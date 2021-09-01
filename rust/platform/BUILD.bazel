@@ -3,6 +3,10 @@ load(":platform.bzl", "declare_config_settings")
 
 package(default_visibility = ["//visibility:public"])
 
+toolchain_type(
+    name = "toolchain_type",
+)
+
 declare_config_settings()
 
 package_group(
@@ -14,6 +18,6 @@ package_group(
 
 bzl_library(
     name = "rules",
-    srcs = glob(["**/*.bzl"]),
+    srcs = glob(["**/*.bzl"]) + ["@rules_rust_bazel_version//:version.bzl"],
     visibility = ["//rust:__subpackages__"],
 )

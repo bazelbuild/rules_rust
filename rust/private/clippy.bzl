@@ -14,6 +14,8 @@
 
 """A module defining clippy rules"""
 
+load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo")
 load(
@@ -23,11 +25,11 @@ load(
     "construct_arguments",
 )
 load(
-    "//rust/private:utils.bzl",
-    "determine_output_hash",
+    "//rust/private:toolchain_utils.bzl",
     "find_cc_toolchain",
     "find_toolchain",
 )
+load("//rust/private:utils.bzl", "determine_output_hash")
 
 def _get_clippy_ready_crate_info(target, aspect_ctx):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
@@ -60,6 +62,7 @@ def _clippy_aspect_impl(target, ctx):
         return [ClippyInfo(output = depset([]))]
 
     toolchain = find_toolchain(ctx)
+    clippy_toolchain = ctx.toolchains[Label("@rules_rust//rust:clippy_toolchain")]
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_type = crate_info.type
 
@@ -91,7 +94,7 @@ def _clippy_aspect_impl(target, ctx):
         attr = ctx.rule.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.clippy_driver.path,
+        tool_path = clippy_toolchain.clippy_driver.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -137,6 +140,11 @@ def _clippy_aspect_impl(target, ctx):
             # fail on any warning
             args.rustc_flags.add("-Dwarnings")
 
+    # Clippy needs to be able to find libraries from rustc so we set the `LD_LIBRARY_PATH`
+    # variable (`DYLD_LIBRARY_PATH` for MacOS).
+    env.update({"LD_LIBRARY_PATH": "{}/lib".format(env["SYSROOT"])})
+    env.update({"DYLD_LIBRARY_PATH": env["LD_LIBRARY_PATH"]})
+
     # Upstream clippy requires one of these two filenames or it silently uses
     # the default config. Enforce the naming so users are not confused.
     valid_config_file_names = [".clippy.toml", "clippy.toml"]
@@ -150,7 +158,7 @@ def _clippy_aspect_impl(target, ctx):
         inputs = compile_inputs,
         outputs = [clippy_out],
         env = env,
-        tools = [toolchain.clippy_driver],
+        tools = [clippy_toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
     )
@@ -195,12 +203,19 @@ rust_clippy_aspect = aspect(
             executable = True,
             cfg = "exec",
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     provides = [ClippyInfo],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:clippy_toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
-    ],
+    ] + ([
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else []),
     incompatible_use_toolchain_transition = True,
     implementation = _clippy_aspect_impl,
     doc = """\

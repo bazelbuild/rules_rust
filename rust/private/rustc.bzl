@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -21,11 +20,15 @@ load(
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load(
+    "//rust/private:toolchain_utils.bzl",
+    "find_cc_toolchain",
+    "find_sysroot",
+)
+load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
     "expand_dict_value_locations",
     "expand_list_element_locations",
-    "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
     "is_exec_configuration",
@@ -382,13 +385,12 @@ def collect_inputs(
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_libs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
+            toolchain.sysroot_files,
         ],
     )
 
@@ -572,10 +574,10 @@ def construct_arguments(
         rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
-    rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
+    rust_stdlib_paths = depset([file.dirname for file in toolchain.rust_stdlib.to_list()]).to_list()
 
     # Tell Rustc where to find the standard library
-    rustc_flags.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
+    rustc_flags.add_all(rust_stdlib_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
     data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
@@ -626,8 +628,10 @@ def construct_arguments(
         data_paths,
     ))
 
-    # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
-    env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
+    # Ensure the sysroot is set for the target platform
+    sysroot = find_sysroot(toolchain)
+    env["SYSROOT"] = sysroot
+    rustc_flags.add("--sysroot", "${pwd}/" + sysroot)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):

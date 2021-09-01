@@ -19,5 +19,5 @@ rust_wasm_bindgen_toolchain(
 toolchain(
     name = "default_wasm_bindgen_toolchain",
     toolchain = "default_wasm_bindgen_toolchain_impl",
-    toolchain_type = "//wasm_bindgen:wasm_bindgen_toolchain",
+    toolchain_type = "@rules_rust//wasm_bindgen:wasm_bindgen_toolchain",
 )

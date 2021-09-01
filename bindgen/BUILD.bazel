@@ -31,5 +31,5 @@ rust_bindgen_toolchain(
 toolchain(
     name = "default_bindgen_toolchain",
     toolchain = "default_bindgen_toolchain_impl",
-    toolchain_type = "//bindgen:bindgen_toolchain",
+    toolchain_type = "@rules_rust//bindgen:bindgen_toolchain",
 )

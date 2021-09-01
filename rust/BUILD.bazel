@@ -14,6 +14,26 @@ toolchain_type(
     name = "toolchain",
 )
 
+toolchain_type(
+    name = "exec_toolchain",
+)
+
+toolchain_type(
+    name = "target_toolchain",
+)
+
+toolchain_type(
+    name = "cargo_toolchain",
+)
+
+toolchain_type(
+    name = "clippy_toolchain",
+)
+
+toolchain_type(
+    name = "rustfmt_toolchain",
+)
+
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),

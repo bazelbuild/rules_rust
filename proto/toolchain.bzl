@@ -136,9 +136,9 @@ PROTO_COMPILE_DEPS = [
 
 # Default dependencies needed to compile gRPC stubs.
 GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
-    Label("//proto/raze:grpc"),
-    Label("//proto/raze:tls_api"),
-    Label("//proto/raze:tls_api_stub"),
+    Label("@rules_rust//proto/raze:grpc"),
+    Label("@rules_rust//proto/raze:tls_api"),
+    Label("@rules_rust//proto/raze:tls_api_stub"),
 ]
 
 rust_proto_toolchain = rule(

@@ -134,10 +134,16 @@ def get_cargo_and_rustc(repository_ctx, host_triple):
     rust_toolchain_repository = rust_toolchain_repository.replace("{triple}", host_triple)
     rust_toolchain_repository = rust_toolchain_repository.replace("{arch}", arch)
 
-    cargo_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/cargo" + extension)))
-    rustc_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/rustc" + extension)))
+    cargo_repository = rust_toolchain_repository.replace("{tool}", "cargo").replace("{cfg}", "exec")
+    rustc_repository = rust_toolchain_repository.replace("{tool}", "rustc").replace("{cfg}", "exec")
+    stdlib_repository = rust_toolchain_repository.replace("{tool}", "stdlib").replace("{cfg}", "target")
+
+    cargo_path = repository_ctx.path(Label("@{}{}".format(cargo_repository, "//:bin/cargo" + extension)))
+    rustc_path = repository_ctx.path(Label("@{}{}".format(rustc_repository, "//:bin/rustc" + extension)))
+    stdlib_path = repository_ctx.path(Label("@{}{}".format(stdlib_repository, "//:BUILD.bazel"))).dirname
 
     return struct(
         cargo = cargo_path,
         rustc = rustc_path,
+        rust_stdlib = stdlib_path,
     )

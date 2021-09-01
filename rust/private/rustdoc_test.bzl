@@ -13,8 +13,11 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
+load("//rust/private:toolchain_utils.bzl", "find_sysroot", "find_toolchain")
+load("//rust/private:utils.bzl", "get_lib_name", "get_preferred_artifact")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -41,7 +44,7 @@ def _rust_doc_test_impl(ctx):
 
     # Construct rustdoc test command, which will be written to a shell script
     # to be executed to run the test.
-    flags = _build_rustdoc_flags(dep_info, crate_info)
+    flags = _build_rustdoc_flags(dep_info, crate_info, toolchain)
     if toolchain.os != "windows":
         rust_doc_test = _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info)
     else:
@@ -50,14 +53,15 @@ def _rust_doc_test_impl(ctx):
     # The test script compiles the crate and runs it, so it needs both compile and runtime inputs.
     compile_inputs = depset(
         [crate_info.output] +
-        [toolchain.rust_doc] +
+        [toolchain.rustdoc] +
         [toolchain.rustc] +
         toolchain.crosstool_files,
         transitive = [
             crate_info.srcs,
             dep_info.transitive_libs,
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
+            toolchain.rustc_lib,
+            toolchain.rust_lib,
+            toolchain.sysroot_files,
         ],
     )
 
@@ -82,12 +86,13 @@ def _dirname(path_str):
     """
     return "/".join(path_str.split("/")[:-1])
 
-def _build_rustdoc_flags(dep_info, crate_info):
+def _build_rustdoc_flags(dep_info, crate_info, toolchain):
     """Constructs the rustdoc script used to test `crate`.
 
     Args:
         dep_info (DepInfo): The DepInfo provider
         crate_info (CrateInfo): The CrateInfo provider
+        toolchain (rust_toolchain): The rust toolchain
 
     Returns:
         list: A list of rustdoc flags (str)
@@ -116,6 +121,15 @@ def _build_rustdoc_flags(dep_info, crate_info):
 
     if crate_info.type == "proc-macro":
         link_flags.extend(["--extern", "proc_macro"])
+
+    sysroot = find_sysroot(toolchain, short_path = True)
+    if toolchain.os == "windows":
+        sysroot = sysroot.replace("/", "\\")
+
+    link_flags.extend([
+        "--sysroot=\"{}\"".format(sysroot),
+        "--target=\"{}\"".format(toolchain.target_triple),
+    ])
 
     edition_flags = ["--edition={}".format(crate_info.edition)] if crate_info.edition != "2015" else []
 
@@ -150,7 +164,7 @@ def _build_rustdoc_test_bash_script(ctx, toolchain, flags, crate_info):
     ctx.actions.write(
         output = rust_doc_test,
         content = _rustdoc_test_bash_script.format(
-            rust_doc = toolchain.rust_doc.short_path,
+            rust_doc = toolchain.rustdoc.short_path,
             crate_root = crate_info.root.path,
             crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
@@ -185,7 +199,7 @@ def _build_rustdoc_test_batch_script(ctx, toolchain, flags, crate_info):
     ctx.actions.write(
         output = rust_doc_test,
         content = _rustdoc_test_batch_script.format(
-            rust_doc = toolchain.rust_doc.short_path.replace("/", "\\"),
+            rust_doc = toolchain.rustdoc.short_path.replace("/", "\\"),
             crate_root = crate_info.root.path,
             crate_name = crate_info.name,
             # TODO: Should be possible to do this with ctx.actions.Args, but can't seem to get them as a str and into the template.
@@ -212,10 +226,17 @@ rust_doc_test = rule(
             doc = "__deprecated__: use `crate`",
             providers = [rust_common.crate_info],
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     executable = True,
     test = True,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else [],
     incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
 

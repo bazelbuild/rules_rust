@@ -20,10 +20,12 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
+load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
-load("//rust/private:utils.bzl", "find_toolchain")
+load("//rust/private:toolchain_utils.bzl", "find_toolchain")
 
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
@@ -102,7 +104,16 @@ def find_proc_macro_dylib_path(toolchain, target):
 rust_analyzer_aspect = aspect(
     attr_aspects = ["deps", "proc_macro_deps", "crate"],
     implementation = _rust_analyzer_aspect_impl,
-    toolchains = [str(Label("//rust:toolchain"))],
+    attrs = {
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
+    },
+    toolchains = [
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else [],
     incompatible_use_toolchain_transition = True,
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
@@ -244,12 +255,19 @@ rust_analyzer = rule(
             aspects = [rust_analyzer_aspect],
             doc = "List of all targets to be included in the index",
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     outputs = {
         "filename": "rust-project.json",
     },
     implementation = _rust_analyzer_impl,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else [],
     incompatible_use_toolchain_transition = True,
     doc = """\
 Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.

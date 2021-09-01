@@ -1,7 +1,8 @@
 """A module defining rustfmt rules"""
 
+load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load(":common.bzl", "rust_common")
-load(":utils.bzl", "find_toolchain")
 
 def _find_rustfmtable_srcs(target, aspect_ctx = None):
     """Parse a target for rustfmt formattable sources.
@@ -47,7 +48,7 @@ def _generate_manifest(edition, srcs, ctx):
     return manifest
 
 def _perform_check(edition, srcs, ctx):
-    toolchain = find_toolchain(ctx)
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:rustfmt_toolchain"))]
     config = ctx.file._config
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
@@ -125,13 +126,20 @@ source files are also ignored by this aspect.
             executable = True,
             default = Label("//util/process_wrapper"),
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
-    ],
+        str(Label("//rust:rustfmt_toolchain")),
+    ] + ([
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else []),
 )
 
 def _rustfmt_test_impl(ctx):

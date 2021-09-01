@@ -1,10 +1,7 @@
 """Utility functions for the cargo rules"""
 
 load("//rust/platform:triple.bzl", "triple")
-load(
-    "//rust/platform:triple_mappings.bzl",
-    "system_to_binary_ext",
-)
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
 _CPU_ARCH_ERROR_MSG = """\
 Command failed with exit code '{code}': {args}
@@ -107,7 +104,60 @@ def get_host_triple(repository_ctx, abi = None):
 
     fail("Unhandled host os: {}", repository_ctx.os.name)
 
-def get_cargo_and_rustc(repository_ctx, toolchain_repository_template, host_triple, version):
+def resolve_repository_template(
+        template,
+        version = None,
+        triple = None,
+        arch = None,
+        vendor = None,
+        system = None,
+        abi = None,
+        cfg = None,
+        tool = None):
+    """Render values into a repository template string
+
+    Args:
+        template (str): The template to use for rendering
+        version (str, optional): The Rust version used in the toolchain.
+        triple (str, optional): The host triple
+        arch (str, optional): The host CPU architecture
+        vendor (str, optional): The host vendor name
+        system (str, optional): The host system name
+        abi (str, optional): The host ABI
+        cfg (str, optional): The configuration of the particular repository.
+            `cargo`+`rustc` would be `exec` where `stdlib` is `target`.
+        tool (str, optional): The tool to expect in the particular repository.
+            Eg. `cargo`, `rustc`, `stdlib`.
+    Returns:
+        str: The resolved template string based on the given parameters
+    """
+    if version:
+        template = template.replace("{version}", version)
+
+    if triple:
+        template = template.replace("{triple}", triple)
+
+    if arch:
+        template = template.replace("{arch}", arch)
+
+    if vendor:
+        template = template.replace("{vendor}", vendor)
+
+    if system:
+        template = template.replace("{system}", system)
+
+    if abi:
+        template = template.replace("{abi}", abi)
+
+    if cfg:
+        template = template.replace("{cfg}", cfg)
+
+    if tool:
+        template = template.replace("{tool}", tool)
+
+    return template
+
+def get_rust_tools(repository_ctx, toolchain_repository_template, host_triple, version):
     """Retrieve a cargo and rustc binary based on the host triple.
 
     Args:
@@ -120,28 +170,28 @@ def get_cargo_and_rustc(repository_ctx, toolchain_repository_template, host_trip
         struct: A struct containing the expected tools
     """
 
-    rust_toolchain_repository = toolchain_repository_template
-    rust_toolchain_repository = rust_toolchain_repository.replace("{version}", version)
-    rust_toolchain_repository = rust_toolchain_repository.replace("{triple}", host_triple.triple)
+    rust_toolchain_repository = resolve_repository_template(
+        template = toolchain_repository_template,
+        version = version,
+        triple = host_triple.triple,
+        arch = host_triple.arch,
+        vendor = host_triple.vendor,
+        system = host_triple.system,
+        abi = host_triple.abi,
+    )
 
-    if host_triple.arch:
-        rust_toolchain_repository = rust_toolchain_repository.replace("{arch}", host_triple.arch)
-
-    if host_triple.vendor:
-        rust_toolchain_repository = rust_toolchain_repository.replace("{vendor}", host_triple.vendor)
-
-    if host_triple.system:
-        rust_toolchain_repository = rust_toolchain_repository.replace("{system}", host_triple.system)
-
-    if host_triple.abi:
-        rust_toolchain_repository = rust_toolchain_repository.replace("{abi}", host_triple.abi)
+    cargo_repository = resolve_repository_template(template = rust_toolchain_repository, tool = "cargo", cfg = "exec")
+    rustc_repository = resolve_repository_template(template = rust_toolchain_repository, tool = "rustc", cfg = "exec")
+    stdlib_repository = resolve_repository_template(template = rust_toolchain_repository, tool = "stdlib", cfg = "target")
 
     extension = system_to_binary_ext(host_triple.system)
 
-    cargo_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/cargo" + extension)))
-    rustc_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/rustc" + extension)))
+    cargo_path = repository_ctx.path(Label("@{}{}".format(cargo_repository, "//:bin/cargo" + extension)))
+    rustc_path = repository_ctx.path(Label("@{}{}".format(rustc_repository, "//:bin/rustc" + extension)))
+    stdlib_path = repository_ctx.path(Label("@{}{}".format(stdlib_repository, "//:BUILD.bazel"))).dirname
 
     return struct(
         cargo = cargo_path,
         rustc = rustc_path,
+        rust_stdlib = stdlib_path,
     )

@@ -13,13 +13,18 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:versions.bzl", "versions")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load("//rust:rust.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_cc_toolchain", "find_toolchain", "get_preferred_artifact")
+load("//rust/private:toolchain_utils.bzl", "find_cc_toolchain", "find_toolchain")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -89,9 +94,9 @@ def _rust_bindgen_impl(ctx):
     if header not in cc_header_list:
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
-    toolchain = ctx.toolchains[Label("//bindgen:bindgen_toolchain")]
+    toolchain = ctx.toolchains[Label("@rules_rust//bindgen:bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
-    rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
+    rustfmt_bin = toolchain.rustfmt or ctx.toolchains[Label("@rules_rust//rust:rustfmt_toolchain")].rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
     libstdcxx = toolchain.libstdcxx
@@ -203,14 +208,21 @@ rust_bindgen = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     outputs = {"out": "%{name}.rs"},
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//bindgen:bindgen_toolchain")),
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
+        str(Label("@rules_rust//bindgen:bindgen_toolchain")),
+        str(Label("@rules_rust//rust:rustfmt_toolchain")),
+        str(Label("@bazel_tools//tools/cpp:toolchain_type")),
+    ] + ([
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else []),
     incompatible_use_toolchain_transition = True,
 )
 

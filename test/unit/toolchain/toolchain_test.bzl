@@ -1,7 +1,7 @@
 """Unit tests for rust toolchains."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
+load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_target_toolchain")
 
 def _toolchain_specifies_target_triple_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -9,7 +9,7 @@ def _toolchain_specifies_target_triple_test_impl(ctx):
 
     asserts.equals(env, None, toolchain_info.target_json)
     asserts.equals(env, "toolchain-test-triple", toolchain_info.target_flag_value)
-    asserts.equals(env, "toolchain-test-triple", toolchain_info.target_triple)
+    asserts.equals(env, "toolchain-test-triple", toolchain_info.triple)
 
     return analysistest.end(env)
 
@@ -19,7 +19,7 @@ def _toolchain_specifies_target_json_test_impl(ctx):
 
     asserts.equals(env, "toolchain-test-triple.json", toolchain_info.target_json.basename)
     asserts.equals(env, "test/unit/toolchain/toolchain-test-triple.json", toolchain_info.target_flag_value)
-    asserts.equals(env, "", toolchain_info.target_triple)
+    asserts.equals(env, "", toolchain_info.triple)
 
     return analysistest.end(env)
 
@@ -37,26 +37,28 @@ def _toolchain_test():
         srcs = ["toolchain-test-triple.json"],
     )
 
-    rust_toolchain(
+    rust_target_toolchain(
         name = "rust_triple_toolchain",
         binary_ext = "",
         dylib_ext = ".so",
         os = "linux",
-        rust_lib = ":std_libs",
+        rust_stdlib = ":std_libs",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
-        target_triple = "toolchain-test-triple",
+        triple = "toolchain-test-triple",
+        version = "0.1.0",
     )
 
-    rust_toolchain(
+    rust_target_toolchain(
         name = "rust_json_toolchain",
         binary_ext = "",
         dylib_ext = ".so",
         os = "linux",
-        rust_lib = ":std_libs",
+        rust_stdlib = ":std_libs",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = ":target_json",
+        version = "0.1.0",
     )
 
     toolchain_specifies_target_triple_test(

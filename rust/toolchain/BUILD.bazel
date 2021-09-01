@@ -1,3 +1,4 @@
+load("//rust:toolchain.bzl", "rust_toolchain")
 load("//rust/private:toolchain_utils.bzl", "toolchain_files")
 
 package(default_visibility = ["//visibility:public"])
@@ -40,4 +41,14 @@ toolchain_files(
 toolchain_files(
     name = "current_exec_rust_stdlib_files",
     tool = "rust_stdlib",
+)
+
+rust_toolchain(
+    name = "current",
+)
+
+toolchain(
+    name = "current_rust_toolchain",
+    toolchain = ":current",
+    toolchain_type = "@rules_rust//rust:toolchain",
 )

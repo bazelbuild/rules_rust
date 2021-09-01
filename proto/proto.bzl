@@ -32,7 +32,9 @@ rust_proto_repositories()
 ```
 """
 
+load("@bazel_skylib//lib:versions.bzl", "versions")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("@rules_rust_bazel_version//:version.bzl", "BAZEL_VERSION")
 load(
     "//proto:toolchain.bzl",
     _generate_proto = "rust_generate_proto",
@@ -44,7 +46,10 @@ load("//rust:rust.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain", "transform_deps")
+load("//rust/private:toolchain_utils.bzl", "find_toolchain")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "determine_output_hash", "transform_deps")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -185,7 +190,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     """
 
     # Create all the source in a specific folder
-    proto_toolchain = ctx.toolchains[Label("//proto:toolchain")]
+    proto_toolchain = ctx.toolchains[Label("@rules_rust//proto:toolchain")]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
@@ -312,14 +317,20 @@ rust_proto_library = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//proto:toolchain")),
-        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
-    ],
+    ] + ([
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else []),
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
     # the version of Bazel that issue was closed on as the min supported version
     incompatible_use_toolchain_transition = True,
@@ -390,14 +401,20 @@ rust_grpc_library = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
+        "_rust_toolchain": attr.label(
+            # https://github.com/bazelbuild/bazel/issues/13243
+            doc = "Required for bazel versions below `4.1.0` to generate the sysroot",
+            default = Label("//rust/toolchain:current"),
+        ),
     },
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//proto:toolchain")),
-        str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
-    ],
+    ] + ([
+        str(Label("@rules_rust//rust:toolchain")),
+    ] if versions.is_at_least("4.1.0", BAZEL_VERSION) else []),
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
     # the version of Bazel that issue was closed on as the min supported version
     incompatible_use_toolchain_transition = True,

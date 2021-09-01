@@ -77,7 +77,7 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 """
 
 def _rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//wasm_bindgen:wasm_bindgen_toolchain")]
+    toolchain = ctx.toolchains[Label("@rules_rust//wasm_bindgen:wasm_bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
 
     # Since the `wasm_file` attribute is behind a transition, it will be converted
