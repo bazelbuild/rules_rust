@@ -488,46 +488,71 @@ def _rust_benchmark_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     # Build the underlying benchmark binary.
-    bench_binary = ctx.actions.declare_file(
-        "{}_bin{}".format(ctx.label.name, toolchain.binary_ext),
-        sibling = ctx.configuration.bin_dir,
+    crate_name = ctx.label.name.replace("-", "_")
+    bench_binary = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    info = rustc_compile_action(
+        ctx = ctx,
+        attr = ctx.attr,
+        toolchain = toolchain,
+        crate_info = rust_common.create_crate_info(
+            name = crate_name,
+            type = "bin",
+            root = crate_root_src(ctx.attr, ctx.files.srcs, "bin"),
+            srcs = depset(ctx.files.srcs),
+            deps = depset(ctx.attr.deps),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            aliases = ctx.attr.aliases,
+            output = bench_binary,
+            edition = get_edition(ctx.attr, toolchain),
+            rustc_env = ctx.attr.rustc_env,
+            is_test = False,
+            compile_data = depset(ctx.files.compile_data),
+        ),
+        rust_flags = ["--test"] if ctx.attr.use_libtest_harness else [],
     )
-    info = _rust_test_common(ctx, toolchain, bench_binary)
 
-    if toolchain.exec_triple.find("windows") != -1:
-        bench_script = ctx.actions.declare_file(
-            ctx.label.name + ".bat",
-        )
+    # Now compile a binary for executing the benchmark
+    runner_src = ctx.actions.declare_file(ctx.label.name + "." + ctx.file._runner_src.basename)
+    ctx.actions.symlink(
+        output = runner_src,
+        target_file = ctx.file._runner_src,
+    )
 
-        # Wrap the benchmark to run it as cargo would.
-        ctx.actions.write(
-            output = bench_script,
-            content = "{} --bench || exit 1".format(bench_binary.short_path),
-            is_executable = True,
-        )
-    else:
-        bench_script = ctx.actions.declare_file(
-            ctx.label.name + ".sh",
-        )
+    args = ctx.attr.args
+    if not args:
+        args = ctx.attr.default_args
 
-        # Wrap the benchmark to run it as cargo would.
-        ctx.actions.write(
-            output = bench_script,
-            content = "\n".join([
-                "#!/usr/bin/env bash",
-                "set -e",
-                "{} --bench".format(bench_binary.short_path),
-            ]),
-            is_executable = True,
-        )
+    bench_runner = ctx.actions.declare_file(ctx.label.name + ".runner" + toolchain.binary_ext)
+    runner_info = rustc_compile_action(
+        ctx = ctx,
+        attr = ctx.attr,
+        toolchain = toolchain,
+        crate_info = rust_common.create_crate_info(
+            name = crate_name + "_runner",
+            type = "bin",
+            root = runner_src,
+            srcs = depset([runner_src]),
+            deps = depset([]),
+            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            aliases = ctx.attr.aliases,
+            output = bench_runner,
+            edition = "2018",
+            rustc_env = {
+                "BENCH_ARGS": " ".join(args),
+                "BENCH_BINARY": bench_binary.short_path,
+            },
+            is_test = False,
+            compile_data = depset([]),
+        ),
+    )
 
     return [
         DefaultInfo(
+            files = depset([bench_runner, bench_binary]),
             runfiles = ctx.runfiles(
-                files = info.runfiles + [bench_binary],
-                collect_data = True,
+                files = [bench_binary] + ctx.attr.data,
             ),
-            executable = bench_script,
+            executable = bench_runner,
         ),
     ]
 
@@ -1206,9 +1231,34 @@ def rust_test_suite(name, srcs, **kwargs):
         tags = kwargs.get("tags", None),
     )
 
+_rust_benchmark_attrs = {
+    "default_args": attr.string_list(
+        doc = (
+            "The default arguments to pass to the benchmark binary. This " +
+            "attribute is used if the built-in `args` attribute is not set."
+        ),
+        default = ["--bench"],
+    ),
+    "use_libtest_harness": attr.bool(
+        default = False,
+        mandatory = False,
+        doc = (
+            "Generate the test harness for this benchmark. Note that " +
+            "[Criterion](https://bheisler.github.io/criterion.rs/book/index.html) " +
+            "benchmarks do not use a test harness, but the nightly `#[bench]` " +
+            "api does. Pass True if you have a `#[bench]` api test."
+        ),
+    ),
+    "_runner_src": attr.label(
+        doc = "Rust source files for the benchmark runner, a binary that starts the benchmark process",
+        allow_single_file = True,
+        default = Label("//util/bench:bench_runner.rs"),
+    ),
+}
+
 rust_benchmark = rule(
     implementation = _rust_benchmark_impl,
-    attrs = _common_attrs,
+    attrs = dict(_common_attrs.items() + _rust_benchmark_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -1225,7 +1275,7 @@ rust_benchmark = rule(
         `test` unstable feature gate. As a result, using this rule would require using a nightly \
         binary release of Rust.
 
-        [rust-bench]: https://doc.rust-lang.org/book/benchmark-tests.html
+        [rust-bench]: https://doc.rust-lang.org/nightly/unstable-book/library-features/test.html
 
         Example:
 
@@ -1279,19 +1329,19 @@ rust_benchmark = rule(
 
         `fibonacci/BUILD`:
         ```python
-        package(default_visibility = ["//visibility:public"])
-
         load("@rules_rust//rust:defs.bzl", "rust_library", "rust_benchmark")
 
+        package(default_visibility = ["//visibility:public"])
+
         rust_library(
-        name = "fibonacci",
-        srcs = ["src/lib.rs"],
+            name = "fibonacci",
+            srcs = ["src/lib.rs"],
         )
 
         rust_benchmark(
-        name = "fibonacci_bench",
-        srcs = ["benches/fibonacci_bench.rs"],
-        deps = [":fibonacci"],
+            name = "fibonacci_bench",
+            srcs = ["benches/fibonacci_bench.rs"],
+            deps = [":fibonacci"],
         )
         ```
 
