@@ -12,7 +12,7 @@ bzip2 = "=0.3.3"
 [package.metadata.raze]
 workspace_path = "//sys/basic/raze"
 genmode = "Remote"
-gen_workspace_prefix = "rules_rust_examples_basic_sys"
+gen_workspace_prefix = "basic_sys"
 rust_rules_workspace_name = "rules_rust"
 package_aliases_dir = "raze"
 default_gen_buildrs = false

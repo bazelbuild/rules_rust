@@ -49,8 +49,8 @@ rust_library(
     version = "0.3.3",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_basic_sys__bzip2_sys__0_1_9_1_0_8//:bzip2_sys",
-        "@rules_rust_examples_basic_sys__libc__0_2_77//:libc",
+        "@basic_sys__bzip2_sys__0_1_9_1_0_8//:bzip2_sys",
+        "@basic_sys__libc__0_2_77//:libc",
     ],
 )
 

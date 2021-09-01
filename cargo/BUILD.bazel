@@ -5,4 +5,5 @@ package(default_visibility = ["//visibility:public"])
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
+    deps = ["//cargo/private:bzl_lib"],
 )

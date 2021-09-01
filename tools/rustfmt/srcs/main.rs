@@ -75,9 +75,12 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
 /// arguments to use when formatting the sources of those targets.
 fn generate_rustfmt_target_manifests(options: &Config, targets: &[String]) {
     let build_args = vec![
-        "build",
-        "--aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect",
-        "--output_groups=rustfmt_manifest",
+        "build".to_owned(),
+        format!(
+            "--aspects={}//rust:defs.bzl%rustfmt_aspect",
+            env!("ASPECT_REPOSITORY")
+        ),
+        "--output_groups=rustfmt_manifest".to_owned(),
     ];
 
     let child = Command::new(&options.bazel)

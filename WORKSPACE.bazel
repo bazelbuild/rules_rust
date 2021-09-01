@@ -8,6 +8,10 @@ load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
 
+load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+
+rust_proto_transitive_repositories()
+
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
@@ -48,41 +52,3 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Use this as is if you are using the rbe_ubuntu16_04 container,
 # otherwise refer to RBE docs.
 rbe_autoconfig(name = "buildkite_config")
-
-# Load all dependencies for examples
-
-local_repository(
-    name = "examples",
-    path = "examples",
-)
-
-load("@examples//:examples_repositories.bzl", examples_repositories = "repositories")
-
-examples_repositories()
-
-load("@examples//:examples_deps.bzl", examples_deps = "deps")
-
-examples_deps()
-
-load("@examples//:examples_transitive_deps.bzl", examples_transitive_deps = "transitive_deps")
-
-examples_transitive_deps(is_top_level = True)
-
-# Load all dependencies for docs
-
-local_repository(
-    name = "docs",
-    path = "docs",
-)
-
-load("@docs//:docs_repositories.bzl", docs_repositories = "repositories")
-
-docs_repositories()
-
-load("@docs//:docs_deps.bzl", docs_deps = "deps")
-
-docs_deps()
-
-load("@docs//:docs_transitive_deps.bzl", docs_transitive_deps = "transitive_deps")
-
-docs_transitive_deps(is_top_level = True)

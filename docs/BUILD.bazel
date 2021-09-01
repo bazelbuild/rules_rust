@@ -9,10 +9,12 @@ bzl_library(
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
         "@build_bazel_rules_nodejs//internal/providers:bzl",
+        "@com_google_protobuf//:bzl_srcs",
     ],
     deps = [
         "@bazel_skylib//lib:paths",
-        "@rules_proto//proto:rules",
+        "@rules_proto//proto:defs",
+        "@rules_proto//proto:repositories",
     ],
 )
 
@@ -32,9 +34,10 @@ bzl_library(
 
 PAGES = dict([
     page(
-        name = "cargo_build_script",
+        name = "cargo",
         symbols = [
             "cargo_build_script",
+            "cargo_bootstrap_repository",
         ],
     ),
     page(
@@ -43,13 +46,6 @@ PAGES = dict([
         symbols = [
             "crate_universe",
             "crate",
-        ],
-    ),
-    page(
-        name = "settings",
-        symbols = [
-            "incompatible_flag",
-            "fail_when_enabled",
         ],
     ),
     page(
@@ -65,6 +61,14 @@ PAGES = dict([
             "rust_test_suite",
             "error_format",
             "extra_rustc_flags",
+        ],
+    ),
+    page(
+        name = "providers",
+        symbols = [
+            "CrateInfo",
+            "DepInfo",
+            "StdLibInfo",
         ],
     ),
     page(
@@ -114,6 +118,7 @@ PAGES = dict([
             "rust_grpc_library",
             "rust_proto_library",
             "rust_proto_repositories",
+            "rust_proto_transitive_repositories",
             "rust_proto_toolchain",
         ],
     ),
@@ -135,6 +140,13 @@ PAGES = dict([
             "rust_wasm_bindgen_repositories",
             "rust_wasm_bindgen_toolchain",
             "rust_wasm_bindgen",
+        ],
+    ),
+    page(
+        name = "settings",
+        symbols = [
+            "incompatible_flag",
+            "fail_when_enabled",
         ],
     ),
 ])

@@ -49,6 +49,6 @@ rust_library(
     version = "0.3.2",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_examples_complex_sys__foreign_types_shared__0_1_1//:foreign_types_shared",
+        "@complex_sys__foreign_types_shared__0_1_1//:foreign_types_shared",
     ],
 )

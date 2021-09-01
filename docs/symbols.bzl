@@ -13,7 +13,8 @@ load(
     _rust_bindgen_repositories = "rust_bindgen_repositories",
 )
 load(
-    "@rules_rust//cargo:cargo_build_script.bzl",
+    "@rules_rust//cargo:defs.bzl",
+    _cargo_bootstrap_repository = "cargo_bootstrap_repository",
     _cargo_build_script = "cargo_build_script",
 )
 load(
@@ -33,6 +34,10 @@ load(
 load(
     "@rules_rust//proto:toolchain.bzl",
     _rust_proto_toolchain = "rust_proto_toolchain",
+)
+load(
+    "@rules_rust//proto:transitive_repositories.bzl",
+    _rust_proto_transitive_repositories = "rust_proto_transitive_repositories",
 )
 load(
     "@rules_rust//rust:defs.bzl",
@@ -66,6 +71,14 @@ load(
     "@rules_rust//rust:toolchain.bzl",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
+)
+
+# buildifier: disable=bzl-visibility
+load(
+    "@rules_rust//rust/private:providers.bzl",
+    _CrateInfo = "CrateInfo",
+    _DepInfo = "DepInfo",
+    _StdLibInfo = "StdLibInfo",
 )
 load(
     "@rules_rust//rust/settings:incompatible.bzl",
@@ -105,8 +118,10 @@ rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
 rust_proto_repositories = _rust_proto_repositories
 rust_stdlib_filegroup = _rust_stdlib_filegroup
+rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
 cargo_build_script = _cargo_build_script
+cargo_bootstrap_repository = _cargo_bootstrap_repository
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
@@ -132,3 +147,8 @@ error_format = _error_format
 extra_rustc_flags = _extra_rustc_flags
 fail_when_enabled = _fail_when_enabled
 incompatible_flag = _incompatible_flag
+
+CrateInfo = _CrateInfo
+DepInfo = _DepInfo
+StdLibInfo = _StdLibInfo
+

@@ -10,6 +10,10 @@ rust_library(
     name = "inline",
     srcs = ["src/lib.rs"],
     edition = "2018",
+    # Not all source files are included in this this target (`extra.rs`)
+    # and as a result, rustfmt complains about a missing module. Do not
+    # run rustfmt to avoid this issue.
+    tags = ["norustfmt"],
 )
 
 rust_test(

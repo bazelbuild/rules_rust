@@ -40,13 +40,15 @@ cargo_build_script(
     name = "openssl_sys_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
-        "OPENSSL_DIR": "../openssl/openssl",
+        "OPENSSL_DIR": "$(execpath @openssl//:gen_dir)",
+        "OPENSSL_STATIC": "1",
     },
     crate_features = [
     ],
     crate_root = "build/main.rs",
     data = glob(["**"]) + [
-        "@openssl",
+        "@openssl//:gen_dir",
+        "@openssl//:openssl",
     ],
     edition = "2015",
     links = "openssl",
@@ -60,16 +62,16 @@ cargo_build_script(
     version = "0.9.60",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_examples_complex_sys__autocfg__1_0_1//:autocfg",
-        "@rules_rust_examples_complex_sys__cc__1_0_66//:cc",
-        "@rules_rust_examples_complex_sys__pkg_config__0_3_19//:pkg_config",
+        "@complex_sys__autocfg__1_0_1//:autocfg",
+        "@complex_sys__cc__1_0_69//:cc",
+        "@complex_sys__pkg_config__0_3_19//:pkg_config",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (
             "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
-            "@rules_rust_examples_complex_sys__vcpkg__0_2_11//:vcpkg",
+            "@complex_sys__vcpkg__0_2_15//:vcpkg",
         ],
         "//conditions:default": [],
     }),
@@ -84,7 +86,7 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    data = [],
+    data = [] + ["@openssl//:openssl"],
     edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
@@ -97,8 +99,8 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":openssl_sys_build_script",
-        "@openssl",
-        "@rules_rust_examples_complex_sys__libc__0_2_82//:libc",
+        "@complex_sys__libc__0_2_98//:libc",
+        "@openssl//:openssl",
     ] + selects.with_or({
         # cfg(target_env = "msvc")
         (

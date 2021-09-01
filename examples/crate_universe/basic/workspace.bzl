@@ -14,5 +14,7 @@ def deps():
         supported_targets = [
             "x86_64-apple-darwin",
             "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
         ],
+        resolver = "@rules_rust_crate_universe_bootstrap//:crate_universe_resolver",
     )

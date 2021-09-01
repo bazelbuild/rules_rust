@@ -1,0 +1,19 @@
+diff --git a/proto/BUILD b/proto/BUILD
+index 4856ada..67105f0 100644
+--- a/proto/BUILD
++++ b/proto/BUILD
+@@ -11,3 +11,14 @@ bzl_library(
+         "//proto/private/rules:proto_descriptor_set",
+     ],
+ )
++
++bzl_library(
++    name = "repositories",
++    srcs = [
++        "repositories.bzl",
++    ],
++    visibility = ["//visibility:public"],
++    deps = [
++        "//proto/private:dependencies",
++    ],
++)

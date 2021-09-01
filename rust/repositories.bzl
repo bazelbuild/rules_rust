@@ -1,6 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_toolchain",
@@ -20,7 +21,6 @@ load(
 load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.54.0"
 DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_darwin_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
@@ -32,7 +32,7 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(
-        version = DEFAULT_RUST_VERSION,
+        version = rust_common.default_version,
         iso_date = None,
         rustfmt_version = None,
         edition = None,
@@ -60,9 +60,9 @@ def rust_repositories(
 
     Args:
         version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
-        iso_date (str, optional): The date of the nightly or beta release (or None, if the version is a specific version).
+        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
         rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
-        edition (str, optional): The rust edition to be used by default (2015 (default) or 2018)
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
@@ -96,7 +96,8 @@ def rust_repositories(
     )
 
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        rust_repository_set(
+        maybe(
+            rust_repository_set,
             name = name,
             exec_triple = exec_triple,
             extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
@@ -177,7 +178,7 @@ rust_toolchain_repository = repository_rule(
         ),
         "edition": attr.string(
             doc = "The rust edition to be used by default.",
-            default = "2015",
+            default = rust_common.default_edition,
         ),
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
@@ -273,7 +274,7 @@ def rust_repository_set(
         iso_date (str, optional): The date of the tool. Defaults to None.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain. Defaults to None.
-        edition (str, optional): The rust edition to be used by default (2015 (if None) or 2018).
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (if None), or 2021).
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See

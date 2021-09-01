@@ -1,5 +1,9 @@
 # Rust rules
 
+* [CrateInfo](#CrateInfo)
+* [DepInfo](#DepInfo)
+* [StdLibInfo](#StdLibInfo)
+* [cargo_bootstrap_repository](#cargo_bootstrap_repository)
 * [cargo_build_script](#cargo_build_script)
 * [crate](#crate)
 * [crate_universe](#crate_universe)
@@ -25,6 +29,7 @@
 * [rust_proto_library](#rust_proto_library)
 * [rust_proto_repositories](#rust_proto_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
+* [rust_proto_transitive_repositories](#rust_proto_transitive_repositories)
 * [rust_repositories](#rust_repositories)
 * [rust_repository_set](#rust_repository_set)
 * [rust_shared_library](#rust_shared_library)
@@ -42,13 +47,41 @@
 * [rustfmt_test](#rustfmt_test)
 
 
+<a id="#cargo_bootstrap_repository"></a>
+
+## cargo_bootstrap_repository
+
+<pre>
+cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>, <a href="#cargo_bootstrap_repository-iso_date">iso_date</a>,
+                           <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_repository_template">rust_toolchain_repository_template</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
+</pre>
+
+A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="cargo_bootstrap_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="cargo_bootstrap_repository-binary"></a>binary |  The binary to build (the <code>--bin</code> parameter for Cargo). If left empty, the repository name will be used.   | String | optional | "" |
+| <a id="cargo_bootstrap_repository-build_mode"></a>build_mode |  The build mode the binary should be built with   | String | optional | "release" |
+| <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the crate_universe resolver manifest (<code>Cargo.toml</code> file)   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-iso_date"></a>iso_date |  The iso_date of cargo binary the resolver should use. Note: This can only be set if <code>version</code> is <code>beta</code> or <code>nightly</code>   | String | optional | "" |
+| <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
+| <a id="cargo_bootstrap_repository-rust_toolchain_repository_template"></a>rust_toolchain_repository_template |  The template to use for finding the host <code>rust_toolchain</code> repository. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{system}</code> (eg. 'darwin'), and <code>{arch}</code> (eg. 'aarch64') will be replaced in the string if present.   | String | optional | "rust_{system}_{arch}" |
+| <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souces to crate to build.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.54.0" |
+
+
 <a id="#crate_universe"></a>
 
 ## crate_universe
 
 <pre>
 crate_universe(<a href="#crate_universe-name">name</a>, <a href="#crate_universe-cargo_toml_files">cargo_toml_files</a>, <a href="#crate_universe-crate_registry_template">crate_registry_template</a>, <a href="#crate_universe-iso_date">iso_date</a>, <a href="#crate_universe-lockfile">lockfile</a>, <a href="#crate_universe-overrides">overrides</a>,
-               <a href="#crate_universe-packages">packages</a>, <a href="#crate_universe-repo_mapping">repo_mapping</a>, <a href="#crate_universe-resolver_download_url_template">resolver_download_url_template</a>, <a href="#crate_universe-resolver_sha256s">resolver_sha256s</a>,
+               <a href="#crate_universe-packages">packages</a>, <a href="#crate_universe-repo_mapping">repo_mapping</a>, <a href="#crate_universe-resolver">resolver</a>, <a href="#crate_universe-resolver_download_url_template">resolver_download_url_template</a>, <a href="#crate_universe-resolver_sha256s">resolver_sha256s</a>,
                <a href="#crate_universe-rust_toolchain_repository_template">rust_toolchain_repository_template</a>, <a href="#crate_universe-sha256s">sha256s</a>, <a href="#crate_universe-supported_targets">supported_targets</a>, <a href="#crate_universe-version">version</a>)
 </pre>
 
@@ -77,6 +110,7 @@ Environment Variables:
 | <a id="crate_universe-overrides"></a>overrides |  Mapping of crate name to specification overrides. See [crate.override](#crateoverride)  for more details.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crate_universe-packages"></a>packages |  A list of crate specifications. See [crate.spec](#cratespec) for more details.   | List of strings | optional | [] |
 | <a id="crate_universe-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
+| <a id="crate_universe-resolver"></a>resolver |  The label of a <code>crate_universe</code> resolver. Resolvers can be built using <code>cargo_bootstrap_repository</code> but if possible, it's recommended to stick with downloading a resoler via <code>resolver_download_url_template</code>.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="crate_universe-resolver_download_url_template"></a>resolver_download_url_template |  URL template from which to download the resolver binary. {host_triple} and {extension} will be filled in according to the host platform.   | String | optional | "{host_triple}{extension}" |
 | <a id="crate_universe-resolver_sha256s"></a>resolver_sha256s |  Dictionary of host_triple -&gt; sha256 for resolver binary.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {"aarch64-apple-darwin": "{aarch64-apple-darwin--sha256}", "aarch64-unknown-linux-gnu": "{aarch64-unknown-linux-gnu--sha256}", "x86_64-apple-darwin": "{x86_64-apple-darwin--sha256}", "x86_64-pc-windows-gnu": "{x86_64-pc-windows-gnu--sha256}", "x86_64-unknown-linux-gnu": "{x86_64-unknown-linux-gnu--sha256}"} |
 | <a id="crate_universe-rust_toolchain_repository_template"></a>rust_toolchain_repository_template |  The template to use for finding the host <code>rust_toolchain</code> repository. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{system}</code> (eg. 'darwin'), and <code>{arch}</code> (eg. 'aarch64') will be replaced in the string if present.   | String | optional | "rust_{system}_{arch}" |
@@ -810,7 +844,7 @@ proto_library(
     srcs = ["my.proto"]
 )
 
-proto_rust_library(
+rust_proto_library(
     name = "rust",
     deps = [":my_proto"],
 )
@@ -882,7 +916,7 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2015" |
+| <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2018" |
 | <a id="rust_proto_toolchain-grpc_compile_deps"></a>grpc_compile_deps |  The crates the generated grpc libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf"), Label("//proto/raze:grpc"), Label("//proto/raze:tls_api"), Label("//proto/raze:tls_api_stub")] |
 | <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust_grpc |
 | <a id="rust_proto_toolchain-proto_compile_deps"></a>proto_compile_deps |  The crates the generated protobuf libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf")] |
@@ -1219,7 +1253,7 @@ See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX r
 | <a id="rust_toolchain-cargo"></a>cargo |  The location of the <code>cargo</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_toolchain-clippy_driver"></a>clippy_driver |  The location of the <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_toolchain-debug_info"></a>debug_info |  Rustc debug info levels per opt level   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {"dbg": "2", "fastbuild": "0", "opt": "0"} |
-| <a id="rust_toolchain-default_edition"></a>default_edition |  The edition to use for rust_* rules that don't specify an edition.   | String | optional | "2015" |
+| <a id="rust_toolchain-default_edition"></a>default_edition |  The edition to use for rust_* rules that don't specify an edition.   | String | optional | "2018" |
 | <a id="rust_toolchain-dylib_ext"></a>dylib_ext |  The extension for dynamic libraries created from rustc.   | String | required |  |
 | <a id="rust_toolchain-exec_triple"></a>exec_triple |  The platform triple for the toolchains execution environment. For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations   | String | optional | "" |
 | <a id="rust_toolchain-opt_level"></a>opt_level |  Rustc optimization levels.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {"dbg": "0", "fastbuild": "0", "opt": "3"} |
@@ -1257,7 +1291,7 @@ A given instance of this rule should be accompanied by a rust_toolchain_reposito
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_toolchain_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_toolchain_repository-dev_components"></a>dev_components |  Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".   | Boolean | optional | False |
-| <a id="rust_toolchain_repository-edition"></a>edition |  The rust edition to be used by default.   | String | optional | "2015" |
+| <a id="rust_toolchain_repository-edition"></a>edition |  The rust edition to be used by default.   | String | optional | "2018" |
 | <a id="rust_toolchain_repository-exec_triple"></a>exec_triple |  The Rust-style target that this compiler runs on   | String | required |  |
 | <a id="rust_toolchain_repository-extra_target_triples"></a>extra_target_triples |  Additional rust-style targets that this set of toolchains should support.   | List of strings | optional | [] |
 | <a id="rust_toolchain_repository-include_rustc_srcs"></a>include_rustc_srcs |  Whether to download and unpack the rustc source files. These are very large, and slow to unpack, but are required to support rust analyzer. An environment variable <code>RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS</code> can also be used to control this attribute. This variable will take precedence over the hard coded attribute. Setting it to <code>true</code> to activates this attribute where all other values deactivate it.   | Boolean | optional | False |
@@ -1328,7 +1362,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 | <a id="rust_wasm_bindgen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_wasm_bindgen-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.   | List of strings | optional | [] |
 | <a id="rust_wasm_bindgen-target"></a>target |  The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.   | String | optional | "bundler" |
-| <a id="rust_wasm_bindgen-wasm_file"></a>wasm_file |  The .wasm file to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_wasm_bindgen-wasm_file"></a>wasm_file |  The <code>.wasm</code> file or crate to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 
 
 <a id="#rust_wasm_bindgen_toolchain"></a>
@@ -1398,13 +1432,95 @@ A test rule for performing `rustfmt --check` on a set of targets
 | <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
+<a id="#CrateInfo"></a>
+
+## CrateInfo
+
+<pre>
+CrateInfo(<a href="#CrateInfo-aliases">aliases</a>, <a href="#CrateInfo-compile_data">compile_data</a>, <a href="#CrateInfo-deps">deps</a>, <a href="#CrateInfo-edition">edition</a>, <a href="#CrateInfo-is_test">is_test</a>, <a href="#CrateInfo-name">name</a>, <a href="#CrateInfo-output">output</a>, <a href="#CrateInfo-proc_macro_deps">proc_macro_deps</a>, <a href="#CrateInfo-root">root</a>,
+          <a href="#CrateInfo-rustc_env">rustc_env</a>, <a href="#CrateInfo-srcs">srcs</a>, <a href="#CrateInfo-type">type</a>, <a href="#CrateInfo-wrapped_crate_type">wrapped_crate_type</a>)
+</pre>
+
+A provider containing general Crate information.
+
+**FIELDS**
+
+
+| Name  | Description |
+| :------------- | :------------- |
+| <a id="CrateInfo-aliases"></a>aliases |  Dict[Label, String]: Renamed and aliased crates    |
+| <a id="CrateInfo-compile_data"></a>compile_data |  depset[File]: Compile data required by this crate.    |
+| <a id="CrateInfo-deps"></a>deps |  depset[Provider]: This crate's (rust or cc) dependencies' providers.    |
+| <a id="CrateInfo-edition"></a>edition |  str: The edition of this crate.    |
+| <a id="CrateInfo-is_test"></a>is_test |  bool: If the crate is being compiled in a test context    |
+| <a id="CrateInfo-name"></a>name |  str: The name of this crate.    |
+| <a id="CrateInfo-output"></a>output |  File: The output File that will be produced, depends on crate type.    |
+| <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[CrateInfo]: This crate's rust proc_macro dependencies' providers.    |
+| <a id="CrateInfo-root"></a>root |  File: The source File entrypoint to this crate, eg. lib.rs    |
+| <a id="CrateInfo-rustc_env"></a>rustc_env |  Dict[String, String]: Additional <code>"key": "value"</code> environment variables to set for rustc.    |
+| <a id="CrateInfo-srcs"></a>srcs |  depset[File]: All source Files that are part of the crate.    |
+| <a id="CrateInfo-type"></a>type |  str: The type of this crate (see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit)).    |
+| <a id="CrateInfo-wrapped_crate_type"></a>wrapped_crate_type |  str, optional: The original crate type for targets generated using a previously defined crate (typically tests using the <code>rust_test::crate</code> attribute)    |
+
+
+<a id="#DepInfo"></a>
+
+## DepInfo
+
+<pre>
+DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>, <a href="#DepInfo-transitive_libs">transitive_libs</a>,
+        <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>)
+</pre>
+
+A provider containing information about a Crate's dependencies.
+
+**FIELDS**
+
+
+| Name  | Description |
+| :------------- | :------------- |
+| <a id="DepInfo-dep_env"></a>dep_env |  File: File with environment variables direct dependencies build scripts rely upon.    |
+| <a id="DepInfo-direct_crates"></a>direct_crates |  depset[AliasableDepInfo]    |
+| <a id="DepInfo-transitive_build_infos"></a>transitive_build_infos |  depset[BuildInfo]    |
+| <a id="DepInfo-transitive_crates"></a>transitive_crates |  depset[CrateInfo]    |
+| <a id="DepInfo-transitive_libs"></a>transitive_libs |  List[File]: All transitive dependencies, not filtered by type.    |
+| <a id="DepInfo-transitive_noncrates"></a>transitive_noncrates |  depset[LinkerInput]: All transitive dependencies that aren't crates.    |
+
+
+<a id="#StdLibInfo"></a>
+
+## StdLibInfo
+
+<pre>
+StdLibInfo(<a href="#StdLibInfo-alloc_files">alloc_files</a>, <a href="#StdLibInfo-between_alloc_and_core_files">between_alloc_and_core_files</a>, <a href="#StdLibInfo-between_core_and_std_files">between_core_and_std_files</a>, <a href="#StdLibInfo-core_files">core_files</a>,
+           <a href="#StdLibInfo-dot_a_files">dot_a_files</a>, <a href="#StdLibInfo-self_contained_files">self_contained_files</a>, <a href="#StdLibInfo-srcs">srcs</a>, <a href="#StdLibInfo-std_files">std_files</a>, <a href="#StdLibInfo-std_rlibs">std_rlibs</a>)
+</pre>
+
+A collection of files either found within the `rust-stdlib` artifact or generated based on existing files.
+
+**FIELDS**
+
+
+| Name  | Description |
+| :------------- | :------------- |
+| <a id="StdLibInfo-alloc_files"></a>alloc_files |  List[File]: <code>.a</code> files related to the <code>alloc</code> module.    |
+| <a id="StdLibInfo-between_alloc_and_core_files"></a>between_alloc_and_core_files |  List[File]: <code>.a</code> files related to the <code>compiler_builtins</code> module.    |
+| <a id="StdLibInfo-between_core_and_std_files"></a>between_core_and_std_files |  List[File]: <code>.a</code> files related to all modules except <code>adler</code>, <code>alloc</code>, <code>compiler_builtins</code>, <code>core</code>, and <code>std</code>.    |
+| <a id="StdLibInfo-core_files"></a>core_files |  List[File]: <code>.a</code> files related to the <code>core</code> and <code>adler</code> modules    |
+| <a id="StdLibInfo-dot_a_files"></a>dot_a_files |  Depset[File]: Generated <code>.a</code> files    |
+| <a id="StdLibInfo-self_contained_files"></a>self_contained_files |  List[File]: All <code>.o</code> files from the <code>self-contained</code> directory.    |
+| <a id="StdLibInfo-srcs"></a>srcs |  List[Target]: The original <code>src</code> attribute.    |
+| <a id="StdLibInfo-std_files"></a>std_files |  Depset[File]: <code>.a</code> files associated with the <code>std</code> module.    |
+| <a id="StdLibInfo-std_rlibs"></a>std_rlibs |  List[File]: All <code>.rlib</code> files    |
+
+
 <a id="#cargo_build_script"></a>
 
 ## cargo_build_script
 
 <pre>
-cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>,
-                   <a href="#cargo_build_script-kwargs">kwargs</a>)
+cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>,
+                   <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -1475,9 +1591,12 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  <code>None</code> |
 | <a id="cargo_build_script-deps"></a>deps |  The dependencies of the crate.   |  <code>[]</code> |
 | <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  <code>{}</code> |
-| <a id="cargo_build_script-data"></a>data |  Files or tools needed by the build script.   |  <code>[]</code> |
+| <a id="cargo_build_script-data"></a>data |  Files needed by the build script.   |  <code>[]</code> |
+| <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  <code>[]</code> |
 | <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  <code>None</code> |
 | <a id="cargo_build_script-rustc_env"></a>rustc_env |  Environment variables to set in rustc when compiling the build script.   |  <code>{}</code> |
+| <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  <code>None</code> |
+| <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  <code>None</code> |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
 
 
@@ -1644,6 +1763,20 @@ Declare dependencies needed for proto compilation.
 | <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
+<a id="#rust_proto_transitive_repositories"></a>
+
+## rust_proto_transitive_repositories
+
+<pre>
+rust_proto_transitive_repositories()
+</pre>
+
+Load transitive dependencies of the `@rules_rust//proto` rules.
+
+This macro should be called immediately after the `rust_proto_repositories` macro.
+
+
+
 <a id="#rust_repositories"></a>
 
 ## rust_repositories
@@ -1676,9 +1809,9 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="rust_repositories-version"></a>version |  The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.   |  <code>"1.54.0"</code> |
-| <a id="rust_repositories-iso_date"></a>iso_date |  The date of the nightly or beta release (or None, if the version is a specific version).   |  <code>None</code> |
+| <a id="rust_repositories-iso_date"></a>iso_date |  The date of the nightly or beta release (ignored if the version is a specific version).   |  <code>None</code> |
 | <a id="rust_repositories-rustfmt_version"></a>rustfmt_version |  The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to <code>version</code> if not specified.   |  <code>None</code> |
-| <a id="rust_repositories-edition"></a>edition |  The rust edition to be used by default (2015 (default) or 2018)   |  <code>None</code> |
+| <a id="rust_repositories-edition"></a>edition |  The rust edition to be used by default (2015, 2018 (default), or 2021)   |  <code>None</code> |
 | <a id="rust_repositories-dev_components"></a>dev_components |  Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".   |  <code>False</code> |
 | <a id="rust_repositories-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. Defaults to None.   |  <code>None</code> |
 | <a id="rust_repositories-include_rustc_srcs"></a>include_rustc_srcs |  Whether to download rustc's src code. This is required in order to use rust-analyzer support. See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details   |  <code>False</code> |
@@ -1711,7 +1844,7 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-extra_target_triples"></a>extra_target_triples |  Additional rust-style targets that this set of toolchains should support. Defaults to [].   |  <code>[]</code> |
 | <a id="rust_repository_set-iso_date"></a>iso_date |  The date of the tool. Defaults to None.   |  <code>None</code> |
 | <a id="rust_repository_set-rustfmt_version"></a>rustfmt_version |  The version of rustfmt to be associated with the toolchain. Defaults to None.   |  <code>None</code> |
-| <a id="rust_repository_set-edition"></a>edition |  The rust edition to be used by default (2015 (if None) or 2018).   |  <code>None</code> |
+| <a id="rust_repository_set-edition"></a>edition |  The rust edition to be used by default (2015, 2018 (if None), or 2021).   |  <code>None</code> |
 | <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components. Requires version to be "nightly". Defaults to False.   |  <code>False</code> |
 | <a id="rust_repository_set-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.   |  <code>None</code> |
 | <a id="rust_repository_set-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']   |  <code>["https://static.rust-lang.org/dist/{}.tar.gz"]</code> |

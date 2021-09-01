@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "wasm_bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen__0_2_68//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen__0_2_76//:wasm_bindgen",
     tags = [
         "cargo-raze",
         "manual",
@@ -25,7 +25,7 @@ alias(
     # Extra aliased target, from raze configuration
     # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_wasm_bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_68//:cargo_bin_wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_76//:cargo_bin_wasm_bindgen",
     tags = [
         "cargo-raze",
         "manual",

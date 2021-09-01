@@ -13,10 +13,12 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("//rust:defs.bzl", "rust_common")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:transitions.bzl", "wasm_bindgen_transition")
 load(
-    ":providers.bzl",
+    "//wasm_bindgen:providers.bzl",
     "DeclarationInfo",
     "JSEcmaScriptModuleInfo",
     "JSModuleInfo",
@@ -78,6 +80,27 @@ def _rust_wasm_bindgen_impl(ctx):
     toolchain = ctx.toolchains[Label("//wasm_bindgen:wasm_bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
 
+    # Since the `wasm_file` attribute is behind a transition, it will be converted
+    # to a list.
+    if len(ctx.attr.wasm_file) == 1 and rust_common.crate_info in ctx.attr.wasm_file[0]:
+        target = ctx.attr.wasm_file[0]
+        crate_info = target[rust_common.crate_info]
+
+        # Provide a helpful warning informing users how to use the rule
+        if rust_common.crate_info in target:
+            supported_types = ["cdylib", "bin"]
+            if crate_info.type not in supported_types:
+                fail("The target '{}' is not a supported type: {}".format(
+                    ctx.attr.crate.label,
+                    supported_types,
+                ))
+
+        progress_message_label = target.label
+        input_file = crate_info.output
+    else:
+        progress_message_label = ctx.file.wasm_file.path
+        input_file = ctx.file.wasm_file
+
     bindgen_wasm_module = ctx.actions.declare_file(ctx.attr.name + "_bg.wasm")
 
     js_out = [ctx.actions.declare_file(ctx.attr.name + ".js")]
@@ -94,14 +117,14 @@ def _rust_wasm_bindgen_impl(ctx):
     args.add("--out-dir", bindgen_wasm_module.dirname)
     args.add("--out-name", ctx.attr.name)
     args.add_all(ctx.attr.bindgen_flags)
-    args.add(ctx.file.wasm_file)
+    args.add(input_file)
 
     ctx.actions.run(
         executable = bindgen_bin,
-        inputs = [ctx.file.wasm_file],
+        inputs = [input_file],
         outputs = outputs,
         mnemonic = "RustWasmBindgen",
-        progress_message = "Generating WebAssembly bindings for {}...".format(ctx.file.wasm_file.path),
+        progress_message = "Generating WebAssembly bindings for {}...".format(progress_message_label),
         arguments = [args],
     )
 
@@ -117,7 +140,7 @@ def _rust_wasm_bindgen_impl(ctx):
         DeclarationInfo(
             declarations = declarations,
             transitive_declarations = declarations,
-            type_blacklisted_declarations = depset([]),
+            type_blocklisted_declarations = depset([]),
         ),
         JSModuleInfo(
             direct_sources = es5_sources,
@@ -146,9 +169,10 @@ rust_wasm_bindgen = rule(
             values = ["web", "bundler", "nodejs", "no-modules", "deno"],
         ),
         "wasm_file": attr.label(
-            doc = "The .wasm file to generate bindings for.",
+            doc = "The `.wasm` file or crate to generate bindings for.",
             allow_single_file = True,
             cfg = wasm_bindgen_transition,
+            mandatory = True,
         ),
         "_allowlist_function_transition": attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),

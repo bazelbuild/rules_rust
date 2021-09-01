@@ -4,6 +4,7 @@
 * [rust_grpc_library](#rust_grpc_library)
 * [rust_proto_library](#rust_proto_library)
 * [rust_proto_repositories](#rust_proto_repositories)
+* [rust_proto_transitive_repositories](#rust_proto_transitive_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
 
 
@@ -26,6 +27,10 @@ external repositories for the Rust proto toolchain (in addition to the [rust rul
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
+
+load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+
+rust_proto_transitive_repositories()
 ```
 
 [raze]: https://github.com/google/cargo-raze
@@ -175,7 +180,7 @@ proto_library(
     srcs = ["my.proto"]
 )
 
-proto_rust_library(
+rust_proto_library(
     name = "rust",
     deps = [":my_proto"],
 )
@@ -247,7 +252,7 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2015" |
+| <a id="rust_proto_toolchain-edition"></a>edition |  The edition used by the generated rust source.   | String | optional | "2018" |
 | <a id="rust_proto_toolchain-grpc_compile_deps"></a>grpc_compile_deps |  The crates the generated grpc libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf"), Label("//proto/raze:grpc"), Label("//proto/raze:tls_api"), Label("//proto/raze:tls_api_stub")] |
 | <a id="rust_proto_toolchain-grpc_plugin"></a>grpc_plugin |  The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //proto:protoc_gen_rust_grpc |
 | <a id="rust_proto_toolchain-proto_compile_deps"></a>proto_compile_deps |  The crates the generated protobuf libraries depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [Label("//proto/raze:protobuf")] |
@@ -271,5 +276,19 @@ Declare dependencies needed for proto compilation.
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
+
+
+<a id="#rust_proto_transitive_repositories"></a>
+
+## rust_proto_transitive_repositories
+
+<pre>
+rust_proto_transitive_repositories()
+</pre>
+
+Load transitive dependencies of the `@rules_rust//proto` rules.
+
+This macro should be called immediately after the `rust_proto_repositories` macro.
+
 
 
