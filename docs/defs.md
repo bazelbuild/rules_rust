@@ -9,26 +9,7 @@
 * [rust_benchmark](#rust_benchmark)
 * [rust_test](#rust_test)
 * [rust_test_suite](#rust_test_suite)
-* [error_format](#error_format)
 * [extra_rustc_flags](#extra_rustc_flags)
-
-<a id="#error_format"></a>
-
-## error_format
-
-<pre>
-error_format(<a href="#error_format-name">name</a>)
-</pre>
-
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-
 
 <a id="#extra_rustc_flags"></a>
 
