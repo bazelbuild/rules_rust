@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
+load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
 load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
 
 rust_analyzer_detect_sysroot(name = "detect_sysroot")
@@ -31,6 +31,11 @@ rust_library(
         "//tools/rust_analyzer/raze:serde",
         "//tools/rust_analyzer/raze:serde_json",
     ],
+)
+
+rust_test(
+    name = "gen_rust_project_lib_test",
+    crate = ":gen_rust_project_lib",
 )
 
 rust_clippy(

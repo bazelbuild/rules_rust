@@ -65,7 +65,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
     dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "proc_macro_deps"):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
-    if hasattr(ctx.rule.attr, "crate"):
+    if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
         dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
@@ -175,7 +175,7 @@ def _create_single_crate(ctx, info):
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
     # macro like include_bytes!. Other use cases might exist that require more complex logic.
     expand_targets = getattr(ctx.rule.attr, "data", []) + getattr(ctx.rule.attr, "compile_data", [])
-    crate["env"].update({k:ctx.expand_location(v, expand_targets) for k,v in info.env.items()})
+    crate["env"].update({k: ctx.expand_location(v, expand_targets) for k, v in info.env.items()})
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]

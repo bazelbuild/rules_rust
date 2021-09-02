@@ -164,3 +164,100 @@ pub fn write_rust_project(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::aquery::CrateSpec;
+
+    #[test]
+    // A simple example with a single crate and no dependencies.
+    fn generate_rust_project_single() {
+        let project = generate_rust_project(
+            "sysroot",
+            &vec![CrateSpec {
+                crate_id: "ID-example".into(),
+                display_name: "example".into(),
+                edition: "2018".into(),
+                root_module: "example/lib.rs".into(),
+                is_workspace_member: true,
+                deps: vec![],
+                proc_macro_dylib_path: None,
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: HashMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+            }],
+        )
+        .expect("expect success");
+
+        assert_eq!(project.crates.len(), 1);
+        let c = &project.crates[0];
+        assert_eq!(c.display_name, Some("example".into()));
+        assert_eq!(c.root_module, "example/lib.rs");
+        assert_eq!(c.deps.len(), 0);
+    }
+
+    #[test]
+    // An example with a one crate having two dependencies.
+    fn generate_rust_project_with_deps() {
+        let project = generate_rust_project(
+            "sysroot",
+            &vec![
+                CrateSpec {
+                    crate_id: "ID-example".into(),
+                    display_name: "example".into(),
+                    edition: "2018".into(),
+                    root_module: "example/lib.rs".into(),
+                    is_workspace_member: true,
+                    deps: vec!["ID-dep_a".into(), "ID-dep_b".into()],
+                    proc_macro_dylib_path: None,
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: HashMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                },
+                CrateSpec {
+                    crate_id: "ID-dep_a".into(),
+                    display_name: "dep_a".into(),
+                    edition: "2018".into(),
+                    root_module: "dep_a/lib.rs".into(),
+                    is_workspace_member: false,
+                    deps: vec![],
+                    proc_macro_dylib_path: None,
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: HashMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                },
+                CrateSpec {
+                    crate_id: "ID-dep_b".into(),
+                    display_name: "dep_b".into(),
+                    edition: "2018".into(),
+                    root_module: "dep_b/lib.rs".into(),
+                    is_workspace_member: false,
+                    deps: vec![],
+                    proc_macro_dylib_path: None,
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: HashMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                },
+            ],
+        )
+        .expect("expect success");
+
+        assert_eq!(project.crates.len(), 3);
+        // Both dep_a and dep_b should be one of the first two crates.
+        assert!(
+            Some("dep_a".into()) == project.crates[0].display_name
+                || Some("dep_a".into()) == project.crates[1].display_name
+        );
+        assert!(
+            Some("dep_b".into()) == project.crates[0].display_name
+                || Some("dep_b".into()) == project.crates[1].display_name
+        );
+        let c = &project.crates[2];
+        assert_eq!(c.display_name, Some("example".into()));
+    }
+}

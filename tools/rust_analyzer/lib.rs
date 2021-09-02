@@ -16,7 +16,10 @@ pub fn generate_crate_and_sysroot_info(
     let output = Command::new(bazel.as_ref())
         .current_dir(workspace.as_ref())
         .arg("build")
-        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+        .arg(format!(
+            "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
+            rules_rust.as_ref()
+        ))
         .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_sysroot_src")
         .arg(format!(
             "{}//tools/rust_analyzer:detect_sysroot",

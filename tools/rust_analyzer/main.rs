@@ -23,7 +23,7 @@ fn main() -> anyhow::Result<()> {
         .as_ref()
         .expect("failed to find execution root, is --execution-root set correctly?");
 
-    let targets = config.targets.split(",").collect::<Vec<_>>();
+    let targets = config.targets.split(',').collect::<Vec<_>>();
 
     // Generate the crate specs and sysroot src.
     generate_crate_and_sysroot_info(&config.bazel, &workspace_root, &config.rules_rust, &targets)?;
