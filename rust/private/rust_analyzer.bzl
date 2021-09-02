@@ -172,7 +172,10 @@ def _create_single_crate(ctx, info):
             "include_dirs": [crate_root, _exec_root_tmpl + out_dir_path],
         }
 
-    crate["env"].update(info.env)
+    # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
+    # macro like include_bytes!. Other use cases might exist that require more complex logic.
+    expand_targets = getattr(ctx.rule.attr, "data", []) + getattr(ctx.rule.attr, "compile_data", [])
+    crate["env"].update({k:ctx.expand_location(v, expand_targets) for k,v in info.env.items()})
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
