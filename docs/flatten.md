@@ -7,6 +7,7 @@
 * [cargo_build_script](#cargo_build_script)
 * [crate](#crate)
 * [crate_universe](#crate_universe)
+* [error_format](#error_format)
 * [extra_rustc_flags](#extra_rustc_flags)
 * [fail_when_enabled](#fail_when_enabled)
 * [incompatible_flag](#incompatible_flag)
@@ -116,6 +117,24 @@ Environment Variables:
 | <a id="crate_universe-sha256s"></a>sha256s |  The sha256 checksum of the desired rust artifacts   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crate_universe-supported_targets"></a>supported_targets |  A list of supported [platform triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) to consider when resoliving dependencies.   | List of strings | optional | ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"] |
 | <a id="crate_universe-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.54.0" |
+
+
+<a id="#error_format"></a>
+
+## error_format
+
+<pre>
+error_format(<a href="#error_format-name">name</a>)
+</pre>
+
+Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="#extra_rustc_flags"></a>
