@@ -86,27 +86,23 @@ pub fn get_crate_specs(
 
     let crate_spec_files =
         parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
-    let mut crate_specs: Vec<CrateSpec> = Vec::new();
-    for file in crate_spec_files {
-        let spec = serde_json::from_reader(File::open(file)?)?;
-        log::debug!("{:?}", spec);
-        crate_specs.push(spec);
-    }
 
-    // Deduplicate crate specs with the same ID. This happens when a rust_test depends on
-    // a rust_library, for example.
-    let mut deduped: HashMap<String, CrateSpec> = HashMap::new();
-    for cs in crate_specs {
-        if let Some(existing) = deduped.get_mut(&cs.crate_id) {
-            existing.deps.extend(cs.deps);
+    // Read all crate specs, deduplicating crates with the same ID. This happens when
+    // a rust_test depends on a rust_library, for example.
+    let mut crate_specs: HashMap<String, CrateSpec> = HashMap::new();
+    for file in crate_spec_files {
+        let spec: CrateSpec = serde_json::from_reader(File::open(file)?)?;
+        log::debug!("{:?}", spec);
+        if let Some(existing) = crate_specs.get_mut(&spec.crate_id) {
+            existing.deps.extend(spec.deps);
             existing.deps.sort();
             existing.deps.dedup();
         } else {
-            deduped.insert(cs.crate_id.clone(), cs);
+            crate_specs.insert(spec.crate_id.clone(), spec);
         }
     }
 
-    Ok(deduped.into_values().collect())
+    Ok(crate_specs.into_values().collect())
 }
 
 pub fn get_sysroot_src(

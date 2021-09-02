@@ -53,7 +53,7 @@ pub fn generate_rust_project(
     sysroot_src: &str,
     crates: &Vec<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
-    let mut p = RustProject {
+    let mut project = RustProject {
         sysroot_src: Some(sysroot_src.into()),
         crates: Vec::new(),
     };
@@ -63,7 +63,6 @@ pub fn generate_rust_project(
     let mut merged_crates_index: HashMap<String, usize> = HashMap::new();
 
     while !unmerged_crates.is_empty() {
-        let num_unmerged = unmerged_crates.len();
         for c in unmerged_crates.iter() {
             if c.deps
                 .iter()
@@ -81,8 +80,8 @@ pub fn generate_rust_project(
                 skipped_crates.push(c);
             } else {
                 log::trace!("Merging crate {}", &c.crate_id);
-                merged_crates_index.insert(c.crate_id.clone(), p.crates.len());
-                p.crates.push(Crate {
+                merged_crates_index.insert(c.crate_id.clone(), project.crates.len());
+                project.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
                     root_module: c.root_module.clone(),
                     edition: c.edition.clone(),
@@ -93,7 +92,7 @@ pub fn generate_rust_project(
                             let crate_index = *merged_crates_index
                                 .get(dep)
                                 .expect("failed to find dependency on second lookup");
-                            let dep_crate = &p.crates[crate_index as usize];
+                            let dep_crate = &project.crates[crate_index as usize];
                             Dependency {
                                 crate_index,
                                 name: dep_crate
@@ -106,19 +105,20 @@ pub fn generate_rust_project(
                         .collect(),
                     is_workspace_member: Some(c.is_workspace_member),
                     source: c.source.as_ref().map(|s| Source {
-                        exclude_dirs: s.exclude_dirs.iter().map(|d| d.clone()).collect(),
-                        include_dirs: s.include_dirs.iter().map(|d| d.clone()).collect(),
+                        exclude_dirs: s.exclude_dirs.clone(),
+                        include_dirs: s.include_dirs.clone(),
                     }),
                     cfg: c.cfg.clone(),
                     target: Some(c.target.clone()),
                     env: Some(c.env.clone()),
                     is_proc_macro: c.proc_macro_dylib_path.is_some(),
-                    proc_macro_dylib_path: c.proc_macro_dylib_path.as_ref().map(|p| p.clone()),
+                    proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
                 });
             }
         }
 
-        if num_unmerged == skipped_crates.len() {
+        // This should not happen, but if it does exit to prevent infinite loop.
+        if unmerged_crates.len() == skipped_crates.len() {
             log::debug!(
                 "Did not make progress on {} unmerged crates. Crates: {:?}",
                 skipped_crates.len(),
@@ -132,7 +132,7 @@ pub fn generate_rust_project(
         skipped_crates.clear();
     }
 
-    Ok(p)
+    Ok(project)
 }
 
 pub fn write_rust_project(
