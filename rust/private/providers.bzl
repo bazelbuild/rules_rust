@@ -28,7 +28,10 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
-        "type": "str: The type of this crate. eg. lib or bin",
+        "type": (
+            "str: The type of this crate " +
+            "(see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit))."
+        ),
         "wrapped_crate_type": (
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"

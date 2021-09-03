@@ -44,6 +44,7 @@ load(
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_rustc_flags = "extra_rustc_flags",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -96,6 +97,9 @@ rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 error_format = _error_format
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+extra_rustc_flags = _extra_rustc_flags
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common

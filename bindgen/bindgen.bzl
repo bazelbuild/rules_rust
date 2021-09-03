@@ -16,7 +16,10 @@
 load("//rust:rust.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_toolchain", "get_preferred_artifact")
+load("//rust/private:rustc.bzl", "get_linker_and_args")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "find_cc_toolchain", "find_toolchain", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -126,6 +129,9 @@ def _rust_bindgen_impl(ctx):
         "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
+    env.update(**linker_env)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
     # DYLD_LIBRARY_PATH is LD_LIBRARY_PATH on macOS.
@@ -188,6 +194,9 @@ rust_bindgen = rule(
             doc = "The .h file to generate bindings for.",
             allow_single_file = True,
         ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,
@@ -196,9 +205,11 @@ rust_bindgen = rule(
         ),
     },
     outputs = {"out": "%{name}.rs"},
+    fragments = ["cpp"],
     toolchains = [
         str(Label("//bindgen:bindgen_toolchain")),
         str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )

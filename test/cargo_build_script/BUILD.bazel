@@ -1,0 +1,25 @@
+"""Tests for the cargo_build_script rule"""
+
+load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//rust:rust.bzl", "rust_test")
+
+# Test that tools are built in the exec configuration.
+cargo_build_script(
+    name = "tools_exec_build_rs",
+    srcs = ["build.rs"],
+    build_script_env = {"TOOL": "$(execpath :tool)"},
+    tools = [":tool"],
+)
+
+genrule(
+    name = "tool",
+    srcs = [],
+    outs = ["tool-file"],
+    cmd = "touch $@",
+)
+
+rust_test(
+    name = "tools_exec",
+    srcs = ["tools_exec.rs"],
+    deps = [":tools_exec_build_rs"],
+)

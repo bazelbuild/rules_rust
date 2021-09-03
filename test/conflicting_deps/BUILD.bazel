@@ -9,6 +9,7 @@ package(default_visibility = ["//visibility:public"])
 rust_library(
     name = "conflicting_deps",
     srcs = ["lib.rs"],
+    edition = "2015",
     deps = [
         "//test/conflicting_deps/first_crate:example_name_conflict",
     ],

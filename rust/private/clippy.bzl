@@ -162,6 +162,7 @@ rust_clippy_aspect = aspect(
             doc = "The desired `--error-format` flags for clippy",
             default = "//:error_format",
         ),
+        "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",
             default = Label("//util/process_wrapper"),

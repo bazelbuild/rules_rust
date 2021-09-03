@@ -331,7 +331,7 @@ proto_library(
     srcs = ["my.proto"]
 )
 
-proto_rust_library(
+rust_proto_library(
     name = "rust",
     deps = [":my_proto"],
 )

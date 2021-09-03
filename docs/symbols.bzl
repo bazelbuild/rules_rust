@@ -41,6 +41,8 @@ load(
 )
 load(
     "@rules_rust//rust:defs.bzl",
+    _error_format = "error_format",
+    _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_benchmark = "rust_benchmark",
@@ -69,6 +71,14 @@ load(
     "@rules_rust//rust:toolchain.bzl",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
+)
+
+# buildifier: disable=bzl-visibility
+load(
+    "@rules_rust//rust/private:providers.bzl",
+    _CrateInfo = "CrateInfo",
+    _DepInfo = "DepInfo",
+    _StdLibInfo = "StdLibInfo",
 )
 load(
     "@rules_rust//rust/settings:incompatible.bzl",
@@ -133,5 +143,11 @@ crate = _crate
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
 
+error_format = _error_format
+extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
 fail_when_enabled = _fail_when_enabled
+
+CrateInfo = _CrateInfo
+DepInfo = _DepInfo
+StdLibInfo = _StdLibInfo

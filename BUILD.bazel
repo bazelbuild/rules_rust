@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:rust.bzl", "error_format")
+load("//rust:rust.bzl", "error_format", "extra_rustc_flags")
 
 exports_files(["LICENSE"])
 
@@ -15,6 +15,15 @@ bzl_library(
 error_format(
     name = "error_format",
     build_setting_default = "human",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+extra_rustc_flags(
+    name = "extra_rustc_flags",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 

@@ -323,3 +323,19 @@ def make_static_lib_symlink(actions, rlib_file):
     dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
     actions.symlink(output = dot_a, target_file = rlib_file)
     return dot_a
+
+def is_exec_configuration(ctx):
+    """Determine if a context is building for the exec configuration.
+
+    This is helpful when processing command line flags that should apply
+    to the target configuration but not the exec configuration.
+
+    Args:
+        ctx (ctx): The ctx object for the current target.
+
+    Returns:
+        True if the exec configuration is detected, False otherwise.
+    """
+
+    # TODO(djmarcin): Is there any better way to determine cfg=exec?
+    return ctx.genfiles_dir.path.find("-exec-") == -1

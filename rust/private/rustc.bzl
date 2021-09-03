@@ -27,6 +27,7 @@ load(
     "find_cc_toolchain",
     "get_lib_name",
     "get_preferred_artifact",
+    "is_exec_configuration",
     "make_static_lib_symlink",
     "relativize",
 )
@@ -55,6 +56,11 @@ _error_format_values = ["human", "json", "short"]
 ErrorFormatInfo = provider(
     doc = "Set the --error-format flag for all rustc invocations",
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
+)
+
+ExtraRustcFlagsInfo = provider(
+    doc = "Pass each value as an additional flag to rustc invocations",
+    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
 )
 
 def _get_rustc_env(attr, toolchain):
@@ -519,6 +525,10 @@ def construct_arguments(
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
     env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
 
+    # extra_rustc_flags apply to the target configuration, not the exec configuration.
+    if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
     args = struct(
@@ -868,7 +878,7 @@ def _crate_to_link_flag(crate_info):
     Returns:
         list: Link flags for the current crate info
     """
-    return ["--extern", "{}={}".format(crate_info.name, crate_info.dep.output.path)]
+    return ["--extern={}={}".format(crate_info.name, crate_info.dep.output.path)]
 
 def _get_crate_dirname(crate):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
@@ -1015,10 +1025,23 @@ def _error_format_impl(ctx):
 
 error_format = rule(
     doc = (
-        "A helper rule for controlling the rustc " +
-        "[--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag."
+        "Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
+        "flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values."
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
+)
+
+def _extra_rustc_flags_impl(ctx):
+    return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
+
+extra_rustc_flags = rule(
+    doc = (
+        "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
+        "This flag should only be used for flags that need to be applied across the entire build. For options that " +
+        "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
+        "These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc)."
+    ),
+    implementation = _extra_rustc_flags_impl,
+    build_setting = config.string_list(flag = True),
 )

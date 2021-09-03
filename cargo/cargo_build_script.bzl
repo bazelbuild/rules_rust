@@ -120,7 +120,8 @@ def _build_script_impl(ctx):
         ctx,
         ctx.attr.build_script_env,
         getattr(ctx.attr, "data", []) +
-        getattr(ctx.attr, "compile_data", []),
+        getattr(ctx.attr, "compile_data", []) +
+        getattr(ctx.attr, "tools", []),
     ))
 
     tools = depset(
@@ -128,7 +129,7 @@ def _build_script_impl(ctx):
             script,
             ctx.executable._cargo_build_script_runner,
             toolchain.rustc,
-        ] + ctx.files.data + ([toolchain.target_json] if toolchain.target_json else []),
+        ] + ctx.files.data + ctx.files.tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
 
@@ -195,7 +196,7 @@ _build_script_run = rule(
             doc = "The list of rust features that the build script should consider activated.",
         ),
         "data": attr.label_list(
-            doc = "Data or tools required by the build script.",
+            doc = "Data required by the build script.",
             allow_files = True,
         ),
         "deps": attr.label_list(
@@ -212,6 +213,11 @@ _build_script_run = rule(
             executable = True,
             allow_files = True,
             mandatory = True,
+            cfg = "exec",
+        ),
+        "tools": attr.label_list(
+            doc = "Tools required by the build script.",
+            allow_files = True,
             cfg = "exec",
         ),
         "version": attr.string(
@@ -242,8 +248,11 @@ def cargo_build_script(
         deps = [],
         build_script_env = {},
         data = [],
+        tools = [],
         links = None,
         rustc_env = {},
+        visibility = None,
+        tags = None,
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -309,9 +318,12 @@ def cargo_build_script(
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The dependencies of the crate.
         build_script_env (dict, optional): Environment variables for build scripts.
-        data (list, optional): Files or tools needed by the build script.
+        data (list, optional): Files needed by the build script.
+        tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
+        visibility (list of label, optional): Visibility to apply to the generated build script output.
+        tags: (list of str, optional): Tags to apply to the generated build script output.
         **kwargs: Forwards to the underlying `rust_binary` rule.
     """
 
@@ -330,6 +342,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         rustc_env = rustc_env,
+        tags = ["manual"],
         **kwargs
     )
     _build_script_run(
@@ -341,6 +354,9 @@ def cargo_build_script(
         links = links,
         deps = deps,
         data = data,
+        tools = tools,
+        visibility = visibility,
+        tags = tags,
     )
 
 def _name_to_pkg_name(name):

@@ -663,6 +663,7 @@ _common_attrs = {
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
     "_error_format": attr.label(default = "//:error_format"),
+    "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,

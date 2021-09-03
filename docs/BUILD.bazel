@@ -49,13 +49,6 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "settings",
-        symbols = [
-            "incompatible_flag",
-            "fail_when_enabled",
-        ],
-    ),
-    page(
         name = "defs",
         symbols = [
             "rust_binary",
@@ -66,6 +59,16 @@ PAGES = dict([
             "rust_benchmark",
             "rust_test",
             "rust_test_suite",
+            "error_format",
+            "extra_rustc_flags",
+        ],
+    ),
+    page(
+        name = "providers",
+        symbols = [
+            "CrateInfo",
+            "DepInfo",
+            "StdLibInfo",
         ],
     ),
     page(
@@ -137,6 +140,13 @@ PAGES = dict([
             "rust_wasm_bindgen_repositories",
             "rust_wasm_bindgen_toolchain",
             "rust_wasm_bindgen",
+        ],
+    ),
+    page(
+        name = "settings",
+        symbols = [
+            "incompatible_flag",
+            "fail_when_enabled",
         ],
     ),
 ])
