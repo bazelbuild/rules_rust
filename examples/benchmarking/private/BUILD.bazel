@@ -1,6 +1,6 @@
 exports_files(
     [
-        "bench_runner.rs",
+        "example_bench_runner.rs",
     ],
     visibility = ["//benchmarking:__subpackages__"],
 )

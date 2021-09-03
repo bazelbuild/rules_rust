@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_rust//rust:rust.bzl", "rust_benchmark")
-load("//benchmarking/private:bench_runner.bzl", example_bench_runner_test = "bench_runner_test")
+load("//benchmarking/private:example_bench_runner.bzl", "example_bench_runner_test")
 
 package(default_visibility = ["//visibility:public"])
 

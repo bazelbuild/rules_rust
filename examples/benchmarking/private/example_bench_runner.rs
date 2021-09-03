@@ -1,4 +1,8 @@
+//! The example_bench_runner is a small binary to ensure `rust_benchmark`
+//! targets are executable.
+
 use std::process;
+
 fn main() {
     // `rust_benchmark` targets produce two rust binaries. We want
     // to get the benchmark runner executable
