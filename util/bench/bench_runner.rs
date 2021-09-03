@@ -4,7 +4,7 @@ fn main() {
     let mut cmd = process::Command::new(env!("BENCH_BINARY"));
 
     // Get args but skip the binary
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    let args: Vec<_> = std::env::args_os().skip(1).collect();
 
     // If there are arguments passed to the binary, use those
     // otherwise, use that the binary was compiled with.
