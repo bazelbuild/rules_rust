@@ -39,6 +39,7 @@ load(
     "//rust/private:rust_analyzer.bzl",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
+    _rust_analyzer_detect_sysroot = "rust_analyzer_detect_sysroot",
 )
 load(
     "//rust/private:rustc.bzl",
@@ -101,6 +102,9 @@ rust_common = _rust_common
 # See @rules_rust//rust/private:common.bzl for a complete description.
 
 rust_analyzer_aspect = _rust_analyzer_aspect
+# See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
+
+rust_analyzer_detect_sysroot = _rust_analyzer_detect_sysroot
 # See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
 
 rust_analyzer = _rust_analyzer

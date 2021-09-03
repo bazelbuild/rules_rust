@@ -19,6 +19,7 @@ load(
     _error_format = "error_format",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
+    _rust_analyzer_detect_sysroot = "rust_analyzer_detect_sysroot",
     _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
@@ -85,6 +86,9 @@ rust_clippy = _rust_clippy
 # See @rules_rust//rust:private/clippy.bzl for a complete description.
 
 rust_analyzer_aspect = _rust_analyzer_aspect
+# See @rules_rust//rust:private/rust_analyzer.bzl for a complete description.
+
+rust_analyzer_detect_sysroot = _rust_analyzer_detect_sysroot
 # See @rules_rust//rust:private/rust_analyzer.bzl for a complete description.
 
 rust_analyzer = _rust_analyzer
