@@ -201,6 +201,7 @@ tasks:
     platform: rbe_ubuntu1604
     environment:
       RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
+      OPENSSL_STATIC: "1"
     working_directory: examples/crate_universe
     build_targets:
       - "//..."
@@ -212,6 +213,7 @@ tasks:
     platform: macos
     environment:
       RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
+      OPENSSL_STATIC: "1"
     working_directory: examples/crate_universe
     build_targets:
       - "//..."
@@ -223,6 +225,7 @@ tasks:
     platform: windows
     environment:
       RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
+      OPENSSL_STATIC: "1"
     working_directory: examples/crate_universe
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts

@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
             eprintln!("Not updating lockfile for `crate_universe` repository with name \"{}\" because it has no `lockfile` attribute.", opt.repo_name);
         }
     } else if let Some(lockfile) = lockfile {
-        return reuse_lockfile(config, &lockfile, &opt);
+        return reuse_lockfile(config, lockfile, &opt);
     }
 
     generate_dependencies(config, &opt)

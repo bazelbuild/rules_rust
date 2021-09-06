@@ -35,7 +35,7 @@ pub struct Resolver {
     pub resolver_config: ResolverConfig,
     pub consolidator_config: ConsolidatorConfig,
     pub render_config: RenderConfig,
-    pub target_triples: Vec<String>,
+    pub target_triples: BTreeSet<String>,
     pub label_to_crates: BTreeMap<String, BTreeSet<String>>,
     digest: Option<String>,
 }
@@ -61,7 +61,7 @@ impl Resolver {
         resolver_config: ResolverConfig,
         consolidator_config: ConsolidatorConfig,
         render_config: RenderConfig,
-        target_triples: Vec<String>,
+        target_triples: BTreeSet<String>,
         label_to_crates: BTreeMap<String, BTreeSet<String>>,
     ) -> Resolver {
         Resolver {
@@ -113,7 +113,7 @@ impl Resolver {
             hasher.update(rules_rust_workspace_name.as_bytes());
             hasher.update(b"\0");
 
-            hasher.update(get_cargo_version(&cargo)?);
+            hasher.update(get_cargo_version(cargo)?);
             hasher.update(b"\0");
             hasher.update(index_url.as_str().as_bytes());
             hasher.update(b"\0");
@@ -245,7 +245,7 @@ impl Resolver {
             package_aliases_dir: "".to_string(),
             render_package_aliases: false,
             target: None,
-            targets: Some(self.target_triples.clone()),
+            targets: Some(self.target_triples.iter().cloned().collect()),
             crates: HashMap::default(),
             output_buildfile_suffix: "".to_string(),
             default_gen_buildrs: true,
@@ -254,6 +254,7 @@ impl Resolver {
             rust_rules_workspace_name: self.render_config.rules_rust_workspace_name.clone(),
             vendor_dir: "".to_string(),
             experimental_api: false,
+            binary_deps: HashMap::new(),
         };
 
         let planner = BuildPlannerImpl::new(metadata, raze_settings);

@@ -3,7 +3,6 @@ use crate_universe_resolver::parser::merge_cargo_tomls;
 use crate_universe_resolver::NamedTempFile;
 use indoc::indoc;
 use maplit::{btreemap, btreeset};
-use semver::VersionReq;
 use spectral::prelude::*;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -37,10 +36,10 @@ fn parses_one_cargo_toml() {
     let cargo_tomls = btreemap! { "//some:Cargo.toml" => cargo_toml };
 
     let want_deps = indoc! {r#"
-    lazy_static = { version = ">=1.0.0, <2.0.0", default-features = true, features = [] }
-    maplit = { version = ">=1.0.1, <2.0.0", default-features = true, features = [] }
-    serde = { version = ">=1.0.0, <2.0.0", default-features = false, features = ["derive"] }
-    structopt = { version = ">=0.3.0, <0.4.0", default-features = true, features = [] }
+    lazy_static = { version = "^1", default-features = true, features = [] }
+    maplit = { version = "^1.0.1", default-features = true, features = [] }
+    serde = { version = "^1", default-features = false, features = ["derive"] }
+    structopt = { version = "^0.3", default-features = true, features = [] }
     "#};
 
     let want_labels_to_deps = btreemap! {
@@ -79,14 +78,14 @@ fn parses_one_cargo_toml() {
 
     assert_eq!(
         value.as_table().unwrap().get("build-dependencies").unwrap(),
-        &r#"syn = { version = ">=1.0.0, <2.0.0", default-features = true, features = [] }"#
+        &r#"syn = { version = "^1", default-features = true, features = [] }"#
             .parse::<toml::Value>()
             .unwrap(),
     );
 
     assert_eq!(
         value.as_table().unwrap().get("dev-dependencies").unwrap(),
-        &r#"futures = { version = ">=0.1.0, <0.2.0", default-features = true, features = [] }"#
+        &r#"futures = { version = "^0.1", default-features = true, features = [] }"#
             .parse::<toml::Value>()
             .unwrap(),
     );
@@ -122,10 +121,10 @@ fn merges_two_cargo_tomls() {
     };
 
     let want_deps = indoc! {r#"
-    lazy_static = { version = ">=1.0.0, <2.0.0, >=1.1.0, <1.2.0", default-features = true, features = [] }
-    maplit = { version = ">=1.0.1, <2.0.0", default-features = true, features = [] }
-    num_enum = { version = ">=0.5.0, <0.6.0", default-features = true, features = ["complex-expressions"] }
-    serde = { version = ">=1.0.0, <2.0.0, >=1.0.57, <2.0.0", default-features = true, features = ["derive", "rc"] }
+    lazy_static = { version = "^1, ^1.1", default-features = true, features = [] }
+    maplit = { version = "^1.0.1", default-features = true, features = [] }
+    num_enum = { version = "^0.5", default-features = true, features = ["complex-expressions"] }
+    serde = { version = "^1, ^1.0.57", default-features = true, features = ["derive", "rc"] }
     "#};
 
     let want_labels_to_deps = btreemap! {
@@ -214,12 +213,12 @@ fn fails_to_merge_different_git() {
 fn can_have_just_packages() {
     let packages = vec![Package {
         name: String::from("serde"),
-        semver: VersionReq::parse("^1").unwrap(),
+        semver: String::from("^1"),
         features: vec![String::from("derive")],
     }];
 
     let want_deps = indoc! {r#"
-    serde = { version = ">=1.0.0, <2.0.0", default-features = true, features = ["derive"] }
+    serde = { version = "^1", default-features = true, features = ["derive"] }
     "#};
 
     let want_labels_to_deps = BTreeMap::new();
@@ -243,13 +242,13 @@ fn can_add_packages() {
 
     let packages = vec![Package {
         name: String::from("serde"),
-        semver: VersionReq::parse("^1.0.57").unwrap(),
+        semver: String::from("^1.0.57"),
         features: vec![String::from("derive")],
     }];
 
     let want_deps = indoc! {r#"
-    lazy_static = { version = ">=1.0.0, <2.0.0", default-features = true, features = [] }
-    serde = { version = ">=1.0.57, <2.0.0", default-features = true, features = ["derive"] }
+    lazy_static = { version = "^1", default-features = true, features = [] }
+    serde = { version = "^1.0.57", default-features = true, features = ["derive"] }
     "#};
 
     let want_labels_to_deps = btreemap! {
@@ -277,7 +276,7 @@ fn package_conflicts_are_errors() {
 
     let packages = vec![Package {
         name: String::from("lazy_static"),
-        semver: VersionReq::parse("^1").unwrap(),
+        semver: String::from("^1"),
         features: vec![],
     }];
 
