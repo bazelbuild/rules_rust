@@ -29,11 +29,11 @@ rust_benchmark(
 
 rust_test(
     name = "bench_test",
-    data = [":bench"],
     srcs = ["//test/bench/private:test_bench_runner.rs"],
+    data = [":bench"],
     rustc_env = {
         "BENCH_FILES": "$(rootpaths :bench)",
     },
-    use_libtest_harness = False,
     tags = ["manual"],
+    use_libtest_harness = False,
 )
