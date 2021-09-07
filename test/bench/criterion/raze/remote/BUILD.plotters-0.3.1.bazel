@@ -1,0 +1,142 @@
+"""
+@generated
+cargo-raze crate build file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+# buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
+load(
+    "@rules_rust//rust:rust.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_test",
+)
+
+package(default_visibility = [
+    # Public for visibility by "@raze__crate__version//" targets.
+    #
+    # Prefer access through "//test/bench/criterion/raze", which limits external
+    # visibility to explicit Cargo.toml dependencies.
+    "//visibility:public",
+])
+
+licenses([
+    "notice",  # MIT from expression "MIT"
+])
+
+# Generated Targets
+
+# Unsupported target "benchmark" with type "bench" omitted
+
+# Unsupported target "3d-plot" with type "example" omitted
+
+# Unsupported target "3d-plot2" with type "example" omitted
+
+# Unsupported target "animation" with type "example" omitted
+
+# Unsupported target "area-chart" with type "example" omitted
+
+# Unsupported target "blit-bitmap" with type "example" omitted
+
+# Unsupported target "boxplot" with type "example" omitted
+
+# Unsupported target "chart" with type "example" omitted
+
+# Unsupported target "console" with type "example" omitted
+
+# Unsupported target "errorbar" with type "example" omitted
+
+# Unsupported target "histogram" with type "example" omitted
+
+# Unsupported target "mandelbrot" with type "example" omitted
+
+# Unsupported target "matshow" with type "example" omitted
+
+# Unsupported target "nested_coord" with type "example" omitted
+
+# Unsupported target "normal-dist" with type "example" omitted
+
+# Unsupported target "normal-dist2" with type "example" omitted
+
+# Unsupported target "relative_size" with type "example" omitted
+
+# Unsupported target "sierpinski" with type "example" omitted
+
+# Unsupported target "slc-temp" with type "example" omitted
+
+# Unsupported target "snowflake" with type "example" omitted
+
+# Unsupported target "stock" with type "example" omitted
+
+# Unsupported target "tick_control" with type "example" omitted
+
+# Unsupported target "two-scales" with type "example" omitted
+
+rust_library(
+    name = "plotters",
+    srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
+    crate_features = [
+        "area_series",
+        "line_series",
+        "plotters-svg",
+        "svg_backend",
+    ],
+    crate_root = "src/lib.rs",
+    crate_type = "lib",
+    data = [],
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.3.1",
+    # buildifier: leave-alone
+    deps = [
+        "@rules_rust_test_bench_criterion__num_traits__0_2_14//:num_traits",
+        "@rules_rust_test_bench_criterion__plotters_backend__0_3_2//:plotters_backend",
+        "@rules_rust_test_bench_criterion__plotters_svg__0_3_1//:plotters_svg",
+    ] + selects.with_or({
+        # cfg(not(target_arch = "wasm32"))
+        (
+            "@rules_rust//rust/platform:aarch64-apple-darwin",
+            "@rules_rust//rust/platform:aarch64-apple-ios",
+            "@rules_rust//rust/platform:aarch64-linux-android",
+            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
+            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@rules_rust//rust/platform:i686-apple-darwin",
+            "@rules_rust//rust/platform:i686-linux-android",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:i686-unknown-freebsd",
+            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
+            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
+            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@rules_rust//rust/platform:x86_64-apple-darwin",
+            "@rules_rust//rust/platform:x86_64-apple-ios",
+            "@rules_rust//rust/platform:x86_64-linux-android",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(target_arch = "wasm32")
+        (
+            "@rules_rust//rust/platform:wasm32-unknown-unknown",
+            "@rules_rust//rust/platform:wasm32-wasi",
+        ): [
+            "@rules_rust_test_bench_criterion__wasm_bindgen__0_2_76//:wasm_bindgen",
+            "@rules_rust_test_bench_criterion__web_sys__0_3_53//:web_sys",
+        ],
+        "//conditions:default": [],
+    }),
+)

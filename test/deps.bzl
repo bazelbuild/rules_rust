@@ -3,6 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
+load("//test/bench:deps.bzl", "benchmarking_deps")
 
 _LIBC_BUILD_FILE_CONTENT = """\
 load("@rules_rust//rust:rust.bzl", "rust_library")
@@ -31,3 +32,5 @@ def rules_rust_test_deps():
             "https://github.com/rust-lang/libc/archive/0.2.20.zip",
         ],
     )
+
+    benchmarking_deps()
