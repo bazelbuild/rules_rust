@@ -107,6 +107,7 @@ def _build_script_impl(ctx):
         cc_executable = cc_toolchain.compiler_executable
         if cc_executable:
             env["CC"] = cc_executable
+            env["CXX"] = cc_executable
         ar_executable = cc_toolchain.ar_executable
         if ar_executable:
             env["AR"] = ar_executable
