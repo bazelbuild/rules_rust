@@ -124,7 +124,7 @@ def _collect_environ(repository_ctx, host_triple):
     """
     env_vars = dict(json.decode(repository_ctx.attr.env.get(host_triple, "{}")))
 
-    # Gather the path for each lable and ensure it exists
+    # Gather the path for each label and ensure it exists
     env_labels = dict(json.decode(repository_ctx.attr.env_label.get(host_triple, "{}")))
     env_labels = {key: repository_ctx.path(Label(value)) for (key, value) in env_labels.items()}
     for key in env_labels:
