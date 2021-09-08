@@ -1,16 +1,17 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Cargo
 
-* [cargo_build_script](#cargo_build_script)
 * [cargo_bootstrap_repository](#cargo_bootstrap_repository)
+* [cargo_build_script](#cargo_build_script)
+* [cargo_env](#cargo_env)
 
 <a id="#cargo_bootstrap_repository"></a>
 
 ## cargo_bootstrap_repository
 
 <pre>
-cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>, <a href="#cargo_bootstrap_repository-iso_date">iso_date</a>,
-                           <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_repository_template">rust_toolchain_repository_template</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
+cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>,
+                           <a href="#cargo_bootstrap_repository-iso_date">iso_date</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_repository_template">rust_toolchain_repository_template</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
 </pre>
 
 A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
@@ -25,6 +26,8 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-build_mode"></a>build_mode |  The build mode the binary should be built with   | String | optional | "release" |
 | <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 | <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the crate_universe resolver manifest (<code>Cargo.toml</code> file)   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-env"></a>env |  A mapping of platform triple to a set of environment variables. See [cargo_env](#cargo_env) for usage details.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
+| <a id="cargo_bootstrap_repository-env_label"></a>env_label |  A mapping of platform triple to a set of environment variables. This attribute differs from <code>env</code> in that all variables passed here must be fully qualified labels of files. See [cargo_env](#cargo_env) for usage details.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="cargo_bootstrap_repository-iso_date"></a>iso_date |  The iso_date of cargo binary the resolver should use. Note: This can only be set if <code>version</code> is <code>beta</code> or <code>nightly</code>   | String | optional | "" |
 | <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
 | <a id="cargo_bootstrap_repository-rust_toolchain_repository_template"></a>rust_toolchain_repository_template |  The template to use for finding the host <code>rust_toolchain</code> repository. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{system}</code> (eg. 'darwin'), and <code>{arch}</code> (eg. 'aarch64') will be replaced in the string if present.   | String | optional | "rust_{system}_{arch}" |
@@ -116,5 +119,48 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  <code>None</code> |
 | <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  <code>None</code> |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
+
+
+<a id="#cargo_env"></a>
+
+## cargo_env
+
+<pre>
+cargo_env(<a href="#cargo_env-env">env</a>)
+</pre>
+
+A helper for generating platform specific environment variables
+
+```python
+load("@rules_rust//rust:defs.bzl", "rust_common")
+load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository", "cargo_env")
+
+cargo_bootstrap_repository(
+    name = "bootstrapped_bin",
+    cargo_lockfile = "//:Cargo.lock",
+    cargo_toml = "//:Cargo.toml",
+    srcs = ["//:resolver_srcs"],
+    version = rust_common.default_version,
+    binary = "my-crate-binary",
+    env = {
+        "x86_64-unknown-linux-gnu": cargo_env({
+            "FOO": "BAR",
+        }),
+    },
+    env_label = {
+        "aarch64-unknown-linux-musl": cargo_env({
+            "DOC": "//:README.md",
+        }),
+    }
+)
+```
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="cargo_env-env"></a>env |  A map of environment variables   |  none |
 
 
