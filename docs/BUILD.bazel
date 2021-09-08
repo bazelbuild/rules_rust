@@ -36,8 +36,9 @@ PAGES = dict([
     page(
         name = "cargo",
         symbols = [
-            "cargo_build_script",
             "cargo_bootstrap_repository",
+            "cargo_build_script",
+            "cargo_env",
         ],
     ),
     page(

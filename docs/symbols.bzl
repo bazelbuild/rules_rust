@@ -16,6 +16,7 @@ load(
     "@rules_rust//cargo:defs.bzl",
     _cargo_bootstrap_repository = "cargo_bootstrap_repository",
     _cargo_build_script = "cargo_build_script",
+    _cargo_env = "cargo_env",
 )
 load(
     "@rules_rust//crate_universe:defs.bzl",
@@ -122,6 +123,7 @@ rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
 cargo_build_script = _cargo_build_script
 cargo_bootstrap_repository = _cargo_bootstrap_repository
+cargo_env = _cargo_env
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain

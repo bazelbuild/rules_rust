@@ -14,6 +14,7 @@ def cargo_bootstrap(
         rustc_bin,
         binary,
         cargo_manifest,
+        environment = {},
         quiet = False,
         build_mode = "release",
         target_dir = None):
@@ -25,6 +26,7 @@ def cargo_bootstrap(
         rustc_bin (path): The path to a Rustc binary.
         binary (str): The binary to build (the `--bin` parameter for Cargo).
         cargo_manifest (path): The path to a Cargo manifest (Cargo.toml file).
+        environment (dict): Environment variables to use during execution.
         quiet (bool, optional): Whether or not to print output from the Cargo command.
         build_mode (str, optional): The build mode to use
         target_dir (path, optional): The directory in which to produce build outputs
@@ -55,12 +57,14 @@ def cargo_bootstrap(
     if build_mode == "release":
         args.append("--release")
 
+    env = dict({
+        "RUSTC": str(rustc_bin),
+    }.items() + environment.items())
+
     repository_ctx.report_progress("Cargo Bootstrapping {}".format(binary))
     result = repository_ctx.execute(
         args,
-        environment = {
-            "RUSTC": str(rustc_bin),
-        },
+        environment = env,
         quiet = quiet,
     )
 
@@ -108,6 +112,28 @@ rust_binary(
 )
 """
 
+def _collect_environ(repository_ctx, host_triple):
+    """Gather environment varialbes to use from the current rule context
+
+    Args:
+        repository_ctx (repository_ctx): The rule's context object.
+        host_triple (str): A string of the current host triple
+
+    Returns:
+        dict: A map of environment variables
+    """
+    env_vars = dict(json.decode(repository_ctx.attr.env.get(host_triple, "{}")))
+
+    # Gather the path for each lable and ensure it exists
+    env_labels = dict(json.decode(repository_ctx.attr.env_label.get(host_triple, "{}")))
+    env_labels = {key: repository_ctx.path(Label(value)) for (key, value) in env_labels.items()}
+    for key in env_labels:
+        if not env_labels[key].exists:
+            fail("File for key '{}' does not exist: {}", key, env_labels[key])
+    env_labels = {key: str(value) for (key, value) in env_labels.items()}
+
+    return dict(env_vars.items() + env_labels.items())
+
 def _cargo_bootstrap_repository_impl(repository_ctx):
     if repository_ctx.attr.version in ("beta", "nightly"):
         version_str = "{}-{}".format(repository_ctx.attr.version, repository_ctx.attr.iso_date)
@@ -124,6 +150,8 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
 
+    environment = _collect_environ(repository_ctx, host_triple.triple)
+
     built_binary = cargo_bootstrap(
         repository_ctx,
         cargo_bin = tools.cargo,
@@ -131,6 +159,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         binary = binary_name,
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
+        environment = environment,
     )
 
     # Create a symlink so that the binary can be accesed via it's target name
@@ -166,6 +195,19 @@ cargo_bootstrap_repository = repository_rule(
             allow_single_file = ["Cargo.toml"],
             mandatory = True,
         ),
+        "env": attr.string_dict(
+            doc = (
+                "A mapping of platform triple to a set of environment variables. See " +
+                "[cargo_env](#cargo_env) for usage details."
+            ),
+        ),
+        "env_label": attr.string_dict(
+            doc = (
+                "A mapping of platform triple to a set of environment variables. This " +
+                "attribute differs from `env` in that all variables passed here must be " +
+                "fully qualified labels of files. See [cargo_env](#cargo_env) for usage details."
+            ),
+        ),
         "iso_date": attr.string(
             doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
         ),
@@ -191,3 +233,38 @@ cargo_bootstrap_repository = repository_rule(
         ),
     },
 )
+
+def cargo_env(env):
+    """A helper for generating platform specific environment variables
+
+    ```python
+    load("@rules_rust//rust:defs.bzl", "rust_common")
+    load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository", "cargo_env")
+
+    cargo_bootstrap_repository(
+        name = "bootstrapped_bin",
+        cargo_lockfile = "//:Cargo.lock",
+        cargo_toml = "//:Cargo.toml",
+        srcs = ["//:resolver_srcs"],
+        version = rust_common.default_version,
+        binary = "my-crate-binary",
+        env = {
+            "x86_64-unknown-linux-gnu": cargo_env({
+                "FOO": "BAR",
+            }),
+        },
+        env_label = {
+            "aarch64-unknown-linux-musl": cargo_env({
+                "DOC": "//:README.md",
+            }),
+        }
+    )
+    ```
+
+    Args:
+        env (dict): A map of environment variables
+
+    Returns:
+        str: A json encoded string of the environment variables
+    """
+    return json.encode(dict(env))
