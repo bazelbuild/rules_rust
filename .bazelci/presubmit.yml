@@ -104,14 +104,17 @@ tasks:
     name: "Rolling Bazel Version"
     bazel: "rolling"
     platform: ubuntu2004
+    soft_fail: yes
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   ubuntu2004_rolling_with_aspects:
     name: "Rolling Bazel Version With Aspects"
     bazel: "rolling"
     platform: ubuntu2004
+    soft_fail: yes
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    build_flags: *aspects_flags
   linux_docs:
     name: Docs
     platform: ubuntu2004
