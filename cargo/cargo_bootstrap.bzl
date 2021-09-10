@@ -132,6 +132,8 @@ def _collect_environ(repository_ctx, host_triple):
             fail("File for key '{}' does not exist: {}", key, env_labels[key])
     env_labels = {key: str(value) for (key, value) in env_labels.items()}
 
+    # In addition to platform specific environment variables, a common set (indicated by `*`) will always
+    # be gathered.
     if host_triple == "*":
         common_env_vars = dict()
     else:
@@ -203,14 +205,15 @@ cargo_bootstrap_repository = repository_rule(
         "env": attr.string_dict(
             doc = (
                 "A mapping of platform triple to a set of environment variables. See " +
-                "[cargo_env](#cargo_env) for usage details."
+                "[cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms."
             ),
         ),
         "env_label": attr.string_dict(
             doc = (
                 "A mapping of platform triple to a set of environment variables. This " +
                 "attribute differs from `env` in that all variables passed here must be " +
-                "fully qualified labels of files. See [cargo_env](#cargo_env) for usage details."
+                "fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. " +
+                "Additionally, the platform triple `*` applies to all platforms."
             ),
         ),
         "iso_date": attr.string(
