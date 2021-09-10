@@ -15,7 +15,7 @@ def crate_universe_bootstrap():
         version = rust_common.default_version,
         binary = "crate_universe_resolver",
         env = {
-            "*": crago_env({
+            "*": cargo_env({
                 "OPENSSL_STATIC": "1",
             }),
         },
