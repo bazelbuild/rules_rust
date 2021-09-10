@@ -132,14 +132,7 @@ def _collect_environ(repository_ctx, host_triple):
             fail("File for key '{}' does not exist: {}", key, env_labels[key])
     env_labels = {key: str(value) for (key, value) in env_labels.items()}
 
-    # In addition to platform specific environment variables, a common set (indicated by `*`) will always
-    # be gathered.
-    if host_triple == "*":
-        common_env_vars = dict()
-    else:
-        common_env_vars = _collect_environ(repository_ctx, "*")
-
-    return dict(common_env_vars.items() + env_vars.items() + env_labels.items())
+    return dict(env_vars.items() + env_labels.items())
 
 def _cargo_bootstrap_repository_impl(repository_ctx):
     if repository_ctx.attr.version in ("beta", "nightly"):
@@ -157,7 +150,9 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
 
-    environment = _collect_environ(repository_ctx, host_triple.triple)
+    # In addition to platform specific environment variables, a common set (indicated by `*`) will always
+    # be gathered.
+    environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.triple).items())
 
     built_binary = cargo_bootstrap(
         repository_ctx,
