@@ -132,7 +132,12 @@ def _collect_environ(repository_ctx, host_triple):
             fail("File for key '{}' does not exist: {}", key, env_labels[key])
     env_labels = {key: str(value) for (key, value) in env_labels.items()}
 
-    return dict(env_vars.items() + env_labels.items())
+    if host_triple == "*":
+        common_env_vars = dict()
+    else:
+        common_env_vars = _collect_environ(repository_ctx, "*")
+
+    return dict(common_env_vars.items() + env_vars.items() + env_labels.items())
 
 def _cargo_bootstrap_repository_impl(repository_ctx):
     if repository_ctx.attr.version in ("beta", "nightly"):

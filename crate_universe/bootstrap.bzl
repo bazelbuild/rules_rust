@@ -14,6 +14,11 @@ def crate_universe_bootstrap():
         srcs = [Label("//crate_universe:resolver_srcs")],
         version = rust_common.default_version,
         binary = "crate_universe_resolver",
+        env = {
+            "*": {
+                "OPENSSL_STATIC": "1",
+            },
+        },
         env_label = {
             "x86_64-pc-windows-gnu": cargo_env({
                 "PERL": "@perl_windows//:perl/bin/perl.exe",
