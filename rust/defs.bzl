@@ -26,7 +26,6 @@ load(
 load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
     "//rust/private:rust.bzl",
-    _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_library = "rust_library",
     _rust_proc_macro = "rust_proc_macro",
@@ -78,9 +77,6 @@ rust_test = _rust_test
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_test_suite = _rust_test_suite
-# See @rules_rust//rust/private:rust.bzl for a complete description.
-
-rust_benchmark = _rust_benchmark
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_doc = _rust_doc

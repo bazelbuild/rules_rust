@@ -46,7 +46,6 @@ load(
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
-    _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
@@ -106,7 +105,6 @@ rust_test_suite = _rust_test_suite
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test
 
-rust_benchmark = _rust_benchmark
 rust_proto_library = _rust_proto_library
 rust_grpc_library = _rust_grpc_library
 
