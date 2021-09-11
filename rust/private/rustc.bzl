@@ -729,7 +729,7 @@ def rustc_compile_action(
         stamp = stamp,
     )
 
-    args, env = construct_arguments(
+    args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
         file = ctx.file,
@@ -748,6 +748,9 @@ def rustc_compile_action(
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
     )
+
+    env = dict(ctx.configuration.default_shell_env)
+    env.update(env_from_args)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
