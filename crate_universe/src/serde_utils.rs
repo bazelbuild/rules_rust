@@ -33,7 +33,7 @@ struct RawDepSpec {
 }
 
 impl FromStr for DepSpec {
-    type Err = semver::ReqParseError;
+    type Err = semver::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let version = VersionSpec::Semver(semver::VersionReq::parse(s)?);

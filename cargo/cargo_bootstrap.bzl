@@ -150,7 +150,9 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
 
-    environment = _collect_environ(repository_ctx, host_triple.triple)
+    # In addition to platform specific environment variables, a common set (indicated by `*`) will always
+    # be gathered.
+    environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.triple).items())
 
     built_binary = cargo_bootstrap(
         repository_ctx,
@@ -198,14 +200,15 @@ cargo_bootstrap_repository = repository_rule(
         "env": attr.string_dict(
             doc = (
                 "A mapping of platform triple to a set of environment variables. See " +
-                "[cargo_env](#cargo_env) for usage details."
+                "[cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms."
             ),
         ),
         "env_label": attr.string_dict(
             doc = (
                 "A mapping of platform triple to a set of environment variables. This " +
                 "attribute differs from `env` in that all variables passed here must be " +
-                "fully qualified labels of files. See [cargo_env](#cargo_env) for usage details."
+                "fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. " +
+                "Additionally, the platform triple `*` applies to all platforms."
             ),
         ),
         "iso_date": attr.string(

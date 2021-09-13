@@ -6,7 +6,6 @@
 * [rust_static_library](#rust_static_library)
 * [rust_shared_library](#rust_shared_library)
 * [rust_proc_macro](#rust_proc_macro)
-* [rust_benchmark](#rust_benchmark)
 * [rust_test](#rust_test)
 * [rust_test_suite](#rust_test_suite)
 * [error_format](#error_format)
@@ -46,116 +45,6 @@ Add additional rustc_flags from the command line with `--@rules_rust//:extra_rus
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-
-
-<a id="#rust_benchmark"></a>
-
-## rust_benchmark
-
-<pre>
-rust_benchmark(<a href="#rust_benchmark-name">name</a>, <a href="#rust_benchmark-aliases">aliases</a>, <a href="#rust_benchmark-compile_data">compile_data</a>, <a href="#rust_benchmark-crate_features">crate_features</a>, <a href="#rust_benchmark-crate_name">crate_name</a>, <a href="#rust_benchmark-crate_root">crate_root</a>, <a href="#rust_benchmark-data">data</a>,
-               <a href="#rust_benchmark-default_args">default_args</a>, <a href="#rust_benchmark-deps">deps</a>, <a href="#rust_benchmark-edition">edition</a>, <a href="#rust_benchmark-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_benchmark-rustc_env">rustc_env</a>, <a href="#rust_benchmark-rustc_env_files">rustc_env_files</a>, <a href="#rust_benchmark-rustc_flags">rustc_flags</a>,
-               <a href="#rust_benchmark-srcs">srcs</a>, <a href="#rust_benchmark-use_libtest_harness">use_libtest_harness</a>, <a href="#rust_benchmark-version">version</a>)
-</pre>
-
-Builds a Rust benchmark test.
-
-**Warning**: This rule is currently experimental. [Rust Benchmark tests][rust-bench]         require the `Bencher` interface in the unstable `libtest` crate, which is behind the         `test` unstable feature gate. As a result, using this rule would require using a nightly         binary release of Rust.
-
-[rust-bench]: https://doc.rust-lang.org/nightly/unstable-book/library-features/test.html
-
-Example:
-
-Suppose you have the following directory structure for a Rust project with a         library crate, `fibonacci` with benchmarks under the `benches/` directory:
-
-```output
-[workspace]/
-WORKSPACE
-fibonacci/
-    BUILD
-    src/
-        lib.rs
-    benches/
-        fibonacci_bench.rs
-```
-
-`fibonacci/src/lib.rs`:
-```rust
-pub fn fibonacci(n: u64) -> u64 {
-    if n < 2 {
-        return n;
-    }
-    let mut n1: u64 = 0;
-    let mut n2: u64 = 1;
-    for _ in 1..n {
-        let sum = n1 + n2;
-        n1 = n2;
-        n2 = sum;
-    }
-    n2
-}
-```
-
-`fibonacci/benches/fibonacci_bench.rs`:
-```rust
-#![feature(test)]
-
-extern crate test;
-extern crate fibonacci;
-
-use test::Bencher;
-
-#[bench]
-fn bench_fibonacci(b: &mut Bencher) {
-    b.iter(|| fibonacci::fibonacci(40));
-}
-```
-
-To build the benchmark test, add a `rust_benchmark` target:
-
-`fibonacci/BUILD`:
-```python
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_benchmark")
-
-package(default_visibility = ["//visibility:public"])
-
-rust_library(
-    name = "fibonacci",
-    srcs = ["src/lib.rs"],
-)
-
-rust_benchmark(
-    name = "fibonacci_bench",
-    srcs = ["benches/fibonacci_bench.rs"],
-    deps = [":fibonacci"],
-)
-```
-
-Run the benchmark test using: `bazel run //fibonacci:fibonacci_bench`.
-
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rust_benchmark-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_benchmark-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target<br><br>These are other <code>rust_library</code> targets and will be presented as the new name given.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: Label -> String</a> | optional | {} |
-| <a id="rust_benchmark-compile_data"></a>compile_data |  List of files used by this rule at compile time.<br><br>This attribute can be used to specify any data files that are embedded into the library, such as via the [<code>include_str!</code>](https://doc.rust-lang.org/std/macro.include_str!.html) macro.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-crate_features"></a>crate_features |  List of features to enable for this crate.<br><br>Features are defined in the code using the <code>#[cfg(feature = "foo")]</code> configuration option. The features listed here will be passed to <code>rustc</code> with <code>--cfg feature="${feature_name}"</code> flags.   | List of strings | optional | [] |
-| <a id="rust_benchmark-crate_name"></a>crate_name |  Crate name to use for this target.<br><br>This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores. Defaults to the target name, with any hyphens replaced by underscores.   | String | optional | "" |
-| <a id="rust_benchmark-crate_root"></a>crate_root |  The file that will be passed to <code>rustc</code> to be used for building this crate.<br><br>If <code>crate_root</code> is not set, then this rule will look for a <code>lib.rs</code> file (or <code>main.rs</code> for rust_binary) or the single file in <code>srcs</code> if <code>srcs</code> contains only one file.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_benchmark-data"></a>data |  List of files used by this rule at compile time and runtime.<br><br>If including data at compile time with include_str!() and similar, prefer <code>compile_data</code> over <code>data</code>, to prevent the data also being included in the runfiles.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-default_args"></a>default_args |  The default arguments to pass to the benchmark binary. This attribute is used if the built-in <code>args</code> attribute is not set.   | List of strings | optional | ["--bench"] |
-| <a id="rust_benchmark-deps"></a>deps |  List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-edition"></a>edition |  The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.   | String | optional | "" |
-| <a id="rust_benchmark-proc_macro_deps"></a>proc_macro_deps |  List of <code>rust_library</code> targets with kind <code>proc-macro</code> used to help build this library target.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-rustc_env"></a>rustc_env |  Dictionary of additional <code>"key": "value"</code> environment variables to set for rustc.<br><br>rust_test()/rust_binary() rules can use $(rootpath //package:target) to pass in the location of a generated file or external tool. Cargo build scripts that wish to expand locations should use cargo_build_script()'s build_script_env argument instead, as build scripts are run in a different environment - see cargo_build_script()'s documentation for more.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
-| <a id="rust_benchmark-rustc_env_files"></a>rustc_env_files |  Files containing additional environment variables to set for rustc.<br><br>These files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\</code>).<br><br>The order that these files will be processed is unspecified, so multiple definitions of a particular variable are discouraged.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | [] |
-| <a id="rust_benchmark-srcs"></a>srcs |  List of Rust <code>.rs</code> source files used to build the library.<br><br>If <code>srcs</code> contains more than one file, then there must be a file either named <code>lib.rs</code>. Otherwise, <code>crate_root</code> must be set to the source file that is the root of the crate to be passed to rustc to build this crate.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
-| <a id="rust_benchmark-use_libtest_harness"></a>use_libtest_harness |  Generate the test harness for this benchmark. Note that [Criterion](https://bheisler.github.io/criterion.rs/book/index.html) benchmarks do not use a test harness, but the nightly <code>#[bench]</code> api does. Pass True if you have a <code>#[bench]</code> api test.   | Boolean | optional | False |
-| <a id="rust_benchmark-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
 <a id="#rust_binary"></a>

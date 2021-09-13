@@ -2,16 +2,23 @@ use cargo_raze::context::{
     BuildableTarget, CrateContext, CrateDependencyContext, GitRepo, LicenseData, SourceDetails,
 };
 use semver::Version;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub(crate) fn lazy_static_crate_context(git: bool) -> CrateContext {
-    let git_data = if git {
-        Some(GitRepo {
-            remote: String::from("https://github.com/rust-lang-nursery/lazy-static.rs.git"),
-            commit: String::from("421669662b35fcb455f2902daed2e20bbbba79b6"),
-            path_to_crate_root: None,
-        })
+    let source_details = if git {
+        SourceDetails {
+            git_data: Some(GitRepo {
+                remote: String::from("https://github.com/rust-lang-nursery/lazy-static.rs.git"),
+                commit: String::from("421669662b35fcb455f2902daed2e20bbbba79b6"),
+                path_to_crate_root: None,
+            }),
+            download_url: None,
+        }
     } else {
-        None
+        SourceDetails {
+            git_data: None,
+            download_url: Some("https://registry.url/".parse().unwrap()),
+        }
     };
 
     CrateContext {
@@ -21,20 +28,19 @@ pub(crate) fn lazy_static_crate_context(git: bool) -> CrateContext {
         raze_settings: Default::default(),
         canonical_additional_build_file: None,
         default_deps: CrateDependencyContext {
-            dependencies: vec![],
-            proc_macro_dependencies: vec![],
-            data_dependencies: vec![],
-            build_dependencies: vec![],
-            build_proc_macro_dependencies: vec![],
-            build_data_dependencies: vec![],
-            dev_dependencies: vec![],
-            aliased_dependencies: vec![],
+            dependencies: BTreeSet::new(),
+            proc_macro_dependencies: BTreeSet::new(),
+            data_dependencies: BTreeSet::new(),
+            build_dependencies: BTreeSet::new(),
+            build_proc_macro_dependencies: BTreeSet::new(),
+            build_data_dependencies: BTreeSet::new(),
+            dev_dependencies: BTreeSet::new(),
+            aliased_dependencies: BTreeMap::new(),
         },
-        source_details: SourceDetails { git_data },
+        source_details,
         sha256: Some(String::from(
             "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646",
         )),
-        registry_url: String::from("https://registry.url/"),
         expected_build_path: String::from("UNUSED"),
         lib_target_name: Some(String::from("UNUSED")),
         license: LicenseData::default(),
@@ -59,14 +65,20 @@ pub(crate) fn lazy_static_crate_context(git: bool) -> CrateContext {
 }
 
 pub(crate) fn maplit_crate_context(git: bool) -> CrateContext {
-    let git_data = if git {
-        Some(GitRepo {
-            remote: String::from("https://github.com/bluss/maplit.git"),
-            commit: String::from("04936f703da907bc4ffdaced121e4cfd5ecbaec6"),
-            path_to_crate_root: None,
-        })
+    let source_details = if git {
+        SourceDetails {
+            git_data: Some(GitRepo {
+                remote: String::from("https://github.com/bluss/maplit.git"),
+                commit: String::from("04936f703da907bc4ffdaced121e4cfd5ecbaec6"),
+                path_to_crate_root: None,
+            }),
+            download_url: None,
+        }
     } else {
-        None
+        SourceDetails {
+            git_data: None,
+            download_url: Some("https://registry.url/".parse().unwrap()),
+        }
     };
 
     CrateContext {
@@ -76,20 +88,19 @@ pub(crate) fn maplit_crate_context(git: bool) -> CrateContext {
         raze_settings: Default::default(),
         canonical_additional_build_file: None,
         default_deps: CrateDependencyContext {
-            dependencies: vec![],
-            proc_macro_dependencies: vec![],
-            data_dependencies: vec![],
-            build_dependencies: vec![],
-            build_proc_macro_dependencies: vec![],
-            build_data_dependencies: vec![],
-            dev_dependencies: vec![],
-            aliased_dependencies: vec![],
+            dependencies: BTreeSet::new(),
+            proc_macro_dependencies: BTreeSet::new(),
+            data_dependencies: BTreeSet::new(),
+            build_dependencies: BTreeSet::new(),
+            build_proc_macro_dependencies: BTreeSet::new(),
+            build_data_dependencies: BTreeSet::new(),
+            dev_dependencies: BTreeSet::new(),
+            aliased_dependencies: BTreeMap::new(),
         },
-        source_details: SourceDetails { git_data },
+        source_details,
         sha256: Some(String::from(
             "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d",
         )),
-        registry_url: String::from("https://registry.url/"),
         expected_build_path: String::from("UNUSED"),
         lib_target_name: Some(String::from("UNUSED")),
         license: LicenseData::default(),

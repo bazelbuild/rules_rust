@@ -200,12 +200,23 @@ pub fn merge_cargo_tomls(
     }
 
     for package in packages {
+        let AdditionalPackage {
+            name,
+            semver,
+            features,
+        } = package;
+
         merged_cargo_toml.dependencies.insert(
-            package.name,
+            name.clone(),
             DepSpec {
                 default_features: true,
-                features: package.features.into_iter().collect(),
-                version: VersionSpec::Semver(package.semver),
+                features: features.into_iter().collect(),
+                version: VersionSpec::Semver(VersionReq::parse(&semver).with_context(|| {
+                    format!(
+                        "Failed to parse semver requirement for package {}, semver: {}",
+                        name, semver
+                    )
+                })?),
             },
         );
     }

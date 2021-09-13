@@ -3,7 +3,6 @@ use std::{
     path::PathBuf,
 };
 
-use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -14,10 +13,10 @@ use crate::{
     resolver::{Resolver, ResolverConfig},
 };
 
-#[derive(Debug, Deserialize, Serialize, Ord, Eq, PartialOrd, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Package {
     pub name: String,
-    pub semver: VersionReq,
+    pub semver: String,
     pub features: Vec<String>,
 }
 
@@ -58,7 +57,7 @@ pub struct Config {
     /// replaced by crate names and versions.
     pub crate_registry_template: String,
 
-    pub target_triples: Vec<String>,
+    pub target_triples: BTreeSet<String>,
     pub cargo: PathBuf,
 
     #[serde(default = "default_rules_rust_workspace_name")]

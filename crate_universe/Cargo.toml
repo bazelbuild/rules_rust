@@ -14,18 +14,20 @@ edition = "2018"
 # Several of these dependencies need to be compatible with the version cargo-raze is using.
 
 anyhow = "1"
-cargo_metadata = "0.13.1"
+cargo_metadata = "0.14"
 # TODO: Use upstream once following changes are merged:
 # https://github.com/google/cargo-raze/pull/407
 # https://github.com/google/cargo-raze/pull/415
-cargo-raze = { git = "https://github.com/UebelAndre/cargo-raze.git", rev = "1e9949fd209056bfd7e35b4374b7b345f2920def", default-features = false }
+cargo-raze = { git = "https://github.com/google/cargo-raze.git", rev = "4cbe5272b0fbbb24577bc85b647b13cb9b99ce52" }
 cfg-expr = "0.7.4"
 env_logger = "0.8"
 hex = "0.4"
 indoc = "1.0.2"
 itertools = "0.10"
 log = "0.4"
-semver = { version = "0.11", features = ["serde"] }
+# openssl is a transitive dep - this enables the feature to allow it to build on buildkite.
+openssl = { version = "0.10", features = ["vendored"] }
+semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.9"
@@ -44,5 +46,5 @@ spectral = "0.6"
 tempfile = "3.2.0"
 
 [patch.crates-io]
-# Until https://github.com/steveklabnik/semver-parser/pull/60 merges.
-semver-parser = { git = "https://github.com/illicitonion/semver-parser.git", rev = "ad6589269eab8851f3d5ad362a6b1cd89a1b6693" }
+# Until https://github.com/ehuss/cargo-clone-crate/pull/6 is released
+cargo-clone-crate = { git = "https://github.com/ehuss/cargo-clone-crate.git", rev = "36f5e72513a26ae539d0c3bfa7b3111b9aa11c6c" }

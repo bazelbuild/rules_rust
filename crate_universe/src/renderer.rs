@@ -35,73 +35,96 @@ pub struct Renderer {
     internal_renderer: Tera,
 }
 
+/// Fully qualified label representing a platform condition.
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(transparent)]
+pub struct PlatformLabel(String);
+
+impl PlatformLabel {
+    pub fn default() -> Self {
+        Self(String::from("//conditions:default"))
+    }
+
+    pub fn from_bazel_triple(bazel_triple: &str) -> Self {
+        Self(format!("@rules_rust//rust/platform:{}", bazel_triple))
+    }
+}
+
 // Get default and targeted metadata, collated per Bazel condition (which corresponds to a triple).
 // The default metadata is included in every triple.
-fn get_per_triple_metadata(package: &CrateContext) -> BTreeMap<String, CrateTargetedDepContext> {
-    let mut per_triple_metadata: BTreeMap<String, CrateTargetedDepContext> = BTreeMap::new();
+fn get_per_triple_metadata(
+    package: &CrateContext,
+) -> BTreeMap<PlatformLabel, CrateTargetedDepContext> {
+    let mut per_triple_metadata: BTreeMap<PlatformLabel, CrateTargetedDepContext> = BTreeMap::new();
 
     // Always add a catch-all to cover the non-targeted dep case.
     // We merge in the default_deps after the next loop.
     per_triple_metadata.insert(
-        String::from("//conditions:default"),
+        PlatformLabel::default(),
         CrateTargetedDepContext {
             target: "Default".to_owned(),
             deps: empty_deps_context(),
-            conditions: vec!["//conditions:default".to_owned()],
+            platform_targets: vec!["//conditions:default".to_owned()],
         },
     );
 
     for dep_context in &package.targeted_deps {
-        dep_context.conditions.iter().for_each(|condition| {
-            let targeted_dep_ctx = per_triple_metadata.entry(condition.to_owned()).or_insert(
-                CrateTargetedDepContext {
-                    target: "".to_owned(),
-                    deps: empty_deps_context(),
-                    conditions: vec![condition.clone()],
-                },
-            );
+        dep_context
+            .platform_targets
+            .iter()
+            .for_each(|platform_bazel_triple| {
+                let targeted_dep_ctx = per_triple_metadata
+                    .entry(PlatformLabel::from_bazel_triple(platform_bazel_triple))
+                    .or_insert(CrateTargetedDepContext {
+                        target: "".to_owned(),
+                        deps: empty_deps_context(),
+                        platform_targets: vec![platform_bazel_triple.clone()],
+                    });
 
-            // Mention all the targets that translated into the current condition (ie. current triplet).
-            targeted_dep_ctx
-                .target
-                .push_str(&format!(" {}", &dep_context.target));
+                // Mention all the targets that translated into the current condition (ie. current triplet).
+                targeted_dep_ctx
+                    .target
+                    .push_str(&format!(" {}", &dep_context.target));
 
-            targeted_dep_ctx
-                .deps
-                .dependencies
-                .extend(dep_context.deps.dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .proc_macro_dependencies
-                .extend(dep_context.deps.proc_macro_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .data_dependencies
-                .extend(dep_context.deps.data_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .build_dependencies
-                .extend(dep_context.deps.build_dependencies.iter().cloned());
-            targeted_dep_ctx.deps.build_proc_macro_dependencies.extend(
-                dep_context
+                targeted_dep_ctx
                     .deps
-                    .build_proc_macro_dependencies
-                    .iter()
-                    .cloned(),
-            );
-            targeted_dep_ctx
-                .deps
-                .build_data_dependencies
-                .extend(dep_context.deps.build_data_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .dev_dependencies
-                .extend(dep_context.deps.dev_dependencies.iter().cloned());
-            targeted_dep_ctx
-                .deps
-                .aliased_dependencies
-                .extend(dep_context.deps.aliased_dependencies.iter().cloned());
-        });
+                    .dependencies
+                    .extend(dep_context.deps.dependencies.iter().cloned());
+                targeted_dep_ctx
+                    .deps
+                    .proc_macro_dependencies
+                    .extend(dep_context.deps.proc_macro_dependencies.iter().cloned());
+                targeted_dep_ctx
+                    .deps
+                    .data_dependencies
+                    .extend(dep_context.deps.data_dependencies.iter().cloned());
+                targeted_dep_ctx
+                    .deps
+                    .build_dependencies
+                    .extend(dep_context.deps.build_dependencies.iter().cloned());
+                targeted_dep_ctx.deps.build_proc_macro_dependencies.extend(
+                    dep_context
+                        .deps
+                        .build_proc_macro_dependencies
+                        .iter()
+                        .cloned(),
+                );
+                targeted_dep_ctx
+                    .deps
+                    .build_data_dependencies
+                    .extend(dep_context.deps.build_data_dependencies.iter().cloned());
+                targeted_dep_ctx
+                    .deps
+                    .dev_dependencies
+                    .extend(dep_context.deps.dev_dependencies.iter().cloned());
+                targeted_dep_ctx.deps.aliased_dependencies.extend(
+                    dep_context
+                        .deps
+                        .aliased_dependencies
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.clone())),
+                );
+            });
     }
 
     // Now also add the non-targeted deps to each target.
@@ -131,9 +154,13 @@ fn get_per_triple_metadata(package: &CrateContext) -> BTreeMap<String, CrateTarg
         ctx.deps
             .dev_dependencies
             .extend(package.default_deps.dev_dependencies.iter().cloned());
-        ctx.deps
-            .aliased_dependencies
-            .extend(package.default_deps.aliased_dependencies.iter().cloned());
+        ctx.deps.aliased_dependencies.extend(
+            package
+                .default_deps
+                .aliased_dependencies
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone())),
+        );
     }
 
     per_triple_metadata
@@ -141,14 +168,14 @@ fn get_per_triple_metadata(package: &CrateContext) -> BTreeMap<String, CrateTarg
 
 fn empty_deps_context() -> CrateDependencyContext {
     CrateDependencyContext {
-        dependencies: vec![],
-        proc_macro_dependencies: vec![],
-        data_dependencies: vec![],
-        build_dependencies: vec![],
-        build_proc_macro_dependencies: vec![],
-        build_data_dependencies: vec![],
-        dev_dependencies: vec![],
-        aliased_dependencies: vec![],
+        dependencies: BTreeSet::new(),
+        proc_macro_dependencies: BTreeSet::new(),
+        data_dependencies: BTreeSet::new(),
+        build_dependencies: BTreeSet::new(),
+        build_proc_macro_dependencies: BTreeSet::new(),
+        build_data_dependencies: BTreeSet::new(),
+        dev_dependencies: BTreeSet::new(),
+        aliased_dependencies: BTreeMap::new(),
     }
 }
 
@@ -323,7 +350,7 @@ impl Renderer {
             .with_context(|| format!("Could not create output file {}", defs_bzl_path.display()))?;
 
         self.render_workspaces(&mut defs_bzl_file)?;
-        writeln!(defs_bzl_file, "")?;
+        writeln!(defs_bzl_file)?;
         self.render_helper_functions(&mut defs_bzl_file)?;
 
         self.render_crates(repository_dir)?;
@@ -336,7 +363,7 @@ impl Renderer {
             .with_context(|| format!("Could not create lockfile file: {:?}", lockfile_path))?;
         let content = serde_json::to_string_pretty(&self.context)
             .with_context(|| format!("Could not seralize render context: {:?}", self.context))?;
-        write!(lockfile_file, "{}\n", &content)?;
+        writeln!(lockfile_file, "{}", &content)?;
 
         Ok(())
     }
@@ -368,7 +395,7 @@ impl Renderer {
             let mut build_file = File::create(&build_file_path).with_context(|| {
                 format!("Could not create BUILD file: {}", build_file_path.display())
             })?;
-            write!(build_file, "{}\n", &build_file_content)?;
+            writeln!(build_file, "{}", &build_file_content)?;
         }
 
         Ok(())
@@ -512,7 +539,7 @@ fn string_arg<'a, 'b>(
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 struct RenderablePackage {
     crate_context: CrateContext,
-    per_triple_metadata: BTreeMap<String, CrateTargetedDepContext>,
+    per_triple_metadata: BTreeMap<PlatformLabel, CrateTargetedDepContext>,
     is_proc_macro: bool,
 }
 
