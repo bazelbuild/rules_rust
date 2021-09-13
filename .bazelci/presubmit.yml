@@ -61,12 +61,34 @@ tasks:
       # rust_doc_test is likely not fully sandboxed
       - "-//test/chained_direct_deps:mod3_doc_test"
     build_flags: *aspects_flags
+  rbe_ubuntu1604_with_aspects:
+    name: RBE Rolling Bazel Version With Aspects
+    platform: rbe_ubuntu1604
+    build_targets: *default_linux_targets
+    test_targets:
+      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+      - "..."
+      - "//test/..."
+      - "-//test/conflicting_deps:conflicting_deps_test"
+      # rust_doc_test is likely not fully sandboxed
+      - "-//test/chained_direct_deps:mod3_doc_test"
+    build_flags: *aspects_flags
+    soft_fail: yes
+    bazel: "rolling"
   macos_with_aspects:
     name: With Aspects
     platform: macos
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     build_flags: *aspects_flags
+  macos_rolling_with_aspects:
+    name: "Macos Rolling Bazel Version With Aspects"
+    platform: macos
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    build_flags: *aspects_flags
+    soft_fail: yes
+    bazel: "rolling"
   windows_with_aspects:
     name: With Aspects
     platform: windows
@@ -76,6 +98,17 @@ tasks:
       - "--config=clippy"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
+  windows_rolling_with_aspects:
+    name: "Windows Rolling Bazel Version With Aspects"
+    platform: windows
+    build_flags:
+      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+    soft_fail: yes
+    bazel: "rolling"
   ubuntu2004_clang:
     name: With Clang
     platform: ubuntu2004
@@ -87,6 +120,19 @@ tasks:
       # - "--linkopt=-fuse-ld=lld"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+  ubuntu2004_rolling_clang:
+    name: Rolling Bazel Version With Clang
+    platform: ubuntu2004
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--repo_env=CC=clang"
+      # TODO(hlopko): Make this work (some tests were failing)
+      # - "--linkopt=-fuse-ld=lld"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    soft_fail: yes
+    bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
     bazel: "3.5.0"
@@ -100,13 +146,6 @@ tasks:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags: *aspects_flags
-  ubuntu2004_rolling:
-    name: "Rolling Bazel Version"
-    bazel: "rolling"
-    platform: ubuntu2004
-    soft_fail: yes
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
   ubuntu2004_rolling_with_aspects:
     name: "Rolling Bazel Version With Aspects"
     bazel: "rolling"
@@ -142,6 +181,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  ubuntu2004_examples_rolling:
+    name: "Examples with Rolling Bazel Version"
+    platform: ubuntu2004
+    working_directory: examples
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
+    soft_fail: yes
   rbe_ubuntu1604_examples:
     name: Examples
     platform: rbe_ubuntu1604
