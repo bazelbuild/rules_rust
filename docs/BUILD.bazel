@@ -61,6 +61,7 @@ PAGES = dict([
             "rust_test_suite",
             "error_format",
             "extra_rustc_flags",
+            "capture_clippy_output",
         ],
     ),
     page(

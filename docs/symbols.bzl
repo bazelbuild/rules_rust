@@ -42,6 +42,7 @@ load(
 )
 load(
     "@rules_rust//rust:defs.bzl",
+    _capture_clippy_output = "capture_clippy_output",
     _error_format = "error_format",
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer = "rust_analyzer",
@@ -147,6 +148,7 @@ error_format = _error_format
 extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
 fail_when_enabled = _fail_when_enabled
+capture_clippy_output = _capture_clippy_output
 
 CrateInfo = _CrateInfo
 DepInfo = _DepInfo

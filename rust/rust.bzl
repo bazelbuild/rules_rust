@@ -16,6 +16,7 @@
 
 load(
     "//rust:defs.bzl",
+    _capture_clippy_output = "capture_clippy_output",
     _error_format = "error_format",
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer = "rust_analyzer",
@@ -79,6 +80,9 @@ rust_clippy_aspect = _rust_clippy_aspect
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 rust_clippy = _rust_clippy
+# See @rules_rust//rust:private/clippy.bzl for a complete description.
+
+capture_clippy_output = _capture_clippy_output
 # See @rules_rust//rust:private/clippy.bzl for a complete description.
 
 rust_analyzer_aspect = _rust_analyzer_aspect

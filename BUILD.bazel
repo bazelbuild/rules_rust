@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:rust.bzl", "error_format", "extra_rustc_flags")
+load("//rust:rust.bzl", "capture_clippy_output", "error_format", "extra_rustc_flags")
 
 exports_files(["LICENSE"])
 
@@ -44,5 +44,11 @@ label_flag(
 alias(
     name = "rustfmt",
     actual = "//tools/rustfmt",
+    visibility = ["//visibility:public"],
+)
+
+capture_clippy_output(
+    name = "capture_clippy_output",
+    build_setting_default = False,
     visibility = ["//visibility:public"],
 )

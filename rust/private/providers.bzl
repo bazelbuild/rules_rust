@@ -68,3 +68,15 @@ StdLibInfo = provider(
         "std_rlibs": "List[File]: All `.rlib` files",
     },
 )
+
+CaptureClippyOutputInfo = provider(
+    doc = "Value of the `capture_clippy_output` build setting",
+    fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
+)
+
+ClippyInfo = provider(
+    doc = "Provides information on a clippy run.",
+    fields = {
+        "output": "File with the clippy output.",
+    },
+)

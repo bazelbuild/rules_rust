@@ -15,6 +15,7 @@
 """A module defining clippy rules"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo")
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -51,7 +52,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
 def _clippy_aspect_impl(target, ctx):
     crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
-        return []
+        return [ClippyInfo(output = depset([]))]
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
@@ -75,10 +76,6 @@ def _clippy_aspect_impl(target, ctx):
         build_info,
     )
 
-    # A marker file indicating clippy has executed successfully.
-    # This file is necessary because "ctx.actions.run" mandates an output.
-    clippy_marker = ctx.actions.declare_file(ctx.label.name + ".clippy.ok")
-
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.rule.attr,
@@ -97,24 +94,35 @@ def _clippy_aspect_impl(target, ctx):
         emit = ["dep-info", "metadata"],
     )
 
-    # Turn any warnings from clippy or rustc into an error, as otherwise
-    # Bazel will consider the execution result of the aspect to be "success",
-    # and Clippy won't be re-triggered unless the source file is modified.
-    if "__bindgen" in ctx.rule.attr.tags:
-        # bindgen-generated content is likely to trigger warnings, so
-        # only fail on clippy warnings
-        args.rustc_flags.add("-Dclippy::style")
-        args.rustc_flags.add("-Dclippy::correctness")
-        args.rustc_flags.add("-Dclippy::complexity")
-        args.rustc_flags.add("-Dclippy::perf")
-    else:
-        # fail on any warning
-        args.rustc_flags.add("-Dwarnings")
-
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
-    args.process_wrapper_flags.add("--touch-file", clippy_marker.path)
+    if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out")
+        args.process_wrapper_flags.add("--stdout-file", clippy_out.path)
+
+        # If we are capturing the output, we want the build system to be able to keep going
+        # and consume the output. Some clippy lints are denials, so we treat them as warnings.
+        args.rustc_flags.add("-Wclippy::all")
+    else:
+        # A marker file indicating clippy has executed successfully.
+        # This file is necessary because "ctx.actions.run" mandates an output.
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok")
+        args.process_wrapper_flags.add("--touch-file", clippy_out.path)
+
+        # Turn any warnings from clippy or rustc into an error, as otherwise
+        # Bazel will consider the execution result of the aspect to be "success",
+        # and Clippy won't be re-triggered unless the source file is modified.
+        if "__bindgen" in ctx.rule.attr.tags:
+            # bindgen-generated content is likely to trigger warnings, so
+            # only fail on clippy warnings
+            args.rustc_flags.add("-Dclippy::style")
+            args.rustc_flags.add("-Dclippy::correctness")
+            args.rustc_flags.add("-Dclippy::complexity")
+            args.rustc_flags.add("-Dclippy::perf")
+        else:
+            # fail on any warning
+            args.rustc_flags.add("-Dwarnings")
 
     # Upstream clippy requires one of these two filenames or it silently uses
     # the default config. Enforce the naming so users are not confused.
@@ -127,7 +135,7 @@ def _clippy_aspect_impl(target, ctx):
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = [clippy_marker],
+        outputs = [clippy_out],
         env = env,
         tools = [toolchain.clippy_driver],
         arguments = args.all,
@@ -135,7 +143,8 @@ def _clippy_aspect_impl(target, ctx):
     )
 
     return [
-        OutputGroupInfo(clippy_checks = depset([clippy_marker])),
+        OutputGroupInfo(clippy_checks = depset([clippy_out])),
+        ClippyInfo(output = depset([clippy_out])),
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
@@ -146,6 +155,10 @@ rust_clippy_aspect = aspect(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     attrs = {
+        "_capture_output": attr.label(
+            doc = "Value of the `capture_clippy_output` build setting",
+            default = Label("//:capture_clippy_output"),
+        ),
         "_cc_toolchain": attr.label(
             doc = (
                 "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
@@ -170,6 +183,7 @@ rust_clippy_aspect = aspect(
             cfg = "exec",
         ),
     },
+    provides = [ClippyInfo],
     toolchains = [
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -259,4 +273,21 @@ rust_clippy(
 )
 ```
 """,
+)
+
+def _capture_clippy_output_impl(ctx):
+    """Implementation of the `capture_clippy_output` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the CaptureClippyOutputInfo provider
+    """
+    return [CaptureClippyOutputInfo(capture_output = ctx.build_setting_value)]
+
+capture_clippy_output = rule(
+    doc = "Control whether to print clippy output or store it to a file, using the configured error_format.",
+    implementation = _capture_clippy_output_impl,
+    build_setting = config.bool(flag = True),
 )

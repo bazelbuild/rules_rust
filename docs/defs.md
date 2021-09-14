@@ -10,6 +10,25 @@
 * [rust_test_suite](#rust_test_suite)
 * [error_format](#error_format)
 * [extra_rustc_flags](#extra_rustc_flags)
+* [capture_clippy_output](#capture_clippy_output)
+
+<a id="#capture_clippy_output"></a>
+
+## capture_clippy_output
+
+<pre>
+capture_clippy_output(<a href="#capture_clippy_output-name">name</a>)
+</pre>
+
+Control whether to print clippy output or store it to a file, using the configured error_format.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="capture_clippy_output-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+
 
 <a id="#error_format"></a>
 
