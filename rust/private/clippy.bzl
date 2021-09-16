@@ -97,8 +97,10 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
+    # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
+    # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
-        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out")
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
         args.process_wrapper_flags.add("--stdout-file", clippy_out.path)
 
         # If we are capturing the output, we want the build system to be able to keep going
@@ -107,7 +109,7 @@ def _clippy_aspect_impl(target, ctx):
     else:
         # A marker file indicating clippy has executed successfully.
         # This file is necessary because "ctx.actions.run" mandates an output.
-        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok")
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
         args.process_wrapper_flags.add("--touch-file", clippy_out.path)
 
         # Turn any warnings from clippy or rustc into an error, as otherwise
