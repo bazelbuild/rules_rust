@@ -18,7 +18,7 @@ def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, de
         cargo_toml_files (list): A list of `Label`s to Cargo manifests.
         overrides (dict): A dict of crate name (`str`) to json encoded `crate.override` data.
         default_registry_download_url_template (str): The URL template for downloading crates from the default registry.
-        additional_registries (dict[str, str]): Dict of registry name to the URL of the index.
+        additional_registries (dict): Dict of registry name (`str`) to the URL of the index (`str`).
         targets (list): A list of target platform triples
         cargo_bin_path (path): The label of a Cargo binary.
 
