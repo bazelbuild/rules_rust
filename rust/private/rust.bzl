@@ -573,6 +573,7 @@ _common_attrs = {
             The order that these files will be processed is unspecified, so
             multiple definitions of a particular variable are discouraged.
         """),
+        allow_files = True,
     ),
     "rustc_flags": attr.string_list(
         doc = dedent("""\
