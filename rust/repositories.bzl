@@ -79,9 +79,9 @@ def rust_repositories(
     maybe(
         http_archive,
         name = "rules_cc",
-        url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.zip",
-        sha256 = "8c7e8bf24a2bf515713445199a677ee2336e1c487fa1da41037c6026de04bbc3",
-        strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
+        url = "https://github.com/bazelbuild/rules_cc/archive/dd2758b96dc8f9f4add81eaa4154b7e3d8be6873.zip",
+        sha256 = "4e14abe3f288b5ae31eee4dc68472bfcd8d59a0bb1be91dd2c6bfa8af56baf19",
+        strip_prefix = "rules_cc-dd2758b96dc8f9f4add81eaa4154b7e3d8be6873",
         type = "zip",
     )
 

@@ -29,15 +29,11 @@ def rust_proto_repositories(register_default_toolchain = True):
     maybe(
         http_archive,
         name = "rules_proto",
-        sha256 = "bc12122a5ae4b517fa423ea03a8d82ea6352d5127ea48cb54bc324e8ab78493c",
-        strip_prefix = "rules_proto-af6481970a34554c6942d993e194a9aed7987780",
+        sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
+        strip_prefix = "rules_proto-4.0.0",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/af6481970a34554c6942d993e194a9aed7987780.tar.gz",
-            "https://github.com/bazelbuild/rules_proto/archive/af6481970a34554c6942d993e194a9aed7987780.tar.gz",
-        ],
-        patch_args = ["-p1"],
-        patches = [
-            Label("//proto/patches:rules_proto-bzl_visibility.patch"),
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
+            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
         ],
     )
 
