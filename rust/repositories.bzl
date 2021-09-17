@@ -244,7 +244,7 @@ rust_toolchain_repository = repository_rule(
         ),
     },
     implementation = _rust_toolchain_repository_impl,
-    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
+    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS", "LD_LIBRARY_PATH"],
 )
 
 rust_toolchain_repository_proxy = repository_rule(

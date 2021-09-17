@@ -63,10 +63,13 @@ def _perform_check(edition, srcs, ctx):
     args.add("--check")
     args.add_all(srcs)
 
+    env = {"LD_LIBRARY_PATH": toolchain.ld_libary_path}
+
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = srcs + [config],
         outputs = [marker],
+        env = env,
         tools = [toolchain.rustfmt],
         arguments = [args],
         mnemonic = "Rustfmt",

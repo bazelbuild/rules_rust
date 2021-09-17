@@ -200,6 +200,7 @@ rust_toolchain(
     exec_triple = "{exec_triple}",
     target_triple = "{target_triple}",
     visibility = ["//visibility:public"],
+    ld_library_path = "{ld_library_path}",
 )
 """
 
@@ -208,6 +209,7 @@ def BUILD_for_rust_toolchain(
         name,
         exec_triple,
         target_triple,
+        ld_library_path,
         include_rustc_srcs,
         default_edition,
         include_rustfmt,
@@ -254,6 +256,7 @@ def BUILD_for_rust_toolchain(
         exec_triple = exec_triple,
         target_triple = target_triple,
         rustfmt_label = rustfmt_label,
+        ld_library_path = ld_library_path,
     )
 
 _build_file_for_toolchain_template = """\
@@ -405,6 +408,7 @@ def load_rust_stdlib(ctx, target_triple):
         exec_triple = ctx.attr.exec_triple,
         include_rustc_srcs = should_include_rustc_srcs(ctx),
         target_triple = target_triple,
+        ld_library_path = ctx.os.environ.get("LD_LIBRARY_PATH", ""),
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,

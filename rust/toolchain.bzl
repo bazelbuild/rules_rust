@@ -486,6 +486,9 @@ def _rust_toolchain_impl(ctx):
         # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
+
+        # hack workaround for twitter
+        ld_library_path = ctx.attr.ld_library_path,
     )
     return [toolchain]
 
@@ -601,6 +604,9 @@ rust_toolchain = rule(
                 "The platform triple for the toolchains target environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
+        ),
+        "ld_library_path": attr.string(
+            doc = "Value for LD_LIBRARY_PATH environment variable.",
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
