@@ -14,7 +14,7 @@ workspace_path = "//ffi/python_calling_rust/raze"
 genmode = "Remote"
 gen_workspace_prefix = "rules_rust_examples_ffi_python_calling_rust"
 rust_rules_workspace_name = "rules_rust"
-package_aliases_dir = "."
+package_aliases_dir = "raze"
 default_gen_buildrs = true
 
 [package.metadata.raze.crates.pyo3.'0.13.2']
