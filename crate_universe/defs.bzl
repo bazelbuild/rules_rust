@@ -6,6 +6,7 @@ load("//rust:defs.bzl", "rust_common")
 load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
 
+# The default template for download URLs from the default registry (i.e. crates.io).
 DEFAULT_DEFAULT_CRATE_DOWNLOAD_URL_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
 def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, default_registry_download_url_template, additional_registries, targets, cargo_bin_path):
