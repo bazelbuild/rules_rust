@@ -575,6 +575,16 @@ _common_attrs = {
         """),
         allow_files = True,
     ),
+    "rustc_env_stamp_template": attr.label(
+        doc = dedent("""\
+            A template file which uses volatile 
+            [workspace status](https://docs.bazel.build/versions/4.0.0/user-manual.html#workspace_status)
+            info for creating a stamped `rustc_env_file`. Each stamp should be wrapped in brackets within
+            the template file. A file containg `BUILD_TIMESTAMP={BUILD_TIMESTAMP}` would render into
+            `BUILD_TIMESTAMP=1632432221`. 
+        """),
+        allow_single_file = True,
+    ),
     "rustc_flags": attr.string_list(
         doc = dedent("""\
             List of compiler flags passed to `rustc`.
@@ -585,10 +595,6 @@ _common_attrs = {
             arguments to rustc: `@$(location //package:target)`.
         """),
     ),
-    # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
-    # "name": attr.string(
-    #     doc = "This name will also be used as the name of the crate built by this rule.",
-    # `),
     "srcs": attr.label_list(
         doc = dedent("""\
             List of Rust `.rs` source files used to build the library.
@@ -605,6 +611,12 @@ _common_attrs = {
     ),
     "_cc_toolchain": attr.label(
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+    ),
+    "_env_stamper": attr.label(
+        doc = "A binary used for stamping `rustc_env_stamped_file`",
+        executable = True,
+        cfg = "exec",
+        default = Label("//util/env_stamper"),
     ),
     "_error_format": attr.label(default = "//:error_format"),
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
@@ -825,6 +837,53 @@ _rust_binary_attrs = {
         default = False,
     ),
 }
+
+def _internal_rust_binary_impl(ctx):
+    """The implementation of the `internal_rust_binary` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list of providers. See `_rust_binary_impl`.
+    """
+    return _rust_binary_impl(ctx)
+
+def _internal_rust_binary_attrs():
+    """Generates a list of attributes for the `internal_rust_binary` rule
+
+    The attributes produced should match that of `rust_binary` but have
+    attributes which require targets built by `internal_rust_binary` to
+    be stripped.
+
+    Returns:
+        dict: A set of attributes
+    """
+    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items())
+    if "rustc_env_stamped_file" in attrs:
+        attrs.pop("rustc_env_stamped_file")
+    if "_env_stamper" in attrs:
+        attrs.pop("_env_stamper")
+    return attrs
+
+internal_rust_binary = rule(
+    implementation = _internal_rust_binary_impl,
+    provides = _common_providers,
+    attrs = _internal_rust_binary_attrs(),
+    executable = True,
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
+    incompatible_use_toolchain_transition = True,
+    doc = dedent("""\
+        Exactly the same as `rust_binary` but does not include any attributes which
+        are products of `rust_binary` itself. This rule is used to allow for building
+        Rust binaries that can be used in the public `rust_binary` rule.    
+    """),
+)
 
 rust_binary = rule(
     implementation = _rust_binary_impl,

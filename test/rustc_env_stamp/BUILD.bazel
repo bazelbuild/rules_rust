@@ -1,0 +1,29 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "stamp_printer",
+    srcs = ["src/main.rs"],
+    rustc_env_stamp_template = ":generate_rustc_env_stamp_template",
+)
+
+write_file(
+    name = "generate_rustc_env_stamp_template",
+    out = "rustc_env_stamp_template",
+    content = ["BUILD_TIMESTAMP={BUILD_TIMESTAMP}"],
+)
+
+rust_test(
+    name = "test",
+    srcs = ["src/test.rs"],
+    data = [
+        ":generate_rustc_env_stamp_template",
+        ":stamp_printer",
+    ],
+    rustc_env = {
+        "PRINTER": "$(rootpath :stamp_printer)",
+        "TEMPLATE": "$(execpath :generate_rustc_env_stamp_template)",
+    },
+)

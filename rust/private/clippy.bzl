@@ -173,6 +173,12 @@ rust_clippy_aspect = aspect(
             allow_single_file = True,
             default = Label("//:clippy.toml"),
         ),
+        "_env_stamper": attr.label(
+            doc = "A binary used for stamping `rustc_env_stamped_file`",
+            executable = True,
+            cfg = "exec",
+            default = Label("//util/env_stamper"),
+        ),
         "_error_format": attr.label(
             doc = "The desired `--error-format` flags for clippy",
             default = "//:error_format",

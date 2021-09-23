@@ -270,6 +270,34 @@ def _process_build_scripts(
         compile_inputs = depset(extra_inputs, transitive = [compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
 
+def _stamp_rustc_env_file(ctx, template_file, inputs, stamper):
+    """Run an action to produce a rendered stamp file
+
+    Args:
+        ctx (ctx): The rule's context object
+        template_file (File): The template file to resolves stamps in.
+        inputs (depset): A set of inputs destin for a `Rustc` action.
+        stamper (File): The env_stamper executable.
+
+    Returns:
+        File: The template with all stamp variables rendered
+    """
+    env_file = ctx.actions.declare_file(ctx.label.name + ".stamped_rustc.env")
+    ctx.actions.run(
+        outputs = [env_file],
+        inputs = depset([template_file, ctx.version_file], transitive = [inputs]),
+        env = {
+            "ENV_OUTPUT": env_file.path,
+            "ENV_TEMPLATE": template_file.path,
+            "VERSION_INFO_TXT": ctx.version_file.path,
+        },
+        executable = stamper,
+        mnemonic = "RustcEnvStamp",
+        progress_message = "Stamping Rustc env file - {}".format(ctx.label.name),
+    )
+
+    return env_file
+
 def collect_inputs(
         ctx,
         file,
@@ -332,6 +360,19 @@ def collect_inputs(
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
+
+    # Generate the stamp file if a template has been provided
+    env_stamp_template = getattr(file, "rustc_env_stamp_template", None)
+    if env_stamp_template:
+        stamped_env_file = _stamp_rustc_env_file(
+            ctx = ctx,
+            template_file = env_stamp_template,
+            inputs = compile_inputs,
+            stamper = ctx.executable._env_stamper,
+        )
+        compile_inputs = depset([stamped_env_file], transitive = [compile_inputs])
+        build_env_files = build_env_files + [stamped_env_file]
+
     return compile_inputs, out_dir, build_env_files, build_flags_files
 
 def construct_arguments(

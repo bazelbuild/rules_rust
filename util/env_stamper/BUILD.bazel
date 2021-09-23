@@ -1,0 +1,10 @@
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "internal_rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+internal_rust_binary(
+    name = "env_stamper",
+    srcs = ["env_stamper.rs"],
+    edition = "2018",
+)
