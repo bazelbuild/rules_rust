@@ -4,6 +4,7 @@ load(
     "rust_test",
 )
 load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test_suite")
 
 cargo_build_script(
     name = "build_script",
@@ -23,4 +24,11 @@ rust_test(
     crate = ":demo_lib",
 )
 
-# Add a test suite once the unit test works.
+rust_test_suite(
+    name = "suite",
+    srcs = glob(["tests/**"]),
+    # Add the 'crate' argument, which will be passed as a kwarg
+    # to the underlying rust_test rules. This will make OUT_DIR
+    # available when compiling integration tests.
+    crate = ":demo_lib",
+)
