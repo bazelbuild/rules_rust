@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "out_dir_integration_tests"
+name = "out_dir_in_tests"
 version = "0.1.0"
