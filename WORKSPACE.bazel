@@ -43,8 +43,7 @@ http_archive(
     url = "https://github.com/bazelbuild/continuous-integration/releases/download/rules-1.0.0/bazelci_rules-1.0.0.tar.gz",
 )
 
-load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")
-
 # To run with RBE on Bazel CI, uncomment the following line.
 #
+# load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")
 # rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu1604-bazel-java8")

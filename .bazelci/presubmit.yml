@@ -24,6 +24,7 @@ tasks:
     test_targets: *default_linux_targets
   rbe_ubuntu1604:
     shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
       - "//..."
@@ -55,6 +56,7 @@ tasks:
     name: With Aspects
     platform: rbe_ubuntu1604
     shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets:
@@ -69,6 +71,7 @@ tasks:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu1604
     shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets:
@@ -215,6 +218,7 @@ tasks:
       # see: https://github.com/bazelbuild/rules_rust/issues/919
       - "-//bindgen/..."
     shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *rbe_examples_targets
     test_targets: *rbe_examples_targets
@@ -275,6 +279,7 @@ tasks:
       RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
     shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
       - "//..."
