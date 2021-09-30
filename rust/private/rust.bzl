@@ -463,8 +463,6 @@ def _rust_test_common(ctx, toolchain, output):
     else:
         return providers
 
-
-
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
 
