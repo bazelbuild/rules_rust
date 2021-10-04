@@ -662,9 +662,9 @@ _rust_test_attrs = {
     ),
     "_grep_includes": attr.label(
         allow_single_file = True,
-        executable = True,
         cfg = "host",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
 }
 
@@ -842,9 +842,9 @@ _rust_binary_attrs = {
     ),
     "_grep_includes": attr.label(
         allow_single_file = True,
-        executable = True,
         cfg = "host",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
 }
 

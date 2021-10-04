@@ -3,8 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
-load("//rust/private:common.bzl", "rust_common")
-load("//rust:defs.bzl", "rust_binary", "rust_proc_macro", "rust_shared_library", "rust_static_library", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
 
 def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
@@ -80,9 +79,17 @@ def _linkstamps_test():
     )
 
 def linkstamps_test_suite(name):
-    # Older versions of Bazel do not support Skylark linkstamps.
+    """Entry-point macro called from the BUILD file.
+
+    Args:
+      name: Name of the macro.
+    """
+
+    # Older versions of Bazel do not support Starlark linkstamps.
     if not hasattr(cc_common, "register_linkstamp_compile_action"):
-        print("Skipping linkstamps tests since this Bazel version does not support Skylark linkstamps.")
+        # This is a good way to surface a message about skipping unsupported tests.
+        # buildifier: disable=print
+        print("Skipping linkstamps tests since this Bazel version does not support Starlark linkstamps.")
         return
 
     _linkstamps_test()
