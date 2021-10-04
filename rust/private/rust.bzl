@@ -651,6 +651,12 @@ _rust_test_attrs = {
             Whether to use libtest.
         """),
     ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
+    ),
     "_launcher": attr.label(
         executable = True,
         default = Label("//util/launcher:launcher"),
@@ -659,12 +665,6 @@ _rust_test_attrs = {
             A launcher executable for loading environment and argument files passed in via the `env` attribute
             and ensuring the variables are set for the underlying test executable.
         """),
-    ),
-    "_grep_includes": attr.label(
-        allow_single_file = True,
-        cfg = "host",
-        default = Label("@bazel_tools//tools/cpp:grep-includes"),
-        executable = True,
     ),
 }
 

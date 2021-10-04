@@ -2,8 +2,8 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//test/unit:common.bzl", "assert_action_mnemonic")
 load("//rust:defs.bzl", "rust_binary", "rust_test")
+load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
