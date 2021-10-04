@@ -650,6 +650,12 @@ _rust_test_attrs = {
             and ensuring the variables are set for the underlying test executable.
         """),
     ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        executable = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+    ),
 }
 
 _common_providers = [
@@ -823,6 +829,12 @@ _rust_binary_attrs = {
             "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
         ),
         default = False,
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        executable = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
     ),
 }
 
