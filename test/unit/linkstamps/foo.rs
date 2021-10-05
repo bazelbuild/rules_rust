@@ -1,3 +1,1 @@
-pub fn main() {
-    dbg!(42);
-}
+pub fn main() {}
