@@ -321,9 +321,9 @@ def collect_inputs(
     linkstamp_outs = []
 
     if (crate_info.type in ("bin", "cdylib") and
-        # Are linkstamps a supported feature?
+        # Are linkstamps supported by native rules?
         cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
-        # Is Bazel recent enough to support Skylark linkstamps?
+        # Is Bazel recent enough to support Starlark linkstamps?
         hasattr(cc_common, "register_linkstamp_compile_action") and
         # The current rule doesn't define _grep_includes attribute; this
         # attribute is required for compiling linkstamps.

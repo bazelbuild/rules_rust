@@ -5,9 +5,16 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
+def _is_running_on_linux(ctx):
+    return ctx.target_platform_has_constraint(ctx.attr._linux[platform_common.ConstraintValueInfo])
+
 def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
+    if not _is_running_on_linux(ctx):
+        print("Skipping linkstamps tests on an unsupported (non-Linux) platform")
+        return analysistest.end(env)
+
     linkstamp_action = tut.actions[0]
     assert_action_mnemonic(env, linkstamp_action, "CppLinkstampCompile")
     linkstamp_out = linkstamp_action.outputs.to_list()[0]
@@ -37,12 +44,23 @@ def _supports_linkstamps_test(ctx):
     )
     return analysistest.end(env)
 
-supports_linkstamps_test = analysistest.make(_supports_linkstamps_test)
+supports_linkstamps_test = analysistest.make(
+    _supports_linkstamps_test,
+    attrs = {
+        "_linux": attr.label(default = Label("@platforms//os:linux")),
+    },
+)
 
 def _linkstamps_test():
+    # Native linkstamps is only supported on Linux. Ideally, it would be better
+    # to check if the feature_configuration of the target toolchain has the
+    # "linkstamp" feature, but this is not supported in unit tests.
     cc_library(
         name = "cc_lib_with_linkstamp",
-        linkstamp = "linkstamp.cc",
+        linkstamp = select({
+            "//rust/platform:linux": "linkstamp.cc",
+            "//conditions:default": None,
+        }),
     )
 
     rust_binary(
