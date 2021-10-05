@@ -12,8 +12,7 @@ def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     if not _is_running_on_linux(ctx):
-        # buildifier: disable=print
-        print("Skipping linkstamps tests on an unsupported (non-Linux) platform")
+        # Skipping linkstamps tests on an unsupported (non-Linux) platform
         return analysistest.end(env)
 
     linkstamp_action = tut.actions[0]
@@ -53,9 +52,10 @@ supports_linkstamps_test = analysistest.make(
 )
 
 def _linkstamps_test():
-    # Native linkstamps is only supported on Linux. Ideally, it would be better
-    # to check if the feature_configuration of the target toolchain has the
-    # "linkstamp" feature, but this is not supported in unit tests.
+    # Native linkstamps are only supported by the builtin Linux C++ toolchain. Ideally,
+    # we would be able to inspect the feature_configuration of the target to see if
+    # it has the "linkstamp" feature, but there is no way to get that feature
+    # configuration.
     cc_library(
         name = "cc_lib_with_linkstamp",
         linkstamp = select({
