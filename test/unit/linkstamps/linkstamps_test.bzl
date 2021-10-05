@@ -12,6 +12,7 @@ def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     if not _is_running_on_linux(ctx):
+        # buildifier: disable=print
         print("Skipping linkstamps tests on an unsupported (non-Linux) platform")
         return analysistest.end(env)
 
@@ -105,7 +106,6 @@ def linkstamps_test_suite(name):
 
     # Older versions of Bazel do not support Starlark linkstamps.
     if not hasattr(cc_common, "register_linkstamp_compile_action"):
-        # This is a good way to surface a message about skipping unsupported tests.
         # buildifier: disable=print
         print("Skipping linkstamps tests since this Bazel version does not support Starlark linkstamps.")
         return
