@@ -19,11 +19,17 @@ fn run() {
     assert_eq!(
         hello_world_bin.as_path(),
         std::path::Path::new(if std::env::consts::OS == "windows" {
-            "test/test_env/hello-world.exe"
+            "test/test_env_launcher/hello-world.exe"
         } else {
-            "test/test_env/hello-world"
+            "test/test_env_launcher/hello-world"
         })
     );
     assert!(!hello_world_bin.is_absolute());
     assert!(hello_world_bin.exists());
+
+    // Ensure `execpath` expanded variables map to real files and have absolute paths
+    let hello_world_src =
+        std::path::PathBuf::from(std::env::var("HELLO_WORLD_SRC_EXECPATH").unwrap());
+    assert!(hello_world_src.is_absolute());
+    assert!(hello_world_src.exists());
 }
