@@ -24,7 +24,7 @@ def _supports_linkstamps_test(ctx):
     asserts.equals(
         env,
         linkstamp_out.path,
-        tut_out.dirname + "/_objs/" + tut_out.basename + "/test/unit/linkstamps/linkstamp.o",
+        expected_linkstamp_path,
         "Expected linkstamp output '{actual_path}' to match '{expected_path}'".format(
             actual_path = linkstamp_out.path,
             expected_path = expected_linkstamp_path,

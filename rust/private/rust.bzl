@@ -825,6 +825,16 @@ _rust_binary_attrs = {
         """),
         default = "bin",
     ),
+    "stamp": attr.int(
+        doc = dedent("""\
+            Embed additional information into the binaries.
+
+            By default stamping is controlled by the --stamp flag.
+            See https://docs.bazel.build/versions/main/user-manual.html#workspace_status
+            and https://docs.bazel.build/versions/main/user-manual.html#flag--stamp.
+        """),
+        default = -1,
+    ),
     "linker_script": attr.label(
         doc = dedent("""\
             Link script to forward into linker via rustc options.

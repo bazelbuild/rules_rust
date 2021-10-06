@@ -317,8 +317,28 @@ def collect_inputs(
             for additional_input in linker_input.additional_inputs
         ]
 
-    # Compute linkstamps.
+    # Compute linkstamps. Use the inputs of the binary as inputs to the
+    # linkstamp action to ensure linkstamps are rebuilt whenever binary inputs
+    # change.
     linkstamp_outs = []
+
+    nolinkstamp_compile_inputs = depset(
+        getattr(files, "data", []) +
+        [toolchain.rustc] +
+        toolchain.crosstool_files +
+        ([build_info.rustc_env, build_info.flags] if build_info else []) +
+        ([toolchain.target_json] if toolchain.target_json else []) +
+        ([] if linker_script == None else [linker_script]),
+        transitive = [
+            toolchain.rustc_lib.files,
+            toolchain.rust_lib.files,
+            linker_depset,
+            crate_info.srcs,
+            dep_info.transitive_libs,
+            depset(additional_transitive_inputs),
+            crate_info.compile_data,
+        ],
+    )
 
     if (crate_info.type in ("bin", "cdylib") and
         # Are linkstamps supported by the C++ toolchain?
@@ -348,27 +368,15 @@ def collect_inputs(
                         source_file = linkstamp.file(),
                         output_file = linkstamp_out,
                         compilation_inputs = linkstamp.hdrs(),
-                        inputs_for_validation = depset([]),
+                        inputs_for_validation = nolinkstamp_compile_inputs,
                         label_replacement = str(ctx.label),
                         output_replacement = crate_info.output.path,
                     )
 
     compile_inputs = depset(
-        getattr(files, "data", []) +
-        [toolchain.rustc] +
-        toolchain.crosstool_files +
-        ([build_info.rustc_env, build_info.flags] if build_info else []) +
-        ([toolchain.target_json] if toolchain.target_json else []) +
-        ([] if linker_script == None else [linker_script]) +
         linkstamp_outs,
         transitive = [
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
-            linker_depset,
-            crate_info.srcs,
-            dep_info.transitive_libs,
-            depset(additional_transitive_inputs),
-            crate_info.compile_data,
+            nolinkstamp_compile_inputs,
         ],
     )
     build_env_files = getattr(files, "rustc_env_files", [])
