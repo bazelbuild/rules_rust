@@ -868,7 +868,6 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     link_input = cc_common.create_linker_input(
         owner = ctx.label,
         libraries = depset([library_to_link]),
-        user_link_flags = depset(toolchain.stdlib_linkflags),
     )
 
     linking_context = cc_common.create_linking_context(
@@ -876,7 +875,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         linker_inputs = depset([link_input]),
     )
 
-    cc_infos = [CcInfo(linking_context = linking_context)]
+    cc_infos = [
+        CcInfo(linking_context = linking_context),
+        toolchain.stdlib_linkflags_cc_info,
+    ]
     for dep in getattr(attr, "deps", []):
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])
