@@ -12,6 +12,9 @@ fn run() {
         "Hello fellow Rustaceans!"
     );
 
+    // Ensure environmnet variables set using `env` are also available at compile time
+    assert_eq!(env!("FERRIS_SAYS"), "Hello fellow Rustaceans!");
+
     // Test the behavior of `rootpath` and that a binary can be found relative to current_dir
     let hello_world_bin =
         std::path::PathBuf::from(std::env::var_os("HELLO_WORLD_BIN_ROOTPATH").unwrap());

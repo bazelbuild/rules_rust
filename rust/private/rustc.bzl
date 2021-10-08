@@ -576,6 +576,13 @@ def construct_arguments(
         data_paths,
     ))
 
+    # Apply any environment variables from the `env` attribute
+    env.update(expand_dict_value_locations(
+        ctx,
+        getattr(attr, "env", {}),
+        data_paths,
+    ))
+
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
     env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
 
