@@ -65,12 +65,13 @@ def _clippy_aspect_impl(target, ctx):
         aliases = crate_info.aliases,
     )
 
-    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
         toolchain,
         cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         build_info,
@@ -86,6 +87,7 @@ def _clippy_aspect_impl(target, ctx):
         feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
+        linkstamp_outs = linkstamp_outs,
         output_hash = determine_output_hash(crate_info.root),
         rust_flags = [],
         out_dir = out_dir,

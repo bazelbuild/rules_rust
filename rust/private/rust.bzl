@@ -651,6 +651,12 @@ _rust_test_attrs = {
             Whether to use libtest.
         """),
     ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
+    ),
     "_launcher": attr.label(
         executable = True,
         default = Label("//util/launcher:launcher"),
@@ -833,6 +839,22 @@ _rust_binary_attrs = {
             "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
         ),
         default = False,
+    ),
+    "stamp": attr.int(
+        doc = dedent("""\
+            Embed additional information into the binaries.
+
+            By default stamping is controlled by the --stamp flag.
+            See https://docs.bazel.build/versions/main/user-manual.html#workspace_status
+            and https://docs.bazel.build/versions/main/user-manual.html#flag--stamp.
+        """),
+        default = -1,
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
 }
 
