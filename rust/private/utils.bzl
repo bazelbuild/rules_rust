@@ -15,6 +15,7 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
+load(":providers.bzl", "DepVariantInfo", "CrateInfo", "DepInfo", "BuildInfo")
 
 def find_toolchain(ctx):
     """Finds the first rust toolchain that is configured.
@@ -339,3 +340,11 @@ def is_exec_configuration(ctx):
 
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec-") == -1
+
+def transform_deps(deps, make_rust_providers_target_independent):
+    return [DepVariantInfo(
+        crate_info = dep[CrateInfo] if CrateInfo in dep else None,
+        dep_info = dep[DepInfo] if DepInfo in dep else None,
+        build_info = dep[BuildInfo] if BuildInfo in dep else None,
+        cc_info = dep[CcInfo] if CcInfo in dep else None,
+    ) for dep in deps] if make_rust_providers_target_independent else deps

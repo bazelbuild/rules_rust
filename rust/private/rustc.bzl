@@ -31,17 +31,9 @@ load(
     "make_static_lib_symlink",
     "relativize",
 )
+load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 
-BuildInfo = provider(
-    doc = "A provider containing `rustc` build settings for a given Crate.",
-    fields = {
-        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
-        "flags": "File: file containing additional flags to pass to rustc",
-        "link_flags": "File: file containing flags to pass to the linker",
-        "out_dir": "File: directory containing the result of a build script",
-        "rustc_env": "File: file containing additional environment variables to set for rustc.",
-    },
-)
+BuildInfo = _BuildInfo
 
 AliasableDepInfo = provider(
     doc = "A provider mapping an alias name to a Crate's information.",
@@ -110,7 +102,7 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases):
+def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_target_independent = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -131,33 +123,49 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
-        if rust_common.crate_info in dep:
+        if type(dep) == "Target" and make_rust_providers_target_independent:
+            fail("The `deps` parameter needs to be of type `depset[DepVariantInfo], got depset[Target]`")
+
+        (crate_info, dep_info) = _get_crate_and_dep_info(dep)
+        cc_info = _get_cc_info(dep)
+        dep_build_info = _get_build_info(dep)
+
+        if crate_info:
             # This dependency is a rust_library
-            direct_dep = dep[rust_common.crate_info]
+
+            if not getattr(crate_info, "owner", None) and make_rust_providers_target_independent:
+                fail("Missing mandatory CrateInfo field: owner")
+
+            # When crate_info.owner is set, we use it. When the dep type is Target we get the
+            # label from dep.label
+            owner = getattr(crate_info, "owner", dep.label if type(dep) == "Target" else None)
+
             direct_crates.append(AliasableDepInfo(
-                name = aliases.get(dep.label, direct_dep.name),
-                dep = direct_dep,
+                name = aliases.get(owner, crate_info.name),
+                dep = crate_info,
             ))
 
-            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
-            transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
-            transitive_noncrate_libs.append(dep[rust_common.dep_info].transitive_libs)
-            transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
-        elif CcInfo in dep:
+            transitive_crates.append(depset([crate_info], transitive = [dep_info.transitive_crates]))
+            transitive_noncrates.append(dep_info.transitive_noncrates)
+            transitive_noncrate_libs.append(dep_info.transitive_libs)
+            transitive_build_infos.append(dep_info.transitive_build_infos)
+        elif cc_info:
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+            linker_inputs = cc_info.linking_context.linker_inputs.to_list()
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
-            transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
-        elif BuildInfo in dep:
+            transitive_noncrates.append(cc_info.linking_context.linker_inputs)
+        elif dep_build_info:
             if build_info:
-                fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
-            build_info = dep[BuildInfo]
+                fail("Several deps are providing build information, " +
+                     "only one is allowed in the dependencies")
+            build_info = dep_build_info
             transitive_build_infos.append(depset([build_info]))
         else:
-            fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
+            fail("rust targets can only depend on rust_library, rust_*_library or " +
+                 "cc_library targets."))
 
     transitive_crates_depset = depset(transitive = transitive_crates)
     transitive_libs = depset(
@@ -179,6 +187,28 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
         ),
         build_info,
     )
+
+def _get_crate_and_dep_info(dep):
+    if type(dep) == "Target" and rust_common.crate_info in dep:
+        return (dep[rust_common.crate_info], dep[rust_common.dep_info])
+    elif type(dep) == "struct" and hasattr(dep, "crate_info"):
+        return (dep.crate_info, dep.dep_info)
+    return (None, None)
+
+def _get_cc_info(dep):
+    if type(dep) == "Target" and CcInfo in dep:
+        return dep[CcInfo]
+    elif type(dep) == "struct" and hasattr(dep, "cc_info"):
+        return dep.cc_info
+    return None
+
+def _get_build_info(dep):
+    if type(dep) == "Target" and BuildInfo in dep:
+        return dep[BuildInfo]
+    elif type(dep) == "struct" and hasattr(dep, "build_info"):
+        return dep.build_info
+    return None
+
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
@@ -567,11 +597,14 @@ def rustc_compile_action(
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+
     dep_info, build_info = collect_deps(
         label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        make_rust_providers_target_independent = make_rust_providers_target_independent,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(

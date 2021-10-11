@@ -2,6 +2,7 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
+load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_lib = ctx.files.srcs
@@ -229,6 +230,8 @@ def _rust_toolchain_impl(ctx):
     if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
+    make_rust_providers_target_independent = getattr(ctx.attr, "_incompatible_make_rust_providers_target_independent")[IncompatibleFlagInfo]
+
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
@@ -252,6 +255,7 @@ def _rust_toolchain_impl(ctx):
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
+        _incompatible_make_rust_providers_target_independent = make_rust_providers_target_independent.enabled
     )
     return [toolchain]
 
@@ -363,6 +367,8 @@ rust_toolchain = rule(
         "_crosstool": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_incompatible_make_rust_providers_target_independent": attr.label(
+            default = "@rules_rust//rust/settings:incompatible_make_rust_providers_target_independent"),
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",

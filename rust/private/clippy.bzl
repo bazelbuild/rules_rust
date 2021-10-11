@@ -22,7 +22,12 @@ load(
     "collect_inputs",
     "construct_arguments",
 )
-load("//rust/private:utils.bzl", "determine_output_hash", "find_cc_toolchain", "find_toolchain")
+load("//rust/private:utils.bzl",
+    "determine_output_hash",
+    "find_cc_toolchain",
+    "find_toolchain",
+    "transform_deps"
+)
 
 def _get_clippy_ready_crate_info(target, aspect_ctx):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
@@ -63,6 +68,7 @@ def _clippy_aspect_impl(target, ctx):
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(

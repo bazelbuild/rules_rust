@@ -9,6 +9,12 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/591",
 )
 
+incompatible_flag(
+    name = "incompatible_make_rust_providers_target_independent",
+    build_setting_default = False,
+    issue = "TODO",
+)
+
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),

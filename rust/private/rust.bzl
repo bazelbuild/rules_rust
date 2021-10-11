@@ -22,6 +22,7 @@ load(
     "determine_output_hash",
     "expand_dict_value_locations",
     "find_toolchain",
+    "transform_deps",
 )
 
 # TODO(marco): Separate each rule into its own file.
@@ -250,6 +251,10 @@ def _rust_library_common(ctx, crate_type):
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -259,14 +264,15 @@ def _rust_library_common(ctx, crate_type):
             type = crate_type,
             root = crate_root,
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
         ),
         output_hash = output_hash,
     )
@@ -286,6 +292,10 @@ def _rust_binary_impl(ctx):
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -295,14 +305,15 @@ def _rust_binary_impl(ctx):
             type = ctx.attr.crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label
         ),
     )
 
@@ -404,6 +415,11 @@ def _rust_test_common(ctx, toolchain, output):
 
     crate_name = crate_name_from_attr(ctx.attr)
     crate_type = "bin"
+
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info]
@@ -420,8 +436,8 @@ def _rust_test_common(ctx, toolchain, output):
             type = crate_type,
             root = crate.root,
             srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
-            deps = depset(ctx.attr.deps, transitive = [crate.deps]),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
+            deps = depset(deps, transitive = [crate.deps]),
+            proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
             edition = crate.edition,
@@ -429,6 +445,7 @@ def _rust_test_common(ctx, toolchain, output):
             is_test = True,
             compile_data = compile_data,
             wrapped_crate_type = crate.type,
+            owner = ctx.label,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -437,14 +454,15 @@ def _rust_test_common(ctx, toolchain, output):
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
         )
 
     providers = rustc_compile_action(
