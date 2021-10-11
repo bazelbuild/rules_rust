@@ -69,6 +69,10 @@ def cargo_bootstrap(
     )
 
     if result.return_code != 0:
+        # buildifier: disable=print
+        print("STDOUT:", result.stdout)
+        # buildifier: disable=print
+        print("STDERR:", result.stderr)
         fail("exit_code: {}".format(
             result.return_code,
         ))
