@@ -8,6 +8,18 @@ _CARGO_BUILD_MODES = [
     "debug",
 ]
 
+_FAIL_MESSAGE = """\
+Process exited with code '{code}'
+# ARGV ########################################################################
+{argv}
+
+# STDOUT ######################################################################
+{stdout}
+
+# STDERR ######################################################################
+{stderr}
+"""
+
 def cargo_bootstrap(
         repository_ctx,
         cargo_bin,
@@ -69,12 +81,11 @@ def cargo_bootstrap(
     )
 
     if result.return_code != 0:
-        # buildifier: disable=print
-        print("STDOUT:", result.stdout)
-        # buildifier: disable=print
-        print("STDERR:", result.stderr)
-        fail("exit_code: {}".format(
-            result.return_code,
+        fail(_FAIL_MESSAGE.format(
+            code = result.return_code,
+            argv = args,
+            stdout = result.stdout,
+            stderr = result.stderr,
         ))
 
     extension = ""
