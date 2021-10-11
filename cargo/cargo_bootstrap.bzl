@@ -154,7 +154,7 @@ def _detect_changes(repository_ctx):
     repository_ctx.path(repository_ctx.attr.cargo_toml)
 
 def _cargo_bootstrap_repository_impl(repository_ctx):
-    # Check to see if the rule needs to be rerun
+    # Pretend to Bazel that this rule's input files have been used, so that it will re-run the rule if they change.
     _detect_changes(repository_ctx)
 
     if repository_ctx.attr.version in ("beta", "nightly"):
