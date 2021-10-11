@@ -12,10 +12,7 @@ def _find_clippy_action(actions):
 
 def _clippy_aspect_action_has_flag_impl(ctx, flags):
     env = analysistest.begin(ctx)
-
-    # TODO: Replace with `analysistest.target_under_test(env)` upstream fix
-    # https://github.com/bazelbuild/bazel-skylib/pull/299
-    target = env.ctx.attr.target_under_test_with_aspect
+    target = analysistest.target_under_test(env)
 
     clippy_action = _find_clippy_action(target.actions)
 
@@ -68,11 +65,7 @@ def _test_clippy_aspect_action_has_warnings_flag_test_impl(ctx):
 def make_clippy_aspect_unittest(impl):
     return analysistest.make(
         impl,
-        attrs = {
-            # We can't just use target_under_test because we need to add our own aspect to the attribute.
-            # See https://github.com/bazelbuild/bazel-skylib/pull/299
-            "target_under_test_with_aspect": attr.label(aspects = [rust_clippy_aspect], mandatory = True),
-        },
+        extra_target_under_test_aspects = [rust_clippy_aspect],
     )
 
 binary_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_binary_clippy_aspect_action_has_warnings_flag_test_impl)
@@ -89,17 +82,14 @@ def clippy_test_suite(name):
     binary_clippy_aspect_action_has_warnings_flag_test(
         name = "binary_clippy_aspect_action_has_warnings_flag_test",
         target_under_test = Label("//test/clippy:ok_binary"),
-        target_under_test_with_aspect = Label("//test/clippy:ok_binary"),
     )
     library_clippy_aspect_action_has_warnings_flag_test(
         name = "library_clippy_aspect_action_has_warnings_flag_test",
         target_under_test = Label("//test/clippy:ok_library"),
-        target_under_test_with_aspect = Label("//test/clippy:ok_library"),
     )
     test_clippy_aspect_action_has_warnings_flag_test(
         name = "test_clippy_aspect_action_has_warnings_flag_test",
         target_under_test = Label("//test/clippy:ok_test"),
-        target_under_test_with_aspect = Label("//test/clippy:ok_test"),
     )
 
     native.test_suite(
