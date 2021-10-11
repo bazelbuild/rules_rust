@@ -306,13 +306,14 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _create_test_launcher(ctx, toolchain, output, providers):
+def _create_test_launcher(ctx, toolchain, output, env, providers):
     """Create a process wrapper to ensure runtime environment variables are defined for the test binary
 
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current rust toolchain
         output (File): The output File that will be produced, depends on crate type.
+        env (dict): Dict of environment variables
         providers (list): Providers from a rust compile action. See `rustc_compile_action`
 
     Returns:
@@ -337,20 +338,12 @@ def _create_test_launcher(ctx, toolchain, output, providers):
         is_executable = True,
     )
 
-    # Get data attribute
-    data = getattr(ctx.attr, "data", [])
-
     # Expand the environment variables and write them to a file
     environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_dict_value_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        data,
-    )
 
     # Convert the environment variables into a list to be written into a file.
     environ_list = []
-    for key, value in sorted(environ.items()):
+    for key, value in sorted(env.items()):
         environ_list.extend([key, value])
 
     ctx.actions.write(
@@ -454,8 +447,21 @@ def _rust_test_common(ctx, toolchain, output):
         crate_info = crate_info,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
     )
+    data = getattr(ctx.attr, "data", [])
 
-    return _create_test_launcher(ctx, toolchain, output, providers)
+    env = expand_dict_value_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        data,
+    )
+    providers.append(testing.TestEnvironment(env))
+
+    if any(["{pwd}" in v for v in env.values()]):
+        # Some of the environment variables require expanding {pwd} placeholder at runtime,
+        # we need a launcher for that.
+        return _create_test_launcher(ctx, toolchain, output, env, providers)
+    else:
+        return providers
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -573,6 +579,7 @@ _common_attrs = {
             The order that these files will be processed is unspecified, so
             multiple definitions of a particular variable are discouraged.
         """),
+        allow_files = True,
     ),
     "rustc_flags": attr.string_list(
         doc = dedent("""\
@@ -629,8 +636,12 @@ _rust_test_attrs = {
         mandatory = False,
         doc = dedent("""\
             Specifies additional environment variables to set when the test is executed by bazel test.
-            Values are subject to `$(execpath)` and
+            Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+
+            Execpath returns absolute path, and in order to be able to construct the absolute path we
+            need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
+            more complicated debugger attachment.
         """),
     ),
     "use_libtest_harness": attr.bool(
@@ -639,6 +650,12 @@ _rust_test_attrs = {
         doc = dedent("""\
             Whether to use libtest.
         """),
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
     "_launcher": attr.label(
         executable = True,
@@ -822,6 +839,22 @@ _rust_binary_attrs = {
             "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
         ),
         default = False,
+    ),
+    "stamp": attr.int(
+        doc = dedent("""\
+            Embed additional information into the binaries.
+
+            By default stamping is controlled by the --stamp flag.
+            See https://docs.bazel.build/versions/main/user-manual.html#workspace_status
+            and https://docs.bazel.build/versions/main/user-manual.html#flag--stamp.
+        """),
+        default = -1,
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
 }
 

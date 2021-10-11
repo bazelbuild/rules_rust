@@ -276,6 +276,7 @@ def collect_inputs(
         files,
         toolchain,
         cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         build_info):
@@ -287,12 +288,18 @@ def collect_inputs(
         files (list): A list of all inputs (`ctx.files`).
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
 
     Returns:
-        tuple: See `_process_build_scripts`
+        tuple: A tuple: A tuple of the following items:
+            - (list): A list of all build info `OUT_DIR` File objects
+            - (str): The `OUT_DIR` of the current build info
+            - (File): An optional path to a generated environment file from a `cargo_build_script` target
+            - (list): All direct and transitive build flags from the current build info
+            - (list[File]): Linkstamp outputs.
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
@@ -310,7 +317,12 @@ def collect_inputs(
             for additional_input in linker_input.additional_inputs
         ]
 
-    compile_inputs = depset(
+    # Compute linkstamps. Use the inputs of the binary as inputs to the
+    # linkstamp action to ensure linkstamps are rebuilt whenever binary inputs
+    # change.
+    linkstamp_outs = []
+
+    nolinkstamp_compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -327,12 +339,52 @@ def collect_inputs(
             crate_info.compile_data,
         ],
     )
+
+    if (crate_info.type in ("bin", "cdylib") and
+        # Are linkstamps supported by the C++ toolchain?
+        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
+        # Is Bazel recent enough to support Starlark linkstamps?
+        hasattr(cc_common, "register_linkstamp_compile_action") and
+        # The current rule doesn't define _grep_includes attribute; this
+        # attribute is required for compiling linkstamps.
+        hasattr(ctx.attr, "_grep_includes")):
+        for dep in ctx.attr.deps:
+            if CcInfo in dep and dep[CcInfo].linking_context:
+                linking_context = dep[CcInfo].linking_context
+                for linkstamp in linking_context.linkstamps().to_list():
+                    # The linkstamp output path is based on the binary crate
+                    # name and the input linkstamp path. This is to disambiguate
+                    # the linkstamp outputs produced by multiple binary crates
+                    # that depend on the same linkstamp. We use the same pattern
+                    # for the output name as the one used by native cc rules.
+                    out_name = "_objs/" + crate_info.output.basename + "/" + linkstamp.file().path[:-len(linkstamp.file().extension)] + "o"
+                    linkstamp_out = ctx.actions.declare_file(out_name)
+                    linkstamp_outs.append(linkstamp_out)
+                    cc_common.register_linkstamp_compile_action(
+                        actions = ctx.actions,
+                        cc_toolchain = cc_toolchain,
+                        feature_configuration = feature_configuration,
+                        grep_includes = ctx.file._grep_includes,
+                        source_file = linkstamp.file(),
+                        output_file = linkstamp_out,
+                        compilation_inputs = linkstamp.hdrs(),
+                        inputs_for_validation = nolinkstamp_compile_inputs,
+                        label_replacement = str(ctx.label),
+                        output_replacement = crate_info.output.path,
+                    )
+
+    compile_inputs = depset(
+        linkstamp_outs,
+        transitive = [
+            nolinkstamp_compile_inputs,
+        ],
+    )
     build_env_files = getattr(files, "rustc_env_files", [])
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
-    return compile_inputs, out_dir, build_env_files, build_flags_files
+    return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs
 
 def construct_arguments(
         ctx,
@@ -344,6 +396,7 @@ def construct_arguments(
         feature_configuration,
         crate_info,
         dep_info,
+        linkstamp_outs,
         output_hash,
         rust_flags,
         out_dir,
@@ -362,6 +415,7 @@ def construct_arguments(
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
+        linkstamp_outs (list): Linkstamp outputs of native dependencies
         output_hash (str): The hashed path of the crate root
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
@@ -495,7 +549,7 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, crate_info.type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info)
@@ -574,12 +628,13 @@ def rustc_compile_action(
         aliases = crate_info.aliases,
     )
 
-    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
@@ -595,6 +650,7 @@ def rustc_compile_action(
         feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
+        linkstamp_outs = linkstamp_outs,
         output_hash = output_hash,
         rust_flags = rust_flags,
         out_dir = out_dir,
@@ -943,12 +999,13 @@ def _make_link_flags_default(linker_input):
 def _libraries_dirnames(linker_input):
     return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
 
-def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration):
+def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
         args (Args): The Args struct for a ctx.action
         dep_info (DepInfo): Dependency Info provider
+        linkstamp_outs (list): Linkstamp outputs of native dependencies
         crate_type: Crate type of the current target
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
@@ -966,6 +1023,9 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         make_link_flags = _make_link_flags_default
 
     args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags)
+
+    for linkstamp_out in linkstamp_outs:
+        args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
