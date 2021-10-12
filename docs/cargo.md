@@ -163,4 +163,8 @@ cargo_bootstrap_repository(
 | :------------- | :------------- | :------------- |
 | <a id="cargo_env-env"></a>env |  A map of environment variables   |  none |
 
+**RETURNS**
+
+str: A json encoded string of the environment variables
+
 
