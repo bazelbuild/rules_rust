@@ -17,7 +17,11 @@ pub(crate) fn lazy_static_crate_context(git: bool) -> CrateContext {
     } else {
         SourceDetails {
             git_data: None,
-            download_url: Some("https://registry.url/".parse().unwrap()),
+            download_url: Some(
+                "https://crates.io/api/v1/crates/lazy_static/1.4.0/download"
+                    .parse()
+                    .unwrap(),
+            ),
         }
     };
 
@@ -77,7 +81,11 @@ pub(crate) fn maplit_crate_context(git: bool) -> CrateContext {
     } else {
         SourceDetails {
             git_data: None,
-            download_url: Some("https://registry.url/".parse().unwrap()),
+            download_url: Some(
+                "https://crates.io/api/v1/crates/maplit/1.0.2/download"
+                    .parse()
+                    .unwrap(),
+            ),
         }
     };
 

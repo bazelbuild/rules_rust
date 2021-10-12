@@ -6,9 +6,10 @@ load("//rust:defs.bzl", "rust_common")
 load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext", "triple_to_system")
 
-DEFAULT_CRATE_REGISTRY_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
+# The default template for download URLs from the default registry (i.e. crates.io).
+DEFAULT_DEFAULT_CRATE_DOWNLOAD_URL_TEMPLATE = "https://crates.io/api/v1/crates/{crate}/{version}/download"
 
-def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, registry_template, targets, cargo_bin_path):
+def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, default_registry_download_url_template, additional_registries, targets, cargo_bin_path):
     """Generate json encoded dependency info for the crate resolver.
 
     Args:
@@ -17,7 +18,8 @@ def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, re
         packages (list): A list of json encoded `crate.spec` entries.
         cargo_toml_files (list): A list of `Label`s to Cargo manifests.
         overrides (dict): A dict of crate name (`str`) to json encoded `crate.override` data.
-        registry_template (str): A crate registry url template
+        default_registry_download_url_template (str): The URL template for downloading crates from the default registry.
+        additional_registries (dict): Dict of registry name (`str`) to the URL of the index (`str`).
         targets (list): A list of target platform triples
         cargo_bin_path (path): The label of a Cargo binary.
 
@@ -43,9 +45,10 @@ def _input_content_template(ctx, name, packages, cargo_toml_files, overrides, re
     return "{}\n".format(
         json.encode_indent(
             struct(
+                additional_registries = additional_registries,
                 cargo = str(cargo_bin_path),
                 cargo_toml_files = encodable_cargo_toml_files,
-                crate_registry_template = registry_template,
+                default_registry_download_url_template = default_registry_download_url_template,
                 overrides = encodable_overrides,
                 packages = dcoded_pkgs,
                 repository_name = name,
@@ -104,7 +107,8 @@ def _crate_universe_resolve_impl(repository_ctx):
         packages = repository_ctx.attr.packages,
         cargo_toml_files = repository_ctx.attr.cargo_toml_files,
         overrides = repository_ctx.attr.overrides,
-        registry_template = repository_ctx.attr.crate_registry_template,
+        default_registry_download_url_template = repository_ctx.attr.default_registry_download_url_template,
+        additional_registries = repository_ctx.attr.additional_registries,
         targets = repository_ctx.attr.supported_targets,
         cargo_bin_path = tools.cargo,
     )
@@ -159,13 +163,20 @@ Environment Variables:
 """,
     implementation = _crate_universe_resolve_impl,
     attrs = {
+        "additional_registries": attr.string_dict(
+            doc = """\
+Additional registries used by Cargo (see https://doc.rust-lang.org/cargo/reference/registries.html).
+
+Dict of registry_name: index_url.
+""",
+        ),
         "cargo_toml_files": attr.label_list(
             doc = "A list of Cargo manifests (`Cargo.toml` files).",
             allow_files = True,
         ),
-        "crate_registry_template": attr.string(
+        "default_registry_download_url_template": attr.string(
             doc = "A template for where to download crates from for the default crate registry. This must contain `{version}` and `{crate}` templates.",
-            default = DEFAULT_CRATE_REGISTRY_TEMPLATE,
+            default = DEFAULT_DEFAULT_CRATE_DOWNLOAD_URL_TEMPLATE,
         ),
         "iso_date": attr.string(
             doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",

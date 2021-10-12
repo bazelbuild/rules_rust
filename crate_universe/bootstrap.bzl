@@ -11,7 +11,6 @@ def crate_universe_bootstrap():
         name = "rules_rust_crate_universe_bootstrap",
         cargo_lockfile = Label("//crate_universe:Cargo.lock"),
         cargo_toml = Label("//crate_universe:Cargo.toml"),
-        srcs = [Label("//crate_universe:resolver_srcs")],
         version = rust_common.default_version,
         binary = "crate_universe_resolver",
         env = {
