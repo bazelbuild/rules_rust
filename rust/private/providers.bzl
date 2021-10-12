@@ -24,6 +24,7 @@ CrateInfo = provider(
         "is_test": "bool: If the crate is being compiled in a test context",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
+        "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo|Target]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
@@ -36,7 +37,6 @@ CrateInfo = provider(
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"
         ),
-        "owner": "Label: The label of the target that produced this CrateInfo",
     },
 )
 
@@ -69,10 +69,10 @@ DepVariantInfo = provider(
           "a Rust build script dependency, in which case `build_info` will be populated, or a " +
           "C/C++ dependency, in which case `cc_info` will be populated.",
     fields = {
-        "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
-        "dep_info": "DepInfo: The DepInfo of a Rust dependency",
         "build_info": "BuildInfo: The BuildInfo of a Rust dependency",
         "cc_info": "CcInfo: The CcInfo of a C/C++ dependency",
+        "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
+        "dep_info": "DepInfo: The DepInfo of a Rust dependency",
     },
 )
 

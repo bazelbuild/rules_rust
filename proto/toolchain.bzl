@@ -18,7 +18,6 @@ load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def generated_file_stem(file_path):
     """Returns the basename of a file without any extensions.

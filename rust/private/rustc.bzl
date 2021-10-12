@@ -19,6 +19,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
@@ -31,7 +32,6 @@ load(
     "make_static_lib_symlink",
     "relativize",
 )
-load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 
 BuildInfo = _BuildInfo
 
@@ -110,6 +110,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        make_rust_providers_target_independent (bool): Whether
+            --incompatible_make_rust_providers_target_independent has been flipped.
 
     Returns:
         tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
