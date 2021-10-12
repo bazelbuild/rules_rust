@@ -216,9 +216,11 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
 
     # Gather all dependencies for compilation
     compile_action_deps = depset(
-        transform_deps(compile_deps +
+        transform_deps(
+            compile_deps +
             proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
-            toolchain._incompatible_make_rust_providers_target_independent),
+            toolchain._incompatible_make_rust_providers_target_independent,
+        ),
     )
 
     return rustc_compile_action(

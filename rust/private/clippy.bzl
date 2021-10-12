@@ -22,11 +22,11 @@ load(
     "collect_inputs",
     "construct_arguments",
 )
-load("//rust/private:utils.bzl",
+load(
+    "//rust/private:utils.bzl",
     "determine_output_hash",
     "find_cc_toolchain",
     "find_toolchain",
-    "transform_deps"
 )
 
 def _get_clippy_ready_crate_info(target, aspect_ctx):

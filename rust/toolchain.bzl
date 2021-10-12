@@ -255,7 +255,7 @@ def _rust_toolchain_impl(ctx):
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
-        _incompatible_make_rust_providers_target_independent = make_rust_providers_target_independent.enabled
+        _incompatible_make_rust_providers_target_independent = make_rust_providers_target_independent.enabled,
     )
     return [toolchain]
 
@@ -368,7 +368,8 @@ rust_toolchain = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_incompatible_make_rust_providers_target_independent": attr.label(
-            default = "@rules_rust//rust/settings:incompatible_make_rust_providers_target_independent"),
+            default = "@rules_rust//rust/settings:incompatible_make_rust_providers_target_independent",
+        ),
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",

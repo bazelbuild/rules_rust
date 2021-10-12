@@ -36,7 +36,7 @@ CrateInfo = provider(
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"
         ),
-        "owner": "Label: The label of the target that produced this CrateInfo"
+        "owner": "Label: The label of the target that produced this CrateInfo",
     },
 )
 

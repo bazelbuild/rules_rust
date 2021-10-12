@@ -15,7 +15,7 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
-load(":providers.bzl", "DepVariantInfo", "CrateInfo", "DepInfo", "BuildInfo")
+load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 def find_toolchain(ctx):
     """Finds the first rust toolchain that is configured.

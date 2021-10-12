@@ -313,7 +313,7 @@ def _rust_binary_impl(ctx):
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
-            owner = ctx.label
+            owner = ctx.label,
         ),
     )
 
