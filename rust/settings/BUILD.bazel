@@ -12,7 +12,7 @@ incompatible_flag(
 incompatible_flag(
     name = "incompatible_make_rust_providers_target_independent",
     build_setting_default = False,
-    issue = "TODO",
+    issue = "https://github.com/bazelbuild/rules_rust/issues/966",
 )
 
 bzl_library(
