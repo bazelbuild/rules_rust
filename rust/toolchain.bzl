@@ -230,7 +230,7 @@ def _rust_toolchain_impl(ctx):
     if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
-    make_rust_providers_target_independent = getattr(ctx.attr, "_incompatible_make_rust_providers_target_independent")[IncompatibleFlagInfo]
+    make_rust_providers_target_independent = ctx.attr._incompatible_make_rust_providers_target_independent[IncompatibleFlagInfo]
 
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
