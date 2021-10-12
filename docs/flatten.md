@@ -1560,6 +1560,10 @@ cargo_bootstrap_repository(
 | :------------- | :------------- | :------------- |
 | <a id="cargo_env-env"></a>env |  A map of environment variables   |  none |
 
+**RETURNS**
+
+str: A json encoded string of the environment variables
+
 
 <a id="#crate.spec"></a>
 
@@ -1598,6 +1602,10 @@ crate_universe(
 | <a id="crate.spec-name"></a>name |  The name of the crate as it would appear in a crate registry.   |  none |
 | <a id="crate.spec-semver"></a>semver |  The desired version ([semver](https://semver.org/)) of the crate   |  none |
 | <a id="crate.spec-features"></a>features |  A list of desired [features](https://doc.rust-lang.org/cargo/reference/features.html).   |  <code>None</code> |
+
+**RETURNS**
+
+str: A json encoded struct of crate info
 
 
 <a id="#crate.override"></a>
@@ -1666,6 +1674,10 @@ crate_universe(
 | <a id="crate.override-extra_build_script_env_vars"></a>extra_build_script_env_vars |  Environment variables to add to the [build_script_env](./cargo_build_script.md#cargo_build_script-build_script_env) attribute of the generated <code>cargo_build_script</code> target.   |  <code>None</code> |
 | <a id="crate.override-extra_rustc_env_vars"></a>extra_rustc_env_vars |  Environment variables to add to the <code>rustc_env</code> attribute for the generated target (eg: [rust_library.rustc_env](./defs.md#rust_library-rustc_env)).   |  <code>None</code> |
 | <a id="crate.override-features_to_remove"></a>features_to_remove |  A list of features to remove from a generated target.   |  <code>[]</code> |
+
+**RETURNS**
+
+str: A json encoded struct of crate overrides
 
 
 <a id="#rust_bindgen_library"></a>
