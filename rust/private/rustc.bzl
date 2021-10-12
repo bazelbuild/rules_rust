@@ -164,8 +164,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
             build_info = dep_build_info
             transitive_build_infos.append(depset([build_info]))
         else:
-            fail("rust targets can only depend on rust_library, rust_*_library or " +
-                 "cc_library targets."))
+            fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
+                 "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
     transitive_libs = depset(
@@ -208,7 +208,6 @@ def _get_build_info(dep):
     elif type(dep) == "struct" and hasattr(dep, "build_info"):
         return dep.build_info
     return None
-
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
