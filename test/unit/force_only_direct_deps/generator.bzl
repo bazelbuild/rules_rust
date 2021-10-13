@@ -55,7 +55,7 @@ EOF
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
-            root = rs_file.path,
+            root = rs_file,
             srcs = depset([rs_file]),
             deps = depset(deps),
             proc_macro_deps = depset([]),
