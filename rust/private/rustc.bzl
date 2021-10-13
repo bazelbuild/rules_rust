@@ -960,9 +960,12 @@ def add_crate_link_flags(args, dep_info, force_only_direct_deps = False):
     """
 
     if force_only_direct_deps:
-        args.add_all(depset(
-            transitive = [dep_info.direct_crates,
-                          dep_info.transitive_crates]
+        args.add_all(
+            depset(
+                transitive = [
+                    dep_info.direct_crates,
+                    dep_info.transitive_crates,
+                ],
             ),
             uniquify = True,
             map_each = _crate_to_link_flag,

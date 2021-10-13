@@ -12,8 +12,10 @@ def _force_only_direct_deps_rustc_flags_test(ctx):
     argv = action.argv
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains_prefix(
-        env, action,
-         "--extern=transitive=bazel-out/k8-fastbuild/bin/test/unit/force_only_direct_deps/libtransitive")
+        env,
+        action,
+        "--extern=transitive=bazel-out/k8-fastbuild/bin/test/unit/force_only_direct_deps/libtransitive",
+    )
     return analysistest.end(env)
 
 force_only_direct_deps_test = analysistest.make(_force_only_direct_deps_rustc_flags_test)
@@ -23,7 +25,7 @@ def _force_only_direct_deps_test():
         name = "direct",
         srcs = ["direct.rs"],
         edition = "2018",
-        deps = [":transitive"]
+        deps = [":transitive"],
     )
 
     rust_library(

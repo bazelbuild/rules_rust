@@ -1,7 +1,6 @@
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
-
 load(
     "//rust/private:utils.bzl",
     "determine_output_hash",
@@ -22,14 +21,15 @@ pub fn call_both() {}
 {}
 EOF
 """.format(rs_file.path, "{", "}"),
-        mnemonic = "WriteRsFile"
+        mnemonic = "WriteRsFile",
     )
 
     toolchain = ctx.toolchains[Label("//rust:toolchain")]
+
     # Determine unique hash for this rlib
     output_hash = determine_output_hash(rs_file)
 
-    crate_name = ctx.label.name + "_generated"
+    crate_name = ctx.label.name
     crate_type = "rlib"
 
     rust_lib_name = "{prefix}{name}-{lib_hash}{extension}".format(
@@ -74,7 +74,7 @@ generator = rule(
     implementation = _generator_impl,
     attrs = {
         "deps": attr.label_list(),
-        "_cc_toolchain" : attr.label(
+        "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
         "_error_format": attr.label(default = "@rules_rust//:error_format"),
