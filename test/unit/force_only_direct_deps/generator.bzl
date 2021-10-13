@@ -14,12 +14,12 @@ def _generator_impl(ctx):
     ctx.actions.run_shell(
         outputs = [rs_file],
         command = """cat <<EOF > {}
-use direct;
-use transitive;
+use direct::direct_fn;
+use transitive::transitive_fn;
 
 pub fn call_both() {}
-    direct::direct_fn();
-    transitive::transitive_fn();
+    direct_fn();
+    transitive_fn();
 {}
 EOF
 """.format(rs_file.path, "{", "}"),
