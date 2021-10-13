@@ -323,6 +323,7 @@ def load_rust_src(ctx):
         url,
         output = archive_path,
         sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or "",
+        auth = _make_auth_dict(ctx, [url]),
     )
     ctx.extract(
         archive_path,
@@ -536,6 +537,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         sha256 = getattr(ctx.attr, "sha256s", dict()).get(tool_suburl) or
                  FILE_KEY_TO_SHA.get(tool_suburl) or
                  sha256,
+        auth = _make_auth_dict(ctx, urls),
     )
     for subdirectory in tool_subdirectories:
         ctx.extract(
@@ -543,3 +545,12 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             output = "",
             stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
+
+def _make_auth_dict(ctx, urls):
+    auth = getattr(ctx.attr, "auth", {})
+    if not auth:
+        return {}
+    ret = {}
+    for url in urls:
+        ret[url] = auth
+    return ret

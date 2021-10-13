@@ -170,6 +170,12 @@ rust_toolchain_repository = repository_rule(
         "selection from toolchain fetching."
     ),
     attrs = {
+        "auth": attr.string_dict(
+            doc = (
+                "Auth object compatible with repository_ctx.download to use when downloading files. " +
+                "See https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download for more details."
+            ),
+        ),
         "dev_components": attr.bool(
             doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
             default = False,
@@ -255,7 +261,8 @@ def rust_repository_set(
         edition = None,
         dev_components = False,
         sha256s = None,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        auth = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -278,6 +285,8 @@ def rust_repository_set(
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
+            See https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download for more details.
     """
 
     rust_toolchain_repository(
@@ -293,6 +302,7 @@ def rust_repository_set(
         dev_components = dev_components,
         sha256s = sha256s,
         urls = urls,
+        auth = auth,
     )
 
     rust_toolchain_repository_proxy(
