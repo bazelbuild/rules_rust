@@ -1,10 +1,12 @@
-load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
-load("//rust/private:rustc.bzl", "rustc_compile_action")
+"""A custom rule that threats all its dependencies as direct dependencies."""
+
 load(
-    "//rust/private:utils.bzl",
-    "determine_output_hash",
-    "find_toolchain",
+    "//rust:rust_common.bzl",
+    "BuildInfo",
+    "CrateInfo",
+    "DepInfo",
+    "DepVariantInfo",
+    "rust_common",
 )
 
 def _generator_impl(ctx):
@@ -27,8 +29,7 @@ EOF
     toolchain = ctx.toolchains[Label("//rust:toolchain")]
 
     # Determine unique hash for this rlib
-    output_hash = determine_output_hash(rs_file)
-
+    output_hash = repr(hash(rs_file.path))
     crate_name = ctx.label.name
     crate_type = "rlib"
 
@@ -47,7 +48,7 @@ EOF
     ) for dep in ctx.attr.deps]
 
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    return rustc_compile_action(
+    return rust_common.rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
