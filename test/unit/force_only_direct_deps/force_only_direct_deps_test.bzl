@@ -37,6 +37,7 @@ def _force_only_direct_deps_test():
     generator(
         name = "generate",
         deps = [":direct"],
+        tags = ["noclippy"],
     )
 
     force_only_direct_deps_test(
