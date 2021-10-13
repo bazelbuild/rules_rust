@@ -14,7 +14,7 @@ def _force_only_direct_deps_rustc_flags_test(ctx):
     assert_argv_contains_prefix(
         env,
         action,
-        "--extern=transitive=bazel-out/k8-fastbuild/bin/test/unit/force_only_direct_deps/libtransitive",
+        "--extern=transitive",
     )
     return analysistest.end(env)
 
