@@ -959,29 +959,38 @@ def add_crate_link_flags(args, dep_info, force_only_direct_deps = False):
             to the commandline as opposed to -L.
     """
 
-    # nb. Crates are linked via --extern regardless of their crate_type
-    args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
-
     if force_only_direct_deps:
-        args.add_all(dep_info.transitive_crates, uniquify = True, map_each = _crate_to_link_flag)
-    else:
-        args.add_all(
-            dep_info.transitive_crates,
-            map_each = _get_crate_dirname,
+        args.add_all(depset(
+            transitive = [dep_info.direct_crates,
+                          dep_info.transitive_crates]
+            ),
             uniquify = True,
-            format_each = "-Ldependency=%s",
+            map_each = _crate_to_link_flag,
         )
+    else:
+        # nb. Crates are linked via --extern regardless of their crate_type
+        args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
+    args.add_all(
+        dep_info.transitive_crates,
+        map_each = _get_crate_dirname,
+        uniquify = True,
+        format_each = "-Ldependency=%s",
+    )
 
 def _crate_to_link_flag(crate_info):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
 
     Args:
-        crate_info (CrateInfo): A CrateInfo provider from the current rule
+        crate_info (CrateInfo|AliasableDepInfo): A CrateInfo or a AliasableDepInfo provider
 
     Returns:
-        list: Link flags for the current crate info
+        list: Link flags for the given crate_info
     """
-    return ["--extern={}={}".format(crate_info.name, crate_info.dep.output.path)]
+
+    # This is AliasableDepInfo
+    if hasattr(crate_info, "dep"):
+        crate_info = crate_info.dep
+    return ["--extern={}={}".format(crate_info.name, crate_info.output.path)]
 
 def _get_crate_dirname(crate):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
