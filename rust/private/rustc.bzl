@@ -977,20 +977,24 @@ def add_crate_link_flags(args, dep_info, force_only_direct_deps = False):
         format_each = "-Ldependency=%s",
     )
 
-def _crate_to_link_flag(crate_info):
+def _crate_to_link_flag(crate):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
 
     Args:
-        crate_info (CrateInfo|AliasableDepInfo): A CrateInfo or a AliasableDepInfo provider
+        crate (CrateInfo|AliasableDepInfo): A CrateInfo or an AliasableDepInfo provider
 
     Returns:
         list: Link flags for the given crate_info
     """
 
-    # This is AliasableDepInfo
-    if hasattr(crate_info, "dep"):
-        crate_info = crate_info.dep
-    return ["--extern={}={}".format(crate_info.name, crate_info.output.path)]
+    # This is AliasableDepInfo, we should use the alias as a crate name
+    if hasattr(crate, "dep"):
+        name = crate.name
+        crate_info = crate.dep
+    else:
+        name = crate.name
+        crate_info = crate
+    return ["--extern={}={}".format(name, crate_info.output.path)]
 
 def _get_crate_dirname(crate):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
