@@ -1,4 +1,0 @@
-load(":force_only_direct_deps_test.bzl", "force_only_direct_deps_test_suite")
-
-############################ UNIT TESTS #############################
-force_only_direct_deps_test_suite(name = "force_only_direct_deps_test_suite")

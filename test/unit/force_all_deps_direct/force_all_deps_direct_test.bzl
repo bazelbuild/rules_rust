@@ -3,9 +3,9 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_library")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains_prefix")
-load("//test/unit/force_only_direct_deps:generator.bzl", "generator")
+load("//test/unit/force_all_deps_direct:generator.bzl", "generator")
 
-def _force_only_direct_deps_rustc_flags_test(ctx):
+def _force_all_deps_direct_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[1]
@@ -18,9 +18,9 @@ def _force_only_direct_deps_rustc_flags_test(ctx):
     )
     return analysistest.end(env)
 
-force_only_direct_deps_test = analysistest.make(_force_only_direct_deps_rustc_flags_test)
+force_all_deps_direct_test = analysistest.make(_force_all_deps_direct_rustc_flags_test)
 
-def _force_only_direct_deps_test():
+def _force_all_deps_direct_test():
     rust_library(
         name = "direct",
         srcs = ["direct.rs"],
@@ -40,22 +40,22 @@ def _force_only_direct_deps_test():
         tags = ["noclippy"],
     )
 
-    force_only_direct_deps_test(
-        name = "force_only_direct_deps_rustc_flags_test",
+    force_all_deps_direct_test(
+        name = "force_all_deps_direct_rustc_flags_test",
         target_under_test = ":generate",
     )
 
-def force_only_direct_deps_test_suite(name):
+def force_all_deps_direct_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
     Args:
         name: Name of the macro.
     """
-    _force_only_direct_deps_test()
+    _force_all_deps_direct_test()
 
     native.test_suite(
         name = name,
         tests = [
-            ":force_only_direct_deps_rustc_flags_test",
+            ":force_all_deps_direct_rustc_flags_test",
         ],
     )

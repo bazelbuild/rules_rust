@@ -434,7 +434,7 @@ def construct_arguments(
         build_env_files,
         build_flags_files,
         emit = ["dep-info", "link"],
-        force_only_direct_deps = False):
+        force_all_deps_direct = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -454,7 +454,7 @@ def construct_arguments(
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         emit (list): Values for the --emit flag to rustc.
-        force_only_direct_deps (bool, optional): Whether to pass the transitive rlibs with --external
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
 
     Returns:
@@ -586,7 +586,7 @@ def construct_arguments(
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info, force_only_direct_deps)
+    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct)
 
     needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
                                    crate_info.edition != "2015"
@@ -636,7 +636,7 @@ def rustc_compile_action(
         output_hash = None,
         rust_flags = [],
         environ = {},
-        force_only_direct_deps = False):
+        force_all_deps_direct = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -647,7 +647,7 @@ def rustc_compile_action(
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         environ (dict, optional): A set of makefile expandable environment variables for the action
-        force_only_direct_deps (bool, optional): Whether to pass the transitive rlibs with --external
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
 
     Returns:
@@ -696,7 +696,7 @@ def rustc_compile_action(
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
-        force_only_direct_deps = force_only_direct_deps,
+        force_all_deps_direct = force_all_deps_direct,
     )
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
@@ -949,17 +949,17 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info, force_only_direct_deps = False):
+def add_crate_link_flags(args, dep_info, force_all_deps_direct = False):
     """Adds link flags to an Args object reference
 
     Args:
         args (Args): An arguments object reference
         dep_info (DepInfo): The current target's dependency info
-        force_only_direct_deps (bool, optional): Whether to pass the transitive rlibs with --external
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
     """
 
-    if force_only_direct_deps:
+    if force_all_deps_direct:
         args.add_all(
             depset(
                 transitive = [
@@ -971,7 +971,7 @@ def add_crate_link_flags(args, dep_info, force_only_direct_deps = False):
             map_each = _crate_to_link_flag,
         )
     else:
-        # nb. Crates are linked via --extern regardless of their crate_type
+        # nb. Direct crates are linked via --extern regardless of their crate_type
         args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
     args.add_all(
         dep_info.transitive_crates,
@@ -987,7 +987,7 @@ def _crate_to_link_flag(crate):
         crate (CrateInfo|AliasableDepInfo): A CrateInfo or an AliasableDepInfo provider
 
     Returns:
-        list: Link flags for the given crate_info
+        list: Link flags for the given provider
     """
 
     # This is AliasableDepInfo, we should use the alias as a crate name

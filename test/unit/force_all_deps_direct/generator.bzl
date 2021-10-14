@@ -1,13 +1,13 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
-load(
-    "//rust:rust_common.bzl",
-    "BuildInfo",
-    "CrateInfo",
-    "DepInfo",
-    "DepVariantInfo",
-    "rust_common",
-)
+# buildifier: disable=bzl-visibility
+load("//rust/private:common.bzl", "rust_common")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 def _generator_impl(ctx):
     rs_file = ctx.actions.declare_file(ctx.label.name + "_generated.rs")
@@ -48,7 +48,7 @@ EOF
     ) for dep in ctx.attr.deps]
 
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    return rust_common.rustc_compile_action(
+    return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -68,7 +68,7 @@ EOF
             is_test = False,
         ),
         output_hash = output_hash,
-        force_only_direct_deps = True,
+        force_all_deps_direct = True,
     )
 
 generator = rule(

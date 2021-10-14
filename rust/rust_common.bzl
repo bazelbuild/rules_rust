@@ -14,24 +14,7 @@
 
 """Module with Rust definitions required to write custom Rust rules."""
 
-load("//rust/private:common.bzl", _rust_common = "rust_common")
-load(
-    "//rust/private:providers.bzl",
-    _BuildInfo = "BuildInfo",
-    _ClippyInfo = "ClippyInfo",
-    _CrateInfo = "CrateInfo",
-    _DepInfo = "DepInfo",
-    _DepVariantInfo = "DepVariantInfo",
-)
-load("//rust/private:rustc.bzl", _rustc_compile_action = "rustc_compile_action")
+load("//rust/private:providers.bzl", _ClippyInfo = "ClippyInfo", _CrateInfo = "CrateInfo")
 
-BuildInfo = _BuildInfo
 CrateInfo = _CrateInfo
 ClippyInfo = _ClippyInfo
-DepInfo = _DepInfo
-DepVariantInfo = _DepVariantInfo
-
-rust_common = struct(
-    create_crate_info = _rust_common.create_crate_info,
-    rustc_compile_action = _rustc_compile_action,
-)
