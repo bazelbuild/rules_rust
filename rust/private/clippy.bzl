@@ -63,11 +63,13 @@ def _clippy_aspect_impl(target, ctx):
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     crate_type = crate_info.type
 
-    dep_info, build_info = collect_deps(
+    dep_info, build_info, linkstamps = collect_deps(
         label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
+        are_linkstamps_supported = False,
         make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent,
     )
 
@@ -75,6 +77,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx,
         ctx.rule.file,
         ctx.rule.files,
+        linkstamps,
         toolchain,
         cc_toolchain,
         feature_configuration,

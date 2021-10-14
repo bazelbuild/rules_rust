@@ -102,7 +102,16 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_target_independent = False):
+def _are_linkstamps_supported(feature_configuration, has_grep_includes):
+    # Are linkstamps supported by the C++ toolchain?
+    return (cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
+            # Is Bazel recent enough to support Starlark linkstamps?
+            hasattr(cc_common, "register_linkstamp_compile_action") and
+            # The current rule doesn't define _grep_includes attribute; this
+            # attribute is required for compiling linkstamps.
+            has_grep_includes)
+
+def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported = False, make_rust_providers_target_independent = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -110,11 +119,16 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
         make_rust_providers_target_independent (bool): Whether
             --incompatible_make_rust_providers_target_independent has been flipped.
 
     Returns:
-        tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
+        tuple: Returns a tuple of:
+            DepInfo,
+            BuildInfo,
+            linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
+
     """
     direct_crates = []
     transitive_crates = []
@@ -122,6 +136,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
     transitive_noncrate_libs = []
     transitive_build_infos = []
     build_info = None
+    linkstamps = []
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
@@ -159,6 +174,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
             transitive_noncrates.append(cc_info.linking_context.linker_inputs)
+            if are_linkstamps_supported:
+                linkstamps.append(cc_info.linking_context.linkstamps())
         elif dep_build_info:
             if build_info:
                 fail("Several deps are providing build information, " +
@@ -188,6 +205,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, make_rust_providers_targ
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
+        depset(transitive = linkstamps),
     )
 
 def _get_crate_and_dep_info(dep):
@@ -305,6 +323,7 @@ def collect_inputs(
         ctx,
         file,
         files,
+        linkstamps,
         toolchain,
         cc_toolchain,
         feature_configuration,
@@ -317,6 +336,7 @@ def collect_inputs(
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         files (list): A list of all inputs (`ctx.files`).
+        linkstamps (depset): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
@@ -371,38 +391,33 @@ def collect_inputs(
         ],
     )
 
-    if (crate_info.type in ("bin", "cdylib") and
-        # Are linkstamps supported by the C++ toolchain?
-        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
-        # Is Bazel recent enough to support Starlark linkstamps?
-        hasattr(cc_common, "register_linkstamp_compile_action") and
-        # The current rule doesn't define _grep_includes attribute; this
-        # attribute is required for compiling linkstamps.
-        hasattr(ctx.attr, "_grep_includes")):
-        for dep in ctx.attr.deps:
-            if CcInfo in dep and dep[CcInfo].linking_context:
-                linking_context = dep[CcInfo].linking_context
-                for linkstamp in linking_context.linkstamps().to_list():
-                    # The linkstamp output path is based on the binary crate
-                    # name and the input linkstamp path. This is to disambiguate
-                    # the linkstamp outputs produced by multiple binary crates
-                    # that depend on the same linkstamp. We use the same pattern
-                    # for the output name as the one used by native cc rules.
-                    out_name = "_objs/" + crate_info.output.basename + "/" + linkstamp.file().path[:-len(linkstamp.file().extension)] + "o"
-                    linkstamp_out = ctx.actions.declare_file(out_name)
-                    linkstamp_outs.append(linkstamp_out)
-                    cc_common.register_linkstamp_compile_action(
-                        actions = ctx.actions,
-                        cc_toolchain = cc_toolchain,
-                        feature_configuration = feature_configuration,
-                        grep_includes = ctx.file._grep_includes,
-                        source_file = linkstamp.file(),
-                        output_file = linkstamp_out,
-                        compilation_inputs = linkstamp.hdrs(),
-                        inputs_for_validation = nolinkstamp_compile_inputs,
-                        label_replacement = str(ctx.label),
-                        output_replacement = crate_info.output.path,
-                    )
+    if crate_info.type in ("bin", "cdylib"):
+        # There is no other way to register an action for each member of a depset than
+        # flattening the depset as of 2021-10-12. Luckily, usually there is only one linkstamp
+        # in a build, and we only flatten the list on binary targets that perform transitive linking,
+        # so it's extremely unlikely that this call to `to_list()` will ever be a performance
+        # problem.
+        for linkstamp in linkstamps.to_list():
+            # The linkstamp output path is based on the binary crate
+            # name and the input linkstamp path. This is to disambiguate
+            # the linkstamp outputs produced by multiple binary crates
+            # that depend on the same linkstamp. We use the same pattern
+            # for the output name as the one used by native cc rules.
+            out_name = "_objs/" + crate_info.output.basename + "/" + linkstamp.file().path[:-len(linkstamp.file().extension)] + "o"
+            linkstamp_out = ctx.actions.declare_file(out_name)
+            linkstamp_outs.append(linkstamp_out)
+            cc_common.register_linkstamp_compile_action(
+                actions = ctx.actions,
+                cc_toolchain = cc_toolchain,
+                feature_configuration = feature_configuration,
+                grep_includes = ctx.file._grep_includes,
+                source_file = linkstamp.file(),
+                output_file = linkstamp_out,
+                compilation_inputs = linkstamp.hdrs(),
+                inputs_for_validation = nolinkstamp_compile_inputs,
+                label_replacement = str(ctx.label),
+                output_replacement = crate_info.output.path,
+            )
 
     compile_inputs = depset(
         linkstamp_outs,
@@ -660,11 +675,15 @@ def rustc_compile_action(
 
     make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
 
-    dep_info, build_info = collect_deps(
+    dep_info, build_info, linkstamps = collect_deps(
         label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        are_linkstamps_supported = _are_linkstamps_supported(
+            feature_configuration = feature_configuration,
+            has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
+        ),
         make_rust_providers_target_independent = make_rust_providers_target_independent,
     )
 
@@ -672,6 +691,7 @@ def rustc_compile_action(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
+        linkstamps = linkstamps,
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,

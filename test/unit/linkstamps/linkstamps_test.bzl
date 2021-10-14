@@ -64,10 +64,21 @@ def _linkstamps_test():
         }),
     )
 
+    cc_library(
+        name = "cc_lib_with_linkstamp_transitively",
+        deps = [":cc_lib_with_linkstamp"],
+    )
+
     rust_binary(
         name = "some_rust_binary",
         srcs = ["foo.rs"],
         deps = [":cc_lib_with_linkstamp"],
+    )
+
+    rust_binary(
+        name = "some_rust_binary_with_multiple_paths_to_a_linkstamp",
+        srcs = ["foo.rs"],
+        deps = [":cc_lib_with_linkstamp", ":cc_lib_with_linkstamp_transitively"],
     )
 
     rust_test(
@@ -85,6 +96,11 @@ def _linkstamps_test():
     supports_linkstamps_test(
         name = "rust_binary_supports_linkstamps_test",
         target_under_test = ":some_rust_binary",
+    )
+
+    supports_linkstamps_test(
+        name = "rust_binary_supports_duplicated_linkstamps",
+        target_under_test = ":some_rust_binary_with_multiple_paths_to_a_linkstamp",
     )
 
     supports_linkstamps_test(
@@ -116,6 +132,7 @@ def linkstamps_test_suite(name):
         name = name,
         tests = [
             ":rust_binary_supports_linkstamps_test",
+            ":rust_binary_supports_duplicated_linkstamps",
             ":rust_test_supports_linkstamps_test1",
             ":rust_test_supports_linkstamps_test2",
         ],
