@@ -147,6 +147,9 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
 
+        if cc_info and are_linkstamps_supported:
+            linkstamps.append(cc_info.linking_context.linkstamps())
+
         if crate_info:
             # This dependency is a rust_library
 
@@ -174,8 +177,6 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
             transitive_noncrates.append(cc_info.linking_context.linker_inputs)
-            if are_linkstamps_supported:
-                linkstamps.append(cc_info.linking_context.linkstamps())
         elif dep_build_info:
             if build_info:
                 fail("Several deps are providing build information, " +

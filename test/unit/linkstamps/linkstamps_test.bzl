@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//rust:defs.bzl", "rust_binary", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 def _is_running_on_linux(ctx):
@@ -64,31 +64,8 @@ def _linkstamps_test():
         }),
     )
 
-    cc_library(
-        name = "cc_lib_with_linkstamp_transitively",
-        deps = [":cc_lib_with_linkstamp"],
-    )
-
     rust_binary(
         name = "some_rust_binary",
-        srcs = ["foo.rs"],
-        deps = [":cc_lib_with_linkstamp"],
-    )
-
-    rust_binary(
-        name = "some_rust_binary_with_multiple_paths_to_a_linkstamp",
-        srcs = ["foo.rs"],
-        deps = [":cc_lib_with_linkstamp", ":cc_lib_with_linkstamp_transitively"],
-    )
-
-    rust_test(
-        name = "some_rust_test1",
-        srcs = ["foo.rs"],
-        deps = [":cc_lib_with_linkstamp"],
-    )
-
-    rust_test(
-        name = "some_rust_test2",
         srcs = ["foo.rs"],
         deps = [":cc_lib_with_linkstamp"],
     )
@@ -98,14 +75,54 @@ def _linkstamps_test():
         target_under_test = ":some_rust_binary",
     )
 
+    rust_library(
+        name = "some_rust_library_with_linkstamp_transitively",
+        srcs = ["foo.rs"],
+        deps = [":cc_lib_with_linkstamp"],
+    )
+
+    rust_binary(
+        name = "some_rust_binary_with_linkstamp_transitively",
+        srcs = ["foo.rs"],
+        deps = [":some_rust_library_with_linkstamp_transitively"],
+    )
+
+    supports_linkstamps_test(
+        name = "rust_binary_with_linkstamp_transitively",
+        target_under_test = ":some_rust_binary_with_linkstamp_transitively",
+    )
+
+    cc_library(
+        name = "cc_lib_with_linkstamp_transitively",
+        deps = [":cc_lib_with_linkstamp"],
+    )
+
+    rust_binary(
+        name = "some_rust_binary_with_multiple_paths_to_a_linkstamp",
+        srcs = ["foo.rs"],
+        deps = [":cc_lib_with_linkstamp", ":cc_lib_with_linkstamp_transitively"],
+    )
+
     supports_linkstamps_test(
         name = "rust_binary_supports_duplicated_linkstamps",
         target_under_test = ":some_rust_binary_with_multiple_paths_to_a_linkstamp",
     )
 
+    rust_test(
+        name = "some_rust_test1",
+        srcs = ["foo.rs"],
+        deps = [":cc_lib_with_linkstamp"],
+    )
+
     supports_linkstamps_test(
         name = "rust_test_supports_linkstamps_test1",
         target_under_test = ":some_rust_test1",
+    )
+
+    rust_test(
+        name = "some_rust_test2",
+        srcs = ["foo.rs"],
+        deps = [":cc_lib_with_linkstamp"],
     )
 
     supports_linkstamps_test(
