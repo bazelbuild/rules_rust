@@ -18,6 +18,7 @@ extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
 use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::env;
 use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
@@ -89,7 +90,7 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(cc_path) = env::var_os("CC") {
-        let mut cc_path = exec_root.join(cc_path);
+        let mut cc_path = exec_root.join(cc_path).into_os_string();
         if let Some(sysroot_path) = env::var_os("SYSROOT") {
             cc_path.push(" --sysroot=");
             cc_path.push(&exec_root.join(sysroot_path));
