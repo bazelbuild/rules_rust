@@ -19,7 +19,6 @@ extern crate cargo_build_script_output_parser;
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
 use std::collections::BTreeMap;
 use std::env;
-use std::ffi::OsString;
 use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
 use std::process::Command;
