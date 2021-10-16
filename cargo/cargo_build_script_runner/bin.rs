@@ -19,7 +19,6 @@ extern crate cargo_build_script_output_parser;
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
 use std::collections::BTreeMap;
 use std::env;
-use std::ffi::OsString;
 use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
 use std::process::Command;
@@ -90,10 +89,10 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(cc_path) = env::var_os("CC") {
-        let mut cc_path = absolutify(&exec_root, cc_path);
+        let mut cc_path = exec_root.join(cc_path).into_os_string();
         if let Some(sysroot_path) = env::var_os("SYSROOT") {
             cc_path.push(" --sysroot=");
-            cc_path.push(absolutify(&exec_root, sysroot_path));
+            cc_path.push(&exec_root.join(sysroot_path));
         }
         command.env("CC", cc_path);
     }
@@ -105,7 +104,7 @@ fn run_buildrs() -> Result<(), String> {
         if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
             command.env_remove("AR");
         } else {
-            command.env("AR", absolutify(&exec_root, ar_path));
+            command.env("AR", exec_root.join(ar_path));
         }
     }
 
@@ -256,15 +255,6 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
         .into_iter()
         .map(|(key, value)| (format!("CARGO_CFG_{}", key.to_uppercase()), value.join(",")))
         .collect())
-}
-
-fn absolutify(root: &Path, maybe_relative: OsString) -> OsString {
-    let path = Path::new(&maybe_relative);
-    if path.is_relative() {
-        root.join(path).into_os_string()
-    } else {
-        maybe_relative
-    }
 }
 
 fn main() {

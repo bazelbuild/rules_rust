@@ -210,6 +210,59 @@ fn fails_to_merge_different_git() {
 }
 
 #[test]
+fn fails_to_merge_different_registries() {
+    let cargo_toml1 = indoc! { r#"
+    [package]
+    name = "blepper"
+    version = "1.0.0"
+
+    [dependencies]
+    lazy_static = { version = "0.1.0", registry = "the-best-cats" }
+    "# };
+
+    let cargo_toml2 = indoc! { r#"
+    [package]
+    name = "mlemer"
+    version = "2.0.0"
+
+    [dependencies]
+    lazy_static = { version = "0.1.1" }
+    "# };
+
+    let cargo_tomls = btreemap! {
+       "//a:Cargo.toml" => cargo_toml1,
+       "//b:Cargo.toml" => cargo_toml2,
+    };
+
+    let err = format!("{:?}", expect_err(cargo_tomls, vec![]));
+
+    assert_that(&err).contains("Can't merge the same package from different registries");
+    assert_that(&err).contains("the-best-cats");
+    assert_that(&err).contains("lazy_static");
+}
+
+#[test]
+fn errors_on_unknown_registry() {
+    let cargo_toml = indoc! { r#"
+    [package]
+    name = "blepper"
+    version = "1.0.0"
+
+    [dependencies]
+    lazy_static = { version = "0.1.0", registry = "the-worst-cats" }
+    "# };
+
+    let cargo_tomls = btreemap! {
+       "//a:Cargo.toml" => cargo_toml,
+    };
+
+    let err = format!("{:?}", expect_err(cargo_tomls, vec![]));
+
+    assert_that(&err).contains("Saw dep for unknown registry the-worst-cats");
+    assert_that(&err).contains("the-best-cats");
+}
+
+#[test]
 fn can_have_just_packages() {
     let packages = vec![Package {
         name: String::from("serde"),
@@ -300,6 +353,7 @@ fn test(
     let labels_to_cargo_tomls = write_cargo_tomls_to_disk(input);
 
     let (merged_cargo_toml, labels_to_deps) = merge_cargo_tomls(
+        &btreeset!["the-best-cats".into()],
         labels_to_cargo_tomls
             .iter()
             .map(|(label, file)| (label.clone(), file.path().to_owned()))
@@ -332,6 +386,7 @@ fn expect_err(
     let labels_to_cargo_tomls = write_cargo_tomls_to_disk(cargo_tomls);
 
     merge_cargo_tomls(
+        &btreeset!["the-best-cats".into()],
         labels_to_cargo_tomls
             .iter()
             .map(|(label, file)| (label.clone(), file.path().to_owned()))

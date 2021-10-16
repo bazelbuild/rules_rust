@@ -17,7 +17,6 @@ use crate::{config, resolver::Dependencies};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct RenderConfig {
     pub repo_rule_name: String,
-    pub crate_registry_template: String,
     pub rules_rust_workspace_name: String,
 }
 
@@ -406,10 +405,6 @@ impl Renderer {
         context.insert("lockfile_hash", &self.context.hash);
         context.insert("crates", &self.context.transitive_renderable_packages);
         context.insert("repo_rule_name", &self.context.config.repo_rule_name);
-        context.insert(
-            "repository_http_template",
-            &self.context.config.crate_registry_template,
-        );
         let rendered_repository_rules = self
             .internal_renderer
             .render("templates/defs.bzl.template", &context)?;
@@ -716,9 +711,6 @@ mod tests {
         let renderer = Renderer::new(
             RenderConfig {
                 repo_rule_name: String::from("rule_prefix"),
-                crate_registry_template: String::from(
-                    "https://crates.io/api/v1/crates/{crate}/{version}/download",
-                ),
                 rules_rust_workspace_name: String::from("rules_rust"),
             },
             String::from("598"),
@@ -892,9 +884,6 @@ mod tests {
     fn default_render_config() -> RenderConfig {
         RenderConfig {
             repo_rule_name: String::from("rule_prefix"),
-            crate_registry_template: String::from(
-                "https://crates.io/api/v1/crates/{crate}/{version}/download",
-            ),
             rules_rust_workspace_name: String::from("rules_rust"),
         }
     }

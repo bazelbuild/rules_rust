@@ -44,7 +44,7 @@ load("//rust:rust.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain")
+load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain", "transform_deps")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -212,10 +212,15 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         output_hash,
     ))
 
+    toolchain = find_toolchain(ctx)
+
     # Gather all dependencies for compilation
     compile_action_deps = depset(
-        compile_deps +
-        proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
+        transform_deps(
+            compile_deps +
+            proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
+            toolchain._incompatible_make_rust_providers_target_independent,
+        ),
     )
 
     return rustc_compile_action(

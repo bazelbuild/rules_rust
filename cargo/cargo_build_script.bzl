@@ -336,6 +336,10 @@ def cargo_build_script(
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(_name_to_pkg_name(name))
 
+    binary_tags = [tag for tag in tags or []]
+    if "manual" not in binary_tags:
+        binary_tags.append("manual")
+
     rust_binary(
         name = name + "_script_",
         crate_features = crate_features,
@@ -343,7 +347,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         rustc_env = rustc_env,
-        tags = ["manual"],
+        tags = binary_tags,
         **kwargs
     )
     _build_script_run(

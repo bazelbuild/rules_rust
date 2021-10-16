@@ -19,6 +19,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load(
     "//rust/private:utils.bzl",
     "crate_name_from_attr",
@@ -32,16 +33,7 @@ load(
     "relativize",
 )
 
-BuildInfo = provider(
-    doc = "A provider containing `rustc` build settings for a given Crate.",
-    fields = {
-        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
-        "flags": "File: file containing additional flags to pass to rustc",
-        "link_flags": "File: file containing flags to pass to the linker",
-        "out_dir": "File: directory containing the result of a build script",
-        "rustc_env": "File: file containing additional environment variables to set for rustc.",
-    },
-)
+BuildInfo = _BuildInfo
 
 AliasableDepInfo = provider(
     doc = "A provider mapping an alias name to a Crate's information.",
@@ -110,7 +102,16 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def collect_deps(label, deps, proc_macro_deps, aliases):
+def _are_linkstamps_supported(feature_configuration, has_grep_includes):
+    # Are linkstamps supported by the C++ toolchain?
+    return (cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
+            # Is Bazel recent enough to support Starlark linkstamps?
+            hasattr(cc_common, "register_linkstamp_compile_action") and
+            # The current rule doesn't define _grep_includes attribute; this
+            # attribute is required for compiling linkstamps.
+            has_grep_includes)
+
+def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported = False, make_rust_providers_target_independent = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -118,9 +119,16 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
+        make_rust_providers_target_independent (bool): Whether
+            --incompatible_make_rust_providers_target_independent has been flipped.
 
     Returns:
-        tuple: Returns a tuple (DepInfo, BuildInfo) of providers.
+        tuple: Returns a tuple of:
+            DepInfo,
+            BuildInfo,
+            linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
+
     """
     direct_crates = []
     transitive_crates = []
@@ -128,36 +136,56 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
     transitive_noncrate_libs = []
     transitive_build_infos = []
     build_info = None
+    linkstamps = []
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
-        if rust_common.crate_info in dep:
+        if type(dep) == "Target" and make_rust_providers_target_independent:
+            fail("The `deps` parameter needs to be of type `depset[DepVariantInfo], got depset[Target]`")
+
+        (crate_info, dep_info) = _get_crate_and_dep_info(dep)
+        cc_info = _get_cc_info(dep)
+        dep_build_info = _get_build_info(dep)
+
+        if cc_info and are_linkstamps_supported:
+            linkstamps.append(cc_info.linking_context.linkstamps())
+
+        if crate_info:
             # This dependency is a rust_library
-            direct_dep = dep[rust_common.crate_info]
+
+            if not getattr(crate_info, "owner", None) and make_rust_providers_target_independent:
+                fail("Missing mandatory CrateInfo field: owner")
+
+            # When crate_info.owner is set, we use it. When the dep type is Target we get the
+            # label from dep.label
+            owner = getattr(crate_info, "owner", dep.label if type(dep) == "Target" else None)
+
             direct_crates.append(AliasableDepInfo(
-                name = aliases.get(dep.label, direct_dep.name),
-                dep = direct_dep,
+                name = aliases.get(owner, crate_info.name),
+                dep = crate_info,
             ))
 
-            transitive_crates.append(depset([dep[rust_common.crate_info]], transitive = [dep[rust_common.dep_info].transitive_crates]))
-            transitive_noncrates.append(dep[rust_common.dep_info].transitive_noncrates)
-            transitive_noncrate_libs.append(dep[rust_common.dep_info].transitive_libs)
-            transitive_build_infos.append(dep[rust_common.dep_info].transitive_build_infos)
-        elif CcInfo in dep:
+            transitive_crates.append(depset([crate_info], transitive = [dep_info.transitive_crates]))
+            transitive_noncrates.append(dep_info.transitive_noncrates)
+            transitive_noncrate_libs.append(dep_info.transitive_libs)
+            transitive_build_infos.append(dep_info.transitive_build_infos)
+        elif cc_info:
             # This dependency is a cc_library
 
             # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
+            linker_inputs = cc_info.linking_context.linker_inputs.to_list()
             libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
             transitive_noncrate_libs.append(depset(libs))
-            transitive_noncrates.append(dep[CcInfo].linking_context.linker_inputs)
-        elif BuildInfo in dep:
+            transitive_noncrates.append(cc_info.linking_context.linker_inputs)
+        elif dep_build_info:
             if build_info:
-                fail("Several deps are providing build information, only one is allowed in the dependencies", "deps")
-            build_info = dep[BuildInfo]
+                fail("Several deps are providing build information, " +
+                     "only one is allowed in the dependencies")
+            build_info = dep_build_info
             transitive_build_infos.append(depset([build_info]))
         else:
-            fail("rust targets can only depend on rust_library, rust_*_library or cc_library targets." + str(dep), "deps")
+            fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
+                 "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
     transitive_libs = depset(
@@ -178,7 +206,29 @@ def collect_deps(label, deps, proc_macro_deps, aliases):
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
+        depset(transitive = linkstamps),
     )
+
+def _get_crate_and_dep_info(dep):
+    if type(dep) == "Target" and rust_common.crate_info in dep:
+        return (dep[rust_common.crate_info], dep[rust_common.dep_info])
+    elif type(dep) == "struct" and hasattr(dep, "crate_info"):
+        return (dep.crate_info, dep.dep_info)
+    return (None, None)
+
+def _get_cc_info(dep):
+    if type(dep) == "Target" and CcInfo in dep:
+        return dep[CcInfo]
+    elif type(dep) == "struct" and hasattr(dep, "cc_info"):
+        return dep.cc_info
+    return None
+
+def _get_build_info(dep):
+    if type(dep) == "Target" and BuildInfo in dep:
+        return dep[BuildInfo]
+    elif type(dep) == "struct" and hasattr(dep, "build_info"):
+        return dep.build_info
+    return None
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
@@ -274,8 +324,10 @@ def collect_inputs(
         ctx,
         file,
         files,
+        linkstamps,
         toolchain,
         cc_toolchain,
+        feature_configuration,
         crate_info,
         dep_info,
         build_info):
@@ -285,14 +337,21 @@ def collect_inputs(
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         files (list): A list of all inputs (`ctx.files`).
+        linkstamps (depset): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
 
     Returns:
-        tuple: See `_process_build_scripts`
+        tuple: A tuple: A tuple of the following items:
+            - (list): A list of all build info `OUT_DIR` File objects
+            - (str): The `OUT_DIR` of the current build info
+            - (File): An optional path to a generated environment file from a `cargo_build_script` target
+            - (list): All direct and transitive build flags from the current build info
+            - (list[File]): Linkstamp outputs.
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
@@ -310,7 +369,12 @@ def collect_inputs(
             for additional_input in linker_input.additional_inputs
         ]
 
-    compile_inputs = depset(
+    # Compute linkstamps. Use the inputs of the binary as inputs to the
+    # linkstamp action to ensure linkstamps are rebuilt whenever binary inputs
+    # change.
+    linkstamp_outs = []
+
+    nolinkstamp_compile_inputs = depset(
         getattr(files, "data", []) +
         [toolchain.rustc] +
         toolchain.crosstool_files +
@@ -327,12 +391,47 @@ def collect_inputs(
             crate_info.compile_data,
         ],
     )
+
+    if crate_info.type in ("bin", "cdylib"):
+        # There is no other way to register an action for each member of a depset than
+        # flattening the depset as of 2021-10-12. Luckily, usually there is only one linkstamp
+        # in a build, and we only flatten the list on binary targets that perform transitive linking,
+        # so it's extremely unlikely that this call to `to_list()` will ever be a performance
+        # problem.
+        for linkstamp in linkstamps.to_list():
+            # The linkstamp output path is based on the binary crate
+            # name and the input linkstamp path. This is to disambiguate
+            # the linkstamp outputs produced by multiple binary crates
+            # that depend on the same linkstamp. We use the same pattern
+            # for the output name as the one used by native cc rules.
+            out_name = "_objs/" + crate_info.output.basename + "/" + linkstamp.file().path[:-len(linkstamp.file().extension)] + "o"
+            linkstamp_out = ctx.actions.declare_file(out_name)
+            linkstamp_outs.append(linkstamp_out)
+            cc_common.register_linkstamp_compile_action(
+                actions = ctx.actions,
+                cc_toolchain = cc_toolchain,
+                feature_configuration = feature_configuration,
+                grep_includes = ctx.file._grep_includes,
+                source_file = linkstamp.file(),
+                output_file = linkstamp_out,
+                compilation_inputs = linkstamp.hdrs(),
+                inputs_for_validation = nolinkstamp_compile_inputs,
+                label_replacement = str(ctx.label),
+                output_replacement = crate_info.output.path,
+            )
+
+    compile_inputs = depset(
+        linkstamp_outs,
+        transitive = [
+            nolinkstamp_compile_inputs,
+        ],
+    )
     build_env_files = getattr(files, "rustc_env_files", [])
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
-    return compile_inputs, out_dir, build_env_files, build_flags_files
+    return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs
 
 def construct_arguments(
         ctx,
@@ -344,12 +443,14 @@ def construct_arguments(
         feature_configuration,
         crate_info,
         dep_info,
+        linkstamp_outs,
         output_hash,
         rust_flags,
         out_dir,
         build_env_files,
         build_flags_files,
-        emit = ["dep-info", "link"]):
+        emit = ["dep-info", "link"],
+        force_all_deps_direct = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -362,12 +463,15 @@ def construct_arguments(
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
+        linkstamp_outs (list): Linkstamp outputs of native dependencies
         output_hash (str): The hashed path of the crate root
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
         emit (list): Values for the --emit flag to rustc.
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
+            to the commandline as opposed to -L.
 
     Returns:
         tuple: A tuple of the following items
@@ -495,10 +599,10 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, crate_info.type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info)
+    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct)
 
     needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
                                    crate_info.edition != "2015"
@@ -547,7 +651,8 @@ def rustc_compile_action(
         crate_info,
         output_hash = None,
         rust_flags = [],
-        environ = {}):
+        environ = {},
+        force_all_deps_direct = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -558,6 +663,8 @@ def rustc_compile_action(
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         environ (dict, optional): A set of makefile expandable environment variables for the action
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
+            to the commandline as opposed to -L.
 
     Returns:
         list: A list of the following providers:
@@ -567,19 +674,28 @@ def rustc_compile_action(
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
-    dep_info, build_info = collect_deps(
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+
+    dep_info, build_info, linkstamps = collect_deps(
         label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        are_linkstamps_supported = _are_linkstamps_supported(
+            feature_configuration = feature_configuration,
+            has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
+        ),
+        make_rust_providers_target_independent = make_rust_providers_target_independent,
     )
 
-    compile_inputs, out_dir, build_env_files, build_flags_files = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
+        linkstamps = linkstamps,
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
@@ -595,11 +711,13 @@ def rustc_compile_action(
         feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
+        linkstamp_outs = linkstamp_outs,
         output_hash = output_hash,
         rust_flags = rust_flags,
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
+        force_all_deps_direct = force_all_deps_direct,
     )
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
@@ -852,16 +970,30 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info):
+def add_crate_link_flags(args, dep_info, force_all_deps_direct = False):
     """Adds link flags to an Args object reference
 
     Args:
         args (Args): An arguments object reference
         dep_info (DepInfo): The current target's dependency info
+        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
+            to the commandline as opposed to -L.
     """
 
-    # nb. Crates are linked via --extern regardless of their crate_type
-    args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
+    if force_all_deps_direct:
+        args.add_all(
+            depset(
+                transitive = [
+                    dep_info.direct_crates,
+                    dep_info.transitive_crates,
+                ],
+            ),
+            uniquify = True,
+            map_each = _crate_to_link_flag,
+        )
+    else:
+        # nb. Direct crates are linked via --extern regardless of their crate_type
+        args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
     args.add_all(
         dep_info.transitive_crates,
         map_each = _get_crate_dirname,
@@ -869,16 +1001,24 @@ def add_crate_link_flags(args, dep_info):
         format_each = "-Ldependency=%s",
     )
 
-def _crate_to_link_flag(crate_info):
+def _crate_to_link_flag(crate):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
 
     Args:
-        crate_info (CrateInfo): A CrateInfo provider from the current rule
+        crate (CrateInfo|AliasableDepInfo): A CrateInfo or an AliasableDepInfo provider
 
     Returns:
-        list: Link flags for the current crate info
+        list: Link flags for the given provider
     """
-    return ["--extern={}={}".format(crate_info.name, crate_info.dep.output.path)]
+
+    # This is AliasableDepInfo, we should use the alias as a crate name
+    if hasattr(crate, "dep"):
+        name = crate.name
+        crate_info = crate.dep
+    else:
+        name = crate.name
+        crate_info = crate
+    return ["--extern={}={}".format(name, crate_info.output.path)]
 
 def _get_crate_dirname(crate):
     """A helper macro used by `add_crate_link_flags` for getting the directory name of the current crate's output path
@@ -943,12 +1083,13 @@ def _make_link_flags_default(linker_input):
 def _libraries_dirnames(linker_input):
     return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
 
-def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, feature_configuration):
+def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
         args (Args): The Args struct for a ctx.action
         dep_info (DepInfo): Dependency Info provider
+        linkstamp_outs (list): Linkstamp outputs of native dependencies
         crate_type: Crate type of the current target
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
@@ -966,6 +1107,9 @@ def _add_native_link_flags(args, dep_info, crate_type, toolchain, cc_toolchain, 
         make_link_flags = _make_link_flags_default
 
     args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags)
+
+    for linkstamp_out in linkstamp_outs:
+        args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically

@@ -22,6 +22,7 @@ load(
     "determine_output_hash",
     "expand_dict_value_locations",
     "find_toolchain",
+    "transform_deps",
 )
 
 # TODO(marco): Separate each rule into its own file.
@@ -250,6 +251,10 @@ def _rust_library_common(ctx, crate_type):
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -259,14 +264,15 @@ def _rust_library_common(ctx, crate_type):
             type = crate_type,
             root = crate_root,
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
         ),
         output_hash = output_hash,
     )
@@ -286,6 +292,10 @@ def _rust_binary_impl(ctx):
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -295,24 +305,26 @@ def _rust_binary_impl(ctx):
             type = ctx.attr.crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
         ),
     )
 
-def _create_test_launcher(ctx, toolchain, output, providers):
+def _create_test_launcher(ctx, toolchain, output, env, providers):
     """Create a process wrapper to ensure runtime environment variables are defined for the test binary
 
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current rust toolchain
         output (File): The output File that will be produced, depends on crate type.
+        env (dict): Dict of environment variables
         providers (list): Providers from a rust compile action. See `rustc_compile_action`
 
     Returns:
@@ -337,20 +349,12 @@ def _create_test_launcher(ctx, toolchain, output, providers):
         is_executable = True,
     )
 
-    # Get data attribute
-    data = getattr(ctx.attr, "data", [])
-
     # Expand the environment variables and write them to a file
     environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-    environ = expand_dict_value_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        data,
-    )
 
     # Convert the environment variables into a list to be written into a file.
     environ_list = []
-    for key, value in sorted(environ.items()):
+    for key, value in sorted(env.items()):
         environ_list.extend([key, value])
 
     ctx.actions.write(
@@ -404,6 +408,11 @@ def _rust_test_common(ctx, toolchain, output):
 
     crate_name = crate_name_from_attr(ctx.attr)
     crate_type = "bin"
+
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info]
@@ -420,8 +429,8 @@ def _rust_test_common(ctx, toolchain, output):
             type = crate_type,
             root = crate.root,
             srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
-            deps = depset(ctx.attr.deps, transitive = [crate.deps]),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps, transitive = [crate.proc_macro_deps]),
+            deps = depset(deps, transitive = [crate.deps]),
+            proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
             edition = crate.edition,
@@ -429,6 +438,7 @@ def _rust_test_common(ctx, toolchain, output):
             is_test = True,
             compile_data = compile_data,
             wrapped_crate_type = crate.type,
+            owner = ctx.label,
         )
     else:
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -437,14 +447,15 @@ def _rust_test_common(ctx, toolchain, output):
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
             srcs = depset(ctx.files.srcs),
-            deps = depset(ctx.attr.deps),
-            proc_macro_deps = depset(ctx.attr.proc_macro_deps),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
         )
 
     providers = rustc_compile_action(
@@ -454,8 +465,21 @@ def _rust_test_common(ctx, toolchain, output):
         crate_info = crate_info,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
     )
+    data = getattr(ctx.attr, "data", [])
 
-    return _create_test_launcher(ctx, toolchain, output, providers)
+    env = expand_dict_value_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        data,
+    )
+    providers.append(testing.TestEnvironment(env))
+
+    if any(["{pwd}" in v for v in env.values()]):
+        # Some of the environment variables require expanding {pwd} placeholder at runtime,
+        # we need a launcher for that.
+        return _create_test_launcher(ctx, toolchain, output, env, providers)
+    else:
+        return providers
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -630,8 +654,12 @@ _rust_test_attrs = {
         mandatory = False,
         doc = dedent("""\
             Specifies additional environment variables to set when the test is executed by bazel test.
-            Values are subject to `$(execpath)` and
+            Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+
+            Execpath returns absolute path, and in order to be able to construct the absolute path we
+            need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
+            more complicated debugger attachment.
         """),
     ),
     "use_libtest_harness": attr.bool(
@@ -640,6 +668,12 @@ _rust_test_attrs = {
         doc = dedent("""\
             Whether to use libtest.
         """),
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
     "_launcher": attr.label(
         executable = True,
@@ -823,6 +857,22 @@ _rust_binary_attrs = {
             "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
         ),
         default = False,
+    ),
+    "stamp": attr.int(
+        doc = dedent("""\
+            Embed additional information into the binaries.
+
+            By default stamping is controlled by the --stamp flag.
+            See https://docs.bazel.build/versions/main/user-manual.html#workspace_status
+            and https://docs.bazel.build/versions/main/user-manual.html#flag--stamp.
+        """),
+        default = -1,
+    ),
+    "_grep_includes": attr.label(
+        allow_single_file = True,
+        cfg = "host",
+        default = Label("@bazel_tools//tools/cpp:grep-includes"),
+        executable = True,
     ),
 }
 

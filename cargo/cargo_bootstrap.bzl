@@ -8,6 +8,18 @@ _CARGO_BUILD_MODES = [
     "debug",
 ]
 
+_FAIL_MESSAGE = """\
+Process exited with code '{code}'
+# ARGV ########################################################################
+{argv}
+
+# STDOUT ######################################################################
+{stdout}
+
+# STDERR ######################################################################
+{stderr}
+"""
+
 def cargo_bootstrap(
         repository_ctx,
         cargo_bin,
@@ -69,8 +81,11 @@ def cargo_bootstrap(
     )
 
     if result.return_code != 0:
-        fail("exit_code: {}".format(
-            result.return_code,
+        fail(_FAIL_MESSAGE.format(
+            code = result.return_code,
+            argv = args,
+            stdout = result.stdout,
+            stderr = result.stderr,
         ))
 
     extension = ""
@@ -134,7 +149,25 @@ def _collect_environ(repository_ctx, host_triple):
 
     return dict(env_vars.items() + env_labels.items())
 
+def _detect_changes(repository_ctx):
+    """Inspect files that are considered inputs to the build for changes
+
+    Args:
+        repository_ctx (repository_ctx): The rule's context object.
+    """
+    # Simply generating a `path` object consideres the file as 'tracked' or
+    # 'consumed' which means changes to it will trigger rebuilds
+
+    for src in repository_ctx.attr.srcs:
+        repository_ctx.path(src)
+
+    repository_ctx.path(repository_ctx.attr.cargo_lockfile)
+    repository_ctx.path(repository_ctx.attr.cargo_toml)
+
 def _cargo_bootstrap_repository_impl(repository_ctx):
+    # Pretend to Bazel that this rule's input files have been used, so that it will re-run the rule if they change.
+    _detect_changes(repository_ctx)
+
     if repository_ctx.attr.version in ("beta", "nightly"):
         version_str = "{}-{}".format(repository_ctx.attr.version, repository_ctx.attr.iso_date)
     else:
@@ -223,9 +256,8 @@ cargo_bootstrap_repository = repository_rule(
             default = "rust_{system}_{arch}",
         ),
         "srcs": attr.label_list(
-            doc = "Souces to crate to build.",
+            doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",
             allow_files = True,
-            mandatory = True,
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",

@@ -15,6 +15,7 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
+load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 def find_toolchain(ctx):
     """Finds the first rust toolchain that is configured.
@@ -339,3 +340,27 @@ def is_exec_configuration(ctx):
 
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec-") == -1
+
+def transform_deps(deps, make_rust_providers_target_independent):
+    """Conditionally transform a [Target] into [DepVariantInfo].
+
+    This helper function is used to transform ctx.attr.deps and ctx.attr.proc_macro_deps into
+    [DepVariantInfo] when --//rust/settings:incompatible_make_rust_providers_target_independent
+    is set to true (https://github.com/bazelbuild/rules_rust/issues/966).
+    Do not rely on this function - it will be removed after the flag is flipped.
+
+    Args:
+        deps (list of Targets): Dependencies comming from ctx.attr.deps or ctx.attr.proc_macro_deps
+        make_rust_providers_target_independent (bool): The value of
+            --//rust/settings:incompatible_make_rust_providers_target_independent.
+
+    Returns:
+        list of DepVariantInfos if --//rust/settings:incompatible_make_rust_providers_target has
+        been flipped, list of Targets otherwise.
+    """
+    return [DepVariantInfo(
+        crate_info = dep[CrateInfo] if CrateInfo in dep else None,
+        dep_info = dep[DepInfo] if DepInfo in dep else None,
+        build_info = dep[BuildInfo] if BuildInfo in dep else None,
+        cc_info = dep[CcInfo] if CcInfo in dep else None,
+    ) for dep in deps] if make_rust_providers_target_independent else deps
