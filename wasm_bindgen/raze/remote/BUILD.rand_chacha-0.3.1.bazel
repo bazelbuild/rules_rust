@@ -50,7 +50,7 @@ rust_library(
     version = "0.3.1",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__ppv_lite86__0_2_10//:ppv_lite86",
+        "@rules_rust_wasm_bindgen__ppv_lite86__0_2_15//:ppv_lite86",
         "@rules_rust_wasm_bindgen__rand_core__0_6_3//:rand_core",
     ],
 )

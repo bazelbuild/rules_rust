@@ -51,7 +51,7 @@ rust_library(
     version = "21.0.0",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__leb128__0_2_4//:leb128",
+        "@rules_rust_wasm_bindgen__leb128__0_2_5//:leb128",
     ],
 )
 

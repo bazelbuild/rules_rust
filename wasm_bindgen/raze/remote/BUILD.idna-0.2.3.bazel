@@ -52,7 +52,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         "@rules_rust_wasm_bindgen__matches__0_1_9//:matches",
-        "@rules_rust_wasm_bindgen__unicode_bidi__0_3_6//:unicode_bidi",
+        "@rules_rust_wasm_bindgen__unicode_bidi__0_3_7//:unicode_bidi",
         "@rules_rust_wasm_bindgen__unicode_normalization__0_1_19//:unicode_normalization",
     ],
 )

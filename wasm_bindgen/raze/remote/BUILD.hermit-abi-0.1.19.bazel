@@ -50,6 +50,6 @@ rust_library(
     version = "0.1.19",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__libc__0_2_99//:libc",
+        "@rules_rust_wasm_bindgen__libc__0_2_107//:libc",
     ],
 )
