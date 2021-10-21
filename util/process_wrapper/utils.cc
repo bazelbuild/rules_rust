@@ -101,4 +101,30 @@ bool ReadFileToArray(const System::StrType& file_path,
   return true;
 }
 
+bool ReadStampStatusToArray(
+    const System::StrType& stamp_path,
+    std::vector<std::pair<System::StrType, System::StrType>>& vec) {
+  // Read each line of the stamp file and split on the first space
+  System::StrVecType stamp_block;
+  if (!ReadFileToArray(stamp_path, stamp_block)) {
+    return false;
+  }
+
+  for (int i = 0; i < stamp_block.size(); ++i) {
+    size_t space_pos = stamp_block[i].find(' ');
+    if (space_pos == std::string::npos) {
+      std::cerr << "process wrapper error: wrong workspace status file "
+                   "format for \""
+                << ToUtf8(stamp_block[i]) << "\".\n";
+      return false;
+    }
+    System::StrType key = stamp_block[i].substr(0, space_pos);
+    System::StrType value =
+        stamp_block[i].substr(space_pos + 1, stamp_block[i].size());
+    vec.push_back({std::move(key), std::move(value)});
+  }
+
+  return true;
+}
+
 }  // namespace process_wrapper

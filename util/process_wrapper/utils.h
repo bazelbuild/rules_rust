@@ -32,6 +32,11 @@ void ReplaceToken(System::StrType& str, const System::StrType& token,
 // Reads a file in text mode and feeds each line to item in the vec output
 bool ReadFileToArray(const System::StrType& file_path, System::StrVecType& vec);
 
+// Reads a workspace status stamp file to an array of key value pairs
+bool ReadStampStatusToArray(
+    const System::StrType& stamp_path,
+    std::vector<std::pair<System::StrType, System::StrType>>& vec);
+
 }  // namespace process_wrapper
 
 #endif  // LIB_PROCESS_WRAPPER_UTILS_H_

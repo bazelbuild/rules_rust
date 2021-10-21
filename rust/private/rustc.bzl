@@ -20,6 +20,7 @@ load(
 )
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
+load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
     "expand_dict_value_locations",
@@ -330,7 +331,8 @@ def collect_inputs(
         feature_configuration,
         crate_info,
         dep_info,
-        build_info):
+        build_info,
+        stamp = False):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -344,6 +346,8 @@ def collect_inputs(
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
+        stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
+            https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -420,17 +424,22 @@ def collect_inputs(
                 output_replacement = crate_info.output.path,
             )
 
+    # If stamping is enabled include the volatile status info file
+    stamp_info = [ctx.version_file] if stamp else []
+
     compile_inputs = depset(
-        linkstamp_outs,
+        linkstamp_outs + stamp_info,
         transitive = [
             nolinkstamp_compile_inputs,
         ],
     )
+
     build_env_files = getattr(files, "rustc_env_files", [])
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
+
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs
 
 def construct_arguments(
@@ -450,7 +459,8 @@ def construct_arguments(
         build_env_files,
         build_flags_files,
         emit = ["dep-info", "link"],
-        force_all_deps_direct = False):
+        force_all_deps_direct = False,
+        stamp = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -472,6 +482,8 @@ def construct_arguments(
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
+            https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
 
     Returns:
         tuple: A tuple of the following items
@@ -510,6 +522,10 @@ def construct_arguments(
     # Since we cannot get the `exec_root` from starlark, we cheat a little and
     # use `${pwd}` which resolves the `exec_root` at action execution time.
     process_wrapper_flags.add("--subst", "pwd=${pwd}")
+
+    # If stamping is enabled, enable the functionality in the process wrapper
+    if stamp:
+        process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
@@ -688,6 +704,9 @@ def rustc_compile_action(
         make_rust_providers_target_independent = make_rust_providers_target_independent,
     )
 
+    # Determine if the build is currently running with --stamp
+    stamp = is_stamping_enabled(attr)
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -699,6 +718,7 @@ def rustc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        stamp = stamp,
     )
 
     args, env = construct_arguments(
@@ -718,6 +738,7 @@ def rustc_compile_action(
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         force_all_deps_direct = force_all_deps_direct,
+        stamp = stamp,
     )
 
     if hasattr(attr, "version") and attr.version != "0.0.0":

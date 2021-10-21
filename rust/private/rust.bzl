@@ -592,10 +592,16 @@ _common_attrs = {
 
             These files should  contain a single variable per line, of format
             `NAME=value`, and newlines may be included in a value by ending a
-            line with a trailing back-slash (`\\`).
+            line with a trailing back-slash (`\\\\`).
 
             The order that these files will be processed is unspecified, so
             multiple definitions of a particular variable are discouraged.
+
+            Note that the variables here are subject to 
+            [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status)
+            stamping should the `stamp` attribute be enabled. Stamp variables
+            should be wrapped in brackets in order to be resolved. E.g.
+            `NAME={WORKSPACE_STATUS_VARIABLE}`.
         """),
         allow_files = True,
     ),
@@ -604,9 +610,9 @@ _common_attrs = {
             List of compiler flags passed to `rustc`.
 
             These strings are subject to Make variable expansion for predefined
-            source/output path variables like `$location`, `$execpath`, and `$rootpath`.
-            This expansion is useful if you wish to pass a generated file of
-            arguments to rustc: `@$(location //package:target)`.
+            source/output path variables like `$location`, `$execpath`, and 
+            `$rootpath`. This expansion is useful if you wish to pass a generated
+            file of arguments to rustc: `@$(location //package:target)`.
         """),
     ),
     # TODO(stardoc): How do we provide additional documentation to an inherited attribute?
@@ -623,6 +629,30 @@ _common_attrs = {
         """),
         allow_files = [".rs"],
     ),
+    "stamp": attr.int(
+        doc = dedent("""\
+            Whether to encode build information into the `Rustc` action. Possible values:
+
+            - `stamp = 1`: Always stamp the build information into the `Rustc` action, even in \
+            [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds. \
+            This setting should be avoided, since it potentially kills remote caching for the target and \
+            any downstream actions that depend on it.
+
+            - `stamp = 0`: Always replace build information by constant values. This gives good build result caching.
+
+            - `stamp = -1`: Embedding of build information is controlled by the \
+            [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.
+
+            Stamped targets are not rebuilt unless their dependencies change.
+
+            For example if a `rust_library` is stamped, and a `rust_binary` depends on that library, the stamped
+            library won't be rebuilt when we change sources of the `rust_binary`. This is different from how
+            [`cc_library.linkstamps`](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp)
+            behaves.
+        """),
+        default = -1,
+        values = [1, 0, -1],
+    ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
@@ -637,6 +667,10 @@ _common_attrs = {
         executable = True,
         allow_single_file = True,
         cfg = "exec",
+    ),
+    "_stamp_flag": attr.label(
+        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
+        default = Label("//rust/private:stamp"),
     ),
 }
 
@@ -857,16 +891,6 @@ _rust_binary_attrs = {
             "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
         ),
         default = False,
-    ),
-    "stamp": attr.int(
-        doc = dedent("""\
-            Embed additional information into the binaries.
-
-            By default stamping is controlled by the --stamp flag.
-            See https://docs.bazel.build/versions/main/user-manual.html#workspace_status
-            and https://docs.bazel.build/versions/main/user-manual.html#flag--stamp.
-        """),
-        default = -1,
     ),
     "_grep_includes": attr.label(
         allow_single_file = True,
