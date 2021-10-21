@@ -27,17 +27,18 @@ rust_test(
     # Intentionally uses a mix of -s and _s because those normalisations are part of what is being tested.
     name = "cargo_env-vars_test",
     srcs = ["tests/cargo.rs"],
-    deps = [":cargo_build_script_env-vars_build_script"],
+    deps = [":build_script_build"],
 )
 
 rust_test(
     name = "cargo-env-vars-custom-crate-name-test",
     srcs = ["tests/custom_crate_name.rs"],
     crate_name = "custom_crate_name",
-    deps = [":cargo_build_script_env-vars_build_script"],
+    deps = [":build_script_build"],
 )
 
 cargo_build_script(
-    name = "cargo_build_script_env-vars_build_script",
+    name = "build_script_build",
     srcs = ["src/build.rs"],
+    pkg_name = "cargo_build_script_env-vars",
 )

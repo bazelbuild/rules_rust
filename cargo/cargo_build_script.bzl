@@ -53,7 +53,7 @@ def _build_script_impl(ctx):
         stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
     )
 
-    pkg_name = _name_to_pkg_name(ctx.label.name)
+    pkg_name = getattr(ctx.attr, "pkg_name", _name_to_pkg_name(ctx.label.name))
 
     toolchain_tools = [
         # Needed for rustc to function.
@@ -169,6 +169,7 @@ def _build_script_impl(ctx):
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
+        progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
     )
 
@@ -206,6 +207,9 @@ _build_script_run = rule(
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
+        ),
+        "pkg_name": attr.string(
+            doc = "The name to use as the build script's Cargo package name.",
         ),
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
@@ -248,6 +252,7 @@ def cargo_build_script(
         version = None,
         deps = [],
         build_script_env = {},
+        pkg_name = None,
         data = [],
         tools = [],
         links = None,
@@ -319,6 +324,7 @@ def cargo_build_script(
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The dependencies of the crate.
         build_script_env (dict, optional): Environment variables for build scripts.
+        pkg_name (str, optional): The name to use as the build script's Cargo package name.
         data (list, optional): Files needed by the build script.
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
@@ -328,13 +334,17 @@ def cargo_build_script(
         **kwargs: Forwards to the underlying `rust_binary` rule.
     """
 
+    # Ensure the Cargo package name is always set.
+    if not pkg_name:
+        pkg_name = _name_to_pkg_name(name)
+
     # This duplicates the code in _build_script_impl because we need to make these available both when we invoke rustc (this code) and when we run the compiled build script (_build_script_impl).
     # https://github.com/bazelbuild/rules_rust/issues/661 will hopefully remove this duplication.
     rustc_env = dict(rustc_env)
     if "CARGO_PKG_NAME" not in rustc_env:
-        rustc_env["CARGO_PKG_NAME"] = _name_to_pkg_name(name)
+        rustc_env["CARGO_PKG_NAME"] = pkg_name
     if "CARGO_CRATE_NAME" not in rustc_env:
-        rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(_name_to_pkg_name(name))
+        rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(pkg_name)
 
     binary_tags = [tag for tag in tags or []]
     if "manual" not in binary_tags:
@@ -356,6 +366,7 @@ def cargo_build_script(
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
+        pkg_name = pkg_name,
         links = links,
         deps = deps,
         data = data,
