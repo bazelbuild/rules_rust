@@ -169,6 +169,7 @@ def _build_script_impl(ctx):
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
+        progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
     )
 
