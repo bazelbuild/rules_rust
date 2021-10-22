@@ -1,10 +1,4 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_doc",
-    "rust_doc_test",
-    "rust_library",
-    "rust_test",
-)
+load("@rules_rust//rust:defs.bzl", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "fibonacci",

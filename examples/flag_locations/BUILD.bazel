@@ -1,7 +1,4 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_test",
-)
+load("@rules_rust//rust:defs.bzl", "rust_test")
 
 # generate a file containing cfg flags
 genrule(
