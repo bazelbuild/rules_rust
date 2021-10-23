@@ -10,9 +10,10 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -49,7 +50,6 @@ rust_library(
         "winapi",
     ],
     crate_root = "src/lib.rs",
-    crate_type = "lib",
     data = [],
     edition = "2015",
     rustc_flags = [
@@ -67,13 +67,6 @@ rust_library(
         "@rules_rust_wasm_bindgen__num_traits__0_2_14//:num_traits",
         "@rules_rust_wasm_bindgen__time__0_1_43//:time",
     ] + selects.with_or({
-        # cfg(all(target_arch = "wasm32", not(any(target_os = "emscripten", target_os = "wasi"))))
-        (
-            "@rules_rust//rust/platform:wasm32-unknown-unknown",
-        ): [
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
         # cfg(windows)
         (
             "@rules_rust//rust/platform:i686-pc-windows-msvc",
