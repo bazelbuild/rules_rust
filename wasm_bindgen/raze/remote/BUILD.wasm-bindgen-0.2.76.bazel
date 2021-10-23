@@ -10,9 +10,10 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -59,29 +60,18 @@ cargo_build_script(
     version = "0.2.76",
     visibility = ["//visibility:private"],
     deps = [
-    ] + selects.with_or({
-        # cfg(target_arch = "wasm32")
-        (
-            "@rules_rust//rust/platform:wasm32-unknown-unknown",
-            "@rules_rust//rust/platform:wasm32-wasi",
-        ): [
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 rust_library(
     name = "wasm_bindgen",
     srcs = glob(["**/*.rs"]),
-    aliases = {
-    },
     crate_features = [
         "default",
         "spans",
         "std",
     ],
     crate_root = "src/lib.rs",
-    crate_type = "lib",
     data = [],
     edition = "2018",
     proc_macro_deps = [
@@ -99,15 +89,7 @@ rust_library(
     deps = [
         ":wasm_bindgen_build_script",
         "@rules_rust_wasm_bindgen__cfg_if__1_0_0//:cfg_if",
-    ] + selects.with_or({
-        # cfg(target_arch = "wasm32")
-        (
-            "@rules_rust//rust/platform:wasm32-unknown-unknown",
-            "@rules_rust//rust/platform:wasm32-wasi",
-        ): [
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 # Unsupported target "headless" with type "test" omitted
