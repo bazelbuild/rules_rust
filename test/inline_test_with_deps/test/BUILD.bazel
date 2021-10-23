@@ -1,8 +1,4 @@
-load(
-    "//rust:rust.bzl",
-    "rust_library",
-    "rust_test",
-)
+load("//rust:defs.bzl", "rust_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 

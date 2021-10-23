@@ -22,8 +22,8 @@ alias(
 )
 
 alias(
-    name = "grpc_compiler",
-    actual = "@rules_rust_proto__grpc_compiler__0_6_2//:grpc_compiler",
+    name = "cargo_bin_protoc_gen_rust_grpc",
+    actual = "@rules_rust_proto__grpc_compiler__0_6_2//:cargo_bin_protoc_gen_rust_grpc",
     tags = [
         "cargo-raze",
         "manual",
@@ -31,10 +31,8 @@ alias(
 )
 
 alias(
-    # Extra aliased target, from raze configuration
-    # N.B.: The exact form of this is subject to change.
-    name = "cargo_bin_protoc_gen_rust_grpc",
-    actual = "@rules_rust_proto__grpc_compiler__0_6_2//:cargo_bin_protoc_gen_rust_grpc",
+    name = "grpc_compiler",
+    actual = "@rules_rust_proto__grpc_compiler__0_6_2//:grpc_compiler",
     tags = [
         "cargo-raze",
         "manual",
@@ -60,8 +58,8 @@ alias(
 )
 
 alias(
-    name = "protobuf_codegen",
-    actual = "@rules_rust_proto__protobuf_codegen__2_8_2//:protobuf_codegen",
+    name = "cargo_bin_protoc_gen_rust",
+    actual = "@rules_rust_proto__protobuf_codegen__2_8_2//:cargo_bin_protoc_gen_rust",
     tags = [
         "cargo-raze",
         "manual",
@@ -69,10 +67,8 @@ alias(
 )
 
 alias(
-    # Extra aliased target, from raze configuration
-    # N.B.: The exact form of this is subject to change.
-    name = "cargo_bin_protoc_gen_rust",
-    actual = "@rules_rust_proto__protobuf_codegen__2_8_2//:cargo_bin_protoc_gen_rust",
+    name = "protobuf_codegen",
+    actual = "@rules_rust_proto__protobuf_codegen__2_8_2//:protobuf_codegen",
     tags = [
         "cargo-raze",
         "manual",
