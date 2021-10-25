@@ -279,7 +279,7 @@ def cargo_build_script(
     ```python
     package(default_visibility = ["//visibility:public"])
 
-    load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
+    load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
     load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
     # This will run the build script from the root of the workspace, and

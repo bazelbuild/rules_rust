@@ -38,7 +38,7 @@ load(
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-load("//rust:rust.bzl", "rust_common")
+load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")

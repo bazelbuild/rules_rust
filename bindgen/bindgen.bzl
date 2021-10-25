@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
-load("//rust:rust.bzl", "rust_library")
+load("//rust:defs.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "get_linker_and_args")
