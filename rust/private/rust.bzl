@@ -167,116 +167,6 @@ def _shortest_src_with_basename(srcs, basename):
                 shortest = f
     return shortest
 
-def _rust_library_impl(ctx):
-    """The implementation of the `rust_library` rule.
-
-    This rule provides CcInfo, so it can be used everywhere Bazel
-    expects rules_cc, but care must be taken to have the correct
-    dependencies on an allocator and std implemetation as needed.
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers.
-    """
-    return _rust_library_common(ctx, "rlib")
-
-def _rust_static_library_impl(ctx):
-    """The implementation of the `rust_static_library` rule.
-
-    This rule provides CcInfo, so it can be used everywhere Bazel
-    expects rules_cc.
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers.
-    """
-    return _rust_library_common(ctx, "staticlib")
-
-def _rust_shared_library_impl(ctx):
-    """The implementation of the `rust_shared_library` rule.
-
-    This rule provides CcInfo, so it can be used everywhere Bazel
-    expects rules_cc.
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers.
-    """
-    return _rust_library_common(ctx, "cdylib")
-
-def _rust_proc_macro_impl(ctx):
-    """The implementation of the `rust_proc_macro` rule.
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers.
-    """
-    return _rust_library_common(ctx, "proc-macro")
-
-def _rust_library_common(ctx, crate_type):
-    """The common implementation of the library-like rules.
-
-    Args:
-        ctx (ctx): The rule's context object
-        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
-
-    Returns:
-        list: A list of providers. See `rustc_compile_action`
-    """
-
-    # Find lib.rs
-    crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
-    _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
-
-    toolchain = find_toolchain(ctx)
-
-    # Determine unique hash for this rlib
-    output_hash = determine_output_hash(crate_root)
-
-    crate_name = crate_name_from_attr(ctx.attr)
-    rust_lib_name = _determine_lib_name(
-        crate_name,
-        crate_type,
-        toolchain,
-        output_hash,
-    )
-    rust_lib = ctx.actions.declare_file(rust_lib_name)
-
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
-
-    return rustc_compile_action(
-        ctx = ctx,
-        attr = ctx.attr,
-        toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
-            name = crate_name,
-            type = crate_type,
-            root = crate_root,
-            srcs = depset(ctx.files.srcs),
-            deps = depset(deps),
-            proc_macro_deps = depset(proc_macro_deps),
-            aliases = ctx.attr.aliases,
-            output = rust_lib,
-            edition = get_edition(ctx.attr, toolchain),
-            rustc_env = ctx.attr.rustc_env,
-            is_test = False,
-            compile_data = depset(ctx.files.compile_data),
-            owner = ctx.label,
-        ),
-        output_hash = output_hash,
-    )
-
 def _rust_binary_impl(ctx):
     """The implementation of the `rust_binary` rule
 
@@ -691,19 +581,99 @@ _common_providers = [
     rust_common.dep_info,
     DefaultInfo,
 ]
+ProvidedFunctionInfo = provider(fields = {"fn": ""})
 
-rust_library = rule(
-    implementation = _rust_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
+def _rust_library_like_impl(ctx):
+    """The common implementation of the library-like rules.
+
+    Args:
+        ctx (ctx): The rule's context object
+        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+
+    Returns:
+        list: A list of providers. See `rustc_compile_action`
+    """
+
+    # Find lib.rs
+    crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
+    crate_type = ctx.attr._crate_type
+    _assert_no_deprecated_attributes(ctx)
+    _assert_correct_dep_mapping(ctx)
+
+    toolchain = find_toolchain(ctx)
+
+    # Determine unique hash for this rlib
+    output_hash = determine_output_hash(crate_root)
+
+    crate_name = crate_name_from_attr(ctx.attr)
+    rust_lib_name = _determine_lib_name(
+        crate_name,
+        crate_type,
+        toolchain,
+        output_hash,
+    )
+    rust_lib = ctx.actions.declare_file(rust_lib_name)
+
+    transform_deps_fn = ctx.attr._transform_deps_fn[ProvidedFunctionInfo].fn
+
+    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    deps = transform_deps_fn(ctx.attr.deps, make_rust_providers_target_independent)
+    proc_macro_deps = transform_deps_fn(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+
+    return rustc_compile_action(
+        ctx = ctx,
+        attr = ctx.attr,
+        toolchain = toolchain,
+        crate_info = rust_common.create_crate_info(
+            name = crate_name,
+            type = crate_type,
+            root = crate_root,
+            srcs = depset(ctx.files.srcs),
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
+            aliases = ctx.attr.aliases,
+            output = rust_lib,
+            edition = get_edition(ctx.attr, toolchain),
+            rustc_env = ctx.attr.rustc_env,
+            is_test = False,
+            compile_data = depset(ctx.files.compile_data),
+            owner = ctx.label,
+        ),
+        output_hash = output_hash,
+    )
+
+
+def _transform_deps_fn_impl(ctx):
+    return [ProvidedFunctionInfo(fn = transform_deps)]
+
+transform_deps_fn = rule(
+    implementation = _transform_deps_fn_impl,
+    provides = [ProvidedFunctionInfo]
+)
+
+def _rust_library_like_rule(crate_type, doc, extra_attrs = {}, transform_deps_fn = transform_deps):
+    return rule(
+        implementation = _rust_library_like_impl,
+        provides = _common_providers,
+        attrs = dict(
+            _common_attrs.items() + extra_attrs.items() + {
+                "_crate_type": attr.string(default = crate_type),
+                "_transform_deps_fn": attr.label(default = "//rust/private:transform_deps_fn")
+            }.items(),
+        ),
+        fragments = ["cpp"],
+        host_fragments = ["cpp"],
+        toolchains = [
+            str(Label("//rust:toolchain")),
+            "@bazel_tools//tools/cpp:toolchain_type",
+        ],
+        incompatible_use_toolchain_transition = True,
+        doc = dedent(doc),
+    )
+
+rust_library = _rust_library_like_rule(
+    "rlib",
+    """\
         Builds a Rust library crate.
 
         Example:
@@ -766,21 +736,12 @@ rust_library = rule(
         bazel-bin/examples/rust/hello_lib/libhello_lib.rlib
         INFO: Elapsed time: 1.245s, Critical Path: 1.01s
         ```
-        """),
+        """,
 )
 
-rust_static_library = rule(
-    implementation = _rust_static_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
+rust_static_library = _rust_library_like_rule(
+    "staticlib",
+    """\
         Builds a Rust static library.
 
         This static library will contain all transitively reachable crates and native objects.
@@ -790,21 +751,12 @@ rust_static_library = rule(
         This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
 
         When building the whole binary in Bazel, use `rust_library` instead.
-        """),
+        """,
 )
 
-rust_shared_library = rule(
-    implementation = _rust_shared_library_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
+rust_shared_library = _rust_library_like_rule(
+    "cdylib",
+    """"\
         Builds a Rust shared library.
 
         This shared library will contain all transitively reachable crates and native objects.
@@ -814,23 +766,14 @@ rust_shared_library = rule(
         This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
 
         When building the whole binary in Bazel, use `rust_library` instead.
-        """),
+        """,
 )
 
-rust_proc_macro = rule(
-    implementation = _rust_proc_macro_impl,
-    provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
-    fragments = ["cpp"],
-    host_fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
+rust_proc_macro = _rust_library_like_rule(
+    "proc-macro",
+    """\
         Builds a Rust proc-macro crate.
-        """),
+        """,
 )
 
 _rust_binary_attrs = {
