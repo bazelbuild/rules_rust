@@ -103,7 +103,6 @@ rust_analyzer_aspect = aspect(
     attr_aspects = ["deps", "proc_macro_deps", "crate"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain"))],
-    incompatible_use_toolchain_transition = True,
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
@@ -250,7 +249,6 @@ rust_analyzer = rule(
     },
     implementation = _rust_analyzer_impl,
     toolchains = [str(Label("//rust:toolchain"))],
-    incompatible_use_toolchain_transition = True,
     doc = """\
 Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
 """,

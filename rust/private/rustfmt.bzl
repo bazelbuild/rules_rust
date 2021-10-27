@@ -126,7 +126,6 @@ source files are also ignored by this aspect.
             default = Label("//util/process_wrapper"),
         ),
     },
-    incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [

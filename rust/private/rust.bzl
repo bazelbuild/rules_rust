@@ -702,7 +702,6 @@ rust_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust library crate.
 
@@ -779,7 +778,6 @@ rust_static_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust static library.
 
@@ -803,7 +801,6 @@ rust_shared_library = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust shared library.
 
@@ -827,7 +824,6 @@ rust_proc_macro = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust proc-macro crate.
         """),
@@ -887,7 +883,6 @@ rust_binary = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust binary crate.
 
@@ -987,7 +982,6 @@ rust_test = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust test crate.
 

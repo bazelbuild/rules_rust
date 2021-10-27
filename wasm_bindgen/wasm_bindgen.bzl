@@ -181,7 +181,6 @@ rust_wasm_bindgen = rule(
     toolchains = [
         str(Label("//wasm_bindgen:wasm_bindgen_toolchain")),
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_wasm_bindgen_toolchain_impl(ctx):

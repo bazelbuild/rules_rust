@@ -194,5 +194,4 @@ rust_doc = rule(
         "rust_doc_zip": "%{name}.zip",
     },
     toolchains = [str(Label("//rust:toolchain"))],
-    incompatible_use_toolchain_transition = True,
 )

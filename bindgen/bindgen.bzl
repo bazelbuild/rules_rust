@@ -211,7 +211,6 @@ rust_bindgen = rule(
         str(Label("//rust:toolchain")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_bindgen_toolchain_impl(ctx):

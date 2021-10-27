@@ -77,5 +77,4 @@ toolchain_files = rule(
     toolchains = [
         str(Label("//rust:toolchain")),
     ],
-    incompatible_use_toolchain_transition = True,
 )

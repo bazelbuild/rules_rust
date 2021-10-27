@@ -216,7 +216,6 @@ rust_doc_test = rule(
     executable = True,
     test = True,
     toolchains = [str(Label("//rust:toolchain"))],
-    incompatible_use_toolchain_transition = True,
     doc = """Runs Rust documentation tests.
 
 Example:
