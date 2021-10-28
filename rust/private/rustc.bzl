@@ -22,7 +22,6 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load(
     "//rust/private:utils.bzl",
-    "crate_name_from_attr",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
