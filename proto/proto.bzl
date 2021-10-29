@@ -241,6 +241,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             is_test = False,
             compile_data = depset([target.files for target in getattr(ctx.attr, "compile_data", [])]),
             wrapped_crate_type = None,
+            owner = ctx.label,
         ),
         output_hash = output_hash,
     )
