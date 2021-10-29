@@ -57,8 +57,8 @@ def _with_modified_crate_name_impl(ctx):
 with_modified_crate_name = rule(
     implementation = _with_modified_crate_name_impl,
     attrs = {
-        "src": attr.label(allow_single_file = [".rs"]),
         "deps": attr.label_list(),
+        "src": attr.label(allow_single_file = [".rs"]),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
