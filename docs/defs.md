@@ -118,7 +118,7 @@ impl Greeter {
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -138,7 +138,7 @@ fn main() {
 
 `hello_world/BUILD`:
 ```python
-load("@rules_rust//rust:rust.bzl", "rust_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
     name = "hello_world",
@@ -237,7 +237,7 @@ pub mod greeter;
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",

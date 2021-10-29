@@ -288,7 +288,7 @@ impl Greeter {
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
@@ -308,7 +308,7 @@ fn main() {
 
 `hello_world/BUILD`:
 ```python
-load("@rules_rust//rust:rust.bzl", "rust_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
     name = "hello_world",
@@ -483,7 +483,7 @@ Example:
   ```python
   package(default_visibility = ["//visibility:public"])
 
-  load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc")
+  load("@rules_rust//rust:defs.bzl", "rust_library", "rust_doc")
 
   rust_library(
       name = "hello_lib",
@@ -543,7 +543,7 @@ To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:rust.bzl", "rust_library", "rust_doc_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_doc_test")
 
 rust_library(
     name = "hello_lib",
@@ -664,7 +664,7 @@ pub mod greeter;
 ```python
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "hello_lib",
