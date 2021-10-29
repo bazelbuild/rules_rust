@@ -22,7 +22,6 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load(
     "//rust/private:utils.bzl",
-    "crate_name_from_attr",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -55,12 +54,13 @@ ExtraRustcFlagsInfo = provider(
     fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
 )
 
-def _get_rustc_env(attr, toolchain):
+def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
     Args:
         attr (struct): The current target's attributes
         toolchain (rust_toolchain): The current target's rust toolchain context
+        crate_name (str): The name of the crate to be compiled
 
     Returns:
         dict: Rustc environment variables
@@ -74,7 +74,7 @@ def _get_rustc_env(attr, toolchain):
     return {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
-        "CARGO_CRATE_NAME": crate_name_from_attr(attr),
+        "CARGO_CRATE_NAME": crate_name,
         "CARGO_PKG_AUTHORS": "",
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
@@ -487,7 +487,7 @@ def construct_arguments(
 
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    env = _get_rustc_env(attr, toolchain)
+    env = _get_rustc_env(attr, toolchain, crate_info.name)
 
     # Wrapper args first
     process_wrapper_flags = ctx.actions.args()

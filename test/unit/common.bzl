@@ -97,3 +97,14 @@ def assert_list_contains_adjacent_elements_not(env, list_under_test, adjacent_el
                         actual = list_under_test,
                     ),
                 )
+
+def assert_env_value(env, action, key, value):
+    asserts.true(
+        env,
+        action.env[key] == value,
+        "Expected env[{key}] to be equal to '{value}', got '{real_value}'".format(
+            key = key,
+            value = value,
+            real_value = action.env[key],
+        ),
+    )
