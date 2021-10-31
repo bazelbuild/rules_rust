@@ -178,25 +178,6 @@ Add additional rustc_flags from the command line with `--@rules_rust//:extra_rus
 | <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#fail_when_enabled"></a>
-
-## fail_when_enabled
-
-<pre>
-fail_when_enabled(<a href="#fail_when_enabled-name">name</a>, <a href="#fail_when_enabled-flag">flag</a>)
-</pre>
-
-A rule that will fail analysis when a flag is enabled.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="fail_when_enabled-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="fail_when_enabled-flag"></a>flag |  The incompatible flag to check   | String | required |  |
-
-
 <a id="#incompatible_flag"></a>
 
 ## incompatible_flag

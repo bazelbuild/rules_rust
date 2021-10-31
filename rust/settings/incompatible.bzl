@@ -25,4 +25,3 @@ incompatible_flag = rule(
         ),
     },
 )
-

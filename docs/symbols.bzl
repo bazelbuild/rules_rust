@@ -146,7 +146,6 @@ rustfmt_test = _rustfmt_test
 error_format = _error_format
 extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
-fail_when_enabled = _fail_when_enabled
 capture_clippy_output = _capture_clippy_output
 
 CrateInfo = _CrateInfo
