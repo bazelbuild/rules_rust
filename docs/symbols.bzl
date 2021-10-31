@@ -83,7 +83,6 @@ load(
 )
 load(
     "@rules_rust//rust/settings:incompatible.bzl",
-    _fail_when_enabled = "fail_when_enabled",
     _incompatible_flag = "incompatible_flag",
 )
 load(

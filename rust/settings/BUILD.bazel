@@ -4,12 +4,6 @@ load(":incompatible.bzl", "incompatible_flag")
 package(default_visibility = ["//visibility:public"])
 
 incompatible_flag(
-    name = "split_rust_library",
-    build_setting_default = True,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/591",
-)
-
-incompatible_flag(
     name = "incompatible_make_rust_providers_target_independent",
     build_setting_default = True,
     issue = "https://github.com/bazelbuild/rules_rust/issues/966",

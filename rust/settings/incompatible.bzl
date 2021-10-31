@@ -26,20 +26,3 @@ incompatible_flag = rule(
     },
 )
 
-def _fail_when_enabled_impl(ctx):
-    flag = ctx.attr.flag
-    flag_info = getattr(ctx.attr, "_" + flag)[IncompatibleFlagInfo]
-    if flag_info.enabled:
-        fail("Incompatible flag {} has been flipped, see {} for details.".format(flag, flag_info.issue))
-
-fail_when_enabled = rule(
-    doc = "A rule that will fail analysis when a flag is enabled.",
-    implementation = _fail_when_enabled_impl,
-    attrs = {
-        "flag": attr.string(
-            doc = "The incompatible flag to check",
-            mandatory = True,
-        ),
-        "_split_rust_library": attr.label(default = "//rust/settings:split_rust_library"),
-    },
-)
