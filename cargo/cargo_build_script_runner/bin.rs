@@ -88,13 +88,15 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    if let Some(cc_path) = env::var_os("CC") {
-        let mut cc_path = exec_root.join(cc_path).into_os_string();
-        if let Some(sysroot_path) = env::var_os("SYSROOT") {
-            cc_path.push(" --sysroot=");
-            cc_path.push(&exec_root.join(sysroot_path));
+    for compiler_env_var in &["CC", "CXX"] {
+        if let Some(compiler_path) = env::var_os(compiler_env_var) {
+            let mut compiler_path = exec_root.join(compiler_path).into_os_string();
+            if let Some(sysroot_path) = env::var_os("SYSROOT") {
+                compiler_path.push(" --sysroot=");
+                compiler_path.push(&exec_root.join(sysroot_path));
+            }
+            command.env(compiler_env_var, compiler_path);
         }
-        command.env("CC", cc_path);
     }
 
     if let Some(ar_path) = env::var_os("AR") {
