@@ -7,7 +7,10 @@ load("//rust:defs.bzl", "rust_test")
 cargo_build_script(
     name = "tools_exec_build_rs",
     srcs = ["build.rs"],
-    build_script_env = {"TOOL": "$(execpath :tool)"},
+    build_script_env = {
+        "TOOL": "$(execpath :tool)",
+        "CXXFLAGS": "-DMY_DEFINE"
+    },
     tools = [":tool"],
 )
 

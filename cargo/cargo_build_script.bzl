@@ -1,5 +1,9 @@
 # buildifier: disable=module-docstring
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "C_COMPILE_ACTION_NAME",
+    "CPP_COMPILE_ACTION_NAME"
+)
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
 
@@ -28,6 +32,37 @@ def get_cc_compile_env(cc_toolchain, feature_configuration):
         action_name = C_COMPILE_ACTION_NAME,
         variables = compile_variables,
     )
+
+def get_cxx_compile_opts(cc_toolchain, feature_configuration):
+    """Gather command line arguments and env for the ``CPP_COMPILE_ACTION_NAME``
+    action from the given cc_toolchain.
+
+    Args:
+        cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
+
+    Returns:
+        tuple: Returns the command line arguments as the first element and the
+        env as the second element.
+    """
+    compile_variables = cc_common.create_compile_variables(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+    )
+
+    compile_args_from_toolchain = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+
+    cc_compile_env = cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = CPP_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+
+    return (compile_args_from_toolchain, cc_compile_env)
 
 def _build_script_impl(ctx):
     """The implementation for the `_build_script_run` rule.
@@ -100,6 +135,17 @@ def _build_script_impl(ctx):
     include = cc_env.get("INCLUDE")
     if include:
         env["INCLUDE"] = include
+
+    compile_args_from_toolchain, _ = get_cxx_compile_opts(cc_toolchain, feature_configuration)
+    # XXX: Skip adding the CXX env since we already added the C env. Should we stick to just CXX?
+    # Remove --sysroot since we pass it in the SYSROOT env var (we need to
+    # use the absolute path for it). See ``cargo_build_script_runner/bin.rs``
+    # for how this is handled.
+    compile_args_from_toolchain = [
+        arg for arg in compile_args_from_toolchain
+        if not arg.startswith("--sysroot")
+    ]
+    env["CXXFLAGS"] = " ".join(compile_args_from_toolchain)
 
     if cc_toolchain:
         toolchain_tools.append(cc_toolchain.all_files)

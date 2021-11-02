@@ -4,6 +4,10 @@ fn main() {
         "cargo:rustc-env=TOOL_PATH={}",
         std::env::var("TOOL").unwrap()
     );
+    println!(
+        "cargo:rustc-env=CXXFLAGS={}",
+        std::env::var("CXXFLAGS").unwrap()
+    );
 
     // Assert that the CC and CXX env vars existed and were executable.
     // We don't assert what happens when they're executed (in particular, we don't check for a
