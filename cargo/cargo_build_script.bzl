@@ -1,8 +1,8 @@
 # buildifier: disable=module-docstring
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_COMPILE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
-    "CPP_COMPILE_ACTION_NAME"
 )
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
@@ -34,8 +34,7 @@ def get_cc_compile_env(cc_toolchain, feature_configuration):
     )
 
 def get_cxx_compile_opts(cc_toolchain, feature_configuration):
-    """Gather command line arguments and env for the ``CPP_COMPILE_ACTION_NAME``
-    action from the given cc_toolchain.
+    """Gather command line arguments and env from the given ``cc_toolchain``.
 
     Args:
         cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
@@ -137,12 +136,14 @@ def _build_script_impl(ctx):
         env["INCLUDE"] = include
 
     compile_args_from_toolchain, _ = get_cxx_compile_opts(cc_toolchain, feature_configuration)
+
     # XXX: Skip adding the CXX env since we already added the C env. Should we stick to just CXX?
     # Remove --sysroot since we pass it in the SYSROOT env var (we need to
     # use the absolute path for it). See ``cargo_build_script_runner/bin.rs``
     # for how this is handled.
     compile_args_from_toolchain = [
-        arg for arg in compile_args_from_toolchain
+        arg
+        for arg in compile_args_from_toolchain
         if not arg.startswith("--sysroot")
     ]
     env["CXXFLAGS"] = " ".join(compile_args_from_toolchain)
