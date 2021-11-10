@@ -22,6 +22,10 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
 
 rust_analyzer_deps()
 
+load("@rules_rust//util/import:deps.bzl", "import_deps")
+
+import_deps()
+
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
