@@ -5,12 +5,11 @@ rust_proc_macro(
     srcs = [
         "import.rs",
     ],
-    crate_name = "import",
-    visibility = ["//visibility:public"],
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
     ],
+    visibility = ["//visibility:public"],
 )
 
 rust_library(
@@ -18,7 +17,6 @@ rust_library(
     srcs = [
         "import_internal.rs",
     ],
-    crate_name = "import_internal",
     deps = [
         "//util/import/raze:aho_corasick",
         "//util/import/raze:lazy_static",
