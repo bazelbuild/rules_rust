@@ -99,9 +99,24 @@ def get_lib_name(lib):
     Returns:
         str: The name of the library
     """
+    # On macos and windows, dynamic/static libraries always end with the
+    # extension and potential versions will be before the extension, and should
+    # be part of the library name.
+    # On linux, the version usually comes after the extension.
+    # So regardless of the platform we want to find the extension and make
+    # everything left to it the library name.
 
-    # NB: The suffix may contain a version number like 'so.1.2.3'
-    libname = lib.basename.split(".", 1)[0]
+    # Search for the extension - starting from the right - by removing any
+    # trailing digit.
+    comps = lib.basename.split(".")
+    for comp in reversed(comps):
+        if comp.isdigit():
+            comps.pop()
+        else:
+            break
+
+    # The library name is now everything minus the extension.
+    libname = ".".join(comps[:-1])
 
     if libname.startswith("lib"):
         return libname[3:]
