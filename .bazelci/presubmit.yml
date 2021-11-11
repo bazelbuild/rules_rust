@@ -144,13 +144,13 @@ tasks:
     bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
