@@ -1,10 +1,11 @@
-use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::option::Option;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Output {
@@ -63,10 +64,11 @@ pub fn get_crate_specs(
     workspace: &Path,
     execution_root: &Path,
     targets: &[&str],
+    rules_rust_name: &str,
 ) -> anyhow::Result<Vec<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = targets
-        .into_iter()
+        .iter()
         .map(|t| format!("deps({})", t))
         .collect::<Vec<_>>()
         .join("+");
@@ -75,7 +77,10 @@ pub fn get_crate_specs(
         .current_dir(workspace)
         .arg("aquery")
         .arg("--include_aspects")
-        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+        .arg(format!(
+            "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
+            rules_rust_name
+        ))
         .arg("--output_groups=rust_analyzer_crate_spec")
         .arg(format!(
             r#"outputs(".*[.]rust_analyzer_crate_spec",{})"#,
@@ -85,11 +90,11 @@ pub fn get_crate_specs(
         .output()?;
 
     let crate_spec_files =
-        parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
+        parse_aquery_output_files(execution_root, &String::from_utf8(aquery_output.stdout)?)?;
 
     // Read all crate specs, deduplicating crates with the same ID. This happens when
     // a rust_test depends on a rust_library, for example.
-    let mut crate_specs: HashMap<String, CrateSpec> = HashMap::new();
+    let mut crate_specs: BTreeMap<String, CrateSpec> = BTreeMap::new();
     for file in crate_spec_files {
         let spec: CrateSpec = serde_json::from_reader(File::open(file)?)?;
         log::debug!("{:?}", spec);
@@ -109,45 +114,51 @@ pub fn get_sysroot_src(
     bazel: &Path,
     workspace: &Path,
     execution_root: &Path,
-    rules_rust: &str,
+    rules_rust_name: &str,
 ) -> anyhow::Result<String> {
     let aquery_output = Command::new(bazel)
         .current_dir(workspace)
         .arg("aquery")
         .arg("--include_aspects")
-        .arg("--aspects=@rules_rust//rust:defs.bzl%rust_analyzer_aspect")
+        .arg(format!(
+            "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
+            rules_rust_name
+        ))
         .arg("--output_groups=rust_analyzer_sysroot_src")
         .arg(format!(
-            r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//tools/rust_analyzer:detect_sysroot)"#,
-            rules_rust
+            r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//rust/private:rust_analyzer_detect_sysroot)"#,
+            rules_rust_name
         ))
         .arg("--output=jsonproto")
         .output()?;
 
     let sysroot_src_files =
-        parse_aquery_output_files(execution_root, String::from_utf8(aquery_output.stdout)?)?;
+        parse_aquery_output_files(execution_root, &String::from_utf8(aquery_output.stdout)?)?;
     log::debug!("sysroot_src_files: {:?}", sysroot_src_files);
     debug_assert!(sysroot_src_files.len() == 1);
 
     Ok(std::fs::read_to_string(&sysroot_src_files[0])?)
 }
 
-fn parse_aquery_output_files(execution_root: &Path, s: String) -> anyhow::Result<Vec<PathBuf>> {
-    let o: Output = serde_json::from_str(&s)?;
+fn parse_aquery_output_files(
+    execution_root: &Path,
+    aquery_stdout: &str,
+) -> anyhow::Result<Vec<PathBuf>> {
+    let out: Output = serde_json::from_str(aquery_stdout)?;
 
-    let artifacts = o
+    let artifacts = out
         .artifacts
         .iter()
         .map(|a| (a.id, a))
         .collect::<HashMap<_, _>>();
-    let path_fragments = o
+    let path_fragments = out
         .path_fragments
         .iter()
         .map(|pf| (pf.id, pf))
         .collect::<HashMap<_, _>>();
 
     let mut output_files: Vec<PathBuf> = Vec::new();
-    for action in o.actions {
+    for action in out.actions {
         for output_id in action.output_ids {
             let artifact = artifacts
                 .get(&output_id)

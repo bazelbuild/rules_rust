@@ -1,6 +1,7 @@
-use anyhow::anyhow;
 use std::path::Path;
 use std::process::Command;
+
+use anyhow::anyhow;
 
 mod aquery;
 mod rust_project;
@@ -22,7 +23,7 @@ pub fn generate_crate_and_sysroot_info(
         ))
         .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_sysroot_src")
         .arg(format!(
-            "{}//tools/rust_analyzer:detect_sysroot",
+            "{}//rust/private:rust_analyzer_detect_sysroot",
             rules_rust.as_ref()
         ))
         .args(targets)
@@ -42,7 +43,7 @@ pub fn generate_crate_and_sysroot_info(
 pub fn write_rust_project(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
-    rules_rust: &impl AsRef<str>,
+    rules_rust_name: &impl AsRef<str>,
     targets: &[&str],
     execution_root: impl AsRef<Path>,
     rust_project_path: impl AsRef<Path>,
@@ -51,14 +52,17 @@ pub fn write_rust_project(
         bazel.as_ref(),
         workspace.as_ref(),
         execution_root.as_ref(),
-        &targets,
+        targets,
+        rules_rust_name.as_ref(),
     )?;
+
     let sysroot_src = aquery::get_sysroot_src(
         bazel.as_ref(),
         workspace.as_ref(),
         execution_root.as_ref(),
-        rules_rust.as_ref(),
+        rules_rust_name.as_ref(),
     )?;
+
     let rust_project = rust_project::generate_rust_project(&sysroot_src, &crate_specs)?;
 
     rust_project::write_rust_project(

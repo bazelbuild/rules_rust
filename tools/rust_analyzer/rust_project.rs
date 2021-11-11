@@ -1,36 +1,73 @@
-// Library for generating rust_project.json files from a Vec<CrateSpec>
-// See official documentation of file format at https://rust-analyzer.github.io/manual.html
+//! Library for generating rust_project.json files from a `Vec<CrateSpec>`
+//! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use crate::aquery::CrateSpec;
-use anyhow::anyhow;
-use serde::Serialize;
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
 
+use anyhow::anyhow;
+use serde::Serialize;
+
+use crate::aquery::CrateSpec;
+
+/// A `rust-project.json` workspace representation. See
+/// [rust-analyzer documentation][rd] for a thorough description of this interface.
+/// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Serialize)]
 pub struct RustProject {
+    /// Path to the directory with *source code* of
+    /// sysroot crates.
     sysroot_src: Option<String>,
+
+    /// The set of crates comprising the current
+    /// project. Must include all transitive
+    /// dependencies as well as sysroot crate (libstd,
+    /// libcore and such).
     crates: Vec<Crate>,
 }
 
+/// A `rust-project.json` crate representation. See
+/// [rust-analyzer documentation][rd] for a thorough description of this interface.
+/// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Serialize)]
 pub struct Crate {
+    /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
     display_name: Option<String>,
+
+    /// Path to the root module of the crate.
     root_module: String,
+
+    /// Edition of the crate.
     edition: String,
+
+    /// Dependencies
     deps: Vec<Dependency>,
+
+    /// Should this crate be treated as a member of current "workspace".
     #[serde(skip_serializing_if = "Option::is_none")]
     is_workspace_member: Option<bool>,
+
+    /// Optionally specify the (super)set of `.rs` files comprising this crate.
     #[serde(skip_serializing_if = "Option::is_none")]
     source: Option<Source>,
+
+    /// The set of cfgs activated for a given crate, like
+    /// `["unix", "feature=\"foo\"", "feature=\"bar\""]`.
     cfg: Vec<String>,
+
+    /// Target triple for this Crate.
     #[serde(skip_serializing_if = "Option::is_none")]
     target: Option<String>,
+
+    /// Environment variables, used for the `env!` macro
     #[serde(skip_serializing_if = "Option::is_none")]
     env: Option<HashMap<String, String>>,
+
+    /// Whether the crate is a proc-macro crate.
     is_proc_macro: bool,
+
+    /// For proc-macro crates, path to compiled proc-macro (.so file).
     #[serde(skip_serializing_if = "Option::is_none")]
     proc_macro_dylib_path: Option<String>,
 }
@@ -46,12 +83,14 @@ pub struct Dependency {
     /// Index of a crate in the `crates` array.
     #[serde(rename = "crate")]
     crate_index: usize,
+
+    /// The display name of the crate.
     name: String,
 }
 
 pub fn generate_rust_project(
     sysroot_src: &str,
-    crates: &Vec<CrateSpec>,
+    crates: &[CrateSpec],
 ) -> anyhow::Result<RustProject> {
     let mut project = RustProject {
         sysroot_src: Some(sysroot_src.into()),
@@ -142,7 +181,7 @@ pub fn write_rust_project(
 ) -> anyhow::Result<()> {
     let execution_root = execution_root
         .to_str()
-        .ok_or(anyhow!("execution_root is not valid UTF-8"))?;
+        .ok_or_else(|| anyhow!("execution_root is not valid UTF-8"))?;
 
     // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
     match std::fs::remove_file(rust_project_path) {
@@ -156,11 +195,13 @@ pub fn write_rust_project(
         }
     }
 
+    // Render the `rust-project.json` file and replace the exec root
+    // placeholders with the path to the local exec root.
+    let rust_project_content =
+        serde_json::to_string(rust_project)?.replace("__EXEC_ROOT__", execution_root);
+
     // Write the new rust-project.json file.
-    std::fs::write(
-        rust_project_path,
-        serde_json::to_string(rust_project)?.replace("__EXEC_ROOT__", &execution_root),
-    )?;
+    std::fs::write(rust_project_path, rust_project_content)?;
 
     Ok(())
 }

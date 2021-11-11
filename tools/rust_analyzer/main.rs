@@ -1,14 +1,16 @@
-use anyhow::anyhow;
-use gen_rust_project_lib::generate_crate_and_sysroot_info;
-use gen_rust_project_lib::write_rust_project;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
+
+use anyhow::anyhow;
+use gen_rust_project_lib::generate_crate_and_sysroot_info;
+use gen_rust_project_lib::write_rust_project;
 use structopt::StructOpt;
 
 // TODO(david): This shells out to an expected rule in the workspace root //:rust_analyzer that the user must define.
-// It would be more convenient if it could automatically discover all the rust code in the workspace if this target does not exist.
+// It would be more convenient if it could automatically discover all the rust code in the workspace if this target
+// does not exist.
 fn main() -> anyhow::Result<()> {
     env_logger::init();
 
@@ -18,21 +20,24 @@ fn main() -> anyhow::Result<()> {
         .workspace
         .as_ref()
         .expect("failed to find workspace root, set with --workspace");
+
     let execution_root = config
         .execution_root
         .as_ref()
         .expect("failed to find execution root, is --execution-root set correctly?");
 
-    let targets = config.targets.split(',').collect::<Vec<_>>();
+    let targets: Vec<&str> = config.targets.split(',').collect();
+
+    let rules_rust_name = env!("ASPECT_REPOSITORY");
 
     // Generate the crate specs and sysroot src.
-    generate_crate_and_sysroot_info(&config.bazel, &workspace_root, &config.rules_rust, &targets)?;
+    generate_crate_and_sysroot_info(&config.bazel, &workspace_root, &rules_rust_name, &targets)?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
         &config.bazel,
         &workspace_root,
-        &config.rules_rust,
+        &rules_rust_name,
         &targets,
         &execution_root,
         &workspace_root.join("rust-project.json"),
@@ -106,17 +111,7 @@ struct Config {
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
 
-    #[structopt(
-        long,
-        default_value = "@rules_rust",
-        help = "The name of the rules_rust repository"
-    )]
-    rules_rust: String,
-
-    #[structopt(
-        long,
-        default_value = "@//...",
-        help = "Comma-separated list of target patterns"
-    )]
+    /// Comma-separated list of target patterns
+    #[structopt(long, default_value = "@//...")]
     targets: String,
 }

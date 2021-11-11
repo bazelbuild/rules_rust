@@ -30,8 +30,8 @@ RustAnalyzerInfo = provider(
     fields = {
         "build_info": "BuildInfo: build info for this crate if present",
         "cfgs": "List[String]: features or other compilation --cfg settings",
-        "crate_specs": "List[File]: transitive closure of OutputGroupInfo files",
         "crate": "rust_common.crate_info",
+        "crate_specs": "List[File]: transitive closure of OutputGroupInfo files",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict{String: String}: Environment variables, used for the `env!` macro",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",

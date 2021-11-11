@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_analyzer", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "mylib",
@@ -22,20 +22,14 @@ rust_library(
     srcs = ["extra_test_dep.rs"],
 )
 
-rust_analyzer(
-    name = "rust_analyzer",
-    testonly = True,
-    targets = [
-        # it's significant that `mylib` goes before `mylib_test`.
-        ":mylib",
-        ":mylib_test",
-    ],
-)
-
 rust_test(
     name = "rust_project_json_test",
     srcs = ["rust_project_json_test.rs"],
     data = [":rust-project.json"],
     edition = "2018",
-    deps = ["//tools/runfiles"],
+    env = {"RUST_PROJECT_JSON": "$(rootpath :rust-project.json)"},
+    # This target is tagged as manual since it's not expected to pass in
+    # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
+    # that target to execute this test.
+    tags = ["manual"],
 )

@@ -1,11 +1,13 @@
-load("//rust:defs.bzl", "rust_analyzer_detect_sysroot", "rust_binary", "rust_clippy", "rust_library", "rust_test")
-
-rust_analyzer_detect_sysroot(name = "detect_sysroot")
+load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
+load("//tools:tool_utils.bzl", "aspect_repository")
 
 rust_binary(
     name = "gen_rust_project",
     srcs = ["main.rs"],
     edition = "2018",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+    },
     visibility = ["//visibility:public"],
     deps = [
         ":gen_rust_project_lib",

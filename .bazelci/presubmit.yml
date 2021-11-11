@@ -181,6 +181,11 @@ tasks:
     platform: ubuntu2004
     run_targets:
       - "//test/rustfmt:test_runner"
+  rust_analyzer_tests:
+    name: Rust-Analyzer Tests
+    platform: ubuntu2004
+    run_targets:
+      - "//test/rust_analyzer:rust_analyzer_test"
   ubuntu2004_examples:
     name: Examples
     platform: ubuntu2004
