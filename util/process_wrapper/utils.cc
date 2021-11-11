@@ -110,7 +110,7 @@ bool ReadStampStatusToArray(
     return false;
   }
 
-  for (int i = 0; i < stamp_block.size(); ++i) {
+  for (System::StrVecType::size_type i = 0; i < stamp_block.size(); ++i) {
     size_t space_pos = stamp_block[i].find(' ');
     if (space_pos == std::string::npos) {
       std::cerr << "process wrapper error: wrong workspace status file "
