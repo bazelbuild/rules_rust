@@ -32,10 +32,9 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "unicode_xid",
+    name = "version_check",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "default",
     ],
     crate_root = "src/lib.rs",
     data = [],
@@ -47,10 +46,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.1",
+    version = "0.9.3",
     # buildifier: leave-alone
     deps = [
     ],
 )
-
-# Unsupported target "exhaustive_tests" with type "test" omitted

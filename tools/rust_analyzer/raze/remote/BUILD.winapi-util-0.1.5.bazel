@@ -10,10 +10,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:defs.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
-    "rust_proc_macro",
     "rust_test",
 )
 
@@ -26,19 +25,22 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "unencumbered",  # Unlicense from expression "Unlicense OR MIT"
 ])
 
 # Generated Targets
 
 rust_library(
-    name = "version_check",
+    name = "winapi_util",
     srcs = glob(["**/*.rs"]),
+    aliases = {
+    },
     crate_features = [
     ],
     crate_root = "src/lib.rs",
+    crate_type = "lib",
     data = [],
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -46,8 +48,17 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.9.2",
+    version = "0.1.5",
     # buildifier: leave-alone
     deps = [
-    ],
+    ] + selects.with_or({
+        # cfg(windows)
+        (
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            "@rules_rust_tools_rust_analyzer__winapi__0_3_9//:winapi",
+        ],
+        "//conditions:default": [],
+    }),
 )

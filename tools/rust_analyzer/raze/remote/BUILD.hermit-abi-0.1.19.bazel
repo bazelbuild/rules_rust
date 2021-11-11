@@ -32,9 +32,10 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "heck",
+    name = "hermit_abi",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = [],
@@ -46,9 +47,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.2",
+    version = "0.1.19",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__unicode_segmentation__1_7_1//:unicode_segmentation",
+        "@rules_rust_tools_rust_analyzer__libc__0_2_100//:libc",
     ],
 )

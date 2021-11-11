@@ -10,10 +10,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:defs.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
-    "rust_proc_macro",
     "rust_test",
 )
 
@@ -31,15 +30,17 @@ licenses([
 
 # Generated Targets
 
+# Unsupported target "bench" with type "bench" omitted
+
 rust_library(
-    name = "hermit_abi",
+    name = "itoa",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "default",
     ],
     crate_root = "src/lib.rs",
+    crate_type = "lib",
     data = [],
-    edition = "2018",
+    edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -47,9 +48,10 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.1.18",
+    version = "0.4.8",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__libc__0_2_86//:libc",
     ],
 )
+
+# Unsupported target "test" with type "test" omitted

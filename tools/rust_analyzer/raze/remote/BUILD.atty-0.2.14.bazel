@@ -73,7 +73,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-linux-android",
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
         ): [
-            "@rules_rust_tools_rust_analyzer__libc__0_2_86//:libc",
+            "@rules_rust_tools_rust_analyzer__libc__0_2_100//:libc",
         ],
         "//conditions:default": [],
     }) + selects.with_or({
