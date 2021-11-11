@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "anyhow",
-    actual = "@rules_rust_tools_rust_analyzer__anyhow__1_0_43//:anyhow",
+    actual = "@rules_rust_tools_rust_analyzer__anyhow__1_0_45//:anyhow",
     tags = [
         "cargo-raze",
         "manual",
@@ -41,7 +41,7 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@rules_rust_tools_rust_analyzer__serde__1_0_128//:serde",
+    actual = "@rules_rust_tools_rust_analyzer__serde__1_0_130//:serde",
     tags = [
         "cargo-raze",
         "manual",
@@ -50,7 +50,7 @@ alias(
 
 alias(
     name = "serde_json",
-    actual = "@rules_rust_tools_rust_analyzer__serde_json__1_0_66//:serde_json",
+    actual = "@rules_rust_tools_rust_analyzer__serde_json__1_0_69//:serde_json",
     tags = [
         "cargo-raze",
         "manual",
@@ -59,7 +59,7 @@ alias(
 
 alias(
     name = "structopt",
-    actual = "@rules_rust_tools_rust_analyzer__structopt__0_3_22//:structopt",
+    actual = "@rules_rust_tools_rust_analyzer__structopt__0_3_25//:structopt",
     tags = [
         "cargo-raze",
         "manual",

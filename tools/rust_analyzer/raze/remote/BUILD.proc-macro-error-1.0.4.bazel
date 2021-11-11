@@ -89,9 +89,9 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":proc_macro_error_build_script",
-        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_28//:proc_macro2",
-        "@rules_rust_tools_rust_analyzer__quote__1_0_9//:quote",
-        "@rules_rust_tools_rust_analyzer__syn__1_0_75//:syn",
+        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_32//:proc_macro2",
+        "@rules_rust_tools_rust_analyzer__quote__1_0_10//:quote",
+        "@rules_rust_tools_rust_analyzer__syn__1_0_81//:syn",
     ],
 )
 

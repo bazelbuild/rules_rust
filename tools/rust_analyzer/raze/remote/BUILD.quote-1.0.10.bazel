@@ -26,15 +26,19 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
 # Generated Targets
 
-rust_proc_macro(
-    name = "structopt_derive",
+# Unsupported target "bench" with type "bench" omitted
+
+rust_library(
+    name = "quote",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "default",
+        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     data = [],
@@ -46,13 +50,13 @@ rust_proc_macro(
         "cargo-raze",
         "manual",
     ],
-    version = "0.4.15",
+    version = "1.0.10",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__heck__0_3_3//:heck",
-        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_28//:proc_macro2",
-        "@rules_rust_tools_rust_analyzer__proc_macro_error__1_0_4//:proc_macro_error",
-        "@rules_rust_tools_rust_analyzer__quote__1_0_9//:quote",
-        "@rules_rust_tools_rust_analyzer__syn__1_0_75//:syn",
+        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_32//:proc_macro2",
     ],
 )
+
+# Unsupported target "compiletest" with type "test" omitted
+
+# Unsupported target "test" with type "test" omitted

@@ -62,7 +62,7 @@ rust_library(
         "@rules_rust_tools_rust_analyzer__bitflags__1_3_2//:bitflags",
         "@rules_rust_tools_rust_analyzer__strsim__0_8_0//:strsim",
         "@rules_rust_tools_rust_analyzer__textwrap__0_11_0//:textwrap",
-        "@rules_rust_tools_rust_analyzer__unicode_width__0_1_8//:unicode_width",
+        "@rules_rust_tools_rust_analyzer__unicode_width__0_1_9//:unicode_width",
         "@rules_rust_tools_rust_analyzer__vec_map__0_8_2//:vec_map",
     ] + selects.with_or({
         # cfg(not(windows))
