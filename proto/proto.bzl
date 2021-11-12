@@ -300,7 +300,7 @@ rust_proto_library = rule(
             doc = "The crates the generated library depends on.",
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_optional_output_wrapper": attr.label(
             executable = True,
@@ -319,7 +319,7 @@ rust_proto_library = rule(
     toolchains = [
         str(Label("//proto:toolchain")),
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
     # the version of Bazel that issue was closed on as the min supported version
@@ -378,7 +378,7 @@ rust_grpc_library = rule(
             doc = "The crates the generated library depends on.",
         ),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = "@rules_cc//cc:current_cc_toolchain",
         ),
         "_optional_output_wrapper": attr.label(
             executable = True,
@@ -397,7 +397,7 @@ rust_grpc_library = rule(
     toolchains = [
         str(Label("//proto:toolchain")),
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
     # the version of Bazel that issue was closed on as the min supported version

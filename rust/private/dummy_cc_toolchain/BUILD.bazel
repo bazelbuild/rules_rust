@@ -9,5 +9,5 @@ toolchain(
     name = "dummy_cc_wasm32_toolchain",
     target_compatible_with = ["//rust/platform/cpu:wasm32"],
     toolchain = ":dummy_cc_wasm32",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    toolchain_type = "@rules_cc//cc:toolchain_type",
 )

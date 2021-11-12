@@ -264,7 +264,7 @@ cargo_bootstrap_repository = repository_rule(
             default = rust_common.default_version,
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
 )

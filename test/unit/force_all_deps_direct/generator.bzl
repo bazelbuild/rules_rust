@@ -76,7 +76,7 @@ generator = rule(
     attrs = {
         "deps": attr.label_list(),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = "@rules_cc//cc:current_cc_toolchain",
         ),
         "_error_format": attr.label(default = "@rules_rust//:error_format"),
         "_process_wrapper": attr.label(
@@ -86,7 +86,7 @@ generator = rule(
             cfg = "exec",
         ),
     },
-    toolchains = ["@rules_rust//rust:toolchain", "@bazel_tools//tools/cpp:toolchain_type"],
+    toolchains = ["@rules_rust//rust:toolchain", "@rules_cc//cc:toolchain_type"],
     incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )

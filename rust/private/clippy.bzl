@@ -177,7 +177,7 @@ rust_clippy_aspect = aspect(
                 "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
@@ -199,7 +199,7 @@ rust_clippy_aspect = aspect(
     provides = [ClippyInfo],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     implementation = _clippy_aspect_impl,

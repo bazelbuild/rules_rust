@@ -10,6 +10,7 @@ bzl_library(
         "@bazel_tools//tools:bzl_srcs",
         "@build_bazel_rules_nodejs//:bzl",
         "@com_google_protobuf//:bzl_srcs",
+        "@rules_cc//cc:bzl_srcs",
     ],
     deps = [
         "@bazel_skylib//lib:paths",

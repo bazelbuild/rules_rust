@@ -195,7 +195,7 @@ rust_bindgen = rule(
             allow_single_file = True,
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
@@ -209,7 +209,7 @@ rust_bindgen = rule(
     toolchains = [
         str(Label("//bindgen:bindgen_toolchain")),
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )

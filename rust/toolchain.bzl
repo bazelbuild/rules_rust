@@ -362,17 +362,17 @@ rust_toolchain = rule(
             ),
         ),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = "@rules_cc//cc:current_cc_toolchain",
         ),
         "_crosstool": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_incompatible_make_rust_providers_target_independent": attr.label(
             default = "@rules_rust//rust/settings:incompatible_make_rust_providers_target_independent",
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = """Declares a Rust toolchain for use.

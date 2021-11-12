@@ -1,6 +1,6 @@
 # buildifier: disable=module-docstring
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
+load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
 
 # buildifier: disable=bzl-visibility
@@ -232,13 +232,13 @@ _build_script_run = rule(
             cfg = "exec",
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )

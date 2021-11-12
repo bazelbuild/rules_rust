@@ -658,7 +658,7 @@ _common_attrs = {
         default = "0.0.0",
     ),
     "_cc_toolchain": attr.label(
-        default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        default = "@rules_cc//cc:current_cc_toolchain",
     ),
     "_error_format": attr.label(default = "//:error_format"),
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
@@ -734,7 +734,7 @@ rust_library = rule(
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -811,7 +811,7 @@ rust_static_library = rule(
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -835,7 +835,7 @@ rust_shared_library = rule(
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -859,7 +859,7 @@ rust_proc_macro = rule(
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -909,7 +909,7 @@ rust_binary = rule(
     host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -1009,7 +1009,7 @@ rust_test = rule(
     test = True,
     toolchains = [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
