@@ -31,7 +31,7 @@ RustAnalyzerInfo = provider(
         "build_info": "BuildInfo: build info for this crate if present",
         "cfgs": "List[String]: features or other compilation --cfg settings",
         "crate": "rust_common.crate_info",
-        "crate_specs": "List[File]: transitive closure of OutputGroupInfo files",
+        "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict{String: String}: Environment variables, used for the `env!` macro",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
@@ -178,6 +178,15 @@ def _create_single_crate(ctx, info):
     crate["env"].update({k: ctx.expand_location(v, expand_targets) for k, v in info.env.items()})
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
+    # It can happen a single source file is present in multiple crates - there can
+    # be a `rust_library` with a `lib.rs` file, and a `rust_test` for the `test`
+    # module in that file. Tests can declare more dependencies than what library
+    # had. Therefore we had to collect all RustAnalyzerInfos for a given crate
+    # and take deps from all of them.
+
+    # There's one exception - if the dependency is the same crate name as the
+    # the crate being processed, we don't add it as a dependency to itself. This is
+    # common and expected - `rust_test.crate` pointing to the `rust_library`.
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
     crate["cfg"] = info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple
@@ -208,7 +217,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
 
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = ["@rules_rust//rust:toolchain"],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Detect the sysroot and store in a file for use by the gen_rust_project tool.
