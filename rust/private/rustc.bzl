@@ -492,9 +492,8 @@ def construct_arguments(
                     This is to be passed to the `arguments` parameter of actions
             - (dict): Common rustc environment variables
     """
-    output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
-
-    linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
+    output_dir = getattr(crate_info.output, "dirname", None)
+    linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
 

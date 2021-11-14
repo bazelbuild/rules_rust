@@ -67,7 +67,7 @@ tasks:
       # rust_doc_test is likely not fully sandboxed
       - "-//test/chained_direct_deps:mod3_doc_test"
     build_flags: *aspects_flags
-  rbe_ubuntu1604_with_aspects:
+  rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu1604
     shell_commands:
