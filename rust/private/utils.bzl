@@ -257,7 +257,7 @@ def _invalid_chars_in_crate_name(name):
 
     return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
 
-def crate_name_from_attr(attr):
+def crate_name_from_attr(attr, label, toolchain):
     """Returns the crate name to use for the current target.
 
     Args:
@@ -275,7 +275,14 @@ def crate_name_from_attr(attr):
             ))
         return attr.crate_name
 
-    crate_name = name_to_crate_name(attr.name)
+    if toolchain and label and toolchain._rename_1p_crates: 
+        if _is_third_party_crate(label):
+            crate_name = attr.name
+        else:
+            crate_name = encode_label_as_crate_name(label)
+    else:
+        crate_name = name_to_crate_name(attr.name)
+
     invalid_chars = _invalid_chars_in_crate_name(crate_name)
     if invalid_chars:
         fail(
@@ -382,3 +389,55 @@ def transform_deps(deps):
         build_info = dep[BuildInfo] if BuildInfo in dep else None,
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
+
+def _is_third_party_crate(label):
+    # TODO: fix this to look at flag
+    return label.package.startswith("third_party/rust")
+
+pairs = (
+    (":", "colon"),
+    ("!", "bang"),
+    ("%", "percent"),
+    ("@", "at"),
+    ("^", "caret"),
+    ("`", "backtick"),
+    (" ", "space"),
+    ("\"", "quote"),
+    ("#", "hash"),
+    ("$", "dollar"),
+    ("&", "ampersand"),
+    ("'", "backslash"),
+    ("(", "lparen"),
+    (")", "rparen"),
+    ("*", "star"),
+    ("-", "dash"),
+    ("+", "plus"),
+    (",", "comma"),
+    (";", "semicolon"),
+    ("<", "langle"),
+    ("=", "equal"),
+    (">", "rangle"),
+    ("?", "question"),
+    ("[", "lbracket"),
+    ("]", "rbracket"),
+    ("{", "lbrace"),
+    ("|", "pipe"),
+    ("}", "rbrace"),
+    ("~", "tilde"),
+    ("/", "slash"),
+    (".", "dot"),
+)
+
+substitutions = [
+    new_pair for (old, new) in pairs 
+             for new_pair in (
+                 ("_{}_".format(new), "_quote{}_".format(new)),
+                 (old, "_{}_".format(new))
+             )
+    ]
+
+def encode_label_as_crate_name(label):
+    full_name = label.package + ':' + label.name
+    for old, new in substitutions:
+        full_name = full_name.replace(old, new)
+    return full_name

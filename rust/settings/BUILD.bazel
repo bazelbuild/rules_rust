@@ -15,6 +15,12 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/1069",
 )
 
+incompatible_flag(
+    name = "rename_1p_crates",
+    build_setting_default = False,
+    issue = "https://github.com/bazelbuild/rules_rust/issues/1013",
+)
+
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
