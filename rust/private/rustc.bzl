@@ -460,7 +460,9 @@ def construct_arguments(
         build_flags_files,
         emit = ["dep-info", "link"],
         force_all_deps_direct = False,
-        stamp = False):
+        force_link = False,
+        stamp = False,
+        remap_path_prefix = "."):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -482,8 +484,10 @@ def construct_arguments(
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
 
     Returns:
         tuple: A tuple of the following items
@@ -576,9 +580,11 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    rustc_flags.add("--remap-path-prefix=${pwd}=.")
+    if remap_path_prefix:
+        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
-    rustc_flags.add("--emit=" + ",".join(emit_with_paths))
+    if emit:
+        rustc_flags.add("--emit=" + ",".join(emit_with_paths))
     rustc_flags.add("--color=always")
     rustc_flags.add("--target=" + toolchain.target_flag_value)
     if hasattr(attr, "crate_features"):
@@ -604,11 +610,14 @@ def construct_arguments(
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
-    if "link" in emit:
+    if "link" in emit or force_link:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
-            rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            if output_dir:
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            else:
+                rpaths = depset([])
             ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
