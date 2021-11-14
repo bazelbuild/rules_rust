@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Rules for performing `rustdoc --test` on Bazel built crates"""
+
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "find_toolchain", "get_lib_name", "get_preferred_artifact")
+load("//rust/private:utils.bzl", "dedent", "find_toolchain", "get_lib_name", "get_preferred_artifact")
 
 def _rust_doc_test_impl(ctx):
     """The implementation for the `rust_doc_test` rule
@@ -217,42 +218,43 @@ rust_doc_test = rule(
     test = True,
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
-    doc = """Runs Rust documentation tests.
+    doc = dedent("""\
+        Runs Rust documentation tests.
 
-Example:
+        Example:
 
-Suppose you have the following directory structure for a Rust library crate:
+        Suppose you have the following directory structure for a Rust library crate:
 
-```output
-[workspace]/
-  WORKSPACE
-  hello_lib/
-      BUILD
-      src/
-          lib.rs
-```
+        ```output
+        [workspace]/
+        WORKSPACE
+        hello_lib/
+            BUILD
+            src/
+                lib.rs
+        ```
 
-To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust_doc_test` \
-target that depends on the `hello_lib` `rust_library` target:
+        To run [documentation tests][doc-test] for the `hello_lib` crate, define a `rust_doc_test` \
+        target that depends on the `hello_lib` `rust_library` target:
 
-[doc-test]: https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+        [doc-test]: https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
 
-```python
-package(default_visibility = ["//visibility:public"])
+        ```python
+        package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_doc_test")
+        load("@rules_rust//rust:defs.bzl", "rust_library", "rust_doc_test")
 
-rust_library(
-    name = "hello_lib",
-    srcs = ["src/lib.rs"],
-)
+        rust_library(
+            name = "hello_lib",
+            srcs = ["src/lib.rs"],
+        )
 
-rust_doc_test(
-    name = "hello_lib_doc_test",
-    crate = ":hello_lib",
-)
-```
+        rust_doc_test(
+            name = "hello_lib_doc_test",
+            crate = ":hello_lib",
+        )
+        ```
 
-Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation tests for the `hello_lib` library crate.
-""",
+        Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation tests for the `hello_lib` library crate.
+    """),
 )
