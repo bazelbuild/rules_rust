@@ -55,7 +55,7 @@ function check_build_result() {
 function test_all() {
   local -r BUILD_OK=0
   local -r BUILD_FAILED=1
-  local -r CAPTURE_OUTPUT="--@rules_rust//:capture_clippy_output=True"
+  local -r CAPTURE_OUTPUT="--@rules_rust//:capture_clippy_output=True --@rules_rust//:error_format=json"
   local -r BAD_CLIPPY_TOML="--@rules_rust//:clippy.toml=//too_many_args:clippy.toml"
 
   mkdir -p "${NEW_WORKSPACE}/test/clippy" && \
