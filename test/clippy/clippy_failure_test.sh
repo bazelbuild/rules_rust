@@ -67,7 +67,7 @@ local_repository(
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+rust_repositories(version="nightly", iso_date="2021-11-02")
 EOF
 
   # Drop the 'noclippy' tags
