@@ -108,13 +108,11 @@ fn write_test_runner_unix(
         .iter()
         // Remove any substrings found in the argument
         .map(|arg| {
-            match strip_substrings
+            let mut stripped_arg = arg.to_owned();
+            strip_substrings
                 .iter()
-                .find(|substring| arg.contains(substring.as_str()))
-            {
-                Some(prefix) => arg.replace(prefix, ""),
-                None => arg.to_owned(),
-            }
+                .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
+            stripped_arg
         })
         .map(|arg| format!("'{}'", arg))
         .collect::<Vec<String>>()
@@ -142,13 +140,11 @@ fn write_test_runner_windows(
         .iter()
         // Remove any substrings found in the argument
         .map(|arg| {
-            match strip_substrings
+            let mut stripped_arg = arg.to_owned();
+            strip_substrings
                 .iter()
-                .find(|substring| arg.contains(substring.as_str()))
-            {
-                Some(prefix) => arg.replace(prefix, ""),
-                None => arg.to_owned(),
-            }
+                .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
+            stripped_arg
         })
         .map(|arg| format!("'{}'", arg))
         .collect::<Vec<String>>()
