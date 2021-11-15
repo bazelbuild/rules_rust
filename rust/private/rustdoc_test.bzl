@@ -22,6 +22,10 @@ load("//rust/private:utils.bzl", "dedent", "find_toolchain")
 def _construct_writer_arguments(ctx, test_runner, action, crate_info, rust_toolchain):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
 
+    This is largely solving for the fact that tests run from a runfiles directory
+    where actions run in an execroot. But it also tracks what environment variables
+    were explicitly added to the action.
+
     Args:
         ctx (ctx): The rule's context object.
         test_runner (File): The test_runner output file declared by `rustdoc_test`.

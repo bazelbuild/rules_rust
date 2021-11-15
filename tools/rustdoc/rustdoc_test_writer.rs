@@ -3,7 +3,7 @@
 //! code in a single call, can be run as a test target in a hermetic manner.
 
 use std::cmp::Reverse;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 struct Options {
     /// A list of environment variable keys to parse from the build action env.
-    env_keys: Vec<String>,
+    env_keys: BTreeSet<String>,
 
     /// A list of substrings to strip from [Options::action_argv].
     strip_substrings: Vec<String>,
@@ -70,7 +70,7 @@ fn parse_args() -> Options {
     strip_substrings.sort_by_key(|b| Reverse(b.len()));
     strip_substrings.dedup();
 
-    let mut env_keys: Vec<String> = writer_args
+    let env_keys = writer_args
         .into_iter()
         .filter(|arg| arg.starts_with("--action_env="))
         .map(|arg| {
@@ -80,8 +80,6 @@ fn parse_args() -> Options {
                 .to_owned()
         })
         .collect();
-    env_keys.sort();
-    env_keys.dedup();
 
     Options {
         env_keys,
