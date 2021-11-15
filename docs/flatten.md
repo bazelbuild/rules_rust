@@ -546,7 +546,7 @@ Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation t
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_doc_test-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_doc_test-crate"></a>crate |  The label of the target to generate code documentation for.<br><br><code>rust_doc_test</code> can generate HTML code documentation for the source files of <code>rust_library</code> or <code>rust_binary</code> targets.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_doc_test-crate"></a>crate |  The label of the target to generate code documentation for. <code>rust_doc_test</code> can generate HTML code documentation for the source files of <code>rust_library</code> or <code>rust_binary</code> targets.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_doc_test-dep"></a>dep |  __deprecated__: use <code>crate</code>   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 

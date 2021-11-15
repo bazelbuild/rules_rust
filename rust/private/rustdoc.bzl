@@ -15,8 +15,140 @@
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:rustc.bzl", "add_crate_link_flags", "add_edition_flags")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain")
+load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
+
+def _strip_crate_info_output(crate_info):
+    """Set the CrateInfo.output to None for a given CrateInfo provider.
+
+    Args:
+        crate_info (CrateInfo): A provider
+
+    Returns:
+        CrateInfo: A modified CrateInfo provider
+    """
+    return rust_common.create_crate_info(
+        name = crate_info.name,
+        type = crate_info.type,
+        root = crate_info.root,
+        srcs = crate_info.srcs,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
+        # This crate info should have no output
+        output = None,
+        edition = crate_info.edition,
+        rustc_env = crate_info.rustc_env,
+        is_test = crate_info.is_test,
+        compile_data = crate_info.compile_data,
+    )
+
+def rustdoc_compile_action(
+        ctx,
+        toolchain,
+        crate_info,
+        output = None,
+        rustdoc_flags = []):
+    """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
+
+    Args:
+        ctx (ctx): The rule's context object.
+        toolchain (rust_toolchain): The currently configured `rust_toolchain`.
+        crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
+        output (File, optional): An optional output a `rustdoc` action is intended to produce.
+        rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+
+    Returns:
+        struct: A struct of some `ctx.actions.run` arguments.
+    """
+
+    # If an output was provided, ensure it's used in rustdoc arguments
+    if output:
+        rustdoc_flags = [
+            "--output",
+            output.path,
+        ] + rustdoc_flags
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+
+    dep_info, build_info, linkstamps = collect_deps(
+        label = ctx.label,
+        deps = crate_info.deps,
+        proc_macro_deps = crate_info.proc_macro_deps,
+        aliases = crate_info.aliases,
+    )
+
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
+        ctx = ctx,
+        file = ctx.file,
+        files = ctx.files,
+        linkstamps = linkstamps,
+        toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        build_info = build_info,
+    )
+
+    # Since this crate is not actually producing the output described by the
+    # given CrateInfo, this attribute needs to be stripped to allow the rest
+    # of the rustc functionality in `construct_arguments` to avoid generating
+    # arguments expecting to do so.
+    rustdoc_crate_info = _strip_crate_info_output(crate_info)
+
+    args, env = construct_arguments(
+        ctx = ctx,
+        attr = ctx.attr,
+        file = ctx.file,
+        toolchain = toolchain,
+        tool_path = toolchain.rust_doc.path,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_info = rustdoc_crate_info,
+        dep_info = dep_info,
+        linkstamp_outs = linkstamp_outs,
+        output_hash = None,
+        rust_flags = rustdoc_flags,
+        out_dir = out_dir,
+        build_env_files = build_env_files,
+        build_flags_files = build_flags_files,
+        emit = [],
+        remap_path_prefix = None,
+        force_link = True,
+    )
+
+    return struct(
+        executable = ctx.executable._process_wrapper,
+        inputs = depset([crate_info.output], transitive = [compile_inputs]),
+        env = env,
+        arguments = args.all,
+        tools = [toolchain.rust_doc],
+    )
+
+def _zip_action(ctx, input_dir, output_zip, crate_label):
+    """Creates an archive of the generated documentation from `rustdoc`
+
+    Args:
+        ctx (ctx): The `rust_doc` rule's context object
+        input_dir (File): A directory containing the outputs from rustdoc
+        output_zip (File): The location of the output archive containing generated documentation
+        crate_label (Label): The label of the crate docs are being generated for.
+    """
+    args = ctx.actions.args()
+    args.add(ctx.executable._zipper)
+    args.add(output_zip)
+    args.add(ctx.bin_dir.path)
+    args.add_all([input_dir], expand_directories = True)
+    ctx.actions.run(
+        executable = ctx.executable._dir_zipper,
+        inputs = [input_dir],
+        outputs = [output_zip],
+        arguments = [args],
+        mnemonic = "RustdocZip",
+        progress_message = "Creating RustdocZip for {}".format(crate_label),
+        tools = [ctx.executable._zipper],
+    )
 
 def _rust_doc_impl(ctx):
     """The implementation of the `rust_doc` rule
@@ -37,75 +169,45 @@ def _rust_doc_impl(ctx):
     crate_info = crate[rust_common.crate_info]
     dep_info = crate[rust_common.dep_info]
 
-    toolchain = find_toolchain(ctx)
+    output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
-    rustdoc_inputs = depset(
-        [c.output for c in dep_info.transitive_crates.to_list()] +
-        [toolchain.rust_doc],
-        transitive = [
-            crate_info.srcs,
-            toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
-        ],
+    # Add the current crate as an extern for the compile action
+    rustdoc_flags = [
+        "--extern",
+        "{}={}".format(crate_info.name, crate_info.output.path),
+    ]
+
+    action = rustdoc_compile_action(
+        ctx = ctx,
+        toolchain = find_toolchain(ctx),
+        crate_info = crate_info,
+        output = output_dir,
+        rustdoc_flags = rustdoc_flags,
     )
 
-    output_dir = ctx.actions.declare_directory(ctx.label.name)
-    args = ctx.actions.args()
-    args.add(crate_info.root.path)
-    args.add("--crate-name", crate_info.name)
-    args.add("--crate-type", crate_info.type)
-    if crate_info.type == "proc-macro":
-        args.add("--extern")
-        args.add("proc_macro")
-    args.add("--output", output_dir.path)
-    add_edition_flags(args, crate_info)
-
-    # nb. rustdoc can't do anything with native link flags; we must omit them.
-    add_crate_link_flags(args, dep_info)
-
-    args.add_all(ctx.files.markdown_css, before_each = "--markdown-css")
-    if ctx.file.html_in_header:
-        args.add("--html-in-header", ctx.file.html_in_header)
-    if ctx.file.html_before_content:
-        args.add("--html-before-content", ctx.file.html_before_content)
-    if ctx.file.html_after_content:
-        args.add("--html-after-content", ctx.file.html_after_content)
-
     ctx.actions.run(
-        executable = toolchain.rust_doc,
-        inputs = rustdoc_inputs,
-        outputs = [output_dir],
-        arguments = [args],
         mnemonic = "Rustdoc",
-        progress_message = "Generating rustdoc for {} ({} files)".format(
-            crate_info.name,
-            len(crate_info.srcs.to_list()),
-        ),
+        progress_message = "Generating Rustdoc for {}".format(crate.label),
+        outputs = [output_dir],
+        executable = action.executable,
+        inputs = action.inputs,
+        env = action.env,
+        arguments = action.arguments,
+        tools = action.tools,
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
-    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip)
+    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip, crate.label)
 
-def _zip_action(ctx, input_dir, output_zip):
-    """Creates an archive of the generated documentation from `rustdoc`
-
-    Args:
-        ctx (ctx): The `rust_doc` rule's context object
-        input_dir (File): A directory containing the outputs from rustdoc
-        output_zip (File): The location of the output archive containing generated documentation
-    """
-    args = ctx.actions.args()
-    args.add(ctx.executable._zipper)
-    args.add(output_zip)
-    args.add(ctx.bin_dir.path)
-    args.add_all([input_dir], expand_directories = True)
-    ctx.actions.run(
-        executable = ctx.executable._dir_zipper,
-        inputs = [input_dir],
-        outputs = [output_zip],
-        arguments = [args],
-        tools = [ctx.executable._zipper],
-    )
+    return [
+        DefaultInfo(
+            files = depset([ctx.outputs.rust_doc_zip]),
+        ),
+        OutputGroupInfo(
+            rustdoc_dir = depset([output_dir]),
+            rustdoc_zip = depset([ctx.outputs.rust_doc_zip]),
+        ),
+    ]
 
 rust_doc = rule(
     doc = dedent("""\
@@ -179,17 +281,31 @@ rust_doc = rule(
             doc = "CSS files to include via `<link>` in a rendered Markdown file.",
             allow_files = [".css"],
         ),
+        "_cc_toolchain": attr.label(
+            doc = "In order to use find_cpp_toolchain, you must define the '_cc_toolchain' attribute on your rule or aspect.",
+            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ),
         "_dir_zipper": attr.label(
+            doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",
             default = Label("//util/dir_zipper"),
             cfg = "exec",
             executable = True,
         ),
+        "_process_wrapper": attr.label(
+            doc = "A process wrapper for running rustdoc on all platforms",
+            default = Label("@rules_rust//util/process_wrapper"),
+            executable = True,
+            allow_single_file = True,
+            cfg = "exec",
+        ),
         "_zipper": attr.label(
+            doc = "A Bazel provided tool for creating archives",
             default = Label("@bazel_tools//tools/zip:zipper"),
             cfg = "exec",
             executable = True,
         ),
     },
+    fragments = ["cpp"],
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
