@@ -25,8 +25,12 @@ rust_library(
         ["**/*.rs"],
         exclude = ["main.rs"],
     ),
+    data = [
+        "//rust/private:rust_analyzer_detect_sysroot",
+    ],
     edition = "2018",
     deps = [
+        "//tools/runfiles",
         "//tools/rust_analyzer/raze:anyhow",
         "//tools/rust_analyzer/raze:log",
         "//tools/rust_analyzer/raze:serde",

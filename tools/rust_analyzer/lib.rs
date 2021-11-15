@@ -2,11 +2,12 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::anyhow;
+use runfiles::Runfiles;
 
 mod aquery;
 mod rust_project;
 
-pub fn generate_crate_and_sysroot_info(
+pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
     rules_rust: impl AsRef<str>,
@@ -21,11 +22,7 @@ pub fn generate_crate_and_sysroot_info(
             "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
             rules_rust.as_ref()
         ))
-        .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_sysroot_src")
-        .arg(format!(
-            "{}//rust/private:rust_analyzer_detect_sysroot",
-            rules_rust.as_ref()
-        ))
+        .arg("--output_groups=rust_analyzer_crate_spec")
         .args(targets)
         .output()?;
 
@@ -56,12 +53,9 @@ pub fn write_rust_project(
         rules_rust_name.as_ref(),
     )?;
 
-    let sysroot_src = aquery::get_sysroot_src(
-        bazel.as_ref(),
-        workspace.as_ref(),
-        execution_root.as_ref(),
-        rules_rust_name.as_ref(),
-    )?;
+    let r = Runfiles::create()?;
+    let path = r.rlocation("rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src");
+    let sysroot_src = std::fs::read_to_string(&path)?;
 
     let rust_project = rust_project::generate_rust_project(&sysroot_src, &crate_specs)?;
 

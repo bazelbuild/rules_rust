@@ -39,10 +39,6 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
-    if OutputGroupInfo in target:
-        if "rust_analyzer_sysroot_src" in target[OutputGroupInfo]:
-            return [target[OutputGroupInfo]]
-
     if rust_common.crate_info not in target:
         return []
 
@@ -213,7 +209,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
         content = sysroot_src,
     )
 
-    return [OutputGroupInfo(rust_analyzer_sysroot_src = depset([sysroot_src_file]))]
+    return [DefaultInfo(files = depset([sysroot_src_file]))]
 
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,
