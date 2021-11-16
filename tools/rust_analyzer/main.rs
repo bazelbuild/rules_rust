@@ -114,7 +114,7 @@ struct Config {
     #[structopt(long, default_value = "bazel")]
     bazel: PathBuf,
 
-    /// Comma-separated list of target patterns
+    // Space separated list of target patterns that comes after all other args.
     #[structopt(default_value = "@//...")]
     targets: Vec<String>,
 }
