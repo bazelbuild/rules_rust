@@ -26,19 +26,22 @@ fn main() -> anyhow::Result<()> {
         .as_ref()
         .expect("failed to find execution root, is --execution-root set correctly?");
 
-    let targets: Vec<&str> = config.targets.split(',').collect();
-
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
     // Generate the crate specs.
-    generate_crate_info(&config.bazel, &workspace_root, &rules_rust_name, &targets)?;
+    generate_crate_info(
+        &config.bazel,
+        &workspace_root,
+        &rules_rust_name,
+        &config.targets,
+    )?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
         &config.bazel,
         &workspace_root,
         &rules_rust_name,
-        &targets,
+        &config.targets,
         &execution_root,
         &workspace_root.join("rust-project.json"),
     )?;
@@ -112,6 +115,6 @@ struct Config {
     bazel: PathBuf,
 
     /// Comma-separated list of target patterns
-    #[structopt(long, default_value = "@//...")]
-    targets: String,
+    #[structopt(default_value = "@//...")]
+    targets: Vec<String>,
 }

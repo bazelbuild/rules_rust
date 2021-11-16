@@ -63,7 +63,7 @@ pub fn get_crate_specs(
     bazel: &Path,
     workspace: &Path,
     execution_root: &Path,
-    targets: &[&str],
+    targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<Vec<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);

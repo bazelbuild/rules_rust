@@ -11,7 +11,7 @@ pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
     rules_rust: impl AsRef<str>,
-    targets: &[&str],
+    targets: &[String],
 ) -> anyhow::Result<()> {
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
@@ -41,7 +41,7 @@ pub fn write_rust_project(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
     rules_rust_name: &impl AsRef<str>,
-    targets: &[&str],
+    targets: &[String],
     execution_root: impl AsRef<Path>,
     rust_project_path: impl AsRef<Path>,
 ) -> anyhow::Result<()> {
@@ -53,7 +53,7 @@ pub fn write_rust_project(
         rules_rust_name.as_ref(),
     )?;
 
-    let workspace_name = match rules_rust_name.as_ref().trim_start_matches("@") {
+    let workspace_name = match rules_rust_name.as_ref().trim_start_matches('@') {
         "" => "rules_rust",
         s => s,
     };
