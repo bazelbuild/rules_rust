@@ -53,8 +53,16 @@ pub fn write_rust_project(
         rules_rust_name.as_ref(),
     )?;
 
+    let workspace_name = match rules_rust_name.as_ref().trim_start_matches("@") {
+        "" => "rules_rust",
+        s => s,
+    };
+    let sysroot_path = format!(
+        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src",
+        workspace_name
+    );
     let r = Runfiles::create()?;
-    let path = r.rlocation("rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src");
+    let path = r.rlocation(sysroot_path);
     let sysroot_src = std::fs::read_to_string(&path)?;
 
     let rust_project = rust_project::generate_rust_project(&sysroot_src, &crate_specs)?;
