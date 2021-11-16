@@ -110,36 +110,6 @@ pub fn get_crate_specs(
     Ok(crate_specs.into_values().collect())
 }
 
-pub fn get_sysroot_src(
-    bazel: &Path,
-    workspace: &Path,
-    execution_root: &Path,
-    rules_rust_name: &str,
-) -> anyhow::Result<String> {
-    let aquery_output = Command::new(bazel)
-        .current_dir(workspace)
-        .arg("aquery")
-        .arg("--include_aspects")
-        .arg(format!(
-            "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
-            rules_rust_name
-        ))
-        .arg("--output_groups=rust_analyzer_sysroot_src")
-        .arg(format!(
-            r#"outputs(".*[.]rust_analyzer_sysroot_src",{}//rust/private:rust_analyzer_detect_sysroot)"#,
-            rules_rust_name
-        ))
-        .arg("--output=jsonproto")
-        .output()?;
-
-    let sysroot_src_files =
-        parse_aquery_output_files(execution_root, &String::from_utf8(aquery_output.stdout)?)?;
-    log::debug!("sysroot_src_files: {:?}", sysroot_src_files);
-    debug_assert!(sysroot_src_files.len() == 1);
-
-    Ok(std::fs::read_to_string(&sysroot_src_files[0])?)
-}
-
 fn parse_aquery_output_files(
     execution_root: &Path,
     aquery_stdout: &str,

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::anyhow;
-use gen_rust_project_lib::generate_crate_and_sysroot_info;
+use gen_rust_project_lib::generate_crate_info;
 use gen_rust_project_lib::write_rust_project;
 use structopt::StructOpt;
 
@@ -30,8 +30,8 @@ fn main() -> anyhow::Result<()> {
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
-    // Generate the crate specs and sysroot src.
-    generate_crate_and_sysroot_info(&config.bazel, &workspace_root, &rules_rust_name, &targets)?;
+    // Generate the crate specs.
+    generate_crate_info(&config.bazel, &workspace_root, &rules_rust_name, &targets)?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
