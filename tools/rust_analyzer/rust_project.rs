@@ -211,8 +211,8 @@ mod tests {
     use super::*;
     use crate::aquery::CrateSpec;
 
+    /// A simple example with a single crate and no dependencies.
     #[test]
-    // A simple example with a single crate and no dependencies.
     fn generate_rust_project_single() {
         let project = generate_rust_project(
             "sysroot",
@@ -239,8 +239,8 @@ mod tests {
         assert_eq!(c.deps.len(), 0);
     }
 
+    /// An example with a one crate having two dependencies.
     #[test]
-    // An example with a one crate having two dependencies.
     fn generate_rust_project_with_deps() {
         let project = generate_rust_project(
             "sysroot",

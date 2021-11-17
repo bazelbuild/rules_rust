@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Runs Bazel build commands over rustfmt rules, where some are expected
-# to fail.
-#
-# Can be run from anywhere within the rules_rust workspace.
+# This script creates temporary workspaces and generates `rust-project.json`
+# files unique to the set of targets defined in the generated workspace.
 
 set -euo pipefail
 
