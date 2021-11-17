@@ -38,22 +38,15 @@ load(
 )
 
 cargo_build_script(
-    name = "winapi_build_script",
+    name = "serde_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
     },
     crate_features = [
-        "consoleapi",
-        "errhandlingapi",
-        "fileapi",
-        "minwinbase",
-        "minwindef",
-        "processenv",
+        "default",
+        "derive",
+        "serde_derive",
         "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     crate_root = "build.rs",
     data = glob(["**"]),
@@ -65,31 +58,27 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.9",
+    version = "1.0.130",
     visibility = ["//visibility:private"],
     deps = [
     ],
 )
 
 rust_library(
-    name = "winapi",
+    name = "serde",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "consoleapi",
-        "errhandlingapi",
-        "fileapi",
-        "minwinbase",
-        "minwindef",
-        "processenv",
+        "default",
+        "derive",
+        "serde_derive",
         "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     crate_root = "src/lib.rs",
     data = [],
     edition = "2015",
+    proc_macro_deps = [
+        "@rules_rust_tools_rust_analyzer__serde_derive__1_0_130//:serde_derive",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -97,9 +86,9 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.9",
+    version = "1.0.130",
     # buildifier: leave-alone
     deps = [
-        ":winapi_build_script",
+        ":serde_build_script",
     ],
 )

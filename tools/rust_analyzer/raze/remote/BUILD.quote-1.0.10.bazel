@@ -31,10 +31,14 @@ licenses([
 
 # Generated Targets
 
+# Unsupported target "bench" with type "bench" omitted
+
 rust_library(
-    name = "heck",
+    name = "quote",
     srcs = glob(["**/*.rs"]),
     crate_features = [
+        "default",
+        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     data = [],
@@ -46,9 +50,13 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.2",
+    version = "1.0.10",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_tools_rust_analyzer__unicode_segmentation__1_7_1//:unicode_segmentation",
+        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_32//:proc_macro2",
     ],
 )
+
+# Unsupported target "compiletest" with type "test" omitted
+
+# Unsupported target "test" with type "test" omitted

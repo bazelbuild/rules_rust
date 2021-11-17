@@ -62,7 +62,7 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.60",
+    version = "1.0.81",
     visibility = ["//visibility:private"],
     deps = [
     ],
@@ -95,13 +95,13 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "1.0.60",
+    version = "1.0.81",
     # buildifier: leave-alone
     deps = [
         ":syn_build_script",
-        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_24//:proc_macro2",
-        "@rules_rust_tools_rust_analyzer__quote__1_0_9//:quote",
-        "@rules_rust_tools_rust_analyzer__unicode_xid__0_2_1//:unicode_xid",
+        "@rules_rust_tools_rust_analyzer__proc_macro2__1_0_32//:proc_macro2",
+        "@rules_rust_tools_rust_analyzer__quote__1_0_10//:quote",
+        "@rules_rust_tools_rust_analyzer__unicode_xid__0_2_2//:unicode_xid",
     ],
 )
 

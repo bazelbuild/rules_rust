@@ -135,13 +135,13 @@ tasks:
     bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -172,6 +172,11 @@ tasks:
     platform: ubuntu2004
     run_targets:
       - "//test/rustfmt:test_runner"
+  rust_analyzer_tests:
+    name: Rust-Analyzer Tests
+    platform: ubuntu2004
+    run_targets:
+      - "//test/rust_analyzer:rust_analyzer_test"
   ubuntu2004_examples:
     name: Examples
     platform: ubuntu2004
