@@ -14,6 +14,9 @@ fi
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
+TEMP_DIR="$(mktemp -d -t ci-XXXXXXXXXX)"
+NEW_WORKSPACE="${TEMP_DIR}/rules_rust_test_clippy"
+
 # Executes a bazel build command and handles the return value, exiting
 # upon seeing an error.
 #
@@ -30,6 +33,21 @@ function check_build_result() {
     echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/clippy:${2}"
     echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
     exit 1
+  elif [[ $# -ge 3 ]] && [[ "${@:3}" == *"capture_clippy_output"* ]]; then
+    # Make sure that content was written to the output file
+    if [ "$(uname)" == "Darwin" ]; then
+      STATOPTS=(-f%z)
+    else
+      STATOPTS=(-c%s)
+    fi
+    if [[ $(stat ${STATOPTS[@]} "${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out") == 0 ]]; then
+      echo "FAIL: Output wasn't written to out file building target //test/clippy:${2}"
+      echo "  Output file: ${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out"
+      echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
+      exit 1
+    else
+      echo "OK"
+    fi
   else
     echo "OK"
   fi
@@ -38,16 +56,12 @@ function check_build_result() {
 function test_all() {
   local -r BUILD_OK=0
   local -r BUILD_FAILED=1
-  local -r TEST_FAIL=3
-  local -r CAPTURE_OUTPUT="--@rules_rust//:capture_clippy_output=True"
+  local -r CAPTURE_OUTPUT="--@rules_rust//:capture_clippy_output=True --@rules_rust//:error_format=json"
   local -r BAD_CLIPPY_TOML="--@rules_rust//:clippy.toml=//too_many_args:clippy.toml"
 
-  temp_dir="$(mktemp -d -t ci-XXXXXXXXXX)"
-  new_workspace="${temp_dir}/rules_rust_test_clippy"
-  
-  mkdir -p "${new_workspace}/test/clippy" && \
-  cp -r test/clippy/* "${new_workspace}/test/clippy/" && \
-  cat << EOF > "${new_workspace}/WORKSPACE.bazel"
+  mkdir -p "${NEW_WORKSPACE}/test/clippy" && \
+  cp -r test/clippy/* "${NEW_WORKSPACE}/test/clippy/" && \
+  cat << EOF > "${NEW_WORKSPACE}/WORKSPACE.bazel"
 workspace(name = "rules_rust_test_clippy")
 local_repository(
     name = "rules_rust",
@@ -63,9 +77,9 @@ EOF
   else
     SEDOPTS=(-i)
   fi
-  sed ${SEDOPTS[@]} 's/"noclippy"//' "${new_workspace}/test/clippy/BUILD.bazel"
+  sed ${SEDOPTS[@]} 's/"noclippy"//' "${NEW_WORKSPACE}/test/clippy/BUILD.bazel"
 
-  pushd "${new_workspace}"
+  pushd "${NEW_WORKSPACE}"
 
   check_build_result $BUILD_OK ok_binary_clippy
   check_build_result $BUILD_OK ok_library_clippy

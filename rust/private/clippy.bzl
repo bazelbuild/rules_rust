@@ -112,7 +112,7 @@ def _clippy_aspect_impl(target, ctx):
     # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--stdout-file", clippy_out.path)
+        args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
 
         # If we are capturing the output, we want the build system to be able to keep going
         # and consume the output. Some clippy lints are denials, so we treat them as warnings.
