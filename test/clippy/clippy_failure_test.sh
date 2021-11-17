@@ -42,6 +42,7 @@ function check_build_result() {
     fi
     if [[ $(stat ${STATOPTS[@]} "${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out") == 0 ]]; then
       echo "FAIL: Output wasn't written to out file building target //test/clippy:${2}"
+      echo "  Output file: ${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out"
       echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
       exit 1
     else
@@ -67,7 +68,7 @@ local_repository(
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories(version="nightly", iso_date="2021-11-02")
+rust_repositories()
 EOF
 
   # Drop the 'noclippy' tags
