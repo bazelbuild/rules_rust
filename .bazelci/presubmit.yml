@@ -15,9 +15,6 @@ default_windows_targets: &default_windows_targets
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
   - "-//test/rustfmt/..."
-  # rust_doc_test targets are currently broken on windows
-  # see: https://github.com/bazelbuild/rules_rust/issues/887
-  - "-//test/chained_direct_deps:mod3_doc_test"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -33,8 +30,6 @@ tasks:
       - "//..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -64,10 +59,8 @@ tasks:
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
     build_flags: *aspects_flags
-  rbe_ubuntu1604_with_aspects:
+  rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu1604
     shell_commands:
@@ -79,8 +72,6 @@ tasks:
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
@@ -209,9 +200,6 @@ tasks:
       - "//..."
       # TODO: This requires an updated `rules_foreign_cc`
       - "-//sys/..."
-      # rust_doc_test is likely not fully sandboxed
-      - "-//fibonacci:fibonacci_doc_test"
-      - "-//hello_lib:hello_lib_doc_test"
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
       # The bindgen rules currently do not work on RBE
@@ -255,10 +243,6 @@ tasks:
       - "-//proto/..."
       # The wasm rules do not work on windows
       - "-//wasm/..."
-      # rust_doc_test targets are currently broken on windows
-      # see: https://github.com/bazelbuild/rules_rust/issues/887
-      - "-//hello_lib:hello_lib_doc_test"
-      - "-//fibonacci:fibonacci_doc_test"
     build_targets: *windows_targets
     test_targets: *windows_targets
   crate_universe_examples_ubuntu2004:
