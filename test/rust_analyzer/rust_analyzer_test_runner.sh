@@ -36,6 +36,9 @@ EOF
 cat << EOF > "${new_workspace}/.bazelrc"
 build --keep_going
 test --test_output=errors
+# The 'strict' config is used to ensure extra checks are run on the test
+# targets that would otherwise not run due to them being tagged as "manual".
+# Note that that tag is stripped for this test.
 build:strict --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 build:strict --output_groups=+rustfmt_checks
 build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
