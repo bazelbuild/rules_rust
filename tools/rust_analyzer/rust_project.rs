@@ -1,7 +1,7 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::ErrorKind;
 use std::path::Path;
 
@@ -13,7 +13,7 @@ use crate::aquery::CrateSpec;
 /// A `rust-project.json` workspace representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct RustProject {
     /// Path to the directory with *source code* of
     /// sysroot crates.
@@ -29,7 +29,7 @@ pub struct RustProject {
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,7 +62,7 @@ pub struct Crate {
 
     /// Environment variables, used for the `env!` macro
     #[serde(skip_serializing_if = "Option::is_none")]
-    env: Option<HashMap<String, String>>,
+    env: Option<BTreeMap<String, String>>,
 
     /// Whether the crate is a proc-macro crate.
     is_proc_macro: bool,
@@ -72,13 +72,13 @@ pub struct Crate {
     proc_macro_dylib_path: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Source {
     include_dirs: Vec<String>,
     exclude_dirs: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Dependency {
     /// Index of a crate in the `crates` array.
     #[serde(rename = "crate")]
@@ -90,7 +90,7 @@ pub struct Dependency {
 
 pub fn generate_rust_project(
     sysroot_src: &str,
-    crates: &[CrateSpec],
+    crates: &BTreeSet<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
     let mut project = RustProject {
         sysroot_src: Some(sysroot_src.into()),
@@ -209,6 +209,9 @@ pub fn write_rust_project(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::collections::BTreeSet;
+
     use crate::aquery::CrateSpec;
 
     /// A simple example with a single crate and no dependencies.
@@ -216,19 +219,19 @@ mod tests {
     fn generate_rust_project_single() {
         let project = generate_rust_project(
             "sysroot",
-            &vec![CrateSpec {
+            &BTreeSet::from([CrateSpec {
                 crate_id: "ID-example".into(),
                 display_name: "example".into(),
                 edition: "2018".into(),
                 root_module: "example/lib.rs".into(),
                 is_workspace_member: true,
-                deps: vec![],
+                deps: BTreeSet::new(),
                 proc_macro_dylib_path: None,
                 source: None,
                 cfg: vec!["test".into(), "debug_assertions".into()],
-                env: HashMap::new(),
+                env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-            }],
+            }]),
         )
         .expect("expect success");
 
@@ -244,18 +247,18 @@ mod tests {
     fn generate_rust_project_with_deps() {
         let project = generate_rust_project(
             "sysroot",
-            &vec![
+            &BTreeSet::from([
                 CrateSpec {
                     crate_id: "ID-example".into(),
                     display_name: "example".into(),
                     edition: "2018".into(),
                     root_module: "example/lib.rs".into(),
                     is_workspace_member: true,
-                    deps: vec!["ID-dep_a".into(), "ID-dep_b".into()],
+                    deps: BTreeSet::from(["ID-dep_a".into(), "ID-dep_b".into()]),
                     proc_macro_dylib_path: None,
                     source: None,
                     cfg: vec!["test".into(), "debug_assertions".into()],
-                    env: HashMap::new(),
+                    env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                 },
                 CrateSpec {
@@ -264,11 +267,11 @@ mod tests {
                     edition: "2018".into(),
                     root_module: "dep_a/lib.rs".into(),
                     is_workspace_member: false,
-                    deps: vec![],
+                    deps: BTreeSet::new(),
                     proc_macro_dylib_path: None,
                     source: None,
                     cfg: vec!["test".into(), "debug_assertions".into()],
-                    env: HashMap::new(),
+                    env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                 },
                 CrateSpec {
@@ -277,14 +280,14 @@ mod tests {
                     edition: "2018".into(),
                     root_module: "dep_b/lib.rs".into(),
                     is_workspace_member: false,
-                    deps: vec![],
+                    deps: BTreeSet::new(),
                     proc_macro_dylib_path: None,
                     source: None,
                     cfg: vec!["test".into(), "debug_assertions".into()],
-                    env: HashMap::new(),
+                    env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                 },
-            ],
+            ]),
         )
         .expect("expect success");
 

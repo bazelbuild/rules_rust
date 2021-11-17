@@ -44,8 +44,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     toolchain = find_toolchain(ctx)
 
-    # Always add test & debug_assertions (like here:
-    # https://github.com/rust-analyzer/rust-analyzer/blob/505ff4070a3de962dbde66f08b6550cda2eb4eab/crates/project_model/src/lib.rs#L379-L381)
+    # Always add `test` & `debug_assertions`. See rust-analyzer source code:
+    # https://github.com/rust-analyzer/rust-analyzer/blob/2021-11-15/crates/project_model/src/workspace.rs#L529-L531
     cfgs = ["test", "debug_assertions"]
     if hasattr(ctx.rule.attr, "crate_features"):
         cfgs += ['feature="{}"'.format(f) for f in ctx.rule.attr.crate_features]
