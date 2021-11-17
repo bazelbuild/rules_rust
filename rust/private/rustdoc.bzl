@@ -306,9 +306,13 @@ rust_doc = rule(
         ),
     },
     fragments = ["cpp"],
+    host_fragments = ["cpp"],
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
     incompatible_use_toolchain_transition = True,
 )
