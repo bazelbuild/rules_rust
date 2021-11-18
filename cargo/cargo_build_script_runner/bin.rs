@@ -250,6 +250,8 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
                     .or_insert_with(Vec::new)
                     .push(value[1..(value.len() - 1)].to_owned());
             }
+        } else if ["windows", "unix"].contains(&line) {
+            values.insert(line, vec![]);
         }
     }
 
