@@ -26,3 +26,25 @@ rust_test(
     name = "simple_test",
     crate = ":simple_example",
 )
+
+# Same as above, except disabling formatting on bindgen.
+rust_bindgen_library(
+    name = "simple_bindgen_unformatted",
+    bindgen_flags = [
+        "--allowlist-var=SIMPLE_.*",
+    ],
+    cc_lib = ":simple",
+    header = "simple.h",
+    rustfmt = False,
+)
+
+rust_binary(
+    name = "simple_example_unformatted",
+    srcs = ["main.rs"],
+    deps = [":simple_bindgen_unformatted"],
+)
+
+rust_test(
+    name = "simple_test_unformatted",
+    crate = ":simple_example_unformatted",
+)
