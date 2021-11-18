@@ -34,6 +34,7 @@ rust_bindgen_library(
         "--allowlist-var=SIMPLE_.*",
     ],
     cc_lib = ":simple",
+    crate_name = "simple_bindgen",
     header = "simple.h",
     rustfmt = False,
 )
@@ -41,6 +42,7 @@ rust_bindgen_library(
 rust_binary(
     name = "simple_example_unformatted",
     srcs = ["main.rs"],
+    crate_name = "simple_example",
     deps = [":simple_bindgen_unformatted"],
 )
 
