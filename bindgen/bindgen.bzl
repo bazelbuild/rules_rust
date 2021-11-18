@@ -40,6 +40,7 @@ def rust_bindgen_library(
         cc_lib,
         bindgen_flags = None,
         clang_flags = None,
+        rustfmt = True,
         **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library.
 
@@ -51,6 +52,7 @@ def rust_bindgen_library(
         cc_lib (str): The label of the cc_library that contains the .h file. This is used to find the transitive includes.
         bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
         clang_flags (list, optional): Flags to pass directly to the clang executable.
+        rustfmt (bool, optional): Enable or disable running rustfmt on the generated file.
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
 
@@ -68,6 +70,7 @@ def rust_bindgen_library(
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
         clang_flags = clang_flags or [],
+        rustfmt = rustfmt,
         tags = tags,
     )
 
