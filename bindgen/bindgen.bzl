@@ -91,7 +91,7 @@ def _rust_bindgen_impl(ctx):
 
     toolchain = ctx.toolchains[Label("//bindgen:bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
-    rustfmt_bin = toolchain.rustfmt
+    rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
     libstdcxx = toolchain.libstdcxx
@@ -109,7 +109,7 @@ def _rust_bindgen_impl(ctx):
     system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
-    if rustfmt_bin:
+    if ctx.attr.rustfmt and rustfmt_bin:
         unformatted_output = ctx.actions.declare_file(output.basename + ".unformatted")
     else:
         unformatted_output = output
@@ -158,7 +158,7 @@ def _rust_bindgen_impl(ctx):
         tools = [clang_bin],
     )
 
-    if rustfmt_bin:
+    if ctx.attr.rustfmt and rustfmt_bin:
         rustfmt_args = ctx.actions.args()
         rustfmt_args.add("--stdout-file", output.path)
         rustfmt_args.add("--")
@@ -193,6 +193,10 @@ rust_bindgen = rule(
         "header": attr.label(
             doc = "The .h file to generate bindings for.",
             allow_single_file = True,
+        ),
+        "rustfmt": attr.bool(
+            doc = "Enable or disable running rustfmt on the generated file.",
+            default = True,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -249,7 +253,7 @@ rust_bindgen_toolchain = rule(
             mandatory = False,
         ),
         "rustfmt": attr.label(
-            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
+            doc = "The label of a `rustfmt` executable. If this is not provided, falls back to the rust_toolchain rustfmt.",
             executable = True,
             cfg = "exec",
             mandatory = False,
