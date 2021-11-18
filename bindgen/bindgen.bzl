@@ -91,7 +91,7 @@ def _rust_bindgen_impl(ctx):
 
     toolchain = ctx.toolchains[Label("//bindgen:bindgen_toolchain")]
     bindgen_bin = toolchain.bindgen
-    rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
+    rustfmt_bin = toolchain.rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
     libstdcxx = toolchain.libstdcxx
