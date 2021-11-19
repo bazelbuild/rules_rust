@@ -236,6 +236,10 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
     let stdout = std::str::from_utf8(&output.stdout)
         .map_err(|err| format!("Non-UTF8 stdout from rustc: {:?}", err))?;
 
+    Ok(parse_rustc_cfg_output(stdout))
+}
+
+fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
     let mut values = BTreeMap::new();
 
     for line in stdout.lines() {
@@ -251,14 +255,16 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
                     .push(value[1..(value.len() - 1)].to_owned());
             }
         } else if ["windows", "unix"].contains(&line) {
+            // the 'windows' or 'unix' line received from rustc will be turned
+            // into eg. CARGO_CFG_WINDOWS='' below
             values.insert(line, vec![]);
         }
     }
 
-    Ok(values
+    values
         .into_iter()
         .map(|(key, value)| (format!("CARGO_CFG_{}", key.to_uppercase()), value.join(",")))
-        .collect())
+        .collect()
 }
 
 fn main() {
@@ -270,4 +276,50 @@ fn main() {
             1
         }
     });
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn rustc_cfg_parsing() {
+        let macos_output = r#"\
+debug_assertions
+target_arch="x86_64"
+target_endian="little"
+target_env=""
+target_family="unix"
+target_feature="fxsr"
+target_feature="sse"
+target_feature="sse2"
+target_feature="sse3"
+target_feature="ssse3"
+target_os="macos"
+target_pointer_width="64"
+target_vendor="apple"
+unix
+"#;
+        let tree = parse_rustc_cfg_output(macos_output);
+        assert_eq!(tree["CARGO_CFG_UNIX"], "");
+        assert_eq!(tree["CARGO_CFG_TARGET_FAMILY"], "unix");
+
+        let windows_output = r#"\
+debug_assertions
+target_arch="x86_64"
+target_endian="little"
+target_env="msvc"
+target_family="windows"
+target_feature="fxsr"
+target_feature="sse"
+target_feature="sse2"
+target_os="windows"
+target_pointer_width="64"
+target_vendor="pc"
+windows
+"#;
+        let tree = parse_rustc_cfg_output(windows_output);
+        assert_eq!(tree["CARGO_CFG_WINDOWS"], "");
+        assert_eq!(tree["CARGO_CFG_TARGET_FAMILY"], "windows");
+    }
 }
