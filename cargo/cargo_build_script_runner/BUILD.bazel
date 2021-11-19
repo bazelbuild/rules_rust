@@ -16,3 +16,9 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [":cargo_build_script_output_parser"],
 )
+
+rust_test(
+    name = "bin_test",
+    crate = ":cargo_build_script_runner",
+    deps = [":cargo_build_script_runner"],
+)
