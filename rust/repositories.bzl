@@ -14,6 +14,7 @@ load(
     "load_rust_stdlib",
     "load_rustc_dev_nightly",
     "load_rustfmt",
+    "should_include_rustc_srcs",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
@@ -114,15 +115,8 @@ def _rust_toolchain_repository_impl(ctx):
 
     check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    # Determing whether or not to include rustc sources in the toolchain. The environment
-    # variable will always take precedence over the attribute.
-    include_rustc_srcs_env = ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
-    if include_rustc_srcs_env != None:
-        include_rustc_srcs = include_rustc_srcs_env.lower() in ["true", "1"]
-    else:
-        include_rustc_srcs = ctx.attr.include_rustc_srcs
-
-    if include_rustc_srcs:
+    # Conditionally download rustc sources. Generally used for `rust-analyzer`
+    if should_include_rustc_srcs(ctx):
         load_rust_src(ctx)
 
     build_components = [load_rust_compiler(ctx)]
