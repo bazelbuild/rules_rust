@@ -133,7 +133,7 @@ def _rust_bindgen_impl(ctx):
         "RUST_BACKTRACE": "1",
     }
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
+    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None, rust_toolchain.stdlib_linkflags)
     env.update(**linker_env)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.

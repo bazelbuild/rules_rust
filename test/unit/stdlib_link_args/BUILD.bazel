@@ -1,0 +1,4 @@
+load(":stdlib_link_args.bzl", "stdlib_link_args_test_suite")
+
+############################ UNIT TESTS #############################
+stdlib_link_args_test_suite(name = "stdlib_link_args_test_suite")

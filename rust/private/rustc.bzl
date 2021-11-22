@@ -242,7 +242,7 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
+def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths, stdlib_linkflags):
     """Gathers cc_common linker information
 
     Args:
@@ -251,6 +251,7 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
+        stdlib_linkflags (sequence): A list of link flags to link the stdlib on the current platform.
 
 
     Returns:
@@ -267,6 +268,11 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
         if CcInfo in dep and dep[CcInfo].linking_context:
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
                 for flag in linker_input.user_link_flags:
+                    # Prevent duplication in the stdlib linkflags since it's otherwise possible to end up with
+                    # thousands of identical flags that lead to failures spawning the compiler/linker due to the
+                    # argument list being too long.
+                    if flag in stdlib_linkflags and flag in user_link_flags:
+                        continue
                     user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
@@ -618,7 +624,7 @@ def construct_arguments(
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
             else:
                 rpaths = depset([])
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
+            ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths, toolchain.stdlib_linkflags)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
