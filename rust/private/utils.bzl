@@ -278,7 +278,7 @@ def compute_crate_name(attr, label, toolchain):
         return attr.crate_name
 
     if toolchain and label and toolchain._rename_1p_crates: 
-        if _is_third_party_crate(label):
+        if _is_third_party_crate(label, toolchain):
             crate_name = attr.name
         else:
             crate_name = encode_label_as_crate_name(label)
@@ -392,9 +392,17 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def _is_third_party_crate(label):
-    # TODO: fix this to look at flag
-    return label.package.startswith("third_party/rust")
+def _is_third_party_crate(label, toolchain):
+    """Determines if the given target is considered third-party.
+
+    Args:
+        label (struct): The label of the current target.
+        toolchain (struct): The toolchain in use.
+
+    Returns:
+        True if the crate is considered third-party, False otherwise.
+    """
+    return (label.package + "/").startswith(toolchain._third_party_dir)
 
 pairs = (
     (":", "colon"),

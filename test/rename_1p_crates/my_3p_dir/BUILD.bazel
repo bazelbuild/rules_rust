@@ -1,0 +1,7 @@
+load("//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "my_3p_lib",
+    srcs = ["lib.rs"],
+    visibility = ["//visibility:public"],
+)
