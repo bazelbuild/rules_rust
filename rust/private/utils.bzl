@@ -235,7 +235,7 @@ def name_to_crate_name(name):
 
     Note that targets can specify the `crate_name` attribute to customize their
     crate name; in situations where this is important, use the
-    crate_name_from_attr() function instead.
+    compute_crate_name() function instead.
 
     Args:
         name (str): The name of the target.
@@ -257,11 +257,13 @@ def _invalid_chars_in_crate_name(name):
 
     return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
 
-def crate_name_from_attr(attr, label, toolchain):
+def compute_crate_name(attr, label, toolchain):
     """Returns the crate name to use for the current target.
 
     Args:
         attr (struct): The attributes of the current target.
+        label (struct): The label of the current target.
+        toolchain (struct): The toolchain in use for the target.
 
     Returns:
         str: The crate name to use for this target.
