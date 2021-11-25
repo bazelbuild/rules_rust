@@ -144,6 +144,7 @@ class OutputPipe {
 
     constexpr DWORD kBufferSize = 4096;
     CHAR buffer[kBufferSize];
+    bool ret = true;
     while (1) {
       DWORD read;
       bool success =
@@ -154,7 +155,8 @@ class OutputPipe {
         std::cerr
             << "process wrapper error: failed to read child process output: "
             << GetLastErrorAsStr();
-        return false;
+        ret = false;
+        break;
       }
 
       DWORD written;
@@ -163,10 +165,12 @@ class OutputPipe {
         std::cerr << "process wrapper error: failed to write to output capture "
                      "file: "
                   << GetLastErrorAsStr();
-        return false;
+        ret = false;
+        break;
       }
     }
-    return true;
+    CloseHandle(output_file_handle);
+    return ret;
   }
 
  private:
@@ -194,44 +198,47 @@ int System::Exec(const System::StrType& executable,
                  const System::Arguments& arguments,
                  const System::EnvironmentBlock& environment_block,
                  const StrType& stdout_file, const StrType& stderr_file) {
-  SECURITY_ATTRIBUTES saAttr;
-  ZeroMemory(&saAttr, sizeof(SECURITY_ATTRIBUTES));
-  saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-  saAttr.bInheritHandle = TRUE;
-  saAttr.lpSecurityDescriptor = NULL;
-
   STARTUPINFO startup_info;
   ZeroMemory(&startup_info, sizeof(STARTUPINFO));
   startup_info.cb = sizeof(STARTUPINFO);
 
-  // We will be setting our own stdin/stdout/stderr handles.
-  // Note that it is critical to set *all* handles when using this option or the process being
-  // called might get a null handle for stdin/stdout/stderr when it expects it to be set.
-  startup_info.dwFlags |= STARTF_USESTDHANDLES;
-  startup_info.hStdInput = INVALID_HANDLE_VALUE;
-
   OutputPipe stdout_pipe;
-  if (!stdout_file.empty()) {
-    if (!stdout_pipe.CreateEnds(&saAttr)) {
-      std::cerr << "process wrapper error: failed to create stdout pipe: "
-                << GetLastErrorAsStr();
-      return -1;
-    }
-    startup_info.hStdOutput = stdout_pipe.WriteEndHandle();
-  } else {
-    startup_info.hStdOutput = INVALID_HANDLE_VALUE;
-  }
-
   OutputPipe stderr_pipe;
-  if (!stderr_file.empty()) {
-    if (!stderr_pipe.CreateEnds(&saAttr)) {
-      std::cerr << "process wrapper error: failed to create stderr pipe: "
-                << GetLastErrorAsStr();
-      return -1;
+
+  if (!stdout_file.empty() || !stderr_file.empty()) {
+    // We will be setting our own stdout/stderr handles.
+    // Note that when setting `STARTF_USESTDHANDLES` it is critical to set *all* handles or the
+    // child process might get a null handle (or garbage).
+    startup_info.dwFlags |= STARTF_USESTDHANDLES;
+    startup_info.hStdInput = INVALID_HANDLE_VALUE;
+
+    SECURITY_ATTRIBUTES saAttr;
+    ZeroMemory(&saAttr, sizeof(SECURITY_ATTRIBUTES));
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    if (!stdout_file.empty()) {
+      if (!stdout_pipe.CreateEnds(&saAttr)) {
+        std::cerr << "process wrapper error: failed to create stdout pipe: "
+                  << GetLastErrorAsStr();
+        return -1;
+      }
+      startup_info.hStdOutput = stdout_pipe.WriteEndHandle();
+    } else {
+      startup_info.hStdOutput = INVALID_HANDLE_VALUE;
     }
-    startup_info.hStdError = stderr_pipe.WriteEndHandle();
-  } else {
-    startup_info.hStdError = INVALID_HANDLE_VALUE;
+
+    if (!stderr_file.empty()) {
+      if (!stderr_pipe.CreateEnds(&saAttr)) {
+        std::cerr << "process wrapper error: failed to create stderr pipe: "
+                  << GetLastErrorAsStr();
+        return -1;
+      }
+      startup_info.hStdError = stderr_pipe.WriteEndHandle();
+    } else {
+      startup_info.hStdError = INVALID_HANDLE_VALUE;
+    }
   }
 
   System::StrType command_line;
@@ -248,7 +255,8 @@ int System::Exec(const System::StrType& executable,
       /*lpApplicationName*/ nullptr,
       /*lpCommandLine*/ command_line.empty() ? nullptr : &command_line[0],
       /*lpProcessAttributes*/ nullptr,
-      /*lpThreadAttributes*/ nullptr, /*bInheritHandles*/ TRUE,
+      /*lpThreadAttributes*/ nullptr,
+      /*bInheritHandles*/ TRUE,
       /*dwCreationFlags*/ 0
 #if defined(UNICODE)
           | CREATE_UNICODE_ENVIRONMENT
@@ -282,6 +290,7 @@ int System::Exec(const System::StrType& executable,
   WaitForSingleObject(process_info.hProcess, INFINITE);
   if (GetExitCodeProcess(process_info.hProcess, &exit_status) == FALSE)
     exit_status = -1;
+  CloseHandle(process_info.hThread);
   CloseHandle(process_info.hProcess);
   return exit_status;
 }
