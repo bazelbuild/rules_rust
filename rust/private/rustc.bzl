@@ -562,6 +562,8 @@ def construct_arguments(
 
     # Rustc arguments
     rustc_flags = ctx.actions.args()
+    rustc_flags.set_param_file_format("multiline")
+    rustc_flags.use_param_file("@%s", use_always = False)
     rustc_flags.add(crate_info.root)
     rustc_flags.add("--crate-name=" + crate_info.name)
     rustc_flags.add("--crate-type=" + crate_info.type)
