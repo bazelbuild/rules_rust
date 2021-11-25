@@ -103,14 +103,9 @@ class OutputPipe {
     CloseWriteEnd();
   }
 
-  bool CreateEnds(STARTUPINFO& startup_info, bool err) {
-    SECURITY_ATTRIBUTES saAttr;
-    ZeroMemory(&saAttr, sizeof(SECURITY_ATTRIBUTES));
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
+  bool CreateEnds(SECURITY_ATTRIBUTES *saAttr) {
     if (!::CreatePipe(&output_pipe_handles_[kReadEndHandle],
-                      &output_pipe_handles_[kWriteEndHandle], &saAttr, 0)) {
+                      &output_pipe_handles_[kWriteEndHandle], saAttr, 0)) {
       return false;
     }
 
@@ -118,13 +113,6 @@ class OutputPipe {
                                 HANDLE_FLAG_INHERIT, 0)) {
       return false;
     }
-
-    if (err) {
-      startup_info.hStdError = output_pipe_handles_[kWriteEndHandle];
-    } else {
-      startup_info.hStdOutput = output_pipe_handles_[kWriteEndHandle];
-    }
-    startup_info.dwFlags |= STARTF_USESTDHANDLES;
 
     return true;
   }
@@ -206,23 +194,44 @@ int System::Exec(const System::StrType& executable,
                  const System::Arguments& arguments,
                  const System::EnvironmentBlock& environment_block,
                  const StrType& stdout_file, const StrType& stderr_file) {
+  SECURITY_ATTRIBUTES saAttr;
+  ZeroMemory(&saAttr, sizeof(SECURITY_ATTRIBUTES));
+  saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+  saAttr.bInheritHandle = TRUE;
+  saAttr.lpSecurityDescriptor = NULL;
+
   STARTUPINFO startup_info;
   ZeroMemory(&startup_info, sizeof(STARTUPINFO));
   startup_info.cb = sizeof(STARTUPINFO);
 
+  // We will be setting our own stdin/stdout/stderr handles.
+  // Note that it is critical to set *all* handles when using this option or the process being
+  // called might get a null handle for stdin/stdout/stderr when it expects it to be set.
+  startup_info.dwFlags |= STARTF_USESTDHANDLES;
+  startup_info.hStdInput = INVALID_HANDLE_VALUE;
+
   OutputPipe stdout_pipe;
-  if (!stdout_file.empty() &&
-      !stdout_pipe.CreateEnds(startup_info, /*err*/ false)) {
-    std::cerr << "process wrapper error: failed to create stdout pipe: "
-              << GetLastErrorAsStr();
-    return -1;
+  if (!stdout_file.empty()) {
+    if (!stdout_pipe.CreateEnds(&saAttr)) {
+      std::cerr << "process wrapper error: failed to create stdout pipe: "
+                << GetLastErrorAsStr();
+      return -1;
+    }
+    startup_info.hStdOutput = stdout_pipe.WriteEndHandle();
+  } else {
+    startup_info.hStdOutput = INVALID_HANDLE_VALUE;
   }
+
   OutputPipe stderr_pipe;
-  if (!stderr_file.empty() &&
-      !stderr_pipe.CreateEnds(startup_info, /*err*/ true)) {
-    std::cerr << "process wrapper error: failed to create stderr pipe: "
-              << GetLastErrorAsStr();
-    return -1;
+  if (!stderr_file.empty()) {
+    if (!stderr_pipe.CreateEnds(&saAttr)) {
+      std::cerr << "process wrapper error: failed to create stderr pipe: "
+                << GetLastErrorAsStr();
+      return -1;
+    }
+    startup_info.hStdError = stderr_pipe.WriteEndHandle();
+  } else {
+    startup_info.hStdError = INVALID_HANDLE_VALUE;
   }
 
   System::StrType command_line;
