@@ -134,8 +134,17 @@ def get_cargo_and_rustc(repository_ctx, host_triple):
     rust_toolchain_repository = rust_toolchain_repository.replace("{triple}", host_triple)
     rust_toolchain_repository = rust_toolchain_repository.replace("{arch}", arch)
 
-    cargo_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/cargo" + extension)))
-    rustc_path = repository_ctx.path(Label("@{}{}".format(rust_toolchain_repository, "//:bin/rustc" + extension)))
+    tool_path = repository_ctx.attr.rust_toolchain_repository_tool_path
+    cargo_path = repository_ctx.path(Label("@{}//{}{}".format(
+        rust_toolchain_repository,
+        tool_path["cargo"],
+        extension,
+    )))
+    rustc_path = repository_ctx.path(Label("@{}//{}{}".format(
+        rust_toolchain_repository,
+        tool_path["rustc"],
+        extension,
+    )))
 
     return struct(
         cargo = cargo_path,

@@ -157,7 +157,7 @@ __WARNING__: This rule experimental and subject to change without warning.
 Environment Variables:
 - `REPIN`: Re-pin the lockfile if set (useful for repinning deps from multiple rulesets).
 - `RULES_RUST_REPIN`: Re-pin the lockfile if set (useful for only repinning Rust deps).
-- `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE`: Override URL to use to download resolver binary 
+- `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE`: Override URL to use to download resolver binary
     - for local paths use a `file://` URL.
 - `RULES_RUST_CRATE_UNIVERSE_RESOLVER_URL_OVERRIDE_SHA256`: An optional sha256 value for the binary at the override url location.
 """,
@@ -225,6 +225,13 @@ Dict of registry_name: index_url.
                 "will be replaced in the string if present."
             ),
             default = "rust_{system}_{arch}",
+        ),
+        "rust_toolchain_repository_tool_path": attr.string_dict(
+            doc = "The relative path of the tools in the repository",
+            default = {
+                "cargo": ":bin/cargo",
+                "rustc": ":bin/rustc",
+            },
         ),
         "sha256s": attr.string_dict(
             doc = "The sha256 checksum of the desired rust artifacts",
