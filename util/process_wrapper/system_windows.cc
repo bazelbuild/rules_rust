@@ -103,9 +103,9 @@ class OutputPipe {
     CloseWriteEnd();
   }
 
-  bool CreateEnds(SECURITY_ATTRIBUTES *saAttr) {
+  bool CreateEnds(SECURITY_ATTRIBUTES& saAttr) {
     if (!::CreatePipe(&output_pipe_handles_[kReadEndHandle],
-                      &output_pipe_handles_[kWriteEndHandle], saAttr, 0)) {
+                      &output_pipe_handles_[kWriteEndHandle], &saAttr, 0)) {
       return false;
     }
 
@@ -219,7 +219,7 @@ int System::Exec(const System::StrType& executable,
     saAttr.lpSecurityDescriptor = NULL;
 
     if (!stdout_file.empty()) {
-      if (!stdout_pipe.CreateEnds(&saAttr)) {
+      if (!stdout_pipe.CreateEnds(saAttr)) {
         std::cerr << "process wrapper error: failed to create stdout pipe: "
                   << GetLastErrorAsStr();
         return -1;
@@ -230,7 +230,7 @@ int System::Exec(const System::StrType& executable,
     }
 
     if (!stderr_file.empty()) {
-      if (!stderr_pipe.CreateEnds(&saAttr)) {
+      if (!stderr_pipe.CreateEnds(saAttr)) {
         std::cerr << "process wrapper error: failed to create stderr pipe: "
                   << GetLastErrorAsStr();
         return -1;
