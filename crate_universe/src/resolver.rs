@@ -372,10 +372,20 @@ impl Resolver {
         for package in &merged_cargo_metadata.packages {
             for dep in &package.dependencies {
                 if dep.kind == kind {
-                    member_package_version_reqs
+                    let reqs = member_package_version_reqs
                         .entry(dep.name.clone())
-                        .or_default()
-                        .push(dep.req.clone());
+                        .or_default();
+                    if let Some(source) = &dep.source {
+                        // If a git dependency is present, and doesn't specify any version requirements,
+                        // treat it as something we're depending on but don't add an empty version requirement.
+                        // Versions with pre-release tags do not match empty version requirements,
+                        // so otherwise they will get filtered out by the version matching below,
+                        // but we assume if you specifically added a git dep, you probably wanted it.
+                        if source.starts_with("git+") && dep.req.comparators.is_empty() {
+                            continue;
+                        }
+                    }
+                    reqs.push(dep.req.clone());
                 }
             }
         }

@@ -40,6 +40,7 @@ def rust_bindgen_library(
         cc_lib,
         bindgen_flags = None,
         clang_flags = None,
+        rustfmt = True,
         **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library.
 
@@ -51,6 +52,7 @@ def rust_bindgen_library(
         cc_lib (str): The label of the cc_library that contains the .h file. This is used to find the transitive includes.
         bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
         clang_flags (list, optional): Flags to pass directly to the clang executable.
+        rustfmt (bool, optional): Enable or disable running rustfmt on the generated file.
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
 
@@ -68,6 +70,7 @@ def rust_bindgen_library(
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
         clang_flags = clang_flags or [],
+        rustfmt = rustfmt,
         tags = tags,
     )
 
@@ -109,7 +112,7 @@ def _rust_bindgen_impl(ctx):
     system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
-    if rustfmt_bin:
+    if ctx.attr.rustfmt and rustfmt_bin:
         unformatted_output = ctx.actions.declare_file(output.basename + ".unformatted")
     else:
         unformatted_output = output
@@ -158,7 +161,7 @@ def _rust_bindgen_impl(ctx):
         tools = [clang_bin],
     )
 
-    if rustfmt_bin:
+    if ctx.attr.rustfmt and rustfmt_bin:
         rustfmt_args = ctx.actions.args()
         rustfmt_args.add("--stdout-file", output.path)
         rustfmt_args.add("--")
@@ -193,6 +196,10 @@ rust_bindgen = rule(
         "header": attr.label(
             doc = "The .h file to generate bindings for.",
             allow_single_file = True,
+        ),
+        "rustfmt": attr.bool(
+            doc = "Enable or disable running rustfmt on the generated file.",
+            default = True,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -249,7 +256,7 @@ rust_bindgen_toolchain = rule(
             mandatory = False,
         ),
         "rustfmt": attr.label(
-            doc = "The label of a `rustfmt` executable. If this is provided, generated sources will be formatted.",
+            doc = "The label of a `rustfmt` executable. If this is not provided, falls back to the rust_toolchain rustfmt.",
             executable = True,
             cfg = "exec",
             mandatory = False,

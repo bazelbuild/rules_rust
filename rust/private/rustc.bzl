@@ -20,6 +20,7 @@ load(
 )
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
+load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
     "expand_dict_value_locations",
@@ -330,7 +331,8 @@ def collect_inputs(
         feature_configuration,
         crate_info,
         dep_info,
-        build_info):
+        build_info,
+        stamp = False):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -344,6 +346,8 @@ def collect_inputs(
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
+        stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
+            https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -420,17 +424,22 @@ def collect_inputs(
                 output_replacement = crate_info.output.path,
             )
 
+    # If stamping is enabled include the volatile status info file
+    stamp_info = [ctx.version_file] if stamp else []
+
     compile_inputs = depset(
-        linkstamp_outs,
+        linkstamp_outs + stamp_info,
         transitive = [
             nolinkstamp_compile_inputs,
         ],
     )
+
     build_env_files = getattr(files, "rustc_env_files", [])
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
+
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs
 
 def construct_arguments(
@@ -450,7 +459,10 @@ def construct_arguments(
         build_env_files,
         build_flags_files,
         emit = ["dep-info", "link"],
-        force_all_deps_direct = False):
+        force_all_deps_direct = False,
+        force_link = False,
+        stamp = False,
+        remap_path_prefix = "."):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -472,6 +484,10 @@ def construct_arguments(
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
+        stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
+            https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
 
     Returns:
         tuple: A tuple of the following items
@@ -483,9 +499,8 @@ def construct_arguments(
                     This is to be passed to the `arguments` parameter of actions
             - (dict): Common rustc environment variables
     """
-    output_dir = getattr(crate_info.output, "dirname") if hasattr(crate_info.output, "dirname") else None
-
-    linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
+    output_dir = getattr(crate_info.output, "dirname", None)
+    linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
 
@@ -510,6 +525,10 @@ def construct_arguments(
     # Since we cannot get the `exec_root` from starlark, we cheat a little and
     # use `${pwd}` which resolves the `exec_root` at action execution time.
     process_wrapper_flags.add("--subst", "pwd=${pwd}")
+
+    # If stamping is enabled, enable the functionality in the process wrapper
+    if stamp:
+        process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
@@ -543,6 +562,8 @@ def construct_arguments(
 
     # Rustc arguments
     rustc_flags = ctx.actions.args()
+    rustc_flags.set_param_file_format("multiline")
+    rustc_flags.use_param_file("@%s", use_always = False)
     rustc_flags.add(crate_info.root)
     rustc_flags.add("--crate-name=" + crate_info.name)
     rustc_flags.add("--crate-type=" + crate_info.type)
@@ -561,9 +582,11 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    rustc_flags.add("--remap-path-prefix=${pwd}=.")
+    if remap_path_prefix:
+        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
-    rustc_flags.add("--emit=" + ",".join(emit_with_paths))
+    if emit:
+        rustc_flags.add("--emit=" + ",".join(emit_with_paths))
     rustc_flags.add("--color=always")
     rustc_flags.add("--target=" + toolchain.target_flag_value)
     if hasattr(attr, "crate_features"):
@@ -589,11 +612,14 @@ def construct_arguments(
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
-    if "link" in emit:
+    if "link" in emit or force_link:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
-            rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            if output_dir:
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+            else:
+                rpaths = depset([])
             ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
@@ -688,6 +714,9 @@ def rustc_compile_action(
         make_rust_providers_target_independent = make_rust_providers_target_independent,
     )
 
+    # Determine if the build is currently running with --stamp
+    stamp = is_stamping_enabled(attr)
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -699,9 +728,10 @@ def rustc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        stamp = stamp,
     )
 
-    args, env = construct_arguments(
+    args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
         file = ctx.file,
@@ -718,7 +748,11 @@ def rustc_compile_action(
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         force_all_deps_direct = force_all_deps_direct,
+        stamp = stamp,
     )
+
+    env = dict(ctx.configuration.default_shell_env)
+    env.update(env_from_args)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
@@ -896,24 +930,6 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
         input_files.append(build_info.link_flags)
 
     return input_files, out_dir, build_env_file, build_flags_files
-
-def _has_dylib_ext(file, dylib_ext):
-    """Determines whether or not the file in question the platform dynamic library extension
-
-    Args:
-        file (File): The file to check
-        dylib_ext (str): The extension (eg `.so`).
-
-    Returns:
-        bool: Whether or not file ends with the requested extension
-    """
-    if file.basename.endswith(dylib_ext):
-        return True
-    split = file.basename.split(".", 2)
-    if len(split) == 2:
-        if split[1] == dylib_ext[1:]:
-            return True
-    return False
 
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.

@@ -307,6 +307,23 @@ def load_rust_compiler(ctx):
 
     return compiler_build_file
 
+def should_include_rustc_srcs(repository_ctx):
+    """Determing whether or not to include rustc sources in the toolchain.
+
+    Args:
+        repository_ctx (repository_ctx): The repository rule's context object
+
+    Returns:
+        bool: Whether or not to include rustc source files in a `rustc_toolchain`
+    """
+
+    # The environment variable will always take precedence over the attribute.
+    include_rustc_srcs_env = repository_ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
+    if include_rustc_srcs_env != None:
+        return include_rustc_srcs_env.lower() in ["true", "1"]
+
+    return getattr(repository_ctx.attr, "include_rustc_srcs", False)
+
 def load_rust_src(ctx):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
@@ -373,7 +390,7 @@ def load_rust_stdlib(ctx, target_triple):
             target_triple = target_triple,
         ),
         exec_triple = ctx.attr.exec_triple,
-        include_rustc_srcs = ctx.attr.include_rustc_srcs,
+        include_rustc_srcs = should_include_rustc_srcs(ctx),
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,

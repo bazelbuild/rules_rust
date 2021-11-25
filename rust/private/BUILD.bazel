@@ -1,4 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
+load("//rust/private:stamp.bzl", "stamp_build_setting")
 
 bzl_library(
     name = "rules",
@@ -9,4 +11,11 @@ bzl_library(
     deps = [
         "//rust/platform:rules",
     ],
+)
+
+stamp_build_setting(name = "stamp")
+
+rust_analyzer_detect_sysroot(
+    name = "rust_analyzer_detect_sysroot",
+    visibility = ["//visibility:public"],
 )

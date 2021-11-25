@@ -1,0 +1,5 @@
+sh_binary(
+    name = "rust_analyzer_test",
+    srcs = ["rust_analyzer_test_runner.sh"],
+    args = [package_name()],
+)

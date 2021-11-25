@@ -1,5 +1,18 @@
 """A module defining toolchain utilities"""
 
+def find_sysroot(rust_toolchain):
+    """Locate the rustc sysroot from the `rust_toolchain`
+
+    Args:
+        rust_toolchain (rust_toolchain): The currently configured `rust_toolchain`.
+
+    Returns:
+        str: A path assignable as `SYSROOT` for an action.
+    """
+    sysroot_anchor = rust_toolchain.rust_lib.files.to_list()[0]
+    directory = sysroot_anchor.path.split(sysroot_anchor.short_path, 1)[0]
+    return directory.rstrip("/")
+
 def _toolchain_files_impl(ctx):
     toolchain = ctx.toolchains[str(Label("//rust:toolchain"))]
 

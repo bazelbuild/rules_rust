@@ -83,7 +83,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-linux-android",
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
         ): [
-            "@rules_rust_wasm_bindgen__libc__0_2_99//:libc",
+            "@rules_rust_wasm_bindgen__libc__0_2_107//:libc",
         ],
         "//conditions:default": [],
     }),

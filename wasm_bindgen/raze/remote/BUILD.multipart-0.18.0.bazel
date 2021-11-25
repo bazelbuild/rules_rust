@@ -59,7 +59,7 @@ rust_binary(
     deps = [
         ":multipart",
         "@rules_rust_wasm_bindgen__buf_redux__0_8_4//:buf_redux",
-        "@rules_rust_wasm_bindgen__httparse__1_5_0//:httparse",
+        "@rules_rust_wasm_bindgen__httparse__1_5_1//:httparse",
         "@rules_rust_wasm_bindgen__log__0_4_14//:log",
         "@rules_rust_wasm_bindgen__mime__0_3_16//:mime",
         "@rules_rust_wasm_bindgen__mime_guess__2_0_3//:mime_guess",
@@ -112,7 +112,7 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         "@rules_rust_wasm_bindgen__buf_redux__0_8_4//:buf_redux",
-        "@rules_rust_wasm_bindgen__httparse__1_5_0//:httparse",
+        "@rules_rust_wasm_bindgen__httparse__1_5_1//:httparse",
         "@rules_rust_wasm_bindgen__log__0_4_14//:log",
         "@rules_rust_wasm_bindgen__mime__0_3_16//:mime",
         "@rules_rust_wasm_bindgen__mime_guess__2_0_3//:mime_guess",

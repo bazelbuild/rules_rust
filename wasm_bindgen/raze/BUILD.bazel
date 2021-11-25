@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "anyhow",
-    actual = "@rules_rust_wasm_bindgen__anyhow__1_0_43//:anyhow",
+    actual = "@rules_rust_wasm_bindgen__anyhow__1_0_45//:anyhow",
     tags = [
         "cargo-raze",
         "manual",
@@ -32,7 +32,7 @@ alias(
 
 alias(
     name = "curl",
-    actual = "@rules_rust_wasm_bindgen__curl__0_4_38//:curl",
+    actual = "@rules_rust_wasm_bindgen__curl__0_4_40//:curl",
     tags = [
         "cargo-raze",
         "manual",
@@ -95,7 +95,7 @@ alias(
 
 alias(
     name = "rouille",
-    actual = "@rules_rust_wasm_bindgen__rouille__3_2_1//:rouille",
+    actual = "@rules_rust_wasm_bindgen__rouille__3_4_0//:rouille",
     tags = [
         "cargo-raze",
         "manual",
@@ -104,7 +104,7 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@rules_rust_wasm_bindgen__serde__1_0_127//:serde",
+    actual = "@rules_rust_wasm_bindgen__serde__1_0_130//:serde",
     tags = [
         "cargo-raze",
         "manual",
@@ -113,7 +113,7 @@ alias(
 
 alias(
     name = "serde_derive",
-    actual = "@rules_rust_wasm_bindgen__serde_derive__1_0_127//:serde_derive",
+    actual = "@rules_rust_wasm_bindgen__serde_derive__1_0_130//:serde_derive",
     tags = [
         "cargo-raze",
         "manual",
@@ -122,7 +122,7 @@ alias(
 
 alias(
     name = "serde_json",
-    actual = "@rules_rust_wasm_bindgen__serde_json__1_0_66//:serde_json",
+    actual = "@rules_rust_wasm_bindgen__serde_json__1_0_69//:serde_json",
     tags = [
         "cargo-raze",
         "manual",
@@ -149,7 +149,7 @@ alias(
 
 alias(
     name = "wasm_bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen__0_2_76//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen__0_2_78//:wasm_bindgen",
     tags = [
         "cargo-raze",
         "manual",
@@ -158,7 +158,7 @@ alias(
 
 alias(
     name = "cargo_bin_wasm_bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_76//:cargo_bin_wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_78//:cargo_bin_wasm_bindgen",
     tags = [
         "cargo-raze",
         "manual",
@@ -167,7 +167,7 @@ alias(
 
 alias(
     name = "wasm_bindgen_cli",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_76//:wasm_bindgen_cli",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli__0_2_78//:wasm_bindgen_cli",
     tags = [
         "cargo-raze",
         "manual",
@@ -176,7 +176,7 @@ alias(
 
 alias(
     name = "wasm_bindgen_cli_support",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli_support__0_2_76//:wasm_bindgen_cli_support",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_cli_support__0_2_78//:wasm_bindgen_cli_support",
     tags = [
         "cargo-raze",
         "manual",
@@ -185,7 +185,7 @@ alias(
 
 alias(
     name = "wasm_bindgen_shared",
-    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_shared__0_2_76//:wasm_bindgen_shared",
+    actual = "@rules_rust_wasm_bindgen__wasm_bindgen_shared__0_2_78//:wasm_bindgen_shared",
     tags = [
         "cargo-raze",
         "manual",

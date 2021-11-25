@@ -62,9 +62,9 @@ rust_library(
     version = "0.19.0",
     # buildifier: leave-alone
     deps = [
-        "@rules_rust_wasm_bindgen__anyhow__1_0_43//:anyhow",
+        "@rules_rust_wasm_bindgen__anyhow__1_0_45//:anyhow",
         "@rules_rust_wasm_bindgen__id_arena__2_2_1//:id_arena",
-        "@rules_rust_wasm_bindgen__leb128__0_2_4//:leb128",
+        "@rules_rust_wasm_bindgen__leb128__0_2_5//:leb128",
         "@rules_rust_wasm_bindgen__log__0_4_14//:log",
         "@rules_rust_wasm_bindgen__rayon__1_5_1//:rayon",
         "@rules_rust_wasm_bindgen__wasmparser__0_77_0//:wasmparser",

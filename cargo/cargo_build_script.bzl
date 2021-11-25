@@ -342,7 +342,7 @@ def cargo_build_script(
         binary_tags.append("manual")
 
     rust_binary(
-        name = name + "_script_",
+        name = name + "_",
         crate_features = crate_features,
         version = version,
         deps = deps,
@@ -353,7 +353,7 @@ def cargo_build_script(
     )
     _build_script_run(
         name = name,
-        script = ":%s_script_" % name,
+        script = ":{}_".format(name),
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
