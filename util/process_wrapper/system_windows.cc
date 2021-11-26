@@ -206,9 +206,8 @@ int System::Exec(const System::StrType& executable,
   OutputPipe stderr_pipe;
 
   if (!stdout_file.empty() || !stderr_file.empty()) {
-    // We will be setting our own stdout/stderr handles.
-    // Note that when setting `STARTF_USESTDHANDLES` it is critical to set *all* handles or the
-    // child process might get a null handle (or garbage).
+    // We will be setting our own stdout/stderr handles. Note that when setting `STARTF_USESTDHANDLES`
+    // it is critical to set *all* handles or the child process might get a null handle (or garbage).
     startup_info.dwFlags |= STARTF_USESTDHANDLES;
     startup_info.hStdInput = INVALID_HANDLE_VALUE;
 
