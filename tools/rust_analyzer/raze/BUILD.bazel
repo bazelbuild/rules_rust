@@ -31,6 +31,15 @@ alias(
 )
 
 alias(
+    name = "itertools",
+    actual = "@rules_rust_tools_rust_analyzer__itertools__0_10_1//:itertools",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
     name = "log",
     actual = "@rules_rust_tools_rust_analyzer__log__0_4_14//:log",
     tags = [

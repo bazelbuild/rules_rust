@@ -83,6 +83,16 @@ def rules_rust_tools_rust_analyzer_fetch_remote_crates():
 
     maybe(
         http_archive,
+        name = "rules_rust_tools_rust_analyzer__either__1_6_1",
+        url = "https://crates.io/api/v1/crates/either/1.6.1/download",
+        type = "tar.gz",
+        sha256 = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457",
+        strip_prefix = "either-1.6.1",
+        build_file = Label("//tools/rust_analyzer/raze/remote:BUILD.either-1.6.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rules_rust_tools_rust_analyzer__env_logger__0_9_0",
         url = "https://crates.io/api/v1/crates/env_logger/0.9.0/download",
         type = "tar.gz",
@@ -119,6 +129,16 @@ def rules_rust_tools_rust_analyzer_fetch_remote_crates():
         sha256 = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4",
         strip_prefix = "humantime-2.1.0",
         build_file = Label("//tools/rust_analyzer/raze/remote:BUILD.humantime-2.1.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "rules_rust_tools_rust_analyzer__itertools__0_10_1",
+        url = "https://crates.io/api/v1/crates/itertools/0.10.1/download",
+        type = "tar.gz",
+        sha256 = "69ddb889f9d0d08a67338271fa9b62996bc788c7796a5c18cf057420aaed5eaf",
+        strip_prefix = "itertools-0.10.1",
+        build_file = Label("//tools/rust_analyzer/raze/remote:BUILD.itertools-0.10.1.bazel"),
     )
 
     maybe(
