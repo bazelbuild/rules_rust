@@ -39,11 +39,13 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[derive(Debug)]
 enum Mode {
     DirectoryBased(PathBuf),
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+#[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
 }

@@ -7,6 +7,8 @@ use runfiles::Runfiles;
 mod aquery;
 mod rust_project;
 
+const SYSROOT_SRC_FILE_RUNFILES_PREFIX: &str = "rules_rust";
+
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
@@ -54,7 +56,7 @@ pub fn write_rust_project(
     )?;
 
     let workspace_name = match rules_rust_name.as_ref().trim_start_matches('@') {
-        "" => "rules_rust",
+        "" => SYSROOT_SRC_FILE_RUNFILES_PREFIX,
         s => s,
     };
     let sysroot_path = format!(
