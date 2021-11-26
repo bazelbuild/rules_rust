@@ -562,6 +562,8 @@ def construct_arguments(
 
     # Rustc arguments
     rustc_flags = ctx.actions.args()
+    rustc_flags.set_param_file_format("multiline")
+    rustc_flags.use_param_file("@%s", use_always = False)
     rustc_flags.add(crate_info.root)
     rustc_flags.add("--crate-name=" + crate_info.name)
     rustc_flags.add("--crate-type=" + crate_info.type)
@@ -610,7 +612,7 @@ def construct_arguments(
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
-    if "link" in emit or force_link:
+    if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or force_link:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":

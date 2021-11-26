@@ -3,7 +3,15 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not", "assert_argv_contains_prefix_suffix", "assert_list_contains_adjacent_elements")
+load(
+    "//test/unit:common.bzl",
+    "assert_argv_contains",
+    "assert_argv_contains_not",
+    "assert_argv_contains_prefix",
+    "assert_argv_contains_prefix_not",
+    "assert_argv_contains_prefix_suffix",
+    "assert_list_contains_adjacent_elements",
+)
 
 def _native_dep_lib_name(ctx):
     if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
@@ -19,6 +27,7 @@ def _lib_has_no_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains_not(env, action, "-lstatic=native_dep")
     assert_argv_contains_not(env, action, "-ldylib=native_dep")
+    assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _rlib_has_no_native_libs_test_impl(ctx):
@@ -28,6 +37,7 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     assert_argv_contains(env, action, "--crate-type=rlib")
     assert_argv_contains_not(env, action, "-lstatic=native_dep")
     assert_argv_contains_not(env, action, "-ldylib=native_dep")
+    assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _dylib_has_native_libs_test_impl(ctx):
@@ -36,6 +46,7 @@ def _dylib_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains(env, action, "--crate-type=dylib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _cdylib_has_native_libs_test_impl(ctx):
@@ -44,6 +55,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _staticlib_has_native_libs_test_impl(ctx):
@@ -52,6 +64,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains(env, action, "--crate-type=staticlib")
     assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _proc_macro_has_native_libs_test_impl(ctx):
@@ -61,6 +74,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _bin_has_native_libs_test_impl(ctx):
@@ -68,6 +82,7 @@ def _bin_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _extract_linker_args(argv):

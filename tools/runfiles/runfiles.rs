@@ -39,11 +39,13 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[derive(Debug)]
 enum Mode {
     DirectoryBased(PathBuf),
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+#[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
 }
@@ -111,6 +113,14 @@ pub fn find_runfiles_dir() -> io::Result<PathBuf> {
         std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or_else(|| OsString::from("0")),
         "1"
     );
+
+    // If bazel told us about the runfiles dir, use that without looking further.
+    if let Some(test_srcdir) = std::env::var_os("TEST_SRCDIR").map(PathBuf::from) {
+        if test_srcdir.is_dir() {
+            return Ok(test_srcdir);
+        }
+    }
+
     // Consume the first argument (argv[0])
     let exec_path = std::env::args().next().expect("arg 0 was not set");
 
@@ -189,14 +199,42 @@ mod test {
 
     #[test]
     fn test_can_read_data_from_runfiles() {
-        let r = Runfiles::create().unwrap();
+        // We want to run two test cases: one with the $TEST_SRCDIR environment variable set and one
+        // with it not set. Since environment variables are global state, we need to ensure the two
+        // test cases do not run concurrently. Rust runs tests in parallel and does not provide an
+        // easy way to synchronise them, so we run both test cases in the same #[test] function.
 
-        let mut f = File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+        let test_srcdir = env::var_os("TEST_SRCDIR").expect("bazel did not provide TEST_SRCDIR");
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+        // Test case 1: $TEST_SRCDIR is set.
+        {
+            let r = Runfiles::create().unwrap();
 
-        assert_eq!("Example Text!", buffer);
+            let mut f =
+                File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer).unwrap();
+
+            assert_eq!("Example Text!", buffer);
+        }
+
+        // Test case 2: $TEST_SRCDIR is *not* set.
+        {
+            env::remove_var("TEST_SRCDIR");
+
+            let r = Runfiles::create().unwrap();
+
+            let mut f =
+                File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer).unwrap();
+
+            assert_eq!("Example Text!", buffer);
+
+            env::set_var("TEST_SRCDIR", test_srcdir);
+        }
     }
 
     #[test]
