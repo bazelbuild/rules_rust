@@ -7,7 +7,7 @@ use runfiles::Runfiles;
 mod aquery;
 mod rust_project;
 
-const SYSROOT_SRC_FILE_RUNFILES_PREFIX: &'static str = "rules_rust";
+const SYSROOT_SRC_FILE_RUNFILES_PREFIX: &str = "rules_rust";
 
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
