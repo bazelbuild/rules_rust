@@ -767,10 +767,21 @@ def rustc_compile_action(
     else:
         formatted_version = ""
 
+    outputs = [crate_info.output]
+
+    # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
+    # interface library that rustc generates in the output files.
+    interface_library = None
+    if toolchain.os == "windows" and crate_info.type == "cdylib":
+        # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
+        # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
+        interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
+        outputs.append(interface_library)
+
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = [crate_info.output],
+        outputs = outputs,
         env = env,
         arguments = args.all,
         mnemonic = "Rustc",
@@ -796,20 +807,20 @@ def rustc_compile_action(
         dep_info,
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
-            files = depset([crate_info.output]),
+            files = depset(outputs),
             runfiles = runfiles,
             executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
         ),
     ]
     if toolchain.target_arch != "wasm32":
-        providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration)
+        providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
 
     return providers
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
 
-def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration):
+def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
@@ -819,6 +830,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
+        interface_library (File): Optional interface library for cdylib crates on Windows.
 
     Returns:
         list: A list containing the CcInfo provider
@@ -867,6 +879,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
             dynamic_library = crate_info.output,
+            interface_library = interface_library,
         )
     else:
         fail("Unexpected case")
