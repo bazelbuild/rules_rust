@@ -877,7 +877,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     cc_infos = [
         CcInfo(linking_context = linking_context),
-        toolchain.stdlib_linkflags_cc_info,
+        toolchain.stdlib_linkflags,
     ]
     for dep in getattr(attr, "deps", []):
         if CcInfo in dep:

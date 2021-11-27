@@ -260,13 +260,10 @@ def _rust_toolchain_impl(ctx):
         dylib_ext = ctx.attr.dylib_ext,
         # Contains linker flags needed to link Rust standard library.
         # These need to be added to linker command lines when the linker is not rustc
-        # (rustc does this automatically). Only use these flags for direct actions and
-        # Use `stdlib_linkflags_cc_info for propagation (otherwise `stdlib_linkflags`
-        # may end up being unnecessailry duplicated).
-        stdlib_linkflags = ctx.attr.stdlib_linkflags,
-        # Empty `CcInfo` whose only purpose is to provide `stdlib_linkflags` in a way
-        # that doesn't duplicate them per target providing a `CcInfo`.
-        stdlib_linkflags_cc_info = stdlib_linkflags_cc_info,
+        # (rustc does this automatically). Linker flags wrapped in an otherwise empty
+        # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
+        # providing a `CcInfo`.
+        stdlib_linkflags = stdlib_linkflags_cc_info,
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
