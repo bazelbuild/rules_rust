@@ -106,15 +106,10 @@ fn consume_repository_name<'s>(
 }
 
 fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, Option<&'s str>)> {
-    let colon_pos = input.find(':');
-    let start_pos;
-    let mut is_absolute = false;
-    if input.starts_with("//") {
-        start_pos = 2;
-        is_absolute = true;
-    } else {
-        start_pos = 0;
-        if colon_pos.is_none() {
+    let is_absolute = input.starts_with("//");
+
+    let (package_name, rest) = match (is_absolute, input.find(':')) {
+        (false, None) => {
             if input.contains("//") {
                 return Err(LabelError(err(
                     label,
@@ -123,12 +118,19 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
             }
             return Ok((input.rsplit_once('/').map(|t| t.1).unwrap_or(input), None))
         }
+        (_, colon_pos) => {
+            let (input, colon_pos) = if is_absolute {
+                (&input[2..], colon_pos.map(|cp| cp - 2))
+            } else {
+                (input, colon_pos)
+            };
+            match colon_pos {
+                Some(colon_pos) => (&input[0..colon_pos], &input[colon_pos..]),
+                None => (input, ""),
+            }
+        }
     };
 
-    let (package_name, rest) = match colon_pos {
-        Some(colon_pos) => (&input[start_pos..colon_pos], &input[colon_pos..]),
-        None => (&input[start_pos..], ""),
-    };
     if package_name.is_empty() {
         return Ok((rest, None));
     }
