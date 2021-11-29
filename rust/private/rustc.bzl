@@ -612,7 +612,7 @@ def construct_arguments(
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
-    if "link" in emit or force_link:
+    if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or force_link:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
@@ -868,7 +868,6 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     link_input = cc_common.create_linker_input(
         owner = ctx.label,
         libraries = depset([library_to_link]),
-        user_link_flags = depset(toolchain.stdlib_linkflags),
     )
 
     linking_context = cc_common.create_linking_context(
@@ -876,7 +875,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         linker_inputs = depset([link_input]),
     )
 
-    cc_infos = [CcInfo(linking_context = linking_context)]
+    cc_infos = [
+        CcInfo(linking_context = linking_context),
+        toolchain.stdlib_linkflags,
+    ]
     for dep in getattr(attr, "deps", []):
         if CcInfo in dep:
             cc_infos.append(dep[CcInfo])

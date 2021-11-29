@@ -231,6 +231,7 @@ mod tests {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "rlib".into(),
             }]),
         )
         .expect("expect success");
@@ -260,6 +261,7 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
                 },
                 CrateSpec {
                     crate_id: "ID-dep_a".into(),
@@ -273,6 +275,7 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
                 },
                 CrateSpec {
                     crate_id: "ID-dep_b".into(),
@@ -286,6 +289,7 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
                 },
             ]),
         )

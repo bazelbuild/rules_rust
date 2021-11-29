@@ -231,6 +231,18 @@ def _rust_toolchain_impl(ctx):
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
     make_rust_providers_target_independent = ctx.attr._incompatible_make_rust_providers_target_independent[IncompatibleFlagInfo]
+    linking_context = cc_common.create_linking_context(
+        linker_inputs = depset([
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                user_link_flags = depset(ctx.attr.stdlib_linkflags),
+            ),
+        ]),
+    )
+    stdlib_linkflags_cc_info = CcInfo(
+        compilation_context = cc_common.create_compilation_context(),
+        linking_context = linking_context,
+    )
 
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
@@ -246,7 +258,12 @@ def _rust_toolchain_impl(ctx):
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
-        stdlib_linkflags = ctx.attr.stdlib_linkflags,
+        # Contains linker flags needed to link Rust standard library.
+        # These need to be added to linker command lines when the linker is not rustc
+        # (rustc does this automatically). Linker flags wrapped in an otherwise empty
+        # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
+        # providing a `CcInfo`.
+        stdlib_linkflags = stdlib_linkflags_cc_info,
         target_triple = ctx.attr.target_triple,
         exec_triple = ctx.attr.exec_triple,
         os = ctx.attr.os,
@@ -345,7 +362,8 @@ rust_toolchain = rule(
         ),
         "stdlib_linkflags": attr.string_list(
             doc = (
-                "Additional linker libs used when std lib is linked, " +
+                "Additional linker flags to use when Rust std lib is linked by a C++ linker " +
+                "(rustc will deal with these automatically), " +
                 "see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs"
             ),
             mandatory = True,
