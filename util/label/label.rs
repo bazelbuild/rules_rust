@@ -11,9 +11,15 @@ use label_error::LabelError;
 pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
     let label = input;
     let (input, repository_name) = consume_repository_name(input, label)?;
+    let is_absolute = input.starts_with("//");
     let (input, package_name) = consume_package_name(input, label)?;
     let name = consume_name(input, label)?;
-    Ok(Label::new(repository_name, package_name, name))
+    let name = match (package_name, name) {
+        (None, None) => return Err(LabelError(err(label, "labels must have a package and/or a target."))),
+        (Some(package_name), None) => name_from_package(package_name),
+        (_, Some(name)) => name,
+    };
+    Ok(Label::new(repository_name, package_name, name, is_absolute))
 }
 
 #[derive(Debug, PartialEq)]
@@ -21,6 +27,7 @@ pub struct Label<'s> {
     pub repository_name: Option<&'s str>,
     pub package_name: Option<&'s str>,
     pub name: &'s str,
+    is_absolute: bool,
 }
 
 type Result<T, E = LabelError> = core::result::Result<T, E>;
@@ -30,11 +37,13 @@ impl<'s> Label<'s> {
         repository_name: Option<&'s str>,
         package_name: Option<&'s str>,
         name: &'s str,
+        is_absolute: bool,
     ) -> Label<'s> {
         Label {
             repository_name,
             package_name,
             name,
+            is_absolute,
         }
     }
 
@@ -43,6 +52,10 @@ impl<'s> Label<'s> {
             Some(name) => name.split('/').collect(),
             None => vec![],
         }
+    }
+
+    pub fn is_absolute(&self) -> bool {
+        self.is_absolute
     }
 }
 
@@ -108,7 +121,7 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
                     "'//' cannot appear in the middle of the label.",
                 )));
             }
-            return Ok((input, None));
+            return Ok((input.rsplit_once('/').map(|t| t.1).unwrap_or(input), None))
         }
     };
 
@@ -165,26 +178,25 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
     Ok((rest, Some(package_name)))
 }
 
-fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<&'s str> {
+fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<Option<&'s str>> {
     if input.is_empty() {
+        return Ok(None);
+    }
+    if input == ":" {
         return Err(LabelError(err(label, "empty target name.")));
     }
-    let name = if let Some(stripped) = input.strip_prefix(':') {
-        stripped
-    } else {
-        input
-    };
-    if name.is_empty() {
-        return Err(LabelError(err(label, "empty target name.")));
-    }
+    let name = input.strip_prefix(':').or_else(|| input.strip_prefix('/')).unwrap_or(input);
     if name.starts_with('/') {
         return Err(LabelError(err(
             label,
             "target names may not start with '/'.",
         )));
     }
+    Ok(Some(name))
+}
 
-    Ok(name)
+fn name_from_package(package_name: &str) -> &str {
+    package_name.rsplit_once('/').map(|tup| tup.1).unwrap_or(package_name)
 }
 
 #[cfg(test)]
@@ -194,11 +206,12 @@ mod tests {
     #[test]
     fn test_new() {
         assert_eq!(
-            Label::new(Some("repo"), Some("foo/bar"), "baz"),
+            Label::new(Some("repo"), Some("foo/bar"), "baz", true),
             Label {
                 repository_name: Some("repo"),
                 package_name: Some("foo/bar"),
-                name: "baz"
+                name: "baz",
+                is_absolute: true,
             }
         );
     }
@@ -209,6 +222,17 @@ mod tests {
         assert_eq!(analyze("@//:foo")?.repository_name, None);
         assert_eq!(analyze("//:foo")?.repository_name, None);
         assert_eq!(analyze(":foo")?.repository_name, None);
+
+        assert_eq!(analyze("@repo//foo/bar")?.repository_name, Some("repo"));
+        assert_eq!(analyze("@//foo/bar")?.repository_name, None);
+        assert_eq!(analyze("//foo/bar")?.repository_name, None);
+        assert_eq!(analyze("foo/bar")?.repository_name, None);
+
+        assert_eq!(analyze("@repo//foo")?.repository_name, Some("repo"));
+        assert_eq!(analyze("@//foo")?.repository_name, None);
+        assert_eq!(analyze("//foo")?.repository_name, None);
+        assert_eq!(analyze("foo")?.repository_name, None);
+
         assert_eq!(
             analyze("@foo:bar"),
             Err(LabelError(
@@ -286,6 +310,14 @@ mod tests {
             ))
         );
 
+        assert_eq!(analyze("@repo//foo/bar")?.package_name, Some("foo/bar"));
+        assert_eq!(analyze("//foo/bar")?.package_name, Some("foo/bar"));
+        assert_eq!(analyze("foo/bar")?.package_name, None);
+
+        assert_eq!(analyze("@repo//foo")?.package_name, Some("foo"));
+        assert_eq!(analyze("//foo")?.package_name, Some("foo"));
+        assert_eq!(analyze("foo")?.package_name, None);
+
         Ok(())
     }
 
@@ -310,6 +342,14 @@ mod tests {
             ))
         );
 
+        assert_eq!(analyze("@repo//foo/bar")?.name, "bar");
+        assert_eq!(analyze("//foo/bar")?.name, "bar");
+        assert_eq!(analyze("foo/bar")?.name, "bar");
+
+        assert_eq!(analyze("@repo//foo")?.name, "foo");
+        assert_eq!(analyze("//foo")?.name, "foo");
+        assert_eq!(analyze("foo")?.name, "foo");
+
         Ok(())
     }
 
@@ -321,6 +361,23 @@ mod tests {
             analyze("@repo//foo/bar:baz")?.packages(),
             vec!["foo", "bar"]
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_absolute() -> Result<()> {
+        assert!(analyze("@repo//foo/bar:baz")?.is_absolute());
+        assert!(analyze("//foo/bar:baz")?.is_absolute());
+        assert!(!analyze("foo/bar:baz")?.is_absolute());
+
+        assert!(analyze("@repo//foo/bar")?.is_absolute());
+        assert!(analyze("//foo/bar")?.is_absolute());
+        assert!(!analyze("foo/bar")?.is_absolute());
+
+        assert!(analyze("@repo//foo")?.is_absolute());
+        assert!(analyze("//foo")?.is_absolute());
+        assert!(!analyze("foo")?.is_absolute());
 
         Ok(())
     }
