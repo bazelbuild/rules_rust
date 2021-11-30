@@ -261,6 +261,7 @@ def _rust_library_common(ctx, crate_type):
         toolchain = toolchain,
         crate_info = rust_common.create_crate_info(
             name = crate_name,
+            version = ctx.attr.version,
             type = crate_type,
             root = crate_root,
             srcs = depset(ctx.files.srcs),
@@ -302,6 +303,7 @@ def _rust_binary_impl(ctx):
         toolchain = toolchain,
         crate_info = rust_common.create_crate_info(
             name = crate_name,
+            version = ctx.attr.version,
             type = ctx.attr.crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
             srcs = depset(ctx.files.srcs),
@@ -426,6 +428,7 @@ def _rust_test_common(ctx, toolchain, output):
         # Build the test binary using the dependency's srcs.
         crate_info = rust_common.create_crate_info(
             name = crate_name,
+            version = ctx.attr.version,
             type = crate_type,
             root = crate.root,
             srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
@@ -444,6 +447,7 @@ def _rust_test_common(ctx, toolchain, output):
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
             name = crate_name,
+            version = ctx.attr.version,
             type = crate_type,
             root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
             srcs = depset(ctx.files.srcs),

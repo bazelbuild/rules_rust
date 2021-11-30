@@ -229,6 +229,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         toolchain = find_toolchain(ctx),
         crate_info = rust_common.create_crate_info(
             name = crate_name,
+            version = ctx.attr.version,
             type = "rlib",
             root = lib_rs,
             srcs = depset(srcs),

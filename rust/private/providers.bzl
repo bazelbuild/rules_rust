@@ -23,6 +23,7 @@ CrateInfo = provider(
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "name": "str: The name of this crate.",
+        "version": "str: The version of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo|Target]: This crate's rust proc_macro dependencies' providers.",
