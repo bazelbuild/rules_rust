@@ -11,15 +11,19 @@ use label_error::LabelError;
 pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
     let label = input;
     let (input, repository_name) = consume_repository_name(input, label)?;
-    let is_absolute = input.starts_with("//");
     let (input, package_name) = consume_package_name(input, label)?;
     let name = consume_name(input, label)?;
     let name = match (package_name, name) {
-        (None, None) => return Err(LabelError(err(label, "labels must have a package and/or a target."))),
+        (None, None) => {
+            return Err(LabelError(err(
+                label,
+                "labels must have a package and/or a target.",
+            )))
+        }
         (Some(package_name), None) => name_from_package(package_name),
         (_, Some(name)) => name,
     };
-    Ok(Label::new(repository_name, package_name, name, is_absolute))
+    Ok(Label::new(repository_name, package_name, name))
 }
 
 #[derive(Debug, PartialEq)]
@@ -27,7 +31,6 @@ pub struct Label<'s> {
     pub repository_name: Option<&'s str>,
     pub package_name: Option<&'s str>,
     pub name: &'s str,
-    is_absolute: bool,
 }
 
 type Result<T, E = LabelError> = core::result::Result<T, E>;
@@ -37,13 +40,11 @@ impl<'s> Label<'s> {
         repository_name: Option<&'s str>,
         package_name: Option<&'s str>,
         name: &'s str,
-        is_absolute: bool,
     ) -> Label<'s> {
         Label {
             repository_name,
             package_name,
             name,
-            is_absolute,
         }
     }
 
@@ -52,10 +53,6 @@ impl<'s> Label<'s> {
             Some(name) => name.split('/').collect(),
             None => vec![],
         }
-    }
-
-    pub fn is_absolute(&self) -> bool {
-        self.is_absolute
     }
 }
 
@@ -106,17 +103,23 @@ fn consume_repository_name<'s>(
 }
 
 fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, Option<&'s str>)> {
-    let is_absolute = input.starts_with("//");
+    let is_absolute = match input.rfind("//") {
+        None => false,
+        Some(0) => true,
+        Some(_) => {
+            return Err(LabelError(err(
+                label,
+                "'//' cannot appear in the middle of the label.",
+            )));
+        }
+    };
 
     let (package_name, rest) = match (is_absolute, input.find(':')) {
-        (false, None) => {
-            if input.contains("//") {
-                return Err(LabelError(err(
-                    label,
-                    "'//' cannot appear in the middle of the label.",
-                )));
-            }
-            return Ok((input.rsplit_once('/').map(|t| t.1).unwrap_or(input), None))
+        (false, colon_pos) if colon_pos.map_or(true, |pos| pos != 0) => {
+            return Err(LabelError(err(
+                label,
+                "relative packages are not permitted.",
+            )));
         }
         (_, colon_pos) => {
             let (input, colon_pos) = if is_absolute {
@@ -133,12 +136,6 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
 
     if package_name.is_empty() {
         return Ok((rest, None));
-    }
-    if package_name.contains("//") {
-        return Err(LabelError(err(
-            label,
-            "'//' cannot appear in the middle of the label.",
-        )));
     }
 
     if !package_name.chars().all(|c| {
@@ -187,7 +184,10 @@ fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<Option<&'s str>> {
     if input == ":" {
         return Err(LabelError(err(label, "empty target name.")));
     }
-    let name = input.strip_prefix(':').or_else(|| input.strip_prefix('/')).unwrap_or(input);
+    let name = input
+        .strip_prefix(':')
+        .or_else(|| input.strip_prefix('/'))
+        .unwrap_or(input);
     if name.starts_with('/') {
         return Err(LabelError(err(
             label,
@@ -198,7 +198,10 @@ fn consume_name<'s>(input: &'s str, label: &'s str) -> Result<Option<&'s str>> {
 }
 
 fn name_from_package(package_name: &str) -> &str {
-    package_name.rsplit_once('/').map(|tup| tup.1).unwrap_or(package_name)
+    package_name
+        .rsplit_once('/')
+        .map(|tup| tup.1)
+        .unwrap_or(package_name)
 }
 
 #[cfg(test)]
@@ -208,12 +211,11 @@ mod tests {
     #[test]
     fn test_new() {
         assert_eq!(
-            Label::new(Some("repo"), Some("foo/bar"), "baz", true),
+            Label::new(Some("repo"), Some("foo/bar"), "baz"),
             Label {
                 repository_name: Some("repo"),
                 package_name: Some("foo/bar"),
                 name: "baz",
-                is_absolute: true,
             }
         );
     }
@@ -228,12 +230,22 @@ mod tests {
         assert_eq!(analyze("@repo//foo/bar")?.repository_name, Some("repo"));
         assert_eq!(analyze("@//foo/bar")?.repository_name, None);
         assert_eq!(analyze("//foo/bar")?.repository_name, None);
-        assert_eq!(analyze("foo/bar")?.repository_name, None);
+        assert_eq!(
+            analyze("foo/bar"),
+            Err(LabelError(
+                "foo/bar must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         assert_eq!(analyze("@repo//foo")?.repository_name, Some("repo"));
         assert_eq!(analyze("@//foo")?.repository_name, None);
         assert_eq!(analyze("//foo")?.repository_name, None);
-        assert_eq!(analyze("foo")?.repository_name, None);
+        assert_eq!(
+            analyze("foo"),
+            Err(LabelError(
+                "foo must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         assert_eq!(
             analyze("@foo:bar"),
@@ -272,10 +284,21 @@ mod tests {
 
         assert_eq!(analyze("//foo:baz/qux")?.package_name, Some("foo"));
         assert_eq!(analyze("//foo/bar:baz/qux")?.package_name, Some("foo/bar"));
-        assert_eq!(analyze("foo:baz/qux")?.package_name, Some("foo"));
-        assert_eq!(analyze("foo/bar:baz/qux")?.package_name, Some("foo/bar"));
+        assert_eq!(
+            analyze("foo:baz/qux"),
+            Err(LabelError(
+                "foo:baz/qux must be a legal label; relative packages are not permitted."
+                    .to_string()
+            ))
+        );
+        assert_eq!(
+            analyze("foo/bar:baz/qux"),
+            Err(LabelError(
+                "foo/bar:baz/qux must be a legal label; relative packages are not permitted."
+                    .to_string()
+            ))
+        );
 
-        assert_eq!(analyze("foo")?.package_name, None);
         assert_eq!(analyze("//foo")?.package_name, Some("foo"));
 
         assert_eq!(
@@ -286,9 +309,23 @@ mod tests {
             ))
         );
         assert_eq!(
+            analyze("//foo//bar"),
+            Err(LabelError(
+                "//foo//bar must be a legal label; '//' cannot appear in the middle of the label."
+                    .to_string()
+            ))
+        );
+        assert_eq!(
             analyze("foo//bar:baz"),
             Err(LabelError(
                 "foo//bar:baz must be a legal label; '//' cannot appear in the middle of the label."
+                    .to_string()
+            ))
+        );
+        assert_eq!(
+            analyze("//foo//bar:baz"),
+            Err(LabelError(
+                "//foo//bar:baz must be a legal label; '//' cannot appear in the middle of the label."
                     .to_string()
             ))
         );
@@ -314,11 +351,21 @@ mod tests {
 
         assert_eq!(analyze("@repo//foo/bar")?.package_name, Some("foo/bar"));
         assert_eq!(analyze("//foo/bar")?.package_name, Some("foo/bar"));
-        assert_eq!(analyze("foo/bar")?.package_name, None);
+        assert_eq!(
+            analyze("foo/bar"),
+            Err(LabelError(
+                "foo/bar must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         assert_eq!(analyze("@repo//foo")?.package_name, Some("foo"));
         assert_eq!(analyze("//foo")?.package_name, Some("foo"));
-        assert_eq!(analyze("foo")?.package_name, None);
+        assert_eq!(
+            analyze("foo"),
+            Err(LabelError(
+                "foo must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         Ok(())
     }
@@ -346,11 +393,21 @@ mod tests {
 
         assert_eq!(analyze("@repo//foo/bar")?.name, "bar");
         assert_eq!(analyze("//foo/bar")?.name, "bar");
-        assert_eq!(analyze("foo/bar")?.name, "bar");
+        assert_eq!(
+            analyze("foo/bar"),
+            Err(LabelError(
+                "foo/bar must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         assert_eq!(analyze("@repo//foo")?.name, "foo");
         assert_eq!(analyze("//foo")?.name, "foo");
-        assert_eq!(analyze("foo")?.name, "foo");
+        assert_eq!(
+            analyze("foo"),
+            Err(LabelError(
+                "foo must be a legal label; relative packages are not permitted.".to_string()
+            ))
+        );
 
         Ok(())
     }
@@ -363,23 +420,6 @@ mod tests {
             analyze("@repo//foo/bar:baz")?.packages(),
             vec!["foo", "bar"]
         );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_is_absolute() -> Result<()> {
-        assert!(analyze("@repo//foo/bar:baz")?.is_absolute());
-        assert!(analyze("//foo/bar:baz")?.is_absolute());
-        assert!(!analyze("foo/bar:baz")?.is_absolute());
-
-        assert!(analyze("@repo//foo/bar")?.is_absolute());
-        assert!(analyze("//foo/bar")?.is_absolute());
-        assert!(!analyze("foo/bar")?.is_absolute());
-
-        assert!(analyze("@repo//foo")?.is_absolute());
-        assert!(analyze("//foo")?.is_absolute());
-        assert!(!analyze("foo")?.is_absolute());
 
         Ok(())
     }
