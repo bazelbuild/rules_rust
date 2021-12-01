@@ -29,6 +29,7 @@ def _transitive_crate_outputs_test():
         srcs = ["bar.rs"],
     )
 
+    # buildifier: disable=native-cc
     native.cc_library(
         name = "baz",
         srcs = ["baz.cc"],
