@@ -138,6 +138,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
     transitive_build_infos = []
     build_info = None
     linkstamps = []
+    transitive_crate_outputs = []
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
@@ -167,6 +168,12 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
             ))
 
             transitive_crates.append(depset([crate_info], transitive = [dep_info.transitive_crates]))
+            transitive_crate_outputs.append(
+                depset(
+                    [crate_info.output],
+                    transitive = [dep_info.transitive_crate_outputs],
+                ),
+            )
             transitive_noncrates.append(dep_info.transitive_noncrates)
             transitive_noncrate_libs.append(dep_info.transitive_libs)
             transitive_build_infos.append(dep_info.transitive_build_infos)
@@ -202,6 +209,7 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
                 transitive = transitive_noncrates,
                 order = "topological",  # dylib link flag ordering matters.
             ),
+            transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
             transitive_libs = transitive_libs,
             transitive_build_infos = depset(transitive = transitive_build_infos),
             dep_env = build_info.dep_env if build_info else None,
