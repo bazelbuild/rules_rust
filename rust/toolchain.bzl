@@ -60,6 +60,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             std_files = std_files,
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
+            all_targets = ctx.attr.srcs,
         ),
     ]
 
@@ -231,11 +232,21 @@ def _rust_toolchain_impl(ctx):
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
     make_rust_providers_target_independent = ctx.attr._incompatible_make_rust_providers_target_independent[IncompatibleFlagInfo]
+
+    expanded_stdlib_linkflags = []
+    for flag in ctx.attr.stdlib_linkflags:
+        expanded_stdlib_linkflags.append(
+            ctx.expand_location(
+                flag,
+                targets = ctx.attr.rust_lib[rust_common.stdlib_info].all_targets,
+            ),
+        )
+
     linking_context = cc_common.create_linking_context(
         linker_inputs = depset([
             cc_common.create_linker_input(
                 owner = ctx.label,
-                user_link_flags = depset(ctx.attr.stdlib_linkflags),
+                user_link_flags = depset(expanded_stdlib_linkflags),
             ),
         ]),
     )
@@ -363,8 +374,8 @@ rust_toolchain = rule(
         "stdlib_linkflags": attr.string_list(
             doc = (
                 "Additional linker flags to use when Rust std lib is linked by a C++ linker " +
-                "(rustc will deal with these automatically), " +
-                "see https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs"
+                "(rustc will deal with these automatically). " +
+                "Subject to location expansion with respect to the srcs of the rust_lib attribute."
             ),
             mandatory = True,
         ),
