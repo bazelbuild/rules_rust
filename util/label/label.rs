@@ -17,7 +17,7 @@ pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
         (None, None) => {
             return Err(LabelError(err(
                 label,
-                "labels must have a package and/or a target.",
+                "labels must have a package and/or a name.",
             )))
         }
         (Some(package_name), None) => name_from_package(package_name),
