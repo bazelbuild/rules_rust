@@ -48,7 +48,7 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
+        "transitive_libs": "List[File]: (Deprecated) All transitive dependencies, not filtered by type.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
     },
 )

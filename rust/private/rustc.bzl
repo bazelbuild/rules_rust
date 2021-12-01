@@ -112,7 +112,13 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             # attribute is required for compiling linkstamps.
             has_grep_includes)
 
-def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported = False, make_rust_providers_target_independent = False):
+def collect_deps(label,
+                 deps,
+                 proc_macro_deps,
+                 aliases,
+                 are_linkstamps_supported = False,
+                 make_rust_providers_target_independent = False,
+                 remove_transitive_libs_from_dep_info = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
@@ -123,6 +129,8 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
         are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
         make_rust_providers_target_independent (bool): Whether
             --incompatible_make_rust_providers_target_independent has been flipped.
+        remove_transitive_libs_from_dep_info (bool): Whether
+            --incompatible_remove_transitive_libs_from_dep_info has been flipped.
 
     Returns:
         tuple: Returns a tuple of:
@@ -175,14 +183,16 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
                 ),
             )
             transitive_noncrates.append(dep_info.transitive_noncrates)
-            transitive_noncrate_libs.append(dep_info.transitive_libs)
+            if not remove_transitive_libs_from_dep_info:
+                transitive_noncrate_libs.append(dep_info.transitive_libs)
             transitive_build_infos.append(dep_info.transitive_build_infos)
         elif cc_info:
             # This dependency is a cc_library
-            transitive_noncrate_libs.append(depset(
-                _collect_libs_from_linker_inputs(cc_info.linking_context.linker_inputs.to_list()),
-            ))
             transitive_noncrates.append(cc_info.linking_context.linker_inputs)
+            if not remove_transitive_libs_from_dep_info:
+                transitive_noncrate_libs.append(depset(
+                    _collect_libs_from_linker_inputs(cc_info.linking_context.linker_inputs.to_list())
+                ))
         elif dep_build_info:
             if build_info:
                 fail("Several deps are providing build information, " +
@@ -194,10 +204,12 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
                  "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
-    transitive_libs = depset(
-        [c.output for c in transitive_crates_depset.to_list()],
-        transitive = transitive_noncrate_libs,
-    )
+    transitive_libs = depset([])
+    if not remove_transitive_libs_from_dep_info:
+        transitive_libs = depset(
+            [c.output for c in transitive_crates_depset.to_list()],
+            transitive = transitive_noncrate_libs,
+        )
 
     return (
         rust_common.dep_info(
@@ -346,7 +358,8 @@ def collect_inputs(
         crate_info,
         dep_info,
         build_info,
-        stamp = False):
+        stamp = False,
+        remove_transitive_libs_from_dep_info = False):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -362,6 +375,8 @@ def collect_inputs(
         build_info (BuildInfo): The target Crate's build settings.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        remove_transitive_libs_from_dep_info (bool): Whether
+            --incompatible_remove_transitive_libs_from_dep_info has been flipped.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -379,6 +394,7 @@ def collect_inputs(
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
     additional_transitive_inputs = []
+<<<<<<< HEAD
     if crate_info.type in ("staticlib", "proc-macro"):
         additional_transitive_inputs = _collect_libs_from_linker_inputs(
             dep_info.transitive_noncrates.to_list(),
@@ -386,6 +402,16 @@ def collect_inputs(
     elif crate_info.type in ("bin", "dylib", "cdylib"):
         linker_inputs = dep_info.transitive_noncrates.to_list()
         additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs) + [
+=======
+    if crate_info.type == "staticlib":
+        additional_transitive_inputs = _collect_libs_from_linker_inputs(
+            dep_info.transitive_noncrates.to_list()) if remove_transitive_libs_from_dep_info else []
+    elif crate_info.type in ("bin", "dylib", "cdylib"):
+        linker_inputs = dep_info.transitive_noncrates.to_list()
+        additional_transitive_inputs = _collect_libs_from_linker_inputs(
+            linker_inputs
+        ) if remove_transitive_libs_from_dep_info else [] + [
+>>>>>>> 2c12626 (WIP)
             additional_input
             for linker_input in linker_inputs
             for additional_input in linker_input.additional_inputs
@@ -408,8 +434,13 @@ def collect_inputs(
             toolchain.rust_lib.files,
             linker_depset,
             crate_info.srcs,
+<<<<<<< HEAD
             dep_info.transitive_crate_outputs,
             depset(additional_transitive_inputs),
+=======
+            dep_info.transitive_crate_outputs if remove_transitive_libs_from_dep_info else dep_info.transitive_libs,
+            depset(direct = additional_transitive_inputs),
+>>>>>>> 2c12626 (WIP)
             crate_info.compile_data,
         ],
     )
@@ -719,6 +750,7 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
+    remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info
 
     dep_info, build_info, linkstamps = collect_deps(
         label = ctx.label,
@@ -730,6 +762,7 @@ def rustc_compile_action(
             has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
         ),
         make_rust_providers_target_independent = make_rust_providers_target_independent,
+        remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info,
     )
 
     # Determine if the build is currently running with --stamp
@@ -747,6 +780,7 @@ def rustc_compile_action(
         dep_info = dep_info,
         build_info = build_info,
         stamp = stamp,
+        remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info,
     )
 
     args, env_from_args = construct_arguments(
@@ -792,6 +826,17 @@ def rustc_compile_action(
         ),
     )
 
+<<<<<<< HEAD
+=======
+    dylibs = []
+    if crate_info.type in ("bin", "dylib", "cdylib", "staticlib"):
+        dylibs = [
+            get_preferred_artifact(lib)
+            for linker_input in dep_info.transitive_noncrates.to_list()
+            for lib in linker_input.libraries if _is_dylib(lib)
+        ]
+
+>>>>>>> 2c12626 (WIP)
     runfiles = ctx.runfiles(
         files = getattr(ctx.files, "data", []),
         collect_data = True,

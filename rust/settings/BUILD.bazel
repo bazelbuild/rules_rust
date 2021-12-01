@@ -9,6 +9,12 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/966",
 )
 
+incompatible_flag(
+    name = "incompatible_remove_transitive_libs_from_dep_info",
+    build_setting_default = False,
+    issue = "https://github.com/bazelbuild/rules_rust/issues/1051",
+)
+
 bzl_library(
     name = "rules",
     srcs = glob(["**/*.bzl"]),
