@@ -5,6 +5,7 @@ load(
     "//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_shared_library",
     "rust_static_library",
 )
@@ -31,7 +32,7 @@ def _native_dep_lib_name(ctx):
     if ctx.target_platform_has_constraint(
         ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
     ):
-        return "libbar.lib"
+        return "bar.lib"
     else:
         return "libbar.a"
 
@@ -79,6 +80,12 @@ def _native_action_inputs_test():
         deps = [":bar"],
     )
 
+    rust_proc_macro(
+        name = "foo_proc_macro",
+        srcs = ["foo.rs"],
+        deps = [":bar"],
+    )
+
     # buildifier: disable=native-cc
     native.cc_library(
         name = "bar",
@@ -105,6 +112,11 @@ def _native_action_inputs_test():
         target_under_test = ":foo_static",
     )
 
+    native_action_inputs_present_test(
+        name = "native_action_inputs_proc_macro_test",
+        target_under_test = ":foo_proc_macro",
+    )
+
 def native_action_inputs_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -120,5 +132,6 @@ def native_action_inputs_test_suite(name):
             ":native_action_inputs_bin_test",
             ":native_action_inputs_dylib_test",
             ":native_action_inputs_static_test",
+            ":native_action_inputs_proc_macro_test",
         ],
     )
