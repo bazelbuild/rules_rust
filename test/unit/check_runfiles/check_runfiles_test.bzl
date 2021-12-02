@@ -12,9 +12,10 @@ load(
 def _check_runfiles_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-
     runfiles = tut[DefaultInfo].default_runfiles.files.to_list()
+
     asserts.true(env, _is_in_runfiles("libbar.so", runfiles))
+
     return analysistest.end(env)
 
 def _is_in_runfiles(name, runfiles):
