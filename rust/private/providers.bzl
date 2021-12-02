@@ -82,13 +82,13 @@ StdLibInfo = provider(
         "generated based on existing files."
     ),
     fields = {
-        "all_targets": "List[Target]: All targets from the original `srcs` attribute.",
         "alloc_files": "List[File]: `.a` files related to the `alloc` module.",
         "between_alloc_and_core_files": "List[File]: `.a` files related to the `compiler_builtins` module.",
         "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
+        "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
     },

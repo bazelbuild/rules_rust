@@ -60,7 +60,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             std_files = std_files,
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
-            all_targets = ctx.attr.srcs,
+            srcs = ctx.attr.srcs,
         ),
     ]
 
@@ -238,7 +238,7 @@ def _rust_toolchain_impl(ctx):
         expanded_stdlib_linkflags.append(
             ctx.expand_location(
                 flag,
-                targets = ctx.attr.rust_lib[rust_common.stdlib_info].all_targets,
+                targets = ctx.attr.rust_lib[rust_common.stdlib_info].srcs,
             ),
         )
 
