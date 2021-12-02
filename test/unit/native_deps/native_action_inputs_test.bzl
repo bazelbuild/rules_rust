@@ -14,7 +14,7 @@ def _native_action_inputs_present_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    asserts.true(env, _has_action_input("libbar.a", action.inputs.to_list()))
+    asserts.true(env, _has_action_input(_native_dep_lib_name(ctx), action.inputs.to_list()))
 
     return analysistest.end(env)
 
@@ -23,9 +23,17 @@ def _native_action_inputs_not_present_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    asserts.false(env, _has_action_input("libbar.a", action.inputs.to_list()))
+    asserts.false(env, _has_action_input(_native_dep_lib_name(ctx), action.inputs.to_list()))
 
     return analysistest.end(env)
+
+def _native_dep_lib_name(ctx):
+    if ctx.target_platform_has_constraint(
+        ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
+    ):
+        return "libbar.lib"
+    else:
+        return "libbar.a"
 
 def _has_action_input(name, inputs):
     for file in inputs:
@@ -33,9 +41,17 @@ def _has_action_input(name, inputs):
             return True
     return False
 
-native_action_inputs_present_test = analysistest.make(_native_action_inputs_present_test_impl)
+native_action_inputs_present_test = analysistest.make(
+    _native_action_inputs_present_test_impl,
+    attrs = {
+        "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
 native_action_inputs_not_present_test = analysistest.make(
     _native_action_inputs_not_present_test_impl,
+    attrs = {
+        "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    },
 )
 
 def _native_action_inputs_test():

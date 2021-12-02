@@ -379,7 +379,7 @@ def collect_inputs(
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
     additional_transitive_inputs = []
-    if crate_info.type == "staticlib":
+    if crate_info.type in ("staticlib", "proc-macro"):
         additional_transitive_inputs = _collect_libs_from_linker_inputs(
             dep_info.transitive_noncrates.to_list(),
         )
