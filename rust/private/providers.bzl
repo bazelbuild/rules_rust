@@ -88,7 +88,7 @@ StdLibInfo = provider(
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
-        "srcs": "List[Target]: The original `src` attribute.",
+        "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
     },

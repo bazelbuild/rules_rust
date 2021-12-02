@@ -23,13 +23,30 @@ def _toolchain_specifies_target_json_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _toolchain_location_expands_linkflags_impl(ctx):
+    env = analysistest.begin(ctx)
+    toolchain_info = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
+
+    asserts.equals(
+        env,
+        "test:test/unit/toolchain/config.txt",
+        toolchain_info.stdlib_linkflags.linking_context.linker_inputs.to_list()[0].user_link_flags[0],
+    )
+
+    return analysistest.end(env)
+
 toolchain_specifies_target_triple_test = analysistest.make(_toolchain_specifies_target_triple_test_impl)
 toolchain_specifies_target_json_test = analysistest.make(_toolchain_specifies_target_json_test_impl)
+toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_location_expands_linkflags_impl)
 
 def _toolchain_test():
+    native.filegroup(
+        name = "stdlib_srcs",
+        srcs = ["config.txt"],
+    )
     rust_stdlib_filegroup(
         name = "std_libs",
-        srcs = [],
+        srcs = [":stdlib_srcs"],
     )
 
     native.filegroup(
@@ -59,6 +76,17 @@ def _toolchain_test():
         target_json = ":target_json",
     )
 
+    rust_toolchain(
+        name = "rust_location_expand_toolchain",
+        binary_ext = "",
+        dylib_ext = ".so",
+        os = "linux",
+        rust_lib = ":std_libs",
+        staticlib_ext = ".a",
+        stdlib_linkflags = ["test:$(location :stdlib_srcs)"],
+        target_json = ":target_json",
+    )
+
     toolchain_specifies_target_triple_test(
         name = "toolchain_specifies_target_triple_test",
         target_under_test = ":rust_triple_toolchain",
@@ -66,6 +94,10 @@ def _toolchain_test():
     toolchain_specifies_target_json_test(
         name = "toolchain_specifies_target_json_test",
         target_under_test = ":rust_json_toolchain",
+    )
+    toolchain_location_expands_linkflags_test(
+        name = "toolchain_location_expands_linkflags_test",
+        target_under_test = ":rust_location_expand_toolchain",
     )
 
 def toolchain_test_suite(name):
