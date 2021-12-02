@@ -1,0 +1,108 @@
+"""Unittests for rust rules."""
+
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load(
+    "//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_shared_library",
+    "rust_static_library",
+)
+
+def _native_action_inputs_present_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+
+    asserts.true(env, _has_action_input("libbar.a", action.inputs.to_list()))
+
+    return analysistest.end(env)
+
+def _native_action_inputs_not_present_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+
+    asserts.false(env, _has_action_input("libbar.a", action.inputs.to_list()))
+
+    return analysistest.end(env)
+
+def _has_action_input(name, inputs):
+    for file in inputs:
+        if file.basename == name:
+            return True
+    return False
+
+native_action_inputs_present_test = analysistest.make(_native_action_inputs_present_test_impl)
+native_action_inputs_not_present_test = analysistest.make(
+    _native_action_inputs_not_present_test_impl,
+)
+
+def _native_action_inputs_test():
+    rust_library(
+        name = "foo_lib",
+        srcs = ["foo.rs"],
+        deps = [":bar"],
+    )
+
+    rust_binary(
+        name = "foo_bin",
+        srcs = ["foo_main.rs"],
+        deps = [":bar"],
+    )
+
+    rust_shared_library(
+        name = "foo_dylib",
+        srcs = ["foo.rs"],
+        deps = [":bar"],
+    )
+
+    rust_static_library(
+        name = "foo_static",
+        srcs = ["foo.rs"],
+        deps = [":bar"],
+    )
+
+    # buildifier: disable=native-cc
+    native.cc_library(
+        name = "bar",
+        srcs = ["bar.cc"],
+    )
+
+    native_action_inputs_not_present_test(
+        name = "native_action_inputs_lib_test",
+        target_under_test = ":foo_lib",
+    )
+
+    native_action_inputs_present_test(
+        name = "native_action_inputs_bin_test",
+        target_under_test = ":foo_bin",
+    )
+
+    native_action_inputs_present_test(
+        name = "native_action_inputs_dylib_test",
+        target_under_test = ":foo_dylib",
+    )
+
+    native_action_inputs_present_test(
+        name = "native_action_inputs_static_test",
+        target_under_test = ":foo_static",
+    )
+
+def native_action_inputs_test_suite(name):
+    """Entry-point macro called from the BUILD file.
+
+    Args:
+        name: Name of the macro.
+    """
+    _native_action_inputs_test()
+
+    native.test_suite(
+        name = name,
+        tests = [
+            ":native_action_inputs_lib_test",
+            ":native_action_inputs_bin_test",
+            ":native_action_inputs_dylib_test",
+            ":native_action_inputs_static_test",
+        ],
+    )
