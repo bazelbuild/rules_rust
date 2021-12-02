@@ -35,7 +35,7 @@ def _check_runfiles_test():
 
     rust_binary(
         name = "foo_bin",
-        srcs = ["foo.rs"],
+        srcs = ["foo_main.rs"],
         deps = [":libbar.so"],
     )
 
