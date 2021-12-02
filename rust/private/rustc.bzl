@@ -774,17 +774,8 @@ def rustc_compile_action(
         ),
     )
 
-    dylibs = []
-    if crate_info.type not in ["rlib", "lib"]:
-        dylibs = [
-            get_preferred_artifact(lib)
-            for linker_input in dep_info.transitive_noncrates.to_list()
-            for lib in linker_input.libraries
-            if _is_dylib(lib)
-        ]
-
     runfiles = ctx.runfiles(
-        files = dylibs + getattr(ctx.files, "data", []),
+        files = getattr(ctx.files, "data", []),
         collect_data = True,
     )
 
