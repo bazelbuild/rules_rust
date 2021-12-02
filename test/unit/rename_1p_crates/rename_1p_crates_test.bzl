@@ -131,10 +131,15 @@ def _rename_1p_crates_test():
         srcs = ["main.rs"],
     )
 
-    rust_library(
-        name = "must-mangle/default-crate-name",
-        srcs = ["lib.rs"],
-    )
+    # FIXME: this seems to create this target twice: once with the overridden
+    # values in config_settings, and once with the stock values. Since the stock
+    # values (i.e. not mangling crate names) disallow '/' characters in target
+    # names, this causes an error, which prevents the overridden version of this
+    # target from being created and tested.
+    # rust_library(
+    #     name = "must-mangle/default-crate-name",
+    #     srcs = ["lib.rs"],
+    # )
 
     rust_library(
         name = "invalid-custom-crate-name",
@@ -173,10 +178,10 @@ def _rename_1p_crates_test():
         target_under_test = ":custom-crate-name-test",
     )
 
-    must_mangle_default_crate_name_test(
-        name = "must_mangle_default_crate_name_test",
-        target_under_test = ":must-mangle/default-crate-name",
-    )
+    # must_mangle_default_crate_name_test(
+    #     name = "must_mangle_default_crate_name_test",
+    #     target_under_test = ":must-mangle/default-crate-name",
+    # )
 
     invalid_custom_crate_name_test(
         name = "invalid_custom_crate_name_test",
@@ -201,7 +206,7 @@ def rename_1p_crates_test_suite(name):
             ":custom_crate_name_binary_test",
             ":default_crate_name_test_test",
             ":custom_crate_name_test_test",
-            ":must_mangle_default_crate_name_test",
+            # ":must_mangle_default_crate_name_test",
             ":invalid_custom_crate_name_test",
         ],
     )
