@@ -22,9 +22,13 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/1013",
 )
 
+# A flag specifying the location of vendored third-party rust crates within this
+# repository that must not be renamed when `rename_1p_crates` is enabled.
+#
+# Must be specified as a Bazel package, e.g. "//some/location/in/repo".
 string_flag(
     name = "third_party_dir",
-    build_setting_default = "third_party/rust/",
+    build_setting_default = "//third_party/rust",
 )
 
 bzl_library(

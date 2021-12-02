@@ -402,7 +402,7 @@ def _is_third_party_crate(label, toolchain):
     Returns:
         True if the crate is considered third-party, False otherwise.
     """
-    return (label.package + "/").startswith(toolchain._third_party_dir)
+    return ("//" + label.package + "/").startswith(toolchain._third_party_dir + "/")
 
 pairs = (
     (":", "colon"),

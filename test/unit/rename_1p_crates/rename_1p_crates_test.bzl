@@ -59,9 +59,19 @@ def _invalid_custom_crate_name_test_impl(ctx):
     asserts.expect_failure(env, "contains invalid character(s): -")
     return analysistest.end(env)
 
+def _third_party_lib_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    assert_argv_contains(env, tut.actions[0], "--crate-name=third_party_lib")
+    return analysistest.end(env)
+
 config_settings = {
     "//rust/settings:rename_1p_crates": True,
 }
+third_party_config_settings = dict(
+    config_settings,
+    **{"//rust/settings:third_party_dir": "//test/unit/rename_1p_crates/my_3p_dir"}
+)
 
 default_crate_name_library_test = analysistest.make(
     _default_crate_name_library_test_impl,
@@ -95,6 +105,10 @@ invalid_custom_crate_name_test = analysistest.make(
     _invalid_custom_crate_name_test_impl,
     config_settings = config_settings,
     expect_failure = True,
+)
+third_party_lib_test = analysistest.make(
+    _third_party_lib_test_impl,
+    config_settings = third_party_config_settings,
 )
 
 def _rename_1p_crates_test():
@@ -131,11 +145,11 @@ def _rename_1p_crates_test():
         srcs = ["main.rs"],
     )
 
-    # FIXME: this seems to create this target twice: once with the overridden
-    # values in config_settings, and once with the stock values. Since the stock
-    # values (i.e. not mangling crate names) disallow '/' characters in target
-    # names, this causes an error, which prevents the overridden version of this
-    # target from being created and tested.
+    # FIXME: this target gets created twice: once with the overridden values in
+    # config_settings, and once with the stock values. Since the stock values
+    # (i.e. not mangling crate names) disallow '/' characters in target names,
+    # this causes an error, which prevents the overridden version of this target
+    # from being created and tested.
     # rust_library(
     #     name = "must-mangle/default-crate-name",
     #     srcs = ["lib.rs"],
@@ -188,6 +202,12 @@ def _rename_1p_crates_test():
         target_under_test = ":invalid-custom-crate-name",
     )
 
+    third_party_lib_test(
+        name = "third_party_lib_test",
+        target_under_test = "//test/unit/rename_1p_crates/my_3p_dir:third_party_lib",
+    )
+
+
 def rename_1p_crates_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -208,5 +228,6 @@ def rename_1p_crates_test_suite(name):
             ":custom_crate_name_test_test",
             # ":must_mangle_default_crate_name_test",
             ":invalid_custom_crate_name_test",
+            ":third_party_lib_test",
         ],
     )

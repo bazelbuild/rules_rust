@@ -25,7 +25,7 @@ rust_library(
 # )
 
 # FIXME: compiles iff //settings:rename_1p_crates == True and
-# //settings:third_party_dir = "test/rename_1p_crates/my_3p_dir/".
+# //settings:third_party_dir = "//test/rename_1p_crates/my_3p_dir".
 # rust_library(
 #     name = "mod4",
 #     srcs = ["mod4.rs"],
