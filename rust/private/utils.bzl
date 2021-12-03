@@ -278,10 +278,10 @@ def compute_crate_name(attr, label, toolchain):
         return attr.crate_name
 
     if toolchain and label and toolchain._rename_1p_crates: 
-        if _is_third_party_crate(label, toolchain):
+        if is_third_party_package(label.package, toolchain._third_party_dir):
             crate_name = attr.name
         else:
-            crate_name = encode_label_as_crate_name(label)
+            crate_name = encode_label_as_crate_name(label.package, label.name)
     else:
         crate_name = name_to_crate_name(attr.name)
 
@@ -392,19 +392,23 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def _is_third_party_crate(label, toolchain):
-    """Determines if the given target is considered third-party.
+def is_third_party_package(package, third_party_dir):
+    """Determines if the given package is considered third-party.
 
     Args:
-        label (struct): The label of the current target.
-        toolchain (struct): The toolchain in use.
+        package (string): The package in question.
+        third_party_dir (string): The directory in which third-party packages are kept.
 
     Returns:
-        True if the crate is considered third-party, False otherwise.
+        True if the package is considered third-party, False otherwise.
     """
-    return ("//" + label.package + "/").startswith(toolchain._third_party_dir + "/")
+    return ("//" + package + "/").startswith(third_party_dir + "/")
 
-pairs = (
+# This is a list of pairs, where the first element of the pair is a character
+# that is allowed in Bazel package or target names but not in crate names; and
+# the second element is an encoding of that char suitable for use in a crate
+# name.
+_encodings = (
     (":", "colon"),
     ("!", "bang"),
     ("%", "percent"),
@@ -438,16 +442,28 @@ pairs = (
     (".", "dot"),
 )
 
-substitutions = [
-    new_pair for (old, new) in pairs 
-             for new_pair in (
+# For each of the above encodings, we generate two substitutions: one that
+# ensures any occurrences of the encodings themselves in the package/target
+# aren't clobbered by this translation, and one that does the encoding itself.
+_substitutions = [
+    subst for (old, new) in _encodings 
+             for subst in (
                  ("_{}_".format(new), "_quote{}_".format(new)),
                  (old, "_{}_".format(new))
              )
     ]
 
-def encode_label_as_crate_name(label):
-    full_name = label.package + ':' + label.name
-    for old, new in substitutions:
+def encode_label_as_crate_name(package, name):
+    """Encodes the package and target names in a format suitable for a crate name.
+
+    Args:
+        package (string): The package of the target in question.
+        name (string): The name of the target in question.
+
+    Returns:
+        A string that encodes the package and target name, to be used as the crate's name.
+    """
+    full_name = package + ':' + name
+    for old, new in _substitutions:
         full_name = full_name.replace(old, new)
     return full_name
