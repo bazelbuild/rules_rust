@@ -16,6 +16,11 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/1069",
 )
 
+# A flag controlling whether to rename first-party crates such that their names
+# encode the Bazel package and target name, instead of just the target name.
+#
+# First-party vs. third-party crates are identified using the value of
+# //settings:third_party_dir.
 incompatible_flag(
     name = "rename_1p_crates",
     build_setting_default = False,

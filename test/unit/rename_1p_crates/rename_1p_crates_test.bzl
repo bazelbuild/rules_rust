@@ -46,14 +46,6 @@ def _custom_crate_name_test_test_impl(ctx):
     assert_argv_contains(env, tut.actions[0], "--crate-name=custom_name")
     return analysistest.end(env)
 
-def _must_mangle_default_crate_name_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    # Note: crate name encodes entire label.
-    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_1p_crates_colon_must_dash_mangle_slash_default_dash_crate_dash_name")
-    return analysistest.end(env)
-
 def _invalid_custom_crate_name_test_impl(ctx):
     env = analysistest.begin(ctx)
     asserts.expect_failure(env, "contains invalid character(s): -")
@@ -62,6 +54,7 @@ def _invalid_custom_crate_name_test_impl(ctx):
 def _third_party_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
+    # Note: not renamed.
     assert_argv_contains(env, tut.actions[0], "--crate-name=third_party_lib")
     return analysistest.end(env)
 
@@ -95,10 +88,6 @@ default_crate_name_test_test = analysistest.make(
 )
 custom_crate_name_test_test = analysistest.make(
     _custom_crate_name_test_test_impl,
-    config_settings = config_settings,
-)
-must_mangle_default_crate_name_test = analysistest.make(
-    _must_mangle_default_crate_name_test_impl,
     config_settings = config_settings,
 )
 invalid_custom_crate_name_test = analysistest.make(
@@ -145,16 +134,6 @@ def _rename_1p_crates_test():
         srcs = ["main.rs"],
     )
 
-    # FIXME: this target gets created twice: once with the overridden values in
-    # config_settings, and once with the stock values. Since the stock values
-    # (i.e. not mangling crate names) disallow '/' characters in target names,
-    # this causes an error, which prevents the overridden version of this target
-    # from being created and tested.
-    # rust_library(
-    #     name = "must-mangle/default-crate-name",
-    #     srcs = ["lib.rs"],
-    # )
-
     rust_library(
         name = "invalid-custom-crate-name",
         crate_name = "hyphens-not-allowed",
@@ -192,11 +171,6 @@ def _rename_1p_crates_test():
         target_under_test = ":custom-crate-name-test",
     )
 
-    # must_mangle_default_crate_name_test(
-    #     name = "must_mangle_default_crate_name_test",
-    #     target_under_test = ":must-mangle/default-crate-name",
-    # )
-
     invalid_custom_crate_name_test(
         name = "invalid_custom_crate_name_test",
         target_under_test = ":invalid-custom-crate-name",
@@ -226,7 +200,6 @@ def rename_1p_crates_test_suite(name):
             ":custom_crate_name_binary_test",
             ":default_crate_name_test_test",
             ":custom_crate_name_test_test",
-            # ":must_mangle_default_crate_name_test",
             ":invalid_custom_crate_name_test",
             ":third_party_lib_test",
         ],
