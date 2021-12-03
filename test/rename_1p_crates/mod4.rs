@@ -1,4 +1,3 @@
-
 extern crate my_3p_lib;
 
 pub fn greeter(name: &str) -> String {
