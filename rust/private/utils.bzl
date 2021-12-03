@@ -277,7 +277,7 @@ def compute_crate_name(attr, label, toolchain):
             ))
         return attr.crate_name
 
-    if toolchain and label and toolchain._rename_1p_crates: 
+    if toolchain and label and toolchain._rename_1p_crates:
         if is_third_party_package(label.package, toolchain._third_party_dir):
             crate_name = attr.name
         else:
@@ -446,12 +446,13 @@ _encodings = (
 # ensures any occurrences of the encodings themselves in the package/target
 # aren't clobbered by this translation, and one that does the encoding itself.
 _substitutions = [
-    subst for (old, new) in _encodings 
-             for subst in (
-                 ("_{}_".format(new), "_quote{}_".format(new)),
-                 (old, "_{}_".format(new))
-             )
-    ]
+    subst
+    for (old, new) in _encodings
+    for subst in (
+        ("_{}_".format(new), "_quote{}_".format(new)),
+        (old, "_{}_".format(new)),
+    )
+]
 
 def encode_label_as_crate_name(package, name):
     """Encodes the package and target names in a format suitable for a crate name.
@@ -463,7 +464,7 @@ def encode_label_as_crate_name(package, name):
     Returns:
         A string that encodes the package and target name, to be used as the crate's name.
     """
-    full_name = package + ':' + name
+    full_name = package + ":" + name
     for old, new in _substitutions:
         full_name = full_name.replace(old, new)
     return full_name

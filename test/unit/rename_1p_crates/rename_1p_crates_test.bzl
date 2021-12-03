@@ -54,6 +54,7 @@ def _invalid_custom_crate_name_test_impl(ctx):
 def _third_party_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
+
     # Note: not renamed.
     assert_argv_contains(env, tut.actions[0], "--crate-name=third_party_lib")
     return analysistest.end(env)
@@ -180,7 +181,6 @@ def _rename_1p_crates_test():
         name = "third_party_lib_test",
         target_under_test = "//test/unit/rename_1p_crates/my_3p_dir:third_party_lib",
     )
-
 
 def rename_1p_crates_test_suite(name):
     """Entry-point macro called from the BUILD file.
