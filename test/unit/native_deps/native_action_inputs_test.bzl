@@ -14,8 +14,17 @@ def _native_action_inputs_present_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    inputs = action.inputs.to_list()
+    lib_name = _native_dep_lib_name(ctx)
 
-    asserts.true(env, _has_action_input(_native_dep_lib_name(ctx), action.inputs.to_list()))
+    asserts.true(
+        env,
+        _has_action_input(lib_name, inputs),
+        "Expected to contain {lib_name} as action input, got {inputs}".format(
+            lib_name = lib_name,
+            inputs = inputs,
+        ),
+    )
 
     return analysistest.end(env)
 
@@ -23,8 +32,14 @@ def _native_action_inputs_not_present_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    inputs = action.inputs.to_list()
+    lib_name = _native_dep_lib_name(ctx)
 
-    asserts.false(env, _has_action_input(_native_dep_lib_name(ctx), action.inputs.to_list()))
+    asserts.false(
+        env,
+        _has_action_input(lib_name, inputs),
+        "Expected not to contain {lib_name}".format(lib_name = lib_name),
+    )
 
     return analysistest.end(env)
 
