@@ -179,11 +179,9 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
             transitive_build_infos.append(dep_info.transitive_build_infos)
         elif cc_info:
             # This dependency is a cc_library
-
-            # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
-            linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-            libs = [get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries]
-            transitive_noncrate_libs.append(depset(libs))
+            transitive_noncrate_libs.append(depset(
+                _collect_libs_from_linker_inputs(cc_info.linking_context.linker_inputs.to_list()),
+            ))
             transitive_noncrates.append(cc_info.linking_context.linker_inputs)
         elif dep_build_info:
             if build_info:
@@ -217,6 +215,14 @@ def collect_deps(label, deps, proc_macro_deps, aliases, are_linkstamps_supported
         build_info,
         depset(transitive = linkstamps),
     )
+
+def _collect_libs_from_linker_inputs(linker_inputs):
+    # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
+    return [
+        get_preferred_artifact(lib)
+        for li in linker_inputs
+        for lib in li.libraries
+    ]
 
 def _get_crate_and_dep_info(dep):
     if type(dep) == "Target" and rust_common.crate_info in dep:
@@ -369,15 +375,19 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
-    # Pass linker additional inputs (e.g., linker scripts) only for linking-like
-    # actions, not for example where the output is rlib. This avoids quadratic
-    # behavior where transitive noncrates are flattened on each transitive
-    # rust_library dependency.
+    # Pass linker inputs only for linking-like actions, not for example where
+    # the output is rlib. This avoids quadratic behavior where transitive noncrates are
+    # flattened on each transitive rust_library dependency.
     additional_transitive_inputs = []
-    if crate_info.type in ("bin", "dylib", "cdylib"):
-        additional_transitive_inputs = [
+    if crate_info.type in ("staticlib", "proc-macro"):
+        additional_transitive_inputs = _collect_libs_from_linker_inputs(
+            dep_info.transitive_noncrates.to_list(),
+        )
+    elif crate_info.type in ("bin", "dylib", "cdylib"):
+        linker_inputs = dep_info.transitive_noncrates.to_list()
+        additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs) + [
             additional_input
-            for linker_input in dep_info.transitive_noncrates.to_list()
+            for linker_input in linker_inputs
             for additional_input in linker_input.additional_inputs
         ]
 
@@ -398,7 +408,7 @@ def collect_inputs(
             toolchain.rust_lib.files,
             linker_depset,
             crate_info.srcs,
-            dep_info.transitive_libs,
+            dep_info.transitive_crate_outputs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
         ],
