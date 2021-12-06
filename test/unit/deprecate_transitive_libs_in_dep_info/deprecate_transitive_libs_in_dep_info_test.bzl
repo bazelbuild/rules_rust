@@ -32,14 +32,14 @@ def _transitive_libs_in_dep_info_deprecated_impl(ctx):
 transitive_libs_in_dep_info_not_deprecated_test = analysistest.make(
     _transitive_libs_in_dep_info_not_deprecated_impl,
     config_settings = {
-        "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info": False,
+        "@//rust/settings:incompatible_remove_transitive_libs_from_dep_info": False,
     },
 )
 
 transitive_libs_in_dep_info_deprecated_test = analysistest.make(
     _transitive_libs_in_dep_info_deprecated_impl,
     config_settings = {
-        "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info": True,
+        "@//rust/settings:incompatible_remove_transitive_libs_from_dep_info": True,
     },
 )
 
