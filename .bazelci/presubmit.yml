@@ -65,6 +65,7 @@ tasks:
       - "-//test/incompatible_changes/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
     build_flags: *aspects_flags
+    bazel: "4.2.2"
   rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu1604
