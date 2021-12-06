@@ -1,6 +1,8 @@
 """ Unit tests for functions defined in utils.bzl. """
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
+
+# buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "encode_label_as_crate_name", "should_encode_label_in_crate_name")
 
 def _encode_label_as_crate_name_test_impl(ctx):
