@@ -22,10 +22,11 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
 
     if type == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
-        asserts.equals(env, None, library_to_link.interface_library)
         if _is_dylib_on_windows(env.ctx):
+            asserts.true(env, library_to_link.interface_library != None)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
         else:
+            asserts.equals(env, None, library_to_link.interface_library)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library != None)
         asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
         asserts.equals(env, None, library_to_link.static_library)
