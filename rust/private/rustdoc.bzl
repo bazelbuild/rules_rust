@@ -76,6 +76,7 @@ def rustdoc_compile_action(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
