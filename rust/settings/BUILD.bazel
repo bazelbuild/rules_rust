@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
 package(default_visibility = ["//visibility:public"])
@@ -21,10 +21,9 @@ incompatible_flag(
 #
 # First-party vs. third-party crates are identified using the value of
 # //settings:third_party_dir.
-incompatible_flag(
-    name = "rename_1p_crates",
+bool_flag(
+    name = "rename_first_party_crates",
     build_setting_default = False,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/1013",
 )
 
 # A flag specifying the location of vendored third-party rust crates within this

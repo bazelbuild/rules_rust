@@ -1,0 +1,4 @@
+load(":rename_first_party_crates_test.bzl", "rename_first_party_crates_test_suite")
+
+############################ UNIT TESTS #############################
+rename_first_party_crates_test_suite(name = "rename_first_party_crates_test_suite")

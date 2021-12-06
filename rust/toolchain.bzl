@@ -235,7 +235,7 @@ def _rust_toolchain_impl(ctx):
     remove_transitive_libs_from_dep_info = ctx.attr._incompatible_remove_transitive_libs_from_dep_info[IncompatibleFlagInfo]
     disable_custom_test_launcher = ctx.attr._incompatible_disable_custom_test_launcher[IncompatibleFlagInfo]
 
-    rename_1p_crates = ctx.attr._rename_1p_crates[IncompatibleFlagInfo].enabled
+    rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
 
     expanded_stdlib_linkflags = []
@@ -290,7 +290,7 @@ def _rust_toolchain_impl(ctx):
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
         _incompatible_remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info.enabled,
         _incompatible_disable_custom_test_launcher = disable_custom_test_launcher.enabled,
-        _rename_1p_crates = rename_1p_crates,
+        _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
     return [toolchain]
@@ -410,8 +410,8 @@ rust_toolchain = rule(
         "_incompatible_remove_transitive_libs_from_dep_info": attr.label(
             default = "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info",
         ),
-        "_rename_1p_crates": attr.label(
-            default = "@rules_rust//rust/settings:rename_1p_crates",
+        "_rename_first_party_crates": attr.label(
+            default = "@rules_rust//rust/settings:rename_first_party_crates",
         ),
         "_third_party_dir": attr.label(
             default = "@rules_rust//rust/settings:third_party_dir",

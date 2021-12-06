@@ -1,4 +1,4 @@
-"""Unit tests for renaming 1P crates."""
+"""Unit tests for renaming first-party crates."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
@@ -9,7 +9,7 @@ def _default_crate_name_library_test_impl(ctx):
     tut = analysistest.target_under_test(env)
 
     # Note: crate name encodes entire label.
-    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_1p_crates_colon_default_dash_crate_dash_name_dash_library")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_first_party_crates_colon_default_dash_crate_dash_name_dash_library")
     return analysistest.end(env)
 
 def _custom_crate_name_library_test_impl(ctx):
@@ -23,7 +23,7 @@ def _default_crate_name_binary_test_impl(ctx):
     tut = analysistest.target_under_test(env)
 
     # Note: crate name encodes entire label.
-    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_1p_crates_colon_default_dash_crate_dash_name_dash_binary")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_first_party_crates_colon_default_dash_crate_dash_name_dash_binary")
     return analysistest.end(env)
 
 def _custom_crate_name_binary_test_impl(ctx):
@@ -37,7 +37,7 @@ def _default_crate_name_test_test_impl(ctx):
     tut = analysistest.target_under_test(env)
 
     # Note: crate name encodes entire label.
-    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_1p_crates_colon_default_dash_crate_dash_name_dash_test")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=test_slash_unit_slash_rename_first_party_crates_colon_default_dash_crate_dash_name_dash_test")
     return analysistest.end(env)
 
 def _custom_crate_name_test_test_impl(ctx):
@@ -60,11 +60,11 @@ def _third_party_lib_test_impl(ctx):
     return analysistest.end(env)
 
 config_settings = {
-    "//rust/settings:rename_1p_crates": True,
+    "//rust/settings:rename_first_party_crates": True,
 }
 third_party_config_settings = dict(
     config_settings,
-    **{"//rust/settings:third_party_dir": "//test/unit/rename_1p_crates/my_3p_dir"}
+    **{"//rust/settings:third_party_dir": "//test/unit/rename_first_party_crates/my_third_party_dir"}
 )
 
 default_crate_name_library_test = analysistest.make(
@@ -101,7 +101,7 @@ third_party_lib_test = analysistest.make(
     config_settings = third_party_config_settings,
 )
 
-def _rename_1p_crates_test():
+def _rename_first_party_crates_test():
     rust_library(
         name = "default-crate-name-library",
         srcs = ["lib.rs"],
@@ -179,17 +179,17 @@ def _rename_1p_crates_test():
 
     third_party_lib_test(
         name = "third_party_lib_test",
-        target_under_test = "//test/unit/rename_1p_crates/my_3p_dir:third_party_lib",
+        target_under_test = "//test/unit/rename_first_party_crates/my_third_party_dir:third_party_lib",
     )
 
-def rename_1p_crates_test_suite(name):
+def rename_first_party_crates_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
     Args:
         name: Name of the macro.
     """
 
-    _rename_1p_crates_test()
+    _rename_first_party_crates_test()
 
     native.test_suite(
         name = name,

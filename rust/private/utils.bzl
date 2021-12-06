@@ -257,39 +257,39 @@ def _invalid_chars_in_crate_name(name):
 
     return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
 
-def compute_crate_name(attr, label, toolchain):
+def compute_crate_name(label, toolchain, name_override = None):
     """Returns the crate name to use for the current target.
 
     Args:
-        attr (struct): The attributes of the current target.
         label (struct): The label of the current target.
         toolchain (struct): The toolchain in use for the target.
+        name_override (String): An optional name to use (as an override of label.name).
 
     Returns:
         str: The crate name to use for this target.
     """
-    if hasattr(attr, "crate_name") and attr.crate_name:
-        invalid_chars = _invalid_chars_in_crate_name(attr.crate_name)
+    if name_override:
+        invalid_chars = _invalid_chars_in_crate_name(name_override)
         if invalid_chars:
             fail("Crate name '{}' contains invalid character(s): {}".format(
-                attr.crate_name,
+                name_override,
                 " ".join(invalid_chars),
             ))
-        return attr.crate_name
+        return name_override
 
-    if toolchain and label and toolchain._rename_1p_crates:
-        if is_third_party_package(label.package, toolchain._third_party_dir):
-            crate_name = attr.name
+    if toolchain and label and toolchain._rename_first_party_crates:
+        if should_encode_label_in_crate_name(label.package, toolchain._third_party_dir):
+            crate_name = label.name
         else:
             crate_name = encode_label_as_crate_name(label.package, label.name)
     else:
-        crate_name = name_to_crate_name(attr.name)
+        crate_name = name_to_crate_name(label.name)
 
     invalid_chars = _invalid_chars_in_crate_name(crate_name)
     if invalid_chars:
         fail(
             "Crate name '{}' ".format(crate_name) +
-            "derived from Bazel target name '{}' ".format(attr.name) +
+            "derived from Bazel target name '{}' ".format(label.name) +
             "contains invalid character(s): {}\n".format(" ".join(invalid_chars)) +
             "Consider adding a crate_name attribute to set a valid crate name",
         )
@@ -392,16 +392,20 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def is_third_party_package(package, third_party_dir):
-    """Determines if the given package is considered third-party.
+def should_encode_label_in_crate_name(package, third_party_dir):
+    """Determines if the crate's name should include the Bazel label, encoded.
+
+    Names of third-party crates do not encode the full label.
 
     Args:
         package (string): The package in question.
         third_party_dir (string): The directory in which third-party packages are kept.
 
     Returns:
-        True if the package is considered third-party, False otherwise.
+        True if the crate name should encode the label, False otherwise.
     """
+    # TODO(hlopko): This code assumes a monorepo; make it work with external
+    # repositories as well.
     return ("//" + package + "/").startswith(third_party_dir + "/")
 
 # This is a list of pairs, where the first element of the pair is a character
