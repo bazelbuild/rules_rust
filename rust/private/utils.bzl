@@ -404,6 +404,7 @@ def should_encode_label_in_crate_name(package, third_party_dir):
     Returns:
         True if the crate name should encode the label, False otherwise.
     """
+
     # TODO(hlopko): This code assumes a monorepo; make it work with external
     # repositories as well.
     return ("//" + package + "/").startswith(third_party_dir + "/")
