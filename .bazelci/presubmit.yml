@@ -34,6 +34,7 @@ tasks:
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       - "-//test/incompatible_changes/..."
+    bazel: "4.2.2"      
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
