@@ -3,9 +3,7 @@ aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
 default_linux_targets: &default_linux_targets
-  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//test/incompatible_changes/..."
   # TODO: Switch manual tag to platform constraint after bazel 4.0.
   - "//test/versioned_dylib:versioned_dylib_test"
 default_macos_targets: &default_macos_targets
@@ -17,7 +15,6 @@ default_windows_targets: &default_windows_targets
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
   - "-//test/rustfmt/..."
-  - "-//test/incompatible_changes/..."
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -33,7 +30,6 @@ tasks:
       - "//..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      - "-//test/incompatible_changes/..."
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -62,7 +58,6 @@ tasks:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "//test/..."
-      - "-//test/incompatible_changes/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
     build_flags: *aspects_flags
   rbe_ubuntu1604_rolling_with_aspects:
@@ -76,7 +71,6 @@ tasks:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "//test/..."
-      - "-//test/incompatible_changes/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
     build_flags: *aspects_flags
     soft_fail: yes
