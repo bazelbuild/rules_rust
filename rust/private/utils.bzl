@@ -447,15 +447,17 @@ _encodings = (
     (".", "dot"),
 )
 
-# For each of the above encodings, we generate two substitutions: one that
+# For each of the above encodings, we generate two substitution rules: one that
 # ensures any occurrences of the encodings themselves in the package/target
 # aren't clobbered by this translation, and one that does the encoding itself.
-_substitutions = [
+# We also include a rule that protects the clobbering-protection rules from
+# getting clobbered.
+_substitutions = [("_quote", "_quotequote_")] + [
     subst
-    for (old, new) in _encodings
+    for (pattern, replacement) in _encodings
     for subst in (
-        ("_{}_".format(new), "_quote{}_".format(new)),
-        (old, "_{}_".format(new)),
+        ("_{}_".format(replacement), "_quote{}_".format(replacement)),
+        (pattern, "_{}_".format(replacement)),
     )
 ]
 
@@ -470,6 +472,72 @@ def encode_label_as_crate_name(package, name):
         A string that encodes the package and target name, to be used as the crate's name.
     """
     full_name = package + ":" + name
-    for old, new in _substitutions:
-        full_name = full_name.replace(old, new)
-    return full_name
+    return _replace_all(full_name, _substitutions)
+
+def decode_crate_name_as_label_for_testing(crate_name):
+    """Decodes a crate_name that was encoded by encode_label_as_crate_name.
+
+    This is used to check that the encoding is bijective; it is expected to only
+    be used in tests.
+
+    Args:
+        crate_name (string): The name of the crate.
+
+    Returns:
+        A string representing the Bazel label (package and target).
+    """
+    return _replace_all(crate_name, [(t[1], t[0]) for t in _substitutions])
+
+def _replace_all(string, substitutions):
+    """Replaces occurrences of the given patterns in `string`.
+
+    Args:
+        string (string): the string in which the replacements should be performed.
+        substitutions: the list of patterns and replacements to apply.
+
+    Returns:
+        A string with the appropriate substitutions performed.
+
+    There are a few reasons this looks complicated:
+    * The substitutions are performed with some priority, i.e. patterns that are
+      listed first in `substitutions` are higher priority than patterns that are
+      listed later.
+    * We also take pains to avoid doing replacements that overlap with each
+      other, since overlaps invalidate pattern matches.
+    * To avoid hairy offset invalidation, we apply the substitutions
+      right-to-left.
+    * To avoid the "_quote" -> "_quotequote_" rule introducing new pattern
+      matches later in the string during decoding, we take the leftmost
+      replacement, in cases of overlap.  (Note that no rule can induce new
+      pattern matches *earlier* in the string.) (E.g. "_quotedot_" encodes to
+      "_quotequote_dot_". Note that "_quotequote_" and "_dot_" both occur in
+      this string, and overlap.).
+    """
+
+    # Find the highest-priority pattern matches.
+    plan = {}
+    for subst_index, (pattern, replacement) in enumerate(substitutions):
+        for pattern_start in range(len(string)):
+            if not pattern_start in plan and string.startswith(pattern, pattern_start):
+                plan[pattern_start] = (len(pattern), replacement)
+
+    # Drop replacements that overlap with a replacement earlier in the string.
+    replaced_indices_set = {}
+    leftmost_plan = {}
+    for pattern_start in sorted(plan.keys()):
+        length, _ = plan[pattern_start]
+        pattern_indices = list(range(pattern_start, pattern_start + length))
+        if any([i in replaced_indices_set for i in pattern_indices]):
+            continue
+        replaced_indices_set.update([(i, True) for i in pattern_indices])
+        leftmost_plan[pattern_start] = plan[pattern_start]
+
+    plan = leftmost_plan
+
+    # Execute the replacement plan, working from right to left.
+    for pattern_start in sorted(plan.keys(), reverse=True):
+        length, replacement = plan[pattern_start]
+        after_pattern = pattern_start + length
+        string = string[:pattern_start] + replacement + string[after_pattern:]
+
+    return string

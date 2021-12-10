@@ -3,31 +3,46 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "encode_label_as_crate_name", "should_encode_label_in_crate_name")
+load("//rust/private:utils.bzl", "decode_crate_name_as_label_for_testing", "encode_label_as_crate_name", "should_encode_label_in_crate_name")
 
 def _encode_label_as_crate_name_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # Typical case:
+    # Typical case.
     asserts.equals(
         env,
         "some_slash_package_colon_target",
         encode_label_as_crate_name("some/package", "target"),
     )
 
-    # Target name includes a character illegal in crate names:
+    # Target name includes a character illegal in crate names.
     asserts.equals(
         env,
         "some_slash_package_colon_foo_slash_target",
         encode_label_as_crate_name("some/package", "foo/target"),
     )
 
-    # Package/target includes some of the substitutions:
+    # Package/target includes some of the encodings.
     asserts.equals(
         env,
         "some_quoteslash__slash_package_colon_target_quotedot_foo",
         encode_label_as_crate_name("some_slash_/package", "target_dot_foo"),
     )
+
+    # Some pathological cases: test that round-tripping the encoding works as
+    # expected.
+
+    # Label includes a quoted encoding.
+    package = "_quotedot_"
+    target = "target"
+    asserts.equals(env, "_quotequote_dot__colon_target", encode_label_as_crate_name(package, target))
+    asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
+
+    # Package is identical to a valid encoding already.
+    package = "_quotequote_dot__colon_target"
+    target = "target"
+    asserts.equals(env, "_quotequote_quote_quotedot__quotecolon_target_colon_target", encode_label_as_crate_name(package, target))
+    asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
     return unittest.end(env)
 
 def _is_third_party_crate_test_impl(ctx):
