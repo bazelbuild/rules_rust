@@ -36,6 +36,12 @@ def win_interface_library_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:windows"],
     )
 
+    native.filegroup(
+        name = "mylib.pdb",
+        srcs = [":mylib"],
+        output_group = "pdb_file",
+    )
+
     cc_binary(
         name = "mybin",
         srcs = ["bin.cc"],

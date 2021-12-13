@@ -375,6 +375,23 @@ def _create_test_launcher(ctx, toolchain, output, env, providers):
     if not default_info:
         fail("No DefaultInfo provider returned from `rustc_compile_action`")
 
+    output_group_info = OutputGroupInfo(
+        launcher_files = depset(launcher_files),
+        output = depset([output]),
+    )
+
+    # Binaries on Windows might provide a pdb file via an `OutputGroupInfo` that we need to merge
+    if toolchain.os == "windows":
+        for i in range(len(providers)):
+            if type(providers[i]) == "OutputGroupInfo":
+                output_group_info = OutputGroupInfo(
+                    launcher_files = output_group_info.launcher_files,
+                    output = output_group_info.output,
+                    pdb_file = providers[i].pdb_file,
+                )
+                providers.pop(i)
+                break
+
     providers.extend([
         DefaultInfo(
             files = default_info.files,
@@ -384,10 +401,7 @@ def _create_test_launcher(ctx, toolchain, output, env, providers):
             ),
             executable = launcher,
         ),
-        OutputGroupInfo(
-            launcher_files = depset(launcher_files),
-            output = depset([output]),
-        ),
+        output_group_info,
     ])
 
     return providers
