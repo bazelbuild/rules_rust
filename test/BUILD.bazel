@@ -5,7 +5,7 @@ load(
 
 rule_test(
     name = "hello_lib_rule_test",
-    generates = ["libhello_lib--145651613.rlib"],
+    generates = ["libhello_lib-145651613.rlib"],
     rule = "//test/rust:hello_lib",
 )
 
