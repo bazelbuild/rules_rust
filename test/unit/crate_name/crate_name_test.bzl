@@ -56,10 +56,16 @@ def _invalid_custom_crate_name_test_impl(ctx):
     asserts.expect_failure(env, "contains invalid character(s): -")
     return analysistest.end(env)
 
-# Regression test to check that the extra hash value appended to the library
-# filename only contains one dash. Previously, the hash for `slib` was negative,
-# resulting in an extra dash in the filename (--codegen_extra_filename=--517943325).
 def _slib_library_name_test_impl(ctx):
+    """Regression test for extra-filename.
+
+    Checks that the extra hash value appended to the library filename only
+    contains one dash. Previously, the hash for `slib` was negative,
+    resulting in an extra dash in the filename (--codegen_extra_filename=--517943325).
+
+    Args:
+      ctx: rule context.
+    """
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     assert_argv_contains(env, tut.actions[0], "--codegen=extra-filename=-517943325")
