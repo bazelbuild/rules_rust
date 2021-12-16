@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//rust:defs.bzl", "rust_shared_library")
+load("//rust:defs.bzl", "rust_binary", "rust_shared_library")
 
 def _win_interface_library_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -47,6 +47,18 @@ def win_interface_library_analysis_test_suite(name):
         srcs = ["bin.cc"],
         deps = [":mylib"],
         target_compatible_with = ["@platforms//os:windows"],
+    )
+
+    rust_binary(
+        name = "myrustbin",
+        srcs = ["main.rs"],
+        target_compatible_with = ["@platforms//os:windows"],
+    )
+
+    native.filegroup(
+        name = "myrustbin.pdb",
+        srcs = [":myrustbin"],
+        output_group = "pdb_file",
     )
 
     win_interface_library_test(

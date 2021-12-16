@@ -56,6 +56,21 @@ def _invalid_custom_crate_name_test_impl(ctx):
     asserts.expect_failure(env, "contains invalid character(s): -")
     return analysistest.end(env)
 
+def _slib_library_name_test_impl(ctx):
+    """Regression test for extra-filename.
+
+    Checks that the extra hash value appended to the library filename only
+    contains one dash. Previously, the hash for `slib` was negative,
+    resulting in an extra dash in the filename (--codegen_extra_filename=--517943325).
+
+    Args:
+      ctx: rule context.
+    """
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    assert_argv_contains(env, tut.actions[0], "--codegen=extra-filename=-517943325")
+    return analysistest.end(env)
+
 default_crate_name_library_test = analysistest.make(
     _default_crate_name_library_test_impl,
 )
@@ -81,6 +96,9 @@ invalid_default_crate_name_test = analysistest.make(
 invalid_custom_crate_name_test = analysistest.make(
     _invalid_custom_crate_name_test_impl,
     expect_failure = True,
+)
+slib_library_name_test = analysistest.make(
+    _slib_library_name_test_impl,
 )
 
 def _crate_name_test():
@@ -128,6 +146,16 @@ def _crate_name_test():
         crate_name = "hyphens-not-allowed",
         srcs = ["lib.rs"],
         tags = ["manual", "norustfmt"],
+    )
+
+    rust_library(
+        name = "slib",
+        srcs = ["slib.rs"],
+    )
+
+    slib_library_name_test(
+        name = "slib_library_name_test",
+        target_under_test = ":slib",
     )
 
     default_crate_name_library_test(

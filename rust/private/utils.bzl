@@ -132,7 +132,12 @@ def determine_output_hash(crate_root):
     Returns:
         str: A string representation of the hash.
     """
-    return repr(hash(crate_root.path))
+
+    # Take the absolute value of hash() since it could be negative.
+    h = hash(crate_root.path)
+    if h < 0:
+        h = -h
+    return repr(h)
 
 def get_preferred_artifact(library_to_link):
     """Get the first available library to link from a LibraryToLink object.
