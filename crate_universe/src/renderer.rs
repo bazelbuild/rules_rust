@@ -614,6 +614,7 @@ mod tests {
                     name = "rule_prefix__lazy_static__1_4_0",
                     strip_prefix = "",
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
+                    init_submodules = True,
                     remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
                     commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
                 )
@@ -655,6 +656,7 @@ mod tests {
                     name = "rule_prefix__lazy_static__1_4_0",
                     strip_prefix = "",
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
+                    init_submodules = True,
                     remote = "https://github.com/rust-lang-nursery/lazy-static.rs.git",
                     commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
                 )

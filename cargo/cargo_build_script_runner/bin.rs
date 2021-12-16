@@ -110,6 +110,10 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
+    if let Some(ld_path) = env::var_os("LD") {
+        command.env("LD", exec_root.join(ld_path));
+    }
+
     // replace env vars with a ${pwd} prefix with the exec_root
     for (key, value) in env::vars() {
         let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
