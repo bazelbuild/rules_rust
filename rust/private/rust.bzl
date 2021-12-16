@@ -320,6 +320,9 @@ def _rust_binary_impl(ctx):
 def _create_test_launcher(ctx, toolchain, output, env, providers):
     """Create a process wrapper to ensure runtime environment variables are defined for the test binary
 
+    WARNING: This function is subject to deletion with the removal of
+    incompatible_disable_custom_test_launcher
+
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current rust toolchain
@@ -474,7 +477,7 @@ def _rust_test_common(ctx, toolchain, output):
     )
     providers.append(testing.TestEnvironment(env))
 
-    if any(["{pwd}" in v for v in env.values()]):
+    if not toolchain._incompatible_disable_custom_test_launcher and any(["{pwd}" in v for v in env.values()]):
         # Some of the environment variables require expanding {pwd} placeholder at runtime,
         # we need a launcher for that.
         return _create_test_launcher(ctx, toolchain, output, env, providers)

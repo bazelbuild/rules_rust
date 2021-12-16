@@ -1,0 +1,5 @@
+load(":disable_custom_test_launcher_test.bzl", "disable_custom_test_launcher_test_suite")
+
+disable_custom_test_launcher_test_suite(
+    name = "disable_custom_test_launcher_test_suite",
+)
