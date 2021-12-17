@@ -312,6 +312,10 @@ INFO: Running command line: bazel-bin/examples/rust/hello_world/hello_world
 Hello world
 ```
 
+On Windows, a PDB file containing debugging information is available under
+the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+is available under the key `dsym_folder` in `OutputGroupInfo`.
+
 **ATTRIBUTES**
 
 

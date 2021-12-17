@@ -36,12 +36,6 @@ def win_interface_library_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:windows"],
     )
 
-    native.filegroup(
-        name = "mylib.pdb",
-        srcs = [":mylib"],
-        output_group = "pdb_file",
-    )
-
     cc_binary(
         name = "mybin",
         srcs = ["bin.cc"],
@@ -53,12 +47,6 @@ def win_interface_library_analysis_test_suite(name):
         name = "myrustbin",
         srcs = ["main.rs"],
         target_compatible_with = ["@platforms//os:windows"],
-    )
-
-    native.filegroup(
-        name = "myrustbin.pdb",
-        srcs = [":myrustbin"],
-        output_group = "pdb_file",
     )
 
     win_interface_library_test(
