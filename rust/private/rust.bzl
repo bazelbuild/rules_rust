@@ -320,6 +320,9 @@ def _rust_binary_impl(ctx):
 def _create_test_launcher(ctx, toolchain, output, env, providers):
     """Create a process wrapper to ensure runtime environment variables are defined for the test binary
 
+    WARNING: This function is subject to deletion with the removal of
+    incompatible_disable_custom_test_launcher
+
     Args:
         ctx (ctx): The rule's context object
         toolchain (rust_toolchain): The current rust toolchain
@@ -375,6 +378,23 @@ def _create_test_launcher(ctx, toolchain, output, env, providers):
     if not default_info:
         fail("No DefaultInfo provider returned from `rustc_compile_action`")
 
+    output_group_info = OutputGroupInfo(
+        launcher_files = depset(launcher_files),
+        output = depset([output]),
+    )
+
+    # Binaries on Windows might provide a pdb file via an `OutputGroupInfo` that we need to merge
+    if toolchain.os == "windows":
+        for i in range(len(providers)):
+            if type(providers[i]) == "OutputGroupInfo":
+                output_group_info = OutputGroupInfo(
+                    launcher_files = output_group_info.launcher_files,
+                    output = output_group_info.output,
+                    pdb_file = providers[i].pdb_file,
+                )
+                providers.pop(i)
+                break
+
     providers.extend([
         DefaultInfo(
             files = default_info.files,
@@ -384,10 +404,7 @@ def _create_test_launcher(ctx, toolchain, output, env, providers):
             ),
             executable = launcher,
         ),
-        OutputGroupInfo(
-            launcher_files = depset(launcher_files),
-            output = depset([output]),
-        ),
+        output_group_info,
     ])
 
     return providers
@@ -474,7 +491,7 @@ def _rust_test_common(ctx, toolchain, output):
     )
     providers.append(testing.TestEnvironment(env))
 
-    if any(["{pwd}" in v for v in env.values()]):
+    if not toolchain._incompatible_disable_custom_test_launcher and any(["{pwd}" in v for v in env.values()]):
         # Some of the environment variables require expanding {pwd} placeholder at runtime,
         # we need a launcher for that.
         return _create_test_launcher(ctx, toolchain, output, env, providers)

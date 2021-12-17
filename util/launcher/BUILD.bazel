@@ -1,3 +1,6 @@
+# WARNING: This package is subject to deletion with the removal of
+# incompatible_disable_custom_test_launcher
+
 load("//rust:defs.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])

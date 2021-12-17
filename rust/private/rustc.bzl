@@ -794,19 +794,26 @@ def rustc_compile_action(
 
     outputs = [crate_info.output]
 
-    # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
-    # interface library that rustc generates in the output files.
     interface_library = None
-    if toolchain.os == "windows" and crate_info.type == "cdylib":
-        # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
-        # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
-        interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
-        outputs.append(interface_library)
+    pdb_file = None
+    if toolchain.os == "windows":
+        # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
+        # interface library that rustc generates in the output files.
+        if crate_info.type == "cdylib":
+            # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
+            # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
+            interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
+            outputs.append(interface_library)
+
+        # Rustc always generates a pdb file so provide it in an output group for crate types that benefit from having
+        # debug information in a separate file. Note that test targets do really need a pdb we skip them.
+        if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb")
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = outputs,
+        outputs = outputs + [pdb_file] if pdb_file else outputs,
         env = env,
         arguments = args.all,
         mnemonic = "Rustc",
@@ -839,6 +846,8 @@ def rustc_compile_action(
     ]
     if toolchain.target_arch != "wasm32":
         providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    if pdb_file:
+        providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
 
     return providers
 
