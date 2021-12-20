@@ -61,14 +61,14 @@ def _assert_correct_dep_mapping(ctx):
                 ),
             )
 
-def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
+def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
     """See https://github.com/bazelbuild/rules_rust/issues/405
 
     Args:
         name (str): The name of the current target
         crate_type (str): The `crate_type`
         toolchain (rust_toolchain): The current `rust_toolchain`
-        lib_hash (str, optional): The hashed crate root path. Defaults to "".
+        lib_hash (str, optional): The hashed crate root path
 
     Returns:
         str: A unique library name
@@ -97,10 +97,10 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = ""):
     if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
         prefix = ""
 
-    return "{prefix}{name}-{lib_hash}{extension}".format(
+    return "{prefix}{name}{lib_hash}{extension}".format(
         prefix = prefix,
         name = name,
-        lib_hash = lib_hash,
+        lib_hash = "-" + lib_hash if lib_hash else "",
         extension = extension,
     )
 
@@ -202,6 +202,10 @@ def _rust_shared_library_impl(ctx):
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc.
 
+    On Windows, a PDB file containing debugging information is available under
+    the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+    is available under the key `dsym_folder` in `OutputGroupInfo`.
+
     Args:
         ctx (ctx): The rule's context object
 
@@ -239,8 +243,15 @@ def _rust_library_common(ctx, crate_type):
 
     toolchain = find_toolchain(ctx)
 
-    # Determine unique hash for this rlib
-    output_hash = determine_output_hash(crate_root)
+    # Determine unique hash for this rlib.
+    # Note that we don't include a hash for `cdylib` since they are meant to be consumed externally and having a
+    # deterministic name is important since it ends up embedded in the executable. This is problematic when one needs
+    # to include the library with a specific filename into a larger application.
+    # (see https://github.com/bazelbuild/rules_rust/issues/405#issuecomment-993089889 for more details)
+    if crate_type != "cdylib":
+        output_hash = determine_output_hash(crate_root)
+    else:
+        output_hash = None
 
     crate_name = compute_crate_name(ctx.label, toolchain, ctx.attr.crate_name)
     rust_lib_name = _determine_lib_name(
@@ -1009,6 +1020,10 @@ rust_binary = rule(
         INFO: Running command line: bazel-bin/examples/rust/hello_world/hello_world
         Hello world
         ```
+
+        On Windows, a PDB file containing debugging information is available under
+        the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+        is available under the key `dsym_folder` in `OutputGroupInfo`.
 """),
 )
 
