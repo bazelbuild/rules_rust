@@ -60,11 +60,11 @@ def _third_party_lib_test_impl(ctx):
     return analysistest.end(env)
 
 config_settings = {
-    "//rust/settings:rename_first_party_crates": True,
+    "@//rust/settings:rename_first_party_crates": True,
 }
 third_party_config_settings = dict(
     config_settings,
-    **{"//rust/settings:third_party_dir": "//test/unit/rename_first_party_crates/my_third_party_dir"}
+    **{"@//rust/settings:third_party_dir": "//test/unit/rename_first_party_crates/my_third_party_dir"}
 )
 
 default_crate_name_library_test = analysistest.make(
