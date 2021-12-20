@@ -255,9 +255,8 @@ def _rust_library_common(ctx, crate_type):
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -296,9 +295,8 @@ def _rust_binary_impl(ctx):
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -430,9 +428,8 @@ def _rust_test_common(ctx, toolchain, output):
     crate_name = crate_name_from_attr(ctx.attr)
     crate_type = "bin"
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config

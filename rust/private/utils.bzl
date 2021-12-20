@@ -361,7 +361,7 @@ def is_exec_configuration(ctx):
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec-") == -1
 
-def transform_deps(deps, make_rust_providers_target_independent):
+def transform_deps(deps):
     """Conditionally transform a [Target] into [DepVariantInfo].
 
     This helper function is used to transform ctx.attr.deps and ctx.attr.proc_macro_deps into
@@ -371,8 +371,6 @@ def transform_deps(deps, make_rust_providers_target_independent):
 
     Args:
         deps (list of Targets): Dependencies comming from ctx.attr.deps or ctx.attr.proc_macro_deps
-        make_rust_providers_target_independent (bool): The value of
-            --//rust/settings:incompatible_make_rust_providers_target_independent.
 
     Returns:
         list of DepVariantInfos if --//rust/settings:incompatible_make_rust_providers_target has
@@ -383,4 +381,4 @@ def transform_deps(deps, make_rust_providers_target_independent):
         dep_info = dep[DepInfo] if DepInfo in dep else None,
         build_info = dep[BuildInfo] if BuildInfo in dep else None,
         cc_info = dep[CcInfo] if CcInfo in dep else None,
-    ) for dep in deps] if make_rust_providers_target_independent else deps
+    ) for dep in deps]

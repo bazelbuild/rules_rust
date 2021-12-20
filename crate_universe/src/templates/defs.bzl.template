@@ -10,7 +10,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 {% break %}
 {%- endif %}
 {%- endfor %}
-{%- if crates %}
+{%- if crates -%}
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+
 {% endif -%}
 def pinned_rust_install():
 {%- if not crates %}

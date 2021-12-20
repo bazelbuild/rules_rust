@@ -219,7 +219,6 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         transform_deps(
             compile_deps +
             proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
-            toolchain._incompatible_make_rust_providers_target_independent,
         ),
     )
 

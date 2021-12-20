@@ -70,7 +70,6 @@ def _clippy_aspect_impl(target, ctx):
         aliases = crate_info.aliases,
         # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
         are_linkstamps_supported = False,
-        make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent,
         remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info,
     )
 
