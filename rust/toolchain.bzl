@@ -231,7 +231,6 @@ def _rust_toolchain_impl(ctx):
     if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
-    make_rust_providers_target_independent = ctx.attr._incompatible_make_rust_providers_target_independent[IncompatibleFlagInfo]
     remove_transitive_libs_from_dep_info = ctx.attr._incompatible_remove_transitive_libs_from_dep_info[IncompatibleFlagInfo]
     disable_custom_test_launcher = ctx.attr._incompatible_disable_custom_test_launcher[IncompatibleFlagInfo]
 
@@ -285,7 +284,6 @@ def _rust_toolchain_impl(ctx):
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
-        _incompatible_make_rust_providers_target_independent = make_rust_providers_target_independent.enabled,
         _incompatible_remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info.enabled,
         _incompatible_disable_custom_test_launcher = disable_custom_test_launcher.enabled,
     )
@@ -402,9 +400,6 @@ rust_toolchain = rule(
         ),
         "_incompatible_disable_custom_test_launcher": attr.label(
             default = Label("@rules_rust//rust/settings:incompatible_disable_custom_test_launcher"),
-        ),
-        "_incompatible_make_rust_providers_target_independent": attr.label(
-            default = "@rules_rust//rust/settings:incompatible_make_rust_providers_target_independent",
         ),
         "_incompatible_remove_transitive_libs_from_dep_info": attr.label(
             default = "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info",

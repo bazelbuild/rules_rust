@@ -578,9 +578,11 @@ mod tests {
 
         let expected_repository_rule = indoc! { r#"
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+            load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
             def pinned_rust_install():
-                http_archive(
+                maybe(
+                    http_archive,
                     name = "rule_prefix__lazy_static__1_4_0",
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
                     sha256 = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646",
@@ -608,9 +610,11 @@ mod tests {
 
         let expected_repository_rule = indoc! { r#"
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+            load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
             def pinned_rust_install():
-                new_git_repository(
+                maybe(
+                    new_git_repository,
                     name = "rule_prefix__lazy_static__1_4_0",
                     strip_prefix = "",
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
@@ -650,9 +654,11 @@ mod tests {
         let expected_repository_rule = indoc! { r#"
             load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
             load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+            load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
             def pinned_rust_install():
-                new_git_repository(
+                maybe(
+                    new_git_repository,
                     name = "rule_prefix__lazy_static__1_4_0",
                     strip_prefix = "",
                     build_file = Label("//:BUILD.lazy_static-1.4.0.bazel"),
@@ -661,7 +667,8 @@ mod tests {
                     commit = "421669662b35fcb455f2902daed2e20bbbba79b6",
                 )
 
-                http_archive(
+                maybe(
+                    http_archive,
                     name = "rule_prefix__maplit__1_0_2",
                     build_file = Label("//:BUILD.maplit-1.0.2.bazel"),
                     sha256 = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d",

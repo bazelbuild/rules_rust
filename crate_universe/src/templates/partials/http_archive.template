@@ -1,4 +1,5 @@
-    http_archive(
+    maybe(
+        http_archive,
         name = "{{repository_name}}",
         build_file = Label("//:BUILD.{{crate.pkg_name}}-{{crate.pkg_version}}.bazel"),
         {%- if crate.sha256 %}

@@ -202,6 +202,10 @@ def _rust_shared_library_impl(ctx):
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc.
 
+    On Windows, a PDB file containing debugging information is available under
+    the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+    is available under the key `dsym_folder` in `OutputGroupInfo`.
+
     Args:
         ctx (ctx): The rule's context object
 
@@ -258,9 +262,8 @@ def _rust_library_common(ctx, crate_type):
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -299,9 +302,8 @@ def _rust_binary_impl(ctx):
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -433,9 +435,8 @@ def _rust_test_common(ctx, toolchain, output):
     crate_name = crate_name_from_attr(ctx.attr)
     crate_type = "bin"
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
-    deps = transform_deps(ctx.attr.deps, make_rust_providers_target_independent)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps, make_rust_providers_target_independent)
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -1019,6 +1020,10 @@ rust_binary = rule(
         INFO: Running command line: bazel-bin/examples/rust/hello_world/hello_world
         Hello world
         ```
+
+        On Windows, a PDB file containing debugging information is available under
+        the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+        is available under the key `dsym_folder` in `OutputGroupInfo`.
 """),
 )
 

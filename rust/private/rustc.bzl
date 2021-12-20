@@ -118,7 +118,6 @@ def collect_deps(
         proc_macro_deps,
         aliases,
         are_linkstamps_supported = False,
-        make_rust_providers_target_independent = False,
         remove_transitive_libs_from_dep_info = False):
     """Walks through dependencies and collects the transitive dependencies.
 
@@ -127,9 +126,7 @@ def collect_deps(
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
-        make_rust_providers_target_independent (bool): Whether
-            --incompatible_make_rust_providers_target_independent has been flipped.
+        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps..
         remove_transitive_libs_from_dep_info (bool): Whether
             --incompatible_remove_transitive_libs_from_dep_info has been flipped.
 
@@ -151,9 +148,6 @@ def collect_deps(
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
-        if type(dep) == "Target" and make_rust_providers_target_independent:
-            fail("The `deps` parameter needs to be of type `depset[DepVariantInfo], got depset[Target]`")
-
         (crate_info, dep_info) = _get_crate_and_dep_info(dep)
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
@@ -163,9 +157,6 @@ def collect_deps(
 
         if crate_info:
             # This dependency is a rust_library
-
-            if not getattr(crate_info, "owner", None) and make_rust_providers_target_independent:
-                fail("Missing mandatory CrateInfo field: owner")
 
             # When crate_info.owner is set, we use it. When the dep type is Target we get the
             # label from dep.label
@@ -731,7 +722,6 @@ def rustc_compile_action(
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
     remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info
 
     dep_info, build_info, linkstamps = collect_deps(
@@ -743,7 +733,6 @@ def rustc_compile_action(
             feature_configuration = feature_configuration,
             has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
         ),
-        make_rust_providers_target_independent = make_rust_providers_target_independent,
         remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info,
     )
 
@@ -794,26 +783,34 @@ def rustc_compile_action(
 
     outputs = [crate_info.output]
 
+    # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
+    # interface library that rustc generates in the output files.
     interface_library = None
-    pdb_file = None
-    if toolchain.os == "windows":
-        # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
-        # interface library that rustc generates in the output files.
-        if crate_info.type == "cdylib":
-            # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
-            # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
-            interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
-            outputs.append(interface_library)
+    if toolchain.os == "windows" and crate_info.type == "cdylib":
+        # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
+        # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
+        interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
+        outputs.append(interface_library)
 
-        # Rustc always generates a pdb file so provide it in an output group for crate types that benefit from having
-        # debug information in a separate file. Note that test targets do really need a pdb we skip them.
-        if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+    # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
+    action_outputs = list(outputs)
+
+    # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
+    # types that benefit from having debug information in a separate file.
+    pdb_file = None
+    dsym_folder = None
+    if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+        if toolchain.os == "windows":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb")
+            action_outputs.append(pdb_file)
+        elif toolchain.os == "darwin":
+            dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM")
+            action_outputs.append(dsym_folder)
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = outputs + [pdb_file] if pdb_file else outputs,
+        outputs = action_outputs,
         env = env,
         arguments = args.all,
         mnemonic = "Rustc",
@@ -848,6 +845,8 @@ def rustc_compile_action(
         providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
     if pdb_file:
         providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
+    if dsym_folder:
+        providers.append(OutputGroupInfo(dsym_folder = depset([dsym_folder])))
 
     return providers
 
