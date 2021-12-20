@@ -8,7 +8,12 @@ load("//rust/private:utils.bzl", "decode_crate_name_as_label_for_testing", "enco
 def _encode_label_as_crate_name_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # Typical case.
+    # Typical cases.
+    asserts.equals(
+        env,
+        "x_slash_y_colon_z",
+        encode_label_as_crate_name("x/y", "z"),
+    )
     asserts.equals(
         env,
         "some_slash_package_colon_target",
@@ -36,6 +41,11 @@ def _encode_label_as_crate_name_test_impl(ctx):
     package = "_quotedot_"
     target = "target"
     asserts.equals(env, "_quotequote_dot__colon_target", encode_label_as_crate_name(package, target))
+    asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
+
+    package = "x_slash_y"
+    target = "z"
+    asserts.equals(env, "x_quoteslash_y_colon_z", encode_label_as_crate_name(package, target))
     asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
 
     # Package is identical to a valid encoding already.
