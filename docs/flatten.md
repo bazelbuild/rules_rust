@@ -1360,13 +1360,13 @@ A provider containing general Crate information.
 | :------------- | :------------- |
 | <a id="CrateInfo-aliases"></a>aliases |  Dict[Label, String]: Renamed and aliased crates    |
 | <a id="CrateInfo-compile_data"></a>compile_data |  depset[File]: Compile data required by this crate.    |
-| <a id="CrateInfo-deps"></a>deps |  depset[DepVariantInfo|Target]: This crate's (rust or cc) dependencies' providers.    |
+| <a id="CrateInfo-deps"></a>deps |  depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.    |
 | <a id="CrateInfo-edition"></a>edition |  str: The edition of this crate.    |
 | <a id="CrateInfo-is_test"></a>is_test |  bool: If the crate is being compiled in a test context    |
 | <a id="CrateInfo-name"></a>name |  str: The name of this crate.    |
 | <a id="CrateInfo-output"></a>output |  File: The output File that will be produced, depends on crate type.    |
 | <a id="CrateInfo-owner"></a>owner |  Label: The label of the target that produced this CrateInfo    |
-| <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[DepVariantInfo|Target]: This crate's rust proc_macro dependencies' providers.    |
+| <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.    |
 | <a id="CrateInfo-root"></a>root |  File: The source File entrypoint to this crate, eg. lib.rs    |
 | <a id="CrateInfo-rustc_env"></a>rustc_env |  Dict[String, String]: Additional <code>"key": "value"</code> environment variables to set for rustc.    |
 | <a id="CrateInfo-srcs"></a>srcs |  depset[File]: All source Files that are part of the crate.    |
