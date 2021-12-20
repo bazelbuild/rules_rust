@@ -535,7 +535,7 @@ def _replace_all(string, substitutions):
     plan = leftmost_plan
 
     # Execute the replacement plan, working from right to left.
-    for pattern_start in sorted(plan.keys(), reverse=True):
+    for pattern_start in sorted(plan.keys(), reverse = True):
         length, replacement = plan[pattern_start]
         after_pattern = pattern_start + length
         string = string[:pattern_start] + replacement + string[after_pattern:]
