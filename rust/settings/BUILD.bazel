@@ -4,12 +4,6 @@ load(":incompatible.bzl", "incompatible_flag")
 package(default_visibility = ["//visibility:public"])
 
 incompatible_flag(
-    name = "incompatible_make_rust_providers_target_independent",
-    build_setting_default = True,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/966",
-)
-
-incompatible_flag(
     name = "incompatible_remove_transitive_libs_from_dep_info",
     build_setting_default = False,
     issue = "https://github.com/bazelbuild/rules_rust/issues/1051",

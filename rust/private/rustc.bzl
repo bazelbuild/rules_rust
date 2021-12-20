@@ -118,7 +118,6 @@ def collect_deps(
         proc_macro_deps,
         aliases,
         are_linkstamps_supported = False,
-        make_rust_providers_target_independent = False,
         remove_transitive_libs_from_dep_info = False):
     """Walks through dependencies and collects the transitive dependencies.
 
@@ -127,9 +126,7 @@ def collect_deps(
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
-        make_rust_providers_target_independent (bool): Whether
-            --incompatible_make_rust_providers_target_independent has been flipped.
+        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps..
         remove_transitive_libs_from_dep_info (bool): Whether
             --incompatible_remove_transitive_libs_from_dep_info has been flipped.
 
@@ -151,9 +148,6 @@ def collect_deps(
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
-        if type(dep) == "Target" and make_rust_providers_target_independent:
-            fail("The `deps` parameter needs to be of type `depset[DepVariantInfo], got depset[Target]`")
-
         (crate_info, dep_info) = _get_crate_and_dep_info(dep)
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
@@ -163,9 +157,6 @@ def collect_deps(
 
         if crate_info:
             # This dependency is a rust_library
-
-            if not getattr(crate_info, "owner", None) and make_rust_providers_target_independent:
-                fail("Missing mandatory CrateInfo field: owner")
 
             # When crate_info.owner is set, we use it. When the dep type is Target we get the
             # label from dep.label
@@ -731,7 +722,6 @@ def rustc_compile_action(
     """
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
-    make_rust_providers_target_independent = toolchain._incompatible_make_rust_providers_target_independent
     remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info
 
     dep_info, build_info, linkstamps = collect_deps(
@@ -743,7 +733,6 @@ def rustc_compile_action(
             feature_configuration = feature_configuration,
             has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
         ),
-        make_rust_providers_target_independent = make_rust_providers_target_independent,
         remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info,
     )
 
