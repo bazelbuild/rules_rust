@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 incompatible_flag(
     name = "incompatible_remove_transitive_libs_from_dep_info",
-    build_setting_default = False,
+    build_setting_default = True,
     issue = "https://github.com/bazelbuild/rules_rust/issues/1051",
 )
 
