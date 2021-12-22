@@ -77,6 +77,10 @@ load("//sys:sys_deps.bzl", "sys_deps")
 
 sys_deps()
 
+load("@examples//ffi/python_calling_rust/raze:crates.bzl", "rules_rust_examples_ffi_python_calling_rust_fetch_remote_crates")
+
+rules_rust_examples_ffi_python_calling_rust_fetch_remote_crates()
+
 local_repository(
     name = "rules_rust_example_cargo_manifest_dir",
     path = "cargo_manifest_dir/external_crate",

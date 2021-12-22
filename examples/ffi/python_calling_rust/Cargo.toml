@@ -1,0 +1,21 @@
+[package]
+name = "rules_rust_examples_ffi_python_calling_rust"
+version = "0.0.1"
+
+[[bin]]
+name = "fake"
+path = "fake.rs"
+
+[dependencies]
+pyo3 = { version = "=0.13.2", features = ["extension-module"] }
+
+[package.metadata.raze]
+workspace_path = "//ffi/python_calling_rust/raze"
+genmode = "Remote"
+gen_workspace_prefix = "rules_rust_examples_ffi_python_calling_rust"
+rust_rules_workspace_name = "rules_rust"
+package_aliases_dir = "raze"
+default_gen_buildrs = true
+
+[package.metadata.raze.crates.pyo3.'0.13.2']
+data_attr = 'glob(["**/*.md"])'

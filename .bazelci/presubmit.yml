@@ -241,6 +241,7 @@ tasks:
       - "//..."
       - "-//ffi/rust_calling_c:matrix_dylib_test"
       - "-//ffi/rust_calling_c:matrix_dynamically_linked"
+      - "-//ffi/python_calling_rust/..."
       # The bindgen rules currently do not work on windows
       # see: https://github.com/bazelbuild/rules_rust/issues/919
       - "-//bindgen/..."

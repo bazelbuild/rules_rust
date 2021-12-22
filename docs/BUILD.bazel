@@ -28,6 +28,7 @@ bzl_library(
         "@rules_rust//cargo:rules",
         "@rules_rust//crate_universe:rules",
         "@rules_rust//proto:rules",
+        "@rules_rust//python:rules",
         "@rules_rust//rust:rules",
         "@rules_rust//wasm_bindgen:rules",
     ],
