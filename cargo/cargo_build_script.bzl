@@ -1,5 +1,5 @@
 # buildifier: disable=module-docstring
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
 
@@ -9,7 +9,7 @@ load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
-def get_cc_compile_env(cc_toolchain, feature_configuration):
+def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
 
     Args:
@@ -17,17 +17,31 @@ def get_cc_compile_env(cc_toolchain, feature_configuration):
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
 
     Returns:
-        dict: Returns environment variables to be set for given action.
+        tuple: A tuple of the following items:
+            - (sequence): A flattened C command line flags for given action.
+            - (sequence): A flattened CXX command line flags for given action.
+            - (dict): C environment variables to be set for given action.
     """
     compile_variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
     )
-    return cc_common.get_environment_variables(
+    cc_c_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = C_COMPILE_ACTION_NAME,
         variables = compile_variables,
     )
+    cc_cxx_args = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+    cc_env = cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = C_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+    return cc_c_args, cc_cxx_args, cc_env
 
 def _build_script_impl(ctx):
     """The implementation for the `_build_script_run` rule.
@@ -99,7 +113,7 @@ def _build_script_impl(ctx):
     env["LDFLAGS"] = " ".join(link_args)
 
     # MSVC requires INCLUDE to be set
-    cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
+    cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
     include = cc_env.get("INCLUDE")
     if include:
         env["INCLUDE"] = include
@@ -116,6 +130,12 @@ def _build_script_impl(ctx):
             env["AR"] = ar_executable
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
+
+        # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
+        # to determine the deployment target when building for apple platforms (`macosx-version-min`
+        # for example, itself derived from the `macos_minimum_os` Bazel argument).
+        env["CFLAGS"] = " ".join(cc_c_args)
+        env["CXXFLAGS"] = " ".join(cc_cxx_args)
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600

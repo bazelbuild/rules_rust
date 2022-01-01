@@ -28,12 +28,12 @@ fn main() {
         std::env::var("TOOL").unwrap()
     );
 
-    // Assert that the CC and CXX env vars existed and were executable.
+    // Assert that the CC, CXX and LD env vars existed and were executable.
     // We don't assert what happens when they're executed (in particular, we don't check for a
     // non-zero exit code), but this asserts that it's an existing file which is executable.
     //
     // Unfortunately we need to shlex the path, because we add a `--sysroot=...` arg to the env var.
-    for env_var in &["CC", "CXX"] {
+    for env_var in &["CC", "CXX", "LD"] {
         let v = std::env::var(env_var)
             .unwrap_or_else(|err| panic!("Error getting {}: {}", env_var, err));
         let (path, args) = if let Some(index) = v.find("--sysroot") {
@@ -46,5 +46,10 @@ fn main() {
             .args(args.into_iter())
             .status()
             .unwrap();
+    }
+
+    // Assert that some env variables are set.
+    for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS"] {
+        assert!(std::env::var(env_var).is_ok());
     }
 }
