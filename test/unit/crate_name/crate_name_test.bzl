@@ -61,14 +61,14 @@ def _slib_library_name_test_impl(ctx):
 
     Checks that the extra hash value appended to the library filename only
     contains one dash. Previously, the hash for `slib` was negative,
-    resulting in an extra dash in the filename (--codegen_extra_filename=--517943325).
+    resulting in an extra dash in the filename (--codegen_extra_filename=--NUM).
 
     Args:
       ctx: rule context.
     """
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    assert_argv_contains(env, tut.actions[0], "--codegen=extra-filename=-517943325")
+    assert_argv_contains(env, tut.actions[0], "--codegen=extra-filename=-2102077805")
     return analysistest.end(env)
 
 default_crate_name_library_test = analysistest.make(
