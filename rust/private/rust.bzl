@@ -249,7 +249,7 @@ def _rust_library_common(ctx, crate_type):
     # to include the library with a specific filename into a larger application.
     # (see https://github.com/bazelbuild/rules_rust/issues/405#issuecomment-993089889 for more details)
     if crate_type != "cdylib":
-        output_hash = determine_output_hash(crate_root)
+        output_hash = determine_output_hash(crate_root, ctx.label)
     else:
         output_hash = None
 
