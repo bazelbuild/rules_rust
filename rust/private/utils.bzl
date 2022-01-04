@@ -123,18 +123,19 @@ def get_lib_name(lib):
     else:
         return libname
 
-def determine_output_hash(crate_root):
+def determine_output_hash(crate_root, label):
     """Generates a hash of the crate root file's path.
 
     Args:
         crate_root (File): The crate's root file (typically `lib.rs`).
+        label (Label): The label of the target.
 
     Returns:
         str: A string representation of the hash.
     """
 
     # Take the absolute value of hash() since it could be negative.
-    h = hash(crate_root.path)
+    h = hash(crate_root.path) + hash(repr(label))
     if h < 0:
         h = -h
     return repr(h)
