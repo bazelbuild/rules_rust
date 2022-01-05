@@ -158,15 +158,7 @@ def _rust_doc_impl(ctx):
         ctx (ctx): The rule's context object
     """
 
-    if ctx.attr.crate and ctx.attr.dep:
-        fail("{} should only use the `crate` attribute. `dep` is deprecated".format(
-            ctx.label,
-        ))
-
-    crate = ctx.attr.crate or ctx.attr.dep
-    if not crate:
-        fail("{} is missing the `crate` attribute".format(ctx.label))
-
+    crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
     dep_info = crate[rust_common.dep_info]
 
@@ -260,11 +252,7 @@ rust_doc = rule(
                 "`rust_library` or `rust_binary` targets."
             ),
             providers = [rust_common.crate_info],
-            # TODO: Make this attribute mandatory once `dep` is removed
-        ),
-        "dep": attr.label(
-            doc = "__deprecated__: use `crate`",
-            providers = [rust_common.crate_info],
+            mandatory = True,
         ),
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",

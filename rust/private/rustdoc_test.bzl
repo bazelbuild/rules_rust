@@ -94,16 +94,10 @@ def _rust_doc_test_impl(ctx):
     Returns:
         list: A list containing a DefaultInfo provider
     """
-    if ctx.attr.crate and ctx.attr.dep:
-        fail("{} should only use the `crate` attribute. `dep` is deprecated".format(
-            ctx.label,
-        ))
 
     toolchain = find_toolchain(ctx)
 
-    crate = ctx.attr.crate or ctx.attr.dep
-    if not crate:
-        fail("{} is missing the `crate` attribute".format(ctx.label))
+    crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
 
     if toolchain.os == "windows":
@@ -165,11 +159,7 @@ rust_doc_test = rule(
                 "source files of `rust_library` or `rust_binary` targets."
             ),
             providers = [rust_common.crate_info],
-            # TODO: Make this attribute mandatory once `dep` is removed
-        ),
-        "dep": attr.label(
-            doc = "__deprecated__: use `crate`",
-            providers = [rust_common.crate_info],
+            mandatory = True,
         ),
         "_cc_toolchain": attr.label(
             doc = (
