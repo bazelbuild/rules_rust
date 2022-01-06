@@ -12,7 +12,7 @@ incompatible_flag(
 
 incompatible_flag(
     name = "incompatible_disable_custom_test_launcher",
-    build_setting_default = False,
+    build_setting_default = True,
     issue = "https://github.com/bazelbuild/rules_rust/issues/1069",
 )
 
