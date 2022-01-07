@@ -10,12 +10,6 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/1051",
 )
 
-incompatible_flag(
-    name = "incompatible_disable_custom_test_launcher",
-    build_setting_default = True,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/1069",
-)
-
 # A flag controlling whether to rename first-party crates such that their names
 # encode the Bazel package and target name, instead of just the target name.
 #
