@@ -8,9 +8,15 @@ exports_files([
 ])
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
-    deps = ["//crate_universe/private:bzl_srcs"],
+    deps = ["//crate_universe/private:bzl_lib"],
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//crate_universe:bzl_lib` target instead",
 )
 
 filegroup(

@@ -36,6 +36,13 @@ string_flag(
 )
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//settings:bzl_lib` target instead",
+    visibility = ["//rust:__subpackages__"],
 )
