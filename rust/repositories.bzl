@@ -94,6 +94,15 @@ def rust_repositories(
         sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
     )
 
+    # Make the iOS simulator constraint available, which is referenced in abi_to_constraints()
+    # rules_rust does not require this dependency; it is just imported as a convenience for users.
+    maybe(
+        http_archive,
+        name = "build_bazel_apple_support",
+        sha256 = "76df040ade90836ff5543888d64616e7ba6c3a7b33b916aa3a4b68f342d1b447",
+        url = "https://github.com/bazelbuild/apple_support/releases/download/0.11.0/apple_support.0.11.0.tar.gz",
+    )
+
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
         maybe(
             rust_repository_set,

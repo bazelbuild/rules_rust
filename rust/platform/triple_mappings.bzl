@@ -181,9 +181,13 @@ def system_to_constraints(system):
     return ["@platforms//os:{}".format(sys_suffix)]
 
 def abi_to_constraints(abi):
-    # TODO(acmcarther): Implement when C++ toolchain is more mature and we
-    # figure out how they're doing this
-    return []
+    # iOS simulator
+    if abi == "sim":
+        return ["@build_bazel_apple_support//constraints:simulator"]
+    else:
+        # TODO(acmcarther): Implement when C++ toolchain is more mature and we
+        # figure out how they're doing this
+        return []
 
 def triple_to_system(triple):
     """Returns a system name for a given platform triple
