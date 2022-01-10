@@ -31,6 +31,12 @@ toolchain(
 rust_proto_toolchain(name = "default-proto-toolchain-impl")
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = glob(["**/*.bzl"]) + ["//proto/raze:crates.bzl"],
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//proto:bzl_lib` target instead",
 )

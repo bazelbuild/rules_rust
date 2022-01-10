@@ -6,9 +6,15 @@ package(default_visibility = ["//visibility:public"])
 toolchain_type(name = "bindgen_toolchain")
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = glob(["**/*.bzl"]) + ["//bindgen/raze:crates.bzl"],
-    deps = ["//rust:rules"],
+    deps = ["//rust:bzl_lib"],
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//bindgen:bzl_lib` target instead",
 )
 
 rust_bindgen_toolchain(
