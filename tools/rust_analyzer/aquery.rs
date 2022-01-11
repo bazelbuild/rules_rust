@@ -538,7 +538,10 @@ mod test {
                 root_module: "myproc_macro.rs".into(),
                 is_workspace_member: true,
                 deps: BTreeSet::new(),
-                proc_macro_dylib_path: Some("bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so".into()),
+                proc_macro_dylib_path: Some(
+                    "bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so"
+                        .into(),
+                ),
                 source: None,
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
@@ -552,7 +555,9 @@ mod test {
                 root_module: "myproc_macro.rs".into(),
                 is_workspace_member: true,
                 deps: BTreeSet::new(),
-                proc_macro_dylib_path: Some("bazel-out/k8-fastbuild/bin/myproc_macro/libmyproc_macro-12345.so".into()),
+                proc_macro_dylib_path: Some(
+                    "bazel-out/k8-fastbuild/bin/myproc_macro/libmyproc_macro-12345.so".into(),
+                ),
                 source: None,
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
@@ -564,24 +569,24 @@ mod test {
         for perm in crate_specs.into_iter().permutations(2) {
             assert_eq!(
                 consolidate_crate_specs(perm).unwrap(),
-                BTreeSet::from([
-                    CrateSpec {
-                        crate_id: "ID-myproc_macro.rs".into(),
-                        display_name: "myproc_macro".into(),
-                        edition: "2018".into(),
-                        root_module: "myproc_macro.rs".into(),
-                        is_workspace_member: true,
-                        deps: BTreeSet::new(),
-                        proc_macro_dylib_path: Some("bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so".into()),
-                        source: None,
-                        cfg: vec!["test".into(), "debug_assertions".into()],
-                        env: BTreeMap::new(),
-                        target: "x86_64-unknown-linux-gnu".into(),
-                        crate_type: "proc_macro".into(),
-                    },
-                ])
+                BTreeSet::from([CrateSpec {
+                    crate_id: "ID-myproc_macro.rs".into(),
+                    display_name: "myproc_macro".into(),
+                    edition: "2018".into(),
+                    root_module: "myproc_macro.rs".into(),
+                    is_workspace_member: true,
+                    deps: BTreeSet::new(),
+                    proc_macro_dylib_path: Some(
+                        "bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so"
+                            .into()
+                    ),
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: BTreeMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "proc_macro".into(),
+                },])
             );
         }
     }
-
 }
