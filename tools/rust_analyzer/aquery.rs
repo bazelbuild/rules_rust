@@ -177,6 +177,16 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
                 existing.display_name = spec.display_name;
                 existing.crate_type = "rlib".into();
             }
+
+            // For proc-macro crates that exist within the workspace, there will be a
+            // generated crate-spec in both the fastbuild and opt-exec configuration.
+            // Prefer proc macro paths with an opt-exec component in the path.
+            if let Some(dylib_path) = spec.proc_macro_dylib_path.as_ref() {
+                const OPT_PATH_COMPONENT: &str = "-opt-exec-";
+                if dylib_path.contains(OPT_PATH_COMPONENT) {
+                    existing.proc_macro_dylib_path.replace(dylib_path.clone());
+                }
+            }
         } else {
             consolidated_specs.insert(spec.crate_id.clone(), spec);
         }
@@ -509,6 +519,71 @@ mod test {
                         crate_type: "rlib".into(),
                     },
                 ])
+            );
+        }
+    }
+
+    #[test]
+    fn consolidate_proc_macro_prefer_exec() {
+        // proc macro crates should prefer the -opt-exec- path which is always generated
+        // during builds where it is used, while the fastbuild version would only be built
+        // when explicitly building that target.
+        let crate_specs = vec![
+            CrateSpec {
+                crate_id: "ID-myproc_macro.rs".into(),
+                display_name: "myproc_macro".into(),
+                edition: "2018".into(),
+                root_module: "myproc_macro.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: Some(
+                    "bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so"
+                        .into(),
+                ),
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "proc_macro".into(),
+            },
+            CrateSpec {
+                crate_id: "ID-myproc_macro.rs".into(),
+                display_name: "myproc_macro".into(),
+                edition: "2018".into(),
+                root_module: "myproc_macro.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: Some(
+                    "bazel-out/k8-fastbuild/bin/myproc_macro/libmyproc_macro-12345.so".into(),
+                ),
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "proc_macro".into(),
+            },
+        ];
+
+        for perm in crate_specs.into_iter().permutations(2) {
+            assert_eq!(
+                consolidate_crate_specs(perm).unwrap(),
+                BTreeSet::from([CrateSpec {
+                    crate_id: "ID-myproc_macro.rs".into(),
+                    display_name: "myproc_macro".into(),
+                    edition: "2018".into(),
+                    root_module: "myproc_macro.rs".into(),
+                    is_workspace_member: true,
+                    deps: BTreeSet::new(),
+                    proc_macro_dylib_path: Some(
+                        "bazel-out/k8-opt-exec-F005BA11/bin/myproc_macro/libmyproc_macro-12345.so"
+                            .into()
+                    ),
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: BTreeMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "proc_macro".into(),
+                },])
             );
         }
     }
