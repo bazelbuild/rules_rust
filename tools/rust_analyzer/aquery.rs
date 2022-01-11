@@ -525,11 +525,9 @@ mod test {
 
     #[test]
     fn consolidate_proc_macro_prefer_exec() {
-        // mylib.rs is a library but has tests and an entry point, and mylib2.rs
-        // depends on mylib.rs. The display_name of the library target mylib.rs
-        // should be "mylib" no matter what order the crate specs is in.
-        // Otherwise Rust Analyzer will not be able to resolve references to
-        // mylib in mylib2.rs.
+        // proc macro crates should prefer the -opt-exec- path which is always generated
+        // during builds where it is used, while the fastbuild version would only be built
+        // when explicitly building that target.
         let crate_specs = vec![
             CrateSpec {
                 crate_id: "ID-myproc_macro.rs".into(),
