@@ -342,7 +342,7 @@ rust_toolchain = rule(
             doc = "Rustc optimization levels.",
             default = {
                 "dbg": "0",
-                "fastbuild": "1",
+                "fastbuild": "0",
                 "opt": "3",
             },
         ),
