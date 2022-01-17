@@ -326,98 +326,6 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _create_test_launcher(ctx, toolchain, output, env, providers):
-    """Create a process wrapper to ensure runtime environment variables are defined for the test binary
-
-    WARNING: This function is subject to deletion with the removal of
-    incompatible_disable_custom_test_launcher
-
-    Args:
-        ctx (ctx): The rule's context object
-        toolchain (rust_toolchain): The current rust toolchain
-        output (File): The output File that will be produced, depends on crate type.
-        env (dict): Dict of environment variables
-        providers (list): Providers from a rust compile action. See `rustc_compile_action`
-
-    Returns:
-        list: A list of providers similar to `rustc_compile_action` but with modified default info
-    """
-
-    # TODO: It's unclear if the toolchain is in the same configuration as the `_launcher` attribute
-    # This should be investigated but for now, we generally assume if the target environment is windows,
-    # the execution environment is windows.
-    if toolchain.os == "windows":
-        launcher_filename = ctx.label.name + ".launcher.exe"
-    else:
-        launcher_filename = ctx.label.name + ".launcher"
-
-    launcher = ctx.actions.declare_file(launcher_filename)
-
-    # Because returned executables must be created from the same rule, the
-    # launcher target is simply symlinked and exposed.
-    ctx.actions.symlink(
-        output = launcher,
-        target_file = ctx.executable._launcher,
-        is_executable = True,
-    )
-
-    # Expand the environment variables and write them to a file
-    environ_file = ctx.actions.declare_file(launcher_filename + ".launchfiles/env")
-
-    # Convert the environment variables into a list to be written into a file.
-    environ_list = []
-    for key, value in sorted(env.items()):
-        environ_list.extend([key, value])
-
-    ctx.actions.write(
-        output = environ_file,
-        content = "\n".join(environ_list),
-    )
-
-    launcher_files = [environ_file]
-
-    # Replace the `DefaultInfo` provider in the returned list
-    default_info = None
-    for i in range(len(providers)):
-        if type(providers[i]) == "DefaultInfo":
-            default_info = providers[i]
-            providers.pop(i)
-            break
-
-    if not default_info:
-        fail("No DefaultInfo provider returned from `rustc_compile_action`")
-
-    output_group_info = OutputGroupInfo(
-        launcher_files = depset(launcher_files),
-        output = depset([output]),
-    )
-
-    # Binaries on Windows might provide a pdb file via an `OutputGroupInfo` that we need to merge
-    if toolchain.os == "windows":
-        for i in range(len(providers)):
-            if type(providers[i]) == "OutputGroupInfo":
-                output_group_info = OutputGroupInfo(
-                    launcher_files = output_group_info.launcher_files,
-                    output = output_group_info.output,
-                    pdb_file = providers[i].pdb_file,
-                )
-                providers.pop(i)
-                break
-
-    providers.extend([
-        DefaultInfo(
-            files = default_info.files,
-            runfiles = default_info.default_runfiles.merge(
-                # The output is now also considered a runfile
-                ctx.runfiles(files = launcher_files + [output]),
-            ),
-            executable = launcher,
-        ),
-        output_group_info,
-    ])
-
-    return providers
-
 def _rust_test_common(ctx, toolchain, output):
     """Builds a Rust test binary.
 
@@ -499,12 +407,7 @@ def _rust_test_common(ctx, toolchain, output):
     )
     providers.append(testing.TestEnvironment(env))
 
-    if not toolchain._incompatible_disable_custom_test_launcher and any(["{pwd}" in v for v in env.values()]):
-        # Some of the environment variables require expanding {pwd} placeholder at runtime,
-        # we need a launcher for that.
-        return _create_test_launcher(ctx, toolchain, output, env, providers)
-    else:
-        return providers
+    return providers
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule
@@ -733,15 +636,6 @@ _rust_test_attrs = {
         cfg = "host",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
-    ),
-    "_launcher": attr.label(
-        executable = True,
-        default = Label("//util/launcher:launcher"),
-        cfg = "exec",
-        doc = dedent("""\
-            A launcher executable for loading environment and argument files passed in via the `env` attribute
-            and ensuring the variables are set for the underlying test executable.
-        """),
     ),
 }
 
