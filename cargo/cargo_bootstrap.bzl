@@ -1,6 +1,6 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
-load("//cargo/private:cargo_utils.bzl", "get_cargo_and_rustc", "get_host_triple")
+load("//cargo/private:cargo_utils.bzl", "get_host_triple", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
 
 _CARGO_BUILD_MODES = [
@@ -177,9 +177,20 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         version_str = repository_ctx.attr.version
 
     host_triple = get_host_triple(repository_ctx)
-    tools = get_cargo_and_rustc(
+
+    if repository_ctx.attr.rust_toolchain_repository_template:
+        # buildifier: disable=print
+        print("Warning: `rust_toolchain_repository_template` is deprecated. Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`")
+        cargo_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
+        rustc_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
+    else:
+        cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
+        rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
+
+    tools = get_rust_tools(
         repository_ctx = repository_ctx,
-        toolchain_repository_template = repository_ctx.attr.rust_toolchain_repository_template,
+        cargo_template = cargo_template,
+        rustc_template = rustc_template,
         host_triple = host_triple,
         version = version_str,
     )
@@ -191,9 +202,9 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
     environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.triple).items())
 
     built_binary = cargo_bootstrap(
-        repository_ctx,
-        cargo_bin = tools.cargo,
-        rustc_bin = tools.rustc,
+        repository_ctx = repository_ctx,
+        cargo_bin = repository_ctx.path(tools.cargo),
+        rustc_bin = repository_ctx.path(tools.rustc),
         binary = binary_name,
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
@@ -251,13 +262,24 @@ cargo_bootstrap_repository = repository_rule(
         "iso_date": attr.string(
             doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
         ),
-        "rust_toolchain_repository_template": attr.string(
+        "rust_toolchain_cargo_template": attr.string(
             doc = (
-                "The template to use for finding the host `rust_toolchain` repository. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{system}` (eg. 'darwin'), and `{arch}` (eg. 'aarch64') " +
-                "will be replaced in the string if present."
+                "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
             ),
-            default = "rust_{system}_{arch}",
+            default = "@rust_{system}_{arch}//:bin/{tool}",
+        ),
+        "rust_toolchain_repository_template": attr.string(
+            doc = "**Deprecated**: Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`",
+        ),
+        "rust_toolchain_rustc_template": attr.string(
+            doc = (
+                "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
+            ),
+            default = "@rust_{system}_{arch}//:bin/{tool}",
         ),
         "srcs": attr.label_list(
             doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",
