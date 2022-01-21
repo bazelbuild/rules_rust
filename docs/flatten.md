@@ -994,8 +994,6 @@ To build and run the tests, simply add a `rust_test` rule with no `srcs` and    
 
 `hello_lib/BUILD`:
 ```python
-package(default_visibility = ["//visibility:public"])
-
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
@@ -1057,8 +1055,6 @@ with `greeting.rs` in `srcs` and a dependency on the `hello_lib` target:
 
 `hello_lib/BUILD`:
 ```python
-package(default_visibility = ["//visibility:public"])
-
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
@@ -1097,7 +1093,7 @@ Run the test with `bazel build //hello_lib:hello_lib_test`.
 | <a id="rust_test-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | [] |
 | <a id="rust_test-srcs"></a>srcs |  List of Rust <code>.rs</code> source files used to build the library.<br><br>If <code>srcs</code> contains more than one file, then there must be a file either named <code>lib.rs</code>. Otherwise, <code>crate_root</code> must be set to the source file that is the root of the crate to be passed to rustc to build this crate.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="rust_test-stamp"></a>stamp |  Whether to encode build information into the <code>Rustc</code> action. Possible values:<br><br>- <code>stamp = 1</code>: Always stamp the build information into the <code>Rustc</code> action, even in             [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds.             This setting should be avoided, since it potentially kills remote caching for the target and             any downstream actions that depend on it.<br><br>- <code>stamp = 0</code>: Always replace build information by constant values. This gives good build result caching.<br><br>- <code>stamp = -1</code>: Embedding of build information is controlled by the             [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.<br><br>Stamped targets are not rebuilt unless their dependencies change.<br><br>For example if a <code>rust_library</code> is stamped, and a <code>rust_binary</code> depends on that library, the stamped library won't be rebuilt when we change sources of the <code>rust_binary</code>. This is different from how [<code>cc_library.linkstamps</code>](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp) behaves.   | Integer | optional | -1 |
-| <a id="rust_test-use_libtest_harness"></a>use_libtest_harness |  Whether to use libtest.   | Boolean | optional | True |
+| <a id="rust_test-use_libtest_harness"></a>use_libtest_harness |  Whether to use <code>libtest</code>. For targets using this flag, individual tests can be run by using the [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag. E.g. <code>bazel test //src:rust_test --test_arg=foo::test::test_fn</code>.   | Boolean | optional | True |
 | <a id="rust_test-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
