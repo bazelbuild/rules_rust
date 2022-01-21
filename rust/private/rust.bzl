@@ -628,7 +628,9 @@ _rust_test_attrs = {
         mandatory = False,
         default = True,
         doc = dedent("""\
-            Whether to use libtest.
+            Whether to use `libtest`. For targets using this flag, individual tests can be run by using the 
+            [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
+            E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
     ),
     "_grep_includes": attr.label(
@@ -985,8 +987,6 @@ rust_test = rule(
 
         `hello_lib/BUILD`:
         ```python
-        package(default_visibility = ["//visibility:public"])
-
         load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
         rust_library(
@@ -1052,8 +1052,6 @@ rust_test = rule(
 
         `hello_lib/BUILD`:
         ```python
-        package(default_visibility = ["//visibility:public"])
-
         load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
         rust_library(
