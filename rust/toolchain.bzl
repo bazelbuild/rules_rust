@@ -6,7 +6,7 @@ load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def _rust_stdlib_filegroup_impl(ctx):
-    rust_lib = ctx.files.srcs
+    rust_std = ctx.files.srcs
     dot_a_files = []
     between_alloc_and_core_files = []
     core_files = []
@@ -15,11 +15,11 @@ def _rust_stdlib_filegroup_impl(ctx):
     alloc_files = []
     self_contained_files = [
         file
-        for file in rust_lib
+        for file in rust_std
         if file.basename.endswith(".o") and "self-contained" in file.path
     ]
 
-    std_rlibs = [f for f in rust_lib if f.basename.endswith(".rlib")]
+    std_rlibs = [f for f in rust_std if f.basename.endswith(".rlib")]
     if std_rlibs:
         # std depends on everything
         #
@@ -46,7 +46,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             for f in sorted(partitioned):
                 # buildifier: disable=print
                 print("File partitioned: {}".format(f.basename))
-            fail("rust_toolchain couldn't properly partition rlibs in rust_lib. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
+            fail("rust_toolchain couldn't properly partition rlibs in rust_std. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
 
     return [
         DefaultInfo(
@@ -97,12 +97,12 @@ def _ltl(library, ctx, cc_toolchain, feature_configuration):
         pic_static_library = library,
     )
 
-def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
+def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
     """Make the CcInfo (if possible) for libstd and allocator libraries.
 
     Args:
         ctx (ctx): The rule's context object.
-        rust_lib: The rust standard library.
+        rust_std: The Rust standard library.
         allocator_library: The target to use for providing allocator functions.
 
 
@@ -112,14 +112,14 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     cc_infos = []
 
-    if not rust_common.stdlib_info in ctx.attr.rust_lib:
+    if not rust_common.stdlib_info in rust_std:
         fail(dedent("""\
             {} --
             The `rust_lib` ({}) must be a target providing `rust_common.stdlib_info`
             (typically `rust_stdlib_filegroup` rule from @rules_rust//rust:defs.bzl).
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
-        """).format(ctx.label, ctx.attr.rust_lib))
-    rust_stdlib_info = ctx.attr.rust_lib[rust_common.stdlib_info]
+        """).format(ctx.label, rust_std))
+    rust_stdlib_info = rust_std[rust_common.stdlib_info]
 
     if rust_stdlib_info.self_contained_files:
         compilation_outputs = cc_common.create_compilation_outputs(
@@ -187,7 +187,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_lib, allocator_library):
         )
 
         link_inputs = cc_common.create_linker_input(
-            owner = rust_lib.label,
+            owner = rust_std.label,
             libraries = std_inputs,
         )
 
@@ -237,12 +237,21 @@ def _rust_toolchain_impl(ctx):
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
 
+    if ctx.attr.rust_lib:
+        # buildifier: disable=print
+        print("`rust_toolchain.rust_lib` is deprecated. Please update {} to use `rust_toolchain.rust_std`".format(
+            ctx.label,
+        ))
+        rust_std = ctx.attr.rust_lib
+    else:
+        rust_std = ctx.attr.rust_std
+
     expanded_stdlib_linkflags = []
     for flag in ctx.attr.stdlib_linkflags:
         expanded_stdlib_linkflags.append(
             ctx.expand_location(
                 flag,
-                targets = ctx.attr.rust_lib[rust_common.stdlib_info].srcs,
+                targets = rust_std[rust_common.stdlib_info].srcs,
             ),
         )
 
@@ -269,7 +278,8 @@ def _rust_toolchain_impl(ctx):
         target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         rustc_lib = ctx.attr.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
-        rust_lib = ctx.attr.rust_lib,
+        rust_std = rust_std,
+        rust_lib = rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
@@ -286,7 +296,7 @@ def _rust_toolchain_impl(ctx):
         default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._crosstool,
-        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, ctx.attr.rust_lib, ctx.attr.allocator_library),
+        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         _incompatible_remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info.enabled,
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
@@ -354,7 +364,10 @@ rust_toolchain = rule(
             cfg = "exec",
         ),
         "rust_lib": attr.label(
-            doc = "The rust standard library.",
+            doc = "**Deprecated**: Use `rust_std`",
+        ),
+        "rust_std": attr.label(
+            doc = "The Rust standard library.",
         ),
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
@@ -379,9 +392,9 @@ rust_toolchain = rule(
         ),
         "stdlib_linkflags": attr.string_list(
             doc = (
-                "Additional linker flags to use when Rust std lib is linked by a C++ linker " +
-                "(rustc will deal with these automatically). " +
-                "Subject to location expansion with respect to the srcs of the rust_lib attribute."
+                "Additional linker flags to use when Rust standard library is linked by a C++ linker " +
+                "(rustc will deal with these automatically). Subject to location expansion with respect " +
+                "to the srcs of the `rust_std` attribute."
             ),
             mandatory = True,
         ),
@@ -432,7 +445,7 @@ rust_toolchain(
     name = "rust_cpuX_impl",
     rustc = "@rust_cpuX//:rustc",
     rustc_lib = "@rust_cpuX//:rustc_lib",
-    rust_lib = "@rust_cpuX//:rust_lib",
+    rust_std = "@rust_cpuX//:rust_std",
     rust_doc = "@rust_cpuX//:rustdoc",
     binary_ext = "",
     staticlib_ext = ".a",
