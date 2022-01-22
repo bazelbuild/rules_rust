@@ -29,7 +29,8 @@ def cargo_bootstrap(
         environment = {},
         quiet = False,
         build_mode = "release",
-        target_dir = None):
+        target_dir = None,
+        timeout = 600):
     """A function for bootstrapping a cargo binary within a repository rule
 
     Args:
@@ -43,6 +44,7 @@ def cargo_bootstrap(
         build_mode (str, optional): The build mode to use
         target_dir (path, optional): The directory in which to produce build outputs
             (Cargo's --target-dir argument).
+        timeout (int, optional): Maximum duration of the Cargo build command in seconds,
 
     Returns:
         path: The path of the built binary within the target directory
@@ -78,6 +80,7 @@ def cargo_bootstrap(
         args,
         environment = env,
         quiet = quiet,
+        timeout = timeout,
     )
 
     if result.return_code != 0:
@@ -195,6 +198,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
         environment = environment,
+        timeout = repository_ctx.attr.timeout,
     )
 
     # Create a symlink so that the binary can be accesed via it's target name
@@ -258,6 +262,10 @@ cargo_bootstrap_repository = repository_rule(
         "srcs": attr.label_list(
             doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",
             allow_files = True,
+        ),
+        "timeout": attr.int(
+            doc = "Maximum duration of the Cargo build command in seconds",
+            default = 600,
         ),
         "version": attr.string(
             doc = "The version of cargo the resolver should use",
