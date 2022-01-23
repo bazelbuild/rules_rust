@@ -54,6 +54,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "powerpc64le": None,
     "s390": None,
     "s390x": "s390x",
+    "thumbv7m": "armv7",
     "wasm32": None,
     "x86_64": "x86_64",
 }
@@ -64,6 +65,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "bitrig": None,
     "darwin": "osx",
     "dragonfly": None,
+    "eabi": "none",
     "emscripten": None,
     "freebsd": "freebsd",
     "ios": "ios",
@@ -80,6 +82,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
+    "eabi": "",
     "emscripten": ".js",
     "freebsd": "",
     "ios": "",
@@ -95,6 +98,7 @@ _SYSTEM_TO_BINARY_EXT = {
 _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
+    "eabi": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
     "ios": ".a",
@@ -107,6 +111,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
 _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
+    "eabi": ".so",
     "emscripten": ".js",
     "freebsd": ".so",
     "ios": ".dylib",
@@ -128,6 +133,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
     "darwin": ["-lSystem", "-lresolv"],
     "dragonfly": ["-lpthread"],
+    "eabi": [],
     "emscripten": [],
     # TODO(bazelbuild/rules_cc#75):
     #
