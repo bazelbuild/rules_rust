@@ -58,7 +58,7 @@ def _build_script_impl(ctx):
     toolchain_tools = [
         # Needed for rustc to function.
         toolchain.rustc_lib.files,
-        toolchain.rust_lib.files,
+        toolchain.rust_std.files,
     ]
 
     cc_toolchain = find_cpp_toolchain(ctx)
