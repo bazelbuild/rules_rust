@@ -141,7 +141,7 @@ _build_file_for_stdlib_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
 
 rust_stdlib_filegroup(
-    name = "rust_lib-{target_triple}",
+    name = "rust_std-{target_triple}",
     srcs = glob(
         [
             "lib/rustlib/{target_triple}/lib/*.rlib",
@@ -152,6 +152,13 @@ rust_stdlib_filegroup(
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
         allow_empty = True,
     ),
+    visibility = ["//visibility:public"],
+)
+
+# For legacy support
+alias(
+    name = "rust_lib-{target_triple}",
+    actual = "rust_std-{target_triple}",
     visibility = ["//visibility:public"],
 )
 """
@@ -177,7 +184,7 @@ _build_file_for_rust_toolchain_template = """\
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
-    rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
+    rust_std = "@{workspace_name}//:rust_std-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
     rustfmt = "@{workspace_name}//:rustfmt_bin",
     cargo = "@{workspace_name}//:cargo",

@@ -9,7 +9,7 @@ def find_sysroot(rust_toolchain):
     Returns:
         str: A path assignable as `SYSROOT` for an action.
     """
-    sysroot_anchor = rust_toolchain.rust_lib.files.to_list()[0]
+    sysroot_anchor = rust_toolchain.rust_std.files.to_list()[0]
     directory = sysroot_anchor.path.split(sysroot_anchor.short_path, 1)[0]
     return directory.rstrip("/")
 
@@ -57,8 +57,8 @@ def _toolchain_files_impl(ctx):
         files = toolchain.rustc_lib.files
     elif ctx.attr.tool == "rustc_srcs":
         files = toolchain.rustc_srcs.files
-    elif ctx.attr.tool == "rust_lib" or ctx.attr.tool == "rust_stdlib":
-        files = toolchain.rust_lib.files
+    elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
+        files = toolchain.rust_std.files
     else:
         fail("Unsupported tool: ", ctx.attr.tool)
 
@@ -76,13 +76,14 @@ toolchain_files = rule(
             values = [
                 "cargo",
                 "clippy",
+                "rust_lib",
+                "rust_std",
+                "rust_stdlib",
+                "rustc_lib",
+                "rustc_srcs",
                 "rustc",
                 "rustdoc",
                 "rustfmt",
-                "rustc_lib",
-                "rustc_srcs",
-                "rust_lib",
-                "rust_stdlib",
             ],
             mandatory = True,
         ),

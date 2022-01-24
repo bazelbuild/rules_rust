@@ -409,7 +409,7 @@ def collect_inputs(
         ([] if linker_script == None else [linker_script]),
         transitive = [
             toolchain.rustc_lib.files,
-            toolchain.rust_lib.files,
+            toolchain.rust_std.files,
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_crate_outputs,
@@ -617,10 +617,10 @@ def construct_arguments(
         rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
-    rust_lib_paths = depset([file.dirname for file in toolchain.rust_lib.files.to_list()]).to_list()
+    rust_std_paths = depset([file.dirname for file in toolchain.rust_std.files.to_list()]).to_list()
 
     # Tell Rustc where to find the standard library
-    rustc_flags.add_all(rust_lib_paths, before_each = "-L", format_each = "%s")
+    rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
     data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
@@ -674,8 +674,8 @@ def construct_arguments(
         data_paths,
     ))
 
-    # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
-    env["SYSROOT"] = paths.dirname(toolchain.rust_lib.files.to_list()[0].short_path)
+    # Set the SYSROOT to the directory of the rust_std files passed to the toolchain
+    env["SYSROOT"] = paths.dirname(toolchain.rust_std.files.to_list()[0].short_path)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):
