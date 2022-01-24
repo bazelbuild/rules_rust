@@ -345,6 +345,7 @@ rust_toolchain = rule(
                 "The platform triple for the toolchains execution environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
+            mandatory = True,
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
@@ -362,6 +363,7 @@ rust_toolchain = rule(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
             cfg = "exec",
+            mandatory = True,
         ),
         "rust_lib": attr.label(
             doc = "**Deprecated**: Use `rust_std`",
@@ -373,6 +375,7 @@ rust_toolchain = rule(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
             cfg = "exec",
+            mandatory = True,
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
