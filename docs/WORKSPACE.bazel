@@ -5,9 +5,11 @@ local_repository(
     path = "..",
 )
 
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
-rust_repositories(include_rustc_srcs = True)
+rules_rust_dependencies()
+
+rust_register_toolchains(include_rustc_srcs = True)
 
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
