@@ -9,7 +9,7 @@ mod test {
     /// directly populate the `compile_data` attribute
     #[test]
     fn test_compile_data_contents() {
-        assert_eq!(COMPILE_DATA, "compile data contents\n");
+        assert_eq!(COMPILE_DATA.trim_end(), "compile data contents");
     }
 
     /// An extra module that tests the `rust_test` rule wrapping the
@@ -20,7 +20,7 @@ mod test {
 
         #[test]
         fn test_compile_data_contents() {
-            assert_eq!(TEST_COMPILE_DATA, "test compile data contents\n");
+            assert_eq!(TEST_COMPILE_DATA.trim_end(), "test compile data contents");
         }
     }
 }
