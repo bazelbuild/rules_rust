@@ -176,7 +176,7 @@ rust_toolchain_repository = repository_rule(
         "auth": attr.string_dict(
             doc = (
                 "Auth object compatible with repository_ctx.download to use when downloading files. " +
-                "See https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download for more details."
+                "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
             ),
         ),
         "dev_components": attr.bool(
@@ -289,7 +289,7 @@ def rust_repository_set(
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
-            See https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download for more details.
+            See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
     """
 
     rust_toolchain_repository(
