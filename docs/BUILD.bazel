@@ -127,7 +127,7 @@ PAGES = dict([
     page(
         name = "rust_repositories",
         symbols = [
-            "rules_rust_depednencies",
+            "rules_rust_dependencies",
             "rust_register_toolchains",
             "rust_repositories",
             "rust_repository_set",

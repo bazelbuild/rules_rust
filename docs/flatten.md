@@ -13,7 +13,7 @@
 * [extra_rustc_flags](#extra_rustc_flags)
 * [fail_when_enabled](#fail_when_enabled)
 * [incompatible_flag](#incompatible_flag)
-* [rules_rust_depednencies](#rules_rust_depednencies)
+* [rules_rust_dependencies](#rules_rust_dependencies)
 * [rust_analyzer](#rust_analyzer)
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_binary](#rust_binary)

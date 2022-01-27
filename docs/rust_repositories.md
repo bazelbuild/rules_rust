@@ -1,7 +1,7 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Repositories
 
-* [rules_rust_depednencies](#rules_rust_depednencies)
+* [rules_rust_dependencies](#rules_rust_dependencies)
 * [rust_register_toolchains](#rust_register_toolchains)
 * [rust_repositories](#rust_repositories)
 * [rust_repository_set](#rust_repository_set)
