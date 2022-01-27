@@ -225,8 +225,6 @@ tasks:
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # This test requires --incompatible_macos_set_install_name and Bazel 4.2.0+
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
     build_flags: *aspects_flags
   windows_examples:
     name: Examples
@@ -239,8 +237,6 @@ tasks:
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
-      - "-//ffi/rust_calling_c:matrix_dynamically_linked"
       # The bindgen rules currently do not work on windows
       # see: https://github.com/bazelbuild/rules_rust/issues/919
       - "-//bindgen/..."
