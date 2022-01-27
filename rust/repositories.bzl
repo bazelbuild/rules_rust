@@ -31,52 +31,8 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
 }
 
-# buildifier: disable=unnamed-macro
-def rust_repositories(
-        version = rust_common.default_version,
-        iso_date = None,
-        rustfmt_version = None,
-        edition = None,
-        dev_components = False,
-        sha256s = None,
-        include_rustc_srcs = False,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
-    """Emits a default set of toolchains for Linux, MacOS, and Freebsd
-
-    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
-    other hosts or for additional target triples.
-
-    The `sha256` attribute represents a dict associating tool subdirectories to sha256 hashes. As an example:
-    ```python
-    {
-        "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
-        "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
-        "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
-    }
-    ```
-    This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive \
-    list of known checksums..
-
-    See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
-
-    Args:
-        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
-        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
-        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
-        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
-        dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
-            See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
-    """
-
-    if dev_components and version != "nightly":
-        fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
-
-    if not rustfmt_version:
-        rustfmt_version = version
-
+def rules_rust_dependencies():
+    """Dependencies used in the implementation of `rules_rust`."""
     maybe(
         http_archive,
         name = "rules_cc",
@@ -103,21 +59,81 @@ def rust_repositories(
         url = "https://github.com/bazelbuild/apple_support/releases/download/0.11.0/apple_support.0.11.0.tar.gz",
     )
 
+# buildifier: disable=unnamed-macro
+def rust_register_toolchains(
+        dev_components = False,
+        edition = None,
+        include_rustc_srcs = False,
+        iso_date = None,
+        register_toolchains = True,
+        rustfmt_version = None,
+        sha256s = None,
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        version = rust_common.default_version):
+    """Emits a default set of toolchains for Linux, MacOS, and Freebsd
+
+    Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
+    other hosts or for additional target triples.
+
+    The `sha256` attribute represents a dict associating tool subdirectories to sha256 hashes. As an example:
+    ```python
+    {
+        "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
+        "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
+        "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
+    }
+    ```
+    This would match for `exec_triple = "x86_64-unknown-linux-gnu"`.  If not specified, rules_rust pulls from a non-exhaustive \
+    list of known checksums..
+
+    See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
+
+    Args:
+        dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
+        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
+            See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
+        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
+        register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
+        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
+        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
+        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
+    """
+    if dev_components and version != "nightly":
+        fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
+
+    if not rustfmt_version:
+        rustfmt_version = version
+
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
         maybe(
             rust_repository_set,
             name = name,
+            dev_components = dev_components,
+            edition = edition,
             exec_triple = exec_triple,
             extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-            version = version,
-            iso_date = iso_date,
-            rustfmt_version = rustfmt_version,
-            edition = edition,
-            dev_components = dev_components,
-            sha256s = sha256s,
             include_rustc_srcs = include_rustc_srcs,
+            iso_date = iso_date,
+            register_toolchain = register_toolchains,
+            rustfmt_version = rustfmt_version,
+            sha256s = sha256s,
             urls = urls,
+            version = version,
         )
+
+# buildifier: disable=unnamed-macro
+def rust_repositories(**kwargs):
+    """**Deprecated**: Use [rules_rust_dependencies](#rules_rust_dependencies) \
+    and [rust_register_toolchains](#rust_register_toolchains) directly.
+
+    Args:
+        **kwargs (dict): Keyword arguments for the `rust_register_toolchains` macro.
+    """
+    rules_rust_dependencies()
+
+    rust_register_toolchains(**kwargs)
 
 def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
@@ -265,7 +281,8 @@ def rust_repository_set(
         dev_components = False,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        auth = None):
+        auth = None,
+        register_toolchain = True):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -290,6 +307,7 @@ def rust_repository_set(
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
     """
 
     rust_toolchain_repository(
@@ -325,8 +343,9 @@ def rust_repository_set(
         ))
 
     # Register toolchains
-    native.register_toolchains(*all_toolchain_names)
-    native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
+    if register_toolchain:
+        native.register_toolchains(*all_toolchain_names)
+        native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
 
     # Inform users that they should be using the canonical name if it's not detected
     if "rules_rust" not in native.existing_rules():

@@ -127,12 +127,14 @@ PAGES = dict([
     page(
         name = "rust_repositories",
         symbols = [
+            "rules_rust_depednencies",
+            "rust_register_toolchains",
             "rust_repositories",
             "rust_repository_set",
-            "rust_toolchain",
-            "rust_toolchain_repository",
-            "rust_toolchain_repository_proxy",
             "rust_stdlib_filegroup",
+            "rust_toolchain_repository_proxy",
+            "rust_toolchain_repository",
+            "rust_toolchain",
         ],
     ),
     page(
