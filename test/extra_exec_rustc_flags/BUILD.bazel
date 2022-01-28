@@ -1,0 +1,35 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("defs.bzl", "with_exec_cfg", "with_extra_exec_rustc_flags_cfg")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+# Checks that extra_exec_rustc_flags are passed in exec configuration.
+# lib.rs is a sample source file that requires a `--cfg=bazel_exec` flag to build.
+# These targets set up transitions so that building :lib triggers building
+# lib.rs in exec configuration with //:extra_exec_rustc_flags=[--cfg=bazel_exec].
+# The intermediate targets are tagged "manual" as they are not meant to be built
+# on their own.
+
+rust_library(
+    name = "lib_do_not_build_directly",
+    srcs = ["lib.rs"],
+    tags = ["manual"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_with_exec_flags_do_not_build_directly",
+    srcs = ["lib_do_not_build_directly"],
+    extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+    tags = ["manual"],
+)
+
+with_exec_cfg(
+    name = "lib",
+    srcs = ["lib_with_exec_flags_do_not_build_directly"],
+)
+
+build_test(
+    name = "lib_build",
+    targets = [":lib"],
+)
