@@ -29,7 +29,26 @@ with_exec_cfg(
     srcs = ["lib_with_exec_flags_do_not_build_directly"],
 )
 
+# Checks that extra_exec_rustc_flags are not passed in non-exec configurations.
+# lib_no_exec.rs is a sample source file that fails to build if
+# `--cfg=bazel_exec` is present. The targets below are built in non-exec configurations,
+# so they should build just fine with //:extra_exec_rustc_flags=[--cfg=bazel_exec].
+rust_library(
+    name = "lib_no_exec",
+    srcs = ["lib_no_exec.rs"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_no_exec_with_extra_build_flags",
+    srcs = ["lib_no_exec"],
+    extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+)
+
 build_test(
     name = "lib_build",
-    targets = [":lib"],
+    targets = [
+        ":lib",
+        ":lib_no_exec",
+        ":lib_no_exec_with_extra_build_flags",
+    ],
 )
