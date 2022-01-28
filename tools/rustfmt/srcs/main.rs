@@ -3,6 +3,11 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::str;
 
+import::import!{
+    "//tools/rustfmt:rustfmt_lib";
+    "//util/label";
+}
+
 fn main() {
     // Gather all command line and environment settings
     let options = parse_args();

@@ -41,6 +41,7 @@ rust_binary(
         ":rustfmt_lib",
         "//util/label",
     ],
+    proc_macro_deps = ["//util/import"],
 )
 
 rust_binary(
