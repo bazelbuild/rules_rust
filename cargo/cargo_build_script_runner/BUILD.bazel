@@ -1,4 +1,5 @@
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//rust/private:transitions.bzl", "with_disabled_rename_first_party_crates_exec")
 
 rust_library(
     name = "cargo_build_script_output_parser",
@@ -10,10 +11,15 @@ rust_test(
     crate = ":cargo_build_script_output_parser",
 )
 
-rust_binary(
+with_disabled_rename_first_party_crates_exec(
     name = "cargo_build_script_runner",
-    srcs = ["bin.rs"],
+    target = "cargo_build_script_runner_impl",
     visibility = ["//visibility:public"],
+)
+
+rust_binary(
+    name = "cargo_build_script_runner_impl",
+    srcs = ["bin.rs"],
     deps = [":cargo_build_script_output_parser"],
 )
 

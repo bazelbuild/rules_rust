@@ -278,7 +278,7 @@ def compute_crate_name(label, toolchain, name_override = None):
         return name_override
 
     if toolchain and label and toolchain._rename_first_party_crates:
-        if should_encode_label_in_crate_name(label.package, toolchain._third_party_dir):
+        if should_encode_label_in_crate_name(label, toolchain._third_party_dir):
             crate_name = label.name
         else:
             crate_name = encode_label_as_crate_name(label.package, label.name)
@@ -392,13 +392,13 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def should_encode_label_in_crate_name(package, third_party_dir):
+def should_encode_label_in_crate_name(label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
 
     Names of third-party crates do not encode the full label.
 
     Args:
-        package (string): The package in question.
+        label (Label): The label in question.
         third_party_dir (string): The directory in which third-party packages are kept.
 
     Returns:
@@ -407,7 +407,7 @@ def should_encode_label_in_crate_name(package, third_party_dir):
 
     # TODO(hlopko): This code assumes a monorepo; make it work with external
     # repositories as well.
-    return ("//" + package + "/").startswith(third_party_dir + "/")
+    return label.workspace_root or ("//" + label.package + "/").startswith(third_party_dir + "/")
 
 # This is a list of pairs, where the first element of the pair is a character
 # that is allowed in Bazel package or target names but not in crate names; and

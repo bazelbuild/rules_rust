@@ -1,15 +1,22 @@
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+load("//rust/private:transitions.bzl", "with_disabled_rename_first_party_crates")
+
+with_disabled_rename_first_party_crates(
+    name = "import",
+    target = "import_impl",
+    visibility = ["//visibility:public"],
+)
 
 rust_proc_macro(
-    name = "import",
+    name = "import_impl",
     srcs = [
         "import.rs",
     ],
+    crate_name = "import",
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
     ],
-    visibility = ["//visibility:public"],
 )
 
 rust_library(

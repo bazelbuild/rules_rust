@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::anyhow;
+import::import!{ "//tools/rust_analyzer:gen_rust_project_lib"; }
 use gen_rust_project_lib::generate_crate_info;
 use gen_rust_project_lib::write_rust_project;
 use structopt::StructOpt;
