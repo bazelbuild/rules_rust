@@ -19,8 +19,14 @@ rust_proc_macro(
     ],
 )
 
-rust_library(
+with_disabled_rename_first_party_crates(
     name = "import_internal",
+    target = "import_internal_impl",
+)
+
+rust_library(
+    name = "import_internal_impl",
+    crate_name = "import_internal",
     srcs = [
         "import_internal.rs",
     ],

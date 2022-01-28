@@ -2,6 +2,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+import::import!{
+    "//tools/runfiles";
+    "//tools/rustfmt:rustfmt_lib";
+}
+
 fn main() {
     // Gather all and environment settings
     let options = parse_args();
