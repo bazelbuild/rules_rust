@@ -681,7 +681,7 @@ def construct_arguments(
     env["RULES_RUST_THIRD_PARTY_DIR"] = str(toolchain._third_party_dir).lower()
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
-    if hasattr(ctx.attr, "_extra_rustc_flags") and is_exec_configuration(ctx):
+    if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
     # Create a struct which keeps the arguments separate so each may be tuned or
