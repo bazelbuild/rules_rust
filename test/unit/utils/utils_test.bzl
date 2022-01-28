@@ -59,18 +59,18 @@ def _is_third_party_crate_test_impl(ctx):
     env = unittest.begin(ctx)
 
     # A target at the root of the third-party dir is considered third-party:
-    asserts.true(env, should_encode_label_in_crate_name(Label("//third_party:foo"), "//third_party"))
+    asserts.false(env, should_encode_label_in_crate_name(Label("//third_party:foo"), "//third_party"))
 
     # Targets in subpackages are detected properly:
-    asserts.true(env, should_encode_label_in_crate_name(Label("//third_party/serde:serde"), "//third_party"))
-    asserts.true(env, should_encode_label_in_crate_name(Label("//third_party/serde/v1:serde"), "//third_party"))
+    asserts.false(env, should_encode_label_in_crate_name(Label("//third_party/serde:serde"), "//third_party"))
+    asserts.false(env, should_encode_label_in_crate_name(Label("//third_party/serde/v1:serde"), "//third_party"))
 
     # Ensure the directory name truly matches, and doesn't just include the
     # third-party dir as a substring (or vice versa).
-    asserts.false(env, should_encode_label_in_crate_name(Label("//third_party_decoy:thing"), "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name(Label("//decoy_third_party:thing"), "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name(Label("//third_:thing"), "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name(Label("//third_party_decoy/serde:serde"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name(Label("//third_party_decoy:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name(Label("//decoy_third_party:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name(Label("//third_:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name(Label("//third_party_decoy/serde:serde"), "//third_party"))
     return unittest.end(env)
 
 encode_label_as_crate_name_test = unittest.make(_encode_label_as_crate_name_test_impl)

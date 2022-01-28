@@ -279,9 +279,9 @@ def compute_crate_name(label, toolchain, name_override = None):
 
     if toolchain and label and toolchain._rename_first_party_crates:
         if should_encode_label_in_crate_name(label, toolchain._third_party_dir):
-            crate_name = label.name
-        else:
             crate_name = encode_label_as_crate_name(label.package, label.name)
+        else:
+            crate_name = label.name
     else:
         crate_name = name_to_crate_name(label.name)
 
@@ -407,7 +407,7 @@ def should_encode_label_in_crate_name(label, third_party_dir):
 
     # TODO(hlopko): This code assumes a monorepo; make it work with external
     # repositories as well.
-    return label.workspace_root or ("//" + label.package + "/").startswith(third_party_dir + "/")
+    return not(label.workspace_root) and not(("//" + label.package + "/").startswith(third_party_dir + "/"))
 
 # This is a list of pairs, where the first element of the pair is a character
 # that is allowed in Bazel package or target names but not in crate names; and
