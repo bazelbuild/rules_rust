@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -20,7 +21,6 @@ load(
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
-load("//rust/private:toolchain_utils.bzl", "find_sysroot")
 load(
     "//rust/private:utils.bzl",
     "expand_dict_value_locations",
@@ -680,7 +680,7 @@ def construct_arguments(
     ))
 
     # Set the SYSROOT to the directory of the rust_std files passed to the toolchain
-    env["SYSROOT"] = find_sysroot(toolchain)
+    env["SYSROOT"] = paths.dirname(toolchain.rust_std.to_list()[0].short_path)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
