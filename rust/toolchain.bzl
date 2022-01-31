@@ -278,8 +278,8 @@ def _rust_toolchain_impl(ctx):
         target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         rustc_lib = depset(ctx.files.rustc_lib),
         rustc_srcs = ctx.attr.rustc_srcs,
-        rust_std = rust_std[DefaultInfo].files,
-        rust_lib = rust_std[DefaultInfo].files,  # `rust_lib` is deprecated and only exists for legacy support.
+        rust_std = rust_std.files,
+        rust_lib = rust_std.files,  # `rust_lib` is deprecated and only exists for legacy support.
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
