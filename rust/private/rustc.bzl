@@ -51,8 +51,13 @@ ErrorFormatInfo = provider(
 )
 
 ExtraRustcFlagsInfo = provider(
-    doc = "Pass each value as an additional flag to rustc invocations",
-    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
+    doc = "Pass each value as an additional flag to non-exec rustc invocations",
+    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
+)
+
+ExtraExecRustcFlagsInfo = provider(
+    doc = "Pass each value as an additional flag to exec rustc invocations",
+    fields = {"extra_exec_rustc_flags": "List[string] Extra flags to pass to rustc in exec configuration"},
 )
 
 def _get_rustc_env(attr, toolchain, crate_name):
@@ -681,6 +686,9 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
+    if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
     args = struct(
@@ -1254,8 +1262,22 @@ extra_rustc_flags = rule(
         "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
-        "These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc)."
+        "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
+        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_flags_impl(ctx):
+    return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = ctx.build_setting_value)
+
+extra_exec_rustc_flags = rule(
+    doc = (
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flags`. " +
+        "This flag should only be used for flags that need to be applied across the entire build. " +
+        "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
+    ),
+    implementation = _extra_exec_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
 )
