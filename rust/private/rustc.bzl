@@ -413,8 +413,8 @@ def collect_inputs(
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
-            toolchain.rustc_lib.files,
-            toolchain.rust_std.files,
+            toolchain.rustc_lib,
+            toolchain.rust_std,
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_crate_outputs,
@@ -622,7 +622,7 @@ def construct_arguments(
         rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
-    rust_std_paths = depset([file.dirname for file in toolchain.rust_std.files.to_list()]).to_list()
+    rust_std_paths = depset([file.dirname for file in toolchain.rust_std.to_list()]).to_list()
 
     # Tell Rustc where to find the standard library
     rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
@@ -680,7 +680,7 @@ def construct_arguments(
     ))
 
     # Set the SYSROOT to the directory of the rust_std files passed to the toolchain
-    env["SYSROOT"] = paths.dirname(toolchain.rust_std.files.to_list()[0].short_path)
+    env["SYSROOT"] = paths.dirname(toolchain.rust_std.to_list()[0].short_path)
 
     env["RULES_RUST_RENAME_FIRST_PARTY_CRATES"] = str(toolchain._rename_first_party_crates).lower()
     env["RULES_RUST_THIRD_PARTY_DIR"] = str(toolchain._third_party_dir).lower()
