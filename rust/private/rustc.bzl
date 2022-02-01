@@ -628,7 +628,9 @@ def construct_arguments(
     rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
-    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
+    # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
+    data_paths = depset(direct = getattr(attr, "data", []) + getattr(attr, "compile_data", [])).to_list()
+
     rustc_flags.add_all(
         expand_list_element_locations(
             ctx,
