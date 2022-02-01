@@ -268,14 +268,14 @@ def _rust_toolchain_impl(ctx):
         linking_context = linking_context,
     )
 
-    # Calculate the rustc sysroot path by using a file from the rust-std bundle
-    rust_std_files_list = rust_std.files.to_list()
-    sysroot_anchor = rust_std_files_list[0]
-    sysroot_path_parts = sysroot_anchor.path.split("/")
-    sysroot_path = ""
-    if len(sysroot_path_parts) > 0:
-        # Drop the last part of the split which is expected to be the filename
-        sysroot_path = "/".join(sysroot_path_parts[:-1])
+    # In cases where the toolchain uses the Rust standard library, calculate sysroot path
+    sysroot_path = None
+    if rust_std:
+        # Calculate the rustc sysroot path by using a file from the rust-std bundle
+        rust_std_files_list = rust_std.files.to_list()
+        if not rust_std_files_list:
+            fail("The `rust_std` cannot be represented by an empty list")
+        sysroot_path = rust_std_files_list[0].dirname
 
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
