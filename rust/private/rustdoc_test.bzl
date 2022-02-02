@@ -56,6 +56,11 @@ def _construct_writer_arguments(ctx, test_runner, action, crate_info, rust_toolc
     for var in action.env.keys():
         writer_args.add("--action_env={}".format(var))
 
+    # Ensure the rustdoc binary is always accessed via a relative path
+    writer_args.add("--strip_substring={}/".format(
+        rust_toolchain.rust_doc.root.path,
+    ))
+
     # Since the test runner will be running from a runfiles directory, the
     # paths originally generated for the build action will not map to any
     # files. To ensure rustdoc can find the appropriate dependencies, the

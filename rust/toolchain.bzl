@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:toolchain_utils.bzl", "generate_sysroot")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
@@ -246,6 +247,18 @@ def _rust_toolchain_impl(ctx):
     else:
         rust_std = ctx.attr.rust_std
 
+    sysroot = generate_sysroot(
+        ctx = ctx,
+        rustc = ctx.file.rustc,
+        rustdoc = ctx.file.rust_doc,
+        rustc_lib = ctx.attr.rustc_lib,
+        rust_std = rust_std,
+        rustfmt = ctx.file.rustfmt,
+        clippy = ctx.file.clippy_driver,
+        cargo = ctx.file.cargo,
+        llvm_tools = ctx.attr.llvm_tools,
+    )
+
     expanded_stdlib_linkflags = []
     for flag in ctx.attr.stdlib_linkflags:
         expanded_stdlib_linkflags.append(
@@ -268,29 +281,23 @@ def _rust_toolchain_impl(ctx):
         linking_context = linking_context,
     )
 
-    # In cases where the toolchain uses the Rust standard library, calculate sysroot path
-    sysroot_path = None
-    if rust_std:
-        # Calculate the rustc sysroot path by using a file from the rust-std bundle
-        rust_std_files_list = rust_std.files.to_list()
-        if not rust_std_files_list:
-            fail("The `rust_std` cannot be represented by an empty list")
-        sysroot_path = rust_std_files_list[0].dirname
+    all_files = depset(ctx.files._crosstool, transitive = [sysroot.all_files])
 
     toolchain = platform_common.ToolchainInfo(
-        rustc = ctx.file.rustc,
-        rust_doc = ctx.file.rust_doc,
-        rustfmt = ctx.file.rustfmt,
-        cargo = ctx.file.cargo,
-        clippy_driver = ctx.file.clippy_driver,
+        all_files = all_files,
+        rustc = sysroot.rustc,
+        rust_doc = sysroot.rustdoc,
+        rustfmt = sysroot.rustfmt,
+        cargo = sysroot.cargo,
+        clippy_driver = sysroot.clippy,
         target_json = ctx.file.target_json,
         target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
-        rustc_lib = depset(ctx.files.rustc_lib),
+        rustc_lib = sysroot.rustc_lib,
         rustc_srcs = ctx.attr.rustc_srcs,
-        rust_std = rust_std.files,
-        rust_std_paths = depset([file.dirname for file in rust_std_files_list]),
-        rust_lib = rust_std.files,  # `rust_lib` is deprecated and only exists for legacy support.
-        sysroot = sysroot_path,
+        rust_std = sysroot.rust_std,
+        rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
+        rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
+        sysroot = sysroot.sysroot_anchor.dirname,
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
@@ -357,6 +364,10 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
+        ),
+        "llvm_tools": attr.label_list(
+            doc = "llvm-tools",
+            allow_files = True,
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
