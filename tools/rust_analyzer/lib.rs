@@ -2,7 +2,6 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::anyhow;
-import::import!{ "//tools/runfiles"; }
 use runfiles::Runfiles;
 
 mod aquery;

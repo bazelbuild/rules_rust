@@ -41,7 +41,6 @@ rust_binary(
         ":rustfmt_lib",
         "//util/label",
     ],
-    proc_macro_deps = ["//util/import"],
 )
 
 rust_binary(
@@ -54,7 +53,6 @@ rust_binary(
         ":rustfmt_lib",
         "//tools/runfiles",
     ],
-    proc_macro_deps = ["//util/import"],
 )
 
 rust_clippy(

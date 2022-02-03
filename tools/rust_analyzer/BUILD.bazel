@@ -30,7 +30,6 @@ rust_library(
         "//rust/private:rust_analyzer_detect_sysroot",
     ],
     edition = "2018",
-    proc_macro_deps = ["//util/import"],
     deps = [
         "//tools/runfiles",
         "//tools/rust_analyzer/raze:anyhow",

@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "third_party_lib",

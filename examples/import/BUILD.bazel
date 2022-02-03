@@ -1,10 +1,10 @@
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "mod1",
     srcs = ["mod1.rs"],
     proc_macro_deps = [
-        "//util/import",
+        "@rules_rust//util/import",
     ]
 )
 
@@ -14,7 +14,7 @@ rust_library(
     deps = [":mod1",
     ],
     proc_macro_deps = [
-        "//util/import",
+        "@rules_rust//util/import",
     ]
 )
 
@@ -30,7 +30,7 @@ rust_library(
         ":mod2",
     ],
     proc_macro_deps = [
-        "//util/import",
+        "@rules_rust//util/import",
     ]
 )
 
