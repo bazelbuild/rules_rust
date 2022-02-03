@@ -2,7 +2,6 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_library(
     name = "cargo_build_script_output_parser",
-    crate_name = "cargo_build_script_output_parser",
     srcs = ["lib.rs"],
 )
 
@@ -13,9 +12,8 @@ rust_test(
 
 rust_binary(
     name = "cargo_build_script_runner",
-    visibility = ["//visibility:public"],
-    crate_name = "cargo_build_script_runner",
     srcs = ["bin.rs"],
+    visibility = ["//visibility:public"],
     deps = [":cargo_build_script_output_parser"],
 )
 

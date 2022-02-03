@@ -5,7 +5,6 @@ rust_binary(
     name = "gen_rust_project",
     srcs = ["main.rs"],
     edition = "2018",
-    proc_macro_deps = ["//util/import"],
     rustc_env = {
         "ASPECT_REPOSITORY": aspect_repository(),
     },
