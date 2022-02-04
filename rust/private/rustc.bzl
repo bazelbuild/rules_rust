@@ -993,6 +993,11 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
         input_files.append(build_info.out_dir)
         input_files.append(build_info.link_flags)
 
+    # Populate with transitive link search paths
+    for dep_build_info in dep_info.transitive_build_infos.to_list():
+        build_flags_files.append(dep_build_info.link_search_paths.path)
+        input_files.append(dep_build_info.link_search_paths)
+
     return input_files, out_dir, build_env_file, build_flags_files
 
 def _compute_rpaths(toolchain, output_dir, dep_info):

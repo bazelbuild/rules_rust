@@ -21,6 +21,7 @@ use std::process::{Command, Output};
 pub struct CompileAndLinkFlags {
     pub compile_flags: String,
     pub link_flags: String,
+    pub link_search_paths: String,
 }
 
 /// Enum containing all the considered return value from the script
@@ -171,6 +172,7 @@ impl BuildScriptOutput {
     pub fn outputs_to_flags(outputs: &[BuildScriptOutput], exec_root: &str) -> CompileAndLinkFlags {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
+        let mut link_search_paths = Vec::new();
 
         for flag in outputs {
             match flag {
@@ -178,13 +180,15 @@ impl BuildScriptOutput {
                 BuildScriptOutput::Flags(e) => compile_flags.push(e.to_owned()),
                 BuildScriptOutput::LinkArg(e) => compile_flags.push(format!("-Clink-arg={}", e)),
                 BuildScriptOutput::LinkLib(e) => link_flags.push(format!("-l{}", e)),
-                BuildScriptOutput::LinkSearch(e) => link_flags.push(format!("-L{}", e)),
+                BuildScriptOutput::LinkSearch(e) => link_search_paths.push(format!("-L{}", e)),
                 _ => {}
             }
         }
+
         CompileAndLinkFlags {
             compile_flags: compile_flags.join("\n"),
             link_flags: Self::redact_exec_root(&link_flags.join("\n"), exec_root),
+            link_search_paths: Self::redact_exec_root(&link_search_paths.join("\n"), exec_root),
         }
     }
 
@@ -279,7 +283,8 @@ cargo:rustc-link-arg=Metal
                 compile_flags:
                     "-Lblah\n--cfg=feature=awesome\n-Clink-arg=-weak_framework\n-Clink-arg=Metal"
                         .to_owned(),
-                link_flags: "-lsdfsdf\n-L${pwd}/bleh".to_owned(),
+                link_flags: "-lsdfsdf".to_owned(),
+                link_search_paths: "-L${pwd}/bleh".to_owned(),
             }
         );
     }
