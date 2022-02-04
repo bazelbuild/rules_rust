@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "capture_clippy_output", "error_format", "extra_rustc_flags")
+load("//rust:defs.bzl", "capture_clippy_output", "error_format", "extra_exec_rustc_flags", "extra_rustc_flags")
 
 exports_files(["LICENSE"])
 
@@ -25,11 +25,22 @@ error_format(
     visibility = ["//visibility:public"],
 )
 
-# This setting may be used to pass extra options to rustc from the command line.
+# This setting may be used to pass extra options to rustc from the command line
+# in non-exec configuration.
 # It applies across all targets whereas the rustc_flags option on targets applies only
 # to that target. This can be useful for passing build-wide options such as LTO.
 extra_rustc_flags(
     name = "extra_rustc_flags",
+    build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line
+# in exec configuration.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+extra_exec_rustc_flags(
+    name = "extra_exec_rustc_flags",
     build_setting_default = [],
     visibility = ["//visibility:public"],
 )

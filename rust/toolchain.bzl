@@ -268,6 +268,15 @@ def _rust_toolchain_impl(ctx):
         linking_context = linking_context,
     )
 
+    # In cases where the toolchain uses the Rust standard library, calculate sysroot path
+    sysroot_path = None
+    if rust_std:
+        # Calculate the rustc sysroot path by using a file from the rust-std bundle
+        rust_std_files_list = rust_std.files.to_list()
+        if not rust_std_files_list:
+            fail("The `rust_std` cannot be represented by an empty list")
+        sysroot_path = rust_std_files_list[0].dirname
+
     toolchain = platform_common.ToolchainInfo(
         rustc = ctx.file.rustc,
         rust_doc = ctx.file.rust_doc,
@@ -276,10 +285,12 @@ def _rust_toolchain_impl(ctx):
         clippy_driver = ctx.file.clippy_driver,
         target_json = ctx.file.target_json,
         target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
-        rustc_lib = ctx.attr.rustc_lib,
+        rustc_lib = depset(ctx.files.rustc_lib),
         rustc_srcs = ctx.attr.rustc_srcs,
-        rust_std = rust_std,
-        rust_lib = rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
+        rust_std = rust_std.files,
+        rust_std_paths = depset([file.dirname for file in rust_std_files_list]),
+        rust_lib = rust_std.files,  # `rust_lib` is deprecated and only exists for legacy support.
+        sysroot = sysroot_path,
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,

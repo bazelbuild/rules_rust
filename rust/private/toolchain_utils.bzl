@@ -1,18 +1,5 @@
 """A module defining toolchain utilities"""
 
-def find_sysroot(rust_toolchain):
-    """Locate the rustc sysroot from the `rust_toolchain`
-
-    Args:
-        rust_toolchain (rust_toolchain): The currently configured `rust_toolchain`.
-
-    Returns:
-        str: A path assignable as `SYSROOT` for an action.
-    """
-    sysroot_anchor = rust_toolchain.rust_std.files.to_list()[0]
-    directory = sysroot_anchor.path.split(sysroot_anchor.short_path, 1)[0]
-    return directory.rstrip("/")
-
 def _toolchain_files_impl(ctx):
     toolchain = ctx.toolchains[str(Label("//rust:toolchain"))]
 
@@ -24,7 +11,7 @@ def _toolchain_files_impl(ctx):
                 toolchain.cargo,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "clippy":
         files = depset([toolchain.clippy_driver])
@@ -33,32 +20,32 @@ def _toolchain_files_impl(ctx):
                 toolchain.clippy_driver,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustc":
         files = depset([toolchain.rustc])
         runfiles = ctx.runfiles(
             files = [toolchain.rustc],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustdoc":
         files = depset([toolchain.rust_doc])
         runfiles = ctx.runfiles(
             files = [toolchain.rust_doc],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustfmt":
         files = depset([toolchain.rustfmt])
         runfiles = ctx.runfiles(
             files = [toolchain.rustfmt],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustc_lib":
-        files = toolchain.rustc_lib.files
+        files = toolchain.rustc_lib
     elif ctx.attr.tool == "rustc_srcs":
         files = toolchain.rustc_srcs.files
     elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
-        files = toolchain.rust_std.files
+        files = toolchain.rust_std
     else:
         fail("Unsupported tool: ", ctx.attr.tool)
 

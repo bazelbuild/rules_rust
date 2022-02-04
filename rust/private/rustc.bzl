@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
-load("@bazel_skylib//lib:paths.bzl", "paths")
+"""Functionality for constructing actions that invoke the Rust compiler"""
+
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
@@ -51,8 +51,13 @@ ErrorFormatInfo = provider(
 )
 
 ExtraRustcFlagsInfo = provider(
-    doc = "Pass each value as an additional flag to rustc invocations",
-    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc"},
+    doc = "Pass each value as an additional flag to non-exec rustc invocations",
+    fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
+)
+
+ExtraExecRustcFlagsInfo = provider(
+    doc = "Pass each value as an additional flag to exec rustc invocations",
+    fields = {"extra_exec_rustc_flags": "List[string] Extra flags to pass to rustc in exec configuration"},
 )
 
 def _get_rustc_env(attr, toolchain, crate_name):
@@ -408,8 +413,8 @@ def collect_inputs(
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
-            toolchain.rustc_lib.files,
-            toolchain.rust_std.files,
+            toolchain.rustc_lib,
+            toolchain.rust_std,
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_crate_outputs,
@@ -617,13 +622,15 @@ def construct_arguments(
         rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
 
     # Gets the paths to the folders containing the standard library (or libcore)
-    rust_std_paths = depset([file.dirname for file in toolchain.rust_std.files.to_list()]).to_list()
+    rust_std_paths = toolchain.rust_std_paths.to_list()
 
     # Tell Rustc where to find the standard library
     rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
-    data_paths = getattr(attr, "data", []) + getattr(attr, "compile_data", [])
+    # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
+    data_paths = depset(direct = getattr(attr, "data", []) + getattr(attr, "compile_data", [])).to_list()
+
     rustc_flags.add_all(
         expand_list_element_locations(
             ctx,
@@ -675,11 +682,14 @@ def construct_arguments(
     ))
 
     # Set the SYSROOT to the directory of the rust_std files passed to the toolchain
-    env["SYSROOT"] = paths.dirname(toolchain.rust_std.files.to_list()[0].short_path)
+    env["SYSROOT"] = toolchain.sysroot
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
@@ -1254,8 +1264,22 @@ extra_rustc_flags = rule(
         "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
-        "These flags are currently excluded from the exec configuration (proc-macros, cargo_build_script, etc)."
+        "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
+        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_flags_impl(ctx):
+    return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = ctx.build_setting_value)
+
+extra_exec_rustc_flags = rule(
+    doc = (
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flags`. " +
+        "This flag should only be used for flags that need to be applied across the entire build. " +
+        "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
+    ),
+    implementation = _extra_exec_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
 )

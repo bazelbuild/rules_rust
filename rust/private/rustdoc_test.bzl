@@ -16,7 +16,6 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
-load("//rust/private:toolchain_utils.bzl", "find_sysroot")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info, rust_toolchain):
@@ -41,7 +40,7 @@ def _construct_writer_arguments(ctx, test_runner, action, crate_info, rust_toolc
 
     # Set the SYSROOT to the directory of the rust_lib files passed to the toolchain
     env = {
-        "SYSROOT": "${{pwd}}/{}".format(find_sysroot(rust_toolchain)),
+        "SYSROOT": "${{pwd}}/{}".format(rust_toolchain.sysroot),
     }
 
     writer_args = ctx.actions.args()
