@@ -1,4 +1,4 @@
-workspace(name = "rules_rust_examples_crate_universe")
+workspace(name = "crate_universe_examples")
 
 local_repository(
     name = "rules_rust",
