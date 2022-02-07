@@ -122,3 +122,7 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Use this as is if you are using the rbe_ubuntu16_04 container,
 # otherwise refer to RBE docs.
 rbe_autoconfig(name = "buildkite_config")
+
+load("@rules_rust//util/import:deps.bzl", "import_deps")
+
+import_deps()
