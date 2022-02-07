@@ -4,11 +4,11 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 rust_binary(
     name = "greeter_client",
     srcs = ["greeter_client.rs"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ],
     visibility = ["//proto/helloworld:__subpackages__"],
     deps = [
         "//proto/helloworld:helloworld_proto",
     ] + GRPC_COMPILE_DEPS,
-    proc_macro_deps = [
-        "@rules_rust//util/import",
-    ]
 )

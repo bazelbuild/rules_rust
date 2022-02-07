@@ -5,12 +5,12 @@ package(default_visibility = ["//visibility:public"])
 rust_binary(
     name = "print",
     srcs = ["main.rs"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ],
     deps = [
         ":printer",
     ],
-    proc_macro_deps = [
-        "@rules_rust//util/import",
-    ]
 )
 
 rust_library(

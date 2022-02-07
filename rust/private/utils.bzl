@@ -279,7 +279,7 @@ def compute_crate_name(workspace_name, label, toolchain, name_override = None):
         return name_override
 
     if (toolchain and label and toolchain._rename_first_party_crates and
-            should_encode_label_in_crate_name(workspace_name, label, toolchain._third_party_dir)):
+        should_encode_label_in_crate_name(workspace_name, label, toolchain._third_party_dir)):
         crate_name = encode_label_as_crate_name(label.package, label.name)
     else:
         crate_name = name_to_crate_name(label.name)

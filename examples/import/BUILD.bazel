@@ -5,27 +5,29 @@ rust_library(
     srcs = ["mod1.rs"],
     proc_macro_deps = [
         "@rules_rust//util/import",
-    ]
+    ],
 )
 
 rust_library(
     name = "mod2",
     srcs = ["mod2.rs"],
-    deps = [":mod1",
-    ],
     proc_macro_deps = [
         "@rules_rust//util/import",
-    ]
+    ],
+    deps = [
+        ":mod1",
+    ],
 )
 
 rust_library(
     name = "mod4",
     srcs = ["mod4.rs"],
-    deps = ["//import/my_third_party_dir:third_party_lib",
-    ],
     proc_macro_deps = [
         "@rules_rust//util/import",
-    ]
+    ],
+    deps = [
+        "//import/my_third_party_dir:third_party_lib",
+    ],
 )
 
 rust_library(
@@ -35,13 +37,13 @@ rust_library(
         ":mod1": "alias_a",
         ":mod2": "alias_b",
     },
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ],
     deps = [
         ":mod1",
         ":mod2",
     ],
-    proc_macro_deps = [
-        "@rules_rust//util/import",
-    ]
 )
 
 rust_test(

@@ -2,11 +2,11 @@ load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
 rust_proc_macro(
     name = "import",
-    visibility = ["//visibility:public"],
     srcs = [
         "import.rs",
     ],
     crate_name = "import",
+    visibility = ["//visibility:public"],
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
@@ -15,10 +15,10 @@ rust_proc_macro(
 
 rust_library(
     name = "import_internal",
-    crate_name = "import_internal",
     srcs = [
         "import_internal.rs",
     ],
+    crate_name = "import_internal",
     deps = [
         "//util/import/raze:aho_corasick",
         "//util/import/raze:lazy_static",

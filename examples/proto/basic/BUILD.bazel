@@ -11,20 +11,20 @@ rust_proto_library(
 rust_library(
     name = "common_lib",
     srcs = ["lib.rs"],
-    deps = [":common_proto_rust"],
     proc_macro_deps = [
         "@rules_rust//util/import",
-    ]
+    ],
+    deps = [":common_proto_rust"],
 )
 
 rust_binary(
     name = "common_bin",
     srcs = ["main.rs"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ],
     deps = [
         ":common_lib",
         ":common_proto_rust",
     ],
-    proc_macro_deps = [
-        "@rules_rust//util/import",
-    ]
 )
