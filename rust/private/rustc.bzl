@@ -665,7 +665,6 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
-    rustc_flags.add("--sysroot", "${pwd}/" + toolchain.sysroot)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
