@@ -20,6 +20,9 @@ rust_binary(
     name = "simple_example",
     srcs = ["main.rs"],
     deps = [":simple_bindgen"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_test(
@@ -41,9 +44,12 @@ rust_bindgen_library(
 
 rust_binary(
     name = "simple_example_unformatted",
-    srcs = ["main.rs"],
+    srcs = ["main_no_import.rs"],
     crate_name = "simple_example",
     deps = [":simple_bindgen_unformatted"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_test(

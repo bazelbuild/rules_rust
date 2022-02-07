@@ -1,6 +1,6 @@
 
 import::import! {
-    "//import:mod1";
+    "//import/subpackage:mod1";
 }
 
 pub fn greeter(name: &str) -> String {

@@ -33,7 +33,10 @@ rust_test(
     name = "greeting_test",
     srcs = ["tests/greeting.rs"],
     edition = "2018",
-    proc_macro_deps = [":proc_macro_lib"],
+    proc_macro_deps = [
+        ":proc_macro_lib",
+        "@rules_rust//util/import",
+    ],
 )
 
 rust_doc(

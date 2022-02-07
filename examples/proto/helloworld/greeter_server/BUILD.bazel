@@ -8,4 +8,7 @@ rust_binary(
     deps = [
         "//proto/helloworld:helloworld_proto",
     ] + GRPC_COMPILE_DEPS,
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )

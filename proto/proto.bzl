@@ -44,7 +44,7 @@ load("//rust:defs.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "determine_output_hash", "find_toolchain", "transform_deps")
+load("//rust/private:utils.bzl", "compute_crate_name", "determine_output_hash", "find_toolchain", "transform_deps")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -168,7 +168,7 @@ def _expand_provider(lst, provider):
     """
     return [el[provider] for el in lst if provider in el]
 
-def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_grpc, compile_deps):
+def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_grpc, compile_deps, toolchain):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -179,6 +179,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         ctx (ctx): The current rule's context object
         is_grpc (bool): True if the current rule is a `gRPC` rule.
         compile_deps (list): A list of Rust dependencies (`List[Target]`)
+        toolchain (rust_toolchain): The current `rust_toolchain`
 
     Returns:
         list: A list of providers, see `rustc_compile_action`
@@ -212,8 +213,6 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         output_hash,
     ))
 
-    toolchain = find_toolchain(ctx)
-
     # Gather all dependencies for compilation
     compile_action_deps = depset(
         transform_deps(
@@ -225,7 +224,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
-        toolchain = find_toolchain(ctx),
+        toolchain = toolchain,
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = "rlib",
@@ -262,14 +261,18 @@ def _rust_protogrpc_library_impl(ctx, is_grpc):
         if RustProtoInfo in f
     ]
 
+    toolchain = find_toolchain(ctx)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain)
+
     return _rust_proto_compile(
         protos = depset(transitive = transitive_sources),
         descriptor_sets = depset(transitive = [p.transitive_descriptor_sets for p in proto]),
         imports = depset(transitive = [p.transitive_imports for p in proto]),
-        crate_name = ctx.label.name,
+        crate_name = crate_name,
         ctx = ctx,
         is_grpc = is_grpc,
         compile_deps = ctx.attr.rust_deps,
+        toolchain = toolchain,
     )
 
 def _rust_proto_library_impl(ctx):

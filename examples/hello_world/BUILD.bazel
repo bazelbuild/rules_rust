@@ -6,6 +6,9 @@ rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
     deps = ["@examples//hello_lib"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_doc(

@@ -1,7 +1,3 @@
-import::import! {
-    "//bindgen:simple_bindgen";
-}
-
 fn main() {
     println!("The value is {}!", simple_bindgen::SIMPLE_VALUE);
 }

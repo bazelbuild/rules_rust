@@ -19,16 +19,6 @@ rust_library(
 )
 
 rust_library(
-    name = "mod4",
-    srcs = ["mod4.rs"],
-    deps = ["//import/my_third_party_dir:third_party_lib",
-    ],
-    proc_macro_deps = [
-        "@rules_rust//util/import",
-    ]
-)
-
-rust_library(
     name = "mod3",
     srcs = ["mod3.rs"],
     aliases = {
@@ -61,9 +51,4 @@ rust_test(
         ":mod2": "alias_b",
     },
     crate = ":mod3",
-)
-
-rust_test(
-    name = "mod4_test",
-    crate = ":mod4",
 )

@@ -35,6 +35,9 @@ rust_static_library(
         "tests/greeting.rs",
     ],
     deps = [":hello_lib"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 # Regression test for #368: cdylib lib with dependencies fail.
@@ -44,6 +47,9 @@ rust_shared_library(
         "tests/greeting.rs",
     ],
     deps = [":hello_lib"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_test(
@@ -55,6 +61,9 @@ rust_test(
     name = "greeting_test",
     srcs = ["tests/greeting.rs"],
     deps = [":hello_lib"],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_doc(

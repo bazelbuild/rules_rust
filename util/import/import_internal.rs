@@ -16,6 +16,9 @@ pub enum Mode {
     /// First-party crates will be renamed, and third-party crates will not be.
     /// The expansion will replace first-party labels with an encoded version,
     /// and third-party labels with just their target.
+    ///
+    /// `third_party_dir` is expected to be an absolute path, omitting the
+    /// leading "//".
     RenameFirstPartyCrates { third_party_dir: String },
 }
 

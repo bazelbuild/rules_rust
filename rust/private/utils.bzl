@@ -263,7 +263,7 @@ def compute_crate_name(workspace_name, label, toolchain, name_override = None):
     Args:
         workspace_name (string): The current workspace name.
         label (struct): The label of the current target.
-        toolchain (struct): The toolchain in use for the target.
+        toolchain (rust_toolchain): The current `rust_toolchain`
         name_override (String): An optional name to use (as an override of label.name).
 
     Returns:

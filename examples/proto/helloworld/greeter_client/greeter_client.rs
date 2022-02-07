@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import::import! {
+    "//proto/helloworld:helloworld_proto";
+}
+
 extern crate grpc;
-extern crate helloworld_proto;
 
 use grpc::ClientStubExt;
 use std::env;

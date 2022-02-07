@@ -8,6 +8,9 @@ rust_binary(
     deps = [
         ":printer",
     ],
+    proc_macro_deps = [
+        "@rules_rust//util/import",
+    ]
 )
 
 rust_library(
