@@ -278,10 +278,8 @@ def _rust_toolchain_impl(ctx):
         linking_context = linking_context,
     )
 
-    all_files = depset(ctx.files._crosstool, transitive = [sysroot.all_files])
-
     toolchain = platform_common.ToolchainInfo(
-        all_files = all_files,
+        all_files = sysroot.all_files,
         rustc = sysroot.rustc,
         rust_doc = sysroot.rustdoc,
         rustfmt = sysroot.rustfmt,
