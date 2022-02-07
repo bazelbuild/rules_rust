@@ -3,17 +3,15 @@ use syn::parse_macro_input;
 fn mode() -> import_internal::Mode {
     match (
         std::env::var("RULES_RUST_RENAME_FIRST_PARTY_CRATES")
-            .map_or(false, |s| s.parse::<bool>().unwrap_or(false)),
-        std::env::var("RULES_RUST_THIRD_PARTY_DIR"),
+            .ok()
+            .and_then(|s| s.parse::<bool>().ok())
+            .unwrap_or(false),
+        std::env::var("RULES_RUST_THIRD_PARTY_DIR")
+            .ok()
+            .and_then(|dir| dir.strip_prefix("//").map(|s| s.to_string())),
     ) {
-        (true, Ok(third_party_dir)) if !third_party_dir.is_empty() => {
-            if let Some(stripped) = third_party_dir.strip_prefix("//") {
-                import_internal::Mode::RenameFirstPartyCrates {
-                    third_party_dir: stripped.into(),
-                }
-            } else {
-                import_internal::Mode::NoRenaming
-            }
+        (true, Some(third_party_dir)) => {
+            import_internal::Mode::RenameFirstPartyCrates { third_party_dir }
         }
         _ => import_internal::Mode::NoRenaming,
     }
