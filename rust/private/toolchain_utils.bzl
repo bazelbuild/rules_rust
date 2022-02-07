@@ -34,13 +34,13 @@ def _symlink_sysroot_tree(ctx, name, target):
 
     return depset(tree_files)
 
-def _symlink_sysroot_bin(ctx, name, dir, target):
+def _symlink_sysroot_bin(ctx, name, directory, target):
     """Crete a symlink to a target file.
 
     Args:
         ctx (ctx): The rule's context object
         name (str): A common name for the output directory
-        dir (str): The directory under `name` to put the file in
+        directory (str): The directory under `name` to put the file in
         target (File): A File object to symlink to
 
     Returns:
@@ -48,7 +48,7 @@ def _symlink_sysroot_bin(ctx, name, dir, target):
     """
     symlink = ctx.actions.declare_file("{}/{}/{}".format(
         name,
-        dir.lstrip("/"),
+        directory.lstrip("/"),
         target.basename,
     ))
 
@@ -93,7 +93,7 @@ def generate_sysroot(
     transitive_file_sets = []
 
     # Rustc
-    sysroot_rustc = _symlink_sysroot_bin(ctx, name, "/bin", rustc)
+    sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
     direct_files.extend([sysroot_rustc, rustc])
 
     # Rustc dependencies
@@ -102,21 +102,21 @@ def generate_sysroot(
         transitive_file_sets.extend([sysroot_rustc_lib, rustc_lib.files])
 
     # Rustdoc
-    sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "/bin", rustdoc)
+    sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
     direct_files.extend([sysroot_rustdoc, rustdoc])
 
     # Clippy
-    sysroot_clippy = _symlink_sysroot_bin(ctx, name, "/bin", clippy) if clippy else None
+    sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy) if clippy else None
     if sysroot_clippy:
         direct_files.extend([sysroot_clippy, clippy])
 
     # Cargo
-    sysroot_cargo = _symlink_sysroot_bin(ctx, name, "/bin", cargo) if cargo else None
+    sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo) if cargo else None
     if sysroot_cargo:
         direct_files.extend([sysroot_cargo, cargo])
 
     # Rustfmt
-    sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "/bin", rustfmt) if rustfmt else None
+    sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt) if rustfmt else None
     if sysroot_rustfmt:
         direct_files.extend([sysroot_rustfmt, rustfmt])
 
