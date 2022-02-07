@@ -3,7 +3,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
