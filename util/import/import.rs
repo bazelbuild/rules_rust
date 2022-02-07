@@ -7,9 +7,9 @@ fn mode() -> import_internal::Mode {
         std::env::var("RULES_RUST_THIRD_PARTY_DIR"),
     ) {
         (true, Ok(third_party_dir)) if !third_party_dir.is_empty() => {
-            if third_party_dir.starts_with("//") {
+            if let Some(stripped) = third_party_dir.strip_prefix("//") {
                 import_internal::Mode::RenameFirstPartyCrates {
-                    third_party_dir: third_party_dir[2..].into(),
+                    third_party_dir: stripped.into(),
                 }
             } else {
                 import_internal::Mode::NoRenaming
