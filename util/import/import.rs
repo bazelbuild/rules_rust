@@ -1,7 +1,4 @@
-use proc_macro;
 use syn::parse_macro_input;
-
-use import_internal;
 
 fn mode() -> import_internal::Mode {
     match (
