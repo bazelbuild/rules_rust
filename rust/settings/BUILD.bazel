@@ -1,14 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
-load(":incompatible.bzl", "incompatible_flag")
 
 package(default_visibility = ["//visibility:public"])
-
-incompatible_flag(
-    name = "incompatible_remove_transitive_libs_from_dep_info",
-    build_setting_default = True,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/1051",
-)
 
 # A flag controlling whether to rename first-party crates such that their names
 # encode the Bazel package and target name, instead of just the target name.
