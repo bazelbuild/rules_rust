@@ -407,19 +407,16 @@ def collect_inputs(
 
     nolinkstamp_compile_inputs = depset(
         getattr(files, "data", []) +
-        [toolchain.rustc] +
-        toolchain.crosstool_files +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
-            toolchain.rustc_lib,
-            toolchain.rust_std,
             linker_depset,
             crate_info.srcs,
             dep_info.transitive_crate_outputs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
+            toolchain.all_files,
         ],
     )
 
@@ -681,8 +678,9 @@ def construct_arguments(
         data_paths,
     ))
 
-    # Set the SYSROOT to the directory of the rust_std files passed to the toolchain
+    # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
+    rustc_flags.add("--sysroot", "${pwd}/" + toolchain.sysroot)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
