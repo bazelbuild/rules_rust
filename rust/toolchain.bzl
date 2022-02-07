@@ -4,7 +4,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:toolchain_utils.bzl", "generate_sysroot")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
@@ -233,8 +232,6 @@ def _rust_toolchain_impl(ctx):
     if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
-    remove_transitive_libs_from_dep_info = ctx.attr._incompatible_remove_transitive_libs_from_dep_info[IncompatibleFlagInfo]
-
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
 
@@ -313,9 +310,8 @@ def _rust_toolchain_impl(ctx):
         target_arch = ctx.attr.target_triple.split("-")[0],
         default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
-        crosstool_files = ctx.files._crosstool,
+        crosstool_files = ctx.files._cc_toolchain,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
-        _incompatible_remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info.enabled,
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
@@ -436,12 +432,6 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
-        ),
-        "_crosstool": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-        "_incompatible_remove_transitive_libs_from_dep_info": attr.label(
-            default = "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info",
         ),
         "_rename_first_party_crates": attr.label(
             default = "@rules_rust//rust/settings:rename_first_party_crates",
