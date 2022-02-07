@@ -48,7 +48,8 @@ def rustdoc_compile_action(
         toolchain,
         crate_info,
         output = None,
-        rustdoc_flags = []):
+        rustdoc_flags = [],
+        is_test = False):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
     Args:
@@ -57,6 +58,7 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
         rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+        is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
@@ -102,7 +104,7 @@ def rustdoc_compile_action(
         attr = ctx.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rust_doc.path,
+        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
