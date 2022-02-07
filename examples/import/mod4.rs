@@ -3,7 +3,7 @@ import::import! {
 }
 
 pub fn greet() -> String {
-        format!("Hello {} from third-party!", third_party_lib::world())
+    format!("Hello {} from third-party!", third_party_lib::world())
 }
 
 #[cfg(test)]
