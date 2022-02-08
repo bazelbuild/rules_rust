@@ -116,6 +116,7 @@ def _rust_doc_test_impl(ctx):
         toolchain = find_toolchain(ctx),
         crate_info = crate_info,
         rustdoc_flags = rustdoc_flags,
+        is_test = True,
     )
 
     tools = action.tools + [ctx.executable._process_wrapper]
