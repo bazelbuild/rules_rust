@@ -278,6 +278,10 @@ def _rust_toolchain_impl(ctx):
         linking_context = linking_context,
     )
 
+    # Determine the path and short_path of the sysroot
+    sysroot_path = sysroot.sysroot_anchor.dirname
+    sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         rustc = sysroot.rustc,
@@ -292,7 +296,8 @@ def _rust_toolchain_impl(ctx):
         rust_std = sysroot.rust_std,
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
         rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
-        sysroot = sysroot.sysroot_anchor.dirname,
+        sysroot = sysroot_path,
+        sysroot_short_path = sysroot_short_path,
         binary_ext = ctx.attr.binary_ext,
         staticlib_ext = ctx.attr.staticlib_ext,
         dylib_ext = ctx.attr.dylib_ext,
