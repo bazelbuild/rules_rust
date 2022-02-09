@@ -119,6 +119,17 @@ def rustdoc_compile_action(
         force_link = True,
     )
 
+    # Because rustdoc tests compile tests outside of the sandbox, the sysroot
+    # must be updated to the `short_path` equivilant as it will now be
+    # a part of runfiles.
+    if is_test:
+        if "SYSROOT" in env:
+            env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
+
+        # `rustdoc` does not support the SYSROOT environment variable. To account
+        # for this, the flag must be explicitly passed to the `rustdoc` binary.
+        args.rustc_flags.add("--sysroot=${{pwd}}/{}".format(toolchain.sysroot_short_path))
+
     return struct(
         executable = ctx.executable._process_wrapper,
         inputs = depset([crate_info.output], transitive = [compile_inputs]),
