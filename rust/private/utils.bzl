@@ -516,7 +516,7 @@ def _replace_all(string, substitutions):
 
     # Find the highest-priority pattern matches.
     plan = {}
-    for _subst_index, (pattern, replacement) in enumerate(substitutions):
+    for pattern, replacement in substitutions:
         for pattern_start in range(len(string)):
             if not pattern_start in plan and string.startswith(pattern, pattern_start):
                 plan[pattern_start] = (len(pattern), replacement)
