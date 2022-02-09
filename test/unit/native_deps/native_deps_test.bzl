@@ -19,17 +19,6 @@ def _native_dep_lib_name(ctx):
     else:
         return "libnative_dep.a"
 
-def _lib_has_no_native_libs_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
-    assert_argv_contains(env, action, "--crate-type=lib")
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains_not(env, action, "-lstatic=native_dep")
-    assert_argv_contains_not(env, action, "-ldylib=native_dep")
-    assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
-    return analysistest.end(env)
-
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)

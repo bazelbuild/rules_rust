@@ -9,7 +9,6 @@ def _force_all_deps_direct_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[1]
-    argv = action.argv
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains_prefix(
         env,

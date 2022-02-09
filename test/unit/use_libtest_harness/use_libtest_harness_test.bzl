@@ -8,7 +8,6 @@ def _use_libtest_harness_rustc_flags_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
-    argv = action.argv
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains(env, action, "test/unit/use_libtest_harness/mytest.rs")
     assert_argv_contains(env, action, "--test")

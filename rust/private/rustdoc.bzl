@@ -74,7 +74,6 @@ def rustdoc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, linkstamps = collect_deps(
-        label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
@@ -172,7 +171,6 @@ def _rust_doc_impl(ctx):
 
     crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
-    dep_info = crate[rust_common.dep_info]
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 

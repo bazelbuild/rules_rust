@@ -123,7 +123,7 @@ def get_cargo_and_rustc(repository_ctx, host_triple):
         version_str = repository_ctx.attr.version
 
     # Get info about the current host's tool locations
-    (host_triple, resolver_triple) = get_host_triple(repository_ctx)
+    host_triple, _ = get_host_triple(repository_ctx)
     system = triple_to_system(host_triple)
     extension = system_to_binary_ext(system)
     arch = triple_to_arch(host_triple)
