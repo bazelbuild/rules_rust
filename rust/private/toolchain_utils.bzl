@@ -48,7 +48,7 @@ def _symlink_sysroot_bin(ctx, name, directory, target):
     """
     symlink = ctx.actions.declare_file("{}/{}/{}".format(
         name,
-        directory.lstrip("/"),
+        directory,
         target.basename,
     ))
 
