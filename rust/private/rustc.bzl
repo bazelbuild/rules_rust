@@ -118,7 +118,6 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             has_grep_includes)
 
 def collect_deps(
-        label,
         deps,
         proc_macro_deps,
         aliases,
@@ -126,7 +125,6 @@ def collect_deps(
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
-        label (str): Label of the current target.
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
@@ -142,7 +140,6 @@ def collect_deps(
     direct_crates = []
     transitive_crates = []
     transitive_noncrates = []
-    transitive_noncrate_libs = []
     transitive_build_infos = []
     build_info = None
     linkstamps = []
@@ -192,7 +189,6 @@ def collect_deps(
                  "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
-    transitive_libs = depset([])
 
     return (
         rust_common.dep_info(
@@ -301,20 +297,12 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     return ld, link_args, link_env
 
 def _process_build_scripts(
-        ctx,
-        file,
-        crate_info,
         build_info,
-        dep_info,
         compile_inputs):
     """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
-        ctx (ctx): The rule's context object
-        file (File): A struct containing files defined in label type attributes marked as `allow_single_file`.
-        crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         build_info (BuildInfo): The target Build's dependency info.
-        dep_info (Depinfo): The target Crate's dependency info.
         compile_inputs (depset): A set of all files that will participate in the build.
 
     Returns:
@@ -324,7 +312,7 @@ def _process_build_scripts(
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (list): All direct and transitive build flags from the current build info.
     """
-    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
+    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info)
     if extra_inputs:
         compile_inputs = depset(extra_inputs, transitive = [compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
@@ -447,7 +435,7 @@ def collect_inputs(
     )
 
     build_env_files = getattr(files, "rustc_env_files", [])
-    compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(ctx, file, crate_info, build_info, dep_info, compile_inputs)
+    compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(build_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
@@ -694,7 +682,6 @@ def rustc_compile_action(
         crate_info,
         output_hash = None,
         rust_flags = [],
-        environ = {},
         force_all_deps_direct = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
@@ -705,7 +692,6 @@ def rustc_compile_action(
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
-        environ (dict, optional): A set of makefile expandable environment variables for the action
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
 
@@ -718,7 +704,6 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, linkstamps = collect_deps(
-        label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
@@ -943,14 +928,11 @@ def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add("--edition={}".format(crate.edition))
 
-def _create_extra_input_args(ctx, file, build_info, dep_info):
+def _create_extra_input_args(build_info):
     """Gather additional input arguments from transitive dependencies
 
     Args:
-        ctx (ctx): The rule's context object
-        file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         build_info (BuildInfo): The BuildInfo provider from the target Crate's set of inputs.
-        dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
 
     Returns:
         tuple: A tuple of the following items:

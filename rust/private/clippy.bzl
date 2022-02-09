@@ -61,10 +61,8 @@ def _clippy_aspect_impl(target, ctx):
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    crate_type = crate_info.type
 
     dep_info, build_info, linkstamps = collect_deps(
-        label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,

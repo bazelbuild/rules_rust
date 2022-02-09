@@ -267,6 +267,7 @@ def _rust_toolchain_impl(ctx):
 
     # In cases where the toolchain uses the Rust standard library, calculate sysroot path
     sysroot_path = None
+    rust_std_files_list = []
     if rust_std:
         # Calculate the rustc sysroot path by using a file from the rust-std bundle
         rust_std_files_list = rust_std.files.to_list()

@@ -27,11 +27,11 @@ load(
 
 # TODO(marco): Separate each rule into its own file.
 
-def _assert_no_deprecated_attributes(ctx):
+def _assert_no_deprecated_attributes(_ctx):
     """Forces a failure if any deprecated attributes were specified
 
     Args:
-        ctx (ctx): The current rule's context object
+        _ctx (ctx): The current rule's context object
     """
     pass
 

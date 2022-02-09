@@ -151,11 +151,10 @@ def _resolve_repository_template(
 
     return template
 
-def get_rust_tools(repository_ctx, cargo_template, rustc_template, host_triple, version):
+def get_rust_tools(cargo_template, rustc_template, host_triple, version):
     """Retrieve `cargo` and `rustc` labels based on the host triple.
 
     Args:
-        repository_ctx (repository_ctx): The rule's context object
         cargo_template (str): A template used to identify the label of the host `cargo` binary.
         rustc_template (str): A template used to identify the label of the host `rustc` binary.
         host_triple (struct): The host's triple. See `@rules_rust//rust/platform:triple.bzl`.

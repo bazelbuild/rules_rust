@@ -8,7 +8,6 @@ def _location_expansion_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
-    argv = action.argv
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains(env, action, "test/unit/location_expansion/mylibrary.rs")
     expected = "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/generated_flag.data"
