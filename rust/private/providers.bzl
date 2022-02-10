@@ -45,11 +45,11 @@ DepInfo = provider(
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[AliasableDepInfo]",
+        "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
-        "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
     },
 )
 
