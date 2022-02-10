@@ -147,6 +147,7 @@ def collect_deps(
     transitive_noncrates = []
     transitive_noncrate_libs = []
     transitive_build_infos = []
+    transitive_link_search_paths = []
     build_info = None
     linkstamps = []
     transitive_crate_outputs = []
@@ -183,6 +184,8 @@ def collect_deps(
             if not remove_transitive_libs_from_dep_info:
                 transitive_noncrate_libs.append(dep_info.transitive_libs)
             transitive_build_infos.append(dep_info.transitive_build_infos)
+            transitive_link_search_paths.append(dep_info.link_search_path_files)
+
         elif cc_info:
             # This dependency is a cc_library
             transitive_noncrates.append(cc_info.linking_context.linker_inputs)
@@ -196,6 +199,7 @@ def collect_deps(
                      "only one is allowed in the dependencies")
             build_info = dep_build_info
             transitive_build_infos.append(depset([build_info]))
+            transitive_link_search_paths.append(depset([build_info.link_search_paths]))
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
@@ -219,6 +223,7 @@ def collect_deps(
             transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
             transitive_libs = transitive_libs,
             transitive_build_infos = depset(transitive = transitive_build_infos),
+            link_search_path_files = depset(transitive = transitive_link_search_paths),
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
@@ -334,14 +339,13 @@ def _process_build_scripts(
 
     Returns:
         tuple: A tuple: A tuple of the following items:
-            - (list): A list of all build info `OUT_DIR` File objects
+            - (depset[File]): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
-            - (list): All direct and transitive build flags from the current build info.
+            - (depset[File]): All direct and transitive build flags from the current build info.
     """
-    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
-    if extra_inputs:
-        compile_inputs = depset(extra_inputs, transitive = [compile_inputs])
+    out_dir, build_env_file, build_flags_files = _create_extra_input_args(ctx, file, build_info, dep_info)
+    compile_inputs = depset(transitive = [build_flags_files, compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
 
 def collect_inputs(
@@ -377,7 +381,7 @@ def collect_inputs(
             - (list): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
-            - (list): All direct and transitive build flags from the current build info
+            - (depset[File]): All direct and transitive build flag files from the current build info
             - (list[File]): Linkstamp outputs.
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
@@ -507,7 +511,7 @@ def construct_arguments(
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
-        build_flags_files (list): The output files of a `cargo_build_script` actions containing rustc build flags
+        build_flags_files (depset): The output files of a `cargo_build_script` actions containing rustc build flags
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
@@ -972,12 +976,10 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
 
     Returns:
         tuple: A tuple of the following items:
-            - (list): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional generated environment file from a `cargo_build_script` target
-            - (list): All direct and transitive build flags from the current build info.
+            - (depset[File]): All direct and transitive build flag files from the current build info.
     """
-    input_files = []
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -988,17 +990,14 @@ def _create_extra_input_args(ctx, file, build_info, dep_info):
     if build_info:
         out_dir = build_info.out_dir.path
         build_env_file = build_info.rustc_env
-        build_flags_files.append(build_info.flags.path)
-        build_flags_files.append(build_info.link_flags.path)
-        input_files.append(build_info.out_dir)
-        input_files.append(build_info.link_flags)
+        build_flags_files.append(build_info.flags)
+        build_flags_files.append(build_info.link_flags)
 
-    # Populate with transitive link search paths
-    for dep_build_info in dep_info.transitive_build_infos.to_list():
-        build_flags_files.append(dep_build_info.link_search_paths.path)
-        input_files.append(dep_build_info.link_search_paths)
-
-    return input_files, out_dir, build_env_file, build_flags_files
+    return (
+        out_dir,
+        build_env_file,
+        depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
+    )
 
 def _compute_rpaths(toolchain, output_dir, dep_info):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
