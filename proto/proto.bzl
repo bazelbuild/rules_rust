@@ -212,8 +212,6 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         output_hash,
     ))
 
-    toolchain = find_toolchain(ctx)
-
     # Gather all dependencies for compilation
     compile_action_deps = depset(
         transform_deps(

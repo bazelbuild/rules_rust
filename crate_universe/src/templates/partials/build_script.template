@@ -51,6 +51,7 @@ cargo_build_script(
     {%- include "templates/partials/targeted_build_script_data_dependencies.template" -%},
     {%- else -%},
     {%- endif %}
+    aliases = {%- include "templates/partials/targeted_aliases.template" %},
     tags = [
         "cargo-raze",
         "manual",

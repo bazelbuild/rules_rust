@@ -48,7 +48,8 @@ def rustdoc_compile_action(
         toolchain,
         crate_info,
         output = None,
-        rustdoc_flags = []):
+        rustdoc_flags = [],
+        is_test = False):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
     Args:
@@ -57,6 +58,7 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
         rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+        is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
@@ -72,11 +74,9 @@ def rustdoc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, linkstamps = collect_deps(
-        label = ctx.label,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
-        remove_transitive_libs_from_dep_info = toolchain._incompatible_remove_transitive_libs_from_dep_info,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
@@ -103,7 +103,7 @@ def rustdoc_compile_action(
         attr = ctx.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rust_doc.path,
+        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
@@ -118,6 +118,17 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         force_link = True,
     )
+
+    # Because rustdoc tests compile tests outside of the sandbox, the sysroot
+    # must be updated to the `short_path` equivilant as it will now be
+    # a part of runfiles.
+    if is_test:
+        if "SYSROOT" in env:
+            env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
+
+        # `rustdoc` does not support the SYSROOT environment variable. To account
+        # for this, the flag must be explicitly passed to the `rustdoc` binary.
+        args.rustc_flags.add("--sysroot=${{pwd}}/{}".format(toolchain.sysroot_short_path))
 
     return struct(
         executable = ctx.executable._process_wrapper,
@@ -160,7 +171,6 @@ def _rust_doc_impl(ctx):
 
     crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
-    dep_info = crate[rust_common.dep_info]
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 

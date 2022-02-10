@@ -48,8 +48,6 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: (Deprecated, see https://github.com/bazelbuild/rules_rust/issues/1051) " +
-                           "All transitive dependencies, not filtered by type.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
         "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
     },

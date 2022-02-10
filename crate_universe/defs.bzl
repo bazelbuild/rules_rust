@@ -377,7 +377,7 @@ def _override(
             if not type(dep_val) == "dict":
                 fail("The {} attribute should be a dictionary".format(dep_key))
 
-            for target, deps in dep_val.items():
+            for deps in dep_val.values():
                 if not type(deps) == "list" or any([type(x) != "string" for x in deps]):
                     fail("The {} values should be lists of strings".format(dep_key))
 

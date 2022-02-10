@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use value_bag::ValueBag;
 
 lazy_static! {
     static ref HASHMAP: HashMap<&'static str, &'static str> = {
@@ -12,6 +13,10 @@ lazy_static! {
 }
 
 fn main() {
+    let bag = ValueBag::capture_display(&42);
+    let num = bag.to_u64().unwrap();
+
+    assert_eq!(num, 42);
     assert_eq!(HASHMAP["Daniel"], "Wagner-Hall");
     println!("It worked!");
 }

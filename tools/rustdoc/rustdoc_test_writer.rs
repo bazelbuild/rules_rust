@@ -3,7 +3,7 @@
 //! code in a single call, can be run as a test target in a hermetic manner.
 
 use std::cmp::Reverse;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -92,7 +92,7 @@ fn parse_args() -> Options {
 /// Write a unix compatible test runner
 fn write_test_runner_unix(
     path: &Path,
-    env: &HashMap<String, String>,
+    env: &BTreeMap<String, String>,
     argv: &[String],
     strip_substrings: &[String],
 ) {
@@ -126,7 +126,7 @@ fn write_test_runner_unix(
 /// Write a windows compatible test runner
 fn write_test_runner_windows(
     path: &Path,
-    env: &HashMap<String, String>,
+    env: &BTreeMap<String, String>,
     argv: &[String],
     strip_substrings: &[String],
 ) {
@@ -180,7 +180,7 @@ fn set_executable(_path: &Path) {
 
 fn write_test_runner(
     path: &Path,
-    env: &HashMap<String, String>,
+    env: &BTreeMap<String, String>,
     argv: &[String],
     strip_substrings: &[String],
 ) {
@@ -196,7 +196,7 @@ fn write_test_runner(
 fn main() {
     let opt = parse_args();
 
-    let env: HashMap<String, String> = env::vars()
+    let env: BTreeMap<String, String> = env::vars()
         .into_iter()
         .filter(|(key, _)| opt.env_keys.iter().any(|k| k == key))
         .collect();

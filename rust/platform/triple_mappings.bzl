@@ -172,7 +172,7 @@ def cpu_arch_to_constraints(cpu_arch):
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
-def vendor_to_constraints(vendor):
+def vendor_to_constraints(_vendor):
     # TODO(acmcarther): Review:
     #
     # My current understanding is that vendors can't have a material impact on

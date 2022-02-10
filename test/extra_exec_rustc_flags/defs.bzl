@@ -1,6 +1,6 @@
 """Test transitions to test extra_exec_rustc_flags."""
 
-def _extra_exec_rustc_flags_transition_impl(settings, attr):
+def _extra_exec_rustc_flags_transition_impl(_settings, attr):
     return {
         "//:extra_exec_rustc_flags": attr.extra_exec_rustc_flags,
     }
