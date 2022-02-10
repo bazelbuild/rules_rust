@@ -1386,8 +1386,8 @@ A provider containing general Crate information.
 ## DepInfo
 
 <pre>
-DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>, <a href="#DepInfo-transitive_crate_outputs">transitive_crate_outputs</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>,
-        <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>, <a href="#DepInfo-link_search_path_files">link_search_path_files</a>)
+DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-link_search_path_files">link_search_path_files</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>,
+        <a href="#DepInfo-transitive_crate_outputs">transitive_crate_outputs</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>, <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>)
 </pre>
 
 A provider containing information about a Crate's dependencies.
@@ -1399,11 +1399,11 @@ A provider containing information about a Crate's dependencies.
 | :------------- | :------------- |
 | <a id="DepInfo-dep_env"></a>dep_env |  File: File with environment variables direct dependencies build scripts rely upon.    |
 | <a id="DepInfo-direct_crates"></a>direct_crates |  depset[AliasableDepInfo]    |
+| <a id="DepInfo-link_search_path_files"></a>link_search_path_files |  depset[File]: All transitive files containing search paths to pass to the linker    |
 | <a id="DepInfo-transitive_build_infos"></a>transitive_build_infos |  depset[BuildInfo]    |
 | <a id="DepInfo-transitive_crate_outputs"></a>transitive_crate_outputs |  depset[File]: All transitive crate outputs.    |
 | <a id="DepInfo-transitive_crates"></a>transitive_crates |  depset[CrateInfo]    |
 | <a id="DepInfo-transitive_noncrates"></a>transitive_noncrates |  depset[LinkerInput]: All transitive dependencies that aren't crates.    |
-| <a id="DepInfo-link_search_path_files"></a>link_search_path_files |  depset[File]: All transitive files containing search paths to pass to the linker    |
 
 
 <a id="#StdLibInfo"></a>
