@@ -319,8 +319,8 @@ def _process_build_scripts(
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
-    out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info, dep_info)
-    compile_inputs = depset(transitive = [build_flags_files, compile_inputs])
+    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info, dep_info)
+    compile_inputs = depset(transitive = [extra_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
 
 def collect_inputs(
@@ -940,10 +940,12 @@ def _create_extra_input_args(build_info, dep_info):
 
     Returns:
         tuple: A tuple of the following items:
+            - (depset[File]): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flag files from the current build info.
     """
+    input_files = []
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -956,8 +958,11 @@ def _create_extra_input_args(build_info, dep_info):
         build_env_file = build_info.rustc_env
         build_flags_files.append(build_info.flags)
         build_flags_files.append(build_info.link_flags)
+        input_files.append(build_info.out_dir)
+        input_files.append(build_info.link_flags)
 
     return (
+        depset(input_files, transitive = [dep_info.link_search_path_files]),
         out_dir,
         build_env_file,
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
