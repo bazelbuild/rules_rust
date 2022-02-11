@@ -340,7 +340,7 @@ def _additional_deps_test():
     cc_library(
         name = "additional_deps_cc",
         srcs = ["native_dep.cc"],
-        linkopts = ["-L$(location :dynamic.lds)"],
+        linkopts = ["-L$(execpath :dynamic.lds)"],
         deps = [":dynamic.lds"],
     )
 
@@ -372,16 +372,16 @@ def native_deps_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
+            ":bin_has_additional_deps_test",
+            ":bin_has_native_dep_and_alwayslink_test",
+            ":bin_has_native_libs_test",
+            ":cdylib_has_additional_deps_test",
+            ":cdylib_has_native_dep_and_alwayslink_test",
+            ":cdylib_has_native_libs_test",
+            ":lib_has_no_additional_deps_test",
+            ":native_linkopts_propagate_test",
+            ":proc_macro_has_native_libs_test",
             ":rlib_has_no_native_libs_test",
             ":staticlib_has_native_libs_test",
-            ":cdylib_has_native_libs_test",
-            ":proc_macro_has_native_libs_test",
-            ":bin_has_native_libs_test",
-            ":bin_has_native_dep_and_alwayslink_test",
-            ":cdylib_has_native_dep_and_alwayslink_test",
-            ":native_linkopts_propagate_test",
-            ":bin_has_additional_deps_test",
-            ":cdylib_has_additional_deps_test",
-            ":lib_has_no_additional_deps_test",
         ],
     )

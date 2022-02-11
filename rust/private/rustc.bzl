@@ -1133,9 +1133,6 @@ def _make_link_flags_default(linker_input):
             ret.extend(_portable_link_flags(lib))
     return ret
 
-def _libraries_dirnames(linker_input):
-    return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
-
 def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
