@@ -117,6 +117,11 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             # attribute is required for compiling linkstamps.
             has_grep_includes)
 
+def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
+    if crate_type in ("cdylib" or "dylib"):
+        return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
+    return False
+
 def collect_deps(
         deps,
         proc_macro_deps,
@@ -211,10 +216,10 @@ def collect_deps(
         depset(transitive = linkstamps),
     )
 
-def _collect_libs_from_linker_inputs(linker_inputs):
+def _collect_libs_from_linker_inputs(linker_inputs, get_artifact_fn):
     # TODO: We could let the user choose how to link, instead of always preferring to link static libraries.
     return [
-        get_preferred_artifact(lib)
+        get_artifact_fn(lib)
         for li in linker_inputs
         for lib in li.libraries
     ]
@@ -363,6 +368,9 @@ def collect_inputs(
 
     linker_depset = cc_toolchain.all_files
 
+    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
+    get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
+
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
@@ -370,10 +378,11 @@ def collect_inputs(
     if crate_info.type in ("staticlib", "proc-macro"):
         additional_transitive_inputs = _collect_libs_from_linker_inputs(
             dep_info.transitive_noncrates.to_list(),
+            get_artifact_fn,
         )
     elif crate_info.type in ("bin", "dylib", "cdylib"):
         linker_inputs = dep_info.transitive_noncrates.to_list()
-        additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs) + [
+        additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs, get_artifact_fn) + [
             additional_input
             for linker_input in linker_inputs
             for additional_input in linker_input.additional_inputs
@@ -622,7 +631,9 @@ def construct_arguments(
         # linker since it won't understand.
         if toolchain.target_arch != "wasm32":
             if output_dir:
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info)
+                use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
+                get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, get_artifact_fn)
             else:
                 rpaths = depset([])
             ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
@@ -968,7 +979,7 @@ def _create_extra_input_args(build_info, dep_info):
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
 
-def _compute_rpaths(toolchain, output_dir, dep_info):
+def _compute_rpaths(toolchain, output_dir, dep_info, get_artifact_fn):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
     Args:
@@ -985,7 +996,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info):
         return depset([])
 
     dylibs = [
-        get_preferred_artifact(lib)
+        get_artifact_fn(lib)
         for linker_input in dep_info.transitive_noncrates.to_list()
         for lib in linker_input.libraries
         if _is_dylib(lib)
@@ -1084,40 +1095,40 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib):
+def _portable_link_flags(lib, get_artifact_fn):
     if lib.static_library or lib.pic_static_library:
-        return ["-C", "link-arg=%s" % get_preferred_artifact(lib).path]
+        return ["-C", "link-arg=%s" % get_artifact_fn(lib).path]
     elif _is_dylib(lib):
         # TODO: Consider switching dylibs to use -Clink-arg as above.
         return [
             "-Lnative=%s" % get_preferred_artifact(lib).dirname,
-            "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib)),
+            "-ldylib=%s" % get_lib_name(get_artifact_fn(lib)),
         ]
 
     return []
 
-def _make_link_flags_windows(linker_input):
+def _make_link_flags_windows(linker_input, get_artifact_fn):
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
-            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib).path])
+            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_artifact_fn(lib).path])
         else:
-            ret.extend(_portable_link_flags(lib))
+            ret.extend(_portable_link_flags(lib, get_artifact_fn))
     return ret
 
-def _make_link_flags_darwin(linker_input):
+def _make_link_flags_darwin(linker_input, get_artifact_fn):
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
             ret.extend([
                 "-C",
-                ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib).path),
+                ("link-arg=-Wl,-force_load,%s" % get_artifact_fn(lib).path),
             ])
         else:
-            ret.extend(_portable_link_flags(lib))
+            ret.extend(_portable_link_flags(lib, get_artifact_fn))
     return ret
 
-def _make_link_flags_default(linker_input):
+def _make_link_flags_default(linker_input, get_artifact_fn):
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
@@ -1125,16 +1136,13 @@ def _make_link_flags_default(linker_input):
                 "-C",
                 "link-arg=-Wl,--whole-archive",
                 "-C",
-                ("link-arg=%s" % get_preferred_artifact(lib).path),
+                ("link-arg=%s" % get_artifact_fn(lib).path),
                 "-C",
                 "link-arg=-Wl,--no-whole-archive",
             ])
         else:
-            ret.extend(_portable_link_flags(lib))
+            ret.extend(_portable_link_flags(lib, get_artifact_fn))
     return ret
-
-def _libraries_dirnames(linker_input):
-    return [get_preferred_artifact(lib).dirname for lib in linker_input.libraries]
 
 def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
@@ -1152,14 +1160,17 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
     if crate_type in ["lib", "rlib"]:
         return
 
-    if toolchain.os == "windows":
-        make_link_flags = _make_link_flags_windows
-    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
-        make_link_flags = _make_link_flags_darwin
-    else:
-        make_link_flags = _make_link_flags_default
+    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type)
+    get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
 
-    args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags)
+    if toolchain.os == "windows":
+        make_link_flags = lambda x: _make_link_flags_windows(x, get_artifact_fn)
+    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
+        make_link_flags = lambda x: _make_link_flags_darwin(x, get_artifact_fn)
+    else:
+        make_link_flags = lambda x: _make_link_flags_default(x, get_artifact_fn)
+
+    args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags, allow_closure = True)
 
     for linkstamp_out in linkstamp_outs:
         args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])
