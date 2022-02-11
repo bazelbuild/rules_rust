@@ -369,7 +369,9 @@ def collect_inputs(
     linker_depset = cc_toolchain.all_files
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
-    get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
+
+    def get_artifact_fn(x):
+        return get_preferred_artifact(x, use_pic = use_pic)
 
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
@@ -632,7 +634,10 @@ def construct_arguments(
         if toolchain.target_arch != "wasm32":
             if output_dir:
                 use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
-                get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
+                
+                def get_artifact_fn(x):
+                    return get_preferred_artifact(x, use_pic = use_pic)
+
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, get_artifact_fn)
             else:
                 rpaths = depset([])
@@ -1162,14 +1167,19 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
         return
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type)
-    get_artifact_fn = lambda x: get_preferred_artifact(x, use_pic = use_pic)
+    
+    def get_artifact_fn(x):
+        return get_preferred_artifact(x, use_pic = use_pic)
 
     if toolchain.os == "windows":
-        make_link_flags = lambda x: _make_link_flags_windows(x, get_artifact_fn)
+        def make_link_flags(x):
+            return _make_link_flags_windows(x, get_artifact_fn)
     elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
-        make_link_flags = lambda x: _make_link_flags_darwin(x, get_artifact_fn)
+        def make_link_flags(x):
+            return _make_link_flags_darwin(x, get_artifact_fn)
     else:
-        make_link_flags = lambda x: _make_link_flags_default(x, get_artifact_fn)
+        def make_link_flags(x):
+            return _make_link_flags_default(x, get_artifact_fn)
 
     args.add_all(dep_info.transitive_noncrates, map_each = make_link_flags, allow_closure = True)
 
