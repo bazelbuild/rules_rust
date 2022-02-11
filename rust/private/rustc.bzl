@@ -1101,7 +1101,7 @@ def _portable_link_flags(lib, get_artifact_fn):
     elif _is_dylib(lib):
         # TODO: Consider switching dylibs to use -Clink-arg as above.
         return [
-            "-Lnative=%s" % get_preferred_artifact(lib).dirname,
+            "-Lnative=%s" % get_artifact_fn(lib).dirname,
             "-ldylib=%s" % get_lib_name(get_artifact_fn(lib)),
         ]
 
