@@ -986,6 +986,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info, get_artifact_fn):
         toolchain (rust_toolchain): The current `rust_toolchain`
         output_dir (str): The output directory of the current target
         dep_info (DepInfo): The current target's dependency info
+        get_artifact_fn: Get the library to link from a LibraryToLink object.
 
     Returns:
         depset: A set of relative paths from the output directory to each dependency
