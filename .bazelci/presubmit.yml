@@ -302,9 +302,5 @@ tasks:
     # TODO: fix test targets in `crate_universe_windows_targets`
     test_targets: *crate_universe_windows_targets
 buildifier:
-  # TODO: Version 5.0.0 introduced a ton of unused variable warnings in cases
-  # that should have been accounted for by `_` prefixes on the variable. Buildifier
-  # should ignore `_` prefixed variables when checking if something is unused
-  # https://github.com/bazelbuild/buildtools/issues/1044
-  version: 4.2.5
+  version: latest
   warnings: "all"
