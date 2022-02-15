@@ -106,48 +106,48 @@ def get_host_triple(repository_ctx, abi = None):
 
 def _resolve_repository_template(
         template,
-        version = None,
-        triple = None,
-        arch = None,
-        vendor = None,
-        system = None,
         abi = None,
-        tool = None):
+        arch = None,
+        system = None,
+        tool = None,
+        triple = None,
+        vendor = None,
+        version = None):
     """Render values into a repository template string
 
     Args:
         template (str): The template to use for rendering
-        version (str, optional): The Rust version used in the toolchain.
-        triple (str, optional): The host triple
-        arch (str, optional): The host CPU architecture
-        vendor (str, optional): The host vendor name
-        system (str, optional): The host system name
         abi (str, optional): The host ABI
+        arch (str, optional): The host CPU architecture
+        system (str, optional): The host system name
         tool (str, optional): The tool to expect in the particular repository.
             Eg. `cargo`, `rustc`, `stdlib`.
+        triple (str, optional): The host triple
+        vendor (str, optional): The host vendor name
+        version (str, optional): The Rust version used in the toolchain.
     Returns:
         string: The resolved template string based on the given parameters
     """
-    if version:
-        template = template.replace("{version}", version)
-
-    if triple:
-        template = template.replace("{triple}", triple)
+    if abi:
+        template = template.replace("{abi}", abi)
 
     if arch:
         template = template.replace("{arch}", arch)
 
-    if vendor:
-        template = template.replace("{vendor}", vendor)
-
     if system:
         template = template.replace("{system}", system)
 
-    if abi:
-        template = template.replace("{abi}", abi)
-
     if tool:
         template = template.replace("{tool}", tool)
+
+    if triple:
+        template = template.replace("{triple}", triple)
+
+    if vendor:
+        template = template.replace("{vendor}", vendor)
+
+    if version:
+        template = template.replace("{version}", version)
 
     return template
 
