@@ -10,6 +10,10 @@ def deps():
                 name = "lazy_static",
                 semver = "=1.4",
             ),
+            crate.spec(
+                name = "value-bag",
+                semver = "=1.0.0-alpha.7",
+            ),
         ],
         supported_targets = [
             "x86_64-apple-darwin",

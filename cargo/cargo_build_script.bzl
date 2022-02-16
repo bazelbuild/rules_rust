@@ -45,6 +45,7 @@ def _build_script_impl(ctx):
     dep_env_out = ctx.actions.declare_file(ctx.label.name + ".depenv")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
+    link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
     manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
@@ -155,6 +156,7 @@ def _build_script_impl(ctx):
         env_out.path,
         flags_out.path,
         link_flags.path,
+        link_search_paths.path,
         dep_env_out.path,
         streams.stdout.path,
         streams.stderr.path,
@@ -171,7 +173,7 @@ def _build_script_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args],
-        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out, streams.stdout, streams.stderr],
+        outputs = [out_dir, env_out, flags_out, link_flags, link_search_paths, dep_env_out, streams.stdout, streams.stderr],
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
@@ -186,6 +188,7 @@ def _build_script_impl(ctx):
             dep_env = dep_env_out,
             flags = flags_out,
             link_flags = link_flags,
+            link_search_paths = link_search_paths,
         ),
         OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
     ]

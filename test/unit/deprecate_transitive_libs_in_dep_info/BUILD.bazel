@@ -1,8 +1,0 @@
-load(
-    ":deprecate_transitive_libs_in_dep_info_test.bzl",
-    "deprecate_transitive_libs_in_dep_info_test_suite",
-)
-
-deprecate_transitive_libs_in_dep_info_test_suite(
-    name = "deprecate_transitive_libs_in_dep_info_test_suite",
-)

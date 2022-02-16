@@ -3,7 +3,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
@@ -211,6 +210,173 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
         )
     return None
 
+def _symlink_sysroot_tree(ctx, name, target):
+    """Generate a set of symlinks to files from another target
+
+    Args:
+        ctx (ctx): The toolchain's context object
+        name (str): The name of the sysroot directory (typically `ctx.label.name`)
+        target (Target): A target owning files to symlink
+
+    Returns:
+        depset[File]: A depset of the generated symlink files
+    """
+    tree_files = []
+    for file in target.files.to_list():
+        # Parse the path to the file relative to the workspace root so a
+        # symlink matching this path can be created within the sysroot.
+
+        # The code blow attempts to parse any workspace names out of the
+        # path. For local targets, this code is a noop.
+        if target.label.workspace_root:
+            file_path = file.path.split(target.label.workspace_root, 1)[-1]
+        else:
+            file_path = file.path
+
+        symlink = ctx.actions.declare_file("{}/{}".format(name, file_path.lstrip("/")))
+
+        ctx.actions.symlink(
+            output = symlink,
+            target_file = file,
+        )
+
+        tree_files.append(symlink)
+
+    return depset(tree_files)
+
+def _symlink_sysroot_bin(ctx, name, directory, target):
+    """Crete a symlink to a target file.
+
+    Args:
+        ctx (ctx): The rule's context object
+        name (str): A common name for the output directory
+        directory (str): The directory under `name` to put the file in
+        target (File): A File object to symlink to
+
+    Returns:
+        File: A newly generated symlink file
+    """
+    symlink = ctx.actions.declare_file("{}/{}/{}".format(
+        name,
+        directory,
+        target.basename,
+    ))
+
+    ctx.actions.symlink(
+        output = symlink,
+        target_file = target,
+        is_executable = True,
+    )
+
+    return symlink
+
+def _generate_sysroot(
+        ctx,
+        rustc,
+        rustdoc,
+        rustc_lib,
+        cargo = None,
+        clippy = None,
+        llvm_tools = None,
+        rust_std = None,
+        rustfmt = None):
+    """Generate a rust sysroot from collection of toolchain components
+
+    Args:
+        ctx (ctx): A context object from a `rust_toolchain` rule.
+        rustc (File): The path to a `rustc` executable.
+        rustdoc (File): The path to a `rustdoc` executable.
+        rustc_lib (Target): A collection of Files containing dependencies of `rustc`.
+        cargo (File, optional): The path to a `cargo` executable.
+        clippy (File, optional): The path to a `clippy-driver` executable.
+        llvm_tools (Target, optional): A collection of llvm tools used by `rustc`.
+        rust_std (Target, optional): A collection of Files containing Rust standard library components.
+        rustfmt (File, optional): The path to a `rustfmt` executable.
+
+    Returns:
+        struct: A struct of generated files representing the new sysroot
+    """
+    name = ctx.label.name
+
+    # Define runfiles
+    direct_files = []
+    transitive_file_sets = []
+
+    # Rustc
+    sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
+    direct_files.extend([sysroot_rustc, rustc])
+
+    # Rustc dependencies
+    sysroot_rustc_lib = None
+    if rustc_lib:
+        sysroot_rustc_lib = _symlink_sysroot_tree(ctx, name, rustc_lib)
+        transitive_file_sets.extend([sysroot_rustc_lib, rustc_lib.files])
+
+    # Rustdoc
+    sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
+    direct_files.extend([sysroot_rustdoc, rustdoc])
+
+    # Clippy
+    sysroot_clippy = None
+    if clippy:
+        sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
+        direct_files.extend([sysroot_clippy, clippy])
+
+    # Cargo
+    sysroot_cargo = None
+    if cargo:
+        sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
+        direct_files.extend([sysroot_cargo, cargo])
+
+    # Rustfmt
+    sysroot_rustfmt = None
+    if rustfmt:
+        sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
+        direct_files.extend([sysroot_rustfmt, rustfmt])
+
+    # Llvm tools
+    sysroot_llvm_tools = None
+    if llvm_tools:
+        sysroot_llvm_tools = _symlink_sysroot_tree(ctx, name, llvm_tools)
+        transitive_file_sets.extend([sysroot_llvm_tools, llvm_tools.files])
+
+    # Rust standard library
+    sysroot_rust_std = None
+    if rust_std:
+        sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
+        transitive_file_sets.extend([sysroot_rust_std, rust_std.files])
+
+    # Declare a file in the root of the sysroot to make locating the sysroot easy
+    sysroot_anchor = ctx.actions.declare_file("{}/rust.sysroot".format(name))
+    ctx.actions.write(
+        output = sysroot_anchor,
+        content = "\n".join([
+            "cargo: {}".format(cargo),
+            "clippy: {}".format(clippy),
+            "llvm_tools: {}".format(llvm_tools),
+            "rust_std: {}".format(rust_std),
+            "rustc_lib: {}".format(rustc_lib),
+            "rustc: {}".format(rustc),
+            "rustdoc: {}".format(rustdoc),
+            "rustfmt: {}".format(rustfmt),
+        ]),
+    )
+
+    # Create a depset of all sysroot files (symlinks and their real paths)
+    all_files = depset(direct_files, transitive = transitive_file_sets)
+
+    return struct(
+        all_files = all_files,
+        cargo = sysroot_cargo,
+        clippy = sysroot_clippy,
+        rust_std = sysroot_rust_std,
+        rustc = sysroot_rustc,
+        rustc_lib = sysroot_rustc_lib,
+        rustdoc = sysroot_rustdoc,
+        rustfmt = sysroot_rustfmt,
+        sysroot_anchor = sysroot_anchor,
+    )
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -232,8 +398,6 @@ def _rust_toolchain_impl(ctx):
     if ctx.attr.target_triple and ctx.file.target_json:
         fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
 
-    remove_transitive_libs_from_dep_info = ctx.attr._incompatible_remove_transitive_libs_from_dep_info[IncompatibleFlagInfo]
-
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
 
@@ -245,6 +409,18 @@ def _rust_toolchain_impl(ctx):
         rust_std = ctx.attr.rust_lib
     else:
         rust_std = ctx.attr.rust_std
+
+    sysroot = _generate_sysroot(
+        ctx = ctx,
+        rustc = ctx.file.rustc,
+        rustdoc = ctx.file.rust_doc,
+        rustc_lib = ctx.attr.rustc_lib,
+        rust_std = rust_std,
+        rustfmt = ctx.file.rustfmt,
+        clippy = ctx.file.clippy_driver,
+        cargo = ctx.file.cargo,
+        llvm_tools = ctx.attr.llvm_tools,
+    )
 
     expanded_stdlib_linkflags = []
     for flag in ctx.attr.stdlib_linkflags:
@@ -263,41 +439,51 @@ def _rust_toolchain_impl(ctx):
             ),
         ]),
     )
+
+    # Contains linker flags needed to link Rust standard library.
+    # These need to be added to linker command lines when the linker is not rustc
+    # (rustc does this automatically). Linker flags wrapped in an otherwise empty
+    # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
+    # providing a `CcInfo`.
     stdlib_linkflags_cc_info = CcInfo(
         compilation_context = cc_common.create_compilation_context(),
         linking_context = linking_context,
     )
 
+    # Determine the path and short_path of the sysroot
+    sysroot_path = sysroot.sysroot_anchor.dirname
+    sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
+
     toolchain = platform_common.ToolchainInfo(
-        rustc = ctx.file.rustc,
-        rust_doc = ctx.file.rust_doc,
-        rustfmt = ctx.file.rustfmt,
-        cargo = ctx.file.cargo,
-        clippy_driver = ctx.file.clippy_driver,
-        target_json = ctx.file.target_json,
-        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
-        rustc_lib = depset(ctx.files.rustc_lib),
-        rustc_srcs = ctx.attr.rustc_srcs,
-        rust_std = rust_std.files,
-        rust_lib = rust_std.files,  # `rust_lib` is deprecated and only exists for legacy support.
+        all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
-        staticlib_ext = ctx.attr.staticlib_ext,
-        dylib_ext = ctx.attr.dylib_ext,
-        # Contains linker flags needed to link Rust standard library.
-        # These need to be added to linker command lines when the linker is not rustc
-        # (rustc does this automatically). Linker flags wrapped in an otherwise empty
-        # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
-        # providing a `CcInfo`.
-        stdlib_linkflags = stdlib_linkflags_cc_info,
-        target_triple = ctx.attr.target_triple,
-        exec_triple = ctx.attr.exec_triple,
-        os = ctx.attr.os,
-        target_arch = ctx.attr.target_triple.split("-")[0],
-        default_edition = ctx.attr.default_edition,
+        cargo = sysroot.cargo,
+        clippy_driver = sysroot.clippy,
         compilation_mode_opts = compilation_mode_opts,
-        crosstool_files = ctx.files._crosstool,
+        crosstool_files = ctx.files._cc_toolchain,
+        default_edition = ctx.attr.default_edition,
+        dylib_ext = ctx.attr.dylib_ext,
+        exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
-        _incompatible_remove_transitive_libs_from_dep_info = remove_transitive_libs_from_dep_info.enabled,
+        os = ctx.attr.os,
+        rust_doc = sysroot.rustdoc,
+        rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
+        rust_std = sysroot.rust_std,
+        rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
+        rustc = sysroot.rustc,
+        rustc_lib = sysroot.rustc_lib,
+        rustc_srcs = ctx.attr.rustc_srcs,
+        rustfmt = sysroot.rustfmt,
+        staticlib_ext = ctx.attr.staticlib_ext,
+        stdlib_linkflags = stdlib_linkflags_cc_info,
+        sysroot = sysroot_path,
+        sysroot_short_path = sysroot_short_path,
+        target_arch = ctx.attr.target_triple.split("-")[0],
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
+        target_json = ctx.file.target_json,
+        target_triple = ctx.attr.target_triple,
+
+        # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
@@ -346,6 +532,10 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
+        ),
+        "llvm_tools": attr.label_list(
+            doc = "LLVM tools that are shipped with the Rust toolchain.",
+            allow_files = True,
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
@@ -414,12 +604,6 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
-        ),
-        "_crosstool": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-        "_incompatible_remove_transitive_libs_from_dep_info": attr.label(
-            default = "@rules_rust//rust/settings:incompatible_remove_transitive_libs_from_dep_info",
         ),
         "_rename_first_party_crates": attr.label(
             default = "@rules_rust//rust/settings:rename_first_party_crates",

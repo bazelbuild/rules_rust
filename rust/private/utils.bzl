@@ -62,14 +62,13 @@ def relativize(path, start):
     src_parts = _path_parts(start)
     dest_parts = _path_parts(path)
     n = 0
-    done = False
     for src_part, dest_part in zip(src_parts, dest_parts):
         if src_part != dest_part:
             break
         n += 1
 
     relative_path = ""
-    for i in range(n, len(src_parts)):
+    for _ in range(n, len(src_parts)):
         relative_path += "../"
     relative_path += "/".join(dest_parts[n:])
 
@@ -492,13 +491,6 @@ def decode_crate_name_as_label_for_testing(crate_name):
 def _replace_all(string, substitutions):
     """Replaces occurrences of the given patterns in `string`.
 
-    Args:
-        string (string): the string in which the replacements should be performed.
-        substitutions: the list of patterns and replacements to apply.
-
-    Returns:
-        A string with the appropriate substitutions performed.
-
     There are a few reasons this looks complicated:
     * The substitutions are performed with some priority, i.e. patterns that are
       listed first in `substitutions` are higher priority than patterns that are
@@ -513,11 +505,18 @@ def _replace_all(string, substitutions):
       pattern matches *earlier* in the string.) (E.g. "_quotedot_" encodes to
       "_quotequote_dot_". Note that "_quotequote_" and "_dot_" both occur in
       this string, and overlap.).
+
+    Args:
+        string (string): the string in which the replacements should be performed.
+        substitutions: the list of patterns and replacements to apply.
+
+    Returns:
+        A string with the appropriate substitutions performed.
     """
 
     # Find the highest-priority pattern matches.
     plan = {}
-    for subst_index, (pattern, replacement) in enumerate(substitutions):
+    for pattern, replacement in substitutions:
         for pattern_start in range(len(string)):
             if not pattern_start in plan and string.startswith(pattern, pattern_start):
                 plan[pattern_start] = (len(pattern), replacement)

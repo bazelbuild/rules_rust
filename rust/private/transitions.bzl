@@ -1,11 +1,11 @@
 # buildifier: disable=module-docstring
-def _wasm_bindgen_transition(settings, attr):
+def _wasm_bindgen_transition(_settings, _attr):
     """The implementation of the `wasm_bindgen_transition` transition
 
     Args:
-        settings (dict): A dict {String:Object} of all settings declared
+        _settings (dict): A dict {String:Object} of all settings declared
             in the inputs parameter to `transition()`
-        attr (dict): A dict of attributes and values of the rule to which
+        _attr (dict): A dict of attributes and values of the rule to which
             the transition is attached
 
     Returns:

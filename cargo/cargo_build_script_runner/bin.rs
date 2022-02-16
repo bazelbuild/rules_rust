@@ -41,6 +41,7 @@ fn run_buildrs() -> Result<(), String> {
         env_file,
         compile_flags_file,
         link_flags_file,
+        link_search_paths_file,
         output_dep_env_path,
         stdout_path,
         stderr_path,
@@ -162,12 +163,15 @@ fn run_buildrs() -> Result<(), String> {
     let CompileAndLinkFlags {
         compile_flags,
         link_flags,
+        link_search_paths,
     } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
 
     write(&compile_flags_file, compile_flags.as_bytes())
         .unwrap_or_else(|_| panic!("Unable to write file {:?}", compile_flags_file));
     write(&link_flags_file, link_flags.as_bytes())
         .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_flags_file));
+    write(&link_search_paths_file, link_search_paths.as_bytes())
+        .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_search_paths_file));
     Ok(())
 }
 
@@ -179,6 +183,7 @@ struct Options {
     env_file: String,
     compile_flags_file: String,
     link_flags_file: String,
+    link_search_paths_file: String,
     output_dep_env_path: String,
     stdout_path: String,
     stderr_path: String,
@@ -190,7 +195,7 @@ fn parse_args() -> Result<Options, String> {
     let mut args = env::args().skip(1);
 
     // TODO: we should consider an alternative to positional arguments.
-    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
+    match (args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next(), args.next()) {
         (
             Some(progname),
             Some(crate_links),
@@ -198,6 +203,7 @@ fn parse_args() -> Result<Options, String> {
             Some(env_file),
             Some(compile_flags_file),
             Some(link_flags_file),
+            Some(link_search_paths_file),
             Some(output_dep_env_path),
             Some(stdout_path),
             Some(stderr_path),
@@ -209,6 +215,7 @@ fn parse_args() -> Result<Options, String> {
                 env_file,
                 compile_flags_file,
                 link_flags_file,
+                link_search_paths_file,
                 output_dep_env_path,
                 stdout_path,
                 stderr_path,
@@ -216,7 +223,7 @@ fn parse_args() -> Result<Options, String> {
             })
         }
         _ => {
-            Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
+            Err(format!("Usage: $0 progname crate_links out_dir env_file compile_flags_file link_flags_file link_search_paths_file output_dep_env_path stdout_path stderr_path input_dep_env_paths[arg1...argn]\nArguments passed: {:?}", args.collect::<Vec<String>>()))
         }
     }
 }

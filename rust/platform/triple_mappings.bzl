@@ -23,6 +23,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
+    "armv7-unknown-linux-gnueabi",
     "i686-linux-android",
     "i686-unknown-freebsd",
     "powerpc-unknown-linux-gnu",
@@ -171,7 +172,7 @@ def cpu_arch_to_constraints(cpu_arch):
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
-def vendor_to_constraints(vendor):
+def vendor_to_constraints(_vendor):
     # TODO(acmcarther): Review:
     #
     # My current understanding is that vendors can't have a material impact on

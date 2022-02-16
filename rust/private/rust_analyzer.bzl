@@ -221,7 +221,7 @@ rust_analyzer_detect_sysroot = rule(
     """),
 )
 
-def _rust_analyzer_impl(ctx):
+def _rust_analyzer_impl(_ctx):
     pass
 
 rust_analyzer = rule(

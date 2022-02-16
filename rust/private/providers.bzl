@@ -45,11 +45,10 @@ DepInfo = provider(
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[AliasableDepInfo]",
+        "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: (Deprecated, see https://github.com/bazelbuild/rules_rust/issues/1051) " +
-                           "All transitive dependencies, not filtered by type.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
     },
 )
@@ -60,6 +59,7 @@ BuildInfo = provider(
         "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
         "flags": "File: file containing additional flags to pass to rustc",
         "link_flags": "File: file containing flags to pass to the linker",
+        "link_search_paths": "File: file containing search paths to pass to the linker",
         "out_dir": "File: directory containing the result of a build script",
         "rustc_env": "File: file containing additional environment variables to set for rustc.",
     },
