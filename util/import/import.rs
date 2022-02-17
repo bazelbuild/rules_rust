@@ -1,18 +1,11 @@
 use syn::parse_macro_input;
 
 fn mode() -> import_internal::Mode {
-    match (
-        std::env::var("RULES_RUST_RENAME_FIRST_PARTY_CRATES")
-            .ok()
-            .and_then(|s| s.parse::<bool>().ok())
-            .unwrap_or(false),
-        std::env::var("RULES_RUST_THIRD_PARTY_DIR")
-            .ok()
-            .and_then(|dir| dir.strip_prefix("//").map(|s| s.to_string())),
-    ) {
-        (true, Some(third_party_dir)) => {
-            import_internal::Mode::RenameFirstPartyCrates { third_party_dir }
-        }
+    match std::env::var("RULES_RUST_THIRD_PARTY_DIR")
+        .ok()
+        .and_then(|dir| dir.strip_prefix("//").map(|s| s.to_string()))
+    {
+        Some(third_party_dir) => import_internal::Mode::RenameFirstPartyCrates { third_party_dir },
         _ => import_internal::Mode::NoRenaming,
     }
 }
