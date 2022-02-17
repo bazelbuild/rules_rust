@@ -1171,6 +1171,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
     else:
         make_link_flags = _make_link_flags_default
 
+    # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0 
     args_and_pic = [(arg, use_pic) for arg in dep_info.transitive_noncrates.to_list()]
     args.add_all(args_and_pic, map_each = make_link_flags)
 
