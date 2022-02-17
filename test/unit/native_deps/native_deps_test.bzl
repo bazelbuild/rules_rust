@@ -29,15 +29,6 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
-def _dylib_has_native_libs_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
-    assert_argv_contains(env, action, "--crate-type=dylib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
-    assert_argv_contains_prefix(env, action, "--codegen=linker=")
-    return analysistest.end(env)
-
 def _cdylib_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -118,24 +109,37 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
+    linker_args = _extract_linker_args(action.argv)
+
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        # Determine the macos min version
+        macosx_version_min = "12.1"
+        for linker_arg in linker_args:
+            for arg in linker_arg.split(" "):
+                if "-mmacosx-version-min" in arg:
+                    _, _, val = arg.partition("=")
+                    macosx_version_min = val
+
         want = [
-            "-lstatic=native_dep",
+            "link-args=-lc++ -fobjc-link-runtime -headerpad_max_install_names -no-canonical-prefixes -target x86_64-apple-macosx -mmacosx-version-min={} -lc++ -target x86_64-apple-macosx".format(macosx_version_min),
+            "link-arg=bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
             "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "-lstatic=native_dep",
+            "link-args=/nologo /SUBSYSTEM:CONSOLE /MACHINE:X64 /DEFAULTLIB:msvcrt.lib /DEBUG:FASTLINK /INCREMENTAL:NO",
+            "link-arg=bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/native_dep.lib",
             "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
         ]
     else:
         want = [
+            "link-args=-fuse-ld=gold -Wl,-no-as-needed -Wl,-z,relro,-z,now -B/usr/bin -pass-exit-codes -lstdc++ -lm",
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
             "link-arg=-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, _extract_linker_args(action.argv))
+    asserts.equals(env, want, linker_args)
     return analysistest.end(env)
 
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
@@ -159,7 +163,7 @@ bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_a
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
-cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
+cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_dep_and_alwayslink_test_impl, attrs = {
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
@@ -336,7 +340,7 @@ def _additional_deps_test():
     cc_library(
         name = "additional_deps_cc",
         srcs = ["native_dep.cc"],
-        linkopts = ["-L$(location :dynamic.lds)"],
+        linkopts = ["-L$(execpath :dynamic.lds)"],
         deps = [":dynamic.lds"],
     )
 
@@ -368,16 +372,16 @@ def native_deps_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
+            ":bin_has_additional_deps_test",
+            ":bin_has_native_dep_and_alwayslink_test",
+            ":bin_has_native_libs_test",
+            ":cdylib_has_additional_deps_test",
+            ":cdylib_has_native_dep_and_alwayslink_test",
+            ":cdylib_has_native_libs_test",
+            ":lib_has_no_additional_deps_test",
+            ":native_linkopts_propagate_test",
+            ":proc_macro_has_native_libs_test",
             ":rlib_has_no_native_libs_test",
             ":staticlib_has_native_libs_test",
-            ":cdylib_has_native_libs_test",
-            ":proc_macro_has_native_libs_test",
-            ":bin_has_native_libs_test",
-            ":bin_has_native_dep_and_alwayslink_test",
-            ":cdylib_has_native_dep_and_alwayslink_test",
-            ":native_linkopts_propagate_test",
-            ":bin_has_additional_deps_test",
-            ":cdylib_has_additional_deps_test",
-            ":lib_has_no_additional_deps_test",
         ],
     )

@@ -439,6 +439,12 @@ def _rust_toolchain_impl(ctx):
             ),
         ]),
     )
+
+    # Contains linker flags needed to link Rust standard library.
+    # These need to be added to linker command lines when the linker is not rustc
+    # (rustc does this automatically). Linker flags wrapped in an otherwise empty
+    # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
+    # providing a `CcInfo`.
     stdlib_linkflags_cc_info = CcInfo(
         compilation_context = cc_common.create_compilation_context(),
         linking_context = linking_context,
@@ -450,37 +456,34 @@ def _rust_toolchain_impl(ctx):
 
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
-        rustc = sysroot.rustc,
-        rust_doc = sysroot.rustdoc,
-        rustfmt = sysroot.rustfmt,
+        binary_ext = ctx.attr.binary_ext,
         cargo = sysroot.cargo,
         clippy_driver = sysroot.clippy,
-        target_json = ctx.file.target_json,
-        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
-        rustc_lib = sysroot.rustc_lib,
-        rustc_srcs = ctx.attr.rustc_srcs,
-        rust_std = sysroot.rust_std,
-        rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
-        rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
-        sysroot = sysroot_path,
-        sysroot_short_path = sysroot_short_path,
-        binary_ext = ctx.attr.binary_ext,
-        staticlib_ext = ctx.attr.staticlib_ext,
-        dylib_ext = ctx.attr.dylib_ext,
-        # Contains linker flags needed to link Rust standard library.
-        # These need to be added to linker command lines when the linker is not rustc
-        # (rustc does this automatically). Linker flags wrapped in an otherwise empty
-        # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
-        # providing a `CcInfo`.
-        stdlib_linkflags = stdlib_linkflags_cc_info,
-        target_triple = ctx.attr.target_triple,
-        exec_triple = ctx.attr.exec_triple,
-        os = ctx.attr.os,
-        target_arch = ctx.attr.target_triple.split("-")[0],
-        default_edition = ctx.attr.default_edition,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._cc_toolchain,
+        default_edition = ctx.attr.default_edition,
+        dylib_ext = ctx.attr.dylib_ext,
+        exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
+        os = ctx.attr.os,
+        rust_doc = sysroot.rustdoc,
+        rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
+        rust_std = sysroot.rust_std,
+        rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
+        rustc = sysroot.rustc,
+        rustc_lib = sysroot.rustc_lib,
+        rustc_srcs = ctx.attr.rustc_srcs,
+        rustfmt = sysroot.rustfmt,
+        staticlib_ext = ctx.attr.staticlib_ext,
+        stdlib_linkflags = stdlib_linkflags_cc_info,
+        sysroot = sysroot_path,
+        sysroot_short_path = sysroot_short_path,
+        target_arch = ctx.attr.target_triple.split("-")[0],
+        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
+        target_json = ctx.file.target_json,
+        target_triple = ctx.attr.target_triple,
+
+        # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
