@@ -669,6 +669,9 @@ def construct_arguments(
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
 
+    if toolchain._rename_first_party_crates:
+        env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
+
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
