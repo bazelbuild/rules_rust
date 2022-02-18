@@ -133,6 +133,15 @@ tasks:
     test_targets: *default_linux_targets
     soft_fail: yes
     bazel: "rolling"
+  ubuntu2004_opt:
+    name: With -c opt
+    platform: ubuntu2004
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--compilation_mode=opt"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
   ubuntu1804:
     name: "Min Bazel Version"
     bazel: "4.0.0"

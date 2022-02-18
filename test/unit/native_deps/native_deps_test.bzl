@@ -16,6 +16,8 @@ load(
 def _native_dep_lib_name(ctx):
     if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         return "native_dep.lib"
+    elif ("dylib" in ctx.label.name or "proc_macro" in ctx.label.name) and ctx.var["COMPILATION_MODE"] == "opt":
+        return "libnative_dep.pic.a"
     else:
         return "libnative_dep.a"
 
@@ -79,21 +81,22 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
+    compilation_mode = ctx.var["COMPILATION_MODE"]
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-arg=bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/darwin-{}/bin/test/unit/native_deps/libnative_dep.a".format(compilation_mode),
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-arg=bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/native_dep.lib",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+            "link-arg=bazel-out/x64_windows-{}/bin/test/unit/native_deps/native_dep.lib".format(compilation_mode),
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
         ]
     else:
         want = [
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libnative_dep.a".format(compilation_mode),
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
             "link-arg=-Wl,--no-whole-archive",
         ]
     individual_link_args = [
@@ -109,34 +112,26 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    linker_args = _extract_linker_args(action.argv)
+    # skipping first link-arg since it contains unrelated linker flags
+    linker_args = _extract_linker_args(action.argv)[1:]
 
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = ".pic" if compilation_mode == "opt" else ""
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
-        # Determine the macos min version
-        macosx_version_min = "12.1"
-        for linker_arg in linker_args:
-            for arg in linker_arg.split(" "):
-                if "-mmacosx-version-min" in arg:
-                    _, _, val = arg.partition("=")
-                    macosx_version_min = val
-
         want = [
-            "link-args=-lc++ -fobjc-link-runtime -headerpad_max_install_names -no-canonical-prefixes -target x86_64-apple-macosx -mmacosx-version-min={} -lc++ -target x86_64-apple-macosx".format(macosx_version_min),
-            "link-arg=bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/darwin-{}/bin/test/unit/native_deps/libnative_dep{}.a".format(compilation_mode, pic_suffix),
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-args=/nologo /SUBSYSTEM:CONSOLE /MACHINE:X64 /DEFAULTLIB:msvcrt.lib /DEBUG:FASTLINK /INCREMENTAL:NO",
-            "link-arg=bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/native_dep.lib",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+            "link-arg=bazel-out/x64_windows-{}/bin/test/unit/native_deps/native_dep.lib".format(compilation_mode),
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
         ]
     else:
         want = [
-            "link-args=-fuse-ld=gold -Wl,-no-as-needed -Wl,-z,relro,-z,now -B/usr/bin -pass-exit-codes -lstdc++ -lm",
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libnative_dep{}.a".format(compilation_mode, pic_suffix),
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     asserts.equals(env, want, linker_args)
