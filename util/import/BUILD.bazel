@@ -1,0 +1,36 @@
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+
+rust_proc_macro(
+    name = "import",
+    srcs = [
+        "import.rs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":import_internal",
+        "//util/import/raze:syn",
+    ],
+)
+
+rust_library(
+    name = "import_internal",
+    srcs = [
+        "import_internal.rs",
+    ],
+    deps = [
+        "//util/import/raze:aho_corasick",
+        "//util/import/raze:lazy_static",
+        "//util/import/raze:proc_macro2",
+        "//util/import/raze:quote",
+        "//util/import/raze:syn",
+        "//util/label",
+    ],
+)
+
+rust_test(
+    name = "import_internal_test",
+    crate = ":import_internal",
+    deps = [
+        "//util/import/raze:quickcheck",
+    ],
+)

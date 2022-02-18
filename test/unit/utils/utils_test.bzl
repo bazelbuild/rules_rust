@@ -58,19 +58,23 @@ def _encode_label_as_crate_name_test_impl(ctx):
 def _is_third_party_crate_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # A target at the root of the 3p dir is considered 3p:
-    asserts.true(env, should_encode_label_in_crate_name("third_party", "//third_party"))
+    # A target at the root of the third-party dir is considered third-party:
+    asserts.false(env, should_encode_label_in_crate_name("some_workspace", Label("//third_party:foo"), "//third_party"))
 
     # Targets in subpackages are detected properly:
-    asserts.true(env, should_encode_label_in_crate_name("third_party/serde", "//third_party"))
-    asserts.true(env, should_encode_label_in_crate_name("third_party/serde/v1", "//third_party"))
+    asserts.false(env, should_encode_label_in_crate_name("some_workspace", Label("//third_party/serde:serde"), "//third_party"))
+    asserts.false(env, should_encode_label_in_crate_name("some_workspace", Label("//third_party/serde/v1:serde"), "//third_party"))
 
     # Ensure the directory name truly matches, and doesn't just include the
-    # 3p dir as a substring (or vice versa).
-    asserts.false(env, should_encode_label_in_crate_name("third_party_decoy", "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name("decoy_third_party", "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name("third_", "//third_party"))
-    asserts.false(env, should_encode_label_in_crate_name("third_party_decoy/serde", "//third_party"))
+    # third-party dir as a substring (or vice versa).
+    asserts.true(env, should_encode_label_in_crate_name("some_workspace", Label("//third_party_decoy:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name("some_workspace", Label("//decoy_third_party:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name("some_workspace", Label("//third_:thing"), "//third_party"))
+    asserts.true(env, should_encode_label_in_crate_name("some_workspace", Label("//third_party_decoy/serde:serde"), "//third_party"))
+
+    # Targets in rules_rust's repo should never be renamed.
+    asserts.false(env, should_encode_label_in_crate_name("rules_rust", Label("//some_package:foo"), "//third_party"))
+
     return unittest.end(env)
 
 encode_label_as_crate_name_test = unittest.make(_encode_label_as_crate_name_test_impl)

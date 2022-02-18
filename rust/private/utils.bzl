@@ -265,10 +265,11 @@ def _invalid_chars_in_crate_name(name):
 
     return dict([(c, ()) for c in name.elems() if not (c.isalnum() or c == "_")]).keys()
 
-def compute_crate_name(label, toolchain, name_override = None):
+def compute_crate_name(workspace_name, label, toolchain, name_override = None):
     """Returns the crate name to use for the current target.
 
     Args:
+        workspace_name (string): The current workspace name.
         label (struct): The label of the current target.
         toolchain (struct): The toolchain in use for the target.
         name_override (String): An optional name to use (as an override of label.name).
@@ -285,11 +286,9 @@ def compute_crate_name(label, toolchain, name_override = None):
             ))
         return name_override
 
-    if toolchain and label and toolchain._rename_first_party_crates:
-        if should_encode_label_in_crate_name(label.package, toolchain._third_party_dir):
-            crate_name = label.name
-        else:
-            crate_name = encode_label_as_crate_name(label.package, label.name)
+    if (toolchain and label and toolchain._rename_first_party_crates and
+        should_encode_label_in_crate_name(workspace_name, label, toolchain._third_party_dir)):
+        crate_name = encode_label_as_crate_name(label.package, label.name)
     else:
         crate_name = name_to_crate_name(label.name)
 
@@ -400,13 +399,16 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def should_encode_label_in_crate_name(package, third_party_dir):
+def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
 
-    Names of third-party crates do not encode the full label.
+    Crate names may only encode the label if the target is in the current repo,
+    the target is not in the third_party_dir, and the current repo is not
+    rules_rust.
 
     Args:
-        package (string): The package in question.
+        workspace_name (string): The name of the current workspace.
+        label (Label): The package in question.
         third_party_dir (string): The directory in which third-party packages are kept.
 
     Returns:
@@ -415,7 +417,11 @@ def should_encode_label_in_crate_name(package, third_party_dir):
 
     # TODO(hlopko): This code assumes a monorepo; make it work with external
     # repositories as well.
-    return ("//" + package + "/").startswith(third_party_dir + "/")
+    return (
+        workspace_name != "rules_rust" and
+        not label.workspace_root and
+        not ("//" + label.package + "/").startswith(third_party_dir + "/")
+    )
 
 # This is a list of pairs, where the first element of the pair is a character
 # that is allowed in Bazel package or target names but not in crate names; and
@@ -522,25 +528,21 @@ def _replace_all(string, substitutions):
         A string with the appropriate substitutions performed.
     """
 
-    # Find the highest-priority pattern matches.
+    # Find the highest-priority pattern matches for each string index, going
+    # left-to-right and skipping indices that are already involved in a
+    # pattern match.
     plan = {}
-    for pattern, replacement in substitutions:
-        for pattern_start in range(len(string)):
-            if not pattern_start in plan and string.startswith(pattern, pattern_start):
-                plan[pattern_start] = (len(pattern), replacement)
-
-    # Drop replacements that overlap with a replacement earlier in the string.
-    replaced_indices_set = {}
-    leftmost_plan = {}
-    for pattern_start in sorted(plan.keys()):
-        length, _ = plan[pattern_start]
-        pattern_indices = list(range(pattern_start, pattern_start + length))
-        if any([i in replaced_indices_set for i in pattern_indices]):
+    matched_indices_set = {}
+    for pattern_start in range(len(string)):
+        if pattern_start in matched_indices_set:
             continue
-        replaced_indices_set.update([(i, True) for i in pattern_indices])
-        leftmost_plan[pattern_start] = plan[pattern_start]
-
-    plan = leftmost_plan
+        for (pattern, replacement) in substitutions:
+            if not string.startswith(pattern, pattern_start):
+                continue
+            length = len(pattern)
+            plan[pattern_start] = (length, replacement)
+            matched_indices_set.update([(pattern_start + i, True) for i in range(length)])
+            break
 
     # Execute the replacement plan, working from right to left.
     for pattern_start in sorted(plan.keys(), reverse = True):
