@@ -132,8 +132,14 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
             "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
         ]
     else:
+        # Determine the linker used.
+        use_ld_arg = ""
+        for linker_arg in linker_args:
+            for arg in linker_arg.split(" "):
+                if arg.startswith("link-args=-fuse-ld="):
+                    use_ld_arg = "{} ".format(arg)
         want = [
-            "link-args=-fuse-ld=gold -Wl,-no-as-needed -Wl,-z,relro,-z,now -B/usr/bin -pass-exit-codes -lstdc++ -lm",
+            "{}-Wl,-no-as-needed -Wl,-z,relro,-z,now -B/usr/bin -pass-exit-codes -lstdc++ -lm".format(use_ld_arg),
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
