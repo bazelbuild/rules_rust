@@ -262,7 +262,7 @@ def _rust_protogrpc_library_impl(ctx, is_grpc):
     ]
 
     toolchain = find_toolchain(ctx)
-    crate_name = compute_crate_name( ctx.workspace_name, ctx.label, toolchain)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain)
 
     return _rust_proto_compile(
         protos = depset(transitive = transitive_sources),
