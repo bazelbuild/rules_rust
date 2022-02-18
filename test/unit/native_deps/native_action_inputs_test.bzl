@@ -51,6 +51,8 @@ def _native_dep_lib_name(ctx):
         ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
     ):
         return "bar.lib"
+    elif ("dylib" in ctx.label.name or "proc_macro" in ctx.label.name) and ctx.var["COMPILATION_MODE"] == "opt":
+        return "libbar.pic.a"
     else:
         return "libbar.a"
 

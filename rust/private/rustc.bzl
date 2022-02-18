@@ -118,7 +118,7 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             has_grep_includes)
 
 def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
-    if crate_type in ("cdylib" or "dylib"):
+    if crate_type in ["cdylib", "dylib", "proc-macro"]:
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     return False
 
@@ -1178,7 +1178,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
     for linkstamp_out in linkstamp_outs:
         args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])
 
-    if crate_type in ["dylib", "cdylib"]:
+    if crate_type in ["dylib", "cdylib", "proc-macro"]:
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
         args.add_all(
