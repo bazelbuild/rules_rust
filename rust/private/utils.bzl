@@ -139,22 +139,30 @@ def determine_output_hash(crate_root, label):
         h = -h
     return repr(h)
 
-def get_preferred_artifact(library_to_link):
+def get_preferred_artifact(library_to_link, use_pic):
     """Get the first available library to link from a LibraryToLink object.
 
     Args:
         library_to_link (LibraryToLink): See the followg links for additional details:
             https://docs.bazel.build/versions/master/skylark/lib/LibraryToLink.html
+        use_pic: If set, prefers pic_static_library over static_library.
 
     Returns:
         File: Returns the first valid library type (only one is expected)
     """
-    return (
-        library_to_link.static_library or
-        library_to_link.pic_static_library or
-        library_to_link.interface_library or
-        library_to_link.dynamic_library
-    )
+    if use_pic:
+        return (
+            library_to_link.pic_static_library or
+            library_to_link.interface_library or
+            library_to_link.dynamic_library
+        )
+    else:
+        return (
+            library_to_link.static_library or
+            library_to_link.pic_static_library or
+            library_to_link.interface_library or
+            library_to_link.dynamic_library
+        )
 
 def _expand_location(ctx, env, data):
     """A trivial helper for `_expand_locations`
