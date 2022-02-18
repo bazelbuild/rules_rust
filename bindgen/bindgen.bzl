@@ -32,7 +32,7 @@ def _get_libs_for_static_executable(dep):
         depset: A depset[File]
     """
     linker_inputs = dep[CcInfo].linking_context.linker_inputs.to_list()
-    return depset([get_preferred_artifact(lib) for li in linker_inputs for lib in li.libraries])
+    return depset([get_preferred_artifact(lib, use_pic = False) for li in linker_inputs for lib in li.libraries])
 
 def rust_bindgen_library(
         name,

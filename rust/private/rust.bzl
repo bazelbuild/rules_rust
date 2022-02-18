@@ -253,7 +253,7 @@ def _rust_library_common(ctx, crate_type):
     else:
         output_hash = None
 
-    crate_name = compute_crate_name(ctx.label, toolchain, ctx.attr.crate_name)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     rust_lib_name = _determine_lib_name(
         crate_name,
         crate_type,
@@ -297,7 +297,7 @@ def _rust_binary_impl(ctx):
         list: A list of providers. See `rustc_compile_action`
     """
     toolchain = find_toolchain(ctx)
-    crate_name = compute_crate_name(ctx.label, toolchain, ctx.attr.crate_name)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
@@ -340,7 +340,7 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
-    crate_name = compute_crate_name(ctx.label, toolchain, ctx.attr.crate_name)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_type = "bin"
 
     deps = transform_deps(ctx.attr.deps)
