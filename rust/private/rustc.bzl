@@ -1099,11 +1099,11 @@ def _get_crate_dirname(crate):
 
 def _portable_link_flags(lib, use_pic):
     if lib.static_library or lib.pic_static_library:
-        return ["-C", "link-arg=%s" % get_preferred_artifact(lib, use_pic).path]
-    elif _is_dylib(lib):
-        # TODO: Consider switching dylibs to use -Clink-arg as above.
         return [
-            "-Lnative=%s" % get_preferred_artifact(lib, use_pic).dirname,
+            "-lstatic=%s" % get_lib_name(get_preferred_artifact(lib, use_pic)),
+        ]
+    elif _is_dylib(lib):
+        return [
             "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib, use_pic)),
         ]
 
@@ -1149,6 +1149,10 @@ def _make_link_flags_default(linker_input_and_use_pic):
             ret.extend(_portable_link_flags(lib, use_pic))
     return ret
 
+def _libraries_dirnames(linker_input_and_use_pic):
+    link_input, use_pic = linker_input_and_use_pic
+    return [get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]
+
 def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
@@ -1176,6 +1180,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
     args_and_pic = [(arg, use_pic) for arg in dep_info.transitive_noncrates.to_list()]
+    args.add_all(args_and_pic, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
     args.add_all(args_and_pic, map_each = make_link_flags)
 
     for linkstamp_out in linkstamp_outs:
