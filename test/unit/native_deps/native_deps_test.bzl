@@ -115,7 +115,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     pic_suffix = ".pic" if compilation_mode == "opt" else ""
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-arg=bazel-out/x64_windows-{}/bin/test/unit/native_deps/native_dep.lib".format(compilation_mode),
+            "-lstatic=native_dep",
             "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
