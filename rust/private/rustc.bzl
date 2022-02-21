@@ -400,7 +400,8 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             # FIXME: Under the native-link-modifiers unstable rustc feature,
             # we could use -lstatic:+verbatim instead.
             name_is_ambiguous = (
-                toolchain.os.startswith("linux") and
+                (toolchain.os.startswith("linux") or
+                 toolchain.os.startswith("mac") or toolchain.os.startswith("darwin")) and
                 artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
             )
 
