@@ -407,6 +407,21 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
+def create_import_macro_dep(ctx):
+    """Returns a list of targets to be added to proc_macro_deps.
+
+    Args:
+        ctx (struct): the ctx of the current target.
+
+    Returns:
+        list of Targets. Either empty (if the fake import macro implementation
+        is being used), or a singleton list with the real implementation.
+    """
+    if ctx.attr._import_macro_dep.label.name == "fake_import_macro_impl":
+        return []
+
+    return [ctx.attr._import_macro_dep]
+
 def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
 

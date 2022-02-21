@@ -18,6 +18,7 @@ load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
     "compute_crate_name",
+    "create_import_macro_dep",
     "dedent",
     "determine_output_hash",
     "expand_dict_value_locations",
@@ -263,7 +264,7 @@ def _rust_library_common(ctx, crate_type):
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + create_import_macro_dep(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -303,7 +304,7 @@ def _rust_binary_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + create_import_macro_dep(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -591,6 +592,9 @@ _common_attrs = {
     "_error_format": attr.label(default = "//:error_format"),
     "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
+    "_import_macro_dep": attr.label(
+        default = "@rules_rust//util/import",
+    ),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,
