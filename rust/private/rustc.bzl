@@ -23,6 +23,7 @@ load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
+    "abs",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -328,6 +329,99 @@ def _process_build_scripts(
     compile_inputs = depset(transitive = [extra_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
 
+def _symlink_for_ambiguous_lib(actions, crate_info, lib):
+    """Constructs a disambiguating symlink for a library dependency.
+
+    Args:
+      actions (Actions): The rule's context actions object.
+      crate_info (CrateInfo): The target crate's info.
+      lib (File): The library to symlink to.
+
+    Returns:
+      (File): The disambiguating symlink for the library.
+    """
+
+    # Take the absolute value of hash() since it could be negative.
+    path_hash = abs(hash(lib.path))
+    lib_name = get_lib_name(lib)
+
+    # Ensure the symlink follows the lib<name>.a pattern. Add a hash of the
+    # original library path to disambiguate libraries with the same basename.
+    symlink_name = "lib{}-{}.a".format(lib_name, path_hash)
+
+    # Add the symlink to a target crate-specific _ambiguous_libs/ subfolder,
+    # to avoid possible collisions with sibling crates that may depend on the
+    # same ambiguous libraries.
+    symlink = actions.declare_file("_ambiguous_libs/" + crate_info.output.basename + "/" + symlink_name)
+    actions.symlink(
+        output = symlink,
+        target_file = lib,
+        progress_message = "Creating symlink to ambiguous lib: {}".format(lib.path),
+    )
+    return symlink
+
+def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
+    """Constructs disambiguating symlinks for ambiguous library dependencies.
+
+    The symlinks are all created in a _ambiguous_libs/ subfolder specific to
+    the target crate to avoid possible collisions with sibling crates that may
+    depend on the same ambiguous libraries.
+
+    Args:
+      actions (Actions): The rule's context actions object.
+      toolchain: The Rust toolchain object.
+      crate_info (CrateInfo): The target crate's info.
+      dep_info: (DepInfo): The target crate's dependency info.
+      use_pic: (boolean): Whether the build should use PIC.
+
+    Returns:
+      dict[String, File]: A mapping from ambiguous library paths to their
+        disambiguating symlink.
+    """
+
+    # A dictionary from file paths of ambiguous libraries to the corresponding
+    # symlink.
+    ambiguous_libs = {}
+
+    # A dictionary maintaining a mapping from preferred library name to the
+    # last visited artifact with that name.
+    visited_libs = {}
+    for link_input in dep_info.transitive_noncrates.to_list():
+        for lib in link_input.libraries:
+            # Focus on static libs; dynamic libs use a different location
+            # mechanism, not -Lnative=....
+            if _is_dylib(lib):
+                continue
+            artifact = get_preferred_artifact(lib, use_pic)
+            name = get_lib_name(artifact)
+
+            # On Linux, normally library base names start with `lib`, following the
+            # pattern `lib[name].(a|lo)` and we pass -lstatic=name.
+            # FIXME: Under the native-link-modifiers unstable rustc feature,
+            # we could use -lstatic:+verbatim instead.
+            name_is_ambiguous = (
+                toolchain.os.startswith("linux") and
+                artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
+            )
+
+            # Detect cases where we need to disambiguate library dependencies
+            # by constructing symlinks.
+            if (
+                name_is_ambiguous or
+                # We have multiple libraries with the same name.
+                (name in visited_libs and visited_libs[name].path != artifact.path)
+            ):
+                # Disambiguate the previously visited library (if we just detected
+                # that it is ambiguous) and the current library.
+                if name in visited_libs:
+                    old_path = visited_libs[name].path
+                    if old_path not in ambiguous_libs:
+                        ambiguous_libs[old_path] = _symlink_for_ambiguous_lib(actions, crate_info, visited_libs[name])
+                ambiguous_libs[artifact.path] = _symlink_for_ambiguous_lib(actions, crate_info, artifact)
+
+            visited_libs[name] = artifact
+    return ambiguous_libs
+
 def collect_inputs(
         ctx,
         file,
@@ -362,7 +456,8 @@ def collect_inputs(
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flag files from the current build info
-            - (list[File]): Linkstamp outputs.
+            - (list[File]): Linkstamp outputs
+            - (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`.
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
@@ -374,6 +469,7 @@ def collect_inputs(
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
     additional_transitive_inputs = []
+    ambiguous_libs = {}
     if crate_info.type in ("staticlib", "proc-macro"):
         additional_transitive_inputs = _collect_libs_from_linker_inputs(
             dep_info.transitive_noncrates.to_list(),
@@ -381,11 +477,12 @@ def collect_inputs(
         )
     elif crate_info.type in ("bin", "dylib", "cdylib"):
         linker_inputs = dep_info.transitive_noncrates.to_list()
+        ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
             additional_input
             for linker_input in linker_inputs
             for additional_input in linker_input.additional_inputs
-        ]
+        ] + ambiguous_libs.values()
 
     # Compute linkstamps. Use the inputs of the binary as inputs to the
     # linkstamp action to ensure linkstamps are rebuilt whenever binary inputs
@@ -451,7 +548,7 @@ def collect_inputs(
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
 
-    return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs
+    return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
         ctx,
@@ -464,6 +561,7 @@ def construct_arguments(
         crate_info,
         dep_info,
         linkstamp_outs,
+        ambiguous_libs,
         output_hash,
         rust_flags,
         out_dir,
@@ -487,6 +585,7 @@ def construct_arguments(
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
         linkstamp_outs (list): Linkstamp outputs of native dependencies
+        ambiguous_libs (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`
         output_hash (str): The hashed path of the crate root
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
@@ -639,7 +738,7 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct)
@@ -731,7 +830,7 @@ def rustc_compile_action(
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
-    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
@@ -756,6 +855,7 @@ def rustc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         linkstamp_outs = linkstamp_outs,
+        ambiguous_libs = ambiguous_libs,
         output_hash = output_hash,
         rust_flags = rust_flags,
         out_dir = out_dir,
@@ -1097,30 +1197,33 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic):
+def _portable_link_flags(lib, use_pic, ambiguous_libs):
+    artifact = get_preferred_artifact(lib, use_pic)
+    if ambiguous_libs and artifact.path in ambiguous_libs:
+        artifact = ambiguous_libs[artifact.path]
     if lib.static_library or lib.pic_static_library:
         return [
-            "-lstatic=%s" % get_lib_name(get_preferred_artifact(lib, use_pic)),
+            "-lstatic=%s" % get_lib_name(artifact),
         ]
     elif _is_dylib(lib):
         return [
-            "-ldylib=%s" % get_lib_name(get_preferred_artifact(lib, use_pic)),
+            "-ldylib=%s" % get_lib_name(artifact),
         ]
 
     return []
 
-def _make_link_flags_windows(linker_input_and_use_pic):
-    linker_input, use_pic = linker_input_and_use_pic
+def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
+    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
             ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
     return ret
 
-def _make_link_flags_darwin(linker_input_and_use_pic):
-    linker_input, use_pic = linker_input_and_use_pic
+def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
+    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
@@ -1129,11 +1232,11 @@ def _make_link_flags_darwin(linker_input_and_use_pic):
                 ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
     return ret
 
-def _make_link_flags_default(linker_input_and_use_pic):
-    linker_input, use_pic = linker_input_and_use_pic
+def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
+    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
@@ -1146,20 +1249,21 @@ def _make_link_flags_default(linker_input_and_use_pic):
                 "link-arg=-Wl,--no-whole-archive",
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
     return ret
 
-def _libraries_dirnames(linker_input_and_use_pic):
-    link_input, use_pic = linker_input_and_use_pic
+def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
+    link_input, use_pic, _ = linker_input_and_use_pic_and_ambiguous_libs
     return [get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]
 
-def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain, cc_toolchain, feature_configuration):
+def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
         args (Args): The Args struct for a ctx.action
         dep_info (DepInfo): Dependency Info provider
         linkstamp_outs (list): Linkstamp outputs of native dependencies
+        ambiguous_libs (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`
         crate_type: Crate type of the current target
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
@@ -1179,9 +1283,15 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, crate_type, toolchain
         make_link_flags = _make_link_flags_default
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
-    args_and_pic = [(arg, use_pic) for arg in dep_info.transitive_noncrates.to_list()]
-    args.add_all(args_and_pic, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
-    args.add_all(args_and_pic, map_each = make_link_flags)
+    args_and_pic_and_ambiguous_libs = [(arg, use_pic, ambiguous_libs) for arg in dep_info.transitive_noncrates.to_list()]
+    args.add_all(args_and_pic_and_ambiguous_libs, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
+    if ambiguous_libs:
+        # If there are ambiguous libs, the disambiguation symlinks to them are
+        # all created in the same directory. Add it to the library search path.
+        ambiguous_libs_dirname = ambiguous_libs.values()[0].dirname
+        args.add("-Lnative={}".format(ambiguous_libs_dirname))
+
+    args.add_all(args_and_pic_and_ambiguous_libs, map_each = make_link_flags)
 
     for linkstamp_out in linkstamp_outs:
         args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])

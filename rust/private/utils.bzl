@@ -122,6 +122,19 @@ def get_lib_name(lib):
     else:
         return libname
 
+def abs(value):
+    """Returns the absolute value of a number.
+
+    Args:
+      value (int): A number.
+
+    Returns:
+      int: The absolute value of the number.
+    """
+    if value < 0:
+        return -value
+    return value
+
 def determine_output_hash(crate_root, label):
     """Generates a hash of the crate root file's path.
 
@@ -134,9 +147,7 @@ def determine_output_hash(crate_root, label):
     """
 
     # Take the absolute value of hash() since it could be negative.
-    h = hash(crate_root.path) + hash(repr(label))
-    if h < 0:
-        h = -h
+    h = abs(hash(crate_root.path) + hash(repr(label)))
     return repr(h)
 
 def get_preferred_artifact(library_to_link, use_pic):
