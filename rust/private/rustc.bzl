@@ -585,7 +585,7 @@ def construct_arguments(
         crate_info (CrateInfo): The CrateInfo provider of the target crate
         dep_info (DepInfo): The DepInfo provider of the target crate
         linkstamp_outs (list): Linkstamp outputs of native dependencies
-        ambiguous_libs (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`
+        ambiguous_libs (dict): Ambiguous libs, see `_disambiguate_libs`
         output_hash (str): The hashed path of the crate root
         rust_flags (list): Additional flags to pass to rustc
         out_dir (str): The path to the output directory for the target Crate.
@@ -1263,7 +1263,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         args (Args): The Args struct for a ctx.action
         dep_info (DepInfo): Dependency Info provider
         linkstamp_outs (list): Linkstamp outputs of native dependencies
-        ambiguous_libs (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`
+        ambiguous_libs (dict): Ambiguous libs, see `_disambiguate_libs`
         crate_type: Crate type of the current target
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
