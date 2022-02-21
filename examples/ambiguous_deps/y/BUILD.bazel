@@ -1,0 +1,5 @@
+cc_library(
+    name = "exc",
+    srcs = ["exc.cc"],
+    visibility = ["//ambiguous_deps:__subpackages__"],
+)
