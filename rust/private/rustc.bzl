@@ -329,11 +329,12 @@ def _process_build_scripts(
     compile_inputs = depset(transitive = [extra_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_file, build_flags_files
 
-def _symlink_for_ambiguous_lib(actions, crate_info, lib):
+def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
     Args:
       actions (Actions): The rule's context actions object.
+      toolchain: The Rust toolchain object.
       crate_info (CrateInfo): The target crate's info.
       lib (File): The library to symlink to.
 
@@ -345,9 +346,16 @@ def _symlink_for_ambiguous_lib(actions, crate_info, lib):
     path_hash = abs(hash(lib.path))
     lib_name = get_lib_name(lib)
 
-    # Ensure the symlink follows the lib<name>.a pattern. Add a hash of the
-    # original library path to disambiguate libraries with the same basename.
-    symlink_name = "lib{}-{}.a".format(lib_name, path_hash)
+    prefix = "lib"
+    extension = ".a"
+    if toolchain.os.startswith("windows"):
+        prefix = ""
+        extension = ".lib"
+
+    # Ensure the symlink follows the lib<name>.a pattern on Unix-like platforms
+    # or <name>.lib on Windows.
+    # Add a hash of the original library path to disambiguate libraries with the same basename.
+    symlink_name = "{}{}-{}{}".format(prefix, lib_name, path_hash, extension)
 
     # Add the symlink to a target crate-specific _ambiguous_libs/ subfolder,
     # to avoid possible collisions with sibling crates that may depend on the
@@ -395,14 +403,18 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             artifact = get_preferred_artifact(lib, use_pic)
             name = get_lib_name(artifact)
 
-            # On Linux, normally library base names start with `lib`, following the
-            # pattern `lib[name].(a|lo)` and we pass -lstatic=name.
+            # On Linux-like platforms, normally library base names start with
+            # `lib`, following the pattern `lib[name].(a|lo)` and we pass
+            # -lstatic=name.
+            # On Windows, the base name looks like `name.lib` and we pass
+            # -lstatic=name.
             # FIXME: Under the native-link-modifiers unstable rustc feature,
             # we could use -lstatic:+verbatim instead.
             name_is_ambiguous = (
-                (toolchain.os.startswith("linux") or
-                 toolchain.os.startswith("mac") or toolchain.os.startswith("darwin")) and
+                (toolchain.os.startswith("linux") or toolchain.os.startswith("mac") or toolchain.os.startswith("darwin")) and
                 artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
+            ) or (
+                toolchain.os.startswith("windows") and not artifact.basename.endswith(".lib")
             )
 
             # Detect cases where we need to disambiguate library dependencies
@@ -417,8 +429,8 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
                 if name in visited_libs:
                     old_path = visited_libs[name].path
                     if old_path not in ambiguous_libs:
-                        ambiguous_libs[old_path] = _symlink_for_ambiguous_lib(actions, crate_info, visited_libs[name])
-                ambiguous_libs[artifact.path] = _symlink_for_ambiguous_lib(actions, crate_info, artifact)
+                        ambiguous_libs[old_path] = _symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
+                ambiguous_libs[artifact.path] = _symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
 
             visited_libs[name] = artifact
     return ambiguous_libs
