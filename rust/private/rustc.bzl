@@ -404,8 +404,10 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
     visited_libs = {}
     for link_input in dep_info.transitive_noncrates.to_list():
         for lib in link_input.libraries:
-            # Focus on static libs; dynamic libs use a different location
-            # mechanism, not -Lnative=....
+            # FIXME: Dynamic libs are not disambiguated right now, there are
+            # cases where those have a non-standard name with version (e.g.,
+            # //test/unit/versioned_libs). We hope that the link modifiers
+            # stabilization will come before we need to make this work.
             if _is_dylib(lib):
                 continue
             artifact = get_preferred_artifact(lib, use_pic)
