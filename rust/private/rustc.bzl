@@ -1275,7 +1275,9 @@ def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
 
 def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
     link_input, use_pic, _ = linker_input_and_use_pic_and_ambiguous_libs
-    return [get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]
+
+    # De-duplicate names.
+    return depset([get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]).to_list()
 
 def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration):
     """Adds linker flags for all dependencies of the current target.
