@@ -48,13 +48,7 @@ import_macro_dep_bootstrap_transition = transition(
 
 def _with_import_macro_bootstrapping_mode_impl(ctx):
     target = ctx.attr.target[0]
-    providers = [target[rust_common.crate_info], target[rust_common.dep_info]]
-    if hasattr(ctx, "executable") and hasattr(ctx.executable, "target"):
-        symlink = ctx.actions.declare_file(target.label.name + "_symlink")
-        ctx.actions.symlink(output = symlink, target_file = ctx.executable.target, is_executable = True)
-        providers.append(DefaultInfo(executable = symlink))
-
-    return providers
+    return [target[rust_common.crate_info], target[rust_common.dep_info]]
 
 with_import_macro_bootstrapping_mode = rule(
     implementation = _with_import_macro_bootstrapping_mode_impl,

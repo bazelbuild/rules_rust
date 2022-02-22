@@ -407,7 +407,7 @@ def transform_deps(deps):
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
 
-def create_import_macro_dep(ctx):
+def get_import_macro_deps(ctx):
     """Returns a list of targets to be added to proc_macro_deps.
 
     Args:
