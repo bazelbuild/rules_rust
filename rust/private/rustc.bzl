@@ -341,6 +341,10 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     Returns:
       (File): The disambiguating symlink for the library.
     """
+    # FIXME: Once the relative order part of the native-link-modifiers rustc
+    # feature is stable, we should be able to eliminate the need to construct
+    # symlinks by passing the full paths to the libraries.
+    # https://github.com/rust-lang/rust/issues/81490.
 
     # Take the absolute value of hash() since it could be negative.
     path_hash = abs(hash(lib.path))
@@ -386,6 +390,10 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
       dict[String, File]: A mapping from ambiguous library paths to their
         disambiguating symlink.
     """
+    # FIXME: Once the relative order part of the native-link-modifiers rustc
+    # feature is stable, we should be able to eliminate the need to construct
+    # symlinks by passing the full paths to the libraries.
+    # https://github.com/rust-lang/rust/issues/81490.
 
     # A dictionary from file paths of ambiguous libraries to the corresponding
     # symlink.
@@ -410,7 +418,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             # -lstatic=name.
             # FIXME: Under the native-link-modifiers unstable rustc feature,
             # we could use -lstatic:+verbatim instead.
-            name_is_ambiguous = (
+            needs_symlink_to_standardize_name = (
                 (toolchain.os.startswith("linux") or toolchain.os.startswith("mac") or toolchain.os.startswith("darwin")) and
                 artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
             ) or (
@@ -420,7 +428,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             # Detect cases where we need to disambiguate library dependencies
             # by constructing symlinks.
             if (
-                name_is_ambiguous or
+                needs_symlink_to_standardize_name or
                 # We have multiple libraries with the same name.
                 (name in visited_libs and visited_libs[name].path != artifact.path)
             ):
