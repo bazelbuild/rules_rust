@@ -17,7 +17,6 @@ TARGETS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_TARGETS.txt")"
 VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_VERSIONS.txt")"
 BETA_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_BETA_ISO_DATES.txt")"
 NIGHTLY_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_NIGHTLY_ISO_DATES.txt")"
-RUSTFMT_VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_RUSTFMT_VERSIONS.txt")"
 
 enumerate_keys() {
   for TOOL in $TOOLS
