@@ -150,7 +150,7 @@ impl BuildScriptOutput {
         crate_links: &str,
         exec_root: &str,
     ) -> String {
-        let prefix = format!("DEP_{}_", crate_links.replace("-", "_").to_uppercase());
+        let prefix = format!("DEP_{}_", crate_links.replace('-', "_").to_uppercase());
         outputs
             .iter()
             .filter_map(|x| {
