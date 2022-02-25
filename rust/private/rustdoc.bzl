@@ -79,7 +79,7 @@ def rustdoc_compile_action(
         aliases = crate_info.aliases,
     )
 
-    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
@@ -109,6 +109,7 @@ def rustdoc_compile_action(
         crate_info = rustdoc_crate_info,
         dep_info = dep_info,
         linkstamp_outs = linkstamp_outs,
+        ambiguous_libs = ambiguous_libs,
         output_hash = None,
         rust_flags = rustdoc_flags,
         out_dir = out_dir,

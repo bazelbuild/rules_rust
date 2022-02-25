@@ -1,11 +1,19 @@
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
+# buildifier: disable=bzl-visibility
+load("//rust/private:transitions.bzl", "with_import_macro_bootstrapping_mode")
+
+with_import_macro_bootstrapping_mode(
+    name = "import_macro",
+    target = "import_macro_impl",
+)
+
 rust_proc_macro(
-    name = "import",
+    name = "import_macro_impl",
     srcs = [
         "import.rs",
     ],
-    visibility = ["//visibility:public"],
+    crate_name = "import",
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
@@ -33,4 +41,25 @@ rust_test(
     deps = [
         "//util/import/raze:quickcheck",
     ],
+)
+
+alias(
+    name = "import",
+    actual = select({
+        ":use_fake_import_macro": ":fake_import_macro_impl",
+        "//conditions:default": ":import_macro",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "use_fake_import_macro",
+    flag_values = {
+        "@rules_rust//rust/settings:use_real_import_macro": "False",
+    },
+)
+
+sh_binary(
+    name = "fake_import_macro_impl",
+    srcs = ["fake_import_macro_impl.sh"],
 )

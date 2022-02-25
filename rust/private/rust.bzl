@@ -22,6 +22,7 @@ load(
     "determine_output_hash",
     "expand_dict_value_locations",
     "find_toolchain",
+    "get_import_macro_deps",
     "transform_deps",
 )
 
@@ -263,7 +264,7 @@ def _rust_library_common(ctx, crate_type):
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -303,7 +304,7 @@ def _rust_binary_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -344,7 +345,7 @@ def _rust_test_common(ctx, toolchain, output):
     crate_type = "bin"
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -591,6 +592,9 @@ _common_attrs = {
     "_error_format": attr.label(default = "//:error_format"),
     "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
+    "_import_macro_dep": attr.label(
+        default = "@rules_rust//util/import",
+    ),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
         executable = True,

@@ -75,7 +75,7 @@ impl Runfiles {
             .lines()
             .map(|line| {
                 let pair = line
-                    .split_once(" ")
+                    .split_once(' ')
                     .expect("manifest file contained unexpected content");
                 (pair.0.into(), pair.1.into())
             })

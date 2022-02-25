@@ -122,6 +122,19 @@ def get_lib_name(lib):
     else:
         return libname
 
+def abs(value):
+    """Returns the absolute value of a number.
+
+    Args:
+      value (int): A number.
+
+    Returns:
+      int: The absolute value of the number.
+    """
+    if value < 0:
+        return -value
+    return value
+
 def determine_output_hash(crate_root, label):
     """Generates a hash of the crate root file's path.
 
@@ -134,9 +147,7 @@ def determine_output_hash(crate_root, label):
     """
 
     # Take the absolute value of hash() since it could be negative.
-    h = hash(crate_root.path) + hash(repr(label))
-    if h < 0:
-        h = -h
+    h = abs(hash(crate_root.path) + hash(repr(label)))
     return repr(h)
 
 def get_preferred_artifact(library_to_link, use_pic):
@@ -395,6 +406,21 @@ def transform_deps(deps):
         build_info = dep[BuildInfo] if BuildInfo in dep else None,
         cc_info = dep[CcInfo] if CcInfo in dep else None,
     ) for dep in deps]
+
+def get_import_macro_deps(ctx):
+    """Returns a list of targets to be added to proc_macro_deps.
+
+    Args:
+        ctx (struct): the ctx of the current target.
+
+    Returns:
+        list of Targets. Either empty (if the fake import macro implementation
+        is being used), or a singleton list with the real implementation.
+    """
+    if ctx.attr._import_macro_dep.label.name == "fake_import_macro_impl":
+        return []
+
+    return [ctx.attr._import_macro_dep]
 
 def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
