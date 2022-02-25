@@ -304,47 +304,47 @@ def _generate_sysroot(
 
     # Rustc
     sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
-    direct_files.extend([sysroot_rustc, rustc])
+    direct_files.extend([sysroot_rustc])
 
     # Rustc dependencies
     sysroot_rustc_lib = None
     if rustc_lib:
         sysroot_rustc_lib = _symlink_sysroot_tree(ctx, name, rustc_lib)
-        transitive_file_sets.extend([sysroot_rustc_lib, rustc_lib.files])
+        transitive_file_sets.extend([sysroot_rustc_lib])
 
     # Rustdoc
     sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
-    direct_files.extend([sysroot_rustdoc, rustdoc])
+    direct_files.extend([sysroot_rustdoc])
 
     # Clippy
     sysroot_clippy = None
     if clippy:
         sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
-        direct_files.extend([sysroot_clippy, clippy])
+        direct_files.extend([sysroot_clippy])
 
     # Cargo
     sysroot_cargo = None
     if cargo:
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
-        direct_files.extend([sysroot_cargo, cargo])
+        direct_files.extend([sysroot_cargo])
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
         sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
-        direct_files.extend([sysroot_rustfmt, rustfmt])
+        direct_files.extend([sysroot_rustfmt])
 
     # Llvm tools
     sysroot_llvm_tools = None
     if llvm_tools:
         sysroot_llvm_tools = _symlink_sysroot_tree(ctx, name, llvm_tools)
-        transitive_file_sets.extend([sysroot_llvm_tools, llvm_tools.files])
+        transitive_file_sets.extend([sysroot_llvm_tools])
 
     # Rust standard library
     sysroot_rust_std = None
     if rust_std:
         sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
-        transitive_file_sets.extend([sysroot_rust_std, rust_std.files])
+        transitive_file_sets.extend([sysroot_rust_std])
 
     # Declare a file in the root of the sysroot to make locating the sysroot easy
     sysroot_anchor = ctx.actions.declare_file("{}/rust.sysroot".format(name))
