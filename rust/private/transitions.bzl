@@ -64,3 +64,48 @@ with_import_macro_bootstrapping_mode = rule(
         ),
     },
 )
+
+def _without_process_wrapper_transition_impl(_settings, _attr):
+    """This transition allows rust_* rules to invoke rustc without process_wrapper."""
+    return {
+        "//rust/settings:use_process_wrapper": False,
+    }
+
+without_process_wrapper_transition = transition(
+    implementation = _without_process_wrapper_transition_impl,
+    inputs = [],
+    outputs = ["//rust/settings:use_process_wrapper"],
+)
+
+def _without_process_wrapper_impl(ctx):
+    executable = ctx.executable.target
+    link_name = ctx.label.name
+
+    # Append .exe if on windows
+    if executable.extension:
+        link_name = link_name + "." + executable.extension
+    link = ctx.actions.declare_file(link_name)
+    ctx.actions.symlink(
+        output = link,
+        target_file = executable,
+    )
+    return [
+        DefaultInfo(
+            executable = link,
+        ),
+    ]
+
+without_process_wrapper = rule(
+    implementation = _without_process_wrapper_impl,
+    attrs = {
+        "target": attr.label(
+            cfg = without_process_wrapper_transition,
+            allow_single_file = True,
+            mandatory = True,
+            executable = True,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
+        ),
+    },
+)

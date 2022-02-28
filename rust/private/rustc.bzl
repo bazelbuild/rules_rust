@@ -922,20 +922,41 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM")
             action_outputs.append(dsym_folder)
 
-    ctx.actions.run(
-        executable = ctx.executable._process_wrapper,
-        inputs = compile_inputs,
-        outputs = action_outputs,
-        env = env,
-        arguments = args.all,
-        mnemonic = "Rustc",
-        progress_message = "Compiling Rust {} {}{} ({} files)".format(
-            crate_info.type,
-            ctx.label.name,
-            formatted_version,
-            len(crate_info.srcs.to_list()),
-        ),
-    )
+    # This uses startswith as on windows the basename will be process_wrapper_fake.exe.
+    if not ctx.executable._process_wrapper.basename.startswith("process_wrapper_fake"):
+        # Run as normal
+        ctx.actions.run(
+            executable = ctx.executable._process_wrapper,
+            inputs = compile_inputs,
+            outputs = action_outputs,
+            env = env,
+            arguments = args.all,
+            mnemonic = "Rustc",
+            progress_message = "Compiling Rust {} {}{} ({} files)".format(
+                crate_info.type,
+                ctx.label.name,
+                formatted_version,
+                len(crate_info.srcs.to_list()),
+            ),
+        )
+    else:
+        # Run without process_wrapper
+        if build_env_files or build_flags_files or stamp:
+            fail("build_env_files, build_flags_files, stamp are not supported if use_process_wrapper is False")
+        ctx.actions.run(
+            executable = toolchain.rustc,
+            inputs = compile_inputs,
+            outputs = action_outputs,
+            env = env,
+            arguments = [args.rustc_flags],
+            mnemonic = "Rustc",
+            progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
+                crate_info.type,
+                ctx.label.name,
+                formatted_version,
+                len(crate_info.srcs.to_list()),
+            ),
+        )
 
     runfiles = ctx.runfiles(
         files = getattr(ctx.files, "data", []),
