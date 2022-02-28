@@ -116,6 +116,11 @@ exports_files([
     "{binary}"
 ])
 
+alias(
+    name = "binary",
+    actual = "{binary}",
+)
+
 rust_binary(
     name = "install",
     rustc_env = {{
