@@ -1,0 +1,9 @@
+filegroup(
+    name = "distro",
+    srcs = [
+        "//tools/cross_installer:distro",
+        "//tools/examples_runner:distro",
+        "//tools/urls_generator:distro",
+    ],
+    visibility = ["//:__subpackages__"],
+)

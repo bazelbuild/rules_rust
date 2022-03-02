@@ -1,0 +1,18 @@
+[package]
+name = "examples-runner"
+version = "0.0.1"
+edition = "2018"
+
+[[bin]]
+name = "examples-runner"
+path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+flate2 = "1.0.22"
+hex = "0.4.3"
+sha2 = "0.10.0"
+tar = "0.4.38"
+tempfile = "3.2.0"
+url = "2.2.2"

@@ -1,8 +1,24 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":bootstrap_utils.bzl", "srcs_module")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//:__subpackages__"])
 
-bzl_library(
-    name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]),
+exports_files(glob(["**"]))
+
+srcs_module(
+    name = "srcs_module",
+    srcs = "//:rust_srcs",
+    dest = ":srcs.bzl",
+)
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["*.bzl"]),
+)
+
+filegroup(
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        "BUILD.bazel",
+        "//private/vendor:distro",
+    ],
 )
