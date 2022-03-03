@@ -1,6 +1,6 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
-load("//cargo/private:cargo_utils.bzl", "get_rust_tools")
+load("//cargo/private:cargo_utils.bzl", "get_rust_tools", "resolve_sysroot_path")
 load("//rust:defs.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
 
@@ -28,6 +28,7 @@ def cargo_bootstrap(
         binary,
         cargo_manifest,
         environment = {},
+        sysroot = None,
         quiet = False,
         build_mode = "release",
         target_dir = None,
@@ -41,6 +42,7 @@ def cargo_bootstrap(
         binary (str): The binary to build (the `--bin` parameter for Cargo).
         cargo_manifest (path): The path to a Cargo manifest (Cargo.toml file).
         environment (dict): Environment variables to use during execution.
+        sysroot (path, optional): The path to the Rust sysroot.
         quiet (bool, optional): Whether or not to print output from the Cargo command.
         build_mode (str, optional): The build mode to use
         target_dir (path, optional): The directory in which to produce build outputs
@@ -72,9 +74,11 @@ def cargo_bootstrap(
     if build_mode == "release":
         args.append("--release")
 
-    env = dict({
-        "RUSTC": str(rustc_bin),
-    }.items() + environment.items())
+    # Setup environment variables
+    env = {"RUSTC": str(rustc_bin)}
+    if sysroot:
+        env.update({"RUSTFLAGS": "--sysroot={}".format(sysroot)})
+    env.update(environment)
 
     repository_ctx.report_progress("Cargo Bootstrapping {}".format(binary))
     result = repository_ctx.execute(
@@ -189,13 +193,17 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         print("Warning: `rust_toolchain_repository_template` is deprecated. Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`")
         cargo_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
         rustc_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
+        sysroot_anchor_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:BUILD.bazel")
     else:
         cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
         rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
+        sysroot_anchor_template = repository_ctx.attr.rust_toolchain_sysroot_anchor_template
 
     tools = get_rust_tools(
         cargo_template = cargo_template,
         rustc_template = rustc_template,
+        sysroot_anchor_template = sysroot_anchor_template,
+        sysroot_path = repository_ctx.attr.rust_toolchain_sysroot_path,
         host_triple = host_triple,
         version = version_str,
     )
@@ -210,6 +218,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         repository_ctx = repository_ctx,
         cargo_bin = repository_ctx.path(tools.cargo),
         rustc_bin = repository_ctx.path(tools.rustc),
+        sysroot = resolve_sysroot_path(repository_ctx, tools.sysroot),
         binary = binary_name,
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
@@ -271,7 +280,8 @@ cargo_bootstrap_repository = repository_rule(
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
+                "`{system}` (eg. 'darwin'), `{tool}` (eg. 'cargo'), and `{ext}` (eg. '.exe') will be replaced in " +
+                "the string if present."
             ),
             default = "@rust_{system}_{arch}//:bin/{tool}",
         ),
@@ -282,9 +292,25 @@ cargo_bootstrap_repository = repository_rule(
             doc = (
                 "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
+                "`{system}` (eg. 'darwin'), `{tool}` (eg. 'rustc'), and `{ext}` (eg. '.exe') will be replaced in " +
+                "the string if present."
             ),
             default = "@rust_{system}_{arch}//:bin/{tool}",
+        ),
+        "rust_toolchain_sysroot_anchor_template": attr.string(
+            doc = (
+                "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+                "and `{system}` (eg. 'darwin') will be replaced in the string if present."
+            ),
+            default = "@rust_{system}_{arch}//:BUILD.bazel",
+        ),
+        "rust_toolchain_sysroot_path": attr.string(
+            doc = (
+                "The path to the Rust sysroot relative to the directory of the file represented by " +
+                "`rust_toolchain_sysroot_anchor_template`"
+            ),
+            default = "",
         ),
         "srcs": attr.label_list(
             doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",

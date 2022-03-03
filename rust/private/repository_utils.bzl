@@ -1,6 +1,7 @@
 """Utility macros for use in rules_rust repository rules"""
 
 load("//rust:known_shas.bzl", "FILE_KEY_TO_SHA")
+load("//rust/platform:triple.bzl", "triple")
 load(
     "//rust/platform:triple_mappings.bzl",
     "system_to_binary_ext",
@@ -266,6 +267,43 @@ toolchain(
 )
 """
 
+def load_clippy(ctx):
+    """Loads a clippy binary and yields corresponding BUILD for it
+
+    Args:
+        ctx (repository_ctx): The repository rule's context object
+
+    Returns:
+        str: The BUILD file contents for this clippy binary
+    """
+    triple = ctx.attr.triple
+
+    if ctx.attr.version in ("beta", "nightly"):
+        iso_date = ctx.attr.iso_date
+    else:
+        iso_date = None
+
+    sha256 = load_arbitrary_tool(
+        ctx,
+        iso_date = iso_date,
+        target_triple = triple,
+        tool_name = "clippy",
+        tool_subdirectories = ["clippy-preview"],
+        version = ctx.attr.version,
+        sha256 = ctx.attr.sha256,
+    )
+
+    # TODO: Clippy should have it's rpath set such that a standalone `rustc` bundle
+    # can be used to provide dependencies needed at runtime. For now, just load another
+    # `rustc` bundle with the expectation that Bazel will have cached the artifact and
+    # it only needs to be re-extracted.
+    build_content = "\n".join([
+        load_rustc(ctx)[0],
+        BUILD_for_clippy(triple),
+    ])
+
+    return build_content, sha256
+
 def BUILD_for_toolchain(name, parent_workspace_name, exec_triple, target_triple):
     return _build_file_for_toolchain_template.format(
         name = name,
@@ -296,6 +334,27 @@ def load_rustfmt(ctx):
 
     return BUILD_for_rustfmt(target_triple)
 
+def load_rustc(ctx):
+    """Loads a rust compiler and yields corresponding BUILD for it
+
+    Args:
+        ctx (repository_ctx): A repository_ctx.
+    Returns:
+        str: The BUILD file contents for this compiler and compiler library
+    """
+
+    triple = ctx.attr.triple
+    sha256 = load_arbitrary_tool(
+        ctx,
+        iso_date = ctx.attr.iso_date,
+        target_triple = triple,
+        tool_name = "rustc",
+        tool_subdirectories = ["rustc"],
+        version = ctx.attr.version,
+    )
+
+    return BUILD_for_compiler(triple), sha256
+
 def load_rust_compiler(ctx):
     """Loads a rust compiler and yields corresponding BUILD for it
 
@@ -320,6 +379,14 @@ def load_rust_compiler(ctx):
 
     return compiler_build_file
 
+_build_file_for_rustc_srcs_template = """\
+alias(
+    name = "rustc_srcs",
+    actual = "//lib/rustlib/src:rustc_srcs",
+    visibility = ["//visibility:public"],
+)
+"""
+
 def should_include_rustc_srcs(repository_ctx):
     """Determing whether or not to include rustc sources in the toolchain.
 
@@ -337,21 +404,32 @@ def should_include_rustc_srcs(repository_ctx):
 
     return getattr(repository_ctx.attr, "include_rustc_srcs", False)
 
-def load_rust_src(ctx):
+def load_rust_src(ctx, sha256 = None):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
     Args:
         ctx (ctx): A repository_ctx.
+        sha256 (str, optional): The sha256 value of the remote rustc srcs archive.
+
+    Returns:
+        tuple:
+            - The BUILD file contents for this rustc_srcs repository.
+            - The sha256 value of the rust src artifact.
     """
     tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
     url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
     archive_path = tool_path + _get_tool_extension(ctx)
-    ctx.download(
+    if not sha256:
+        if hasattr(ctx.attr, "sha256s"):
+            sha256 = ctx.attr.sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path, "")
+        else:
+            sha256 = FILE_KEY_TO_SHA.get(archive_path, "")
+    results = ctx.download(
         url,
         output = archive_path,
-        sha256 = ctx.attr.sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or "",
+        sha256 = sha256 or "",
         auth = _make_auth_dict(ctx, [url]),
     )
     ctx.extract(
@@ -368,6 +446,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )""",
     )
+
+    return _build_file_for_rustc_srcs_template, results.sha256
 
 def load_rust_stdlib(ctx, target_triple):
     """Loads a rust standard library and yields corresponding BUILD for it
@@ -412,25 +492,54 @@ def load_rust_stdlib(ctx, target_triple):
 
     return stdlib_build_file + toolchain_build_file
 
-def load_rustc_dev_nightly(ctx, target_triple):
+def load_rustc_dev_nightly(ctx, target_triple, sha256 = ""):
     """Loads the nightly rustc dev component
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        sha256: The sha256 value of the archive
+
+    Returns:
+        str: The used sha256 value of the archive
     """
 
     subdir_name = "rustc-dev"
     if ctx.attr.iso_date < "2020-12-24":
         subdir_name = "rustc-dev-{}".format(target_triple)
 
-    load_arbitrary_tool(
+    return load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
         tool_subdirectories = [subdir_name],
         version = ctx.attr.version,
+        sha256 = sha256,
+    )
+
+_build_file_llvm_tools_template = """\
+filegroup(
+    name = "llvm_tools",
+    srcs = glob(
+        [
+            "lib/rustlib/{target_triple}/bin/*{binary_ext}",
+            "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_llvm_tools(target_triple):
+    system = triple_to_system(target_triple)
+    binary_ext = system_to_binary_ext(system)
+    dylib_ext = system_to_dylib_ext(system)
+    return _build_file_llvm_tools_template.format(
+        target_triple = target_triple,
+        binary_ext = binary_ext,
+        dylib_ext = dylib_ext,
     )
 
 def load_llvm_tools(ctx, target_triple):
@@ -538,6 +647,9 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         iso_date (str): The date of the tool (ignored if the version is a specific version).
         target_triple (str): The rust-style target triple of the tool
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
+
+    Returns:
+        str: The sha256 value of the tool that was downloaded.
     """
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
@@ -554,7 +666,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     tool_path = produce_tool_path(tool_name, target_triple, version)
 
     archive_path = tool_path + _get_tool_extension(ctx)
-    ctx.download(
+    result = ctx.download(
         urls,
         output = archive_path,
         sha256 = getattr(ctx.attr, "sha256s", dict()).get(archive_path) or
@@ -568,6 +680,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             output = "",
             stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
+    return result.sha256
 
 def _make_auth_dict(ctx, urls):
     auth = getattr(ctx.attr, "auth", {})
@@ -586,3 +699,46 @@ def _get_tool_extension(ctx):
         return ".tar.xz"
     else:
         return ""
+
+_WORKSPACE = """\
+# rules_rust generated workspace
+workspace(name = "{}")
+"""
+
+def write_build_and_workspace(repository_ctx, build_file_content):
+    """Writes a BUILD and WORKSPACE file for a rules_rust generated repository
+
+    Args:
+        repository_ctx (repository_ctx): The rule's context object
+        build_file_content (str): The contents of the BUILD file
+    """
+
+    repository_ctx.file("BUILD.bazel", build_file_content)
+    repository_ctx.file("WORKSPACE.bazel", _WORKSPACE.format(repository_ctx.name))
+
+def update_attrs(orig, override):
+    """Utility function for altering and adding the specified attributes to a particular repository rule invocation.
+
+    This is used to make a rule reproducible.
+
+    Args:
+        orig (dict): dict of actually set attributes (either explicitly or implicitly)
+            by a particular rule invocation
+        override (dict): dict of attributes to override or add to orig
+    Returns:
+        dict of attributes with the keys from override inserted/updated
+    """
+    exclude = ["to_json", "to_proto"]
+    keys = [
+        key
+        for key in dir(orig)
+        if not key.startswith("_") and key not in exclude
+    ]
+
+    result = {}
+    for key in keys:
+        if getattr(orig, key) != None:
+            result[key] = getattr(orig, key)
+
+    result.update(override)
+    return result
