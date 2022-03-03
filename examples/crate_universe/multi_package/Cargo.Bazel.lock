@@ -1,5 +1,5 @@
 {
-  "checksum": "b52e3679173a427dfe2c470a2bb505ac4a4221bcfa5f05e5e6f8978e9464f7f7",
+  "checksum": "135d4cd85352bc3c007d7fc87097f5b8ad2b002a44a5febd26aaa8b6fdf7d37a",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -310,13 +310,13 @@
       },
       "license": "Apache-2.0 OR MIT"
     },
-    "async-global-executor 2.0.2": {
+    "async-global-executor 2.0.3": {
       "name": "async-global-executor",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/async-global-executor/2.0.2/download",
-          "sha256": "9586ec52317f36de58453159d48351bc244bc24ced3effc1fce22f3d48664af6"
+          "url": "https://crates.io/api/v1/crates/async-global-executor/2.0.3/download",
+          "sha256": "c026b7e44f1316b567ee750fea85103f87fcb80792b860e979f221259796ca0a"
         }
       },
       "targets": [
@@ -380,7 +380,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "2.0.2"
+        "version": "2.0.3"
       },
       "license": "Apache-2.0 OR MIT"
     },
@@ -788,7 +788,7 @@
           "selects": {
             "cfg(not(target_os = \"unknown\"))": [
               {
-                "id": "async-global-executor 2.0.2",
+                "id": "async-global-executor 2.0.3",
                 "target": "async_global_executor"
               },
               {

@@ -1,5 +1,5 @@
 {
-  "checksum": "88ae84c97c2e8c452718adf7be45f107fb90b070277b9941d1bce8add0d0434b",
+  "checksum": "0c378937b8cfb3069017bc9680db9d94bd12d7569f71ea00fa3c75421b893560",
   "crates": {
     "adler32 1.2.0": {
       "name": "adler32",
@@ -207,13 +207,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "bytemuck 1.7.3": {
+    "bytemuck 1.8.0": {
       "name": "bytemuck",
-      "version": "1.7.3",
+      "version": "1.8.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/bytemuck/1.7.3/download",
-          "sha256": "439989e6b8c38d1b6570a384ef1e49c8848128f5a97f3914baef02920842712f"
+          "url": "https://crates.io/api/v1/crates/bytemuck/1.8.0/download",
+          "sha256": "0e851ca7c24871e7336801608a4797d7376545b6928a10d32d75685687141ead"
         }
       },
       "targets": [
@@ -236,7 +236,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.7.3"
+        "version": "1.8.0"
       },
       "license": "Zlib OR Apache-2.0 OR MIT"
     },
@@ -928,7 +928,7 @@
         "deps": {
           "common": [
             {
-              "id": "bytemuck 1.7.3",
+              "id": "bytemuck 1.8.0",
               "target": "bytemuck"
             },
             {

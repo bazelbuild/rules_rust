@@ -1,5 +1,5 @@
 {
-  "checksum": "eb93bfc0ce7afb0e64ccaf292f8d1ead6e58f965f1be3cfd62193cc494d25781",
+  "checksum": "8eeaecba1dc454ef2e41ffa0071049af54e659c4a65c9989eb3433dab5947222",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -149,13 +149,13 @@
       },
       "license": "Apache-2.0 OR MIT"
     },
-    "axum 0.4.7": {
+    "axum 0.4.8": {
       "name": "axum",
-      "version": "0.4.7",
+      "version": "0.4.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/axum/0.4.7/download",
-          "sha256": "fdfba8d55076d367807d4ada89bb689a3e2c0ce0e01bc977a61df03f9f705dcf"
+          "url": "https://crates.io/api/v1/crates/axum/0.4.8/download",
+          "sha256": "c9f346c92c1e9a71d14fe4aaf7c2a5d9932cc4e5e48d8fb6641524416eb79ddd"
         }
       },
       "targets": [
@@ -284,7 +284,7 @@
           ],
           "selects": {}
         },
-        "version": "0.4.7"
+        "version": "0.4.8"
       },
       "license": "MIT"
     },
@@ -487,7 +487,7 @@
         "deps": {
           "common": [
             {
-              "id": "axum 0.4.7",
+              "id": "axum 0.4.8",
               "target": "axum"
             },
             {
