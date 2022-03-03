@@ -56,11 +56,7 @@ def _build_script_impl(ctx):
 
     pkg_name = _name_to_pkg_name(ctx.label.name)
 
-    toolchain_tools = [
-        # Needed for rustc to function.
-        toolchain.rustc_lib,
-        toolchain.rust_std,
-    ]
+    toolchain_tools = [toolchain.all_files]
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
@@ -121,6 +117,13 @@ def _build_script_impl(ctx):
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
 
+    # In form build scripts of rustc flags
+    # https://github.com/rust-lang/cargo/issues/9600
+    env["CARGO_ENCODED_RUSTFLAGS"] = " ".join([
+        # Allow build scripts to locate the generated sysroot
+        "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
+    ])
+
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
@@ -136,7 +139,6 @@ def _build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-            toolchain.rustc,
         ] + ctx.files.data + ctx.files.tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
