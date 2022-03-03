@@ -225,6 +225,21 @@ Environment Variables:
             ),
             default = "@rust_{system}_{arch}//:bin/{tool}",
         ),
+        "rust_toolchain_sysroot_anchor_template": attr.string(
+            doc = (
+                "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
+                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+                "and `{system}` (eg. 'darwin') will be replaced in the string if present."
+            ),
+            default = "@rust_{system}_{arch}//:BUILD.bazel",
+        ),
+        "rust_toolchain_sysroot_path": attr.string(
+            doc = (
+                "The path to the Rust sysroot relative to the directory of the file represented by " +
+                "`rust_toolchain_sysroot_anchor_template`"
+            ),
+            default = "",
+        ),
         "rust_version": attr.string(
             doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly-2021-09-08`",
             default = rust_common.default_version,

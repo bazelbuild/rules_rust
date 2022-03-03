@@ -1,6 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
@@ -16,6 +17,12 @@ load(
     "load_rustfmt",
     "should_include_rustc_srcs",
     _load_arbitrary_tool = "load_arbitrary_tool",
+)
+load(
+    "//rust/private:toolchain_repositories.bzl",
+    "rust_exec_tool_repositories",
+    "rust_target_tool_repositories",
+    _new_rust_toolchain_repository = "rust_toolchain_repository",
 )
 
 # Reexport `load_arbitrary_tool` as it's currently in use in https://github.com/google/cargo-raze
@@ -63,6 +70,7 @@ def rules_rust_dependencies():
 def rust_register_toolchains(
         dev_components = False,
         edition = None,
+        experimental_individual_tool_repositories = False,
         include_rustc_srcs = False,
         iso_date = None,
         register_toolchains = True,
@@ -91,6 +99,7 @@ def rust_register_toolchains(
     Args:
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
+        experimental_individual_tool_repositories (bool): If true, `rust_toolchain` will made from individual asset bundles `rustc`, `rust_std`, etc vs the larger host tools bundle, `rust`.
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
             See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
         iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
@@ -106,22 +115,66 @@ def rust_register_toolchains(
     if not rustfmt_version:
         rustfmt_version = version
 
-    for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        maybe(
-            rust_repository_set,
-            name = name,
-            dev_components = dev_components,
-            edition = edition,
-            exec_triple = exec_triple,
-            extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-            include_rustc_srcs = include_rustc_srcs,
-            iso_date = iso_date,
-            register_toolchain = register_toolchains,
-            rustfmt_version = rustfmt_version,
-            sha256s = sha256s,
-            urls = urls,
-            version = version,
-        )
+    if experimental_individual_tool_repositories:
+        tool_prefix = "rust__{}_"
+        for exec_triple in DEFAULT_TOOLCHAIN_TRIPLES.keys():
+            for target_triple in SUPPORTED_PLATFORM_TRIPLES:
+                exec_tools = rust_exec_tool_repositories(
+                    name = tool_prefix.format(exec_triple),
+                    triple = exec_triple,
+                    sha256s_map = sha256s,
+                    url_templates = urls,
+                )
+                target_tools = rust_target_tool_repositories(
+                    name = tool_prefix.format(target_triple),
+                    triple = target_triple,
+                    sha256s_map = sha256s,
+                    url_templates = urls,
+                )
+
+                maybe(
+                    _new_rust_toolchain_repository,
+                    name = "rust__{}_-_{}".format(exec_triple, target_triple),
+                    cargo_repository = exec_tools.cargo,
+                    clippy_repository = exec_tools.clippy,
+                    edition = edition,
+                    exec_triple = exec_triple,
+                    include_rustc_srcs = include_rustc_srcs,
+                    iso_date = iso_date,
+                    register_toolchain = register_toolchains,
+                    rustc_repository = exec_tools.rustc,
+                    rustfmt_repository = exec_tools.rustfmt,
+                    rustc_srcs_repository = exec_tools.rustc_srcs,
+                    stdlib_repository = target_tools.stdlib,
+                    target_triple = target_triple,
+                    version = version,
+                )
+
+        # For legacy support, a `cc_toolchain` is registered for for the
+        # `@rules_rust//rust/platform:wasm` platform since building for
+        # wasm does not use a `cc_toolchain` but one is required by
+        # `rust_toolchain`.
+        if register_toolchains:
+            native.register_toolchains(str(
+                Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain"),
+            ))
+    else:
+        for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
+            maybe(
+                rust_repository_set,
+                name = name,
+                exec_triple = exec_triple,
+                extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
+                version = version,
+                iso_date = iso_date,
+                register_toolchain = register_toolchains,
+                rustfmt_version = rustfmt_version,
+                edition = edition,
+                dev_components = dev_components,
+                sha256s = sha256s,
+                include_rustc_srcs = include_rustc_srcs,
+                urls = urls,
+            )
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(**kwargs):
