@@ -81,7 +81,7 @@ def rules_rust_dependencies():
 def rust_register_toolchains(
         dev_components = False,
         edition = None,
-        experimental_individual_tool_repositories = False,
+        experimental_individual_tool_repositories = True,
         extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
         include_rustc_srcs = False,
         iso_date = None,

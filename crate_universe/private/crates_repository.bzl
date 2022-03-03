@@ -268,7 +268,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
                 "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'rustc.exe') will be replaced in " +
                 "the string if present."
             ),
-            default = "@rust_{system}_{arch}//:bin/{tool}",
+            default = "@rust__{triple}__{tool}//:bin/{tool}{ext}",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
@@ -277,7 +277,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
                 "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'cargo.exe') will be replaced in " +
                 "the string if present."
             ),
-            default = "@rust_{system}_{arch}//:bin/{tool}",
+            default = "@rust__{triple}__{tool}//:bin/{tool}{ext}",
         ),
         "rust_toolchain_sysroot_anchor_template": attr.string(
             doc = (
@@ -285,7 +285,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
                 "and `{system}` (eg. 'darwin') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}//:BUILD.bazel",
+            default = "@rust__{triple}__stdlib//:BUILD.bazel",
         ),
         "rust_toolchain_sysroot_path": attr.string(
             doc = (
