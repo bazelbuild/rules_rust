@@ -111,7 +111,7 @@ CARGO_BAZEL_URLS = {}
 CARGO_BAZEL_SHA256S = {}
 
 # Example:
-# Label("//:cargo_bazel_bin")
+# Label("//crate_universe:cargo_bazel_bin")
 CARGO_BAZEL_LABEL = Label("@cargo_bazel_bootstrap//:binary")
 "#;
 
@@ -143,7 +143,7 @@ fn render_module(artifacts: &[Artifact]) -> String {
         )
         .replace(
             "CARGO_BAZEL_LABEL = Label(\"@cargo_bazel_bootstrap//:binary\")",
-            "CARGO_BAZEL_LABEL = Label(\"//:cargo_bazel_bin\")",
+            "CARGO_BAZEL_LABEL = Label(\"//crate_universe:cargo_bazel_bin\")",
         )
 }
 

@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "tools/cross_installer",
-    "tools/examples_runner",
     "tools/urls_generator",
 ]
 

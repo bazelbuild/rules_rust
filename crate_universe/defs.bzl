@@ -11,23 +11,23 @@
 """
 
 load(
-    "//private:crate.bzl",
+    "//crate_universe/private:crate.bzl",
     _crate = "crate",
 )
 load(
-    "//private:crates_repository.bzl",
+    "//crate_universe/private:crates_repository.bzl",
     _crates_repository = "crates_repository",
 )
 load(
-    "//private:crates_vendor.bzl",
+    "//crate_universe/private:crates_vendor.bzl",
     _crates_vendor = "crates_vendor",
 )
 load(
-    "//private:generate_utils.bzl",
+    "//crate_universe/private:generate_utils.bzl",
     _render_config = "render_config",
 )
 load(
-    "//private:splicing_utils.bzl",
+    "//crate_universe/private:splicing_utils.bzl",
     _splicing_config = "splicing_config",
 )
 

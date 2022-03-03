@@ -11,7 +11,7 @@ CARGO_BAZEL_SRCS = [
 """
 
 def _srcs_module_impl(ctx):
-    srcs = ["@cargo_bazel//:{}".format(src.short_path) for src in ctx.files.srcs]
+    srcs = ["@rules_rust{}".format(src.owner) for src in ctx.files.srcs]
     if not srcs:
         fail("`srcs` cannot be empty")
     output = ctx.actions.declare_file(ctx.label.name)

@@ -6,7 +6,7 @@ exports_files(glob(["**"]))
 
 srcs_module(
     name = "srcs_module",
-    srcs = "//:rust_srcs",
+    srcs = "//crate_universe:rust_srcs",
     dest = ":srcs.bzl",
 )
 
@@ -19,6 +19,6 @@ filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [
         "BUILD.bazel",
-        "//private/vendor:distro",
+        "//crate_universe/private/vendor:distro",
     ],
 )

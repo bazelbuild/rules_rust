@@ -1,4 +1,4 @@
-load("//private:vendor_utils.bzl", "crates_vendor_deps_targets")
+load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps_targets")
 
 crates_vendor_deps_targets()
 
@@ -7,5 +7,5 @@ filegroup(
     srcs = glob(["*.bzl"]) + [
         "BUILD.bazel",
     ],
-    visibility = ["//private:__subpackages__"],
+    visibility = ["//crate_universe/private:__subpackages__"],
 )

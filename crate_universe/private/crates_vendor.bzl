@@ -1,9 +1,9 @@
 """Rules for vendoring Bazel targets into existing workspaces"""
 
-load("@rules_rust//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
-load("//private:generate_utils.bzl", "collect_crate_annotations", "render_config")
-load("//private:splicing_utils.bzl", "splicing_config")
-load("//private:urls.bzl", "CARGO_BAZEL_LABEL")
+load("//crate_universe/private:generate_utils.bzl", "collect_crate_annotations", "render_config")
+load("//crate_universe/private:splicing_utils.bzl", "splicing_config")
+load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
+load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
@@ -247,7 +247,7 @@ crates_vendor = rule(
             doc = "The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.",
             cfg = "exec",
             executable = True,
-            default = Label("//private/vendor:buildifier"),
+            default = Label("//crate_universe/private/vendor:buildifier"),
         ),
         "cargo_bazel": attr.label(
             doc = (
@@ -290,7 +290,7 @@ crates_vendor = rule(
         ),
         "splicing_config": attr.string(
             doc = (
-                "The configuration flags to use for splicing Cargo maniests. Use `@cargo_bazel//:defs.bzl\\%rsplicing_config` to " +
+                "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
         ),

@@ -1,9 +1,12 @@
 """A module is used to assist in bootstrapping cargo-bazel"""
 
-load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository")
-load("//private:srcs.bzl", "CARGO_BAZEL_SRCS")
+load("//cargo:defs.bzl", "cargo_bootstrap_repository")
+load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
 
-def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = None):
+# buildifier: disable=bzl-visibility
+load("//rust/private:common.bzl", "rust_common")
+
+def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = rust_common.default_version):
     """An optional repository which bootstraps `cargo-bazel` for use with `crates_repository`
 
     Args:
@@ -14,8 +17,8 @@ def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = None):
         name = name,
         srcs = CARGO_BAZEL_SRCS,
         binary = "cargo-bazel",
-        cargo_lockfile = "@cargo_bazel//:Cargo.lock",
-        cargo_toml = "@cargo_bazel//:Cargo.toml",
+        cargo_lockfile = "@rules_rust//crate_universe:Cargo.lock",
+        cargo_toml = "@rules_rust//crate_universe:Cargo.toml",
         version = rust_version,
         # The increased timeout helps avoid flakes in CI
         timeout = 900,

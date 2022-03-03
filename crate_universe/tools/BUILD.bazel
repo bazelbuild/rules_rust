@@ -1,9 +1,8 @@
 filegroup(
     name = "distro",
     srcs = [
-        "//tools/cross_installer:distro",
-        "//tools/examples_runner:distro",
-        "//tools/urls_generator:distro",
+        "//crate_universe/tools/cross_installer:distro",
+        "//crate_universe/tools/urls_generator:distro",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//crate_universe:__subpackages__"],
 )

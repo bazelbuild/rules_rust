@@ -4,8 +4,8 @@
 
 ## [Documentation][docs]
 
-For detailed documentation. See https://abrisco.github.io/cargo-bazel/
+For detailed documentation. See https://bazelbuild.github.io/rules_rust/crate_universe.html
 
 [cargo]: https://doc.rust-lang.org/cargo/
 [bazel]: https://bazel.build/
-[docs]: https://abrisco.github.io/cargo-bazel/
+[docs]: https://bazelbuild.github.io/rules_rust/crate_universe.html

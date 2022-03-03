@@ -12,7 +12,7 @@ filegroup(
         "BUILD.bazel",
         "Cargo.toml",
     ],
-    visibility = ["//tools:__pkg__"],
+    visibility = ["//crate_universe/tools:__pkg__"],
 )
 
 rust_binary(
@@ -20,11 +20,11 @@ rust_binary(
     srcs = glob(["src/**/*.rs"]),
     aliases = aliases(),
     compile_data = [
-        "//private:urls.bzl",
+        "//crate_universe/private:urls.bzl",
     ],
     proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
-        "MODULE_ROOT_PATH": "$(rootpath //private:urls.bzl)",
+        "MODULE_ROOT_PATH": "$(rootpath //crate_universe/private:urls.bzl)",
     },
     deps = all_crate_deps(normal = True),
 )

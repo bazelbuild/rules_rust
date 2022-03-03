@@ -1,7 +1,8 @@
 """Common utilities useful for unifying the behavior of different parts of `cargo-bazel`."""
 
+# buildifier: disable=bzl-visibility
 load(
-    "//private:rust_utils.bzl",
+    "//cargo/private:cargo_utils.bzl",
     _get_host_triple = "get_host_triple",
     _rust_get_rust_tools = "get_rust_tools",
 )

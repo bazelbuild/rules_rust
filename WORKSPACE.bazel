@@ -6,6 +6,10 @@ rules_rust_dependencies()
 
 rust_register_toolchains(include_rustc_srcs = True)
 
+load("@rules_rust//crate_universe:crates.bzl", "crate_deps_repository")
+
+crate_deps_repository(bootstrap = True)
+
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()

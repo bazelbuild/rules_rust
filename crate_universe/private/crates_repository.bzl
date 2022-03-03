@@ -1,10 +1,8 @@
 """`crates_repository` rule implementation"""
 
-load("@rules_rust//rust:defs.bzl", "rust_common")
-load("@rules_rust//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
-load("//private:common_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//crate_universe/private:common_utils.bzl", "get_host_triple", "get_rust_tools")
 load(
-    "//private:generate_utils.bzl",
+    "//crate_universe/private:generate_utils.bzl",
     "CRATES_REPOSITORY_ENVIRON",
     "determine_repin",
     "execute_generator",
@@ -13,11 +11,13 @@ load(
     "get_lockfile",
 )
 load(
-    "//private:splicing_utils.bzl",
+    "//crate_universe/private:splicing_utils.bzl",
     "create_splicing_manifest",
     "splice_workspace_manifest",
 )
-load("//private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
+load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
+load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 def _crates_repository_impl(repository_ctx):
     # Determine the current host's platform triple
@@ -203,7 +203,7 @@ Environment Variables:
         ),
         "render_config": attr.string(
             doc = (
-                "The configuration flags to use for rendering. Use `@cargo_bazel//:defs.bzl\\%render_config` to " +
+                "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
         ),
@@ -231,7 +231,7 @@ Environment Variables:
         ),
         "splicing_config": attr.string(
             doc = (
-                "The configuration flags to use for splicing Cargo maniests. Use `@cargo_bazel//:defs.bzl\\%rsplicing_config` to " +
+                "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
         ),

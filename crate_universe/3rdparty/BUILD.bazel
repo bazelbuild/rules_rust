@@ -1,4 +1,4 @@
-load("//:crates.bzl", "crate_deps_target")
+load("//crate_universe:crates.bzl", "crate_deps_target")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,7 +10,7 @@ filegroup(
         "*.bzl",
         "*.bazel",
     ]) + [
-        "//3rdparty/crates:srcs",
+        "//crate_universe/3rdparty/crates:srcs",
     ],
 )
 

@@ -33,5 +33,5 @@ filegroup(
         "BUILD.bazel",
         "Cargo.toml",
     ],
-    visibility = ["//tools:__pkg__"],
+    visibility = ["//crate_universe/tools:__pkg__"],
 )

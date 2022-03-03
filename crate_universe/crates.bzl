@@ -1,10 +1,12 @@
 """A module defining dependencies of the `cargo-bazel` Rust target"""
 
 load("@rules_rust//rust:defs.bzl", "rust_common")
-load("//:defs.bzl", "crate", "crates_repository", "crates_vendor")
-load("//:deps_bootstrap.bzl", "cargo_bazel_bootstrap")
-load("//3rdparty:third_party_deps.bzl", "third_party_deps")
-load("//3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
+load("//crate_universe:defs.bzl", "crate", "crates_repository", "crates_vendor")
+load("//crate_universe:deps_bootstrap.bzl", "cargo_bazel_bootstrap")
+load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
+load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
+load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
+load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
 
 USE_CRATES_REPOSITORY = False
 
@@ -22,10 +24,9 @@ _ANNOTATIONS = {
 }
 
 _MANIFESTS = [
-    "@cargo_bazel//:Cargo.toml",
-    "@cargo_bazel//tools/cross_installer:Cargo.toml",
-    "@cargo_bazel//tools/examples_runner:Cargo.toml",
-    "@cargo_bazel//tools/urls_generator:Cargo.toml",
+    "@rules_rust//crate_universe:Cargo.toml",
+    "@rules_rust//crate_universe/tools/cross_installer:Cargo.toml",
+    "@rules_rust//crate_universe/tools/urls_generator:Cargo.toml",
 ]
 
 def crate_deps_repository(rust_version = rust_common.default_version, bootstrap = False):
@@ -44,13 +45,16 @@ def crate_deps_repository(rust_version = rust_common.default_version, bootstrap 
             name = _REPOSITORY_NAME,
             annotations = _ANNOTATIONS,
             generator = "@cargo_bazel_bootstrap//:cargo-bazel" if bootstrap else None,
-            lockfile = "@cargo_bazel//:Cargo.Bazel.lock",
+            lockfile = "@rules_rust//crate_universe:Cargo.Bazel.lock",
             manifests = _MANIFESTS,
             rust_version = rust_version,
         )
 
     else:
         _vendor_crate_repositories()
+
+    crates_vendor_deps()
+    cross_installer_deps()
 
 def crate_deps_target(name = "crates_vendor", vendor_path = "crates"):
     crates_vendor(
