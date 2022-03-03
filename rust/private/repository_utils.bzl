@@ -186,7 +186,7 @@ rust_toolchain(
     rust_doc = "@{workspace_name}//:rustdoc",
     rust_std = "@{workspace_name}//:rust_std-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
-    rustfmt = "@{workspace_name}//:rustfmt_bin",
+    rustfmt = {rustfmt_label},
     cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
     rustc_lib = "@{workspace_name}//:rustc_lib",
@@ -210,6 +210,7 @@ def BUILD_for_rust_toolchain(
         target_triple,
         include_rustc_srcs,
         default_edition,
+        include_rustfmt,
         stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -220,6 +221,7 @@ def BUILD_for_rust_toolchain(
         target_triple (str): The rust-style target triple of the tool
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         default_edition (str): Default Rust edition.
+        include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -235,6 +237,9 @@ def BUILD_for_rust_toolchain(
     rustc_srcs = "None"
     if include_rustc_srcs:
         rustc_srcs = "\"@{workspace_name}//lib/rustlib/src:rustc_srcs\"".format(workspace_name = workspace_name)
+    rustfmt_label = "None"
+    if include_rustfmt:
+        rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
@@ -248,6 +253,7 @@ def BUILD_for_rust_toolchain(
         default_edition = default_edition,
         exec_triple = exec_triple,
         target_triple = target_triple,
+        rustfmt_label = rustfmt_label,
     )
 
 _build_file_for_toolchain_template = """\
@@ -402,6 +408,7 @@ def load_rust_stdlib(ctx, target_triple):
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
+        include_rustfmt = not (not ctx.attr.rustfmt_version),
     )
 
     return stdlib_build_file + toolchain_build_file
