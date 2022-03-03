@@ -43,14 +43,6 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "crate_universe",
-        header_template = ":crate_universe.vm",
-        symbols = [
-            "crate_universe",
-            "crate",
-        ],
-    ),
-    page(
         name = "defs",
         symbols = [
             "rust_binary",
@@ -185,6 +177,13 @@ stardoc(
     header_template = ":flatten_header_vm",
     input = ":symbols.bzl",
     symbol_names = sorted([symbol for k in PAGES.keys() for symbol in PAGES[k].symbols]),
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe",
+    out = "crate_universe.md",
+    input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
 

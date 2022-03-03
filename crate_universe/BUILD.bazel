@@ -8,13 +8,9 @@ exports_files(
         "Cargo.toml",
         "Cargo.lock",
         "Cargo.Bazel.lock",
+        "defs.bzl",
     ],
     visibility = ["//visibility:public"],
-)
-
-exports_files(
-    glob(["*.bzl"]),
-    visibility = ["//crate_universe:__subpackages__"],
 )
 
 filegroup(
@@ -46,6 +42,7 @@ bzl_library(
     name = "bzl_lib",
     srcs = [":bzl_srcs"],
     visibility = ["//visibility:public"],
+    deps = ["//rust:bzl_lib"],
 )
 
 filegroup(

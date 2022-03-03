@@ -21,7 +21,8 @@ load(
 load(
     "@rules_rust//crate_universe:defs.bzl",
     _crate = "crate",
-    _crate_universe = "crate_universe",
+    _crates_repository = "crates_repository",
+    _crates_vendor = "crates_vendor",
 )
 load(
     "@rules_rust//proto:proto.bzl",
@@ -137,8 +138,9 @@ rust_clippy_aspect = _rust_clippy_aspect
 rust_analyzer = _rust_analyzer
 rust_analyzer_aspect = _rust_analyzer_aspect
 
-crate_universe = _crate_universe
 crate = _crate
+crates_repository = _crates_repository
+crates_vendor = _crates_vendor
 
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
