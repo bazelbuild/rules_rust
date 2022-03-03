@@ -1,0 +1,14 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+exports_files([
+    "BUILD.names.bazel",
+])
+
+rust_test(
+    name = "launch_test",
+    srcs = ["remote_crate_test.rs"],
+    data = ["@names//:names_bin"],
+    rustc_env = {
+        "EXECUTABLE": "$(rootpath @names//:names_bin)",
+    },
+)

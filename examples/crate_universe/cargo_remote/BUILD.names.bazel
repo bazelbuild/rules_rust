@@ -1,0 +1,67 @@
+load("@crate_index_cargo_remote//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Cargo.toml",
+    "Cargo.lock",
+])
+
+rust_binary(
+    name = "names_bin",
+    srcs = ["src/bin/names.rs"],
+    aliases = aliases(
+        normal = True,
+        proc_macro = True,
+    ),
+    crate_features = [
+        "application",
+        "clap",
+        "default",
+    ],
+    crate_root = "src/bin/names.rs",
+    edition = "2018",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    version = "0.12.0",
+    deps = all_crate_deps(normal = True) + [
+        ":names",
+    ],
+)
+
+rust_library(
+    name = "names",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(
+        normal = True,
+        proc_macro = True,
+    ),
+    crate_features = [
+        "application",
+        "clap",
+        "default",
+    ],
+    edition = "2018",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    version = "0.12.0",
+    deps = all_crate_deps(normal = True) + [
+        ":build-script-build",
+    ],
+)
+
+cargo_build_script(
+    name = "build-script-build",
+    srcs = ["build.rs"],
+    aliases = aliases(build = True),
+    crate_features = [
+        "application",
+        "clap",
+        "default",
+    ],
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(["data/**"]),
+    edition = "2018",
+    version = "0.12.0",
+)

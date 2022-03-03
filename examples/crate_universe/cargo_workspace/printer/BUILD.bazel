@@ -1,0 +1,18 @@
+load("@crate_index_cargo_workspace//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "printer",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = [
+        "//cargo_workspace/rng",
+    ] + all_crate_deps(),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":printer",
+)

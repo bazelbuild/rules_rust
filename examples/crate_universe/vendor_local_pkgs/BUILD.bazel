@@ -1,0 +1,72 @@
+load("@cargo_bazel//:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "axum": [crate.annotation(
+            compile_data_glob = ["**/*.md"],
+        )],
+    },
+    mode = "local",
+    packages = {
+        "axum": crate.spec(
+            version = "0.4.0",
+        ),
+        "hyper": crate.spec(
+            features = ["full"],
+            version = "0.14",
+        ),
+        "mime": crate.spec(
+            version = "0.3",
+        ),
+        "serde_json": crate.spec(
+            version = "1.0",
+        ),
+        # TODO: This is pinned due to a build failure introduced by 1.17
+        # bringing in windows-sys and introduces linker errors.
+        # https://github.com/abrisco/cargo-bazel/issues/173
+        "tokio": crate.spec(
+            features = ["full"],
+            version = "=1.16.1",
+        ),
+        "tower": crate.spec(
+            features = ["util"],
+            version = "0.4",
+        ),
+        "tower-http": crate.spec(
+            features = ["trace"],
+            version = "0.2.1",
+        ),
+        "tracing": crate.spec(
+            version = "0.1",
+        ),
+        "tracing-subscriber": crate.spec(
+            version = "0.3",
+        ),
+    },
+)
+
+rust_binary(
+    name = "vendor_local",
+    srcs = glob(["**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "//vendor_local_pkgs/crates:axum",
+        "//vendor_local_pkgs/crates:hyper",
+        "//vendor_local_pkgs/crates:mime",
+        "//vendor_local_pkgs/crates:serde_json",
+        "//vendor_local_pkgs/crates:tokio",
+        "//vendor_local_pkgs/crates:tower",
+        "//vendor_local_pkgs/crates:tower-http",
+        "//vendor_local_pkgs/crates:tracing",
+        "//vendor_local_pkgs/crates:tracing-subscriber",
+    ],
+)
+
+rust_test(
+    name = "unit_test",
+    srcs = glob(["**/*.rs"]),
+    crate = ":vendor_local",
+    edition = "2018",
+)

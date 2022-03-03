@@ -1,0 +1,25 @@
+load("@cargo_bazel//:defs.bzl", "crates_vendor")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//vendor_local_manifests/crates:defs.bzl", "aliases", "all_crate_deps")
+
+crates_vendor(
+    name = "crates_vendor",
+    manifests = [":Cargo.toml"],
+    mode = "local",
+)
+
+rust_library(
+    name = "cargo_local",
+    srcs = glob(["**/*.rs"]),
+    aliases = aliases(),
+    edition = "2018",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    deps = all_crate_deps(normal = True),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":cargo_local",
+    proc_macro_deps = all_crate_deps(proc_macro_dev = True),
+    deps = all_crate_deps(normal_dev = True),
+)
