@@ -1,4 +1,4 @@
-load("@cargo_bazel//:defs.bzl", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 load("//vendor_local_manifests/crates:defs.bzl", "aliases", "all_crate_deps")
 

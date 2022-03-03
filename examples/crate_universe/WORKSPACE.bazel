@@ -1,29 +1,25 @@
 workspace(name = "examples")
 
 local_repository(
-    name = "cargo_bazel",
-    path = "../",
+    name = "rules_rust",
+    path = "../../",
 )
-
-load("@cargo_bazel//:deps.bzl", "cargo_bazel_deps")
-
-cargo_bazel_deps()
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
 rules_rust_dependencies()
 
-rust_register_toolchains()
+rust_register_toolchains(include_rustc_srcs = True)
 
-load("@cargo_bazel//:crates.bzl", "crate_deps_repository")
+load("@rules_rust//crate_universe:crates.bzl", "crate_deps_repository")
 
 crate_deps_repository()
 
-load("@cargo_bazel//:crates_deps.bzl", "crate_repositories")
+load("@rules_rust//crate_universe:crates_deps.bzl", "crate_repositories")
 
 crate_repositories()
 
-load("@cargo_bazel//:defs.bzl", "crate", "crates_repository", "splicing_config")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "splicing_config")
 
 ###############################################################################
 # C A R G O   A L I A S E S
@@ -57,6 +53,9 @@ cargo_aliases_crate_repositories()
 
 crates_repository(
     name = "crate_index_cargo_local",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
     lockfile = "//cargo_local:Cargo.lock",
     lockfile_kind = "cargo",
     manifests = ["//cargo_local:Cargo.toml"],
@@ -325,3 +324,21 @@ load(
 crates_vendor_packages_repositories()
 
 ###############################################################################
+
+# Used for Bazel CI
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "179ec02f809e86abf56356d8898c8bd74069f1bd7c56044050c2cd3d79d0e024",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
+
+# Creates a default toolchain config for RBE.
+# Use this as is if you are using the rbe_ubuntu16_04 container,
+# otherwise refer to RBE docs.
+rbe_autoconfig(name = "buildkite_config")

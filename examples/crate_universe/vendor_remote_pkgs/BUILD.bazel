@@ -1,4 +1,4 @@
-load("@cargo_bazel//:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
 crates_vendor(
