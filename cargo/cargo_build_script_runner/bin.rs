@@ -100,6 +100,12 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
+    // Bazel does not support byte strings so in order to correctly represent `CARGO_ENCODED_RUSTFLAGS`
+    // the escaped `\x1f` sequences need to be unescaped
+    if let Ok(encoded_rustflags) = env::var("CARGO_ENCODED_RUSTFLAGS") {
+        command.env("CARGO_ENCODED_RUSTFLAGS", encoded_rustflags.replace("\\x1f", "\x1f"));
+    }
+
     if let Some(ar_path) = env::var_os("AR") {
         // The default OSX toolchain uses libtool as ar_executable not ar.
         // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
