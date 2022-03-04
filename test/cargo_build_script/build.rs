@@ -11,11 +11,14 @@ fn test_encoded_rustflags() {
     assert_eq!(flags.len(), 2);
 
     assert!(flags[0].starts_with("--sysroot"));
+
+    // Ensure the `pwd` template has been resolved
+    assert!(!flags[0].contains("${pwd}"));
+
     assert_eq!(flags[1], "--verbose");
 }
 
 fn main() {
-
     // Perform some unit testing
     test_encoded_rustflags();
 
