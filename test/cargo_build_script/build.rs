@@ -11,7 +11,7 @@ fn test_encoded_rustflags() {
     assert_eq!(flags.len(), 2);
 
     assert!(flags[0].starts_with("--sysroot"));
-    assert!(flags[1].starts_with("--verbose"));
+    assert_eq!(flags[1], "--verbose");
 }
 
 fn main() {
