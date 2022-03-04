@@ -119,7 +119,7 @@ def _build_script_impl(ctx):
 
     # In form build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
-    env["CARGO_ENCODED_RUSTFLAGS"] = " ".join([
+    env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join([
         # Allow build scripts to locate the generated sysroot
         "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
     ])
