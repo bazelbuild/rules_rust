@@ -1,4 +1,24 @@
+//! A Cargo build script binary used in unit tests for the Bazel `cargo_build_script` rule
+
+/// `cargo_build_script` should always set `CARGO_ENCODED_RUSTFLAGS`
+fn test_encoded_rustflags() {
+    let encoded_rustflags = std::env::var("CARGO_ENCODED_RUSTFLAGS").unwrap();
+
+    let flags: Vec<String> = encoded_rustflags
+        .split('\x1f')
+        .map(str::to_string)
+        .collect();
+    assert_eq!(flags.len(), 2);
+
+    assert!(flags[0].starts_with("--sysroot"));
+    assert!(flags[1].starts_with("--verbose"));
+}
+
 fn main() {
+
+    // Perform some unit testing
+    test_encoded_rustflags();
+
     // Pass the TOOL_PATH along to the rust_test so we can assert on it.
     println!(
         "cargo:rustc-env=TOOL_PATH={}",
