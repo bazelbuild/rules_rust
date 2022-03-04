@@ -46,7 +46,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 
 <pre>
 cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>,
-                   <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
+                   <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -121,6 +121,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  <code>[]</code> |
 | <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  <code>None</code> |
 | <a id="cargo_build_script-rustc_env"></a>rustc_env |  Environment variables to set in rustc when compiling the build script.   |  <code>{}</code> |
+| <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.   |  <code>[]</code> |
 | <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  <code>None</code> |
 | <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  <code>None</code> |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
