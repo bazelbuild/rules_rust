@@ -7,7 +7,7 @@ load("//rust:defs.bzl", "rust_binary", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
+load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -119,10 +119,10 @@ def _build_script_impl(ctx):
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
-    env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join([
+    env["CARGO_ENCODED_RUSTFLAGS"] = "\\x1f".join([
         # Allow build scripts to locate the generated sysroot
         "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
-    ])
+    ] + ctx.attr.rustc_flags)
 
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
@@ -219,6 +219,16 @@ _build_script_run = rule(
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
         ),
+        "rustc_flags": attr.string_list(
+            doc = dedent("""\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and 
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
+        ),
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
         "script": attr.label(
@@ -264,6 +274,7 @@ def cargo_build_script(
         tools = [],
         links = None,
         rustc_env = {},
+        rustc_flags = [],
         visibility = None,
         tags = None,
         **kwargs):
@@ -335,6 +346,7 @@ def cargo_build_script(
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
+        rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
         **kwargs: Forwards to the underlying `rust_binary` rule.
@@ -359,6 +371,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         rustc_env = rustc_env,
+        rustc_flags = rustc_flags,
         tags = binary_tags,
         **kwargs
     )
@@ -372,6 +385,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         tools = tools,
+        rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
     )
