@@ -63,7 +63,7 @@ def get_generator(repository_ctx, host_triple):
 
     if not generator_url:
         fail((
-            "No generator URL was found either in fro the `CARGO_BAZEL_GENERATOR_URL` " +
+            "No generator URL was found either in the `CARGO_BAZEL_GENERATOR_URL` " +
             "environment variable or for the `{}` triple in the `generator_urls` attribute"
         ).format(host_triple))
 
