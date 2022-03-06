@@ -29,7 +29,7 @@ if __name__ == "__main__":
     workspace_root = Path(
         os.environ.get("BUILD_WORKSPACE_DIRECTORY",
                        str(Path(__file__).parent.parent.parent.parent.parent)))
-    metadata_dir = workspace_root / "test_data" / "metadata"
+    metadata_dir = workspace_root / "crate_universe/test_data/metadata"
     cargo = os.getenv("CARGO", "cargo")
 
     with tempfile.TemporaryDirectory() as temp_dir:

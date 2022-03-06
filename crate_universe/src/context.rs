@@ -487,14 +487,14 @@ mod test {
                 (
                     CrateId {
                         name: "names".to_owned(),
-                        version: "0.11.1-dev".to_owned(),
+                        version: "0.12.1-dev".to_owned(),
                     },
                     Some("pinned_names".to_owned())
                 ),
                 (
                     CrateId {
                         name: "names".to_owned(),
-                        version: "0.12.0".to_owned(),
+                        version: "0.13.0".to_owned(),
                     },
                     None
                 ),

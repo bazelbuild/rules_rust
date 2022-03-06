@@ -1,3 +1,5 @@
+[workspace]
+
 [package]
 name = "aliases"
 version = "0.1.0"
@@ -19,5 +21,5 @@ pinned_log = { package = "log", version = "=0.3.9" }
 value-bag = "=1.0.0-alpha.7"
 
 # Defines binary targets
-names = "=0.12.0"
-pinned_names = { package = "names", git = "https://github.com/fnichol/names.git", rev = "534b1cd239fb57933616f3d25ae258bdf708811d" }
+names = "=0.13.0"
+pinned_names = { package = "names", git = "https://github.com/fnichol/names.git", rev = "760516503b89ddc8bc2ab42d579d4566cfb1054f" }

@@ -24,7 +24,7 @@
                 {
                     "name": "names",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "=0.12.0",
+                    "req": "=0.13.0",
                     "kind": null,
                     "rename": null,
                     "optional": false,
@@ -47,7 +47,7 @@
                 },
                 {
                     "name": "names",
-                    "source": "git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d",
+                    "source": "git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f",
                     "req": "*",
                     "kind": null,
                     "rename": "pinned_names",
@@ -604,8 +604,8 @@
         },
         {
             "name": "clap",
-            "version": "3.0.0-beta.2",
-            "id": "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "3.1.5",
+            "id": "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
             "description": "A simple to use, efficient, and full-featured Command Line Argument Parser",
@@ -615,6 +615,18 @@
                     "name": "atty",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "req": "^0.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "backtrace",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
                     "kind": null,
                     "rename": null,
                     "optional": true,
@@ -638,7 +650,7 @@
                 {
                     "name": "clap_derive",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^3.0.0-beta.2",
+                    "req": "^3.1.4",
                     "kind": null,
                     "rename": null,
                     "optional": true,
@@ -674,14 +686,12 @@
                 {
                     "name": "os_str_bytes",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^2.3",
+                    "req": "^6.0",
                     "kind": null,
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
-                    "features": [
-                        "raw"
-                    ],
+                    "features": [],
                     "target": null,
                     "registry": null
                 },
@@ -712,7 +722,7 @@
                 {
                     "name": "termcolor",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.1",
+                    "req": "^1.1.1",
                     "kind": null,
                     "rename": null,
                     "optional": true,
@@ -736,34 +746,22 @@
                 {
                     "name": "textwrap",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.12",
+                    "req": "^0.15.0",
                     "kind": null,
                     "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
+                    "uses_default_features": false,
                     "features": [],
                     "target": null,
                     "registry": null
                 },
                 {
-                    "name": "unicode-width",
+                    "name": "unicase",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
+                    "req": "^2.6",
                     "kind": null,
                     "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "vec_map",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.8",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
+                    "optional": true,
                     "uses_default_features": true,
                     "features": [],
                     "target": null,
@@ -818,14 +816,42 @@
                     "registry": null
                 },
                 {
-                    "name": "version-sync",
+                    "name": "rustversion",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.8",
+                    "req": "^1",
                     "kind": "dev",
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
                     "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "trybuild",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.18",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "trycmd",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.12",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [
+                        "color-auto",
+                        "diff",
+                        "examples"
+                    ],
                     "target": null,
                     "registry": null
                 }
@@ -839,11 +865,788 @@
                         "lib"
                     ],
                     "name": "clap",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
                     "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "demo",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/demo.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "cargo-example",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/cargo-example.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "cargo-example-derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/cargo-example-derive.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "escaped-positional",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/escaped-positional.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "escaped-positional-derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/escaped-positional-derive.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "git-derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/git-derive.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "keyvalue-derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/keyvalue-derive.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "busybox",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/multicall-busybox.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "unstable-multicall"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "hostname",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/multicall-hostname.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "unstable-multicall"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "01_quick",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/01_quick.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_apps",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/02_apps.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_crate",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/02_crate.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_app_settings",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/02_app_settings.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_01_flag_bool",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_01_flag_bool.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_01_flag_count",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_01_flag_count.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_02_option",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_02_option.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_03_positional",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_03_positional.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_04_subcommands",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_04_subcommands.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_05_default_values",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/03_05_default_values.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_01_possible",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_01_possible.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_01_enum",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_01_enum.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo",
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_02_parse",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_02_parse.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_02_validate",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_02_validate.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_03_relations",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_03_relations.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_04_custom",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/04_04_custom.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "05_01_assert",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_builder/05_01_assert.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "01_quick_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/01_quick.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_apps_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/02_apps.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_crate_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/02_crate.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "02_app_settings_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/02_app_settings.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_01_flag_bool_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_01_flag_bool.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_01_flag_count_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_01_flag_count.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_02_option_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_02_option.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_03_positional_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_03_positional.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_04_subcommands_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_04_subcommands.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_04_subcommands_alt_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_04_subcommands_alt.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "03_05_default_values_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/03_05_default_values.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_01_enum_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/04_01_enum.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_02_parse_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/04_02_parse.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_02_validate_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/04_02_validate.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_03_relations_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/04_03_relations.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "04_04_custom_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/04_04_custom.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "05_01_assert_derive",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/tutorial_derive/05_01_assert.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "custom-bool",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/derive_ref/custom-bool.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "pacman",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/pacman.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "git",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/examples/git.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
                 },
                 {
                     "kind": [
@@ -853,7 +1656,7 @@
                         "bin"
                     ],
                     "name": "01_default",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/01_default.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/01_default.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -867,7 +1670,7 @@
                         "bin"
                     ],
                     "name": "02_simple",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/02_simple.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/02_simple.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -881,7 +1684,7 @@
                         "bin"
                     ],
                     "name": "03_complex",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/03_complex.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/03_complex.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -895,7 +1698,7 @@
                         "bin"
                     ],
                     "name": "04_new_help",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/04_new_help.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/04_new_help.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -909,7 +1712,7 @@
                         "bin"
                     ],
                     "name": "05_ripgrep",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/05_ripgrep.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/05_ripgrep.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -923,7 +1726,7 @@
                         "bin"
                     ],
                     "name": "06_rustup",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/benches/06_rustup.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/benches/06_rustup.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -939,30 +1742,45 @@
                     "termcolor"
                 ],
                 "debug": [
-                    "clap_derive/debug"
+                    "clap_derive/debug",
+                    "backtrace"
                 ],
                 "default": [
-                    "suggestions",
-                    "color",
-                    "derive",
                     "std",
-                    "cargo"
+                    "color",
+                    "suggestions"
                 ],
                 "derive": [
                     "clap_derive",
                     "lazy_static"
                 ],
-                "doc": [
-                    "yaml",
-                    "regex"
+                "env": [],
+                "std": [
+                    "indexmap/std"
                 ],
-                "std": [],
                 "suggestions": [
                     "strsim"
                 ],
-                "unstable": [
-                    "clap_derive/unstable"
+                "unicode": [
+                    "textwrap/unicode-width",
+                    "unicase"
                 ],
+                "unstable-doc": [
+                    "derive",
+                    "cargo",
+                    "wrap_help",
+                    "yaml",
+                    "env",
+                    "unicode",
+                    "regex",
+                    "unstable-replace",
+                    "unstable-multicall",
+                    "unstable-grouped"
+                ],
+                "unstable-grouped": [],
+                "unstable-multicall": [],
+                "unstable-replace": [],
+                "unstable-v4": [],
                 "wrap_help": [
                     "terminal_size",
                     "textwrap/terminal_size"
@@ -971,24 +1789,88 @@
                     "yaml-rust"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.0.0-beta.2/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
-                        "features": [
-                            "doc"
+                        "cargo-args": [
+                            "-Zunstable-options",
+                            "-Zrustdoc-scrape-examples=examples"
                         ],
-                        "targets": [
-                            "x86_64-unknown-linux-gnu"
+                        "features": [
+                            "unstable-doc"
+                        ],
+                        "rustdoc-args": [
+                            "--cfg",
+                            "docsrs"
                         ]
                     }
+                },
+                "playground": {
+                    "features": [
+                        "unstable-doc"
+                    ]
+                },
+                "release": {
+                    "shared-version": true,
+                    "tag-name": "v{{version}}",
+                    "pre-release-replacements": [
+                        {
+                            "file": "CHANGELOG.md",
+                            "min": 1,
+                            "replace": "{{version}}",
+                            "search": "Unreleased"
+                        },
+                        {
+                            "exactly": 1,
+                            "file": "CHANGELOG.md",
+                            "replace": "...{{tag_name}}",
+                            "search": "\\.\\.\\.HEAD"
+                        },
+                        {
+                            "file": "CHANGELOG.md",
+                            "min": 1,
+                            "replace": "{{date}}",
+                            "search": "ReleaseDate"
+                        },
+                        {
+                            "exactly": 1,
+                            "file": "CHANGELOG.md",
+                            "replace": "<!-- next-header -->\n## [Unreleased] - ReleaseDate\n",
+                            "search": "<!-- next-header -->"
+                        },
+                        {
+                            "exactly": 1,
+                            "file": "CHANGELOG.md",
+                            "replace": "<!-- next-url -->\n[Unreleased]: https://github.com/clap-rs/clap/compare/{{tag_name}}...HEAD",
+                            "search": "<!-- next-url -->"
+                        },
+                        {
+                            "exactly": 13,
+                            "file": "README.md",
+                            "prerelease": true,
+                            "replace": "github.com/clap-rs/clap/blob/{{tag_name}}/",
+                            "search": "github.com/clap-rs/clap/blob/[^/]+/"
+                        },
+                        {
+                            "exactly": 1,
+                            "file": "README.md",
+                            "prerelease": true,
+                            "replace": "version = \"{{version}}\"",
+                            "search": "version = \"[a-z0-9\\.-]+\""
+                        },
+                        {
+                            "exactly": 4,
+                            "file": "src/derive.rs",
+                            "prerelease": true,
+                            "replace": "github.com/clap-rs/clap/blob/{{tag_name}}/",
+                            "search": "github.com/clap-rs/clap/blob/[^/]+/"
+                        }
+                    ]
                 }
             },
             "publish": null,
-            "authors": [
-                "Kevin K. <kbknapp@gmail.com>",
-                "Clap Maintainers"
-            ],
+            "authors": [],
             "categories": [
                 "command-line-interface"
             ],
@@ -1001,7 +1883,7 @@
             ],
             "readme": "README.md",
             "repository": "https://github.com/clap-rs/clap",
-            "homepage": "https://clap.rs/",
+            "homepage": null,
             "documentation": "https://docs.rs/clap/",
             "edition": "2018",
             "links": null,
@@ -1010,8 +1892,8 @@
         },
         {
             "name": "clap_derive",
-            "version": "3.0.14",
-            "id": "clap_derive 3.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "3.1.4",
+            "id": "clap_derive 3.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
             "description": "Parse command line argument by defining a struct, derive crate.",
@@ -1089,7 +1971,7 @@
                         "proc-macro"
                     ],
                     "name": "clap_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_derive-3.0.14/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_derive-3.1.4/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -1100,7 +1982,7 @@
                 "debug": [],
                 "default": []
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_derive-3.0.14/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_derive-3.1.4/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -1110,6 +1992,7 @@
                     }
                 },
                 "release": {
+                    "dependent-version": "upgrade",
                     "shared-version": true,
                     "tag-name": "v{{version}}",
                     "pre-release-replacements": [
@@ -1246,8 +2129,8 @@
         },
         {
             "name": "getrandom",
-            "version": "0.2.4",
-            "id": "getrandom 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.2.5",
+            "id": "getrandom 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
             "description": "A small cross-platform library for retrieving random data from system source",
@@ -1359,7 +2242,7 @@
                         "lib"
                     ],
                     "name": "getrandom",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -1373,7 +2256,7 @@
                         "bin"
                     ],
                     "name": "normal",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/tests/normal.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/tests/normal.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -1387,7 +2270,7 @@
                         "bin"
                     ],
                     "name": "custom",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/tests/custom.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/tests/custom.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -1401,7 +2284,7 @@
                         "bin"
                     ],
                     "name": "rdrand",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/tests/rdrand.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/tests/rdrand.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -1415,7 +2298,7 @@
                         "bin"
                     ],
                     "name": "mod",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/benches/mod.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/benches/mod.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -1438,7 +2321,7 @@
                 "std": [],
                 "test-in-browser": []
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.4/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -2377,8 +3260,8 @@
         },
         {
             "name": "libc",
-            "version": "0.2.117",
-            "id": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.2.119",
+            "id": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
             "description": "Raw FFI bindings to platform libraries like libc.\n",
@@ -2406,7 +3289,7 @@
                         "lib"
                     ],
                     "name": "libc",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.117/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.119/src/lib.rs",
                     "edition": "2015",
                     "doc": true,
                     "doctest": true,
@@ -2420,7 +3303,7 @@
                         "bin"
                     ],
                     "name": "const_fn",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.117/tests/const_fn.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.119/tests/const_fn.rs",
                     "edition": "2015",
                     "doc": false,
                     "doctest": false,
@@ -2434,7 +3317,7 @@
                         "bin"
                     ],
                     "name": "build-script-build",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.117/build.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.119/build.rs",
                     "edition": "2015",
                     "doc": false,
                     "doctest": false,
@@ -2457,7 +3340,7 @@
                     "std"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.117/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.119/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -2846,23 +3729,150 @@
             "rust_version": null
         },
         {
-            "name": "names",
-            "version": "0.11.1-dev",
-            "id": "names 0.11.1-dev (git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d#534b1cd239fb57933616f3d25ae258bdf708811d)",
-            "license": "MIT",
+            "name": "memchr",
+            "version": "2.4.1",
+            "id": "memchr 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "Unlicense/MIT",
             "license_file": null,
-            "description": "A random name generator with names suitable for use in container\ninstances, project names, application instances, etc.\n",
-            "source": "git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d#534b1cd239fb57933616f3d25ae258bdf708811d",
+            "description": "Safe interface to memchr.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
             "dependencies": [
                 {
-                    "name": "clap",
+                    "name": "compiler_builtins",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "=3.0.0-beta.2",
+                    "req": "^0.1.2",
                     "kind": null,
                     "rename": null,
                     "optional": true,
                     "uses_default_features": true,
                     "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": "core",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.18",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "quickcheck",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "memchr",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memchr-2.4.1/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memchr-2.4.1/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [
+                    "std"
+                ],
+                "rustc-dep-of-std": [
+                    "core",
+                    "compiler_builtins"
+                ],
+                "std": [],
+                "use_std": [
+                    "std"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memchr-2.4.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Andrew Gallant <jamslam@gmail.com>",
+                "bluss"
+            ],
+            "categories": [],
+            "keywords": [
+                "memchr",
+                "char",
+                "scan",
+                "strchr",
+                "string"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/BurntSushi/memchr",
+            "homepage": "https://github.com/BurntSushi/memchr",
+            "documentation": "https://docs.rs/memchr/",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "names",
+            "version": "0.12.1-dev",
+            "id": "names 0.12.1-dev (git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f#760516503b89ddc8bc2ab42d579d4566cfb1054f)",
+            "license": "MIT",
+            "license_file": null,
+            "description": "A random name generator with names suitable for use in container\ninstances, project names, application instances, etc.\n",
+            "source": "git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f#760516503b89ddc8bc2ab42d579d4566cfb1054f",
+            "dependencies": [
+                {
+                    "name": "clap",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^3.1.5",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [
+                        "derive"
+                    ],
                     "target": null,
                     "registry": null
                 },
@@ -2900,7 +3910,7 @@
                         "lib"
                     ],
                     "name": "names",
-                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/534b1cd/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/7605165/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -2914,7 +3924,7 @@
                         "bin"
                     ],
                     "name": "names",
-                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/534b1cd/src/bin/names.rs",
+                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/7605165/src/bin/names.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": false,
@@ -2928,7 +3938,7 @@
                         "bin"
                     ],
                     "name": "version-numbers",
-                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/534b1cd/tests/version-numbers.rs",
+                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/7605165/tests/version-numbers.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -2942,7 +3952,7 @@
                         "bin"
                     ],
                     "name": "build-script-build",
-                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/534b1cd/build.rs",
+                    "src_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/7605165/build.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -2957,7 +3967,7 @@
                     "application"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/534b1cd/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/git/checkouts/names-1a8772e9ce82304c/7605165/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -2987,8 +3997,8 @@
         },
         {
             "name": "names",
-            "version": "0.12.0",
-            "id": "names 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.13.0",
+            "id": "names 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT",
             "license_file": null,
             "description": "A random name generator with names suitable for use in container\ninstances, project names, application instances, etc.\n",
@@ -2997,12 +4007,14 @@
                 {
                     "name": "clap",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "=3.0.0-beta.2",
+                    "req": "^3.1.5",
                     "kind": null,
                     "rename": null,
                     "optional": true,
                     "uses_default_features": true,
-                    "features": [],
+                    "features": [
+                        "derive"
+                    ],
                     "target": null,
                     "registry": null
                 },
@@ -3040,7 +4052,7 @@
                         "lib"
                     ],
                     "name": "names",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.12.0/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.13.0/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -3054,7 +4066,7 @@
                         "bin"
                     ],
                     "name": "names",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.12.0/src/bin/names.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.13.0/src/bin/names.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": false,
@@ -3068,7 +4080,7 @@
                         "bin"
                     ],
                     "name": "version-numbers",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.12.0/tests/version-numbers.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.13.0/tests/version-numbers.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -3082,7 +4094,7 @@
                         "bin"
                     ],
                     "name": "build-script-build",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.12.0/build.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.13.0/build.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -3097,7 +4109,7 @@
                     "application"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.12.0/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/names-0.13.0/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -3127,17 +4139,53 @@
         },
         {
             "name": "os_str_bytes",
-            "version": "2.4.0",
-            "id": "os_str_bytes 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "6.0.0",
+            "id": "os_str_bytes 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
-            "description": "Traits for converting between byte sequences and platform-native strings\n",
+            "description": "Utilities for converting between byte sequences and platform-native strings\n",
             "source": "registry+https://github.com/rust-lang/crates.io-index",
             "dependencies": [
                 {
+                    "name": "memchr",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^2.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "print_bytes",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "uniquote",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^3.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
                     "name": "getrandom",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
+                    "req": "^0.2",
                     "kind": "dev",
                     "rename": null,
                     "optional": false,
@@ -3156,7 +4204,7 @@
                         "lib"
                     ],
                     "name": "os_str_bytes",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-2.4.0/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.0.0/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -3164,9 +4212,13 @@
                 }
             ],
             "features": {
-                "raw": []
+                "default": [
+                    "memchr",
+                    "raw_os_str"
+                ],
+                "raw_os_str": []
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-2.4.0/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.0.0/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -3207,7 +4259,7 @@
             "edition": "2018",
             "links": null,
             "default_run": null,
-            "rust_version": null
+            "rust_version": "1.52.0"
         },
         {
             "name": "ppv-lite86",
@@ -3905,8 +4957,8 @@
         },
         {
             "name": "rand",
-            "version": "0.8.4",
-            "id": "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.8.5",
+            "id": "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
             "description": "Random number generators and other randomness functionality.\n",
@@ -3927,7 +4979,7 @@
                 {
                     "name": "packed_simd_2",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.3.5",
+                    "req": "^0.3.7",
                     "kind": null,
                     "rename": "packed_simd",
                     "optional": true,
@@ -3935,6 +4987,18 @@
                     "features": [
                         "into_bits"
                     ],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand_chacha",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
                     "target": null,
                     "registry": null
                 },
@@ -3977,18 +5041,6 @@
                     "registry": null
                 },
                 {
-                    "name": "rand_hc",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.3.0",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
                     "name": "rand_pcg",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "req": "^0.3.0",
@@ -3998,30 +5050,6 @@
                     "uses_default_features": true,
                     "features": [],
                     "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "rand_chacha",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.3.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": false,
-                    "features": [],
-                    "target": "cfg(not(target_os = \"emscripten\"))",
-                    "registry": null
-                },
-                {
-                    "name": "rand_hc",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.3.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": "cfg(target_os = \"emscripten\")",
                     "registry": null
                 },
                 {
@@ -4046,7 +5074,7 @@
                         "lib"
                     ],
                     "name": "rand",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand-0.8.4/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand-0.8.5/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -4082,11 +5110,10 @@
                     "libc"
                 ],
                 "std_rng": [
-                    "rand_chacha",
-                    "rand_hc"
+                    "rand_chacha"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand-0.8.4/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand-0.8.5/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -4337,69 +5364,6 @@
             "repository": "https://github.com/rust-random/rand",
             "homepage": "https://rust-random.github.io/book",
             "documentation": "https://docs.rs/rand_core",
-            "edition": "2018",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
-        },
-        {
-            "name": "rand_hc",
-            "version": "0.3.1",
-            "id": "rand_hc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT OR Apache-2.0",
-            "license_file": null,
-            "description": "HC128 random number generator\n",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
-            "dependencies": [
-                {
-                    "name": "rand_core",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.6.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                }
-            ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "rand_hc",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand_hc-0.3.1/src/lib.rs",
-                    "edition": "2018",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
-            "features": {},
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rand_hc-0.3.1/Cargo.toml",
-            "metadata": null,
-            "publish": null,
-            "authors": [
-                "The Rand Project Developers"
-            ],
-            "categories": [
-                "algorithms",
-                "no-std"
-            ],
-            "keywords": [
-                "random",
-                "rng",
-                "hc128"
-            ],
-            "readme": "README.md",
-            "repository": "https://github.com/rust-random/rand",
-            "homepage": "https://rust-random.github.io/book",
-            "documentation": "https://docs.rs/rand_hc",
             "edition": "2018",
             "links": null,
             "default_run": null,
@@ -5188,8 +6152,8 @@
         },
         {
             "name": "termcolor",
-            "version": "1.1.2",
-            "id": "termcolor 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "1.1.3",
+            "id": "termcolor 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "Unlicense OR MIT",
             "license_file": null,
             "description": "A simple cross platform library for writing colored text to a terminal.\n",
@@ -5217,7 +6181,7 @@
                         "lib"
                     ],
                     "name": "termcolor",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/termcolor-1.1.2/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/termcolor-1.1.3/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -5225,7 +6189,7 @@
                 }
             ],
             "features": {},
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/termcolor-1.1.2/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/termcolor-1.1.3/Cargo.toml",
             "metadata": null,
             "publish": null,
             "authors": [
@@ -5250,17 +6214,17 @@
         },
         {
             "name": "textwrap",
-            "version": "0.12.1",
-            "id": "textwrap 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.15.0",
+            "id": "textwrap 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT",
             "license_file": null,
-            "description": "Textwrap is a library for word wrapping, indenting, and dedenting\nstrings.\n\nYou can use it to format strings (such as help and error messages) for\ndisplay in commandline applications. It is designed to be efficient\nand handle Unicode characters correctly.\n",
+            "description": "Powerful library for word wrapping, indenting, and dedenting strings",
             "source": "registry+https://github.com/rust-lang/crates.io-index",
             "dependencies": [
                 {
                     "name": "hyphenation",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.8",
+                    "req": "^0.8.4",
                     "kind": null,
                     "rename": null,
                     "optional": true,
@@ -5272,9 +6236,33 @@
                     "registry": null
                 },
                 {
+                    "name": "smawk",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
                     "name": "terminal_size",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
+                    "req": "^0.1.17",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "unicode-linebreak",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.2",
                     "kind": null,
                     "rename": null,
                     "optional": true,
@@ -5286,8 +6274,20 @@
                 {
                     "name": "unicode-width",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
+                    "req": "^0.1.9",
                     "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "criterion",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.5",
+                    "kind": "dev",
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
@@ -5298,7 +6298,7 @@
                 {
                     "name": "lipsum",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.6",
+                    "req": "^0.8.0",
                     "kind": "dev",
                     "rename": null,
                     "optional": false,
@@ -5308,21 +6308,9 @@
                     "registry": null
                 },
                 {
-                    "name": "rand",
+                    "name": "unic-emoji-char",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.6",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "rand_xorshift",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
+                    "req": "^0.9.0",
                     "kind": "dev",
                     "rename": null,
                     "optional": false,
@@ -5334,13 +6322,25 @@
                 {
                     "name": "version-sync",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.9",
+                    "req": "^0.9.4",
                     "kind": "dev",
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
                     "features": [],
                     "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "termion",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.5.6",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(unix)",
                     "registry": null
                 }
             ],
@@ -5353,7 +6353,7 @@
                         "lib"
                     ],
                     "name": "textwrap",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -5366,23 +6366,12 @@
                     "crate_types": [
                         "bin"
                     ],
-                    "name": "layout",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/examples/layout.rs",
-                    "edition": "2018",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
                     "name": "hyphenation",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/examples/hyphenation.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/examples/hyphenation.rs",
                     "edition": "2018",
+                    "required-features": [
+                        "hyphenation"
+                    ],
                     "doc": false,
                     "doctest": false,
                     "test": false
@@ -5395,8 +6384,11 @@
                         "bin"
                     ],
                     "name": "termwidth",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/examples/termwidth.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/examples/termwidth.rs",
                     "edition": "2018",
+                    "required-features": [
+                        "terminal_size"
+                    ],
                     "doc": false,
                     "doctest": false,
                     "test": false
@@ -5409,7 +6401,21 @@
                         "bin"
                     ],
                     "name": "version-numbers",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/tests/version-numbers.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/tests/version-numbers.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "indent",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/tests/indent.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -5423,15 +6429,35 @@
                         "bin"
                     ],
                     "name": "linear",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/benches/linear.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/benches/linear.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "indent",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/benches/indent.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
                     "test": false
                 }
             ],
-            "features": {},
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.12.1/Cargo.toml",
+            "features": {
+                "default": [
+                    "unicode-linebreak",
+                    "unicode-width",
+                    "smawk"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -5459,100 +6485,6 @@
             "homepage": null,
             "documentation": "https://docs.rs/textwrap/",
             "edition": "2018",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
-        },
-        {
-            "name": "unicode-width",
-            "version": "0.1.9",
-            "id": "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT/Apache-2.0",
-            "license_file": null,
-            "description": "Determine displayed width of `char` and `str` types\naccording to Unicode Standard Annex #11 rules.\n",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
-            "dependencies": [
-                {
-                    "name": "compiler_builtins",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "rustc-std-workspace-core",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": null,
-                    "rename": "core",
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "rustc-std-workspace-std",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": null,
-                    "rename": "std",
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                }
-            ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "unicode-width",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/unicode-width-0.1.9/src/lib.rs",
-                    "edition": "2015",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
-            "features": {
-                "bench": [],
-                "default": [],
-                "no_std": [],
-                "rustc-dep-of-std": [
-                    "std",
-                    "core",
-                    "compiler_builtins"
-                ]
-            },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/unicode-width-0.1.9/Cargo.toml",
-            "metadata": null,
-            "publish": null,
-            "authors": [
-                "kwantam <kwantam@gmail.com>",
-                "Manish Goregaokar <manishsmail@gmail.com>"
-            ],
-            "categories": [],
-            "keywords": [
-                "text",
-                "width",
-                "unicode"
-            ],
-            "readme": "README.md",
-            "repository": "https://github.com/unicode-rs/unicode-width",
-            "homepage": "https://github.com/unicode-rs/unicode-width",
-            "documentation": "https://unicode-rs.github.io/unicode-width",
-            "edition": "2015",
             "links": null,
             "default_run": null,
             "rust_version": null
@@ -5898,99 +6830,6 @@
             "homepage": null,
             "documentation": "https://docs.rs/value-bag",
             "edition": "2018",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
-        },
-        {
-            "name": "vec_map",
-            "version": "0.8.2",
-            "id": "vec_map 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT/Apache-2.0",
-            "license_file": null,
-            "description": "A simple map based on a vector for small integer keys",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
-            "dependencies": [
-                {
-                    "name": "serde",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [
-                        "derive"
-                    ],
-                    "target": null,
-                    "registry": null
-                }
-            ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "vec_map",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/vec_map-0.8.2/src/lib.rs",
-                    "edition": "2015",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
-            "features": {
-                "eders": [
-                    "serde"
-                ]
-            },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/vec_map-0.8.2/Cargo.toml",
-            "metadata": null,
-            "publish": null,
-            "authors": [
-                "Alex Crichton <alex@alexcrichton.com>",
-                "Jorge Aparicio <japaricious@gmail.com>",
-                "Alexis Beingessner <a.beingessner@gmail.com>",
-                "Brian Anderson <>",
-                "tbu- <>",
-                "Manish Goregaokar <>",
-                "Aaron Turon <aturon@mozilla.com>",
-                "Adolfo Ochagav\u00eda <>",
-                "Niko Matsakis <>",
-                "Steven Fackler <>",
-                "Chase Southwood <csouth3@illinois.edu>",
-                "Eduard Burtescu <>",
-                "Florian Wilkens <>",
-                "F\u00e9lix Raimundo <>",
-                "Tibor Benke <>",
-                "Markus Siemens <markus@m-siemens.de>",
-                "Josh Branchaud <jbranchaud@gmail.com>",
-                "Huon Wilson <dbau.pp@gmail.com>",
-                "Corey Farwell <coref@rwell.org>",
-                "Aaron Liblong <>",
-                "Nick Cameron <nrc@ncameron.org>",
-                "Patrick Walton <pcwalton@mimiga.net>",
-                "Felix S Klock II <>",
-                "Andrew Paseltiner <apaseltiner@gmail.com>",
-                "Sean McArthur <sean.monstar@gmail.com>",
-                "Vadim Petrochenkov <>"
-            ],
-            "categories": [],
-            "keywords": [
-                "data-structures",
-                "collections",
-                "vecmap",
-                "vec_map",
-                "contain-rs"
-            ],
-            "readme": "README.md",
-            "repository": "https://github.com/contain-rs/vec-map",
-            "homepage": "https://github.com/contain-rs/vec-map",
-            "documentation": "https://contain-rs.github.io/vec-map/vec_map",
-            "edition": "2015",
             "links": null,
             "default_run": null,
             "rust_version": null
@@ -6861,8 +7700,8 @@
                 "dependencies": [
                     "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
                     "log 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "names 0.11.1-dev (git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d#534b1cd239fb57933616f3d25ae258bdf708811d)",
-                    "names 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "names 0.12.1-dev (git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f#760516503b89ddc8bc2ab42d579d4566cfb1054f)",
+                    "names 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
                     "value-bag 1.0.0-alpha.7 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
@@ -6888,7 +7727,7 @@
                     },
                     {
                         "name": "pinned_names",
-                        "pkg": "names 0.11.1-dev (git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d#534b1cd239fb57933616f3d25ae258bdf708811d)",
+                        "pkg": "names 0.12.1-dev (git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f#760516503b89ddc8bc2ab42d579d4566cfb1054f)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -6898,7 +7737,7 @@
                     },
                     {
                         "name": "names",
-                        "pkg": "names 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "names 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -6923,7 +7762,7 @@
                 "id": "atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                     "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
@@ -6939,7 +7778,7 @@
                     },
                     {
                         "name": "libc",
-                        "pkg": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -6981,19 +7820,17 @@
                 "features": []
             },
             {
-                "id": "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
                     "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "clap_derive 3.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "clap_derive 3.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
                     "indexmap 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
                     "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "os_str_bytes 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "os_str_bytes 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
                     "strsim 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "termcolor 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "textwrap 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "vec_map 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "termcolor 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "textwrap 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
@@ -7018,7 +7855,7 @@
                     },
                     {
                         "name": "clap_derive",
-                        "pkg": "clap_derive 3.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "clap_derive 3.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7048,7 +7885,7 @@
                     },
                     {
                         "name": "os_str_bytes",
-                        "pkg": "os_str_bytes 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "os_str_bytes 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7068,7 +7905,7 @@
                     },
                     {
                         "name": "termcolor",
-                        "pkg": "termcolor 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "termcolor 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7078,27 +7915,7 @@
                     },
                     {
                         "name": "textwrap",
-                        "pkg": "textwrap 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    },
-                    {
-                        "name": "unicode_width",
-                        "pkg": "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    },
-                    {
-                        "name": "vec_map",
-                        "pkg": "vec_map 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "textwrap 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7109,7 +7926,6 @@
                 ],
                 "features": [
                     "atty",
-                    "cargo",
                     "clap_derive",
                     "color",
                     "default",
@@ -7122,7 +7938,7 @@
                 ]
             },
             {
-                "id": "clap_derive 3.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "clap_derive 3.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "heck 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
                     "proc-macro-error 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7217,10 +8033,10 @@
                 "features": []
             },
             {
-                "id": "getrandom 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "getrandom 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                     "wasi 0.10.2+wasi-snapshot-preview1 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
@@ -7236,7 +8052,7 @@
                     },
                     {
                         "name": "libc",
-                        "pkg": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7278,12 +8094,12 @@
             {
                 "id": "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
-                    "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
                         "name": "libc",
-                        "pkg": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7324,7 +8140,9 @@
                         ]
                     }
                 ],
-                "features": []
+                "features": [
+                    "std"
+                ]
             },
             {
                 "id": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7333,7 +8151,7 @@
                 "features": []
             },
             {
-                "id": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [],
                 "deps": [],
                 "features": []
@@ -7382,79 +8200,103 @@
                 ]
             },
             {
-                "id": "names 0.11.1-dev (git+https://github.com/fnichol/names.git?rev=534b1cd239fb57933616f3d25ae258bdf708811d#534b1cd239fb57933616f3d25ae258bdf708811d)",
-                "dependencies": [
-                    "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)"
-                ],
-                "deps": [
-                    {
-                        "name": "clap",
-                        "pkg": "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    },
-                    {
-                        "name": "rand",
-                        "pkg": "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    }
-                ],
-                "features": [
-                    "application",
-                    "clap",
-                    "default"
-                ]
-            },
-            {
-                "id": "names 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                "dependencies": [
-                    "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)"
-                ],
-                "deps": [
-                    {
-                        "name": "clap",
-                        "pkg": "clap 3.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    },
-                    {
-                        "name": "rand",
-                        "pkg": "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    }
-                ],
-                "features": [
-                    "application",
-                    "clap",
-                    "default"
-                ]
-            },
-            {
-                "id": "os_str_bytes 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "memchr 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [],
                 "deps": [],
                 "features": [
-                    "raw"
+                    "default",
+                    "std"
+                ]
+            },
+            {
+                "id": "names 0.12.1-dev (git+https://github.com/fnichol/names.git?rev=760516503b89ddc8bc2ab42d579d4566cfb1054f#760516503b89ddc8bc2ab42d579d4566cfb1054f)",
+                "dependencies": [
+                    "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "clap",
+                        "pkg": "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "rand",
+                        "pkg": "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "application",
+                    "clap",
+                    "default"
+                ]
+            },
+            {
+                "id": "names 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "clap",
+                        "pkg": "clap 3.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "rand",
+                        "pkg": "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "application",
+                    "clap",
+                    "default"
+                ]
+            },
+            {
+                "id": "os_str_bytes 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "memchr 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "memchr",
+                        "pkg": "memchr 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default",
+                    "memchr",
+                    "raw_os_str"
                 ]
             },
             {
@@ -7619,17 +8461,16 @@
                 ]
             },
             {
-                "id": "rand 0.8.4 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "rand 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
-                    "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                     "rand_chacha 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "rand_core 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "rand_hc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "rand_core 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
                         "name": "libc",
-                        "pkg": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "libc 0.2.119 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7643,7 +8484,7 @@
                         "dep_kinds": [
                             {
                                 "kind": null,
-                                "target": "cfg(not(target_os = \"emscripten\"))"
+                                "target": null
                             }
                         ]
                     },
@@ -7656,16 +8497,6 @@
                                 "target": null
                             }
                         ]
-                    },
-                    {
-                        "name": "rand_hc",
-                        "pkg": "rand_hc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": "cfg(target_os = \"emscripten\")"
-                            }
-                        ]
                     }
                 ],
                 "features": [
@@ -7674,7 +8505,6 @@
                     "getrandom",
                     "libc",
                     "rand_chacha",
-                    "rand_hc",
                     "std",
                     "std_rng"
                 ]
@@ -7714,12 +8544,12 @@
             {
                 "id": "rand_core 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
-                    "getrandom 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "getrandom 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
                         "name": "getrandom",
-                        "pkg": "getrandom 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "getrandom 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
@@ -7733,25 +8563,6 @@
                     "getrandom",
                     "std"
                 ]
-            },
-            {
-                "id": "rand_hc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                "dependencies": [
-                    "rand_core 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)"
-                ],
-                "deps": [
-                    {
-                        "name": "rand_core",
-                        "pkg": "rand_core 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    }
-                ],
-                "features": []
             },
             {
                 "id": "strsim 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7810,7 +8621,7 @@
                 ]
             },
             {
-                "id": "termcolor 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "termcolor 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "winapi-util 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
@@ -7829,31 +8640,10 @@
                 "features": []
             },
             {
-                "id": "textwrap 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                "dependencies": [
-                    "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)"
-                ],
-                "deps": [
-                    {
-                        "name": "unicode_width",
-                        "pkg": "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
-                        "dep_kinds": [
-                            {
-                                "kind": null,
-                                "target": null
-                            }
-                        ]
-                    }
-                ],
-                "features": []
-            },
-            {
-                "id": "unicode-width 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "textwrap 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [],
                 "deps": [],
-                "features": [
-                    "default"
-                ]
+                "features": []
             },
             {
                 "id": "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7891,12 +8681,6 @@
                         ]
                     }
                 ],
-                "features": []
-            },
-            {
-                "id": "vec_map 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                "dependencies": [],
-                "deps": [],
                 "features": []
             },
             {

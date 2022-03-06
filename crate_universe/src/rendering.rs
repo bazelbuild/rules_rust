@@ -381,8 +381,8 @@ mod test {
 
         let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
 
-        assert!(build_file_content.contains(r#"name = "names-0.11.1-dev__names","#));
-        assert!(build_file_content.contains(r#"name = "names-0.12.0__names","#));
+        assert!(build_file_content.contains(r#"name = "names-0.12.1-dev__names","#));
+        assert!(build_file_content.contains(r#"name = "names-0.13.0__names","#));
     }
 
     #[test]
