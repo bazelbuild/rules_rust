@@ -46,18 +46,20 @@ import_macro_dep_bootstrap_transition = transition(
     outputs = ["@rules_rust//rust/settings:use_real_import_macro"],
 )
 
-def _with_import_macro_bootstrapping_mode_impl(ctx):
-    target = ctx.attr.target[0]
+def _alias_with_import_macro_bootstrapping_mode_impl(ctx):
+    actual = ctx.attr.actual
+    if len(actual) != 1:
+        fail("`deps` attribute has to have exactly one element.")
+    target = actual[0]
     return [target[rust_common.crate_info], target[rust_common.dep_info]]
 
-with_import_macro_bootstrapping_mode = rule(
-    implementation = _with_import_macro_bootstrapping_mode_impl,
+alias_with_import_macro_bootstrapping_mode = rule(
+    implementation = _alias_with_import_macro_bootstrapping_mode_impl,
     attrs = {
-        "target": attr.label(
+        # Using `actual` so tooling such as rust analyzer aspect traverses the target.
+        "actual": attr.label(
             cfg = import_macro_dep_bootstrap_transition,
-            allow_single_file = True,
             mandatory = True,
-            executable = False,
         ),
         "_allowlist_function_transition": attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),
