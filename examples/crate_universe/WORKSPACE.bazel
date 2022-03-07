@@ -29,8 +29,8 @@ crates_repository(
     name = "cargo_aliases",
     annotations = {
         "names": [crate.annotation(
-            shallow_since = "1631486371 -0600",
-            version = "0.11.1-dev",
+            shallow_since = "1646516410 -0700",
+            version = "0.12.1-dev",
         )],
     },
     # `generator` is not necessary in official releases.
@@ -77,9 +77,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "names",
     build_file = "//cargo_remote:BUILD.names.bazel",
-    sha256 = "9a143ae56c0f9bc375be22a6b25c959ad042e83e7d6be2392074e77ee8257d0e",
-    strip_prefix = "names-0.12.0",
-    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.12.0.zip"],
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
 )
 
 crates_repository(
