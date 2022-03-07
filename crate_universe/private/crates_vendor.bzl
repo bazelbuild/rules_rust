@@ -1,7 +1,7 @@
 """Rules for vendoring Bazel targets into existing workspaces"""
 
 load("//crate_universe/private:generate_utils.bzl", "collect_crate_annotations", "render_config")
-load("//crate_universe/private:splicing_utils.bzl", "splicing_config")
+load("//crate_universe/private:splicing_utils.bzl", "kebab_case_keys", "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
@@ -58,7 +58,8 @@ def _write_data_file(ctx, name, data):
 def _write_splicing_manifest(ctx):
     # Deserialize information about direct packges
     direct_packages_info = {
-        pkg: json.decode(data)
+        # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
+        pkg: kebab_case_keys(dict(json.decode(data)))
         for (pkg, data) in ctx.attr.packages.items()
     }
 

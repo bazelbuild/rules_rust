@@ -76,6 +76,20 @@ def download_extra_workspace_members(repository_ctx, cache_dir, render_template_
 
     return manifests
 
+def kebab_case_keys(data):
+    """Ensure the key value of the data given are kebab-case
+
+    Args:
+        data (dict): A deserialized json blob
+
+    Returns:
+        dict: The same `data` but with kebab-case keys
+    """
+    return {
+        key.lower().replace("_", "-"): val
+        for (key, val) in data.items()
+    }
+
 def create_splicing_manifest(repository_ctx):
     """Produce a manifest containing required components for splciing a new Cargo workspace
 
@@ -89,7 +103,8 @@ def create_splicing_manifest(repository_ctx):
 
     # Deserialize information about direct packges
     direct_packages_info = {
-        pkg: json.decode(data)
+        # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
+        pkg: kebab_case_keys(dict(json.decode(data)))
         for (pkg, data) in repository_ctx.attr.packages.items()
     }
 
