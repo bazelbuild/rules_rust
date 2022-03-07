@@ -47,9 +47,17 @@ alias(
     name = "import",
     actual = select({
         ":use_fake_import_macro": ":fake_import_macro_impl",
-        "//conditions:default": ":import_macro",
+        "//conditions:default": ":import_macro_label",
     }),
     visibility = ["//visibility:public"],
+)
+
+# This is there to cut the loading-time dependency on the import macro dependencies
+# (so users who don't use the macro don't need to add those deps to their WORKSPACE
+# file). Bazel in the loading phase doesn't "see" through `label_flag`.
+label_flag(
+    name = "import_macro_label",
+    build_setting_default = "import_macro",
 )
 
 config_setting(
