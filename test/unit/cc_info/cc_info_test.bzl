@@ -10,7 +10,7 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
     asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
     cc_info = tut[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    asserts.equals(env, len(linker_inputs), ccinfo_count)
+    asserts.equals(env, ccinfo_count, len(linker_inputs))
     library_to_link = linker_inputs[0].libraries[0]
     asserts.equals(env, False, library_to_link.alwayslink)
 
@@ -22,10 +22,11 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
 
     if type == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
-        asserts.equals(env, None, library_to_link.interface_library)
         if _is_dylib_on_windows(env.ctx):
+            asserts.true(env, library_to_link.interface_library != None)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
         else:
+            asserts.equals(env, None, library_to_link.interface_library)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library != None)
         asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
         asserts.equals(env, None, library_to_link.static_library)
@@ -41,10 +42,28 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
         asserts.true(env, library_to_link.pic_static_library != None)
         asserts.equals(env, library_to_link.static_library, library_to_link.pic_static_library)
 
+def _collect_user_link_flags(env, tut):
+    asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
+    cc_info = tut[CcInfo]
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    return [f for i in linker_inputs for f in i.user_link_flags]
+
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "rlib", 2)
+    _assert_cc_info_has_library_to_link(env, tut, "rlib", 3)
+    return analysistest.end(env)
+
+def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    user_link_flags = _collect_user_link_flags(env, tut)
+    asserts.equals(
+        env,
+        depset(user_link_flags).to_list(),
+        user_link_flags,
+        "user_link_flags_should_not_have_duplicates_here",
+    )
     return analysistest.end(env)
 
 def _bin_does_not_provide_cc_info_test_impl(ctx):
@@ -62,16 +81,19 @@ def _proc_macro_does_not_provide_cc_info_test_impl(ctx):
 def _cdylib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "cdylib", 1)
+    _assert_cc_info_has_library_to_link(env, tut, "cdylib", 2)
     return analysistest.end(env)
 
 def _staticlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "staticlib", 1)
+    _assert_cc_info_has_library_to_link(env, tut, "staticlib", 2)
     return analysistest.end(env)
 
 rlib_provides_cc_info_test = analysistest.make(_rlib_provides_cc_info_test_impl)
+rlib_with_dep_only_has_stdlib_linkflags_once_test = analysistest.make(
+    _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl,
+)
 bin_does_not_provide_cc_info_test = analysistest.make(_bin_does_not_provide_cc_info_test_impl)
 staticlib_provides_cc_info_test = analysistest.make(_staticlib_provides_cc_info_test_impl)
 cdylib_provides_cc_info_test = analysistest.make(_cdylib_provides_cc_info_test_impl, attrs = {
@@ -83,6 +105,12 @@ def _cc_info_test():
     rust_library(
         name = "rlib",
         srcs = ["foo.rs"],
+    )
+
+    rust_library(
+        name = "rlib_with_dep",
+        srcs = ["foo.rs"],
+        deps = [":rlib"],
     )
 
     rust_binary(
@@ -110,6 +138,10 @@ def _cc_info_test():
     rlib_provides_cc_info_test(
         name = "rlib_provides_cc_info_test",
         target_under_test = ":rlib",
+    )
+    rlib_with_dep_only_has_stdlib_linkflags_once_test(
+        name = "rlib_with_dep_only_has_stdlib_linkflags_once_test",
+        target_under_test = ":rlib_with_dep",
     )
     bin_does_not_provide_cc_info_test(
         name = "bin_does_not_provide_cc_info_test",
@@ -140,6 +172,7 @@ def cc_info_test_suite(name):
         name = name,
         tests = [
             ":rlib_provides_cc_info_test",
+            ":rlib_with_dep_only_has_stdlib_linkflags_once_test",
             ":staticlib_provides_cc_info_test",
             ":cdylib_provides_cc_info_test",
             ":proc_macro_does_not_provide_cc_info_test",

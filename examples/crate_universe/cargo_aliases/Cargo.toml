@@ -1,0 +1,21 @@
+[package]
+name = "aliases"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Defines library targets
+log = "=0.4.14"
+pinned_log = { package = "log", version = "=0.3.9" }
+
+# Contains a transitive alias
+value-bag = "=1.0.0-alpha.7"
+
+# Defines binary targets
+names = "=0.13.0"
+pinned_names = { package = "names", git = "https://github.com/fnichol/names.git", rev = "760516503b89ddc8bc2ab42d579d4566cfb1054f" }
+
+[dev-dependencies]
+env_logger = "0.9.0"

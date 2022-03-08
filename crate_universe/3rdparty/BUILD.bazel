@@ -1,0 +1,20 @@
+load("//crate_universe:crates.bzl", "crate_deps_target")
+
+package(default_visibility = ["//visibility:public"])
+
+crate_deps_target()
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "*.bazel",
+    ]) + [
+        "//crate_universe/3rdparty/crates:srcs",
+    ],
+)
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["*.bzl"]),
+)

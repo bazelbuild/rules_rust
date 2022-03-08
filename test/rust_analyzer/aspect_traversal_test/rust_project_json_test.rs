@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use runfiles::Runfiles;
+    use std::env;
+    use std::path::PathBuf;
 
     #[test]
     fn test_aspect_traverses_all_the_right_corners_of_target_graph() {
-        let r = Runfiles::create().unwrap();
-        let rust_project_path =
-            r.rlocation("rules_rust/test/rust_analyzer/aspect_traversal_test/rust-project.json");
+        let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
 
         let content = std::fs::read_to_string(&rust_project_path)
             .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));

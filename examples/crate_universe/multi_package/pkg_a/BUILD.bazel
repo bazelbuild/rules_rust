@@ -1,0 +1,32 @@
+load("@m_pkgs//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "pkg_a",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    # TODO: There's an issue building OpenSSL on Windows in GitHub CI so for
+    # now all targets that depend on it are disabled
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = all_crate_deps(normal = True),
+)
+
+rust_test(
+    name = "unit_test",
+    aliases = aliases(),
+    crate = ":pkg_a",
+    proc_macro_deps = all_crate_deps(proc_macro_dev = True),
+    # TODO: There's an issue building OpenSSL on Windows in GitHub CI so for
+    # now all targets that depend on it are disabled
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = all_crate_deps(normal_dev = True),
+)

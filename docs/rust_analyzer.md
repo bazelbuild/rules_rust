@@ -9,7 +9,7 @@
 
 For [non-Cargo projects](https://rust-analyzer.github.io/manual.html#non-cargo-based-projects),
 [rust-analyzer](https://rust-analyzer.github.io/) depends on a `rust-project.json` file at the
-root of the project that describes its structure. The `rust_analyzer` rule facilitates generating 
+root of the project that describes its structure. The `rust_analyzer` rule facilitates generating
 such a file.
 
 ### Setup
@@ -32,32 +32,11 @@ can also set `include_rustc_srcs = True` on any `rust_repository` or
 `rust_repositories` calls in the workspace but the environment variable
 has higher priority and can override the attribute.
 
-Finally, add a rule to the root `BUILD` file like the following.
-
-```python
-load("@rules_rust//rust:defs.bzl", "rust_analyzer")
-
-rust_analyzer(
-    name = "rust_analyzer",
-    targets = [
-        # all the binary/library targets you want in the rust-project.json
-    ],
-)
-```
-
-A list of `rust_analyzer` compatible targets can be found by usign the following query:
-
-```bash
-bazel query 'kind("rust_*library|rust_binary", //...:all)'
-```
-
-Note: __All `rust_*` targets provided to the root rust_analyzer must have `//visibility:public`.__
-
-Run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project` whenever
-dependencies change to regenerate the `rust-project.json` file. It should be
-added to `.gitignore` because it is effectively a build artifact. Once the
-`rust-project.json` has been generated in the project root, rust-analyzer can
-pick it up upon restart.
+Finally, run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project`
+whenever dependencies change to regenerate the `rust-project.json` file. It
+should be added to `.gitignore` because it is effectively a build artifact.
+Once the `rust-project.json` has been generated in the project root,
+rust-analyzer can pick it up upon restart.
 
 #### VSCode
 
@@ -100,7 +79,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 rust_analyzer(<a href="#rust_analyzer-name">name</a>, <a href="#rust_analyzer-targets">targets</a>)
 </pre>
 
-Produces a rust-project.json for the given targets. Configure rust-analyzer to load the generated file via the linked projects mechanism.
+Deprecated: gen_rust_project can now create a rust-project.json without a rust_analyzer rule.
 
 
 **ATTRIBUTES**

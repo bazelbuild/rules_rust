@@ -22,8 +22,6 @@ alias(
 )
 
 alias(
-    # Extra aliased target, from raze configuration
-    # N.B.: The exact form of this is subject to change.
     name = "cargo_bin_bindgen",
     actual = "@rules_rust_bindgen__bindgen__0_58_1//:cargo_bin_bindgen",
     tags = [

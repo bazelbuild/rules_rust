@@ -1,13 +1,20 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:rust.bzl", "error_format")
+load("//rust:defs.bzl", "capture_clippy_output", "error_format", "extra_exec_rustc_flags", "extra_rustc_flags")
 
 exports_files(["LICENSE"])
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = [
         ":workspace.bzl",
     ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//:bzl_lib` target instead",
     visibility = ["//visibility:public"],
 )
 
@@ -15,6 +22,26 @@ bzl_library(
 error_format(
     name = "error_format",
     build_setting_default = "human",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line
+# in non-exec configuration.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+extra_rustc_flags(
+    name = "extra_rustc_flags",
+    build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line
+# in exec configuration.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+extra_exec_rustc_flags(
+    name = "extra_exec_rustc_flags",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
@@ -35,5 +62,11 @@ label_flag(
 alias(
     name = "rustfmt",
     actual = "//tools/rustfmt",
+    visibility = ["//visibility:public"],
+)
+
+capture_clippy_output(
+    name = "capture_clippy_output",
+    build_setting_default = False,
     visibility = ["//visibility:public"],
 )

@@ -1,15 +1,42 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load(":incompatible.bzl", "incompatible_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 
 package(default_visibility = ["//visibility:public"])
 
-incompatible_flag(
-    name = "split_rust_library",
+# A flag controlling whether to rename first-party crates such that their names
+# encode the Bazel package and target name, instead of just the target name.
+#
+# First-party vs. third-party crates are identified using the value of
+# //settings:third_party_dir.
+bool_flag(
+    name = "rename_first_party_crates",
     build_setting_default = False,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/591",
+)
+
+# A flag specifying the location of vendored third-party rust crates within this
+# repository that must not be renamed when `rename_first_party_crates` is enabled.
+#
+# Must be specified as a Bazel package, e.g. "//some/location/in/repo".
+string_flag(
+    name = "third_party_dir",
+    build_setting_default = "//third_party/rust",
+)
+
+# A flag to control whether rust_library and rust_binary targets should
+# implicitly depend on the *real* import macro, or on a no-op target.
+bool_flag(
+    name = "use_real_import_macro",
+    build_setting_default = False,
 )
 
 bzl_library(
-    name = "rules",
+    name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//settings:bzl_lib` target instead",
+    visibility = ["//rust:__subpackages__"],
 )

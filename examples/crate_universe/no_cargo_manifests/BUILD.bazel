@@ -1,0 +1,25 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "no_cargo_manifests",
+    srcs = glob(["**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@no_cargo//:axum",
+        "@no_cargo//:hyper",
+        "@no_cargo//:mime",
+        "@no_cargo//:serde_json",
+        "@no_cargo//:tokio",
+        "@no_cargo//:tower",
+        "@no_cargo//:tower-http",
+        "@no_cargo//:tracing",
+        "@no_cargo//:tracing-subscriber",
+    ],
+)
+
+rust_test(
+    name = "unit_test",
+    srcs = glob(["**/*.rs"]),
+    crate = ":no_cargo_manifests",
+    edition = "2018",
+)

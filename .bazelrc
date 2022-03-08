@@ -1,5 +1,5 @@
 # `.bazelrc` is a Bazel configuration file.
-# https://docs.bazel.build/versions/master/best-practices.html#using-the-bazelrc-file
+# https://bazel.build/docs/best-practices#bazelrc-file
 
 # Enable rustfmt for all targets in the workspace
 build:rustfmt --aspects=//rust:defs.bzl%rustfmt_aspect
@@ -9,5 +9,9 @@ build:rustfmt --output_groups=+rustfmt_checks
 build:clippy --aspects=//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
 
-# https://bazel.googlesource.com/bazel/+/master/site/docs/windows.md#enable-symlink-support
+# https://bazel.build/docs/windows#symlink
 startup --windows_enable_symlinks
+
+# This import should always be last to allow users to override
+# settings for local development.
+try-import %workspace%/user.bazelrc

@@ -19,12 +19,13 @@ CrateInfo = provider(
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "compile_data": "depset[File]: Compile data required by this crate.",
-        "deps": "depset[Provider]: This crate's (rust or cc) dependencies' providers.",
+        "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
-        "proc_macro_deps": "depset[CrateInfo]: This crate's rust proc_macro dependencies' providers.",
+        "owner": "Label: The label of the target that produced this CrateInfo",
+        "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
@@ -44,10 +45,36 @@ DepInfo = provider(
     fields = {
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
         "direct_crates": "depset[AliasableDepInfo]",
+        "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
+        "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
-        "transitive_libs": "List[File]: All transitive dependencies, not filtered by type.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+    },
+)
+
+BuildInfo = provider(
+    doc = "A provider containing `rustc` build settings for a given Crate.",
+    fields = {
+        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
+        "flags": "File: file containing additional flags to pass to rustc",
+        "link_flags": "File: file containing flags to pass to the linker",
+        "link_search_paths": "File: file containing search paths to pass to the linker",
+        "out_dir": "File: directory containing the result of a build script",
+        "rustc_env": "File: file containing additional environment variables to set for rustc.",
+    },
+)
+
+DepVariantInfo = provider(
+    doc = "A wrapper provider for a dependency of a crate. The dependency can be a Rust " +
+          "dependency, in which case the `crate_info` and `dep_info` fields will be populated, " +
+          "a Rust build script dependency, in which case `build_info` will be populated, or a " +
+          "C/C++ dependency, in which case `cc_info` will be populated.",
+    fields = {
+        "build_info": "BuildInfo: The BuildInfo of a Rust dependency",
+        "cc_info": "CcInfo: The CcInfo of a C/C++ dependency",
+        "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
+        "dep_info": "DepInfo: The DepInfo of a Rust dependency",
     },
 )
 
@@ -63,8 +90,20 @@ StdLibInfo = provider(
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
-        "srcs": "List[Target]: The original `src` attribute.",
+        "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
+    },
+)
+
+CaptureClippyOutputInfo = provider(
+    doc = "Value of the `capture_clippy_output` build setting",
+    fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
+)
+
+ClippyInfo = provider(
+    doc = "Provides information on a clippy run.",
+    fields = {
+        "output": "File with the clippy output.",
     },
 )

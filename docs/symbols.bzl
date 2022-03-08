@@ -16,11 +16,13 @@ load(
     "@rules_rust//cargo:defs.bzl",
     _cargo_bootstrap_repository = "cargo_bootstrap_repository",
     _cargo_build_script = "cargo_build_script",
+    _cargo_env = "cargo_env",
 )
 load(
     "@rules_rust//crate_universe:defs.bzl",
     _crate = "crate",
-    _crate_universe = "crate_universe",
+    _crates_repository = "crates_repository",
+    _crates_vendor = "crates_vendor",
 )
 load(
     "@rules_rust//proto:proto.bzl",
@@ -41,9 +43,11 @@ load(
 )
 load(
     "@rules_rust//rust:defs.bzl",
+    _capture_clippy_output = "capture_clippy_output",
+    _error_format = "error_format",
+    _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
-    _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
@@ -80,7 +84,6 @@ load(
 )
 load(
     "@rules_rust//rust/settings:incompatible.bzl",
-    _fail_when_enabled = "fail_when_enabled",
     _incompatible_flag = "incompatible_flag",
 )
 load(
@@ -103,7 +106,6 @@ rust_test_suite = _rust_test_suite
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test
 
-rust_benchmark = _rust_benchmark
 rust_proto_library = _rust_proto_library
 rust_grpc_library = _rust_grpc_library
 
@@ -120,6 +122,7 @@ rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
 cargo_build_script = _cargo_build_script
 cargo_bootstrap_repository = _cargo_bootstrap_repository
+cargo_env = _cargo_env
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
@@ -135,14 +138,17 @@ rust_clippy_aspect = _rust_clippy_aspect
 rust_analyzer = _rust_analyzer
 rust_analyzer_aspect = _rust_analyzer_aspect
 
-crate_universe = _crate_universe
 crate = _crate
+crates_repository = _crates_repository
+crates_vendor = _crates_vendor
 
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
 
+error_format = _error_format
+extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
-fail_when_enabled = _fail_when_enabled
+capture_clippy_output = _capture_clippy_output
 
 CrateInfo = _CrateInfo
 DepInfo = _DepInfo

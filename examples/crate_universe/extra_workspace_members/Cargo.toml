@@ -1,0 +1,11 @@
+[package]
+name = "extra_workspace_members"
+version = "0.1.0"
+authors = ["UebelAndre <github@uebelandre.com>"]
+
+[[bin]]
+name = "extra_workspace_members"
+path = "src/main.rs"
+
+[dependencies]
+ferris-says = "0.2.1"

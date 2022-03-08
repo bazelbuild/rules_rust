@@ -23,6 +23,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
+    "armv7-unknown-linux-gnueabi",
     "i686-linux-android",
     "i686-unknown-freebsd",
     "powerpc-unknown-linux-gnu",
@@ -54,6 +55,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "powerpc64le": None,
     "s390": None,
     "s390x": "s390x",
+    "thumbv7m": "armv7",
     "wasm32": None,
     "x86_64": "x86_64",
 }
@@ -64,6 +66,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "bitrig": None,
     "darwin": "osx",
     "dragonfly": None,
+    "eabi": "none",
     "emscripten": None,
     "freebsd": "freebsd",
     "ios": "ios",
@@ -80,6 +83,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
+    "eabi": "",
     "emscripten": ".js",
     "freebsd": "",
     "ios": "",
@@ -95,6 +99,7 @@ _SYSTEM_TO_BINARY_EXT = {
 _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
+    "eabi": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
     "ios": ".a",
@@ -107,6 +112,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
 _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
+    "eabi": ".so",
     "emscripten": ".js",
     "freebsd": ".so",
     "ios": ".dylib",
@@ -128,6 +134,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
     "darwin": ["-lSystem", "-lresolv"],
     "dragonfly": ["-lpthread"],
+    "eabi": [],
     "emscripten": [],
     # TODO(bazelbuild/rules_cc#75):
     #
@@ -165,7 +172,7 @@ def cpu_arch_to_constraints(cpu_arch):
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
-def vendor_to_constraints(vendor):
+def vendor_to_constraints(_vendor):
     # TODO(acmcarther): Review:
     #
     # My current understanding is that vendors can't have a material impact on
@@ -181,9 +188,13 @@ def system_to_constraints(system):
     return ["@platforms//os:{}".format(sys_suffix)]
 
 def abi_to_constraints(abi):
-    # TODO(acmcarther): Implement when C++ toolchain is more mature and we
-    # figure out how they're doing this
-    return []
+    # iOS simulator
+    if abi == "sim":
+        return ["@build_bazel_apple_support//constraints:simulator"]
+    else:
+        # TODO(acmcarther): Implement when C++ toolchain is more mature and we
+        # figure out how they're doing this
+        return []
 
 def triple_to_system(triple):
     """Returns a system name for a given platform triple

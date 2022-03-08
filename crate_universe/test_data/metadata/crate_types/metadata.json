@@ -1,0 +1,4863 @@
+{
+    "packages": [
+        {
+            "name": "autocfg",
+            "version": "1.0.1",
+            "id": "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "Apache-2.0 OR MIT",
+            "license_file": null,
+            "description": "Automatic cfg for Rust compiler features",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "autocfg",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "integers",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/examples/integers.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "paths",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/examples/paths.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "versions",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/examples/versions.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "traits",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/examples/traits.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "rustflags",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/tests/rustflags.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/autocfg-1.0.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Josh Stone <cuviper@gmail.com>"
+            ],
+            "categories": [
+                "development-tools::build-utils"
+            ],
+            "keywords": [
+                "rustc",
+                "build",
+                "autoconf"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/cuviper/autocfg",
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "bitflags",
+            "version": "1.3.2",
+            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A macro to generate structures which behave like bitflags.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "compiler_builtins",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": "core",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustversion",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde_derive",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde_json",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "trybuild",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "walkdir",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^2.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "bitflags",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "compile",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/tests/compile.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "basic",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/tests/basic.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "default": [],
+                "example_generated": [],
+                "rustc-dep-of-std": [
+                    "core",
+                    "compiler_builtins"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": [
+                            "example_generated"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "no-std"
+            ],
+            "keywords": [
+                "bit",
+                "bitmask",
+                "bitflags",
+                "flags"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/bitflags/bitflags",
+            "homepage": "https://github.com/bitflags/bitflags",
+            "documentation": "https://docs.rs/bitflags",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "cfg-if",
+            "version": "1.0.0",
+            "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A macro to ergonomically define an item depending on a large number of #[cfg]\nparameters. Structured like an if-else chain, the first matching branch is the\nitem that gets emitted.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "compiler_builtins",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": "core",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "cfg-if",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cfg-if-1.0.0/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "xcrate",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cfg-if-1.0.0/tests/xcrate.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "rustc-dep-of-std": [
+                    "core",
+                    "compiler_builtins"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cfg-if-1.0.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Alex Crichton <alex@alexcrichton.com>"
+            ],
+            "categories": [],
+            "keywords": [],
+            "readme": "README.md",
+            "repository": "https://github.com/alexcrichton/cfg-if",
+            "homepage": "https://github.com/alexcrichton/cfg-if",
+            "documentation": "https://docs.rs/cfg-if",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "core-foundation-sys",
+            "version": "0.8.3",
+            "id": "core-foundation-sys 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT / Apache-2.0",
+            "license_file": null,
+            "description": "Bindings to Core Foundation for macOS",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "core-foundation-sys",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/core-foundation-sys-0.8.3/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/core-foundation-sys-0.8.3/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "mac_os_10_7_support": [],
+                "mac_os_10_8_features": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/core-foundation-sys-0.8.3/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-apple-darwin"
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "The Servo Project Developers"
+            ],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": "https://github.com/servo/core-foundation-rs",
+            "homepage": "https://github.com/servo/core-foundation-rs",
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "crate-types",
+            "version": "0.1.0",
+            "id": "crate-types 0.1.0 (path+file://{TEMP_DIR}/crate_types)",
+            "license": null,
+            "license_file": null,
+            "description": null,
+            "source": null,
+            "dependencies": [
+                {
+                    "name": "bitflags",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "=1.3.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "sysinfo",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "=0.22.5",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "crate-types",
+                    "src_path": "{TEMP_DIR}/crate_types/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {},
+            "manifest_path": "{TEMP_DIR}/crate_types/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [],
+            "keywords": [],
+            "readme": null,
+            "repository": null,
+            "homepage": null,
+            "documentation": null,
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "crossbeam-channel",
+            "version": "0.5.2",
+            "id": "crossbeam-channel 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Multi-producer multi-consumer channels for message passing",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-utils",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "num_cpus",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.13.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "signal-hook",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "crossbeam-channel",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "fibonacci",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/examples/fibonacci.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "matching",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/examples/matching.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "stopwatch",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/examples/stopwatch.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "same_channel",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/same_channel.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "zero",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/zero.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "after",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/after.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "never",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/never.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "list",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/list.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "iter",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/iter.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "mpsc",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/mpsc.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "select_macro",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/select_macro.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "select",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/select.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "array",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/array.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "golang",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/golang.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "tick",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/tick.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "ready",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/ready.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "thread_locals",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/tests/thread_locals.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "crossbeam",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/benches/crossbeam.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [
+                    "std"
+                ],
+                "std": [
+                    "crossbeam-utils/std"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.2/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [
+                "algorithms",
+                "concurrency",
+                "data-structures"
+            ],
+            "keywords": [
+                "channel",
+                "mpmc",
+                "select",
+                "golang",
+                "message"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/crossbeam-rs/crossbeam",
+            "homepage": "https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-channel",
+            "documentation": null,
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": "1.36"
+        },
+        {
+            "name": "crossbeam-deque",
+            "version": "0.8.1",
+            "id": "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Concurrent work-stealing deque",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-epoch",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.9",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-utils",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "crossbeam-deque",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "injector",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/tests/injector.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "fifo",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/tests/fifo.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "lifo",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/tests/lifo.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "steal",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/tests/steal.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "default": [
+                    "std"
+                ],
+                "std": [
+                    "crossbeam-epoch/std",
+                    "crossbeam-utils/std"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-deque-0.8.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "The Crossbeam Project Developers"
+            ],
+            "categories": [
+                "algorithms",
+                "concurrency",
+                "data-structures"
+            ],
+            "keywords": [
+                "chase-lev",
+                "lock-free",
+                "scheduler",
+                "scheduling"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/crossbeam-rs/crossbeam",
+            "homepage": "https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-deque",
+            "documentation": "https://docs.rs/crossbeam-deque",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "crossbeam-epoch",
+            "version": "0.9.6",
+            "id": "crossbeam-epoch 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Epoch-based garbage collection",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "const_fn",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.4.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-utils",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8.5",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "lazy_static",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.4.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "memoffset",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.6",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "scopeguard",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "loom",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5",
+                    "kind": null,
+                    "rename": "loom-crate",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(crossbeam_loom)",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "crossbeam-epoch",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "sanitize",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/examples/sanitize.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "loom",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/tests/loom.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "pin",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/benches/pin.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "defer",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/benches/defer.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "flush",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/benches/flush.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "alloc": [],
+                "default": [
+                    "std"
+                ],
+                "loom": [
+                    "loom-crate",
+                    "crossbeam-utils/loom"
+                ],
+                "nightly": [
+                    "crossbeam-utils/nightly",
+                    "const_fn"
+                ],
+                "std": [
+                    "alloc",
+                    "crossbeam-utils/std",
+                    "lazy_static"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-epoch-0.9.6/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [
+                "concurrency",
+                "memory-management",
+                "no-std"
+            ],
+            "keywords": [
+                "lock-free",
+                "rcu",
+                "atomic",
+                "garbage"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/crossbeam-rs/crossbeam",
+            "homepage": "https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-epoch",
+            "documentation": null,
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": "1.36"
+        },
+        {
+            "name": "crossbeam-utils",
+            "version": "0.8.6",
+            "id": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Utilities for concurrent programming",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "lazy_static",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.4.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustversion",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "loom",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(crossbeam_loom)",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "crossbeam-utils",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "wait_group",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/wait_group.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "sharded_lock",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/sharded_lock.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "thread",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/thread.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "cache_padded",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/cache_padded.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "atomic_cell",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/atomic_cell.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "parker",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/tests/parker.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "atomic_cell",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/benches/atomic_cell.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [
+                    "std"
+                ],
+                "nightly": [],
+                "std": [
+                    "lazy_static"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/crossbeam-utils-0.8.6/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [],
+            "categories": [
+                "algorithms",
+                "concurrency",
+                "data-structures",
+                "no-std"
+            ],
+            "keywords": [
+                "scoped",
+                "thread",
+                "atomic",
+                "cache"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/crossbeam-rs/crossbeam",
+            "homepage": "https://github.com/crossbeam-rs/crossbeam/tree/master/crossbeam-utils",
+            "documentation": null,
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": "1.36"
+        },
+        {
+            "name": "either",
+            "version": "1.6.1",
+            "id": "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "The enum `Either` with variants `Left` and `Right` is a general purpose sum type with two cases.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "serde",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [
+                        "derive"
+                    ],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde_json",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "either",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/either-1.6.1/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {
+                "default": [
+                    "use_std"
+                ],
+                "use_std": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/either-1.6.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": [
+                            "serde"
+                        ]
+                    }
+                },
+                "release": {
+                    "no-dev-version": true,
+                    "tag-name": "{{version}}"
+                }
+            },
+            "publish": null,
+            "authors": [
+                "bluss"
+            ],
+            "categories": [
+                "data-structures",
+                "no-std"
+            ],
+            "keywords": [
+                "data-structure",
+                "no_std"
+            ],
+            "readme": "README-crates.io.md",
+            "repository": "https://github.com/bluss/either",
+            "homepage": null,
+            "documentation": "https://docs.rs/either/1/",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "hermit-abi",
+            "version": "0.1.19",
+            "id": "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "hermit-abi is small interface to call functions from the unikernel RustyHermit.\nIt is used to build the target `x86_64-unknown-hermit`.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "compiler_builtins",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": "core",
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.51",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "hermit-abi",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/hermit-abi-0.1.19/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                }
+            ],
+            "features": {
+                "default": [],
+                "docs": [],
+                "rustc-dep-of-std": [
+                    "core",
+                    "compiler_builtins/rustc-dep-of-std",
+                    "libc/rustc-dep-of-std"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/hermit-abi-0.1.19/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-unknown-hermit",
+                        "features": [
+                            "docs"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "Stefan Lankes"
+            ],
+            "categories": [
+                "os"
+            ],
+            "keywords": [
+                "unikernel",
+                "libos"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/hermitcore/libhermit-rs",
+            "homepage": null,
+            "documentation": "https://hermitcore.github.io/rusty-hermit/hermit_abi",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "lazy_static",
+            "version": "1.4.0",
+            "id": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A macro for declaring lazily evaluated statics in Rust.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "spin",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "doc-comment",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.1",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "lazy_static",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/lazy_static-1.4.0/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "test",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/lazy_static-1.4.0/tests/test.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "no_std",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/lazy_static-1.4.0/tests/no_std.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "spin_no_std": [
+                    "spin"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/lazy_static-1.4.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Marvin L\u00f6bel <loebel.marvin@gmail.com>"
+            ],
+            "categories": [
+                "no-std",
+                "rust-patterns",
+                "memory-management"
+            ],
+            "keywords": [
+                "macro",
+                "lazy",
+                "static"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/rust-lang-nursery/lazy-static.rs",
+            "homepage": null,
+            "documentation": "https://docs.rs/lazy_static",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "libc",
+            "version": "0.2.112",
+            "id": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Raw FFI bindings to platform libraries like libc.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "rustc-std-workspace-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "libc",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.112/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "const_fn",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.112/tests/const_fn.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.112/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "align": [],
+                "const-extern-fn": [],
+                "default": [
+                    "std"
+                ],
+                "extra_traits": [],
+                "rustc-dep-of-std": [
+                    "align",
+                    "rustc-std-workspace-core"
+                ],
+                "std": [],
+                "use_std": [
+                    "std"
+                ]
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/libc-0.2.112/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": [
+                            "const-extern-fn",
+                            "extra_traits"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "external-ffi-bindings",
+                "no-std",
+                "os"
+            ],
+            "keywords": [
+                "libc",
+                "ffi",
+                "bindings",
+                "operating",
+                "system"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/rust-lang/libc",
+            "homepage": "https://github.com/rust-lang/libc",
+            "documentation": "https://docs.rs/libc/",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "memoffset",
+            "version": "0.6.5",
+            "id": "memoffset 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT",
+            "license_file": null,
+            "description": "offset_of functionality for Rust structs.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "doc-comment",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "autocfg",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": "build",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "memoffset",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memoffset-0.6.5/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memoffset-0.6.5/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [],
+                "unstable_const": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/memoffset-0.6.5/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Gilad Naaman <gilad.naaman@gmail.com>"
+            ],
+            "categories": [
+                "no-std"
+            ],
+            "keywords": [
+                "mem",
+                "offset",
+                "offset_of",
+                "offsetof"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/Gilnaa/memoffset",
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "ntapi",
+            "version": "0.3.6",
+            "id": "ntapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "Apache-2.0 OR MIT",
+            "license_file": null,
+            "description": "FFI bindings for Native API",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "winapi",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.9",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [
+                        "cfg",
+                        "evntrace",
+                        "in6addr",
+                        "inaddr",
+                        "minwinbase",
+                        "ntsecapi",
+                        "windef",
+                        "winioctl"
+                    ],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "ntapi",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/ntapi-0.3.6/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/ntapi-0.3.6/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [
+                    "user"
+                ],
+                "func-types": [],
+                "impl-default": [
+                    "winapi/impl-default"
+                ],
+                "kernel": [],
+                "nightly": [],
+                "user": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/ntapi-0.3.6/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "features": [
+                            "nightly"
+                        ],
+                        "targets": [
+                            "aarch64-pc-windows-msvc",
+                            "i686-pc-windows-msvc",
+                            "x86_64-pc-windows-msvc"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "MSxDOS <melcodos@gmail.com>"
+            ],
+            "categories": [
+                "external-ffi-bindings",
+                "no-std",
+                "os::windows-apis"
+            ],
+            "keywords": [
+                "windows",
+                "ffi",
+                "ntapi",
+                "native",
+                "win32"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/MSxDOS/ntapi",
+            "homepage": null,
+            "documentation": "https://docs.rs/ntapi/*/x86_64-pc-windows-msvc/ntapi/",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "num_cpus",
+            "version": "1.13.1",
+            "id": "num_cpus 1.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Get the number of CPUs on a machine.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "hermit-abi",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1.3",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(all(any(target_arch = \"x86_64\", target_arch = \"aarch64\"), target_os = \"hermit\"))",
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.26",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(not(windows))",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "num_cpus",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/num_cpus-1.13.1/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "values",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/num_cpus-1.13.1/examples/values.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/num_cpus-1.13.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Sean McArthur <sean@seanmonstar.com>"
+            ],
+            "categories": [
+                "hardware-support"
+            ],
+            "keywords": [
+                "cpu",
+                "cpus",
+                "cores"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/seanmonstar/num_cpus",
+            "homepage": null,
+            "documentation": "https://docs.rs/num_cpus",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "once_cell",
+            "version": "1.9.0",
+            "id": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "description": "Single assignment cells and lazy values.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "atomic-polyfill",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "parking_lot",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.11",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-utils",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.7.2",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "lazy_static",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "regex",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.2.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "once_cell",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "bench",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/bench.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "bench_acquire",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/bench_acquire.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "bench_vs_lazy_static",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/bench_vs_lazy_static.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "lazy_static",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/lazy_static.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "reentrant_init_deadlocks",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/reentrant_init_deadlocks.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "regex",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/regex.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "test_synchronization",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/examples/test_synchronization.rs",
+                    "edition": "2018",
+                    "required-features": [
+                        "std"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "it",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/tests/it.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                }
+            ],
+            "features": {
+                "alloc": [
+                    "race"
+                ],
+                "default": [
+                    "std"
+                ],
+                "race": [],
+                "std": [
+                    "alloc"
+                ],
+                "unstable": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/once_cell-1.9.0/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "all-features": true
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "Aleksey Kladov <aleksey.kladov@gmail.com>"
+            ],
+            "categories": [
+                "rust-patterns",
+                "memory-management"
+            ],
+            "keywords": [
+                "lazy",
+                "static"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/matklad/once_cell",
+            "homepage": null,
+            "documentation": "https://docs.rs/once_cell",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "rayon",
+            "version": "1.5.1",
+            "id": "rayon 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "Apache-2.0/MIT",
+            "license_file": null,
+            "description": "Simple work-stealing parallelism for Rust",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "crossbeam-deque",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "either",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": false,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rayon-core",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.9.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "docopt",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "lazy_static",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand_xorshift",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "serde",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0.85",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [
+                        "derive"
+                    ],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "autocfg",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": "build",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "rayon",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "cpu_monitor",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/examples/cpu_monitor.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "sort-panic-safe",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/sort-panic-safe.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "producer_split_at",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/producer_split_at.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "clones",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/clones.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "issue671-unzip",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/issue671-unzip.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "issue671",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/issue671.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "str",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/str.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "cross-pool",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/cross-pool.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "collect",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/collect.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "iter_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/iter_panic.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "octillion",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/octillion.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "intersperse",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/intersperse.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "named-threads",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/named-threads.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "debug",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/debug.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "chars",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/tests/chars.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-1.5.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Niko Matsakis <niko@alum.mit.edu>",
+                "Josh Stone <cuviper@gmail.com>"
+            ],
+            "categories": [
+                "concurrency"
+            ],
+            "keywords": [
+                "parallel",
+                "thread",
+                "concurrency",
+                "join",
+                "performance"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/rayon-rs/rayon",
+            "homepage": null,
+            "documentation": "https://docs.rs/rayon/",
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "rayon-core",
+            "version": "1.9.1",
+            "id": "rayon-core 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "Apache-2.0/MIT",
+            "license_file": null,
+            "description": "Core APIs for Rayon",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "crossbeam-channel",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.5.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-deque",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "crossbeam-utils",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "lazy_static",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "num_cpus",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.2",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rand_xorshift",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "scoped-tls",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(unix)",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "rayon-core",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "stack_overflow_crash",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/stack_overflow_crash.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "double_init_fail",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/double_init_fail.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "init_zero_threads",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/init_zero_threads.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "scope_join",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/scope_join.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "simple_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/simple_panic.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "scoped_threadpool",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/tests/scoped_threadpool.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Niko Matsakis <niko@alum.mit.edu>",
+                "Josh Stone <cuviper@gmail.com>"
+            ],
+            "categories": [
+                "concurrency"
+            ],
+            "keywords": [
+                "parallel",
+                "thread",
+                "concurrency",
+                "join",
+                "performance"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/rayon-rs/rayon",
+            "homepage": null,
+            "documentation": "https://docs.rs/rayon/",
+            "edition": "2018",
+            "links": "rayon-core",
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "scopeguard",
+            "version": "1.1.0",
+            "id": "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "A RAII scope guard that will run a given closure when it goes out of scope,\neven if the code between panics (assuming unwinding panic).\n\nDefines the macros `defer!`, `defer_on_unwind!`, `defer_on_success!` as\nshorthands for guards with one of the implemented strategies.\n",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "scopeguard",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/scopeguard-1.1.0/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "readme",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/scopeguard-1.1.0/examples/readme.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "default": [
+                    "use_std"
+                ],
+                "use_std": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/scopeguard-1.1.0/Cargo.toml",
+            "metadata": {
+                "release": {
+                    "no-dev-version": true
+                }
+            },
+            "publish": null,
+            "authors": [
+                "bluss"
+            ],
+            "categories": [
+                "rust-patterns",
+                "no-std"
+            ],
+            "keywords": [
+                "scope-guard",
+                "defer",
+                "panic",
+                "unwind"
+            ],
+            "readme": null,
+            "repository": "https://github.com/bluss/scopeguard",
+            "homepage": null,
+            "documentation": "https://docs.rs/scopeguard/",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "sysinfo",
+            "version": "0.22.5",
+            "id": "sysinfo 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT",
+            "license_file": null,
+            "description": "Library to get system information such as processes, processors, disks, components and networks",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "cfg-if",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "once_cell",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.0",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "rayon",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^1.5.1",
+                    "kind": null,
+                    "rename": null,
+                    "optional": true,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": null,
+                    "registry": null
+                },
+                {
+                    "name": "tempfile",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^3.2",
+                    "kind": "dev",
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(all(target_os = \"linux\", not(target_os = \"android\")))",
+                    "registry": null
+                },
+                {
+                    "name": "core-foundation-sys",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.8",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(any(target_os = \"macos\", target_os = \"ios\"))",
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.112",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(not(any(target_os = \"unknown\", target_arch = \"wasm32\")))",
+                    "registry": null
+                },
+                {
+                    "name": "ntapi",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(windows)",
+                    "registry": null
+                },
+                {
+                    "name": "winapi",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.3.9",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [
+                        "fileapi",
+                        "handleapi",
+                        "ifdef",
+                        "ioapiset",
+                        "minwindef",
+                        "pdh",
+                        "psapi",
+                        "synchapi",
+                        "sysinfoapi",
+                        "winbase",
+                        "winerror",
+                        "winioctl",
+                        "winnt",
+                        "oleauto",
+                        "wbemcli",
+                        "rpcdce",
+                        "combaseapi",
+                        "objidl",
+                        "powerbase",
+                        "netioapi",
+                        "lmcons",
+                        "lmaccess",
+                        "lmapibuf",
+                        "memoryapi",
+                        "shellapi",
+                        "std"
+                    ],
+                    "target": "cfg(windows)",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "rlib",
+                        "cdylib"
+                    ],
+                    "crate_types": [
+                        "rlib",
+                        "cdylib"
+                    ],
+                    "name": "sysinfo",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/src/lib.rs",
+                    "edition": "2018",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "example"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "simple",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/examples/simple.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "processor",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/processor.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "send_sync",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/send_sync.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "extras",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/extras.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "uptime",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/uptime.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "disk_list",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/disk_list.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "process",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/process.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "test"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "network",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/tests/network.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "bench"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "basic",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/benches/basic.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/build.rs",
+                    "edition": "2018",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "apple-app-store": [
+                    "apple-sandbox"
+                ],
+                "apple-sandbox": [],
+                "c-interface": [],
+                "debug": [
+                    "libc/extra_traits"
+                ],
+                "default": [
+                    "multithread"
+                ],
+                "multithread": [
+                    "rayon"
+                ],
+                "unknown-ci": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/sysinfo-0.22.5/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Guillaume Gomez <guillaume1.gomez@gmail.com>"
+            ],
+            "categories": [
+                "filesystem",
+                "os",
+                "api-bindings"
+            ],
+            "keywords": [],
+            "readme": "README.md",
+            "repository": "https://github.com/GuillaumeGomez/sysinfo",
+            "homepage": null,
+            "documentation": null,
+            "edition": "2018",
+            "links": null,
+            "default_run": null,
+            "rust_version": "1.54"
+        },
+        {
+            "name": "winapi",
+            "version": "0.3.9",
+            "id": "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "Raw FFI bindings for all of Windows API.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [
+                {
+                    "name": "winapi-i686-pc-windows-gnu",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "i686-pc-windows-gnu",
+                    "registry": null
+                },
+                {
+                    "name": "winapi-x86_64-pc-windows-gnu",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.4",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "x86_64-pc-windows-gnu",
+                    "registry": null
+                }
+            ],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "winapi",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-0.3.9/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-0.3.9/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {
+                "accctrl": [],
+                "aclapi": [],
+                "activation": [],
+                "adhoc": [],
+                "appmgmt": [],
+                "audioclient": [],
+                "audiosessiontypes": [],
+                "avrt": [],
+                "basetsd": [],
+                "bcrypt": [],
+                "bits": [],
+                "bits10_1": [],
+                "bits1_5": [],
+                "bits2_0": [],
+                "bits2_5": [],
+                "bits3_0": [],
+                "bits4_0": [],
+                "bits5_0": [],
+                "bitscfg": [],
+                "bitsmsg": [],
+                "bluetoothapis": [],
+                "bluetoothleapis": [],
+                "bthdef": [],
+                "bthioctl": [],
+                "bthledef": [],
+                "bthsdpdef": [],
+                "bugcodes": [],
+                "cderr": [],
+                "cfg": [],
+                "cfgmgr32": [],
+                "cguid": [],
+                "combaseapi": [],
+                "coml2api": [],
+                "commapi": [],
+                "commctrl": [],
+                "commdlg": [],
+                "commoncontrols": [],
+                "consoleapi": [],
+                "corecrt": [],
+                "corsym": [],
+                "d2d1": [],
+                "d2d1_1": [],
+                "d2d1_2": [],
+                "d2d1_3": [],
+                "d2d1effectauthor": [],
+                "d2d1effects": [],
+                "d2d1effects_1": [],
+                "d2d1effects_2": [],
+                "d2d1svg": [],
+                "d2dbasetypes": [],
+                "d3d": [],
+                "d3d10": [],
+                "d3d10_1": [],
+                "d3d10_1shader": [],
+                "d3d10effect": [],
+                "d3d10misc": [],
+                "d3d10sdklayers": [],
+                "d3d10shader": [],
+                "d3d11": [],
+                "d3d11_1": [],
+                "d3d11_2": [],
+                "d3d11_3": [],
+                "d3d11_4": [],
+                "d3d11on12": [],
+                "d3d11sdklayers": [],
+                "d3d11shader": [],
+                "d3d11tokenizedprogramformat": [],
+                "d3d12": [],
+                "d3d12sdklayers": [],
+                "d3d12shader": [],
+                "d3d9": [],
+                "d3d9caps": [],
+                "d3d9types": [],
+                "d3dcommon": [],
+                "d3dcompiler": [],
+                "d3dcsx": [],
+                "d3dkmdt": [],
+                "d3dkmthk": [],
+                "d3dukmdt": [],
+                "d3dx10core": [],
+                "d3dx10math": [],
+                "d3dx10mesh": [],
+                "datetimeapi": [],
+                "davclnt": [],
+                "dbghelp": [],
+                "dbt": [],
+                "dcommon": [],
+                "dcomp": [],
+                "dcompanimation": [],
+                "dcomptypes": [],
+                "dde": [],
+                "ddraw": [],
+                "ddrawi": [],
+                "ddrawint": [],
+                "debug": [
+                    "impl-debug"
+                ],
+                "debugapi": [],
+                "devguid": [],
+                "devicetopology": [],
+                "devpkey": [],
+                "devpropdef": [],
+                "dinput": [],
+                "dinputd": [],
+                "dispex": [],
+                "dmksctl": [],
+                "dmusicc": [],
+                "docobj": [],
+                "documenttarget": [],
+                "dot1x": [],
+                "dpa_dsa": [],
+                "dpapi": [],
+                "dsgetdc": [],
+                "dsound": [],
+                "dsrole": [],
+                "dvp": [],
+                "dwmapi": [],
+                "dwrite": [],
+                "dwrite_1": [],
+                "dwrite_2": [],
+                "dwrite_3": [],
+                "dxdiag": [],
+                "dxfile": [],
+                "dxgi": [],
+                "dxgi1_2": [],
+                "dxgi1_3": [],
+                "dxgi1_4": [],
+                "dxgi1_5": [],
+                "dxgi1_6": [],
+                "dxgidebug": [],
+                "dxgiformat": [],
+                "dxgitype": [],
+                "dxva2api": [],
+                "dxvahd": [],
+                "eaptypes": [],
+                "enclaveapi": [],
+                "endpointvolume": [],
+                "errhandlingapi": [],
+                "everything": [],
+                "evntcons": [],
+                "evntprov": [],
+                "evntrace": [],
+                "excpt": [],
+                "exdisp": [],
+                "fibersapi": [],
+                "fileapi": [],
+                "functiondiscoverykeys_devpkey": [],
+                "gl-gl": [],
+                "guiddef": [],
+                "handleapi": [],
+                "heapapi": [],
+                "hidclass": [],
+                "hidpi": [],
+                "hidsdi": [],
+                "hidusage": [],
+                "highlevelmonitorconfigurationapi": [],
+                "hstring": [],
+                "http": [],
+                "ifdef": [],
+                "ifmib": [],
+                "imm": [],
+                "impl-debug": [],
+                "impl-default": [],
+                "in6addr": [],
+                "inaddr": [],
+                "inspectable": [],
+                "interlockedapi": [],
+                "intsafe": [],
+                "ioapiset": [],
+                "ipexport": [],
+                "iphlpapi": [],
+                "ipifcons": [],
+                "ipmib": [],
+                "iprtrmib": [],
+                "iptypes": [],
+                "jobapi": [],
+                "jobapi2": [],
+                "knownfolders": [],
+                "ks": [],
+                "ksmedia": [],
+                "ktmtypes": [],
+                "ktmw32": [],
+                "l2cmn": [],
+                "libloaderapi": [],
+                "limits": [],
+                "lmaccess": [],
+                "lmalert": [],
+                "lmapibuf": [],
+                "lmat": [],
+                "lmcons": [],
+                "lmdfs": [],
+                "lmerrlog": [],
+                "lmjoin": [],
+                "lmmsg": [],
+                "lmremutl": [],
+                "lmrepl": [],
+                "lmserver": [],
+                "lmshare": [],
+                "lmstats": [],
+                "lmsvc": [],
+                "lmuse": [],
+                "lmwksta": [],
+                "lowlevelmonitorconfigurationapi": [],
+                "lsalookup": [],
+                "memoryapi": [],
+                "minschannel": [],
+                "minwinbase": [],
+                "minwindef": [],
+                "mmdeviceapi": [],
+                "mmeapi": [],
+                "mmreg": [],
+                "mmsystem": [],
+                "mprapidef": [],
+                "msaatext": [],
+                "mscat": [],
+                "mschapp": [],
+                "mssip": [],
+                "mstcpip": [],
+                "mswsock": [],
+                "mswsockdef": [],
+                "namedpipeapi": [],
+                "namespaceapi": [],
+                "nb30": [],
+                "ncrypt": [],
+                "netioapi": [],
+                "nldef": [],
+                "ntddndis": [],
+                "ntddscsi": [],
+                "ntddser": [],
+                "ntdef": [],
+                "ntlsa": [],
+                "ntsecapi": [],
+                "ntstatus": [],
+                "oaidl": [],
+                "objbase": [],
+                "objidl": [],
+                "objidlbase": [],
+                "ocidl": [],
+                "ole2": [],
+                "oleauto": [],
+                "olectl": [],
+                "oleidl": [],
+                "opmapi": [],
+                "pdh": [],
+                "perflib": [],
+                "physicalmonitorenumerationapi": [],
+                "playsoundapi": [],
+                "portabledevice": [],
+                "portabledeviceapi": [],
+                "portabledevicetypes": [],
+                "powerbase": [],
+                "powersetting": [],
+                "powrprof": [],
+                "processenv": [],
+                "processsnapshot": [],
+                "processthreadsapi": [],
+                "processtopologyapi": [],
+                "profileapi": [],
+                "propidl": [],
+                "propkey": [],
+                "propkeydef": [],
+                "propsys": [],
+                "prsht": [],
+                "psapi": [],
+                "qos": [],
+                "realtimeapiset": [],
+                "reason": [],
+                "restartmanager": [],
+                "restrictederrorinfo": [],
+                "rmxfguid": [],
+                "roapi": [],
+                "robuffer": [],
+                "roerrorapi": [],
+                "rpc": [],
+                "rpcdce": [],
+                "rpcndr": [],
+                "rtinfo": [],
+                "sapi": [],
+                "sapi51": [],
+                "sapi53": [],
+                "sapiddk": [],
+                "sapiddk51": [],
+                "schannel": [],
+                "sddl": [],
+                "securityappcontainer": [],
+                "securitybaseapi": [],
+                "servprov": [],
+                "setupapi": [],
+                "shellapi": [],
+                "shellscalingapi": [],
+                "shlobj": [],
+                "shobjidl": [],
+                "shobjidl_core": [],
+                "shtypes": [],
+                "softpub": [],
+                "spapidef": [],
+                "spellcheck": [],
+                "sporder": [],
+                "sql": [],
+                "sqlext": [],
+                "sqltypes": [],
+                "sqlucode": [],
+                "sspi": [],
+                "std": [],
+                "stralign": [],
+                "stringapiset": [],
+                "strmif": [],
+                "subauth": [],
+                "synchapi": [],
+                "sysinfoapi": [],
+                "systemtopologyapi": [],
+                "taskschd": [],
+                "tcpestats": [],
+                "tcpmib": [],
+                "textstor": [],
+                "threadpoolapiset": [],
+                "threadpoollegacyapiset": [],
+                "timeapi": [],
+                "timezoneapi": [],
+                "tlhelp32": [],
+                "transportsettingcommon": [],
+                "tvout": [],
+                "udpmib": [],
+                "unknwnbase": [],
+                "urlhist": [],
+                "urlmon": [],
+                "usb": [],
+                "usbioctl": [],
+                "usbiodef": [],
+                "usbscan": [],
+                "usbspec": [],
+                "userenv": [],
+                "usp10": [],
+                "utilapiset": [],
+                "uxtheme": [],
+                "vadefs": [],
+                "vcruntime": [],
+                "vsbackup": [],
+                "vss": [],
+                "vsserror": [],
+                "vswriter": [],
+                "wbemads": [],
+                "wbemcli": [],
+                "wbemdisp": [],
+                "wbemprov": [],
+                "wbemtran": [],
+                "wct": [],
+                "werapi": [],
+                "winbase": [],
+                "wincodec": [],
+                "wincodecsdk": [],
+                "wincon": [],
+                "wincontypes": [],
+                "wincred": [],
+                "wincrypt": [],
+                "windef": [],
+                "windot11": [],
+                "windowsceip": [],
+                "windowsx": [],
+                "winefs": [],
+                "winerror": [],
+                "winevt": [],
+                "wingdi": [],
+                "winhttp": [],
+                "wininet": [],
+                "winineti": [],
+                "winioctl": [],
+                "winnetwk": [],
+                "winnls": [],
+                "winnt": [],
+                "winreg": [],
+                "winsafer": [],
+                "winscard": [],
+                "winsmcrd": [],
+                "winsock2": [],
+                "winspool": [],
+                "winstring": [],
+                "winsvc": [],
+                "wintrust": [],
+                "winusb": [],
+                "winusbio": [],
+                "winuser": [],
+                "winver": [],
+                "wlanapi": [],
+                "wlanihv": [],
+                "wlanihvtypes": [],
+                "wlantypes": [],
+                "wlclient": [],
+                "wmistr": [],
+                "wnnc": [],
+                "wow64apiset": [],
+                "wpdmtpextensions": [],
+                "ws2bth": [],
+                "ws2def": [],
+                "ws2ipdef": [],
+                "ws2spi": [],
+                "ws2tcpip": [],
+                "wtsapi32": [],
+                "wtypes": [],
+                "wtypesbase": [],
+                "xinput": []
+            },
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-0.3.9/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "features": [
+                            "everything",
+                            "impl-debug",
+                            "impl-default"
+                        ],
+                        "targets": [
+                            "aarch64-pc-windows-msvc",
+                            "i686-pc-windows-msvc",
+                            "x86_64-pc-windows-msvc"
+                        ]
+                    }
+                }
+            },
+            "publish": null,
+            "authors": [
+                "Peter Atashian <retep998@gmail.com>"
+            ],
+            "categories": [
+                "external-ffi-bindings",
+                "no-std",
+                "os::windows-apis"
+            ],
+            "keywords": [
+                "windows",
+                "ffi",
+                "win32",
+                "com",
+                "directx"
+            ],
+            "readme": "README.md",
+            "repository": "https://github.com/retep998/winapi-rs",
+            "homepage": null,
+            "documentation": "https://docs.rs/winapi/",
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "winapi-i686-pc-windows-gnu",
+            "version": "0.4.0",
+            "id": "winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "Import libraries for the i686-pc-windows-gnu target. Please don't use this crate directly, depend on winapi instead.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "winapi-i686-pc-windows-gnu",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-i686-pc-windows-gnu-0.4.0/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Peter Atashian <retep998@gmail.com>"
+            ],
+            "categories": [],
+            "keywords": [
+                "windows"
+            ],
+            "readme": null,
+            "repository": "https://github.com/retep998/winapi-rs",
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        },
+        {
+            "name": "winapi-x86_64-pc-windows-gnu",
+            "version": "0.4.0",
+            "id": "winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "description": "Import libraries for the x86_64-pc-windows-gnu target. Please don't use this crate directly, depend on winapi instead.",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "dependencies": [],
+            "targets": [
+                {
+                    "kind": [
+                        "lib"
+                    ],
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "name": "winapi-x86_64-pc-windows-gnu",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs",
+                    "edition": "2015",
+                    "doc": true,
+                    "doctest": true,
+                    "test": true
+                },
+                {
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-x86_64-pc-windows-gnu-0.4.0/build.rs",
+                    "edition": "2015",
+                    "doc": false,
+                    "doctest": false,
+                    "test": false
+                }
+            ],
+            "features": {},
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/winapi-x86_64-pc-windows-gnu-0.4.0/Cargo.toml",
+            "metadata": null,
+            "publish": null,
+            "authors": [
+                "Peter Atashian <retep998@gmail.com>"
+            ],
+            "categories": [],
+            "keywords": [
+                "windows"
+            ],
+            "readme": null,
+            "repository": "https://github.com/retep998/winapi-rs",
+            "homepage": null,
+            "documentation": null,
+            "edition": "2015",
+            "links": null,
+            "default_run": null,
+            "rust_version": null
+        }
+    ],
+    "workspace_members": [
+        "crate-types 0.1.0 (path+file://{TEMP_DIR}/crate_types)"
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "id": "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "default"
+                ]
+            },
+            {
+                "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "core-foundation-sys 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "crate-types 0.1.0 (path+file://{TEMP_DIR}/crate_types)",
+                "dependencies": [
+                    "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "sysinfo 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "bitflags",
+                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "sysinfo",
+                        "pkg": "sysinfo 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "crossbeam-channel 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_utils",
+                        "pkg": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "crossbeam-utils",
+                    "default",
+                    "std"
+                ]
+            },
+            {
+                "id": "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-epoch 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_epoch",
+                        "pkg": "crossbeam-epoch 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_utils",
+                        "pkg": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "crossbeam-epoch",
+                    "crossbeam-utils",
+                    "default",
+                    "std"
+                ]
+            },
+            {
+                "id": "crossbeam-epoch 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "memoffset 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_utils",
+                        "pkg": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "lazy_static",
+                        "pkg": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "memoffset",
+                        "pkg": "memoffset 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "scopeguard",
+                        "pkg": "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "alloc",
+                    "lazy_static",
+                    "std"
+                ]
+            },
+            {
+                "id": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "lazy_static",
+                        "pkg": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default",
+                    "lazy_static",
+                    "std"
+                ]
+            },
+            {
+                "id": "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "libc",
+                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default"
+                ]
+            },
+            {
+                "id": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "default",
+                    "std"
+                ]
+            },
+            {
+                "id": "memoffset 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "autocfg",
+                        "pkg": "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": "build",
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default"
+                ]
+            },
+            {
+                "id": "ntapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "winapi",
+                        "pkg": "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default",
+                    "user"
+                ]
+            },
+            {
+                "id": "num_cpus 1.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "hermit_abi",
+                        "pkg": "hermit-abi 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(all(any(target_arch = \"x86_64\", target_arch = \"aarch64\"), target_os = \"hermit\"))"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "libc",
+                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(not(windows))"
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "alloc",
+                    "default",
+                    "race",
+                    "std"
+                ]
+            },
+            {
+                "id": "rayon 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "rayon-core 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "autocfg",
+                        "pkg": "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": "build",
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_deque",
+                        "pkg": "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "either",
+                        "pkg": "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "rayon_core",
+                        "pkg": "rayon-core 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "rayon-core 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "crossbeam-channel 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "num_cpus 1.13.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "crossbeam_channel",
+                        "pkg": "crossbeam-channel 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_deque",
+                        "pkg": "crossbeam-deque 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crossbeam_utils",
+                        "pkg": "crossbeam-utils 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "lazy_static",
+                        "pkg": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "num_cpus",
+                        "pkg": "num_cpus 1.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    }
+                ],
+                "features": []
+            },
+            {
+                "id": "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "sysinfo 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "core-foundation-sys 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "ntapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "rayon 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "cfg_if",
+                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "core_foundation_sys",
+                        "pkg": "core-foundation-sys 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(any(target_os = \"macos\", target_os = \"ios\"))"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "libc",
+                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(not(any(target_os = \"unknown\", target_arch = \"wasm32\")))"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ntapi",
+                        "pkg": "ntapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(windows)"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "once_cell",
+                        "pkg": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "rayon",
+                        "pkg": "rayon 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "winapi",
+                        "pkg": "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(windows)"
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "default",
+                    "multithread",
+                    "rayon"
+                ]
+            },
+            {
+                "id": "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [
+                    "winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                    "winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                ],
+                "deps": [
+                    {
+                        "name": "winapi_i686_pc_windows_gnu",
+                        "pkg": "winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "i686-pc-windows-gnu"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "winapi_x86_64_pc_windows_gnu",
+                        "pkg": "winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "x86_64-pc-windows-gnu"
+                            }
+                        ]
+                    }
+                ],
+                "features": [
+                    "cfg",
+                    "combaseapi",
+                    "evntrace",
+                    "fileapi",
+                    "handleapi",
+                    "ifdef",
+                    "in6addr",
+                    "inaddr",
+                    "ioapiset",
+                    "lmaccess",
+                    "lmapibuf",
+                    "lmcons",
+                    "memoryapi",
+                    "minwinbase",
+                    "minwindef",
+                    "netioapi",
+                    "ntsecapi",
+                    "objidl",
+                    "oleauto",
+                    "pdh",
+                    "powerbase",
+                    "psapi",
+                    "rpcdce",
+                    "shellapi",
+                    "std",
+                    "synchapi",
+                    "sysinfoapi",
+                    "wbemcli",
+                    "winbase",
+                    "windef",
+                    "winerror",
+                    "winioctl",
+                    "winnt"
+                ]
+            },
+            {
+                "id": "winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            },
+            {
+                "id": "winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+                "dependencies": [],
+                "deps": [],
+                "features": []
+            }
+        ],
+        "root": "crate-types 0.1.0 (path+file://{TEMP_DIR}/crate_types)"
+    },
+    "target_directory": "{TEMP_DIR}/crate_types/target",
+    "version": 1,
+    "workspace_root": "{TEMP_DIR}/crate_types",
+    "metadata": null
+}

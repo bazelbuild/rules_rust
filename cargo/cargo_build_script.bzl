@@ -7,7 +7,7 @@ load("//rust:defs.bzl", "rust_binary", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
+load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
 def get_cc_compile_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -45,6 +45,7 @@ def _build_script_impl(ctx):
     dep_env_out = ctx.actions.declare_file(ctx.label.name + ".depenv")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
+    link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
     manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
@@ -55,11 +56,7 @@ def _build_script_impl(ctx):
 
     pkg_name = _name_to_pkg_name(ctx.label.name)
 
-    toolchain_tools = [
-        # Needed for rustc to function.
-        toolchain.rustc_lib.files,
-        toolchain.rust_lib.files,
-    ]
+    toolchain_tools = [toolchain.all_files]
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
@@ -73,11 +70,15 @@ def _build_script_impl(ctx):
         "CARGO_PKG_NAME": pkg_name,
         "HOST": toolchain.exec_triple,
         "OPT_LEVEL": compilation_mode_opt_level,
-        # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
-        "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
+    })
+
+    # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
+    env.update({
+        "DEBUG": {"dbg": "true", "fastbuild": "true", "opt": "false"}.get(ctx.var["COMPILATION_MODE"], "true"),
+        "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
     })
 
     if ctx.attr.version:
@@ -92,8 +93,10 @@ def _build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
+    linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
+    env["LD"] = linker
+    env["LDFLAGS"] = " ".join(link_args)
 
     # MSVC requires INCLUDE to be set
     cc_env = get_cc_compile_env(cc_toolchain, feature_configuration)
@@ -107,11 +110,19 @@ def _build_script_impl(ctx):
         cc_executable = cc_toolchain.compiler_executable
         if cc_executable:
             env["CC"] = cc_executable
+            env["CXX"] = cc_executable
         ar_executable = cc_toolchain.ar_executable
         if ar_executable:
             env["AR"] = ar_executable
         if cc_toolchain.sysroot:
             env["SYSROOT"] = cc_toolchain.sysroot
+
+    # Inform build scripts of rustc flags
+    # https://github.com/rust-lang/cargo/issues/9600
+    env["CARGO_ENCODED_RUSTFLAGS"] = "\\x1f".join([
+        # Allow build scripts to locate the generated sysroot
+        "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
+    ] + ctx.attr.rustc_flags)
 
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
@@ -128,7 +139,6 @@ def _build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-            toolchain.rustc,
         ] + ctx.files.data + ctx.files.tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
@@ -148,6 +158,7 @@ def _build_script_impl(ctx):
         env_out.path,
         flags_out.path,
         link_flags.path,
+        link_search_paths.path,
         dep_env_out.path,
         streams.stdout.path,
         streams.stderr.path,
@@ -164,10 +175,11 @@ def _build_script_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args],
-        outputs = [out_dir, env_out, flags_out, link_flags, dep_env_out, streams.stdout, streams.stderr],
+        outputs = [out_dir, env_out, flags_out, link_flags, link_search_paths, dep_env_out, streams.stdout, streams.stderr],
         tools = tools,
         inputs = build_script_inputs,
         mnemonic = "CargoBuildScriptRun",
+        progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
     )
 
@@ -178,6 +190,7 @@ def _build_script_impl(ctx):
             dep_env = dep_env_out,
             flags = flags_out,
             link_flags = link_flags,
+            link_search_paths = link_search_paths,
         ),
         OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
     ]
@@ -205,6 +218,16 @@ _build_script_run = rule(
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
+        ),
+        "rustc_flags": attr.string_list(
+            doc = dedent("""\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and 
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
         ),
         # The source of truth will be the `cargo_build_script` macro until stardoc
         # implements documentation inheritence. See https://github.com/bazelbuild/stardoc/issues/27
@@ -251,6 +274,7 @@ def cargo_build_script(
         tools = [],
         links = None,
         rustc_env = {},
+        rustc_flags = [],
         visibility = None,
         tags = None,
         **kwargs):
@@ -277,7 +301,7 @@ def cargo_build_script(
     ```python
     package(default_visibility = ["//visibility:public"])
 
-    load("@rules_rust//rust:rust.bzl", "rust_binary", "rust_library")
+    load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
     load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
 
     # This will run the build script from the root of the workspace, and
@@ -322,6 +346,7 @@ def cargo_build_script(
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
+        rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
         **kwargs: Forwards to the underlying `rust_binary` rule.
@@ -335,19 +360,24 @@ def cargo_build_script(
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(_name_to_pkg_name(name))
 
+    binary_tags = [tag for tag in tags or []]
+    if "manual" not in binary_tags:
+        binary_tags.append("manual")
+
     rust_binary(
-        name = name + "_script_",
+        name = name + "_",
         crate_features = crate_features,
         version = version,
         deps = deps,
         data = data,
         rustc_env = rustc_env,
-        tags = ["manual"],
+        rustc_flags = rustc_flags,
+        tags = binary_tags,
         **kwargs
     )
     _build_script_run(
         name = name,
-        script = ":%s_script_" % name,
+        script = ":{}_".format(name),
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
@@ -355,6 +385,7 @@ def cargo_build_script(
         deps = deps,
         data = data,
         tools = tools,
+        rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
     )

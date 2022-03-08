@@ -1,4 +1,4 @@
-load("@rules_rust//rust:rust.bzl", "rust_doc", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_doc", "rust_library", "rust_test")
 
 package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
 
@@ -33,6 +33,11 @@ rust_library(
         "src/matrix.rs",
     ],
     crate_root = "src/matrix.rs",
+    target_compatible_with = select({
+        # TODO: Make this work on windows
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [
         "//ffi/rust_calling_c/c:native_matrix_so",
         "@libc",
@@ -42,6 +47,13 @@ rust_library(
 rust_test(
     name = "matrix_dylib_test",
     crate = ":matrix_dynamically_linked",
+    target_compatible_with = select({
+        # TODO: This test requires --incompatible_macos_set_install_name and Bazel 4.2.0+
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        # TODO: Make this work on windows
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 rust_doc(

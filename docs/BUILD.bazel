@@ -8,11 +8,12 @@ bzl_library(
     name = "docs_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@build_bazel_rules_nodejs//internal/providers:bzl",
+        "@build_bazel_rules_nodejs//:bzl",
         "@com_google_protobuf//:bzl_srcs",
     ],
     deps = [
         "@bazel_skylib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
         "@rules_proto//proto:defs",
         "@rules_proto//proto:repositories",
     ],
@@ -22,13 +23,13 @@ bzl_library(
     name = "all_docs",
     deps = [
         ":docs_deps",
-        "@rules_rust//:rules",
-        "@rules_rust//bindgen:rules",
-        "@rules_rust//cargo:rules",
-        "@rules_rust//crate_universe:rules",
-        "@rules_rust//proto:rules",
-        "@rules_rust//rust:rules",
-        "@rules_rust//wasm_bindgen:rules",
+        "@rules_rust//:bzl_lib",
+        "@rules_rust//bindgen:bzl_lib",
+        "@rules_rust//cargo:bzl_lib",
+        "@rules_rust//crate_universe:bzl_lib",
+        "@rules_rust//proto:bzl_lib",
+        "@rules_rust//rust:bzl_lib",
+        "@rules_rust//wasm_bindgen:bzl_lib",
     ],
 )
 
@@ -36,16 +37,9 @@ PAGES = dict([
     page(
         name = "cargo",
         symbols = [
-            "cargo_build_script",
             "cargo_bootstrap_repository",
-        ],
-    ),
-    page(
-        name = "crate_universe",
-        header_template = ":crate_universe.vm",
-        symbols = [
-            "crate_universe",
-            "crate",
+            "cargo_build_script",
+            "cargo_env",
         ],
     ),
     page(
@@ -56,9 +50,11 @@ PAGES = dict([
             "rust_static_library",
             "rust_shared_library",
             "rust_proc_macro",
-            "rust_benchmark",
             "rust_test",
             "rust_test_suite",
+            "error_format",
+            "extra_rustc_flags",
+            "capture_clippy_output",
         ],
     ),
     page(
@@ -123,12 +119,14 @@ PAGES = dict([
     page(
         name = "rust_repositories",
         symbols = [
+            "rules_rust_dependencies",
+            "rust_register_toolchains",
             "rust_repositories",
             "rust_repository_set",
-            "rust_toolchain",
-            "rust_toolchain_repository",
-            "rust_toolchain_repository_proxy",
             "rust_stdlib_filegroup",
+            "rust_toolchain_repository_proxy",
+            "rust_toolchain_repository",
+            "rust_toolchain",
         ],
     ),
     page(
@@ -179,6 +177,13 @@ stardoc(
     header_template = ":flatten_header_vm",
     input = ":symbols.bzl",
     symbol_names = sorted([symbol for k in PAGES.keys() for symbol in PAGES[k].symbols]),
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe",
+    out = "crate_universe.md",
+    input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
 

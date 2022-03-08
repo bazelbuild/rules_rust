@@ -1,0 +1,40 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+# A rust_binary that depends on two native libs with the same name.
+# See https://github.com/bazelbuild/rules_rust/issues/840.
+rust_binary(
+    name = "bin_with_same_name_deps",
+    srcs = ["bin.rs"],
+    deps = [
+        "//ambiguous_deps/x:exc",
+        "//ambiguous_deps/y:exc",
+    ],
+)
+
+# A rust_binary that depends on a native library with a name that doesn't
+# match the `lib<name>.a` pattern on linux.
+rust_binary(
+    name = "nonstandard_name_bin",
+    srcs = ["nonstandard_name_bin.rs"],
+    deps = [":nonstandard_name_intermediate"],
+)
+
+cc_library(
+    name = "nonstandard_name_cc_lib",
+    srcs = ["cc_library_with_func.cc"],
+)
+
+genrule(
+    name = "nonstandard_name_gen",
+    srcs = [":nonstandard_name_cc_lib"],
+    outs = ["nonstandard_name_gen.a"],
+    # Copy the first member (libnonstandard_name_cc_lib.a) from the srcs to the
+    # output nonstandard_name_gen.a.
+    cmd = "cp $$(awk '{print $$1}' <<< '$(SRCS)') $@",
+)
+
+cc_library(
+    name = "nonstandard_name_intermediate",
+    srcs = [":nonstandard_name_gen.a"],
+)

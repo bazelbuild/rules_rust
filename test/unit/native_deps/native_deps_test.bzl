@@ -3,23 +3,15 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not", "assert_argv_contains_prefix_suffix", "assert_list_contains_adjacent_elements")
-
-def _native_dep_lib_name(ctx):
-    if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
-        return "native_dep.lib"
-    else:
-        return "libnative_dep.a"
-
-def _lib_has_no_native_libs_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
-    assert_argv_contains(env, action, "--crate-type=lib")
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains_not(env, action, "-lstatic=native_dep")
-    assert_argv_contains_not(env, action, "-ldylib=native_dep")
-    return analysistest.end(env)
+load(
+    "//test/unit:common.bzl",
+    "assert_argv_contains",
+    "assert_argv_contains_not",
+    "assert_argv_contains_prefix",
+    "assert_argv_contains_prefix_not",
+    "assert_argv_contains_prefix_suffix",
+    "assert_list_contains_adjacent_elements",
+)
 
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -28,30 +20,27 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     assert_argv_contains(env, action, "--crate-type=rlib")
     assert_argv_contains_not(env, action, "-lstatic=native_dep")
     assert_argv_contains_not(env, action, "-ldylib=native_dep")
-    return analysistest.end(env)
-
-def _dylib_has_native_libs_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
-    assert_argv_contains(env, action, "--crate-type=dylib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _cdylib_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
-    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _staticlib_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
-    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _proc_macro_has_native_libs_test_impl(ctx):
@@ -59,15 +48,19 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     asserts.equals(env, 1, len(tut.actions))
     action = tut.actions[0]
+    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
-    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _bin_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
-    assert_argv_contains_prefix_suffix(env, action, "link-arg=", "/native_deps/" + _native_dep_lib_name(ctx))
+    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
+    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
@@ -84,27 +77,28 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
+    compilation_mode = ctx.var["COMPILATION_MODE"]
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-arg=bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "-lstatic=native_dep",
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
-            "link-arg=bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/native_dep.lib",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+            "-lstatic=native_dep",
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
         ]
     else:
         want = [
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
+            "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
             "link-arg=-Wl,--no-whole-archive",
         ]
     individual_link_args = [
         arg
         for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-arg=")
+        if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
     ]
     asserts.equals(env, want, individual_link_args)
     return analysistest.end(env)
@@ -114,48 +108,41 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
+    # skipping first link-arg since it contains unrelated linker flags
+    linker_args = _extract_linker_args(action.argv)[1:]
+
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = ".pic" if compilation_mode == "opt" else ""
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-fastbuild/bin/test/unit/native_deps/alwayslink.lo.lib",
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
         ]
     else:
         want = [
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libnative_dep.a",
+            "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-fastbuild/bin/test/unit/native_deps/libalwayslink.lo",
+            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, _extract_linker_args(action.argv))
+    asserts.equals(env, want, linker_args)
     return analysistest.end(env)
 
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
-staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
-})
-cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
-})
-proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
-})
-bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
-})
+staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
+cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
+proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
+bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
 bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
-cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
+cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_dep_and_alwayslink_test_impl, attrs = {
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
@@ -332,7 +319,7 @@ def _additional_deps_test():
     cc_library(
         name = "additional_deps_cc",
         srcs = ["native_dep.cc"],
-        linkopts = ["-L$(location :dynamic.lds)"],
+        linkopts = ["-L$(execpath :dynamic.lds)"],
         deps = [":dynamic.lds"],
     )
 
@@ -364,16 +351,16 @@ def native_deps_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
+            ":bin_has_additional_deps_test",
+            ":bin_has_native_dep_and_alwayslink_test",
+            ":bin_has_native_libs_test",
+            ":cdylib_has_additional_deps_test",
+            ":cdylib_has_native_dep_and_alwayslink_test",
+            ":cdylib_has_native_libs_test",
+            ":lib_has_no_additional_deps_test",
+            ":native_linkopts_propagate_test",
+            ":proc_macro_has_native_libs_test",
             ":rlib_has_no_native_libs_test",
             ":staticlib_has_native_libs_test",
-            ":cdylib_has_native_libs_test",
-            ":proc_macro_has_native_libs_test",
-            ":bin_has_native_libs_test",
-            ":bin_has_native_dep_and_alwayslink_test",
-            ":cdylib_has_native_dep_and_alwayslink_test",
-            ":native_linkopts_propagate_test",
-            ":bin_has_additional_deps_test",
-            ":cdylib_has_additional_deps_test",
-            ":lib_has_no_additional_deps_test",
         ],
     )

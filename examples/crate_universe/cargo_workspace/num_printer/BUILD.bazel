@@ -1,0 +1,13 @@
+load("@crate_index_cargo_workspace//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "number_printer",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = [
+        "//cargo_workspace/printer",
+    ] + all_crate_deps(),
+)

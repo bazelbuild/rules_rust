@@ -10,7 +10,7 @@
 ## CrateInfo
 
 <pre>
-CrateInfo(<a href="#CrateInfo-aliases">aliases</a>, <a href="#CrateInfo-compile_data">compile_data</a>, <a href="#CrateInfo-deps">deps</a>, <a href="#CrateInfo-edition">edition</a>, <a href="#CrateInfo-is_test">is_test</a>, <a href="#CrateInfo-name">name</a>, <a href="#CrateInfo-output">output</a>, <a href="#CrateInfo-proc_macro_deps">proc_macro_deps</a>, <a href="#CrateInfo-root">root</a>,
+CrateInfo(<a href="#CrateInfo-aliases">aliases</a>, <a href="#CrateInfo-compile_data">compile_data</a>, <a href="#CrateInfo-deps">deps</a>, <a href="#CrateInfo-edition">edition</a>, <a href="#CrateInfo-is_test">is_test</a>, <a href="#CrateInfo-name">name</a>, <a href="#CrateInfo-output">output</a>, <a href="#CrateInfo-owner">owner</a>, <a href="#CrateInfo-proc_macro_deps">proc_macro_deps</a>, <a href="#CrateInfo-root">root</a>,
           <a href="#CrateInfo-rustc_env">rustc_env</a>, <a href="#CrateInfo-srcs">srcs</a>, <a href="#CrateInfo-type">type</a>, <a href="#CrateInfo-wrapped_crate_type">wrapped_crate_type</a>)
 </pre>
 
@@ -23,12 +23,13 @@ A provider containing general Crate information.
 | :------------- | :------------- |
 | <a id="CrateInfo-aliases"></a>aliases |  Dict[Label, String]: Renamed and aliased crates    |
 | <a id="CrateInfo-compile_data"></a>compile_data |  depset[File]: Compile data required by this crate.    |
-| <a id="CrateInfo-deps"></a>deps |  depset[Provider]: This crate's (rust or cc) dependencies' providers.    |
+| <a id="CrateInfo-deps"></a>deps |  depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.    |
 | <a id="CrateInfo-edition"></a>edition |  str: The edition of this crate.    |
 | <a id="CrateInfo-is_test"></a>is_test |  bool: If the crate is being compiled in a test context    |
 | <a id="CrateInfo-name"></a>name |  str: The name of this crate.    |
 | <a id="CrateInfo-output"></a>output |  File: The output File that will be produced, depends on crate type.    |
-| <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[CrateInfo]: This crate's rust proc_macro dependencies' providers.    |
+| <a id="CrateInfo-owner"></a>owner |  Label: The label of the target that produced this CrateInfo    |
+| <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.    |
 | <a id="CrateInfo-root"></a>root |  File: The source File entrypoint to this crate, eg. lib.rs    |
 | <a id="CrateInfo-rustc_env"></a>rustc_env |  Dict[String, String]: Additional <code>"key": "value"</code> environment variables to set for rustc.    |
 | <a id="CrateInfo-srcs"></a>srcs |  depset[File]: All source Files that are part of the crate.    |
@@ -41,8 +42,8 @@ A provider containing general Crate information.
 ## DepInfo
 
 <pre>
-DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>, <a href="#DepInfo-transitive_libs">transitive_libs</a>,
-        <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>)
+DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-link_search_path_files">link_search_path_files</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>,
+        <a href="#DepInfo-transitive_crate_outputs">transitive_crate_outputs</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>, <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>)
 </pre>
 
 A provider containing information about a Crate's dependencies.
@@ -54,9 +55,10 @@ A provider containing information about a Crate's dependencies.
 | :------------- | :------------- |
 | <a id="DepInfo-dep_env"></a>dep_env |  File: File with environment variables direct dependencies build scripts rely upon.    |
 | <a id="DepInfo-direct_crates"></a>direct_crates |  depset[AliasableDepInfo]    |
+| <a id="DepInfo-link_search_path_files"></a>link_search_path_files |  depset[File]: All transitive files containing search paths to pass to the linker    |
 | <a id="DepInfo-transitive_build_infos"></a>transitive_build_infos |  depset[BuildInfo]    |
+| <a id="DepInfo-transitive_crate_outputs"></a>transitive_crate_outputs |  depset[File]: All transitive crate outputs.    |
 | <a id="DepInfo-transitive_crates"></a>transitive_crates |  depset[CrateInfo]    |
-| <a id="DepInfo-transitive_libs"></a>transitive_libs |  List[File]: All transitive dependencies, not filtered by type.    |
 | <a id="DepInfo-transitive_noncrates"></a>transitive_noncrates |  depset[LinkerInput]: All transitive dependencies that aren't crates.    |
 
 
@@ -82,7 +84,7 @@ A collection of files either found within the `rust-stdlib` artifact or generate
 | <a id="StdLibInfo-core_files"></a>core_files |  List[File]: <code>.a</code> files related to the <code>core</code> and <code>adler</code> modules    |
 | <a id="StdLibInfo-dot_a_files"></a>dot_a_files |  Depset[File]: Generated <code>.a</code> files    |
 | <a id="StdLibInfo-self_contained_files"></a>self_contained_files |  List[File]: All <code>.o</code> files from the <code>self-contained</code> directory.    |
-| <a id="StdLibInfo-srcs"></a>srcs |  List[Target]: The original <code>src</code> attribute.    |
+| <a id="StdLibInfo-srcs"></a>srcs |  List[Target]: All targets from the original <code>srcs</code> attribute.    |
 | <a id="StdLibInfo-std_files"></a>std_files |  Depset[File]: <code>.a</code> files associated with the <code>std</code> module.    |
 | <a id="StdLibInfo-std_rlibs"></a>std_rlibs |  List[File]: All <code>.rlib</code> files    |
 

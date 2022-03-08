@@ -14,6 +14,7 @@ load(
     "load_rust_stdlib",
     "load_rustc_dev_nightly",
     "load_rustfmt",
+    "should_include_rustc_srcs",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
@@ -30,16 +31,45 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
 }
 
+def rules_rust_dependencies():
+    """Dependencies used in the implementation of `rules_rust`."""
+    maybe(
+        http_archive,
+        name = "rules_cc",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.1/rules_cc-0.0.1.tar.gz"],
+        sha256 = "4dccbfd22c0def164c8f47458bd50e0c7148f3d92002cdb459c2a96a68498241",
+    )
+
+    maybe(
+        http_archive,
+        name = "bazel_skylib",
+        urls = [
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.2.0/bazel-skylib-1.2.0.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.2.0/bazel-skylib-1.2.0.tar.gz",
+        ],
+        sha256 = "af87959afe497dc8dfd4c6cb66e1279cb98ccc84284619ebfec27d9c09a903de",
+    )
+
+    # Make the iOS simulator constraint available, which is referenced in abi_to_constraints()
+    # rules_rust does not require this dependency; it is just imported as a convenience for users.
+    maybe(
+        http_archive,
+        name = "build_bazel_apple_support",
+        sha256 = "76df040ade90836ff5543888d64616e7ba6c3a7b33b916aa3a4b68f342d1b447",
+        url = "https://github.com/bazelbuild/apple_support/releases/download/0.11.0/apple_support.0.11.0.tar.gz",
+    )
+
 # buildifier: disable=unnamed-macro
-def rust_repositories(
-        version = rust_common.default_version,
-        iso_date = None,
-        rustfmt_version = None,
-        edition = None,
+def rust_register_toolchains(
         dev_components = False,
-        sha256s = None,
+        edition = None,
         include_rustc_srcs = False,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
+        iso_date = None,
+        register_toolchains = True,
+        rustfmt_version = None,
+        sha256s = None,
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        version = rust_common.default_version):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -59,71 +89,59 @@ def rust_repositories(
     See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more details.
 
     Args:
-        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
-        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
-        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
-        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. Defaults to None.
+        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
             See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
+        register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
+        rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
+        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
+        version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
     """
-
     if dev_components and version != "nightly":
         fail("Rust version must be set to \"nightly\" to enable rustc-dev components")
 
     if not rustfmt_version:
         rustfmt_version = version
 
-    maybe(
-        http_archive,
-        name = "rules_cc",
-        url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.zip",
-        sha256 = "8c7e8bf24a2bf515713445199a677ee2336e1c487fa1da41037c6026de04bbc3",
-        strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
-        type = "zip",
-    )
-
-    maybe(
-        http_archive,
-        name = "bazel_skylib",
-        sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
-        urls = [
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-        ],
-    )
-
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        rust_repository_set(
+        maybe(
+            rust_repository_set,
             name = name,
+            dev_components = dev_components,
+            edition = edition,
             exec_triple = exec_triple,
             extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
-            version = version,
-            iso_date = iso_date,
-            rustfmt_version = rustfmt_version,
-            edition = edition,
-            dev_components = dev_components,
-            sha256s = sha256s,
             include_rustc_srcs = include_rustc_srcs,
+            iso_date = iso_date,
+            register_toolchain = register_toolchains,
+            rustfmt_version = rustfmt_version,
+            sha256s = sha256s,
             urls = urls,
+            version = version,
         )
+
+# buildifier: disable=unnamed-macro
+def rust_repositories(**kwargs):
+    """**Deprecated**: Use [rules_rust_dependencies](#rules_rust_dependencies) \
+    and [rust_register_toolchains](#rust_register_toolchains) directly.
+
+    Args:
+        **kwargs (dict): Keyword arguments for the `rust_register_toolchains` macro.
+    """
+    rules_rust_dependencies()
+
+    rust_register_toolchains(**kwargs)
 
 def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
 
     check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    # Determing whether or not to include rustc sources in the toolchain. The environment
-    # variable will always take precedence over the attribute.
-    include_rustc_srcs_env = ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
-    if include_rustc_srcs_env != None:
-        include_rustc_srcs = include_rustc_srcs_env.lower() in ["true", "1"]
-    else:
-        include_rustc_srcs = ctx.attr.include_rustc_srcs
-
-    if include_rustc_srcs:
+    # Conditionally download rustc sources. Generally used for `rust-analyzer`
+    if should_include_rustc_srcs(ctx):
         load_rust_src(ctx)
 
     build_components = [load_rust_compiler(ctx)]
@@ -171,6 +189,12 @@ rust_toolchain_repository = repository_rule(
         "selection from toolchain fetching."
     ),
     attrs = {
+        "auth": attr.string_dict(
+            doc = (
+                "Auth object compatible with repository_ctx.download to use when downloading files. " +
+                "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
+            ),
+        ),
         "dev_components": attr.bool(
             doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
             default = False,
@@ -256,7 +280,9 @@ def rust_repository_set(
         edition = None,
         dev_components = False,
         sha256s = None,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES):
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        auth = None,
+        register_toolchain = True):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -279,6 +305,9 @@ def rust_repository_set(
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
+            See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
     """
 
     rust_toolchain_repository(
@@ -294,6 +323,7 @@ def rust_repository_set(
         dev_components = dev_components,
         sha256s = sha256s,
         urls = urls,
+        auth = auth,
     )
 
     rust_toolchain_repository_proxy(
@@ -313,8 +343,9 @@ def rust_repository_set(
         ))
 
     # Register toolchains
-    native.register_toolchains(*all_toolchain_names)
-    native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
+    if register_toolchain:
+        native.register_toolchains(*all_toolchain_names)
+        native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
 
     # Inform users that they should be using the canonical name if it's not detected
     if "rules_rust" not in native.existing_rules():

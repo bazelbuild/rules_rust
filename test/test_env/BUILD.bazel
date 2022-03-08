@@ -1,8 +1,4 @@
-load(
-    "//rust:rust.bzl",
-    "rust_binary",
-    "rust_test",
-)
+load("//rust:defs.bzl", "rust_binary", "rust_test")
 
 rust_binary(
     name = "hello-world",
@@ -26,6 +22,5 @@ rust_test(
     env = {
         "FERRIS_SAYS": "Hello fellow Rustaceans!",
         "HELLO_WORLD_BIN_ROOTPATH": "$(rootpath :hello-world)",
-        "HELLO_WORLD_SRC_EXECPATH": "$(execpath :hello_world_main)",
     },
 )

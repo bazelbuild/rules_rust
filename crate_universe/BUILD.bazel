@@ -1,19 +1,130 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_library", "rust_test")
+load("//crate_universe:version.bzl", "VERSION")
 
-package(default_visibility = ["//visibility:public"])
-
-exports_files([
-    "Cargo.toml",
-    "Cargo.lock",
-])
-
-bzl_library(
-    name = "rules",
-    srcs = glob(["**/*.bzl"]),
-    deps = ["//crate_universe/private:bzl_srcs"],
+exports_files(
+    glob(["src/**"]) + [
+        "Cargo.toml",
+        "Cargo.lock",
+        "Cargo.Bazel.lock",
+        "defs.bzl",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "resolver_srcs",
-    srcs = glob(["srcs/**"]),
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        ":rust_srcs",
+        "//crate_universe/3rdparty:distro",
+        "//crate_universe/private:distro",
+        "//crate_universe/tools:distro",
+        "BUILD.bazel",
+        "Cargo.Bazel.lock",
+        "Cargo.lock",
+        "Cargo.toml",
+        "README.md",
+    ],
+    visibility = ["//:__subpackages__"],
 )
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["*.bzl"]) + [
+        "//crate_universe/3rdparty:bzl_srcs",
+        "//crate_universe/private:bzl_srcs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [":bzl_srcs"],
+    visibility = ["//visibility:public"],
+    deps = ["//rust:bzl_lib"],
+)
+
+filegroup(
+    name = "rust_srcs",
+    srcs = glob([
+        "src/**/*.rs",
+        "src/**/*.j2",
+    ]),
+    visibility = ["//:__subpackages__"],
+)
+
+TAGS = [
+    # https://github.com/rust-lang/rust-clippy/issues/8470
+    "noclippy",
+]
+
+rust_library(
+    name = "cargo_bazel",
+    srcs = glob(
+        include = ["src/**/*.rs"],
+        exclude = ["src/main.rs"],
+    ),
+    aliases = aliases(),
+    compile_data = glob(
+        include = ["src/**"],
+        exclude = ["src/**/*.rs"],
+    ),
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    tags = TAGS,
+    version = VERSION,
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(normal = True),
+)
+
+rust_binary(
+    name = "cargo_bazel_bin",
+    srcs = ["src/main.rs"],
+    tags = TAGS,
+    version = VERSION,
+    visibility = ["//visibility:public"],
+    deps = [":cargo_bazel"],
+)
+
+alias(
+    name = "bin",
+    actual = ":cargo_bazel_bin",
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "unit_test",
+    aliases = aliases(),
+    crate = ":cargo_bazel",
+    data = glob(["test_data/**"]) + [
+        "@rules_rust//rust/toolchain:current_exec_cargo_files",
+        "@rules_rust//rust/toolchain:current_exec_rustc_files",
+    ],
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+    rustc_env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_exec_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_exec_rustc_files)",
+    },
+    tags = TAGS,
+    deps = [
+        "@rules_rust//tools/runfiles",
+    ] + all_crate_deps(
+        normal_dev = True,
+    ),
+)
+
+rust_doc(
+    name = "rustdoc",
+    crate = ":cargo_bazel",
+    visibility = ["//visibility:public"],
+)
+
+# `rust_doc_test` does not currently work. See:
+# https://github.com/bazelbuild/rules_rust/issues/980
+#
+# rust_doc_test(
+#     name = "rustdoc_test",
+#     crate = ":cargo_bazel",
+# )

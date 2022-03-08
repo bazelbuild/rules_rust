@@ -41,6 +41,17 @@ def assert_argv_contains_prefix(env, action, prefix):
         ),
     )
 
+def assert_argv_contains_prefix_not(env, action, prefix):
+    for found_flag in action.argv:
+        if found_flag.startswith(prefix):
+            unittest.fail(
+                env,
+                "Expected an arg with prefix '{prefix}' to not appear in {args}".format(
+                    prefix = prefix,
+                    args = action.argv,
+                ),
+            )
+
 def assert_action_mnemonic(env, action, mnemonic):
     if not action.mnemonic == mnemonic:
         unittest.fail(
@@ -97,3 +108,14 @@ def assert_list_contains_adjacent_elements_not(env, list_under_test, adjacent_el
                         actual = list_under_test,
                     ),
                 )
+
+def assert_env_value(env, action, key, value):
+    asserts.true(
+        env,
+        action.env[key] == value,
+        "Expected env[{key}] to be equal to '{value}', got '{real_value}'".format(
+            key = key,
+            value = value,
+            real_value = action.env[key],
+        ),
+    )

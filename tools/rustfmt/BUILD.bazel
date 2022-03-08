@@ -1,5 +1,5 @@
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
-load(":rustfmt_utils.bzl", "aspect_repository")
+load("//tools:tool_utils.bzl", "aspect_repository")
 
 package(default_visibility = ["//visibility:public"])
 

@@ -28,13 +28,15 @@ http_archive(
     ],
 )
 
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
-rust_repositories()
+rules_rust_dependencies()
+
+rust_register_toolchains()
 ```
 
 The rules are under active development, as such the lastest commit on the
-`main` branch should be used. `main` is only tested against `3.5.0` as the
+`main` branch should be used. `main` is only tested against `4.0.0` as the
 minimum supported version of Bazel. Though previous versions may still be
 functional in certain environments.
 

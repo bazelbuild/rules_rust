@@ -1,11 +1,4 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_benchmark",
-    "rust_doc",
-    "rust_doc_test",
-    "rust_library",
-    "rust_test",
-)
+load("@rules_rust//rust:defs.bzl", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "fibonacci",
@@ -15,16 +8,6 @@ rust_library(
 rust_test(
     name = "fibonacci_test",
     crate = ":fibonacci",
-)
-
-rust_benchmark(
-    name = "fibonacci_bench",
-    srcs = ["benches/fibonacci_bench.rs"],
-    tags = [
-        "manual",
-        "noci",
-    ],
-    deps = [":fibonacci"],
 )
 
 rust_doc(

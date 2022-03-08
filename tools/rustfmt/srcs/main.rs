@@ -109,7 +109,7 @@ fn apply_rustfmt(options: &Config, targets: &[String]) {
 
     for target in targets.iter() {
         // Replace any `:` characters and strip leading slashes
-        let target_path = target.replace(":", "/").trim_start_matches('/').to_owned();
+        let target_path = target.replace(':', "/").trim_start_matches('/').to_owned();
 
         // Find a manifest for the current target. Not all targets will have one
         let manifest = options.workspace.join("bazel-bin").join(format!(

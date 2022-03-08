@@ -8,6 +8,7 @@
 /examples/bazel-*
 /examples/crate_universe/*/bazel-*
 /docs/bazel-*
+user.bazelrc
 
 # rustfmt
 *.rs.bk
@@ -24,3 +25,6 @@
 
 # BazelCI
 bazelci.py
+
+# rust-analyzer
+rust-project.json

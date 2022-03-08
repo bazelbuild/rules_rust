@@ -1,9 +1,4 @@
-load(
-    "//rust:rust.bzl",
-    "rust_doc_test",
-    "rust_library",
-    "rust_test",
-)
+load("//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "mod1",

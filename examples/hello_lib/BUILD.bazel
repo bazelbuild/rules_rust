@@ -1,11 +1,4 @@
-load(
-    "@rules_rust//rust:rust.bzl",
-    "rust_analyzer",
-    "rust_doc",
-    "rust_doc_test",
-    "rust_library",
-    "rust_test",
-)
+load("@rules_rust//rust:defs.bzl", "rust_analyzer", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -19,50 +12,37 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
 )
 
-rust_library(
-    name = "hello_dylib",
-    srcs = [
-        "src/greeter.rs",
-        "src/lib.rs",
-    ],
-    crate_type = "dylib",
-)
-
-rust_library(
+rust_shared_library(
     name = "hello_cdylib",
     srcs = [
         "src/greeter.rs",
         "src/lib.rs",
     ],
-    crate_type = "cdylib",
 )
 
-rust_library(
+rust_static_library(
     name = "hello_staticlib",
     srcs = [
         "src/greeter.rs",
         "src/lib.rs",
     ],
-    crate_type = "staticlib",
 )
 
 # Regression test for #368: static lib with dependencies fail.
-rust_library(
+rust_static_library(
     name = "hello_test_staticlib",
     srcs = [
         "tests/greeting.rs",
     ],
-    crate_type = "staticlib",
     deps = [":hello_lib"],
 )
 
 # Regression test for #368: cdylib lib with dependencies fail.
-rust_library(
+rust_shared_library(
     name = "hello_test_cdylib",
     srcs = [
         "tests/greeting.rs",
     ],
-    crate_type = "cdylib",
     deps = [":hello_lib"],
 )
 

@@ -15,14 +15,19 @@ default_windows_targets: &default_windows_targets
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
   - "-//test/rustfmt/..."
-  # rust_doc_test targets are currently broken on windows
-  # see: https://github.com/bazelbuild/rules_rust/issues/887
-  - "-//test/chained_direct_deps:mod3_doc_test"
+crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_local_manifests:crates_vendor"
+  - "//vendor_local_pkgs:crates_vendor"
+  - "//vendor_remote_manifests:crates_vendor_manifests"
+  - "//vendor_remote_pkgs:crates_vendor_pkgs"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   rbe_ubuntu1604:
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
       - "//..."
     test_targets:
@@ -30,8 +35,6 @@ tasks:
       - "//..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -52,21 +55,45 @@ tasks:
   rbe_ubuntu1604_with_aspects:
     name: With Aspects
     platform: rbe_ubuntu1604
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
-      # rust_doc_test is likely not fully sandboxed
-      - "-//test/chained_direct_deps:mod3_doc_test"
     build_flags: *aspects_flags
+  rbe_ubuntu1604_rolling_with_aspects:
+    name: RBE Rolling Bazel Version With Aspects
+    platform: rbe_ubuntu1604
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_targets: *default_linux_targets
+    test_targets:
+      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+      - "..."
+      - "//test/..."
+      - "-//test/conflicting_deps:conflicting_deps_test"
+    build_flags: *aspects_flags
+    soft_fail: yes
+    bazel: "rolling"
   macos_with_aspects:
     name: With Aspects
     platform: macos
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     build_flags: *aspects_flags
+  macos_rolling_with_aspects:
+    name: "Macos Rolling Bazel Version With Aspects"
+    platform: macos
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    build_flags: *aspects_flags
+    soft_fail: yes
+    bazel: "rolling"
   windows_with_aspects:
     name: With Aspects
     platform: windows
@@ -76,6 +103,17 @@ tasks:
       - "--config=clippy"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
+  windows_rolling_with_aspects:
+    name: "Windows Rolling Bazel Version With Aspects"
+    platform: windows
+    build_flags:
+      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+    soft_fail: yes
+    bazel: "rolling"
   ubuntu2004_clang:
     name: With Clang
     platform: ubuntu2004
@@ -87,16 +125,37 @@ tasks:
       # - "--linkopt=-fuse-ld=lld"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+  ubuntu2004_rolling_clang:
+    name: Rolling Bazel Version With Clang
+    platform: ubuntu2004
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--repo_env=CC=clang"
+      # TODO(hlopko): Make this work (some tests were failing)
+      # - "--linkopt=-fuse-ld=lld"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    soft_fail: yes
+    bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "3.5.0"
+    bazel: "4.0.0"
     platform: ubuntu1804
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags: *aspects_flags
+  ubuntu2004_rolling_with_aspects:
+    name: "Rolling Bazel Version With Aspects"
+    bazel: "rolling"
+    platform: ubuntu2004
+    soft_fail: yes
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags: *aspects_flags
@@ -118,6 +177,11 @@ tasks:
     platform: ubuntu2004
     run_targets:
       - "//test/rustfmt:test_runner"
+  rust_analyzer_tests:
+    name: Rust-Analyzer Tests
+    platform: ubuntu2004
+    run_targets:
+      - "//test/rust_analyzer:rust_analyzer_test"
   ubuntu2004_examples:
     name: Examples
     platform: ubuntu2004
@@ -127,6 +191,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  ubuntu2004_examples_rolling:
+    name: "Examples with Rolling Bazel Version"
+    platform: ubuntu2004
+    working_directory: examples
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
+    soft_fail: yes
   rbe_ubuntu1604_examples:
     name: Examples
     platform: rbe_ubuntu1604
@@ -136,12 +210,14 @@ tasks:
       - "//..."
       # TODO: This requires an updated `rules_foreign_cc`
       - "-//sys/..."
-      # rust_doc_test is likely not fully sandboxed
-      - "-//fibonacci:fibonacci_doc_test"
-      - "-//hello_lib:hello_lib_doc_test"
-      - "-//ffi/rust_calling_c/simple/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
+      # The bindgen rules currently do not work on RBE
+      # see: https://github.com/bazelbuild/rules_rust/issues/919
+      - "-//bindgen/..."
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *rbe_examples_targets
     test_targets: *rbe_examples_targets
     build_flags: *aspects_flags
@@ -169,23 +245,20 @@ tasks:
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
-      - "-//ffi/rust_calling_c:matrix_dynamically_linked"
-      - "-//ffi/rust_calling_c/simple/..."
+      # The bindgen rules currently do not work on windows
+      # see: https://github.com/bazelbuild/rules_rust/issues/919
+      - "-//bindgen/..."
+      # The proto rules do not work on windows
       - "-//proto/..."
+      # The wasm rules do not work on windows
       - "-//wasm/..."
-      # rust_doc_test targets are currently broken on windows
-      # see: https://github.com/bazelbuild/rules_rust/issues/887
-      - "-//hello_lib:hello_lib_doc_test"
-      - "-//fibonacci:fibonacci_doc_test"
     build_targets: *windows_targets
     test_targets: *windows_targets
   crate_universe_examples_ubuntu2004:
     name: Crate Universe Examples
     platform: ubuntu2004
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -194,9 +267,11 @@ tasks:
   crate_universe_rbe_ubuntu1604:
     name: Crate Universe Examples
     platform: rbe_ubuntu1604
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    run_targets: *crate_universe_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -205,9 +280,8 @@ tasks:
   crate_universe_examples_macos:
     name: Crate Universe Examples
     platform: macos
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -216,22 +290,16 @@ tasks:
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
-    environment:
-      RULES_RUST_CRATE_UNIVERSE_BOOTSTRAP: true
     working_directory: examples/crate_universe
-    build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-      - "--config=rustfmt"
-      - "--config=clippy"
-    crate_universe_windows_targets: &crate_universe_windows_targets
+    batch_commands:
+      - echo startup --windows_enable_symlinks >> user.bazelrc
+      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
+    run_targets: *crate_universe_vendor_example_targets
+    build_flags: *aspects_flags
+    build_targets:
       - "//..."
-      # TODO: There are windows specific build issues in the generated
-      # dependencies. This should be fixed and all testing enabled.
-      - "-//uses_proc_macro/..."
-      - "-//uses_sys_crate/..."
-    build_targets: *crate_universe_windows_targets
-    # TODO: fix test targets in `crate_universe_windows_targets`
-    test_targets: *crate_universe_windows_targets
+    test_targets:
+      - "//..."
 buildifier:
   version: latest
   warnings: "all"

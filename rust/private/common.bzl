@@ -17,7 +17,7 @@
 This module is meant to be used by custom rules that need to compile Rust code
 and cannot simply rely on writing a macro that wraps `rust_library`. This module
 provides the lower-level interface to Rust providers, actions, and functions.
-Do not load this file directly; instead, load the top-level `rust.bzl` file,
+Do not load this file directly; instead, load the top-level `defs.bzl` file,
 which exports the `rust_common` struct.
 
 In the Bazel lingo, `rust_common` gives the access to the Rust Sandwich API.
@@ -31,7 +31,7 @@ load(":providers.bzl", "CrateInfo", "DepInfo", "StdLibInfo")
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.54.0"
+DEFAULT_RUST_VERSION = "1.59.0"
 DEFAULT_RUST_EDITION = "2018"
 
 def _create_crate_info(**kwargs):

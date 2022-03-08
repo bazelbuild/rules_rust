@@ -20,13 +20,13 @@ load(
 )
 load(
     "//rust/private:clippy.bzl",
+    _capture_clippy_output = "capture_clippy_output",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
     "//rust/private:rust.bzl",
-    _rust_benchmark = "rust_benchmark",
     _rust_binary = "rust_binary",
     _rust_library = "rust_library",
     _rust_proc_macro = "rust_proc_macro",
@@ -43,6 +43,8 @@ load(
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_exec_rustc_flags = "extra_exec_rustc_flags",
+    _extra_rustc_flags = "extra_rustc_flags",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -79,9 +81,6 @@ rust_test = _rust_test
 rust_test_suite = _rust_test_suite
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_benchmark = _rust_benchmark
-# See @rules_rust//rust/private:rust.bzl for a complete description.
-
 rust_doc = _rust_doc
 # See @rules_rust//rust/private:rustdoc.bzl for a complete description.
 
@@ -94,7 +93,16 @@ rust_clippy_aspect = _rust_clippy_aspect
 rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
+capture_clippy_output = _capture_clippy_output
+# See @rules_rust//rust/private:clippy.bzl for a complete description.
+
 error_format = _error_format
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+extra_rustc_flags = _extra_rustc_flags
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+extra_exec_rustc_flags = _extra_exec_rustc_flags
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common

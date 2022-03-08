@@ -1,12 +1,24 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
+load("//rust/private:stamp.bzl", "stamp_build_setting")
 
 bzl_library(
-    name = "rules",
-    srcs = glob(
-        ["**/*.bzl"],
-    ),
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
     visibility = ["//rust:__subpackages__"],
-    deps = [
-        "//rust/platform:rules",
-    ],
+    deps = ["//rust/platform:bzl_lib"],
+)
+
+alias(
+    name = "rules",
+    actual = ":bzl_lib",
+    deprecation = "Please use the `@rules_rust//private:bzl_lib` target instead",
+    visibility = ["//rust:__subpackages__"],
+)
+
+stamp_build_setting(name = "stamp")
+
+rust_analyzer_detect_sysroot(
+    name = "rust_analyzer_detect_sysroot",
+    visibility = ["//visibility:public"],
 )

@@ -1,0 +1,22 @@
+load("@crate_index_extra_members//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "extra_workspace_member",
+    srcs = ["src/main.rs"],
+    data = ["@crate_index_extra_members//:texture-synthesis-cli__texture-synthesis"],
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_env = {
+        "TEXTURE_SYNTHESIS_CLI": "$(rootpath @crate_index_extra_members//:texture-synthesis-cli__texture-synthesis)",
+    },
+    deps = all_crate_deps(),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":extra_workspace_member",
+    data = ["@crate_index_extra_members//:texture-synthesis-cli__texture-synthesis"],
+    rustc_env = {
+        "TEXTURE_SYNTHESIS_CLI": "$(rootpath @crate_index_extra_members//:texture-synthesis-cli__texture-synthesis)",
+    },
+)

@@ -141,7 +141,7 @@ _build_file_for_stdlib_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
 
 rust_stdlib_filegroup(
-    name = "rust_lib-{target_triple}",
+    name = "rust_std-{target_triple}",
     srcs = glob(
         [
             "lib/rustlib/{target_triple}/lib/*.rlib",
@@ -152,6 +152,13 @@ rust_stdlib_filegroup(
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
         allow_empty = True,
     ),
+    visibility = ["//visibility:public"],
+)
+
+# For legacy support
+alias(
+    name = "rust_lib-{target_triple}",
+    actual = "rust_std-{target_triple}",
     visibility = ["//visibility:public"],
 )
 """
@@ -177,9 +184,9 @@ _build_file_for_rust_toolchain_template = """\
 rust_toolchain(
     name = "{toolchain_name}_impl",
     rust_doc = "@{workspace_name}//:rustdoc",
-    rust_lib = "@{workspace_name}//:rust_lib-{target_triple}",
+    rust_std = "@{workspace_name}//:rust_std-{target_triple}",
     rustc = "@{workspace_name}//:rustc",
-    rustfmt = "@{workspace_name}//:rustfmt_bin",
+    rustfmt = {rustfmt_label},
     cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
     rustc_lib = "@{workspace_name}//:rustc_lib",
@@ -203,6 +210,7 @@ def BUILD_for_rust_toolchain(
         target_triple,
         include_rustc_srcs,
         default_edition,
+        include_rustfmt,
         stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -213,6 +221,7 @@ def BUILD_for_rust_toolchain(
         target_triple (str): The rust-style target triple of the tool
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         default_edition (str): Default Rust edition.
+        include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -228,6 +237,9 @@ def BUILD_for_rust_toolchain(
     rustc_srcs = "None"
     if include_rustc_srcs:
         rustc_srcs = "\"@{workspace_name}//lib/rustlib/src:rustc_srcs\"".format(workspace_name = workspace_name)
+    rustfmt_label = "None"
+    if include_rustfmt:
+        rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
@@ -241,6 +253,7 @@ def BUILD_for_rust_toolchain(
         default_edition = default_edition,
         exec_triple = exec_triple,
         target_triple = target_triple,
+        rustfmt_label = rustfmt_label,
     )
 
 _build_file_for_toolchain_template = """\
@@ -307,6 +320,23 @@ def load_rust_compiler(ctx):
 
     return compiler_build_file
 
+def should_include_rustc_srcs(repository_ctx):
+    """Determing whether or not to include rustc sources in the toolchain.
+
+    Args:
+        repository_ctx (repository_ctx): The repository rule's context object
+
+    Returns:
+        bool: Whether or not to include rustc source files in a `rustc_toolchain`
+    """
+
+    # The environment variable will always take precedence over the attribute.
+    include_rustc_srcs_env = repository_ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
+    if include_rustc_srcs_env != None:
+        return include_rustc_srcs_env.lower() in ["true", "1"]
+
+    return getattr(repository_ctx.attr, "include_rustc_srcs", False)
+
 def load_rust_src(ctx):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
@@ -323,6 +353,7 @@ def load_rust_src(ctx):
         url,
         output = archive_path,
         sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or "",
+        auth = _make_auth_dict(ctx, [url]),
     )
     ctx.extract(
         archive_path,
@@ -372,11 +403,12 @@ def load_rust_stdlib(ctx, target_triple):
             target_triple = target_triple,
         ),
         exec_triple = ctx.attr.exec_triple,
-        include_rustc_srcs = ctx.attr.include_rustc_srcs,
+        include_rustc_srcs = should_include_rustc_srcs(ctx),
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
+        include_rustfmt = not (not ctx.attr.rustfmt_version),
     )
 
     return stdlib_build_file + toolchain_build_file
@@ -536,6 +568,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         sha256 = getattr(ctx.attr, "sha256s", dict()).get(tool_suburl) or
                  FILE_KEY_TO_SHA.get(tool_suburl) or
                  sha256,
+        auth = _make_auth_dict(ctx, urls),
     )
     for subdirectory in tool_subdirectories:
         ctx.extract(
@@ -543,3 +576,12 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             output = "",
             stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
+
+def _make_auth_dict(ctx, urls):
+    auth = getattr(ctx.attr, "auth", {})
+    if not auth:
+        return {}
+    ret = {}
+    for url in urls:
+        ret[url] = auth
+    return ret

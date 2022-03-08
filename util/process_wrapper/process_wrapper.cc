@@ -36,10 +36,14 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
     environment_block.push_back(envp[i]);
   }
 
+  System::EnvironmentBlock environment_file_block;
+
   using Subst = std::pair<System::StrType, System::StrType>;
 
   System::StrType exec_path;
   std::vector<Subst> subst_mappings;
+  std::vector<Subst> stamp_mappings;
+  System::StrType volatile_status_file;
   System::StrType stdout_file;
   System::StrType stderr_file;
   System::StrType touch_file;
@@ -76,8 +80,17 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
         value = System::GetWorkingDirectory();
       }
       subst_mappings.push_back({std::move(key), std::move(value)});
+    } else if (arg == PW_SYS_STR("--volatile-status-file")) {
+      if (!volatile_status_file.empty()) {
+        std::cerr << "process wrapper error: \"--volatile-status-file\" can "
+                     "only appear once.\n";
+        return -1;
+      }
+      if (!ReadStampStatusToArray(argv[i], stamp_mappings)) {
+        return -1;
+      }
     } else if (arg == PW_SYS_STR("--env-file")) {
-      if (!ReadFileToArray(argv[i], environment_block)) {
+      if (!ReadFileToArray(argv[i], environment_file_block)) {
         return -1;
       }
     } else if (arg == PW_SYS_STR("--arg-file")) {
@@ -140,6 +153,23 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
       return -1;
     }
   }
+
+  // Stamp any format string in an environment variable block
+  for (const Subst& stamp : stamp_mappings) {
+    System::StrType token = PW_SYS_STR("{");
+    token += stamp.first;
+    token.push_back('}');
+    for (System::StrType& env : environment_file_block) {
+      ReplaceToken(env, token, stamp.second);
+    }
+  }
+
+  // Join environment variables arrays
+  environment_block.reserve(environment_block.size() +
+                            environment_file_block.size());
+  environment_block.insert(environment_block.end(),
+                           environment_file_block.begin(),
+                           environment_file_block.end());
 
   if (subst_mappings.size()) {
     for (const Subst& subst : subst_mappings) {

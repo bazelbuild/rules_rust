@@ -10,9 +10,10 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -53,7 +54,7 @@ rust_binary(
         ":docopt",
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_wasm_bindgen__regex__1_5_4//:regex",
-        "@rules_rust_wasm_bindgen__serde__1_0_127//:serde",
+        "@rules_rust_wasm_bindgen__serde__1_0_130//:serde",
         "@rules_rust_wasm_bindgen__strsim__0_10_0//:strsim",
     ],
 )
@@ -76,7 +77,6 @@ rust_library(
     crate_features = [
     ],
     crate_root = "src/lib.rs",
-    crate_type = "lib",
     data = [],
     edition = "2018",
     rustc_flags = [
@@ -91,7 +91,7 @@ rust_library(
     deps = [
         "@rules_rust_wasm_bindgen__lazy_static__1_4_0//:lazy_static",
         "@rules_rust_wasm_bindgen__regex__1_5_4//:regex",
-        "@rules_rust_wasm_bindgen__serde__1_0_127//:serde",
+        "@rules_rust_wasm_bindgen__serde__1_0_130//:serde",
         "@rules_rust_wasm_bindgen__strsim__0_10_0//:strsim",
     ],
 )

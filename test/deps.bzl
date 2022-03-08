@@ -5,7 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
 
 _LIBC_BUILD_FILE_CONTENT = """\
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "libc",

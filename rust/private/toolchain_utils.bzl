@@ -11,7 +11,7 @@ def _toolchain_files_impl(ctx):
                 toolchain.cargo,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "clippy":
         files = depset([toolchain.clippy_driver])
@@ -20,32 +20,32 @@ def _toolchain_files_impl(ctx):
                 toolchain.clippy_driver,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustc":
         files = depset([toolchain.rustc])
         runfiles = ctx.runfiles(
             files = [toolchain.rustc],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustdoc":
         files = depset([toolchain.rust_doc])
         runfiles = ctx.runfiles(
             files = [toolchain.rust_doc],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustfmt":
         files = depset([toolchain.rustfmt])
         runfiles = ctx.runfiles(
             files = [toolchain.rustfmt],
-            transitive_files = toolchain.rustc_lib.files,
+            transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustc_lib":
-        files = toolchain.rustc_lib.files
+        files = toolchain.rustc_lib
     elif ctx.attr.tool == "rustc_srcs":
         files = toolchain.rustc_srcs.files
-    elif ctx.attr.tool == "rust_lib" or ctx.attr.tool == "rust_stdlib":
-        files = toolchain.rust_lib.files
+    elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
+        files = toolchain.rust_std
     else:
         fail("Unsupported tool: ", ctx.attr.tool)
 
@@ -63,13 +63,14 @@ toolchain_files = rule(
             values = [
                 "cargo",
                 "clippy",
+                "rust_lib",
+                "rust_std",
+                "rust_stdlib",
+                "rustc_lib",
+                "rustc_srcs",
                 "rustc",
                 "rustdoc",
                 "rustfmt",
-                "rustc_lib",
-                "rustc_srcs",
-                "rust_lib",
-                "rust_stdlib",
             ],
             mandatory = True,
         ),

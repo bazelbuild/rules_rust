@@ -1,0 +1,52 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+cc_library(
+    name = "simple",
+    srcs = ["simple.h"],
+)
+
+rust_bindgen_library(
+    name = "simple_bindgen",
+    bindgen_flags = [
+        "--allowlist-var=SIMPLE_.*",
+    ],
+    cc_lib = ":simple",
+    header = "simple.h",
+)
+
+rust_binary(
+    name = "simple_example",
+    srcs = ["main.rs"],
+    deps = [":simple_bindgen"],
+)
+
+rust_test(
+    name = "simple_test",
+    crate = ":simple_example",
+)
+
+# Same as above, except disabling formatting on bindgen.
+rust_bindgen_library(
+    name = "simple_bindgen_unformatted",
+    bindgen_flags = [
+        "--allowlist-var=SIMPLE_.*",
+    ],
+    cc_lib = ":simple",
+    crate_name = "simple_bindgen",
+    header = "simple.h",
+    rustfmt = False,
+)
+
+rust_binary(
+    name = "simple_example_unformatted",
+    srcs = ["main.rs"],
+    crate_name = "simple_example",
+    deps = [":simple_bindgen_unformatted"],
+)
+
+rust_test(
+    name = "simple_test_unformatted",
+    crate = ":simple_example_unformatted",
+)

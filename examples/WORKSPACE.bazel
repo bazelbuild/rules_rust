@@ -8,9 +8,11 @@ local_repository(
     path = "..",
 )
 
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
-rust_repositories(include_rustc_srcs = True)
+rules_rust_dependencies()
+
+rust_register_toolchains(include_rustc_srcs = True)
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
@@ -64,9 +66,9 @@ node_repositories()
 
 http_archive(
     name = "rules_foreign_cc",
-    sha256 = "33a5690733c5cc2ede39cb62ebf89e751f2448e27f20c8b2fbbc7d136b166804",
-    strip_prefix = "rules_foreign_cc-0.5.1",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.5.1.tar.gz",
+    sha256 = "69023642d5781c68911beda769f91fcbc8ca48711db935a75da7f6536b65047f",
+    strip_prefix = "rules_foreign_cc-0.6.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.6.0.tar.gz",
 )
 
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
@@ -83,7 +85,7 @@ local_repository(
 )
 
 _LIBC_BUILD_FILE_CONTENT = """\
-load("@rules_rust//rust:rust.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "libc",
