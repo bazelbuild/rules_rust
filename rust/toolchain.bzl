@@ -533,7 +533,7 @@ rust_toolchain = rule(
             ),
             mandatory = True,
         ),
-        "llvm_tools": attr.label_list(
+        "llvm_tools": attr.label(
             doc = "LLVM tools that are shipped with the Rust toolchain.",
             allow_files = True,
         ),
