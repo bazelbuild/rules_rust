@@ -105,7 +105,7 @@ without_process_wrapper = rule(
             executable = True,
         ),
         "_allowlist_function_transition": attr.label(
-            default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
+            default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
     },
 )
