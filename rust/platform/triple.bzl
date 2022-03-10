@@ -38,6 +38,10 @@ def triple(triple):
     system = component_parts[2]
     abi = None
 
+    if system == "androideabi":
+        system = "android"
+        abi = "eabi"
+
     if len(component_parts) == 4:
         abi = component_parts[3]
 

@@ -68,6 +68,7 @@ def rust_register_toolchains(
         register_toolchains = True,
         rustfmt_version = None,
         sha256s = None,
+        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         version = rust_common.default_version):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
@@ -97,6 +98,7 @@ def rust_register_toolchains(
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
         rustfmt_version (str, optional): The version of rustfmt. Either "nightly", "beta", or an exact version. Defaults to `version` if not specified.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
+        extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         version (str, optional): The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.
     """
@@ -113,7 +115,7 @@ def rust_register_toolchains(
             dev_components = dev_components,
             edition = edition,
             exec_triple = exec_triple,
-            extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
+            extra_target_triples = extra_target_triples,
             include_rustc_srcs = include_rustc_srcs,
             iso_date = iso_date,
             register_toolchain = register_toolchains,

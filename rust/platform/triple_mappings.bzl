@@ -1,5 +1,7 @@
 """Helpers for constructing supported Rust platform triples"""
 
+load("//rust/platform:triple.bzl", "triple")
+
 # All T1 Platforms should be supported, but aren't, see inline notes.
 SUPPORTED_T1_PLATFORM_TRIPLES = [
     "i686-apple-darwin",
@@ -196,58 +198,44 @@ def abi_to_constraints(abi):
         # figure out how they're doing this
         return []
 
-def triple_to_system(triple):
+def triple_to_system(target_triple):
     """Returns a system name for a given platform triple
 
+    **Deprecated**: Use triple() from triple.bzl directly.
+
     Args:
-        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+        target_triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
 
     Returns:
         str: A system name
     """
-    if triple == "wasm32-wasi":
-        return "wasi"
+    return triple(target_triple).system
 
-    component_parts = triple.split("-")
-    if len(component_parts) < 3:
-        fail("Expected target triple to contain at least three sections separated by '-'")
-
-    return component_parts[2]
-
-def triple_to_arch(triple):
+def triple_to_arch(target_triple):
     """Returns a system architecture name for a given platform triple
 
+    **Deprecated**: Use triple() from triple.bzl directly.
+
     Args:
-        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+        target_triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
 
     Returns:
         str: A cpu architecture
     """
-    if triple == "wasm32-wasi":
-        return "wasi"
+    return triple(target_triple).arch
 
-    component_parts = triple.split("-")
-    if len(component_parts) < 3:
-        fail("Expected target triple to contain at least three sections separated by '-'")
-
-    return component_parts[0]
-
-def triple_to_abi(triple):
+def triple_to_abi(target_triple):
     """Returns a system abi name for a given platform triple
 
+    **Deprecated**: Use triple() from triple.bzl directly.
+
     Args:
-        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+        target_triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
 
     Returns:
         str: The triple's abi
     """
-    component_parts = triple.split("-")
-    if len(component_parts) < 3:
-        fail("Expected target triple to contain at least three sections separated by '-'")
-
-    if len(component_parts) >= 4:
-        return component_parts[3]
-    return None
+    return triple(target_triple).system
 
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]
@@ -261,42 +249,32 @@ def system_to_binary_ext(system):
 def system_to_stdlib_linkflags(system):
     return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
 
-def triple_to_constraint_set(triple):
+def triple_to_constraint_set(target_triple):
     """Returns a set of constraints for a given platform triple
 
     Args:
-        triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
+        target_triple (str): A platform triple. eg: `x86_64-unknown-linux-gnu`
 
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if triple == "wasm32-wasi":
+    if target_triple == "wasm32-wasi":
         return [
             "@rules_rust//rust/platform/cpu:wasm32",
             "@rules_rust//rust/platform/os:wasi",
         ]
-    if triple == "wasm32-unknown-unknown":
+    if target_triple == "wasm32-unknown-unknown":
         return [
             "@rules_rust//rust/platform/cpu:wasm32",
             "@rules_rust//rust/platform/os:unknown",
         ]
 
-    component_parts = triple.split("-")
-    if len(component_parts) < 3:
-        fail("Expected target triple to contain at least three sections separated by '-'")
-
-    cpu_arch = component_parts[0]
-    vendor = component_parts[1]
-    system = component_parts[2]
-    abi = None
-
-    if len(component_parts) == 4:
-        abi = component_parts[3]
+    triple_struct = triple(target_triple)
 
     constraint_set = []
-    constraint_set += cpu_arch_to_constraints(cpu_arch)
-    constraint_set += vendor_to_constraints(vendor)
-    constraint_set += system_to_constraints(system)
-    constraint_set += abi_to_constraints(abi)
+    constraint_set += cpu_arch_to_constraints(triple_struct.arch)
+    constraint_set += vendor_to_constraints(triple_struct.vendor)
+    constraint_set += system_to_constraints(triple_struct.system)
+    constraint_set += abi_to_constraints(triple_struct.abi)
 
     return constraint_set
