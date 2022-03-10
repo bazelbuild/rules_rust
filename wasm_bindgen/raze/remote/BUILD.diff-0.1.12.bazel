@@ -48,6 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=diff",
         "manual",
     ],
     version = "0.1.12",

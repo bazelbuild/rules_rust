@@ -44,6 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=lazycell",
         "manual",
     ],
     version = "1.3.0",

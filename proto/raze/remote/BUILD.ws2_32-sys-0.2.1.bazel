@@ -55,6 +55,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=ws2_32",
         "manual",
     ],
     version = "0.2.1",

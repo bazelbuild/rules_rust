@@ -65,6 +65,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=rouille",
         "manual",
     ],
     version = "3.4.0",

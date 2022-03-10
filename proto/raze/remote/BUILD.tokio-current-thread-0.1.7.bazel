@@ -44,6 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=tokio-current-thread",
         "manual",
     ],
     version = "0.1.7",

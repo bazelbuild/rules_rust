@@ -76,6 +76,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=bzip2_sys",
         "manual",
     ],
     version = "0.1.9+1.0.8",

@@ -95,6 +95,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=clang-sys",
         "manual",
     ],
     version = "1.2.0",

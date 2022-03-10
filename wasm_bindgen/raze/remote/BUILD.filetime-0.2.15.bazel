@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=filetime",
         "manual",
     ],
     version = "0.2.15",

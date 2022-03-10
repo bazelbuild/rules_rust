@@ -75,6 +75,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=bitflags",
         "manual",
     ],
     version = "1.2.1",

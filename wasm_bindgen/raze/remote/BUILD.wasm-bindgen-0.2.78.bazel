@@ -82,6 +82,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wasm-bindgen",
         "manual",
     ],
     version = "0.2.78",

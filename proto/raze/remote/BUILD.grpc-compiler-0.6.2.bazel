@@ -46,6 +46,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=protoc-gen-rust-grpc",
         "manual",
     ],
     version = "0.6.2",
@@ -70,6 +71,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=grpc-compiler",
         "manual",
     ],
     version = "0.6.2",

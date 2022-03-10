@@ -48,6 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wasmparser",
         "manual",
     ],
     version = "0.81.0",

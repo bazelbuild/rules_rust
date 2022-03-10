@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=fuchsia-zircon-sys",
         "manual",
     ],
     version = "0.3.3",

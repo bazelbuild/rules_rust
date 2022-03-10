@@ -47,6 +47,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=difference",
         "manual",
     ],
     version = "2.0.0",
@@ -76,6 +77,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=difference",
         "manual",
     ],
     version = "2.0.0",

@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=predicates-tree",
         "manual",
     ],
     version = "1.0.4",

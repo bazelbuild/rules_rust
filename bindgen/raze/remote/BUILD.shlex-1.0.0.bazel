@@ -44,6 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=shlex",
         "manual",
     ],
     version = "1.0.0",

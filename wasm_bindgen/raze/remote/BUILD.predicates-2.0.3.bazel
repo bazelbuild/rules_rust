@@ -48,6 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=predicates",
         "manual",
     ],
     version = "2.0.3",

@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wast",
         "manual",
     ],
     version = "21.0.0",

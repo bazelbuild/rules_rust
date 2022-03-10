@@ -46,6 +46,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=docopt-wordlist",
         "manual",
     ],
     version = "1.1.1",
@@ -84,6 +85,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=docopt",
         "manual",
     ],
     version = "1.1.1",

@@ -92,6 +92,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=bindgen",
         "manual",
     ],
     version = "0.58.1",
@@ -138,6 +139,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=bindgen",
         "manual",
     ],
     version = "0.58.1",

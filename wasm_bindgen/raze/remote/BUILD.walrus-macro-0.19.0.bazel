@@ -44,6 +44,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=walrus-macro",
         "manual",
     ],
     version = "0.19.0",
