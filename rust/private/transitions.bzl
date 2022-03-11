@@ -68,13 +68,13 @@ with_import_macro_bootstrapping_mode = rule(
 def _without_process_wrapper_transition_impl(_settings, _attr):
     """This transition allows rust_* rules to invoke rustc without process_wrapper."""
     return {
-        "//rust/settings:use_process_wrapper": False,
+        "@rules_rust//rust/settings:use_process_wrapper": False,
     }
 
 without_process_wrapper_transition = transition(
     implementation = _without_process_wrapper_transition_impl,
     inputs = [],
-    outputs = ["//rust/settings:use_process_wrapper"],
+    outputs = ["@rules_rust//rust/settings:use_process_wrapper"],
 )
 
 def _without_process_wrapper_impl(ctx):

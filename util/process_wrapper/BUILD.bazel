@@ -22,7 +22,7 @@ cc_binary(
 config_setting(
     name = "use_fake_process_wrapper",
     flag_values = {
-        "//rust/settings:use_process_wrapper": "False",
+        "@rules_rust//rust/settings:use_process_wrapper": "False",
     },
 )
 
