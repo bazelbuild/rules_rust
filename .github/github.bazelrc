@@ -1,0 +1,20 @@
+# Bazel settings for use in Github CI
+
+# Always display the flags being used
+common --announce_rc
+
+# These settings make the windows workers behave similarly to unix workers
+startup --windows_enable_symlinks
+build --enable_runfiles
+
+# Show errors in CI
+test --test_output=errors
+
+# Show more information about failures
+build --verbose_failures
+
+# UI for cleaner CI output
+common --color=no
+common --curses=no
+common --show_task_finish
+common --show_timestamps
