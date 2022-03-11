@@ -51,6 +51,7 @@ cargo_build_script(
     edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
+        "--cfg=use_proc_macro",
     ],
     tags = [
         "cargo-raze",
@@ -78,6 +79,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=proc-macro2",
         "manual",
     ],
     version = "1.0.32",

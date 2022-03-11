@@ -44,6 +44,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=structopt-derive",
         "manual",
     ],
     version = "0.4.18",

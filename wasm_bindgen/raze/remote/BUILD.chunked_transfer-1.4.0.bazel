@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=chunked_transfer",
         "manual",
     ],
     version = "1.4.0",

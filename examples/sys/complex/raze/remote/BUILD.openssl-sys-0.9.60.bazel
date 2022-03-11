@@ -93,6 +93,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=openssl-sys",
         "manual",
     ],
     version = "0.9.60",

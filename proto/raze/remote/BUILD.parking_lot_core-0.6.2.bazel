@@ -48,6 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=parking_lot_core",
         "manual",
     ],
     version = "0.6.2",

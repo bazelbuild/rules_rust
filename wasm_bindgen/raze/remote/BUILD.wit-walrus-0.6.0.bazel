@@ -44,6 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wit-walrus",
         "manual",
     ],
     version = "0.6.0",

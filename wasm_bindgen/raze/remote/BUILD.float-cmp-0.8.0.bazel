@@ -47,6 +47,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=float_cmp",
         "manual",
     ],
     version = "0.8.0",

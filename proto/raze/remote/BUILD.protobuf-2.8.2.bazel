@@ -52,6 +52,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=protobuf",
         "manual",
     ],
     version = "2.8.2",

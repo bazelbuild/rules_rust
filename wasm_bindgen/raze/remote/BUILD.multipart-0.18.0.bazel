@@ -52,6 +52,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=form_test",
         "manual",
     ],
     version = "0.18.0",
@@ -106,6 +107,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=multipart",
         "manual",
     ],
     version = "0.18.0",

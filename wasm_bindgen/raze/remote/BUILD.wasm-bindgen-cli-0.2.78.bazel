@@ -49,6 +49,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wasm-bindgen",
         "manual",
     ],
     version = "0.2.78",
@@ -86,6 +87,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wasm-bindgen-test-runner",
         "manual",
     ],
     version = "0.2.78",
@@ -123,6 +125,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wasm2es6js",
         "manual",
     ],
     version = "0.2.78",

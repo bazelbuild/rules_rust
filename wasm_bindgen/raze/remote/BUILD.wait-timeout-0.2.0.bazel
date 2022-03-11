@@ -48,6 +48,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=exit",
         "manual",
     ],
     version = "0.2.0",
@@ -97,6 +98,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=reader",
         "manual",
     ],
     version = "0.2.0",
@@ -146,6 +148,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=sleep",
         "manual",
     ],
     version = "0.2.0",
@@ -193,6 +196,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wait-timeout",
         "manual",
     ],
     version = "0.2.0",

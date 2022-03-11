@@ -46,6 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wit-printer",
         "manual",
     ],
     version = "0.2.0",

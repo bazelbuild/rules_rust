@@ -73,6 +73,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=doc_comment",
         "manual",
     ],
     version = "0.3.3",

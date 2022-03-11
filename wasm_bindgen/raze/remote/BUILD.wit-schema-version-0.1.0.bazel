@@ -46,6 +46,7 @@ rust_binary(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wit-schema-version",
         "manual",
     ],
     version = "0.1.0",
@@ -68,6 +69,7 @@ rust_library(
     ],
     tags = [
         "cargo-raze",
+        "crate-name=wit-schema-version",
         "manual",
     ],
     version = "0.1.0",
