@@ -922,7 +922,7 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM")
             action_outputs.append(dsym_folder)
 
-    if ctx.executable._process_wrapper != None:
+    if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
