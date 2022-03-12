@@ -1,4 +1,6 @@
 load("//rust:defs.bzl", "rust_test")
+
+# buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "rust_binary_for_process_wrapper")
 
 rust_binary_for_process_wrapper(
