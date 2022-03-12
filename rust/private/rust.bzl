@@ -941,7 +941,7 @@ def _fake_out_process_wrapper(attrs):
 # Provides an internal rust_binary to use that we can use to build the process
 # wrapper, this breaks the dependency of rust_binary on the process wrapper by
 # setting it to None, which the functions in rustc detect and build accordingly.
-rust_binary_for_process_wrapper = rule(
+rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
     attrs = dict(_fake_out_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
