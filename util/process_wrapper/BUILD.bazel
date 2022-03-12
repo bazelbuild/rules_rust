@@ -1,9 +1,9 @@
 load("//rust:defs.bzl", "rust_test")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rust.bzl", "rust_binary_for_process_wrapper")
+load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
 
-rust_binary_for_process_wrapper(
+rust_binary_without_process_wrapper(
     name = "process_wrapper",
     srcs = glob(["*.rs"]),
     visibility = ["//visibility:public"],
