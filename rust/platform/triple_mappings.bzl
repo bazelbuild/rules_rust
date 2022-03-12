@@ -26,6 +26,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
     "armv7-unknown-linux-gnueabi",
+    "arm-unknown-linux-gnueabihf",
+    "armv7-unknown-linux-gnueabihf",
     "i686-linux-android",
     "i686-unknown-freebsd",
     "powerpc-unknown-linux-gnu",

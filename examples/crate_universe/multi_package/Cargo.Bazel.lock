@@ -1,5 +1,5 @@
 {
-  "checksum": "cba62ac1869a36d1f714ffd077e59f027e78a09a85df999006e21db814f938f4",
+  "checksum": "82b29f6353b59e0c52940d234029a2d22baab1ab85692380bd8d5af7fe26fbff",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -47,13 +47,13 @@
       },
       "license": "Unlicense/MIT"
     },
-    "anyhow 1.0.55": {
+    "anyhow 1.0.56": {
       "name": "anyhow",
-      "version": "1.0.55",
+      "version": "1.0.56",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/anyhow/1.0.55/download",
-          "sha256": "159bb86af3a200e19a068f4224eae4c8bb2d0fa054c7e5d1cacd5cef95e684cd"
+          "url": "https://crates.io/api/v1/crates/anyhow/1.0.56/download",
+          "sha256": "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
         }
       },
       "targets": [
@@ -94,14 +94,14 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.55",
+              "id": "anyhow 1.0.56",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.55"
+        "version": "1.0.56"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -6621,7 +6621,7 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.55",
+              "id": "anyhow 1.0.56",
               "target": "anyhow"
             },
             {
@@ -10603,7 +10603,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-linux-android",
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
@@ -10627,7 +10629,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-unknown-freebsd",
@@ -10646,7 +10650,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-unknown-freebsd",
@@ -10664,7 +10670,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-linux-android",
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
@@ -10682,7 +10690,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-pc-windows-msvc",
@@ -10703,7 +10713,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-pc-windows-msvc",
@@ -10725,7 +10737,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-unknown-freebsd",
@@ -10764,7 +10778,9 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "arm-unknown-linux-gnueabihf",
       "armv7-unknown-linux-gnueabi",
+      "armv7-unknown-linux-gnueabihf",
       "i686-apple-darwin",
       "i686-linux-android",
       "i686-unknown-freebsd",
