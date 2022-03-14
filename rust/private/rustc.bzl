@@ -941,7 +941,7 @@ def rustc_compile_action(
     else:
         # Run without process_wrapper
         if build_env_files or build_flags_files or stamp:
-            fail("build_env_files, build_flags_files, stamp are not supported if use_process_wrapper is False")
+            fail("build_env_files, build_flags_files, stamp are not supported when building without process_wrapper")
         ctx.actions.run(
             executable = toolchain.rustc,
             inputs = compile_inputs,

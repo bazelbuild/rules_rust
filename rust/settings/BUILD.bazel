@@ -29,13 +29,6 @@ bool_flag(
     build_setting_default = False,
 )
 
-# A flag that enables/disables the use of process_wrapper when invoking rustc.
-# This is useful for building process_wrapper itself without causing dependency cycles.
-bool_flag(
-    name = "use_process_wrapper",
-    build_setting_default = True,
-)
-
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
