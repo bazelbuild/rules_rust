@@ -86,7 +86,8 @@ fn main() {
     let workspace_root = PathBuf::from(
         env::var("BUILD_WORKSPACE_DIRECTORY")
             .expect("cross_installer is designed to run under Bazel"),
-    );
+    )
+    .join("crate_universe");
 
     // Do some setup
     prepare_workspace(&workspace_root);
