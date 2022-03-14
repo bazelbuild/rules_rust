@@ -64,13 +64,13 @@ alias(
 
 alias(
     name = "tower-http",
-    actual = "@crates_vendor_pkgs__tower-http-0.2.3//:tower_http",
+    actual = "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing",
-    actual = "@crates_vendor_pkgs__tracing-0.1.31//:tracing",
+    actual = "@crates_vendor_pkgs__tracing-0.1.32//:tracing",
     tags = ["manual"],
 )
 

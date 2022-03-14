@@ -81,7 +81,7 @@ rust_proc_macro(
         "//conditions:default": [
             "//vendor_local_pkgs/crates/proc-macro2-1.0.36:proc_macro2",
             "//vendor_local_pkgs/crates/quote-1.0.15:quote",
-            "//vendor_local_pkgs/crates/syn-1.0.86:syn",
+            "//vendor_local_pkgs/crates/syn-1.0.87:syn",
         ],
     }),
 )
