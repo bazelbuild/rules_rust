@@ -112,7 +112,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_index__libc-0.2.119//:libc",
+            "@crate_index__libc-0.2.120//:libc",
 
             # Common Deps
         ],

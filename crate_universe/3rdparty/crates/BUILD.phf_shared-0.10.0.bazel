@@ -82,7 +82,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__siphasher-0.3.9//:siphasher",
+            "@crate_index__siphasher-0.3.10//:siphasher",
             "@crate_index__uncased-0.9.6//:uncased",
         ],
     }),
