@@ -6,7 +6,7 @@ members = [
 
 [package]
 name = "cargo-bazel"
-version = "0.0.28"
+version = "0.1.0"
 authors = [
     "Andre Brisco - andre.brisco@protonmail.com",
 ]
