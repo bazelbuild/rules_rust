@@ -922,8 +922,7 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM")
             action_outputs.append(dsym_folder)
 
-    # This uses startswith as on windows the basename will be process_wrapper_fake.exe.
-    if not ctx.executable._process_wrapper.basename.startswith("process_wrapper_fake"):
+    if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,

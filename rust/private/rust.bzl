@@ -928,6 +928,33 @@ rust_binary = rule(
 """),
 )
 
+def _fake_out_process_wrapper(attrs):
+    new_attr = dict(attrs.items())
+    new_attr["_process_wrapper"] = attr.label(
+        default = None,
+        executable = True,
+        allow_single_file = True,
+        cfg = "exec",
+    )
+    return new_attr
+
+# Provides an internal rust_binary to use that we can use to build the process
+# wrapper, this breaks the dependency of rust_binary on the process wrapper by
+# setting it to None, which the functions in rustc detect and build accordingly.
+rust_binary_without_process_wrapper = rule(
+    implementation = _rust_binary_impl,
+    provides = _common_providers,
+    attrs = dict(_fake_out_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
+    executable = True,
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
+    incompatible_use_toolchain_transition = True,
+)
+
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = _common_providers,

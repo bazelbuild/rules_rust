@@ -1,45 +1,15 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//rust:defs.bzl", "rust_binary", "rust_test")
+load("//rust:defs.bzl", "rust_test")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:transitions.bzl", "without_process_wrapper")
+load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
 
-alias(
+rust_binary_without_process_wrapper(
     name = "process_wrapper",
-    actual = select({
-        # This will never get used, it's only here to break the circular dependency to allow building process_wrapper
-        ":use_fake_process_wrapper": ":process_wrapper_fake",
-        "//conditions:default": ":process_wrapper_impl",
-    }),
-    visibility = ["//visibility:public"],
-)
-
-cc_binary(
-    name = "process_wrapper_fake",
-    srcs = ["fake.cc"],
-)
-
-config_setting(
-    name = "use_fake_process_wrapper",
-    flag_values = {
-        "//rust/settings:use_process_wrapper": "False",
-    },
-)
-
-# Changing the name of this rule requires a corresponding
-# change in //rust/private/rustc.bzl:925
-without_process_wrapper(
-    name = "process_wrapper_impl",
-    target = ":process_wrapper_bin",
-    visibility = ["//visibility:public"],
-)
-
-rust_binary(
-    name = "process_wrapper_bin",
     srcs = glob(["*.rs"]),
+    visibility = ["//visibility:public"],
 )
 
 rust_test(
     name = "process_wrapper_test",
-    crate = ":process_wrapper_bin",
+    crate = ":process_wrapper",
 )
