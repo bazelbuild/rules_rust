@@ -71,3 +71,17 @@ sh_binary(
     name = "fake_import_macro_impl",
     srcs = ["fake_import_macro_impl.sh"],
 )
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "**/*.rs",
+    ]) + [
+        "//util/import/raze:srcs",
+        "//util/import/raze/remote:srcs",
+        "fake_import_macro_impl.sh",
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)

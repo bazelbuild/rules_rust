@@ -1,0 +1,12 @@
+filegroup(
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        "BUILD.bazel",
+        "//tools/allowlists/function_transition_allowlist:distro",
+        "//tools/clippy:distro",
+        "//tools/runfiles:distro",
+        "//tools/rustdoc:distro",
+        "//tools/rustfmt:distro",
+    ],
+    visibility = ["//:__subpackages__"],
+)

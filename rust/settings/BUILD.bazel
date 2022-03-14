@@ -40,3 +40,11 @@ alias(
     deprecation = "Please use the `@rules_rust//settings:bzl_lib` target instead",
     visibility = ["//rust:__subpackages__"],
 )
+
+filegroup(
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)

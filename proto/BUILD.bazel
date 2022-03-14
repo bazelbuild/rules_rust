@@ -14,6 +14,20 @@ alias(
     actual = "//proto/raze:cargo_bin_protoc_gen_rust_grpc",
 )
 
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "*.rs",
+    ]) + [
+        "//proto/raze:srcs",
+        "//proto/raze/remote:srcs",
+        "//proto/patches:distro",
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
 toolchain_type(name = "toolchain")
 
 rust_binary(

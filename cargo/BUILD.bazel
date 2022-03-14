@@ -13,3 +13,14 @@ alias(
     actual = ":bzl_lib",
     deprecation = "Please use the `@rules_rust//cargo:bzl_lib` target instead",
 )
+
+filegroup(
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        "//cargo/bootstrap:distro",
+        "//cargo/cargo_build_script_runner:distro",
+        "//cargo/private:distro",
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)
