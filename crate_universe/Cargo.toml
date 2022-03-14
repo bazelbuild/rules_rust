@@ -19,24 +19,24 @@ default = ["cargo"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.51"
-cargo_metadata = "0.14.1"
+anyhow = "1.0.56"
+cargo_metadata = "0.14.2"
 cargo_toml = "0.11.4"
 cargo-lock = "7.0.1"
 cargo-platform = "0.1.2"
-cfg-expr = "0.10.1"
-clap = { version = "3.0.14", features = ["derive", "env"] }
-crates-index = { version = "0.18.5", default-features = false }
+cfg-expr = "0.10.2"
+clap = { version = "3.1.6", features = ["derive", "env"] }
+crates-index = { version = "0.18.7", default-features = false }
 hex = "0.4.3"
 pathdiff = "0.2.1"
-regex = "1.5.4"
-semver = "1.0.5"
+regex = "1.5.5"
+semver = "1.0.6"
 serde = "1.0.136"
 serde_json = "1.0.79"
-sha2 = "0.10.1"
-tempfile = "3.2.0"
+sha2 = "0.10.2"
+tempfile = "3.3.0"
 tera = "1.15.0"
-textwrap = "0.14.2"
+textwrap = "0.15.0"
 toml = "0.5.8"
 
 [dev-dependencies]
