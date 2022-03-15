@@ -80,7 +80,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__git2-0.14.1//:git2",
+            "@crate_index__git2-0.14.2//:git2",
             "@crate_index__hex-0.4.3//:hex",
             "@crate_index__home-0.5.3//:home",
             "@crate_index__memchr-2.4.1//:memchr",
