@@ -109,6 +109,7 @@ Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.js
 | deps| String |
 | proc_macro_deps| String |
 | crate| String |
+| actual| String |
 
 
 **ATTRIBUTES**
