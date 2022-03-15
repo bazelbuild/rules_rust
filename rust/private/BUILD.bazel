@@ -16,6 +16,15 @@ alias(
     visibility = ["//rust:__subpackages__"],
 )
 
+filegroup(
+    name = "distro",
+    srcs = glob(["*.bzl"]) + [
+        "//rust/private/dummy_cc_toolchain:distro",
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
 stamp_build_setting(name = "stamp")
 
 rust_analyzer_detect_sysroot(

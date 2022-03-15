@@ -13,3 +13,14 @@ rust_test(
     name = "process_wrapper_test",
     crate = ":process_wrapper",
 )
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "**/*.cc",
+        "**/*.rs",
+    ]) + [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)

@@ -41,3 +41,11 @@ toolchain_files(
     name = "current_exec_rust_stdlib_files",
     tool = "rust_stdlib",
 )
+
+filegroup(
+    name = "distro",
+    srcs = [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)
