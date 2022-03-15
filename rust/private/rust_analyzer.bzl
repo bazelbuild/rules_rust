@@ -54,7 +54,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     build_info = None
     dep_infos = []
-    if hasattr(ctx.rule.attr, "proc_macro_deps"):
+    if hasattr(ctx.rule.attr, "deps"):
         for dep in ctx.rule.attr.deps:
             # Save BuildInfo if we find any (for build script output)
             if BuildInfo in dep:
@@ -65,7 +65,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
         dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
-    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None:
+    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None and RustAnalyzerInfo in ctx.rule.attr.actual:
         dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
