@@ -2,10 +2,6 @@
 name: Release
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "The new version to release. E.g. `1.2.3`"
-        required: true
 
 defaults:
   run:
@@ -16,17 +12,30 @@ env:
 
 jobs:
   validation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: main
-      - name: Detect the current version
+      # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
+      # so this step ensures releases are always done off of `main`.
+      - name: Ensure branch is 'main'
         run: |
-          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
-          if [[ "${version}" != "${{ github.event.inputs.version }}" ]]; then
-            echo "Release versions don't match: ${version} != ${{ github.event.inputs.version }}" >&2
+          git fetch origin &> /dev/null
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "${branch}" != "main" ]]; then
+            echo "The release branch must be main. Got '${branch}'' instead." >&2
             exit 1
+          else
+            echo "Branch is '${branch}'"
+          fi
+      - name: Ensure release does not already exist
+        run: |
+          git fetch origin &> /dev/null
+          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
+          if [[ -n "$(git tag -l ${version})" ]]; then
+            echo "A release '${version}' already exists." >&2
+            exit 1
+          else
+            echo "Tag '${version}' will be created"
           fi
   builds:
     needs: validation
@@ -58,12 +67,10 @@ jobs:
               TARGET: "x86_64-unknown-linux-musl"
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: "${{ github.base_ref }}"
       - name: Install rust toolchains for host
         run: |
           # Detect the current version of rust
-          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | sed 's/DEFAULT_RUST_VERSION = "//' | sed 's/"//')"
+          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
           rustup override set "${version}"
           rustup update stable && rustup default stable
       - name: Setup macos build tooling
@@ -95,21 +102,16 @@ jobs:
           if-no-files-found: error
   release:
     needs: builds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: main
       - uses: actions/download-artifact@v2
         with:
           path: ${{ github.workspace }}/crate_universe/target/artifacts
       - name: Detect the current version
         run: |
-          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
-          if [[ "${version}" != "${{ github.event.inputs.version }}" ]]; then
-            echo "Release versions don't match: ${version} != ${{ github.event.inputs.version }}" >&2
-            exit 1
-          fi
+          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | grep -o '[[:digit:].]\+')"
+          echo "RELEASE_VERSION=${version}" >> $GITHUB_ENV
       - name: Create the rules archive
         run: |
           # Update urls and sha256 values
@@ -122,12 +124,12 @@ jobs:
         env:
           CARGO_BAZEL_GENERATOR_URL: file://${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-gnu/cargo-bazel
           ARTIFACTS_DIR: ${{ github.workspace }}/crate_universe/target/artifacts
-          URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{github.event.inputs.version}}
+          URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
       - name: Generate release notes
         run: |
           # Generate the release notes
-          sed 's/{version}/${{ github.event.inputs.version }}/g' ${{ github.workspace }}/.github/release_notes.template \
-          | sed 's/{sha256}/${{env.ARCHIVE_SHA256}}/g' \
+          sed 's/{version}/${{ env.RELEASE_VERSION }}/g' ${{ github.workspace }}/.github/release_notes.template \
+          | sed 's/{sha256}/${{ env.ARCHIVE_SHA256 }}/g' \
           > ${{ github.workspace }}/.github/release_notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -136,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           generate_release_notes: true
-          tag_name: ${{github.event.inputs.version}}
+          tag_name: ${{ env.RELEASE_VERSION }}
           body_path: ${{ github.workspace }}/.github/release_notes.txt
           target_commitish: ${{ github.base_ref }}
 
@@ -146,7 +148,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
-          asset_name: rules_rust-v${{ github.event.inputs.version }}.tar.gz
+          asset_name: rules_rust-v${{ env.RELEASE_VERSION }}.tar.gz
           asset_path: ${{ github.workspace }}/.github/rules_rust.tar.gz
           asset_content_type: application/gzip
 
