@@ -80,7 +80,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__libc-0.2.119//:libc",
+            "@crate_index__libc-0.2.120//:libc",
         ],
     }),
 )

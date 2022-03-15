@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # MIT/Apache-2.0
 # ])
 
 rust_library(
-    name = "regex",
+    name = "libgit2_sys",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,25 +41,8 @@ rust_library(
         ],
     }),
     crate_features = [
-        "aho-corasick",
-        "default",
-        "memchr",
-        "perf",
-        "perf-cache",
-        "perf-dfa",
-        "perf-inline",
-        "perf-literal",
-        "std",
-        "unicode",
-        "unicode-age",
-        "unicode-bool",
-        "unicode-case",
-        "unicode-gencat",
-        "unicode-perl",
-        "unicode-script",
-        "unicode-segment",
     ],
-    crate_root = "src/lib.rs",
+    crate_root = "lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
@@ -92,13 +75,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.5.4",
+    version = "0.13.2+1.4.2",
     deps = [
+        "@libgit2",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__aho-corasick-0.7.18//:aho_corasick",
-            "@crate_index__memchr-2.4.1//:memchr",
-            "@crate_index__regex-syntax-0.6.25//:regex_syntax",
+            "@crate_index__libc-0.2.120//:libc",
+            "@crate_index__libz-sys-1.1.5//:libz_sys",
         ],
     }),
 )

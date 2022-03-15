@@ -84,7 +84,7 @@ rust_proc_macro(
             "@crate_index__proc-macro-error-1.0.4//:proc_macro_error",
             "@crate_index__proc-macro2-1.0.36//:proc_macro2",
             "@crate_index__quote-1.0.15//:quote",
-            "@crate_index__syn-1.0.86//:syn",
+            "@crate_index__syn-1.0.87//:syn",
         ],
     }),
 )

@@ -91,12 +91,12 @@ rust_library(
             "@crate_index__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crate_index__libc-0.2.119//:libc",
+            "@crate_index__libc-0.2.120//:libc",
             "@crate_index__num-integer-0.1.44//:num_integer",
             "@crate_index__num-traits-0.2.14//:num_traits",
         ],
         "//conditions:default": [
-            "@crate_index__libc-0.2.119//:libc",
+            "@crate_index__libc-0.2.120//:libc",
             "@crate_index__num-integer-0.1.44//:num_integer",
             "@crate_index__num-traits-0.2.14//:num_traits",
         ],

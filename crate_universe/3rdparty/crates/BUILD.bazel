@@ -28,7 +28,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@crate_index__anyhow-1.0.55//:anyhow",
+    actual = "@crate_index__anyhow-1.0.56//:anyhow",
     tags = ["manual"],
 )
 
@@ -64,7 +64,7 @@ alias(
 
 alias(
     name = "clap",
-    actual = "@crate_index__clap-3.1.5//:clap",
+    actual = "@crate_index__clap-3.1.6//:clap",
     tags = ["manual"],
 )
 
@@ -88,7 +88,7 @@ alias(
 
 alias(
     name = "regex",
-    actual = "@crate_index__regex-1.5.4//:regex",
+    actual = "@crate_index__regex-1.5.5//:regex",
     tags = ["manual"],
 )
 
@@ -136,7 +136,7 @@ alias(
 
 alias(
     name = "textwrap",
-    actual = "@crate_index__textwrap-0.14.2//:textwrap",
+    actual = "@crate_index__textwrap-0.15.0//:textwrap",
     tags = ["manual"],
 )
 
