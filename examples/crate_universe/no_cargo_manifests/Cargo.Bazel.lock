@@ -1,5 +1,5 @@
 {
-  "checksum": "5c8bd4f7527784376a1667a00ecf8f9ddd398a2a3ccefee5201b383f56d2c99b",
+  "checksum": "268e0e7dba95f9cd721ba2f37f0de246381e19d0b5ac591bf8672bb9659a378f",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -100,7 +100,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.86",
+              "id": "syn 1.0.87",
               "target": "syn"
             }
           ],
@@ -260,7 +260,7 @@
               "target": "tower"
             },
             {
-              "id": "tower-http 0.2.4",
+              "id": "tower-http 0.2.5",
               "target": "tower_http"
             },
             {
@@ -511,11 +511,11 @@
               "target": "tower"
             },
             {
-              "id": "tower-http 0.2.4",
+              "id": "tower-http 0.2.5",
               "target": "tower_http"
             },
             {
-              "id": "tracing 0.1.31",
+              "id": "tracing 0.1.32",
               "target": "tracing"
             },
             {
@@ -923,13 +923,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "h2 0.3.11": {
+    "h2 0.3.12": {
       "name": "h2",
-      "version": "0.3.11",
+      "version": "0.3.12",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/h2/0.3.11/download",
-          "sha256": "d9f1f717ddc7b2ba36df7e871fd88db79326551d3d6f1fc406fbfd28b582ff8e"
+          "url": "https://crates.io/api/v1/crates/h2/0.3.12/download",
+          "sha256": "62eeb471aa3e3c9197aa4bfeabfe02982f6dc96f750486c0bb0009ac58b26d2b"
         }
       },
       "targets": [
@@ -994,14 +994,14 @@
               "target": "tokio_util"
             },
             {
-              "id": "tracing 0.1.31",
+              "id": "tracing 0.1.32",
               "target": "tracing"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.3.11"
+        "version": "0.3.12"
       },
       "license": "MIT"
     },
@@ -1075,7 +1075,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.119",
+              "id": "libc 0.2.120",
               "target": "libc"
             }
           ],
@@ -1375,7 +1375,7 @@
               "target": "futures_util"
             },
             {
-              "id": "h2 0.3.11",
+              "id": "h2 0.3.12",
               "target": "h2"
             },
             {
@@ -1415,7 +1415,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.31",
+              "id": "tracing 0.1.32",
               "target": "tracing"
             },
             {
@@ -1571,13 +1571,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.119": {
+    "libc 0.2.120": {
       "name": "libc",
-      "version": "0.2.119",
+      "version": "0.2.120",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.119/download",
-          "sha256": "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.120/download",
+          "sha256": "ad5c14e80759d0939d013e6ca49930e59fc53dd8e5009132f76240c179380c09"
         }
       },
       "targets": [
@@ -1618,14 +1618,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.119",
+              "id": "libc 0.2.120",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.119"
+        "version": "0.2.120"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1907,13 +1907,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "mio 0.8.0": {
+    "mio 0.8.1": {
       "name": "mio",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/mio/0.8.0/download",
-          "sha256": "ba272f85fa0b41fc91872be579b3bbe0f56b792aa361a380eb669469f68dafb2"
+          "url": "https://crates.io/api/v1/crates/mio/0.8.1/download",
+          "sha256": "7ba42135c6a5917b9db9cd7b293e5409e1c6b041e6f9825e92e55a894c63b6f8"
         }
       },
       "targets": [
@@ -1949,9 +1949,19 @@
             }
           ],
           "selects": {
+            "cfg(target_os = \"wasi\")": [
+              {
+                "id": "libc 0.2.120",
+                "target": "libc"
+              },
+              {
+                "id": "wasi 0.11.0+wasi-snapshot-preview1",
+                "target": "wasi"
+              }
+            ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.119",
+                "id": "libc 0.2.120",
                 "target": "libc"
               }
             ],
@@ -1972,7 +1982,7 @@
           }
         },
         "edition": "2018",
-        "version": "0.8.0"
+        "version": "0.8.1"
       },
       "license": "MIT"
     },
@@ -2124,7 +2134,7 @@
             ],
             "cfg(not(windows))": [
               {
-                "id": "libc 0.2.119",
+                "id": "libc 0.2.120",
                 "target": "libc"
               }
             ]
@@ -2287,7 +2297,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.119",
+                "id": "libc 0.2.120",
                 "target": "libc"
               }
             ],
@@ -2423,7 +2433,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.86",
+              "id": "syn 1.0.87",
               "target": "syn"
             }
           ],
@@ -2987,7 +2997,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.119",
+              "id": "libc 0.2.120",
               "target": "libc"
             }
           ],
@@ -3104,7 +3114,7 @@
           "selects": {
             "cfg(unix)": [
               {
-                "id": "libc 0.2.119",
+                "id": "libc 0.2.120",
                 "target": "libc"
               }
             ],
@@ -3121,13 +3131,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "syn 1.0.86": {
+    "syn 1.0.87": {
       "name": "syn",
-      "version": "1.0.86",
+      "version": "1.0.87",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.86/download",
-          "sha256": "8a65b3f4ffa0092e9887669db0eae07941f023991ab58ea44da8fe8e2d511c6b"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.87/download",
+          "sha256": "1e59d925cf59d8151f25a3bedf97c9c157597c9df7324d32d68991cc399ed08b"
         }
       },
       "targets": [
@@ -3185,7 +3195,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.86",
+              "id": "syn 1.0.87",
               "target": "build_script_build"
             },
             {
@@ -3196,7 +3206,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.86"
+        "version": "1.0.87"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -3345,7 +3355,7 @@
               "target": "memchr"
             },
             {
-              "id": "mio 0.8.0",
+              "id": "mio 0.8.1",
               "target": "mio"
             },
             {
@@ -3372,7 +3382,7 @@
           "selects": {
             "cfg(unix)": [
               {
-                "id": "libc 0.2.119",
+                "id": "libc 0.2.120",
                 "target": "libc"
               },
               {
@@ -3441,7 +3451,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.86",
+              "id": "syn 1.0.87",
               "target": "syn"
             }
           ],
@@ -3658,7 +3668,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.31",
+              "id": "tracing 0.1.32",
               "target": "tracing"
             }
           ],
@@ -3669,13 +3679,13 @@
       },
       "license": "MIT"
     },
-    "tower-http 0.2.4": {
+    "tower-http 0.2.5": {
       "name": "tower-http",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tower-http/0.2.4/download",
-          "sha256": "90c125fdea84614a4368fd35786b51d0682ab8d42705e061e92f0b955dea40fb"
+          "url": "https://crates.io/api/v1/crates/tower-http/0.2.5/download",
+          "sha256": "aba3f3efabf7fb41fae8534fc20a817013dd1c12cb45441efb6c82e6556b4cd8"
         }
       },
       "targets": [
@@ -3752,14 +3762,14 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.31",
+              "id": "tracing 0.1.32",
               "target": "tracing"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.2.4"
+        "version": "0.2.5"
       },
       "license": "MIT"
     },
@@ -3829,13 +3839,13 @@
       },
       "license": "MIT"
     },
-    "tracing 0.1.31": {
+    "tracing 0.1.32": {
       "name": "tracing",
-      "version": "0.1.31",
+      "version": "0.1.32",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing/0.1.31/download",
-          "sha256": "f6c650a8ef0cd2dd93736f033d21cbd1224c5a967aa0c258d00fcf7dafef9b9f"
+          "url": "https://crates.io/api/v1/crates/tracing/0.1.32/download",
+          "sha256": "4a1bdf54a7c28a2bbf701e1d2233f6c77f473486b94bee4f9678da5a148dca7f"
         }
       },
       "targets": [
@@ -3879,7 +3889,7 @@
               "target": "pin_project_lite"
             },
             {
-              "id": "tracing-core 0.1.22",
+              "id": "tracing-core 0.1.23",
               "target": "tracing_core"
             }
           ],
@@ -3889,23 +3899,23 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "tracing-attributes 0.1.19",
+              "id": "tracing-attributes 0.1.20",
               "target": "tracing_attributes"
             }
           ],
           "selects": {}
         },
-        "version": "0.1.31"
+        "version": "0.1.32"
       },
       "license": "MIT"
     },
-    "tracing-attributes 0.1.19": {
+    "tracing-attributes 0.1.20": {
       "name": "tracing-attributes",
-      "version": "0.1.19",
+      "version": "0.1.20",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing-attributes/0.1.19/download",
-          "sha256": "8276d9a4a3a558d7b7ad5303ad50b53d58264641b82914b7ada36bd762e7a716"
+          "url": "https://crates.io/api/v1/crates/tracing-attributes/0.1.20/download",
+          "sha256": "2e65ce065b4b5c53e73bb28912318cb8c9e9ad3921f1d669eb0e68b4c8143a2b"
         }
       },
       "targets": [
@@ -3938,24 +3948,24 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.86",
+              "id": "syn 1.0.87",
               "target": "syn"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.1.19"
+        "version": "0.1.20"
       },
       "license": "MIT"
     },
-    "tracing-core 0.1.22": {
+    "tracing-core 0.1.23": {
       "name": "tracing-core",
-      "version": "0.1.22",
+      "version": "0.1.23",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing-core/0.1.22/download",
-          "sha256": "03cfcb51380632a72d3111cb8d3447a8d908e577d31beeac006f836383d29a23"
+          "url": "https://crates.io/api/v1/crates/tracing-core/0.1.23/download",
+          "sha256": "aa31669fa42c09c34d94d8165dd2012e8ff3c66aca50f3bb226b68f216f2706c"
         }
       },
       "targets": [
@@ -4000,7 +4010,7 @@
           }
         },
         "edition": "2018",
-        "version": "0.1.22"
+        "version": "0.1.23"
       },
       "license": "MIT"
     },
@@ -4047,7 +4057,7 @@
               "target": "log"
             },
             {
-              "id": "tracing-core 0.1.22",
+              "id": "tracing-core 0.1.23",
               "target": "tracing_core"
             }
           ],
@@ -4118,7 +4128,7 @@
               "target": "thread_local"
             },
             {
-              "id": "tracing-core 0.1.22",
+              "id": "tracing-core 0.1.23",
               "target": "tracing_core"
             },
             {
@@ -4310,6 +4320,43 @@
         "version": "0.3.0"
       },
       "license": "MIT"
+    },
+    "wasi 0.11.0+wasi-snapshot-preview1": {
+      "name": "wasi",
+      "version": "0.11.0+wasi-snapshot-preview1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/wasi/0.11.0+wasi-snapshot-preview1/download",
+          "sha256": "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "wasi",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "include": [
+                "**/*.rs"
+              ],
+              "exclude": []
+            }
+          }
+        }
+      ],
+      "library_target_name": "wasi",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "default",
+          "std"
+        ],
+        "edition": "2018",
+        "version": "0.11.0+wasi-snapshot-preview1"
+      },
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
     },
     "winapi 0.3.9": {
       "name": "winapi",
@@ -4962,6 +5009,9 @@
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(target_os = \"redox\")": [],
+    "cfg(target_os = \"wasi\")": [
+      "wasm32-wasi"
+    ],
     "cfg(target_os = \"windows\")": [
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
