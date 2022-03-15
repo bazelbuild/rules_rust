@@ -1,3 +1,4 @@
+"""Alias-like rule for testing."""
 
 load("@rules_rust//rust:defs.bzl", "rust_common")
 

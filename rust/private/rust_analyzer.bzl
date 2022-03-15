@@ -115,7 +115,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     return None
 
 rust_analyzer_aspect = aspect(
-    attr_aspects = ["deps", "proc_macro_deps", "crate", "actual",],
+    attr_aspects = ["deps", "proc_macro_deps", "crate", "actual"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
