@@ -83,7 +83,7 @@ rust_library(
         "//conditions:default": [
             "//vendor_local_pkgs/crates/lazy_static-1.4.0:lazy_static",
             "//vendor_local_pkgs/crates/log-0.4.14:log",
-            "//vendor_local_pkgs/crates/tracing-core-0.1.22:tracing_core",
+            "//vendor_local_pkgs/crates/tracing-core-0.1.23:tracing_core",
         ],
     }),
 )

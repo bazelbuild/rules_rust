@@ -106,7 +106,7 @@ rust_library(
             "//vendor_local_pkgs/crates/sync_wrapper-0.1.1:sync_wrapper",
             "//vendor_local_pkgs/crates/tokio-1.16.1:tokio",
             "//vendor_local_pkgs/crates/tower-0.4.12:tower",
-            "//vendor_local_pkgs/crates/tower-http-0.2.3:tower_http",
+            "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
             "//vendor_local_pkgs/crates/tower-layer-0.3.1:tower_layer",
             "//vendor_local_pkgs/crates/tower-service-0.3.1:tower_service",
         ],

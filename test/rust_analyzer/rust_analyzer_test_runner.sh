@@ -66,7 +66,7 @@ function rust_analyzer_test() {
     
     pushd "${workspace}" &> /dev/null
     echo "Generating rust-project.json..."
-    bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- //:mylib_test
     echo "Building..."
     bazel build //...
     echo "Testing..."
