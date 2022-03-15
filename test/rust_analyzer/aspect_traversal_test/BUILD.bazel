@@ -4,12 +4,31 @@ rust_library(
     name = "mylib",
     srcs = ["mylib.rs"],
     proc_macro_deps = [":proc_macro_dep"],
-    deps = [":lib_dep"],
+    deps = [
+        ":alias_dep",
+        ":lib_dep",
+    ],
 )
 
 rust_library(
     name = "lib_dep",
     srcs = ["lib_dep.rs"],
+)
+
+alias(
+    name = "alias_dep",
+    actual = ":actual_dep",
+)
+
+rust_library(
+    name = "actual_dep",
+    srcs = ["actual_dep.rs"],
+    deps = [":dep_of_aliased_dep"],
+)
+
+rust_library(
+    name = "dep_of_aliased_dep",
+    srcs = ["dep_of_aliased_dep.rs"],
 )
 
 rust_proc_macro(
