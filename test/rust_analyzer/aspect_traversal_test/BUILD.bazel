@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+load(":custom_alias.bzl", "custom_alias")
 
 rust_library(
     name = "mylib",
@@ -6,6 +7,7 @@ rust_library(
     proc_macro_deps = [":proc_macro_dep"],
     deps = [
         ":alias_dep",
+        ":custom_alias_dep",
         ":lib_dep",
     ],
 )
@@ -29,6 +31,22 @@ rust_library(
 rust_library(
     name = "dep_of_aliased_dep",
     srcs = ["dep_of_aliased_dep.rs"],
+)
+
+custom_alias(
+    name = "custom_alias_dep",
+    actual = ":custom_actual_dep",
+)
+
+rust_library(
+    name = "custom_actual_dep",
+    srcs = ["custom_actual_dep.rs"],
+    deps = [":dep_of_custom_aliased_dep"],
+)
+
+rust_library(
+    name = "dep_of_custom_aliased_dep",
+    srcs = ["dep_of_custom_aliased_dep.rs"],
 )
 
 rust_proc_macro(

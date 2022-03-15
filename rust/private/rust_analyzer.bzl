@@ -52,17 +52,21 @@ def _rust_analyzer_aspect_impl(target, ctx):
     if hasattr(ctx.rule.attr, "rustc_flags"):
         cfgs += [f[6:] for f in ctx.rule.attr.rustc_flags if f.startswith("--cfg ") or f.startswith("--cfg=")]
 
-    # Save BuildInfo if we find any (for build script output)
     build_info = None
-    for dep in ctx.rule.attr.deps:
-        if BuildInfo in dep:
-            build_info = dep[BuildInfo]
+    dep_infos = []
+    if hasattr(ctx.rule.attr, "deps"):
+        for dep in ctx.rule.attr.deps:
+            # Save BuildInfo if we find any (for build script output)
+            if BuildInfo in dep:
+                build_info = dep[BuildInfo]
+        dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
 
-    dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "proc_macro_deps"):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
     if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
         dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
+    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None and RustAnalyzerInfo in ctx.rule.attr.actual:
+        dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
 
@@ -111,7 +115,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     return None
 
 rust_analyzer_aspect = aspect(
-    attr_aspects = ["deps", "proc_macro_deps", "crate"],
+    attr_aspects = ["deps", "proc_macro_deps", "crate", "actual"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain"))],
     incompatible_use_toolchain_transition = True,
