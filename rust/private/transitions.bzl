@@ -55,7 +55,7 @@ def _alias_with_import_macro_bootstrapping_mode_impl(ctx):
 
 alias_with_import_macro_bootstrapping_mode = rule(
     implementation = _alias_with_import_macro_bootstrapping_mode_impl,
-    doc = "TODO",
+    doc = "Alias-like rule to build the `actual` with `use_real_import_macro` setting disabled. Not to be used outside of the import macro bootstrap.",
     attrs = {
         # Using `actual` so tooling such as rust analyzer aspect traverses the target.
         "actual": attr.label(
