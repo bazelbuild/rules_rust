@@ -55,6 +55,7 @@ def _alias_with_import_macro_bootstrapping_mode_impl(ctx):
 
 alias_with_import_macro_bootstrapping_mode = rule(
     implementation = _alias_with_import_macro_bootstrapping_mode_impl,
+    doc = "TODO",
     attrs = {
         # Using `actual` so tooling such as rust analyzer aspect traverses the target.
         "actual": attr.label(
