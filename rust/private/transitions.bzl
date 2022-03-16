@@ -58,6 +58,7 @@ alias_with_import_macro_bootstrapping_mode = rule(
     attrs = {
         # Using `actual` so tooling such as rust analyzer aspect traverses the target.
         "actual": attr.label(
+            doc = "The target this alias refers to.",
             cfg = import_macro_dep_bootstrap_transition,
             mandatory = True,
         ),
