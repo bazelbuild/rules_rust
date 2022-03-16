@@ -1,0 +1,218 @@
+---
+name: Release
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  BAZEL_STARTUP_FLAGS: --bazelrc=${{ github.workspace }}/.github/github.bazelrc
+
+jobs:
+  validation:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
+      # so this step ensures releases are always done off of `main`.
+      - name: Ensure branch is 'main'
+        run: |
+          git fetch origin &> /dev/null
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "${branch}" != "main" ]]; then
+            echo "The release branch must be main. Got '${branch}'' instead." >&2
+            exit 1
+          else
+            echo "Branch is '${branch}'"
+          fi
+      - name: Ensure release does not already exist
+        run: |
+          git fetch origin &> /dev/null
+          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
+          if [[ -n "$(git tag -l ${version})" ]]; then
+            echo "A release '${version}' already exists." >&2
+            exit 1
+          else
+            echo "Tag '${version}' will be created"
+          fi
+  builds:
+    needs: validation
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Create a job for each target triple
+        include:
+          - os: macos-11
+            env:
+              TARGET: "aarch64-apple-darwin"
+          - os: ubuntu-20.04
+            env:
+              TARGET: "aarch64-unknown-linux-gnu"
+          - os: macos-11
+            env:
+              TARGET: "x86_64-apple-darwin"
+          - os: ubuntu-20.04
+            env:
+              TARGET: "x86_64-pc-windows-gnu"
+          - os: windows-2019
+            env:
+              TARGET: "x86_64-pc-windows-msvc"
+          - os: ubuntu-20.04
+            env:
+              TARGET: "x86_64-unknown-linux-gnu"
+          - os: ubuntu-20.04
+            env:
+              TARGET: "x86_64-unknown-linux-musl"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install rust toolchains for host
+        run: |
+          # Detect the current version of rust
+          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
+          rustup override set "${version}"
+          rustup update stable && rustup default stable
+      - name: Setup macos build tooling
+        run: |
+          sudo xcode-select -s /Applications/Xcode_12.4.app/Contents/Developer/
+          # Set SDK environment variables
+          echo "SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path)" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version)" >> $GITHUB_ENV
+        if: startswith(matrix.os, 'macos')
+      - name: Setup Windows Bazelrc
+        run: |
+          echo "startup --output_user_root=C:/tmp" > ./user.bazelrc
+        if: startswith(matrix.os, 'Windows')
+      - name: Build cargo-bazel binaries
+        run: |
+          # Build binaries
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            OUTPUT_PATH="$(cygpath "${{ github.workspace }}/crate_universe/target/artifacts" -m)"
+          else
+            OUTPUT_PATH="${{ github.workspace }}/crate_universe/target/artifacts"
+          fi
+            bazel ${BAZEL_STARTUP_FLAGS[@]} run //crate_universe/tools/cross_installer -- --target=${TARGET} --output="${OUTPUT_PATH}"
+        env:
+          TARGET: "${{ matrix.env.TARGET }}"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "${{ matrix.env.TARGET }}"
+          path: ${{ github.workspace }}/crate_universe/target/artifacts/${{ matrix.env.TARGET }}
+          if-no-files-found: error
+  release:
+    needs: builds
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          path: ${{ github.workspace }}/crate_universe/target/artifacts
+      - name: Detect the current version
+        run: |
+          version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | grep -o '[[:digit:].]\+')"
+          echo "RELEASE_VERSION=${version}" >> $GITHUB_ENV
+      - name: Create the rules archive
+        run: |
+          # Update urls and sha256 values
+          bazel ${BAZEL_STARTUP_FLAGS[@]}  run //crate_universe/tools/urls_generator -- --artifacts-dir="${ARTIFACTS_DIR}" --url-prefix="${URL_PREFIX}"
+          # Publish to a known location
+          bazel ${BAZEL_STARTUP_FLAGS[@]}  run //distro:publish -- ${{ github.workspace }}/.github
+          # Save the sha256 checksum of the distro archive to the environment
+          sha256="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust.tar.gz | awk '{ print $1 }')"
+          echo "ARCHIVE_SHA256=${sha256}" >> $GITHUB_ENV
+        env:
+          CARGO_BAZEL_GENERATOR_URL: file://${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-gnu/cargo-bazel
+          ARTIFACTS_DIR: ${{ github.workspace }}/crate_universe/target/artifacts
+          URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
+      - name: Generate release notes
+        run: |
+          # Generate the release notes
+          sed 's/{version}/${{ env.RELEASE_VERSION }}/g' ${{ github.workspace }}/.github/release_notes.template \
+          | sed 's/{sha256}/${{ env.ARCHIVE_SHA256 }}/g' \
+          > ${{ github.workspace }}/.github/release_notes.txt
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        id: rules_rust_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          generate_release_notes: true
+          tag_name: ${{ env.RELEASE_VERSION }}
+          body_path: ${{ github.workspace }}/.github/release_notes.txt
+          target_commitish: ${{ github.base_ref }}
+
+      - name: "Upload the rules archive"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: rules_rust-v${{ env.RELEASE_VERSION }}.tar.gz
+          asset_path: ${{ github.workspace }}/.github/rules_rust.tar.gz
+          asset_content_type: application/gzip
+
+      # There must be a upload action for each platform triple we create
+      - name: "Upload aarch64-apple-darwin"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-aarch64-apple-darwin
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-apple-darwin/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload aarch64-unknown-linux-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-aarch64-unknown-linux-gnu
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-unknown-linux-gnu/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-apple-darwin"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-x86_64-apple-darwin
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-apple-darwin/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-pc-windows-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-x86_64-pc-windows-gnu.exe
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-pc-windows-gnu/cargo-bazel.exe
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-pc-windows-msvc"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-x86_64-pc-windows-msvc.exe
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-pc-windows-msvc/cargo-bazel.exe
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-unknown-linux-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-x86_64-unknown-linux-gnu
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-gnu/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload x86_64-unknown-linux-musl"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-x86_64-unknown-linux-musl
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-musl/cargo-bazel
+          asset_content_type: application/octet-stream
