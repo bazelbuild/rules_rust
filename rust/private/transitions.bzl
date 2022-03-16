@@ -47,11 +47,8 @@ import_macro_dep_bootstrap_transition = transition(
 )
 
 def _alias_with_import_macro_bootstrapping_mode_impl(ctx):
-    actual = ctx.attr.actual
-    if len(actual) != 1:
-        fail("`deps` attribute has to have exactly one element.")
-    target = actual[0]
-    return [target[rust_common.crate_info], target[rust_common.dep_info]]
+    actual = ctx.attr.actual[0]
+    return [actual[rust_common.crate_info], actual[rust_common.dep_info]]
 
 alias_with_import_macro_bootstrapping_mode = rule(
     implementation = _alias_with_import_macro_bootstrapping_mode_impl,
