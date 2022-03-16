@@ -1,11 +1,11 @@
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:transitions.bzl", "with_import_macro_bootstrapping_mode")
+load("//rust/private:transitions.bzl", "alias_with_import_macro_bootstrapping_mode")
 
-with_import_macro_bootstrapping_mode(
+alias_with_import_macro_bootstrapping_mode(
     name = "import_macro",
-    target = "import_macro_impl",
+    actual = ":import_macro_impl",
 )
 
 rust_proc_macro(
