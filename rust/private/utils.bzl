@@ -17,6 +17,14 @@
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
 load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
+UNSUPPORTED_FEATURES = [
+    "thin_lto",
+    "module_maps",
+    "use_header_modules",
+    "fdo_instrument",
+    "fdo_optimize",
+]
+
 def find_toolchain(ctx):
     """Finds the first rust toolchain that is configured.
 
@@ -43,7 +51,7 @@ def find_cc_toolchain(ctx):
         ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
-        unsupported_features = ctx.disabled_features,
+        unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features,
     )
     return cc_toolchain, feature_configuration
 
