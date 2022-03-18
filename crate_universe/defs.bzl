@@ -6,13 +6,28 @@ Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 
 `crate_universe` is experimental, and may have breaking API changes at any time. These instructions may also change without notice.
 
+## Setup
+
+After loading `rules_rust` in your workspace, set the following to begin using `crate_universe`:
+
+```python
+load("@rules_rust//crate_universe:crates.bzl", "crate_deps_repository")
+
+crate_deps_repository()
+```
+
+Note that if the current version of `rules_rust` is not a release artifact, you may need to set additional
+flags such as [`bootstrap = True`](#crate_deps_repository-bootstrap) on the `crate_deps_repository`
+call above or [crates_repository::generator_urls](#crates_repository-generator_urls) in uses of `crates_repository`.
+
 ## Rules
 
+- [crate_deps_repository](#crate_deps_repository)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
+- [crate.annotation](#crateannotation)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
-- [crate.annotation](#crateannotation)
 - [render_config](#render_config)
 - [splicing_config](#splicing_config)
 
@@ -142,8 +157,13 @@ rust_test(
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
+
 """
 
+load(
+    "//crate_universe:crates.bzl",
+    _crate_deps_repository = "crate_deps_repository",
+)
 load(
     "//crate_universe/private:crate.bzl",
     _crate = "crate",
@@ -166,6 +186,7 @@ load(
 )
 
 crate = _crate
+crate_deps_repository = _crate_deps_repository
 crates_repository = _crates_repository
 crates_vendor = _crates_vendor
 render_config = _render_config

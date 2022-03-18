@@ -35,3 +35,9 @@ filegroup(
     ],
     visibility = ["//crate_universe/tools:__pkg__"],
 )
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//crate_universe/tools:__pkg__"],
+)

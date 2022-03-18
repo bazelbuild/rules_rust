@@ -16,5 +16,8 @@ filegroup(
 
 filegroup(
     name = "bzl_srcs",
-    srcs = glob(["*.bzl"]),
+    srcs = glob(["*.bzl"]) + [
+        "//crate_universe/3rdparty/crates:crates.bzl",
+        "//crate_universe/3rdparty/crates:defs.bzl",
+    ],
 )
