@@ -594,6 +594,7 @@ _common_attrs = {
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
     "_import_macro_dep": attr.label(
         default = "@rules_rust//util/import",
+        cfg = "exec",
     ),
     "_process_wrapper": attr.label(
         default = Label("//util/process_wrapper"),
