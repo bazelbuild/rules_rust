@@ -1,4 +1,4 @@
-load("//crate_universe:crates.bzl", "crate_deps_target")
+load("//crate_universe:repositories.bzl", "crate_deps_target")
 
 package(default_visibility = ["//visibility:public"])
 
