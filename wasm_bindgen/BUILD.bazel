@@ -11,12 +11,6 @@ bzl_library(
     deps = ["//rust:bzl_lib"],
 )
 
-alias(
-    name = "rules",
-    actual = ":bzl_lib",
-    deprecation = "Please use the `@rules_rust//wasm_bindgen:bzl_lib` target instead",
-)
-
 filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [
