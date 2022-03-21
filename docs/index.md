@@ -18,13 +18,14 @@ To use the Rust rules, add the following to your `WORKSPACE` file to add the ext
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# To find additional information on this release or newer ones visit:
+# https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    sha256 = "531bdd470728b61ce41cf7604dc4f9a115983e455d46ac1d0c1632f613ab9fc3",
-    strip_prefix = "rules_rust-d8238877c0e552639d3e057aadd6bfcf37592408",
+    sha256 = "7453856d239a004c9e29cde2e45903a068446e4a69501ee7393faf08e1a30403",
     urls = [
-        # `main` branch as of 2021-08-23
-        "https://github.com/bazelbuild/rules_rust/archive/d8238877c0e552639d3e057aadd6bfcf37592408.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_rust/releases/download/0.1.0/rules_rust-v0.1.0.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/releases/download/0.1.0/rules_rust-v0.1.0.tar.gz",
     ],
 )
 
@@ -64,22 +65,22 @@ You can also browse the [full API in one page](flatten.md).
 To build with a particular version of the Rust compiler, pass that version to [`rust_repositories`](flatten.md#rust_repositories):
 
 ```python
-rust_repositories(version = "1.53.0", edition="2018")
+rust_repositories(version = "1.59.0", edition="2018")
 ```
 
 As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
 
 ```python
-rust_repositories(version = "nightly", iso_date = "2021-06-16", edition="2018")
+rust_repositories(version = "nightly", iso_date = "2022-02-23", edition="2018")
 ```
 
 Similarly, `rustfmt_version` may also be configured:
 
 ```python
-rust_repositories(rustfmt_version = "1.53.0")
+rust_repositories(rustfmt_version = "1.59.0")
 ```
 
 ## External Dependencies
 
-If [crate_universe]crate_universe.md) does not suit your needs, another common approach to managing external dependencies is using
+If [crate_universe](crate_universe.md) does not suit your needs, another common approach to managing external dependencies is using
 [cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.
