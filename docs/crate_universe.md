@@ -42,10 +42,10 @@ the [./examples/crate_universe](https://github.com/bazelbuild/rules_rust/tree/ma
 ### Cargo Workspaces
 
 One of the simpler ways to wire up dependencies would be to first structure your project into a [Cargo workspace][cw].
-The `crates_repository` rule can ingest a the root `Cargo.toml` file and generate dependencies from there.
+The `crates_repository` rule can ingest a root `Cargo.toml` file and generate dependencies from there.
 
 ```python
-load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
