@@ -32,6 +32,7 @@ filegroup(
     srcs = [
         "BUILD.bazel",
         "Cargo.toml",
+        "cross_installer_deps.bzl",
     ],
     visibility = ["//crate_universe/tools:__pkg__"],
 )
