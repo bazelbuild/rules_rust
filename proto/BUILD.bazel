@@ -48,9 +48,3 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]) + ["//proto/raze:crates.bzl"],
 )
-
-alias(
-    name = "rules",
-    actual = ":bzl_lib",
-    deprecation = "Please use the `@rules_rust//proto:bzl_lib` target instead",
-)

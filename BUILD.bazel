@@ -11,13 +11,6 @@ bzl_library(
     visibility = ["//visibility:public"],
 )
 
-alias(
-    name = "rules",
-    actual = ":bzl_lib",
-    deprecation = "Please use the `@rules_rust//:bzl_lib` target instead",
-    visibility = ["//visibility:public"],
-)
-
 filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [

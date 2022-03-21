@@ -9,13 +9,6 @@ bzl_library(
     deps = ["//rust/platform:bzl_lib"],
 )
 
-alias(
-    name = "rules",
-    actual = ":bzl_lib",
-    deprecation = "Please use the `@rules_rust//private:bzl_lib` target instead",
-    visibility = ["//rust:__subpackages__"],
-)
-
 filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [
