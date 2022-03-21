@@ -17,11 +17,9 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     # proc_macro dependency. As proc_macro depdendencies are built in exec configuration mode,
     # we check that there isn't an `-exec-` path to `proc_macro_dep` in the command line arguments.
     proc_macro_dep_args = [arg for arg in action.argv if "proc_macro_dep" in arg]
-    proc_macro_dep_in_target_mode = [arg for arg in proc_macro_dep_args if "-exec-" not in arg]
     proc_macro_dep_in_exec_mode = [arg for arg in proc_macro_dep_args if "-exec-" in arg]
 
     asserts.equals(env, 0, len(proc_macro_dep_in_exec_mode))
-    asserts.true(env, len(proc_macro_dep_in_target_mode) > 0)
 
     return analysistest.end(env)
 
@@ -37,7 +35,6 @@ def _proc_macro_does_not_leak_deps_test():
     rust_test(
         name = "deps_not_leaked",
         srcs = ["leaks_deps/proc_macro_user.rs"],
-        deps = ["//test/unit/proc_macro/leaks_deps/proc_macro_dep"],
         proc_macro_deps = [":proc_macro_definition"],
     )
 
