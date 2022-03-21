@@ -56,7 +56,7 @@ You can also browse the [full API in one page](flatten.md).
 
 ### Experimental rules
 
-- [crate_universe](crate_universe.md): A repository rule for fetching dependencies from a crate registry.
+- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate depednencies.
 - [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
 
 ## Specifying Rust version
@@ -81,5 +81,5 @@ rust_repositories(rustfmt_version = "1.53.0")
 
 ## External Dependencies
 
-Currently, the most common approach to managing external dependencies is using
+If [crate_universe]crate_universe.md) does not suit your needs, another common approach to managing external dependencies is using
 [cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.
