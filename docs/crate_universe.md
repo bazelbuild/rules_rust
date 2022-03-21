@@ -13,18 +13,18 @@ Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 After loading `rules_rust` in your workspace, set the following to begin using `crate_universe`:
 
 ```python
-load("@rules_rust//crate_universe:crates.bzl", "crate_deps_repository")
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
-crate_deps_repository()
+crate_universe_dependencies()
 ```
 
 Note that if the current version of `rules_rust` is not a release artifact, you may need to set additional
-flags such as [`bootstrap = True`](#crate_deps_repository-bootstrap) on the `crate_deps_repository`
+flags such as [`bootstrap = True`](#crate_universe_dependencies-bootstrap) on the `crate_universe_dependencies`
 call above or [crates_repository::generator_urls](#crates_repository-generator_urls) in uses of `crates_repository`.
 
 ## Rules
 
-- [crate_deps_repository](#crate_deps_repository)
+- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
 - [crate.annotation](#crateannotation)
@@ -352,12 +352,12 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
-<a id="#crate_deps_repository"></a>
+<a id="#crate_universe_dependencies"></a>
 
-## crate_deps_repository
+## crate_universe_dependencies
 
 <pre>
-crate_deps_repository(<a href="#crate_deps_repository-rust_version">rust_version</a>, <a href="#crate_deps_repository-bootstrap">bootstrap</a>)
+crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>)
 </pre>
 
 Define dependencies of the `cargo-bazel` Rust target
@@ -367,8 +367,8 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_deps_repository-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.59.0"</code> |
-| <a id="crate_deps_repository-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.59.0"</code> |
+| <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 
 <a id="#render_config"></a>
