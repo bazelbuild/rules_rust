@@ -13,13 +13,13 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     action = actions[0]
     assert_action_mnemonic(env, action, "Rustc")
 
-    # Our test depends on the proc_macro_dep crate both directly and indirectly via a
-    # proc_macro dependency. As proc_macro depdendencies are built in exec configuration mode,
-    # we check that there isn't an `-exec-` path to `proc_macro_dep` in the command line arguments.
+    # Our test target has a dependency on "proc_macro_dep" via a rust_proc_macro target,
+    # so the proc_macro_dep rlib should not appear as an input to the Rustc action, nor as -Ldependency on the command line.
+    proc_macro_dep_inputs = [i for i in action.inputs.to_list() if "proc_macro_dep" in i.path]
     proc_macro_dep_args = [arg for arg in action.argv if "proc_macro_dep" in arg]
-    proc_macro_dep_in_exec_mode = [arg for arg in proc_macro_dep_args if "-exec-" in arg]
 
-    asserts.equals(env, 0, len(proc_macro_dep_in_exec_mode))
+    asserts.equals(env, 0, len(proc_macro_dep_inputs))
+    asserts.equals(env, 0, len(proc_macro_dep_args))
 
     return analysistest.end(env)
 
