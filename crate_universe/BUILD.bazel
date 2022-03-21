@@ -34,6 +34,7 @@ filegroup(
     srcs = glob(["*.bzl"]) + [
         "//crate_universe/3rdparty:bzl_srcs",
         "//crate_universe/private:bzl_srcs",
+        "//crate_universe/tools:bzl_srcs",
     ],
     visibility = ["//visibility:public"],
 )

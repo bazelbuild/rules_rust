@@ -1,6 +1,6 @@
-# Cargo->Bazel
+# Crate Universe
 
-`cargo->bazel` is a tool used which uses [Cargo][cargo] to generate build targets for [Bazel][bazel].
+`crate_universe` is a collection of tools which use [Cargo][cargo] to generate build targets for [Bazel][bazel].
 
 ## [Documentation][docs]
 

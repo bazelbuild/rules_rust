@@ -8,13 +8,28 @@ Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 
 `crate_universe` is experimental, and may have breaking API changes at any time. These instructions may also change without notice.
 
+## Setup
+
+After loading `rules_rust` in your workspace, set the following to begin using `crate_universe`:
+
+```python
+load("@rules_rust//crate_universe:crates.bzl", "crate_deps_repository")
+
+crate_deps_repository()
+```
+
+Note that if the current version of `rules_rust` is not a release artifact, you may need to set additional
+flags such as [`bootstrap = True`](#crate_deps_repository-bootstrap) on the `crate_deps_repository`
+call above or [crates_repository::generator_urls](#crates_repository-generator_urls) in uses of `crates_repository`.
+
 ## Rules
 
+- [crate_deps_repository](#crate_deps_repository)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
+- [crate.annotation](#crateannotation)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
-- [crate.annotation](#crateannotation)
 - [render_config](#render_config)
 - [splicing_config](#splicing_config)
 
@@ -144,6 +159,7 @@ rust_test(
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
+
 
 
 <a id="#crates_repository"></a>
@@ -334,6 +350,25 @@ Define information for extra workspace members
 **RETURNS**
 
 string: A json encoded string of all inputs
+
+
+<a id="#crate_deps_repository"></a>
+
+## crate_deps_repository
+
+<pre>
+crate_deps_repository(<a href="#crate_deps_repository-rust_version">rust_version</a>, <a href="#crate_deps_repository-bootstrap">bootstrap</a>)
+</pre>
+
+Define dependencies of the `cargo-bazel` Rust target
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="crate_deps_repository-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.59.0"</code> |
+| <a id="crate_deps_repository-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 
 <a id="#render_config"></a>

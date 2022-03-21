@@ -1,0 +1,7 @@
+load("//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "proc_macro_dep",
+    srcs = ["proc_macro_dep.rs"],
+    visibility = ["//test:__subpackages__"],
+)

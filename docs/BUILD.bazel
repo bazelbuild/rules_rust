@@ -13,6 +13,7 @@ bzl_library(
     ],
     deps = [
         "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:selects",
         "@bazel_skylib//rules:common_settings",
         "@rules_proto//proto:defs",
         "@rules_proto//proto:repositories",

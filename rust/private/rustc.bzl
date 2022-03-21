@@ -173,11 +173,22 @@ def collect_deps(
                 dep = crate_info,
             ))
 
-            transitive_crates.append(depset([crate_info], transitive = [dep_info.transitive_crates]))
+            transitive_crates.append(
+                depset(
+                    [crate_info],
+                    transitive = [] if "proc-macro" in [
+                        crate_info.type,
+                        crate_info.wrapped_crate_type,
+                    ] else [dep_info.transitive_crates],
+                ),
+            )
             transitive_crate_outputs.append(
                 depset(
                     [crate_info.output],
-                    transitive = [dep_info.transitive_crate_outputs],
+                    transitive = [] if "proc-macro" in [
+                        crate_info.type,
+                        crate_info.wrapped_crate_type,
+                    ] else [dep_info.transitive_crate_outputs],
                 ),
             )
             transitive_noncrates.append(dep_info.transitive_noncrates)

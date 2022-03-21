@@ -1,10 +1,12 @@
 """A module defining dependencies of the `cargo-bazel` Rust target"""
 
 load("@rules_rust//rust:defs.bzl", "rust_common")
-load("//crate_universe:defs.bzl", "crate", "crates_repository", "crates_vendor")
 load("//crate_universe:deps_bootstrap.bzl", "cargo_bazel_bootstrap")
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
+load("//crate_universe/private:crate.bzl", "crate")
+load("//crate_universe/private:crates_repository.bzl", "crates_repository")
+load("//crate_universe/private:crates_vendor.bzl", "crates_vendor")
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
 
