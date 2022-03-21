@@ -7,4 +7,3 @@ make_double_forty_two!();
 fn test_answer_macro() {
     assert_eq!(double_forty_two(), forty_two() + forty_two());
 }
-
