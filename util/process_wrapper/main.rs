@@ -75,5 +75,19 @@ fn main() {
         }
     }
 
-    exit(status.code().unwrap())
+    #[cfg(target_family = "unix")]
+    let exit_code = if cfg!(unix) {
+        use std::os::unix::process::ExitStatusExt;
+        let exit_code = match status.code() {
+            Some(c) => c,
+            None => {
+                eprintln!("process wrapper error: subprocess does not have an exit code. core_dumped: {}, signal: {:?}, stopped_signal: {:?}", status.core_dumped(), status.signal(), status.stopped_signal());
+                1
+            }
+        };
+        exit(exit_code)
+    } else {
+        status.code().unwrap_or(1)
+    };
+    exit(exit_code)
 }
