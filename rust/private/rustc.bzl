@@ -169,6 +169,9 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     return False
 
+def _is_proc_macro(crate_info):
+    return "proc-macro" in (crate_info.type, crate_info.wrapped_crate_type)
+
 def collect_deps(
         deps,
         proc_macro_deps,
@@ -197,6 +200,7 @@ def collect_deps(
     build_info = None
     linkstamps = []
     transitive_crate_outputs = []
+    transitive_metadata_outputs = []
 
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
@@ -222,19 +226,35 @@ def collect_deps(
             transitive_crates.append(
                 depset(
                     [crate_info],
-                    transitive = [] if "proc-macro" in [
-                        crate_info.type,
-                        crate_info.wrapped_crate_type,
-                    ] else [dep_info.transitive_crates],
+                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crates],
                 ),
             )
+
+            # If this dependency produces metadata, add it to the metadata outputs.
+            # If it doesn't (for example a custom library that exports crate_info),
+            # we depend on crate_info.output.
+            depend_on = crate_info.metadata
+            if not crate_info.metadata:
+                depend_on = crate_info.output
+
+            transitive_metadata_outputs.append(
+                depset(
+                    [depend_on],
+                    transitive = [dep_info.transitive_metadata_outputs],
+                ),
+            )
+
+            # If this dependency is a proc_macro, it still can be used for lib crates
+            # that produce metadata.
+            if _is_proc_macro(crate_info):
+                transitive_metadata_outputs.append(
+                    depset([crate_info.output]),
+                )
+
             transitive_crate_outputs.append(
                 depset(
                     [crate_info.output],
-                    transitive = [] if "proc-macro" in [
-                        crate_info.type,
-                        crate_info.wrapped_crate_type,
-                    ] else [dep_info.transitive_crate_outputs],
+                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crate_outputs],
                 ),
             )
 
@@ -269,6 +289,7 @@ def collect_deps(
                 order = "topological",  # dylib link flag ordering matters.
             ),
             transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
+            transitive_metadata_outputs = depset(transitive = transitive_metadata_outputs),
             transitive_build_infos = depset(transitive = transitive_build_infos),
             link_search_path_files = depset(transitive = transitive_link_search_paths),
             dep_env = build_info.dep_env if build_info else None,
@@ -505,6 +526,30 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             visited_libs[name] = artifact
     return ambiguous_libs
 
+def _depend_on_metadata(crate_info, force_depend_on_objects):
+    """Determines if we can depend on metadata for this crate.
+
+    By default (when pipelining is disabled or when the crate type needs to link against
+    objects) we depend on the set of object files (.rlib).
+    When pipelining is enabled and the crate type supports depending on metadata,
+    we depend on metadata files only (.rmeta).
+    In some rare cases, even if both of those conditions are true, we still want to
+    depend on objects. This is what force_depend_on_objects is.
+
+    Args:
+        crate_info (CrateInfo): The Crate to determine this for.
+        force_depend_on_objects (bool): if set we will not depend on metadata.
+
+    Returns:
+        Whether we can depend on metadata for this crate.
+    """
+    if force_depend_on_objects:
+        return False
+
+    is_lib = crate_info.type in ("rlib", "lib")
+    build_metadata = crate_info.metadata != None
+    return is_lib and build_metadata
+
 def collect_inputs(
         ctx,
         file,
@@ -516,7 +561,8 @@ def collect_inputs(
         crate_info,
         dep_info,
         build_info,
-        stamp = False):
+        stamp = False,
+        force_depend_on_objects = False):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -532,6 +578,8 @@ def collect_inputs(
         build_info (BuildInfo): The target Crate's build settings.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        force_depend_on_objects (bool, optional): Forces dependencies of this rule to be objects rather than
+            metadata, even for libraries. This is used in rustdoc tests.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -572,6 +620,10 @@ def collect_inputs(
     # change.
     linkstamp_outs = []
 
+    transitive_crate_outputs = dep_info.transitive_crate_outputs
+    if _depend_on_metadata(crate_info, force_depend_on_objects):
+        transitive_crate_outputs = dep_info.transitive_metadata_outputs
+
     nolinkstamp_compile_inputs = depset(
         getattr(files, "data", []) +
         ([build_info.rustc_env, build_info.flags] if build_info else []) +
@@ -580,7 +632,7 @@ def collect_inputs(
         transitive = [
             linker_depset,
             crate_info.srcs,
-            dep_info.transitive_crate_outputs,
+            transitive_crate_outputs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
             toolchain.all_files,
@@ -654,7 +706,10 @@ def construct_arguments(
         force_all_deps_direct = False,
         force_link = False,
         stamp = False,
-        remap_path_prefix = "."):
+        remap_path_prefix = ".",
+        use_json_output = False,
+        build_metadata = False,
+        force_link_to_objects = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -681,6 +736,9 @@ def construct_arguments(
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
         remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
+        use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
+        build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
+        force_link_to_objects (bool): Force linking to concrete (rlib) dependencies, instead of metadata (rlib) even if they are available.
 
     Returns:
         tuple: A tuple of the following items
@@ -692,6 +750,9 @@ def construct_arguments(
                     This is to be passed to the `arguments` parameter of actions
             - (dict): Common rustc environment variables
     """
+    if build_metadata and not use_json_output:
+        fail("build_metadata requires parse_json_output")
+
     output_dir = getattr(crate_info.output, "dirname", None)
     linker_script = getattr(file, "linker_script", None)
 
@@ -761,8 +822,35 @@ def construct_arguments(
     rustc_flags.add(crate_info.root)
     rustc_flags.add("--crate-name=" + crate_info.name)
     rustc_flags.add("--crate-type=" + crate_info.type)
+
+    error_format = "human"
     if hasattr(attr, "_error_format"):
-        rustc_flags.add("--error-format=" + attr._error_format[ErrorFormatInfo].error_format)
+        error_format = attr._error_format[ErrorFormatInfo].error_format
+
+    if use_json_output:
+        # If --error-format was set to json, we just pass the output through
+        # Otherwise process_wrapper uses the "rendered" field.
+        process_wrapper_flags.add("--rustc-output-format", "json" if error_format == "json" else "rendered")
+
+        # Configure rustc json output by adding artifact notifications.
+        # These will always be filtered out by process_wrapper and will be use to terminate
+        # rustc when appropriate.
+        json = ["artifacts"]
+        if error_format == "short":
+            json.append("diagnostic-short")
+        elif error_format == "human" and toolchain.os != "windows":
+            # If the os is not windows, we can get colorized output.
+            json.append("diagnostic-rendered-ansi")
+
+        rustc_flags.add("--json=" + ",".join(json))
+
+        error_format = "json"
+
+        if build_metadata:
+            # Configure process_wrapper to terminate rustc when metadata are emitted
+            process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+
+    rustc_flags.add("--error-format=" + error_format)
 
     # Mangle symbols to disambiguate crates with the same name. This could
     # happen only for non-final artifacts where we compute an output_hash,
@@ -789,7 +877,9 @@ def construct_arguments(
 
     if emit:
         rustc_flags.add("--emit=" + ",".join(emit_with_paths))
-    rustc_flags.add("--color=always")
+    if error_format != "json":
+        # Color is not compatible with json output.
+        rustc_flags.add("--color=always")
     rustc_flags.add("--target=" + toolchain.target_flag_value)
     if hasattr(attr, "crate_features"):
         rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
@@ -832,11 +922,12 @@ def construct_arguments(
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
-    # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct)
+    link_to_metadata = _depend_on_metadata(crate_info, force_link_to_objects)
 
-    needs_extern_proc_macro_flag = "proc-macro" in [crate_info.type, crate_info.wrapped_crate_type] and \
-                                   crate_info.edition != "2015"
+    # These always need to be added, even if not linking this crate.
+    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, link_to_metadata = link_to_metadata)
+
+    needs_extern_proc_macro_flag = _is_proc_macro(crate_info) and crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
@@ -919,6 +1010,8 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
+    build_metadata = getattr(crate_info, "metadata", None)
+
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, linkstamps = collect_deps(
@@ -948,6 +1041,14 @@ def rustc_compile_action(
         stamp = stamp,
     )
 
+    # If we build metadata, we need to keep the command line of the two invocations
+    # (rlib and rmeta) as similar as possible, otherwise rustc rejects the rmeta as
+    # a candidate.
+    # Because of that we need to add emit=metadata to both the rlib and rmeta invocation.
+    emit = ["dep-info", "link"]
+    if build_metadata:
+        emit.append("metadata")
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -955,6 +1056,7 @@ def rustc_compile_action(
         toolchain = toolchain,
         tool_path = toolchain.rustc.path,
         cc_toolchain = cc_toolchain,
+        emit = emit,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
@@ -967,7 +1069,34 @@ def rustc_compile_action(
         build_flags_files = build_flags_files,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
+        use_json_output = bool(build_metadata),
     )
+
+    args_metadata = None
+    if build_metadata:
+        args_metadata, _ = construct_arguments(
+            ctx = ctx,
+            attr = attr,
+            file = ctx.file,
+            toolchain = toolchain,
+            tool_path = toolchain.rustc.path,
+            cc_toolchain = cc_toolchain,
+            emit = emit,
+            feature_configuration = feature_configuration,
+            crate_info = crate_info,
+            dep_info = dep_info,
+            linkstamp_outs = linkstamp_outs,
+            ambiguous_libs = ambiguous_libs,
+            output_hash = output_hash,
+            rust_flags = rust_flags,
+            out_dir = out_dir,
+            build_env_files = build_env_files,
+            build_flags_files = build_flags_files,
+            force_all_deps_direct = force_all_deps_direct,
+            stamp = stamp,
+            use_json_output = True,
+            build_metadata = True,
+        )
 
     env = dict(ctx.configuration.default_shell_env)
     env.update(env_from_args)
@@ -1019,10 +1148,25 @@ def rustc_compile_action(
                 len(crate_info.srcs.to_list()),
             ),
         )
+        if args_metadata:
+            ctx.actions.run(
+                executable = ctx.executable._process_wrapper,
+                inputs = compile_inputs,
+                outputs = [build_metadata],
+                env = env,
+                arguments = args_metadata.all,
+                mnemonic = "RustcMetadata",
+                progress_message = "Compiling Rust metadata {} {}{} ({} files)".format(
+                    crate_info.type,
+                    ctx.label.name,
+                    formatted_version,
+                    len(crate_info.srcs.to_list()),
+                ),
+            )
     else:
         # Run without process_wrapper
-        if build_env_files or build_flags_files or stamp:
-            fail("build_env_files, build_flags_files, stamp are not supported when building without process_wrapper")
+        if build_env_files or build_flags_files or stamp or build_metadata:
+            fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
         ctx.actions.run(
             executable = toolchain.rustc,
             inputs = compile_inputs,
@@ -1304,7 +1448,7 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info, force_all_deps_direct = False):
+def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, link_to_metadata = False):
     """Adds link flags to an Args object reference
 
     Args:
@@ -1312,9 +1456,26 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False):
         dep_info (DepInfo): The current target's dependency info
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        link_to_metadata:
     """
+    # print(" link_to_metadata ", link_to_metadata)
 
-    if force_all_deps_direct:
+    if not link_to_metadata:
+        if force_all_deps_direct:
+            args.add_all(
+                depset(
+                    transitive = [
+                        dep_info.direct_crates,
+                        dep_info.transitive_crates,
+                    ],
+                ),
+                uniquify = True,
+                map_each = _crate_to_link_flag,
+            )
+        else:
+            # nb. Direct crates are linked via --extern regardless of their crate_type
+            args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
+    elif force_all_deps_direct:
         args.add_all(
             depset(
                 transitive = [
@@ -1323,17 +1484,41 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False):
                 ],
             ),
             uniquify = True,
-            map_each = _crate_to_link_flag,
+            map_each = _crate_to_link_flag_metadata,
         )
     else:
         # nb. Direct crates are linked via --extern regardless of their crate_type
-        args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
+        args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag_metadata)
+
     args.add_all(
         dep_info.transitive_crates,
         map_each = _get_crate_dirname,
         uniquify = True,
         format_each = "-Ldependency=%s",
     )
+
+def _crate_to_link_flag_metadata(crate):
+    """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
+
+    Args:
+        crate (CrateInfo|AliasableDepInfo): A CrateInfo or an AliasableDepInfo provider
+
+    Returns:
+        list: Link flags for the given provider
+    """
+
+    # This is AliasableDepInfo, we should use the alias as a crate name
+    if hasattr(crate, "dep"):
+        name = crate.name
+        crate_info = crate.dep
+    else:
+        name = crate.name
+        crate_info = crate
+
+    lib_or_meta = crate_info.metadata
+    if not crate_info.metadata:
+        lib_or_meta = crate_info.output
+    return ["--extern={}={}".format(name, lib_or_meta.path)]
 
 def _crate_to_link_flag(crate):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object

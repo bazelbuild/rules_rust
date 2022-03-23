@@ -29,6 +29,14 @@ bool_flag(
     build_setting_default = False,
 )
 
+# When set, this flag causes rustc to emit .rmeta files and use them for rlib -> rlib dependencies.
+# While this involves one extra (short) rustc invocation to build the rmeta file,
+# it allows library dependencies to be unlocked much sooner, increasing parallelism during compilation.
+bool_flag(
+    name = "pipelined_compilation",
+    build_setting_default = False,
+)
+
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),

@@ -15,6 +15,7 @@ default_windows_targets: &default_windows_targets
   - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
+  - "-//test/unit/pipelined_compilation/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"

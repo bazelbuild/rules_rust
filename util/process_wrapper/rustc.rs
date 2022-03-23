@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::convert::{TryFrom, TryInto};
+
 use tinyjson::JsonValue;
 
 use crate::output::LineOutput;
@@ -40,9 +42,46 @@ fn get_key(value: &JsonValue, key: &str) -> Option<String> {
     }
 }
 
-/// stop_on_rmeta_completion takes an output line from rustc configured with
+#[derive(Debug)]
+enum RustcMessage {
+    Emit(String),
+    Message(String),
+}
+
+impl TryFrom<JsonValue> for RustcMessage {
+    type Error = ();
+    fn try_from(val: JsonValue) -> Result<Self, Self::Error> {
+        if let Some(emit) = get_key(&val, "emit") {
+            return Ok(Self::Emit(emit));
+        }
+        if let Some(rendered) = get_key(&val, "rendered") {
+            return Ok(Self::Message(rendered));
+        }
+        Err(())
+    }
+}
+
+/// process_rustc_json takes an output line from rustc configured with
 /// --error-format=json, parses the json and returns the appropriate output
-/// according to the original --error-format supplied to rustc.
+/// according to the original --error-format supplied.
+/// Only messages are returned, emits are ignored.
+pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineOutput {
+    let parsed: JsonValue = line
+        .parse()
+        .expect("process wrapper error: expected json messages in pipeline mode");
+    match parsed.try_into() {
+        Ok(RustcMessage::Message(msg)) => match error_format {
+            // If the output should be json, we just forward the messages as-is
+            // using `line`.
+            ErrorFormat::Json => LineOutput::Message(line),
+            // Otherwise we return the rendered field.
+            _ => LineOutput::Message(msg),
+        },
+        _ => LineOutput::Skip,
+    }
+}
+
+/// stop_on_rmeta_completion parses the json output of rustc in the same way process_rustc_json does.
 /// In addition, it will signal to stop when metadata is emitted
 /// so the compiler can be terminated.
 /// This is used to implement pipelining in rules_rust, please see
@@ -55,24 +94,19 @@ pub(crate) fn stop_on_rmeta_completion(
     let parsed: JsonValue = line
         .parse()
         .expect("process wrapper error: expected json messages in pipeline mode");
-    if let Some(emit) = get_key(&parsed, "emit") {
-        // We don't want to print emit messages.
-        // If the emit messages is "metadata" we can signal the process to quit
-        return if emit == "metadata" {
+
+    match parsed.try_into() {
+        Ok(RustcMessage::Emit(emit)) if emit == "metadata" => {
             *kill = true;
             LineOutput::Terminate
-        } else {
-            LineOutput::Skip
-        };
-    };
-
-    match error_format {
-        // If the output should be json, we just forward the messages as-is
-        ErrorFormat::Json => LineOutput::Message(line),
-        // Otherwise we extract the "rendered" attribute.
-        // If we don't find it we skip the line.
-        _ => get_key(&parsed, "rendered")
-            .map(LineOutput::Message)
-            .unwrap_or(LineOutput::Skip),
+        }
+        Ok(RustcMessage::Message(msg)) => match error_format {
+            // If the output should be json, we just forward the messages as-is
+            // using `line`.
+            ErrorFormat::Json => LineOutput::Message(line),
+            // Otherwise we return the rendered field.
+            _ => LineOutput::Message(msg),
+        },
+        _ => LineOutput::Skip,
     }
 }

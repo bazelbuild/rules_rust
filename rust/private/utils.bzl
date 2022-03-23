@@ -610,3 +610,25 @@ def _replace_all(string, substitutions):
         string = string[:pattern_start] + replacement + string[after_pattern:]
 
     return string
+
+def can_build_metadata(toolchain, ctx, crate_type):
+    """Can we build metadata for this rust_library?
+
+    Args:
+        toolchain (toolchain): The rust toolchain
+        ctx (ctx): The rule's context object
+        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+
+    Returns:
+        bool: whether we can build metadata for this rule.
+    """
+
+    # In order to enable pipelined compilation we require that:
+    # 1) The _pipelined_compilation flag is enabled,
+    # 2) the OS running the rule is something other than windows as we require sandboxing (for now),
+    # 3) process_wrapper is enabled (this is disabled when compiling process_wrapper itself),
+    # 4) the crate_type is rlib or lib.
+    return toolchain._pipelined_compilation and \
+           toolchain.os != "windows" and \
+           ctx.attr._process_wrapper and \
+           crate_type in ("rlib", "lib")

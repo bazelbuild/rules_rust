@@ -37,6 +37,7 @@ def _strip_crate_info_output(crate_info):
         aliases = crate_info.aliases,
         # This crate info should have no output
         output = None,
+        metadata = crate_info.metadata,
         edition = crate_info.edition,
         rustc_env = crate_info.rustc_env,
         is_test = crate_info.is_test,
@@ -90,6 +91,8 @@ def rustdoc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
+        force_depend_on_objects = is_test,
     )
 
     # Since this crate is not actually producing the output described by the
@@ -118,6 +121,7 @@ def rustdoc_compile_action(
         emit = [],
         remap_path_prefix = None,
         force_link = True,
+        force_link_to_objects = is_test,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot

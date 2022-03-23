@@ -9,6 +9,9 @@ load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVa
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "can_build_metadata")
+
 def _generator_impl(ctx):
     rs_file = ctx.actions.declare_file(ctx.label.name + "_generated.rs")
     ctx.actions.run_shell(
@@ -39,6 +42,12 @@ EOF
         lib_hash = output_hash,
         extension = ".rlib",
     )
+    rust_metadata_name = "{prefix}{name}-{lib_hash}{extension}".format(
+        prefix = "lib",
+        name = crate_name,
+        lib_hash = output_hash,
+        extension = ".rmeta",
+    )
 
     deps = [DepVariantInfo(
         crate_info = dep[CrateInfo] if CrateInfo in dep else None,
@@ -48,6 +57,9 @@ EOF
     ) for dep in ctx.attr.deps]
 
     rust_lib = ctx.actions.declare_file(rust_lib_name)
+    rust_metadata = None
+    if can_build_metadata(toolchain, ctx, crate_type):
+        rust_metadata = ctx.actions.declare_file(rust_metadata_name)
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -61,6 +73,7 @@ EOF
             proc_macro_deps = depset([]),
             aliases = {},
             output = rust_lib,
+            metadata = rust_metadata,
             owner = ctx.label,
             edition = "2018",
             compile_data = depset([]),
