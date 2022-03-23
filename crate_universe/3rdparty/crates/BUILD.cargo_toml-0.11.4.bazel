@@ -51,7 +51,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__serde_derive-1.0.136//:serde_derive",
+            "@crate_universe_crate_index__serde_derive-1.0.136//:serde_derive",
         ],
     }),
     rustc_env = {
@@ -80,8 +80,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__serde-1.0.136//:serde",
-            "@crate_index__toml-0.5.8//:toml",
+            "@crate_universe_crate_index__serde-1.0.136//:serde",
+            "@crate_universe_crate_index__toml-0.5.8//:toml",
         ],
     }),
 )

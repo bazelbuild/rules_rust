@@ -79,8 +79,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__matches-0.1.9//:matches",
-            "@crate_index__percent-encoding-2.1.0//:percent_encoding",
+            "@crate_universe_crate_index__matches-0.1.9//:matches",
+            "@crate_universe_crate_index__percent-encoding-2.1.0//:percent_encoding",
         ],
     }),
 )

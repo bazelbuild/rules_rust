@@ -83,7 +83,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__uncased-0.9.6//:build_script_build",
+            "@crate_universe_crate_index__uncased-0.9.6//:build_script_build",
         ],
     }),
 )
@@ -153,7 +153,7 @@ cargo_build_script(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__version_check-0.9.4//:version_check",
+            "@crate_universe_crate_index__version_check-0.9.4//:version_check",
         ],
     }),
 )

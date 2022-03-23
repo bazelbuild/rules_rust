@@ -81,8 +81,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__num-traits-0.2.14//:num_traits",
-            "@crate_index__rustc-serialize-0.3.24//:rustc_serialize",
+            "@crate_universe_crate_index__num-traits-0.2.14//:num_traits",
+            "@crate_universe_crate_index__rustc-serialize-0.3.24//:rustc_serialize",
         ],
     }),
 )

@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__anyhow-1.0.56//:build_script_build",
+            "@crate_universe_crate_index__anyhow-1.0.56//:build_script_build",
         ],
     }),
 )

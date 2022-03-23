@@ -88,17 +88,17 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@crate_index__winapi-0.3.9//:winapi",
+            "@crate_universe_crate_index__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crate_index__libc-0.2.120//:libc",
-            "@crate_index__num-integer-0.1.44//:num_integer",
-            "@crate_index__num-traits-0.2.14//:num_traits",
+            "@crate_universe_crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__num-integer-0.1.44//:num_integer",
+            "@crate_universe_crate_index__num-traits-0.2.14//:num_traits",
         ],
         "//conditions:default": [
-            "@crate_index__libc-0.2.120//:libc",
-            "@crate_index__num-integer-0.1.44//:num_integer",
-            "@crate_index__num-traits-0.2.14//:num_traits",
+            "@crate_universe_crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__num-integer-0.1.44//:num_integer",
+            "@crate_universe_crate_index__num-traits-0.2.14//:num_traits",
         ],
     }),
 )

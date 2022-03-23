@@ -80,8 +80,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__phf_shared-0.10.0//:phf_shared",
-            "@crate_index__rand-0.8.5//:rand",
+            "@crate_universe_crate_index__phf_shared-0.10.0//:phf_shared",
+            "@crate_universe_crate_index__rand-0.8.5//:rand",
         ],
     }),
 )
@@ -143,8 +143,8 @@ rust_binary(
         ":phf_generator",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__phf_shared-0.10.0//:phf_shared",
-            "@crate_index__rand-0.8.5//:rand",
+            "@crate_universe_crate_index__phf_shared-0.10.0//:phf_shared",
+            "@crate_universe_crate_index__rand-0.8.5//:rand",
         ],
     }),
 )

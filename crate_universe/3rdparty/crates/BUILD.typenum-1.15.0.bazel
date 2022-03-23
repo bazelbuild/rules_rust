@@ -83,7 +83,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__typenum-1.15.0//:build_script_main",
+            "@crate_universe_crate_index__typenum-1.15.0//:build_script_main",
         ],
     }),
 )

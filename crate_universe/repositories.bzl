@@ -12,7 +12,7 @@ load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_i
 
 USE_CRATES_REPOSITORY = False
 
-_REPOSITORY_NAME = "crate_index"
+_REPOSITORY_NAME = "crate_universe_crate_index"
 
 _ANNOTATIONS = {
     "libgit2-sys": [crate.annotation(

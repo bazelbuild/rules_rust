@@ -81,7 +81,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__rand_core-0.3.1//:rand_core",
+            "@crate_universe_crate_index__rand_core-0.3.1//:rand_core",
         ],
     }),
 )

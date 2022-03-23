@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__deunicode-0.4.3//:deunicode",
+            "@crate_universe_crate_index__deunicode-0.4.3//:deunicode",
         ],
     }),
 )

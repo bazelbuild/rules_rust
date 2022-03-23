@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__unic-ucd-segment-0.9.0//:unic_ucd_segment",
+            "@crate_universe_crate_index__unic-ucd-segment-0.9.0//:unic_ucd_segment",
         ],
     }),
 )

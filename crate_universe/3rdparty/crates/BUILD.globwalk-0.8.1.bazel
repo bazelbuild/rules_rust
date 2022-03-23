@@ -79,9 +79,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__bitflags-1.3.2//:bitflags",
-            "@crate_index__ignore-0.4.18//:ignore",
-            "@crate_index__walkdir-2.3.2//:walkdir",
+            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
+            "@crate_universe_crate_index__ignore-0.4.18//:ignore",
+            "@crate_universe_crate_index__walkdir-2.3.2//:walkdir",
         ],
     }),
 )

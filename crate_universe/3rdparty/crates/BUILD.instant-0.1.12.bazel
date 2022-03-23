@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
         ],
     }),
 )

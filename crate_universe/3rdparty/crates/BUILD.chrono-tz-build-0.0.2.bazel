@@ -79,9 +79,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__parse-zoneinfo-0.3.0//:parse_zoneinfo",
-            "@crate_index__phf-0.10.1//:phf",
-            "@crate_index__phf_codegen-0.10.0//:phf_codegen",
+            "@crate_universe_crate_index__parse-zoneinfo-0.3.0//:parse_zoneinfo",
+            "@crate_universe_crate_index__phf-0.10.1//:phf",
+            "@crate_universe_crate_index__phf_codegen-0.10.0//:phf_codegen",
         ],
     }),
 )

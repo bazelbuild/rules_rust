@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__serde-1.0.136//:serde",
+            "@crate_universe_crate_index__serde-1.0.136//:serde",
         ],
     }),
 )

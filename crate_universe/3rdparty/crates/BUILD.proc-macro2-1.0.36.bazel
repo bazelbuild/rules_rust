@@ -85,8 +85,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__proc-macro2-1.0.36//:build_script_build",
-            "@crate_index__unicode-xid-0.2.2//:unicode_xid",
+            "@crate_universe_crate_index__proc-macro2-1.0.36//:build_script_build",
+            "@crate_universe_crate_index__unicode-xid-0.2.2//:unicode_xid",
         ],
     }),
 )

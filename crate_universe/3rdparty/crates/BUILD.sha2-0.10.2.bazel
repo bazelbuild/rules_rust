@@ -99,15 +99,15 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_index__cpufeatures-0.2.1//:cpufeatures",
+            "@crate_universe_crate_index__cpufeatures-0.2.1//:cpufeatures",
 
             # Common Deps
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__digest-0.10.3//:digest",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__digest-0.10.3//:digest",
         ],
         "//conditions:default": [
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__digest-0.10.3//:digest",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__digest-0.10.3//:digest",
         ],
     }),
 )

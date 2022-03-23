@@ -86,9 +86,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__crossbeam-utils-0.8.7//:build_script_build",
-            "@crate_index__lazy_static-1.4.0//:lazy_static",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__crossbeam-utils-0.8.7//:build_script_build",
+            "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
         ],
     }),
 )

@@ -100,12 +100,12 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__libc-0.2.120//:libc",
 
             # Common Deps
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__fastrand-1.7.0//:fastrand",
-            "@crate_index__remove_dir_all-0.5.3//:remove_dir_all",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__fastrand-1.7.0//:fastrand",
+            "@crate_universe_crate_index__remove_dir_all-0.5.3//:remove_dir_all",
         ],
         # cfg(target_os = "redox")
         #
@@ -118,17 +118,17 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@crate_index__winapi-0.3.9//:winapi",
+            "@crate_universe_crate_index__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__fastrand-1.7.0//:fastrand",
-            "@crate_index__remove_dir_all-0.5.3//:remove_dir_all",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__fastrand-1.7.0//:fastrand",
+            "@crate_universe_crate_index__remove_dir_all-0.5.3//:remove_dir_all",
         ],
         "//conditions:default": [
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_index__fastrand-1.7.0//:fastrand",
-            "@crate_index__remove_dir_all-0.5.3//:remove_dir_all",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__fastrand-1.7.0//:fastrand",
+            "@crate_universe_crate_index__remove_dir_all-0.5.3//:remove_dir_all",
         ],
     }),
 )

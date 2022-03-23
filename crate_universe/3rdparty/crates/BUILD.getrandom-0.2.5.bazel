@@ -84,10 +84,10 @@ rust_library(
             "@rules_rust//rust/platform:wasm32-wasi",
         ): [
             # Target Deps
-            "@crate_index__wasi-0.10.2-wasi-snapshot-preview1//:wasi",
+            "@crate_universe_crate_index__wasi-0.10.2-wasi-snapshot-preview1//:wasi",
 
             # Common Deps
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
         ],
         # cfg(unix)
         (
@@ -110,13 +110,13 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__libc-0.2.120//:libc",
 
             # Common Deps
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
         ],
         "//conditions:default": [
-            "@crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
         ],
     }),
 )

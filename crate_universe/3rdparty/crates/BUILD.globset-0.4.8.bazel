@@ -79,11 +79,11 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__aho-corasick-0.7.18//:aho_corasick",
-            "@crate_index__bstr-0.2.17//:bstr",
-            "@crate_index__fnv-1.0.7//:fnv",
-            "@crate_index__log-0.4.14//:log",
-            "@crate_index__regex-1.5.5//:regex",
+            "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
+            "@crate_universe_crate_index__bstr-0.2.17//:bstr",
+            "@crate_universe_crate_index__fnv-1.0.7//:fnv",
+            "@crate_universe_crate_index__log-0.4.14//:log",
+            "@crate_universe_crate_index__regex-1.5.5//:regex",
         ],
     }),
 )

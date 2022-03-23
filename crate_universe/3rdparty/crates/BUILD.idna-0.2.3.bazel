@@ -79,9 +79,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__matches-0.1.9//:matches",
-            "@crate_index__unicode-bidi-0.3.7//:unicode_bidi",
-            "@crate_index__unicode-normalization-0.1.19//:unicode_normalization",
+            "@crate_universe_crate_index__matches-0.1.9//:matches",
+            "@crate_universe_crate_index__unicode-bidi-0.3.7//:unicode_bidi",
+            "@crate_universe_crate_index__unicode-normalization-0.1.19//:unicode_normalization",
         ],
     }),
 )

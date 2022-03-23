@@ -104,7 +104,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__libc-0.2.120//:libc",
 
             # Common Deps
         ],
@@ -114,7 +114,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@crate_index__winapi-0.3.9//:winapi",
+            "@crate_universe_crate_index__winapi-0.3.9//:winapi",
 
             # Common Deps
         ],

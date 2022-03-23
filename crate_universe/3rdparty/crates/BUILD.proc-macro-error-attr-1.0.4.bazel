@@ -83,9 +83,9 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__proc-macro-error-attr-1.0.4//:build_script_build",
-            "@crate_index__proc-macro2-1.0.36//:proc_macro2",
-            "@crate_index__quote-1.0.15//:quote",
+            "@crate_universe_crate_index__proc-macro-error-attr-1.0.4//:build_script_build",
+            "@crate_universe_crate_index__proc-macro2-1.0.36//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.15//:quote",
         ],
     }),
 )
@@ -155,7 +155,7 @@ cargo_build_script(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__version_check-0.9.4//:version_check",
+            "@crate_universe_crate_index__version_check-0.9.4//:version_check",
         ],
     }),
 )

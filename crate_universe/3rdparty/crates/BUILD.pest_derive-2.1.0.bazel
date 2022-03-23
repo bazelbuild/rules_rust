@@ -79,8 +79,8 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__pest-2.1.3//:pest",
-            "@crate_index__pest_generator-2.1.3//:pest_generator",
+            "@crate_universe_crate_index__pest-2.1.3//:pest",
+            "@crate_universe_crate_index__pest_generator-2.1.3//:pest_generator",
         ],
     }),
 )

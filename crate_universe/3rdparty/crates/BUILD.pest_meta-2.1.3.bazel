@@ -79,8 +79,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_index__maplit-1.0.2//:maplit",
-            "@crate_index__pest-2.1.3//:pest",
+            "@crate_universe_crate_index__maplit-1.0.2//:maplit",
+            "@crate_universe_crate_index__pest-2.1.3//:pest",
         ],
     }),
 )
