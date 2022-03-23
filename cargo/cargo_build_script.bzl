@@ -83,6 +83,7 @@ def _build_script_impl(ctx):
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": pkg_name,
         "HOST": toolchain.exec_triple,
+        "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_flag_value,
