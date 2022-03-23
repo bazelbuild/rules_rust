@@ -4,6 +4,7 @@ use std::fmt;
 use std::process::exit;
 
 use crate::flags::{FlagParseError, Flags, ParseOutcome};
+use crate::rustc;
 use crate::util::*;
 
 #[derive(Debug)]
@@ -38,6 +39,12 @@ pub(crate) struct Options {
     pub(crate) stdout_file: Option<String>,
     // If set, redirects the child process stderr to this file.
     pub(crate) stderr_file: Option<String>,
+    // If set, it configures rustc to emit an rmeta file and then
+    // quit.
+    pub(crate) rustc_quit_on_rmeta: bool,
+    // If rustc_quit_on_rmeta is set to true, this controls the
+    // output format of rustc messages.
+    pub(crate) rustc_output_format: rustc::ErrorFormat,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -51,6 +58,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut copy_output_raw = None;
     let mut stdout_file = None;
     let mut stderr_file = None;
+    let mut rustc_quit_on_rmeta_raw = None;
+    let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
     flags.define_flag("--volatile-status-file", "", &mut volatile_status_file_raw);
@@ -79,6 +88,19 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--stderr-file",
         "Redirect subprocess stderr in this file.",
         &mut stderr_file,
+    );
+    flags.define_flag(
+        "--rustc-quit-on-rmeta",
+        "If enabled, this wrapper will terminate rustc after rmeta has been emitted.",
+        &mut rustc_quit_on_rmeta_raw,
+    );
+    flags.define_flag(
+        "--rustc-output-format",
+        "Controls the rustc output format if --rustc-quit-on-rmeta is set.\n\
+        'json' will cause the json output to be output, \
+        'rendered' will extract the rendered message and print that.\n\
+        Default: `rendered`",
+        &mut rustc_output_format_raw,
     );
 
     let mut child_args = match flags
@@ -138,6 +160,19 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         })
         .transpose()?;
 
+    let rustc_quit_on_rmeta = rustc_quit_on_rmeta_raw.map_or(false, |s| s == "true");
+    let rustc_output_format = rustc_output_format_raw
+        .map(|v| match v.as_str() {
+            "json" => Ok(rustc::ErrorFormat::Json),
+            "rendered" => Ok(rustc::ErrorFormat::Rendered),
+            _ => Err(OptionError::Generic(format!(
+                "invalid --rustc-output-format '{}'",
+                v
+            ))),
+        })
+        .transpose()?
+        .unwrap_or_default();
+
     // Prepare the environment variables, unifying those read from files with the ones
     // of the current process.
     let vars = environment_block(environment_file_block, &stamp_mappings, &subst_mappings);
@@ -159,6 +194,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         copy_output,
         stdout_file,
         stderr_file,
+        rustc_quit_on_rmeta,
+        rustc_output_format,
     })
 }
 

@@ -953,14 +953,27 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 
     return new_attr
 
-# Provides an internal rust_binary to use that we can use to build the process
-# wrapper, this breaks the dependency of rust_binary on the process wrapper by
+# Provides an internal rust_{binary,library} to use that we can use to build the process
+# wrapper, this breaks the dependency of rust_* on the process wrapper by
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
     executable = True,
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
+    incompatible_use_toolchain_transition = True,
+)
+
+rust_library_without_process_wrapper = rule(
+    implementation = _rust_library_impl,
+    provides = _common_providers,
+    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
