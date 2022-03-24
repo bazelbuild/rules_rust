@@ -20,7 +20,8 @@ def _supports_linkstamps_test(ctx):
     linkstamp_out = linkstamp_action.outputs.to_list()[0]
     asserts.equals(env, linkstamp_out.basename, "linkstamp.o")
     tut_out = tut.files.to_list()[0]
-    expected_linkstamp_path = tut_out.dirname + "/_objs/" + tut_out.basename + "/test/unit/linkstamps/linkstamp.o"
+    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "/external/rules_rust"
+    expected_linkstamp_path = tut_out.dirname + "/_objs/" + tut_out.basename + workspace_prefix + "/test/unit/linkstamps/linkstamp.o"
     asserts.equals(
         env,
         linkstamp_out.path,
