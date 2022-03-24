@@ -929,14 +929,27 @@ rust_binary = rule(
 """),
 )
 
-def _fake_out_process_wrapper(attrs):
+def _common_attrs_for_binary_without_process_wrapper(attrs):
     new_attr = dict(attrs.items())
+
+    # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
         default = None,
         executable = True,
         allow_single_file = True,
         cfg = "exec",
     )
+
+    # fix stamp = 0
+    new_attr["stamp"] = attr.int(
+        doc = dedent("""\
+            Fix `stamp = 0` as stamping is not supported when building without process_wrapper:
+            https://github.com/bazelbuild/rules_rust/blob/8df4517d370b0c543a01ba38b63e1d5a4104b035/rust/private/rustc.bzl#L955
+        """),
+        default = 0,
+        values = [0],
+    )
+
     return new_attr
 
 # Provides an internal rust_binary to use that we can use to build the process
@@ -945,7 +958,7 @@ def _fake_out_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = dict(_fake_out_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
+    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
