@@ -563,11 +563,10 @@ impl CrateContext {
                         let crate_name = sanitize_module_name(&target.name);
 
                         // Locate the crate's root source file relative to the package root normalized for unix
-                        let crate_root =
-                            pathdiff::diff_paths(target.src_path.to_string(), package_root).map(
-                                // Normalize the path so that it always renders the same regardless of platform
-                                |root| root.to_string_lossy().replace("\\", "/"),
-                            );
+                        let crate_root = pathdiff::diff_paths(&target.src_path, package_root).map(
+                            // Normalize the path so that it always renders the same regardless of platform
+                            |root| root.to_string_lossy().replace('\\', "/"),
+                        );
 
                         // Conditionally check to see if the dependencies is a build-script target
                         if include_build_scripts && kind == "custom-build" {
