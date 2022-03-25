@@ -7,6 +7,7 @@ filegroup(
         "//tools/runfiles:distro",
         "//tools/rustdoc:distro",
         "//tools/rustfmt:distro",
+        "//tools/rust_analyzer:distro",
     ],
     visibility = ["//:__subpackages__"],
 )
