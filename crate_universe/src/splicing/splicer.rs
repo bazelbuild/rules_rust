@@ -344,21 +344,6 @@ impl<'a> SplicerKind<'a> {
     /// A helper for installing Cargo config files into the spliced workspace while also
     /// ensuring no other linked config file is available
     fn setup_cargo_config(cargo_config_path: &Option<PathBuf>, workspace_dir: &Path) -> Result<()> {
-        // Make sure no other config files exist
-        for config in vec![
-            workspace_dir.join("config"),
-            workspace_dir.join("config.toml"),
-        ] {
-            if config.exists() {
-                fs::remove_file(&config).with_context(|| {
-                    format!(
-                        "Failed to delete existing cargo config: {}",
-                        config.display()
-                    )
-                })?;
-            }
-        }
-
         // If the `.cargo` dir is a symlink, we'll need to relink it and ensure
         // a Cargo config file is omitted
         let dot_cargo_dir = workspace_dir.join(".cargo");
@@ -383,9 +368,31 @@ impl<'a> SplicerKind<'a> {
                     dot_cargo_dir.join("config.toml"),
                 ] {
                     if config.exists() {
-                        fs::remove_file(&config)?;
+                        remove_symlink(&config).with_context(|| {
+                            format!(
+                                "Failed to delete existing cargo config: {}",
+                                config.display()
+                            )
+                        })?;
                     }
                 }
+            }
+        }
+
+        // Make sure no other config files exist
+        for config in vec![
+            workspace_dir.join("config"),
+            workspace_dir.join("config.toml"),
+            dot_cargo_dir.join("config"),
+            dot_cargo_dir.join("config.toml"),
+        ] {
+            if config.exists() {
+                remove_symlink(&config).with_context(|| {
+                    format!(
+                        "Failed to delete existing cargo config: {}",
+                        config.display()
+                    )
+                })?;
             }
         }
 
