@@ -1,6 +1,7 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "cargo_environ", "execute")
+load("//cargo:defs.bzl", "CARGO_BAZEL_ISOLATED", "cargo_environ")
+load(":common_utils.bzl", "execute")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"

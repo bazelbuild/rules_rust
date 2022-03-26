@@ -151,7 +151,18 @@ def _resolve_repository_template(
 
     return template
 
-def get_rust_tools(cargo_template, rustc_template, host_triple, version):
+def cargo_home_path(repository_ctx):
+    """Define a path within the repository to use in place of `CARGO_HOME`
+
+    Args:
+        repository_ctx (repository_ctx): The rules context object
+
+    Returns:
+        path: The path to a directory to use as `CARGO_HOME`
+    """
+    return repository_ctx.path(".cargo_home")
+
+def get_rust_tools(cargo_template, rustc_template, host_triple, version, repository_ctx):
     """Retrieve `cargo` and `rustc` labels based on the host triple.
 
     Args:
@@ -159,10 +170,21 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, version):
         rustc_template (str): A template used to identify the label of the host `rustc` binary.
         host_triple (struct): The host's triple. See `@rules_rust//rust/platform:triple.bzl`.
         version (str): The version of Cargo+Rustc to use.
+        repository_ctx (repository_ctx): The rule's context object.
 
     Returns:
         struct: A struct containing the labels of expected tools
     """
+    # This is a bit hidden but to ensure Cargo behaves consistently based
+    # on the user provided config file, the config file is installed into
+    # the `CARGO_HOME` path. This is done so here since fetching tools
+    # is expected to always occur before any subcommands are run.
+    if repository_ctx.attr.isolated and repository_ctx.attr.cargo_config:
+        cargo_home = cargo_home_path(repository_ctx)
+        cargo_home_config = repository_ctx.path("{}/config.toml".format(cargo_home))
+        cargo_config = repository_ctx.path(repository_ctx.attr.cargo_config)
+        repository_ctx.symlink(cargo_config, cargo_home_config)
+
     extension = system_to_binary_ext(host_triple.system)
 
     cargo_label = Label(_resolve_repository_template(

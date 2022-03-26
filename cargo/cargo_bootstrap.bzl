@@ -1,5 +1,6 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
+load("//cargo:cargo_environ.bzl", "cargo_environ")
 load("//cargo/private:cargo_utils.bzl", "get_host_triple", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
 
@@ -71,9 +72,9 @@ def cargo_bootstrap(
     if build_mode == "release":
         args.append("--release")
 
-    env = dict({
-        "RUSTC": str(rustc_bin),
-    }.items() + environment.items())
+    env = cargo_environ(repository_ctx)
+    env["RUSTC"] = str(rustc_bin)
+    env.update(environment)
 
     repository_ctx.report_progress("Cargo Bootstrapping {}".format(binary))
     result = repository_ctx.execute(
@@ -197,6 +198,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         rustc_template = rustc_template,
         host_triple = host_triple,
         version = version_str,
+        repository_ctx = repository_ctx
     )
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
@@ -239,6 +241,10 @@ cargo_bootstrap_repository = repository_rule(
             ],
             default = "release",
         ),
+        "cargo_config": attr.label(
+            doc = "The cargo config file.",
+            allow_single_file = [".cfg"],
+        ),
         "cargo_lockfile": attr.label(
             doc = "The lockfile of the crate_universe resolver",
             allow_single_file = ["Cargo.lock"],
@@ -265,6 +271,10 @@ cargo_bootstrap_repository = repository_rule(
         ),
         "iso_date": attr.string(
             doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
+        ),
+        "isolated": attr.bool(
+            doc = "Isolate the bootstrap cargo.",
+            default = True,
         ),
         "rust_toolchain_cargo_template": attr.string(
             doc = (
