@@ -357,7 +357,7 @@ string: A json encoded string of all inputs
 ## crate_universe_dependencies
 
 <pre>
-crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>)
+crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>, <a href="#crate_universe_dependencies-bootstrap_cargo_config">bootstrap_cargo_config</a>)
 </pre>
 
 Define dependencies of the `cargo-bazel` Rust target
@@ -369,6 +369,7 @@ Define dependencies of the `cargo-bazel` Rust target
 | :------------- | :------------- | :------------- |
 | <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.59.0"</code> |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
+| <a id="crate_universe_dependencies-bootstrap_cargo_config"></a>bootstrap_cargo_config |  "A target containing a Cargo configuration",   |  <code>None</code> |
 
 
 <a id="#render_config"></a>
