@@ -55,11 +55,6 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
-TAGS = [
-    # https://github.com/rust-lang/rust-clippy/issues/8470
-    "noclippy",
-]
-
 rust_library(
     name = "cargo_bazel",
     srcs = glob(
@@ -72,7 +67,6 @@ rust_library(
         exclude = ["src/**/*.rs"],
     ),
     proc_macro_deps = all_crate_deps(proc_macro = True),
-    tags = TAGS,
     version = VERSION,
     visibility = ["//visibility:public"],
     deps = all_crate_deps(normal = True),
@@ -81,7 +75,6 @@ rust_library(
 rust_binary(
     name = "cargo_bazel_bin",
     srcs = ["src/main.rs"],
-    tags = TAGS,
     version = VERSION,
     visibility = ["//visibility:public"],
     deps = [":cargo_bazel"],
@@ -108,7 +101,6 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_exec_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_exec_rustc_files)",
     },
-    tags = TAGS,
     deps = [
         "@rules_rust//tools/runfiles",
     ] + all_crate_deps(
