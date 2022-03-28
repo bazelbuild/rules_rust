@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@crate_universe_crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 load("//crate_universe:version.bzl", "VERSION")
 
 exports_files(
@@ -114,10 +114,13 @@ rust_doc(
     visibility = ["//visibility:public"],
 )
 
-# `rust_doc_test` does not currently work. See:
-# https://github.com/bazelbuild/rules_rust/issues/980
-#
-# rust_doc_test(
-#     name = "rustdoc_test",
-#     crate = ":cargo_bazel",
-# )
+rust_doc_test(
+    name = "rustdoc_test",
+    crate = ":cargo_bazel",
+    # TODO: This target fails on windows with the error tracked in:
+    # https://github.com/bazelbuild/rules_rust/issues/1233
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
