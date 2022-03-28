@@ -28,7 +28,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "libc",
+    name = "crossbeam_utils",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -46,6 +46,7 @@ rust_library(
     }),
     crate_features = [
         "default",
+        "lazy_static",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -53,7 +54,7 @@ rust_library(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -81,18 +82,20 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.120",
+    version = "0.8.8",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.120//:build_script_build",
+            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
+            "@crate_universe_crate_index__crossbeam-utils-0.8.8//:build_script_build",
+            "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "libc_build_script",
+    name = "crossbeam-utils_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -112,6 +115,7 @@ cargo_build_script(
     }),
     crate_features = [
         "default",
+        "lazy_static",
         "std",
     ],
     crate_name = "build_script_build",
@@ -120,7 +124,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -152,7 +156,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "0.2.120",
+    version = "0.8.8",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
@@ -168,7 +172,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "libc_build_script",
+    actual = "crossbeam-utils_build_script",
     tags = [
         "manual",
     ],

@@ -89,8 +89,8 @@ rust_library(
         "//conditions:default": [
             "@crate_universe_crate_index__proc-macro-error-1.0.4//:build_script_build",
             "@crate_universe_crate_index__proc-macro2-1.0.36//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.15//:quote",
-            "@crate_universe_crate_index__syn-1.0.87//:syn",
+            "@crate_universe_crate_index__quote-1.0.17//:quote",
+            "@crate_universe_crate_index__syn-1.0.90//:syn",
         ],
     }),
 )

@@ -52,7 +52,7 @@ alias(
 
 alias(
     name = "cargo_toml",
-    actual = "@crate_universe_crate_index__cargo_toml-0.11.4//:cargo_toml",
+    actual = "@crate_universe_crate_index__cargo_toml-0.11.5//:cargo_toml",
     tags = ["manual"],
 )
 
@@ -94,7 +94,7 @@ alias(
 
 alias(
     name = "semver",
-    actual = "@crate_universe_crate_index__semver-1.0.6//:semver",
+    actual = "@crate_universe_crate_index__semver-1.0.7//:semver",
     tags = ["manual"],
 )
 

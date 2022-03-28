@@ -76,7 +76,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.5",
+    version = "0.2.6",
     deps = [
     ] + select_with_or({
         # cfg(target_os = "wasi")
@@ -110,7 +110,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_universe_crate_index__libc-0.2.120//:libc",
+            "@crate_universe_crate_index__libc-0.2.121//:libc",
 
             # Common Deps
             "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",

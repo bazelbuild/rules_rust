@@ -79,12 +79,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.14",
+    version = "0.4.16",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
             "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_universe_crate_index__log-0.4.14//:build_script_build",
+            "@crate_universe_crate_index__log-0.4.16//:build_script_build",
         ],
     }),
 )
@@ -149,7 +149,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "0.4.14",
+    version = "0.4.16",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({

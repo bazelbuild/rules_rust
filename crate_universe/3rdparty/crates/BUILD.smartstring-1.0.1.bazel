@@ -18,17 +18,17 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_proc_macro",
+    "rust_library",
 )
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # MPL-2.0+
 # ])
 
-rust_proc_macro(
-    name = "serde_derive",
+rust_library(
+    name = "smartstring",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -46,13 +46,15 @@ rust_proc_macro(
     }),
     crate_features = [
         "default",
+        "serde",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -80,21 +82,20 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.136",
+    version = "1.0.1",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro2-1.0.36//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.17//:quote",
-            "@crate_universe_crate_index__serde_derive-1.0.136//:build_script_build",
-            "@crate_universe_crate_index__syn-1.0.90//:syn",
+            "@crate_universe_crate_index__serde-1.0.136//:serde",
+            "@crate_universe_crate_index__smartstring-1.0.1//:build_script_build",
+            "@crate_universe_crate_index__static_assertions-1.1.0//:static_assertions",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "serde_derive_build_script",
+    name = "smartstring_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -114,6 +115,8 @@ cargo_build_script(
     }),
     crate_features = [
         "default",
+        "serde",
+        "std",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -121,7 +124,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -153,11 +156,13 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.136",
+    version = "1.0.1",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__autocfg-1.1.0//:autocfg",
+            "@crate_universe_crate_index__version_check-0.9.4//:version_check",
         ],
     }),
 )
@@ -169,7 +174,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "serde_derive_build_script",
+    actual = "smartstring_build_script",
     tags = [
         "manual",
     ],

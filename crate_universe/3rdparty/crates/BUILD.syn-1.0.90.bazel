@@ -28,7 +28,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "semver",
+    name = "syn",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -45,9 +45,14 @@ rust_library(
         ],
     }),
     crate_features = [
+        "clone-impls",
         "default",
-        "serde",
-        "std",
+        "derive",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "quote",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -82,19 +87,21 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.6",
+    version = "1.0.90",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.6//:build_script_build",
-            "@crate_universe_crate_index__serde-1.0.136//:serde",
+            "@crate_universe_crate_index__proc-macro2-1.0.36//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.17//:quote",
+            "@crate_universe_crate_index__syn-1.0.90//:build_script_build",
+            "@crate_universe_crate_index__unicode-xid-0.2.2//:unicode_xid",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "semver_build_script",
+    name = "syn_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -113,9 +120,14 @@ cargo_build_script(
         ],
     }),
     crate_features = [
+        "clone-impls",
         "default",
-        "serde",
-        "std",
+        "derive",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "quote",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -155,7 +167,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.6",
+    version = "1.0.90",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
@@ -171,7 +183,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "semver_build_script",
+    actual = "syn_build_script",
     tags = [
         "manual",
     ],
