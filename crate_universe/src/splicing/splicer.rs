@@ -96,7 +96,7 @@ impl<'a> SplicerKind<'a> {
                     !manifests.keys().any(|path| {
                         let path_str = path.to_string_lossy().to_string();
                         // Account for windows paths.
-                        let path_str = path_str.replace("\\", "/");
+                        let path_str = path_str.replace('\\', "/");
                         // Workspace members are represented as directories.
                         path_str.trim_end_matches("/Cargo.toml").ends_with(member)
                     })
@@ -1022,7 +1022,7 @@ mod test {
         // On windows, make sure we normalize the path to match what Cargo would
         // otherwise use to populate metadata.
         if cfg!(target_os = "windows") {
-            workspace_root = format!("/{}", workspace_root.replace("\\", "/"))
+            workspace_root = format!("/{}", workspace_root.replace('\\', "/"))
         };
 
         if is_root {
