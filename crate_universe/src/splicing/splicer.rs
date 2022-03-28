@@ -396,6 +396,24 @@ impl<'a> SplicerKind<'a> {
             }
         }
 
+        // Ensure no parent directory also has a cargo config
+        let mut current_parent = workspace_dir.parent();
+        while let Some(parent) = current_parent {
+            for config in vec![
+                parent.join(".cargo").join("config.toml"),
+                parent.join(".cargo").join("config"),
+            ] {
+                if config.exists() {
+                    bail!(
+                        "A Cargo config file was found in a parenting directory to the current workspace. \nWorkspace = {}\nCargo config = {}",
+                        workspace_dir.display(),
+                        config.display(),
+                    )
+                }
+            }
+            current_parent = parent.parent()
+        }
+
         // Install the new config file after having removed all others
         if let Some(cargo_config_path) = cargo_config_path {
             if !dot_cargo_dir.exists() {
