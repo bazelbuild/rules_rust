@@ -406,7 +406,7 @@ impl<'a> SplicerKind<'a> {
             ] {
                 if config.exists() {
                     bail!(
-                        "A Cargo config file was found in a parenting directory to the current workspace. \nWorkspace = {}\nCargo config = {}",
+                        "A Cargo config file was found in a parent directory to the current workspace. This is not allowed because these settings will leak into your Bazel build but will not be reproducible on other machines.\nWorkspace = {}\nCargo config = {}",
                         workspace_dir.display(),
                         config.display(),
                     )
