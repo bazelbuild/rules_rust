@@ -86,7 +86,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
-            "//vendor_local_pkgs/crates/log-0.4.14:log",
+            "//vendor_local_pkgs/crates/log-0.4.16:log",
             "//vendor_local_pkgs/crates/pin-project-lite-0.2.8:pin_project_lite",
             "//vendor_local_pkgs/crates/tracing-core-0.1.23:tracing_core",
         ],

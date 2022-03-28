@@ -82,7 +82,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@crates_vendor_pkgs__lazy_static-1.4.0//:lazy_static",
-            "@crates_vendor_pkgs__log-0.4.14//:log",
+            "@crates_vendor_pkgs__log-0.4.16//:log",
             "@crates_vendor_pkgs__tracing-core-0.1.23//:tracing_core",
         ],
     }),
