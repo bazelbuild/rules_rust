@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use anyhow::Context;
 use clap::Parser;
 
 use crate::cli::Result;
@@ -26,10 +27,14 @@ pub struct SpliceOptions {
     #[clap(long)]
     pub cargo_lockfile: Option<PathBuf>,
 
-    /// The directory in which to build the workspace. A `Cargo.toml` file
-    /// should always be produced within this directory.
+    /// The directory in which to build the workspace. If this argument is not
+    /// passed, a temporary directory will be generated.
     #[clap(long)]
-    pub workspace_dir: PathBuf,
+    pub workspace_dir: Option<PathBuf>,
+
+    /// The location where the results of splicing are written.
+    #[clap(long)]
+    pub output_dir: PathBuf,
 
     /// If true, outputs will be printed instead of written to disk.
     #[clap(long)]
@@ -55,12 +60,15 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let extra_manifests_manifest =
         ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?;
 
+    // Determine the splicing workspace
+    let temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
+    let splicing_dir = match &opt.workspace_dir {
+        Some(dir) => dir.clone(),
+        None => temp_dir.as_ref().to_path_buf(),
+    };
+
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(
-        opt.workspace_dir,
-        splicing_manifest,
-        extra_manifests_manifest,
-    )?;
+    let splicer = Splicer::new(splicing_dir, splicing_manifest, extra_manifests_manifest)?;
 
     // Splice together the manifest
     let manifest_path = splicer.splice_workspace()?;
@@ -72,19 +80,33 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;
 
+    let output_dir = opt.output_dir.clone();
+
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, _) = Generator::new()
         .with_cargo(opt.cargo)
         .with_rustc(opt.rustc)
         .generate(&manifest_path.as_path_buf())?;
 
-    // Write metadata next to the manifest
-    let metadata_path = manifest_path
+    let cargo_lockfile_path = manifest_path
         .as_path_buf()
         .parent()
-        .expect("Newly spliced cargo manifest has no parent directory")
-        .join("cargo-bazel-spliced-metadata.json");
-    write_metadata(&metadata_path, &cargo_metadata)?;
+        .with_context(|| {
+            format!(
+                "The path {} is expected to have a parent directory",
+                manifest_path.as_path_buf().display()
+            )
+        })?
+        .join("Cargo.lock");
+
+    // Generate the consumable outputs of the splicing process
+    std::fs::create_dir_all(&output_dir)
+        .with_context(|| format!("Failed to create directories for {}", &output_dir.display()))?;
+
+    write_metadata(&opt.output_dir.join("metadata.json"), &cargo_metadata)?;
+
+    std::fs::copy(cargo_lockfile_path, output_dir.join("Cargo.lock"))
+        .context("Failed to copy lockfile")?;
 
     Ok(())
 }

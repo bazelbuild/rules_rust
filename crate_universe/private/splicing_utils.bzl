@@ -2,6 +2,8 @@
 
 load(":common_utils.bzl", "cargo_environ", "execute")
 
+CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
+
 def splicing_config(resolver_version = "1"):
     """arious settings used to configure Cargo manifest splicing behavior.
 
@@ -170,14 +172,14 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
         ), indent = " " * 4),
     )
 
-    cargo_workspace = repository_ctx.path("{}/cargo-bazel-splicing".format(repo_dir))
+    splicing_output_dir = repository_ctx.path("splicing-output")
 
     # Generate a workspace root which contains all workspace members
     arguments = [
         generator,
         "splice",
-        "--workspace-dir",
-        cargo_workspace,
+        "--output-dir",
+        splicing_output_dir,
         "--splicing-manifest",
         splicing_manifest,
         "--extra-manifests-manifest",
@@ -187,6 +189,14 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
         "--rustc",
         rustc,
     ]
+
+    # Optionally set the splicing workspace directory to somewhere within the repository directory
+    # to improve the debugging experience.
+    if CARGO_BAZEL_DEBUG in repository_ctx.os.environ:
+        arguments.extend([
+            "--workspace-dir",
+            repository_ctx.path("{}/splicing-workspace".format(repo_dir)),
+        ])
 
     # Splicing accepts a Cargo.lock file in some scenarios. Ensure it's passed
     # if the lockfile is a actually a Cargo lockfile.
@@ -211,13 +221,12 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
         env = env,
     )
 
-    root_manifest = repository_ctx.path("{}/Cargo.toml".format(cargo_workspace))
-    if not root_manifest.exists:
-        fail("Root manifest does not exist: {}".format(root_manifest))
+    # This file must have been produced by the execution above.
+    spliced_lockfile = repository_ctx.path("{}/Cargo.lock".format(splicing_output_dir))
+    if not spliced_lockfile.exists:
+        fail("Lockfile file does not exist: {}".format(spliced_lockfile))
+    spliced_metadata = repository_ctx.path("{}/metadata.json".format(splicing_output_dir))
+    if not spliced_metadata.exists:
+        fail("Metadata file does not exist: {}".format(spliced_metadata))
 
-    # This file must match the one generated in splicing
-    metadata_path = repository_ctx.path("{}/cargo-bazel-spliced-metadata.json".format(cargo_workspace))
-    if not metadata_path.exists:
-        fail("Root metadata file does not exist: {}".format(metadata_path))
-
-    return metadata_path
+    return spliced_metadata
