@@ -78,21 +78,22 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     action = tut.actions[0]
 
     compilation_mode = ctx.var["COMPILATION_MODE"]
+    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
         ]
     else:
         want = [
             "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink.lo".format(compilation_mode),
+            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     individual_link_args = [
@@ -112,22 +113,23 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     linker_args = _extract_linker_args(action.argv)[1:]
 
     compilation_mode = ctx.var["COMPILATION_MODE"]
+    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
     pic_suffix = ".pic" if compilation_mode == "opt" else ""
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
+            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode),
+            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
         ]
     else:
         want = [
             "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, pic_suffix),
+            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     asserts.equals(env, want, linker_args)
