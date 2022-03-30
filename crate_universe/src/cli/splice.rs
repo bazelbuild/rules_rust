@@ -61,10 +61,13 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?;
 
     // Determine the splicing workspace
-    let temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
+    let temp_dir;
     let splicing_dir = match &opt.workspace_dir {
         Some(dir) => dir.clone(),
-        None => temp_dir.as_ref().to_path_buf(),
+        None => {
+            temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
+            temp_dir.as_ref().to_path_buf()
+        },
     };
 
     // Generate a splicer for creating a Cargo workspace manifest
