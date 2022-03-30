@@ -5,6 +5,7 @@ filegroup(
         "//tools/allowlists/function_transition_allowlist:distro",
         "//tools/clippy:distro",
         "//tools/runfiles:distro",
+        "//tools/rust_analyzer:distro",
         "//tools/rustdoc:distro",
         "//tools/rustfmt:distro",
     ],
