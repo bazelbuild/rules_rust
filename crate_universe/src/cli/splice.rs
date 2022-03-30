@@ -67,7 +67,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         None => {
             temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
             temp_dir.as_ref().to_path_buf()
-        },
+        }
     };
 
     // Generate a splicer for creating a Cargo workspace manifest
