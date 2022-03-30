@@ -344,21 +344,6 @@ impl<'a> SplicerKind<'a> {
     /// A helper for installing Cargo config files into the spliced workspace while also
     /// ensuring no other linked config file is available
     fn setup_cargo_config(cargo_config_path: &Option<PathBuf>, workspace_dir: &Path) -> Result<()> {
-        // Make sure no other config files exist
-        for config in vec![
-            workspace_dir.join("config"),
-            workspace_dir.join("config.toml"),
-        ] {
-            if config.exists() {
-                fs::remove_file(&config).with_context(|| {
-                    format!(
-                        "Failed to delete existing cargo config: {}",
-                        config.display()
-                    )
-                })?;
-            }
-        }
-
         // If the `.cargo` dir is a symlink, we'll need to relink it and ensure
         // a Cargo config file is omitted
         let dot_cargo_dir = workspace_dir.join(".cargo");
@@ -383,10 +368,51 @@ impl<'a> SplicerKind<'a> {
                     dot_cargo_dir.join("config.toml"),
                 ] {
                     if config.exists() {
-                        fs::remove_file(&config)?;
+                        remove_symlink(&config).with_context(|| {
+                            format!(
+                                "Failed to delete existing cargo config: {}",
+                                config.display()
+                            )
+                        })?;
                     }
                 }
             }
+        }
+
+        // Make sure no other config files exist
+        for config in vec![
+            workspace_dir.join("config"),
+            workspace_dir.join("config.toml"),
+            dot_cargo_dir.join("config"),
+            dot_cargo_dir.join("config.toml"),
+        ] {
+            if config.exists() {
+                remove_symlink(&config).with_context(|| {
+                    format!(
+                        "Failed to delete existing cargo config: {}",
+                        config.display()
+                    )
+                })?;
+            }
+        }
+
+        // Ensure no parent directory also has a cargo config
+        let mut current_parent = workspace_dir.parent();
+        while let Some(parent) = current_parent {
+            let dot_cargo_dir = parent.join(".cargo");
+            for config in vec![
+                dot_cargo_dir.join("config.toml"),
+                dot_cargo_dir.join("config"),
+            ] {
+                if config.exists() {
+                    bail!(
+                        "A Cargo config file was found in a parent directory to the current workspace. This is not allowed because these settings will leak into your Bazel build but will not be reproducible on other machines.\nWorkspace = {}\nCargo config = {}",
+                        workspace_dir.display(),
+                        config.display(),
+                    )
+                }
+            }
+            current_parent = parent.parent()
         }
 
         // Install the new config file after having removed all others
@@ -1439,5 +1465,101 @@ mod test {
 
         // Ensure lockfile was successfully spliced
         cargo_lock::Lockfile::load(workspace_root.as_ref().join("Cargo.lock")).unwrap();
+    }
+
+    #[test]
+    fn cargo_config_setup() {
+        let (mut splicing_manifest, _cache_dir) = mock_splicing_manifest_with_workspace_in_root();
+
+        // Write a cargo config
+        let temp_dir = tempfile::tempdir().unwrap();
+        let external_config = temp_dir.as_ref().join("config.toml");
+        fs::write(&external_config, "# Cargo configuration file").unwrap();
+        splicing_manifest.cargo_config = Some(external_config);
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        Splicer::new(
+            workspace_root.as_ref().to_path_buf(),
+            splicing_manifest,
+            ExtraManifestsManifest::default(),
+        )
+        .unwrap()
+        .splice_workspace()
+        .unwrap();
+
+        let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
+        assert!(cargo_config.exists());
+        assert_eq!(
+            fs::read_to_string(cargo_config).unwrap().trim(),
+            "# Cargo configuration file"
+        );
+    }
+
+    #[test]
+    fn unregistered_cargo_config_replaced() {
+        let (mut splicing_manifest, cache_dir) = mock_splicing_manifest_with_workspace_in_root();
+
+        // Generate a cargo config that is not tracked by the splicing manifest
+        fs::create_dir_all(cache_dir.as_ref().join(".cargo")).unwrap();
+        fs::write(
+            cache_dir.as_ref().join(".cargo").join("config.toml"),
+            "# Untracked Cargo configuration file",
+        )
+        .unwrap();
+
+        // Write a cargo config
+        let temp_dir = tempfile::tempdir().unwrap();
+        let external_config = temp_dir.as_ref().join("config.toml");
+        fs::write(&external_config, "# Cargo configuration file").unwrap();
+        splicing_manifest.cargo_config = Some(external_config);
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        Splicer::new(
+            workspace_root.as_ref().to_path_buf(),
+            splicing_manifest,
+            ExtraManifestsManifest::default(),
+        )
+        .unwrap()
+        .splice_workspace()
+        .unwrap();
+
+        let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
+        assert!(cargo_config.exists());
+        assert_eq!(
+            fs::read_to_string(cargo_config).unwrap().trim(),
+            "# Cargo configuration file"
+        );
+    }
+
+    #[test]
+    fn error_on_cargo_config_in_parent() {
+        let (mut splicing_manifest, _cache_dir) = mock_splicing_manifest_with_workspace_in_root();
+
+        // Write a cargo config
+        let temp_dir = tempfile::tempdir().unwrap();
+        let dot_cargo_dir = temp_dir.as_ref().join(".cargo");
+        fs::create_dir_all(&dot_cargo_dir).unwrap();
+        let external_config = dot_cargo_dir.join("config.toml");
+        fs::write(&external_config, "# Cargo configuration file").unwrap();
+        splicing_manifest.cargo_config = Some(external_config.clone());
+
+        // Splice the workspace
+        let workspace_root = temp_dir.as_ref().join("workspace_root");
+        let splicing_result = Splicer::new(
+            workspace_root.clone(),
+            splicing_manifest,
+            ExtraManifestsManifest::default(),
+        )
+        .unwrap()
+        .splice_workspace();
+
+        // Ensure cargo config files in parent directories lead to errors
+        assert!(splicing_result.is_err());
+        let err_str = splicing_result.err().unwrap().to_string();
+        assert!(err_str.starts_with("A Cargo config file was found in a parent directory"));
+        assert!(err_str.contains(&format!("Workspace = {}", workspace_root.display())));
+        assert!(err_str.contains(&format!("Cargo config = {}", external_config.display())));
     }
 }

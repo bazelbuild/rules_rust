@@ -123,7 +123,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_pkgs__libc-0.2.120//:libc",
+            "@crates_vendor_pkgs__libc-0.2.121//:libc",
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",
 
             # Common Deps

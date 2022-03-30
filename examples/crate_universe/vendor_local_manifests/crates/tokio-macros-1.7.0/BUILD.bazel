@@ -80,8 +80,8 @@ rust_proc_macro(
     ] + select_with_or({
         "//conditions:default": [
             "//vendor_local_manifests/crates/proc-macro2-1.0.36:proc_macro2",
-            "//vendor_local_manifests/crates/quote-1.0.15:quote",
-            "//vendor_local_manifests/crates/syn-1.0.87:syn",
+            "//vendor_local_manifests/crates/quote-1.0.17:quote",
+            "//vendor_local_manifests/crates/syn-1.0.90:syn",
         ],
     }),
 )

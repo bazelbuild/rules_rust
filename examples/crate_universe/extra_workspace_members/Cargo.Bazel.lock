@@ -1,5 +1,5 @@
 {
-  "checksum": "72d8805d765739ccd6727cde60b52e8a68c2172254ba8517f6239b721b1b63f5",
+  "checksum": "cb915ce9c13c77d98109928337118eb33fa0a330b62080310db45353acfadd3d",
   "crates": {
     "adler32 1.2.0": {
       "name": "adler32",
@@ -121,7 +121,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.120",
+                "id": "libc 0.2.121",
                 "target": "libc"
               }
             ],
@@ -207,13 +207,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "bytemuck 1.8.0": {
+    "bytemuck 1.9.0": {
       "name": "bytemuck",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/bytemuck/1.8.0/download",
-          "sha256": "0e851ca7c24871e7336801608a4797d7376545b6928a10d32d75685687141ead"
+          "url": "https://crates.io/api/v1/crates/bytemuck/1.9.0/download",
+          "sha256": "ee1e0e2125faccb856bf10b0a9dfa89c4c718d05ef85580dfefbdf1c422ef801"
         }
       },
       "targets": [
@@ -236,7 +236,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.8.0"
+        "version": "1.9.0"
       },
       "license": "Zlib OR Apache-2.0 OR MIT"
     },
@@ -458,7 +458,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.120",
+              "id": "libc 0.2.121",
               "target": "libc"
             },
             {
@@ -563,13 +563,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "crossbeam-utils 0.8.7": {
+    "crossbeam-utils 0.8.8": {
       "name": "crossbeam-utils",
-      "version": "0.8.7",
+      "version": "0.8.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/crossbeam-utils/0.8.7/download",
-          "sha256": "b5e5bed1f1c269533fa816a0a5492b3545209a205ca1a54842be180eb63a16a6"
+          "url": "https://crates.io/api/v1/crates/crossbeam-utils/0.8.8/download",
+          "sha256": "0bf124c720b7686e3c2663cf54062ab0f68a88af2fb6a030e87e30bf721fcb38"
         }
       },
       "targets": [
@@ -615,7 +615,7 @@
               "target": "cfg_if"
             },
             {
-              "id": "crossbeam-utils 0.8.7",
+              "id": "crossbeam-utils 0.8.8",
               "target": "build_script_build"
             },
             {
@@ -626,7 +626,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.8.7"
+        "version": "0.8.8"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -881,7 +881,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.120",
+              "id": "libc 0.2.121",
               "target": "libc"
             }
           ],
@@ -928,7 +928,7 @@
         "deps": {
           "common": [
             {
-              "id": "bytemuck 1.8.0",
+              "id": "bytemuck 1.9.0",
               "target": "bytemuck"
             },
             {
@@ -1091,13 +1091,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.120": {
+    "libc 0.2.121": {
       "name": "libc",
-      "version": "0.2.120",
+      "version": "0.2.121",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.120/download",
-          "sha256": "ad5c14e80759d0939d013e6ca49930e59fc53dd8e5009132f76240c179380c09"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.121/download",
+          "sha256": "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
         }
       },
       "targets": [
@@ -1138,14 +1138,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.120",
+              "id": "libc 0.2.121",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.120"
+        "version": "0.2.121"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1540,7 +1540,7 @@
             ],
             "cfg(not(windows))": [
               {
-                "id": "libc 0.2.120",
+                "id": "libc 0.2.121",
                 "target": "libc"
               }
             ]
@@ -1775,11 +1775,11 @@
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.15",
+              "id": "quote 1.0.17",
               "target": "quote"
             },
             {
-              "id": "syn 1.0.87",
+              "id": "syn 1.0.90",
               "target": "syn"
             }
           ],
@@ -1864,7 +1864,7 @@
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.15",
+              "id": "quote 1.0.17",
               "target": "quote"
             }
           ],
@@ -1956,13 +1956,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "quote 1.0.15": {
+    "quote 1.0.17": {
       "name": "quote",
-      "version": "1.0.15",
+      "version": "1.0.17",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/quote/1.0.15/download",
-          "sha256": "864d3e96a899863136fc6e99f3d7cae289dafe43bf2c5ac19b70df7210c0a145"
+          "url": "https://crates.io/api/v1/crates/quote/1.0.17/download",
+          "sha256": "632d02bff7f874a36f33ea8bb416cd484b90cc66c1194b1a1110d067a7013f58"
         }
       },
       "targets": [
@@ -1998,7 +1998,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.15"
+        "version": "1.0.17"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -2450,11 +2450,11 @@
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.15",
+              "id": "quote 1.0.17",
               "target": "quote"
             },
             {
-              "id": "syn 1.0.87",
+              "id": "syn 1.0.90",
               "target": "syn"
             }
           ],
@@ -2465,13 +2465,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "syn 1.0.87": {
+    "syn 1.0.90": {
       "name": "syn",
-      "version": "1.0.87",
+      "version": "1.0.90",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.87/download",
-          "sha256": "1e59d925cf59d8151f25a3bedf97c9c157597c9df7324d32d68991cc399ed08b"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.90/download",
+          "sha256": "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f"
         }
       },
       "targets": [
@@ -2522,11 +2522,11 @@
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.15",
+              "id": "quote 1.0.17",
               "target": "quote"
             },
             {
-              "id": "syn 1.0.87",
+              "id": "syn 1.0.90",
               "target": "build_script_build"
             },
             {
@@ -2537,7 +2537,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.87"
+        "version": "1.0.90"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -2579,7 +2579,7 @@
           "selects": {
             "cfg(not(windows))": [
               {
-                "id": "libc 0.2.120",
+                "id": "libc 0.2.121",
                 "target": "libc"
               }
             ],
@@ -2650,7 +2650,7 @@
           "selects": {
             "cfg(not(target_arch = \"wasm32\"))": [
               {
-                "id": "crossbeam-utils 0.8.7",
+                "id": "crossbeam-utils 0.8.8",
                 "target": "crossbeam_utils"
               }
             ]

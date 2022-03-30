@@ -105,6 +105,7 @@ cargo_remote_crate_repositories()
 
 crates_repository(
     name = "crate_index_cargo_workspace",
+    cargo_config = "//cargo_workspace:.cargo/config.toml",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
