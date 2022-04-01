@@ -6,3 +6,14 @@ filegroup(
         "protobuf-2.8.2.patch",
     ],
 )
+
+filegroup(
+    name = "distro",
+    srcs = [
+        "BUILD.bazel",
+        "README.md",
+    ] + glob([
+        "*.patch",
+    ]),
+    visibility = ["//proto:__subpackages__"],
+)

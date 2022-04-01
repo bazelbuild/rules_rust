@@ -20,9 +20,10 @@ filegroup(
         "*.bzl",
         "*.rs",
     ]) + [
-        "//proto/raze:srcs",
-        "//proto/raze/remote:srcs",
         "//proto/patches:distro",
+        "//proto/raze:srcs",
+        "//proto/raze/patch:distro",
+        "//proto/raze/remote:srcs",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],
