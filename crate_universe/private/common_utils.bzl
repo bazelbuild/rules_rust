@@ -9,8 +9,6 @@ load(
 
 get_host_triple = _get_host_triple
 
-CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
-
 _EXECUTE_ERROR_MESSAGE = """\
 Command {args} failed with exit code {exit_code}.
 STDOUT ------------------------------------------------------------------------
@@ -96,12 +94,7 @@ def cargo_environ(repository_ctx):
     """
     env = dict()
 
-    if CARGO_BAZEL_ISOLATED in repository_ctx.os.environ:
-        if repository_ctx.os.environ[CARGO_BAZEL_ISOLATED].lower() in ["true", "1", "yes", "on"]:
-            env.update({
-                "CARGO_HOME": str(_cargo_home_path(repository_ctx)),
-            })
-    elif repository_ctx.attr.isolated:
+    if repository_ctx.attr.isolated:
         env.update({
             "CARGO_HOME": str(_cargo_home_path(repository_ctx)),
         })

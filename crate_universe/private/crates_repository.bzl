@@ -109,7 +109,6 @@ Environment Variables:
 | --- | --- |
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
-| `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
 
 """,
@@ -162,8 +161,7 @@ Environment Variables:
                 "If true, `CARGO_HOME` will be overwritten to a directory within the generated repository in " +
                 "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
                 "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
-                "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-                "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+                "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times."
             ),
             default = True,
         ),

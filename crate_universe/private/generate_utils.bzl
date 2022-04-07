@@ -1,6 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "cargo_environ", "execute")
+load(":common_utils.bzl", "cargo_environ", "execute")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -17,9 +17,7 @@ REPIN_ENV_VARS = [
     CARGO_BAZEL_REPIN,
 ]
 
-CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
-    CARGO_BAZEL_ISOLATED,
-]
+CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS
 
 def get_generator(repository_ctx, host_triple):
     """Query network resources to locate a `cargo-bazel` binary
