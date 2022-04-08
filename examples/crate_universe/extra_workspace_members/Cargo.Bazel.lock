@@ -1,5 +1,5 @@
 {
-  "checksum": "cb915ce9c13c77d98109928337118eb33fa0a330b62080310db45353acfadd3d",
+  "checksum": "ffefc431b4beda07270e75284be07d280fba62608e89b253c129f384e32d994b",
   "crates": {
     "adler32 1.2.0": {
       "name": "adler32",
@@ -121,7 +121,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.121",
+                "id": "libc 0.2.122",
                 "target": "libc"
               }
             ],
@@ -207,13 +207,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "bytemuck 1.9.0": {
+    "bytemuck 1.9.1": {
       "name": "bytemuck",
-      "version": "1.9.0",
+      "version": "1.9.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/bytemuck/1.9.0/download",
-          "sha256": "ee1e0e2125faccb856bf10b0a9dfa89c4c718d05ef85580dfefbdf1c422ef801"
+          "url": "https://crates.io/api/v1/crates/bytemuck/1.9.1/download",
+          "sha256": "cdead85bdec19c194affaeeb670c0e41fe23de31459efd1c174d049269cf02cc"
         }
       },
       "targets": [
@@ -236,7 +236,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.9.0"
+        "version": "1.9.1"
       },
       "license": "Zlib OR Apache-2.0 OR MIT"
     },
@@ -458,7 +458,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.121",
+              "id": "libc 0.2.122",
               "target": "libc"
             },
             {
@@ -881,7 +881,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.121",
+              "id": "libc 0.2.122",
               "target": "libc"
             }
           ],
@@ -928,7 +928,7 @@
         "deps": {
           "common": [
             {
-              "id": "bytemuck 1.9.0",
+              "id": "bytemuck 1.9.1",
               "target": "bytemuck"
             },
             {
@@ -1091,13 +1091,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.121": {
+    "libc 0.2.122": {
       "name": "libc",
-      "version": "0.2.121",
+      "version": "0.2.122",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.121/download",
-          "sha256": "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.122/download",
+          "sha256": "ec647867e2bf0772e28c8bcde4f0d19a9216916e890543b5a03ed8ef27b8f259"
         }
       },
       "targets": [
@@ -1138,14 +1138,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.121",
+              "id": "libc 0.2.122",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.121"
+        "version": "0.2.122"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1540,7 +1540,7 @@
             ],
             "cfg(not(windows))": [
               {
-                "id": "libc 0.2.121",
+                "id": "libc 0.2.122",
                 "target": "libc"
               }
             ]
@@ -1771,7 +1771,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "proc_macro2"
             },
             {
@@ -1779,7 +1779,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.90",
+              "id": "syn 1.0.91",
               "target": "syn"
             }
           ],
@@ -1860,7 +1860,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "proc_macro2"
             },
             {
@@ -1889,13 +1889,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "proc-macro2 1.0.36": {
+    "proc-macro2 1.0.37": {
       "name": "proc-macro2",
-      "version": "1.0.36",
+      "version": "1.0.37",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.36/download",
-          "sha256": "c7342d5883fbccae1cc37a2353b09c87c9b0f3afd73f5fb9bba687a1f733b029"
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.37/download",
+          "sha256": "ec757218438d5fda206afc041538b2f6d889286160d649a86a24d37e1235afd1"
         }
       },
       "targets": [
@@ -1936,7 +1936,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "build_script_build"
             },
             {
@@ -1947,7 +1947,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.36"
+        "version": "1.0.37"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1991,7 +1991,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "proc_macro2"
             }
           ],
@@ -2446,7 +2446,7 @@
               "target": "proc_macro_error"
             },
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "proc_macro2"
             },
             {
@@ -2454,7 +2454,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.90",
+              "id": "syn 1.0.91",
               "target": "syn"
             }
           ],
@@ -2465,13 +2465,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "syn 1.0.90": {
+    "syn 1.0.91": {
       "name": "syn",
-      "version": "1.0.90",
+      "version": "1.0.91",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.90/download",
-          "sha256": "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.91/download",
+          "sha256": "b683b2b825c8eef438b77c36a06dc262294da3d5a5813fac20da149241dcd44d"
         }
       },
       "targets": [
@@ -2518,7 +2518,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.36",
+              "id": "proc-macro2 1.0.37",
               "target": "proc_macro2"
             },
             {
@@ -2526,7 +2526,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.90",
+              "id": "syn 1.0.91",
               "target": "build_script_build"
             },
             {
@@ -2537,7 +2537,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.90"
+        "version": "1.0.91"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -2579,7 +2579,7 @@
           "selects": {
             "cfg(not(windows))": [
               {
-                "id": "libc 0.2.121",
+                "id": "libc 0.2.122",
                 "target": "libc"
               }
             ],
