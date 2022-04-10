@@ -1,5 +1,5 @@
 {
-  "checksum": "d40826d42e08cce6c275643f032045db73ed0ca8df3df0247455727c58d590ca",
+  "checksum": "0a6242f7bd2ce6f7adf071110f944b64f30020876270fa45dad1f3ab2a949953",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -551,9 +551,9 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cargo-bazel 0.2.0": {
+    "cargo-bazel 0.2.1": {
       "name": "cargo-bazel",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "repository": null,
       "targets": [
         {
@@ -685,7 +685,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.2.0"
+        "version": "0.2.1"
       },
       "license": null
     },
@@ -7923,7 +7923,7 @@
     "phf_generator 0.10.0"
   ],
   "workspace_members": {
-    "cargo-bazel 0.2.0": "crate_universe",
+    "cargo-bazel 0.2.1": "crate_universe",
     "cross_installer 0.1.0": "crate_universe/tools/cross_installer",
     "urls_generator 0.1.0": "crate_universe/tools/urls_generator"
   },
