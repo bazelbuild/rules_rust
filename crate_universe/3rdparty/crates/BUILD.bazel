@@ -64,7 +64,7 @@ alias(
 
 alias(
     name = "clap",
-    actual = "@crate_universe_crate_index__clap-3.1.6//:clap",
+    actual = "@crate_universe_crate_index__clap-3.1.8//:clap",
     tags = ["manual"],
 )
 
@@ -119,6 +119,12 @@ alias(
 alias(
     name = "spectral",
     actual = "@crate_universe_crate_index__spectral-0.6.0//:spectral",
+    tags = ["manual"],
+)
+
+alias(
+    name = "syn",
+    actual = "@crate_universe_crate_index__syn-1.0.90//:syn",
     tags = ["manual"],
 )
 

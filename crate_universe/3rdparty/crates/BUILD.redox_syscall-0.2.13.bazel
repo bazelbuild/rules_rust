@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "pkg_config",
+    name = "syscall",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -47,7 +47,7 @@ rust_library(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -75,10 +75,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.3.24",
+    version = "0.2.13",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
         ],
     }),
 )
