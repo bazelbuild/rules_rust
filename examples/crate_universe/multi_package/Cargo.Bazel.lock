@@ -1,5 +1,5 @@
 {
-  "checksum": "a0fb85aec3e72e155508fd755dd80ec38fac9f27bebe620c44c4109a9319ba1c",
+  "checksum": "90b9c257f171dc9e59d7ef965338906459e097f90614c213ad8ee023ef0b8474",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -3496,7 +3496,7 @@
               "target": "tokio_util"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -4055,7 +4055,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             },
             {
@@ -4446,7 +4446,7 @@
               "target": "sluice"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             },
             {
@@ -9139,7 +9139,7 @@
               "target": "tokio"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -9183,13 +9183,13 @@
       },
       "license": "MIT"
     },
-    "tracing 0.1.32": {
+    "tracing 0.1.33": {
       "name": "tracing",
-      "version": "0.1.32",
+      "version": "0.1.33",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing/0.1.32/download",
-          "sha256": "4a1bdf54a7c28a2bbf701e1d2233f6c77f473486b94bee4f9678da5a148dca7f"
+          "url": "https://crates.io/api/v1/crates/tracing/0.1.33/download",
+          "sha256": "80b9fa4360528139bc96100c160b7ae879f5567f49f1782b0b02035b0358ebf3"
         }
       },
       "targets": [
@@ -9249,7 +9249,7 @@
           ],
           "selects": {}
         },
-        "version": "0.1.32"
+        "version": "0.1.33"
       },
       "license": "MIT"
     },
@@ -9389,7 +9389,7 @@
               "target": "pin_project"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],

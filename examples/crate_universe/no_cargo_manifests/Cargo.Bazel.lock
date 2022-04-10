@@ -1,5 +1,5 @@
 {
-  "checksum": "3a7b41c8aa6d72b38ee436a36986bd86ead405ee1453bf34239ef7396bbf44e1",
+  "checksum": "e363b114bfca318daf2672f5264190592878fe5d1826d721ea18d1508bbd578d",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -515,11 +515,11 @@
               "target": "tower_http"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             },
             {
-              "id": "tracing-subscriber 0.3.10",
+              "id": "tracing-subscriber 0.3.11",
               "target": "tracing_subscriber"
             }
           ],
@@ -994,7 +994,7 @@
               "target": "tokio_util"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -1415,7 +1415,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             },
             {
@@ -3548,7 +3548,7 @@
               "target": "tokio"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -3637,7 +3637,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -3731,7 +3731,7 @@
               "target": "tower_service"
             },
             {
-              "id": "tracing 0.1.32",
+              "id": "tracing 0.1.33",
               "target": "tracing"
             }
           ],
@@ -3808,13 +3808,13 @@
       },
       "license": "MIT"
     },
-    "tracing 0.1.32": {
+    "tracing 0.1.33": {
       "name": "tracing",
-      "version": "0.1.32",
+      "version": "0.1.33",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing/0.1.32/download",
-          "sha256": "4a1bdf54a7c28a2bbf701e1d2233f6c77f473486b94bee4f9678da5a148dca7f"
+          "url": "https://crates.io/api/v1/crates/tracing/0.1.33/download",
+          "sha256": "80b9fa4360528139bc96100c160b7ae879f5567f49f1782b0b02035b0358ebf3"
         }
       },
       "targets": [
@@ -3874,7 +3874,7 @@
           ],
           "selects": {}
         },
-        "version": "0.1.32"
+        "version": "0.1.33"
       },
       "license": "MIT"
     },
@@ -4037,13 +4037,13 @@
       },
       "license": "MIT"
     },
-    "tracing-subscriber 0.3.10": {
+    "tracing-subscriber 0.3.11": {
       "name": "tracing-subscriber",
-      "version": "0.3.10",
+      "version": "0.3.11",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tracing-subscriber/0.3.10/download",
-          "sha256": "b9df98b037d039d03400d9dd06b0f8ce05486b5f25e9a2d7d36196e142ebbc52"
+          "url": "https://crates.io/api/v1/crates/tracing-subscriber/0.3.11/download",
+          "sha256": "4bc28f93baff38037f64e6f43d34cfa1605f27a49c34e8a04c5e78b0babf2596"
         }
       },
       "targets": [
@@ -4108,7 +4108,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.3.10"
+        "version": "0.3.11"
       },
       "license": "MIT"
     },
