@@ -198,8 +198,20 @@ impl Digest {
             bail!("Failed to query cargo version")
         }
 
-        let version = String::from_utf8(output.stdout)?;
-        Ok(version)
+        let version = String::from_utf8(output.stdout)?.trim().to_owned();
+
+        // TODO: There is a bug in the linux binary for Cargo 1.60.0 where
+        // the commit hash reported by the version is shorter than what's
+        // reported on other platforms. This conditional here is a hack to
+        // correct for this difference and ensure lockfile hashes can be
+        // computed consistently. If a new binary is released then this
+        // condition should be removed
+        // https://github.com/rust-lang/cargo/issues/10547
+        if version == "cargo 1.60.0 (d1fd9fe 2022-03-01)" {
+            Ok("cargo 1.60.0 (d1fd9fe2c 2022-03-01)".to_owned())
+        } else {
+            Ok(version)
+        }
     }
 }
 
