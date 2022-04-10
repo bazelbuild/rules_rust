@@ -39,5 +39,10 @@ tera = "1.15.0"
 textwrap = "0.15.0"
 toml = "0.5.8"
 
+# TODO: The 1.0.91 release causes build issues for windows where rustc seems to
+# run infinitely. This dependency should not be pinned.
+# https://github.com/bazelbuild/rules_rust/issues/1253
+syn = "=1.0.90"
+
 [dev-dependencies]
 spectral = "0.6.0"
