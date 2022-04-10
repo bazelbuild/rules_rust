@@ -117,9 +117,10 @@ rust_doc(
 rust_doc_test(
     name = "rustdoc_test",
     crate = ":cargo_bazel",
-    # TODO: This target fails on windows with the error tracked in:
+    # TODO: This target fails on some platforms with the error tracked in:
     # https://github.com/bazelbuild/rules_rust/issues/1233
     target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
