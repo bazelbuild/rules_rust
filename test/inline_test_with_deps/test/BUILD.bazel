@@ -11,5 +11,6 @@ rust_library(
 rust_test(
     name = "inline_test",
     crate = ":inline",
+    edition = "2018",
     deps = ["//test/inline_test_with_deps/dep"],
 )

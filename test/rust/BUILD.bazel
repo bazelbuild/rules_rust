@@ -8,10 +8,12 @@ rust_library(
         "src/greeter.rs",
         "src/lib.rs",
     ],
+    edition = "2018",
 )
 
 rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
+    edition = "2018",
     deps = [":hello_lib"],
 )

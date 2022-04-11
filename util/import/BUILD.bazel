@@ -14,6 +14,7 @@ rust_proc_macro(
         "import.rs",
     ],
     crate_name = "import",
+    edition = "2018",
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
@@ -25,6 +26,7 @@ rust_library(
     srcs = [
         "import_internal.rs",
     ],
+    edition = "2018",
     deps = [
         "//util/import/raze:aho_corasick",
         "//util/import/raze:lazy_static",
@@ -38,6 +40,7 @@ rust_library(
 rust_test(
     name = "import_internal_test",
     crate = ":import_internal",
+    edition = "2018",
     deps = [
         "//util/import/raze:quickcheck",
     ],

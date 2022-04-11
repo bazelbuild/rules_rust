@@ -66,6 +66,7 @@ rust_library(
         include = ["src/**"],
         exclude = ["src/**/*.rs"],
     ),
+    edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     version = VERSION,
     visibility = ["//visibility:public"],
@@ -75,6 +76,7 @@ rust_library(
 rust_binary(
     name = "cargo_bazel_bin",
     srcs = ["src/main.rs"],
+    edition = "2018",
     version = VERSION,
     visibility = ["//visibility:public"],
     deps = [":cargo_bazel"],

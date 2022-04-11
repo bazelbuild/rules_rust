@@ -29,6 +29,7 @@ def _interleaving_link_order_test():
     rust_library(
         name = "a",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":b"],
     )
     cc_library(
@@ -39,6 +40,7 @@ def _interleaving_link_order_test():
     rust_library(
         name = "c",
         srcs = ["c.rs"],
+        edition = "2018",
         deps = [":d"],
     )
     cc_library(
@@ -49,6 +51,7 @@ def _interleaving_link_order_test():
     rust_library(
         name = "e",
         srcs = ["e.rs"],
+        edition = "2018",
     )
 
     interleaving_cc_link_order_test(

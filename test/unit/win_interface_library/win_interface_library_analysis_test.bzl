@@ -33,6 +33,7 @@ def win_interface_library_analysis_test_suite(name):
     rust_shared_library(
         name = "mylib",
         srcs = ["lib.rs"],
+        edition = "2018",
         target_compatible_with = ["@platforms//os:windows"],
     )
 
@@ -46,6 +47,7 @@ def win_interface_library_analysis_test_suite(name):
     rust_binary(
         name = "myrustbin",
         srcs = ["main.rs"],
+        edition = "2018",
         target_compatible_with = ["@platforms//os:windows"],
     )
 

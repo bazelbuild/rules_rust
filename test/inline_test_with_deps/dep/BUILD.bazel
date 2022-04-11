@@ -5,4 +5,5 @@ package(default_visibility = ["//visibility:public"])
 rust_library(
     name = "dep",
     srcs = ["src/lib.rs"],
+    edition = "2018",
 )

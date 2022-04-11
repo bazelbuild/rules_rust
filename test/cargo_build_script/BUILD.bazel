@@ -8,6 +8,7 @@ cargo_build_script(
     name = "tools_exec_build_rs",
     srcs = ["build.rs"],
     build_script_env = {"TOOL": "$(execpath :tool)"},
+    edition = "2018",
     # Add a flag to test that they're exposed to the build script
     rustc_flags = ["--verbose"],
     tools = [":tool"],
@@ -23,5 +24,6 @@ genrule(
 rust_test(
     name = "tools_exec",
     srcs = ["tools_exec.rs"],
+    edition = "2018",
     deps = [":tools_exec_build_rs"],
 )

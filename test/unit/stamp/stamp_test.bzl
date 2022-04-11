@@ -63,6 +63,7 @@ def _define_test_targets():
         rust_test(
             name = "{}_unit_test".format(name),
             crate = ":{}".format(name),
+            edition = "2018",
             rustc_env_files = [":stamp.env"],
             stamp = stamp_value,
             crate_features = features,
@@ -71,6 +72,7 @@ def _define_test_targets():
         rust_binary(
             name = "{}_bin".format(name),
             srcs = ["stamp_main.rs"],
+            edition = "2018",
             deps = [":{}".format(name)],
             rustc_env_files = [":stamp.env"],
             stamp = stamp_value,

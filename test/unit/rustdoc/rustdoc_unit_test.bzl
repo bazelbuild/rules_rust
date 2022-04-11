@@ -77,12 +77,14 @@ rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_li
 def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     rule_fn(
         name = name,
+        edition = "2018",
         **kwargs
     )
 
     rust_test(
         name = "{}_test".format(name),
         crate = ":{}".format(name),
+        edition = "2018",
     )
 
     rust_doc(
@@ -97,7 +99,11 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     )
 
 def _define_targets():
-    rust_library(name = "adder", srcs = ["adder.rs"])
+    rust_library(
+        name = "adder",
+        srcs = ["adder.rs"],
+        edition = "2018",
+    )
 
     _target_maker(
         rust_binary,
@@ -116,7 +122,6 @@ def _define_targets():
         rust_proc_macro,
         name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
-        edition = "2018",
     )
 
     _target_maker(
