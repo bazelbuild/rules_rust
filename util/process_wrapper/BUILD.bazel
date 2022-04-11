@@ -6,12 +6,14 @@ load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
 rust_binary_without_process_wrapper(
     name = "process_wrapper",
     srcs = glob(["*.rs"]),
+    edition = "2018",
     visibility = ["//visibility:public"],
 )
 
 rust_test(
     name = "process_wrapper_test",
     crate = ":process_wrapper",
+    edition = "2018",
 )
 
 filegroup(
