@@ -119,7 +119,7 @@ def get_edition(attr, toolchain, label):
     """
     if getattr(attr, "edition"):
         return attr.edition
-    elif not toolchain.default_edition:
+    elif toolchain.default_edition == "required" or not toolchain.default_edition:
         fail("Attribute `edition` is required for {}.".format(label))
     else:
         return toolchain.default_edition
