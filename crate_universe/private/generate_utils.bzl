@@ -67,6 +67,16 @@ def get_generator(repository_ctx, host_triple):
             "environment variable or for the `{}` triple in the `generator_urls` attribute"
         ).format(host_triple))
 
+    # Download and extract the file into place
+    if generator_url.endswith(".tar.xz"):
+        extract_path = repository_ctx.path(output.basename + "_extracted")
+        repository_ctx.download_and_extract(
+            output = extract_path,
+            url = generator_url,
+            sha256 = generator_sha256,
+        )
+        return extract_path.get_child(output.basename), None
+
     # Download the file into place
     if generator_sha256:
         repository_ctx.download(
