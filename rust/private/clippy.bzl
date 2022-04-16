@@ -206,6 +206,10 @@ rust_clippy_aspect = aspect(
             ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_clippy_flags": attr.label(
+            doc = "Arguments to pass to clippy",
+            default = Label("//:clippy_flags"),
+        ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
             allow_single_file = True,
@@ -216,10 +220,6 @@ rust_clippy_aspect = aspect(
             default = "//:error_format",
         ),
         "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
-        "_clippy_flags": attr.label(
-            doc = "Arguments to pass to clippy",
-            default = Label("//:clippy_flags"),
-        ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",
             default = Label("//util/process_wrapper"),
