@@ -456,6 +456,13 @@ impl CrateContext {
                     }
                 }
 
+                // Tools
+                if let Some(extra) = &crate_extra.build_script_tools {
+                    for data in extra {
+                        attrs.tools.insert(data.clone(), None);
+                    }
+                }
+
                 // Data glob
                 if let Some(extra) = &crate_extra.build_script_data_glob {
                     attrs.data_glob.extend(extra.clone());
