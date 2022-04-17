@@ -947,7 +947,9 @@ mod test {
 }
 ```
 
-To build and run the tests, simply add a `rust_test` rule with no `srcs` and         only depends on the `hello_lib` `rust_library` target via the `crate` attribute:
+To build and run the tests, simply add a `rust_test` rule with no `srcs`
+and only depends on the `hello_lib` `rust_library` target via the
+`crate` attribute:
 
 `hello_lib/BUILD`:
 ```python
