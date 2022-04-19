@@ -4,17 +4,15 @@ load("//rust/platform:triple.bzl", "triple")
 
 # All T1 Platforms should be supported, but aren't, see inline notes.
 SUPPORTED_T1_PLATFORM_TRIPLES = [
+    "aarch64-unknown-linux-gnu",
     "i686-apple-darwin",
+    "i686-pc-windows-gnu",
     "i686-pc-windows-msvc",
     "i686-unknown-linux-gnu",
     "x86_64-apple-darwin",
+    "x86_64-pc-windows-gnu",
     "x86_64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
-    # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
-    # and others using existing @platforms// config_values
-    #
-    #"i686-pc-windows-gnu",
-    #"x86_64-pc-windows-gnu",
 ]
 
 # Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
@@ -22,8 +20,9 @@ SUPPORTED_T1_PLATFORM_TRIPLES = [
 SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios",
+    "aarch64-pc-windows-msvc",
     "aarch64-linux-android",
-    "aarch64-unknown-linux-gnu",
+    "aarch64-unknown-linux-musl",
     "arm-unknown-linux-gnueabi",
     "armv7-unknown-linux-gnueabi",
     "i686-linux-android",
@@ -35,6 +34,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
+    "x86_64-unknown-linux-musl",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
@@ -60,6 +60,15 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "thumbv7m": "armv7",
     "wasm32": None,
     "x86_64": "x86_64",
+}
+
+# ABIs that map to a platform constraints
+_ABI_TO_BUILTIN_SUFFIX = {
+    "gnu": "@platforms//abi:gnu",
+    "msvc": "@platforms//abi:msvc",
+    "musl": "@platforms//abi:musl",
+    # iOS simulator
+    "sim": "@build_bazel_apple_support//constraints:simulator",
 }
 
 # Systems that map to a "@platforms//os entry
@@ -190,13 +199,21 @@ def system_to_constraints(system):
     return ["@platforms//os:{}".format(sys_suffix)]
 
 def abi_to_constraints(abi):
-    # iOS simulator
-    if abi == "sim":
-        return ["@build_bazel_apple_support//constraints:simulator"]
-    else:
-        # TODO(acmcarther): Implement when C++ toolchain is more mature and we
-        # figure out how they're doing this
-        return []
+    """Produce constraints for a given [ABI][abi] value
+
+    [abi]: https://en.wikipedia.org/wiki/Application_binary_interface
+
+    Args:
+        abi (str): The abi flag to match constraints with
+
+    Returns:
+        list: A list of platform constraints
+    """
+
+    if abi in _ABI_TO_BUILTIN_SUFFIX:
+        return [_ABI_TO_BUILTIN_SUFFIX[abi]]
+
+    return []
 
 def triple_to_system(target_triple):
     """Returns a system name for a given platform triple
