@@ -122,9 +122,7 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
-    clippy_flags = None
-    if hasattr(ctx.attr, "_clippy_flags"):
-        clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+    clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
 
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
@@ -133,8 +131,7 @@ def _clippy_aspect_impl(target, ctx):
         args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
 
         if clippy_flags:
-            for flag in clippy_flags:
-                args.rustc_flags.add(flag)
+            args.rustc_flags.extend(clippy_flags)
         else:
             # If we are capturing the output, we want the build system to be able to keep going
             # and consume the output. Some clippy lints are denials, so we treat them as warnings.
@@ -146,12 +143,7 @@ def _clippy_aspect_impl(target, ctx):
         args.process_wrapper_flags.add("--touch-file", clippy_out.path)
 
         if clippy_flags:
-            for flag in clippy_flags:
-                args.rustc_flags.add(flag)
-
-            # Turn any warnings from clippy or rustc into an error, as otherwise
-            # Bazel will consider the execution result of the aspect to be "success",
-            # and Clippy won't be re-triggered unless the source file is modified.
+            args.rustc_flags.extend(clippy_flags)
 
         elif "__bindgen" in ctx.rule.attr.tags:
             # bindgen-generated content is likely to trigger warnings, so
@@ -161,7 +153,11 @@ def _clippy_aspect_impl(target, ctx):
             args.rustc_flags.add("-Dclippy::complexity")
             args.rustc_flags.add("-Dclippy::perf")
         else:
-            # fail on any warning
+            # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
+
+            # Turn any warnings from clippy or rustc into an error, as otherwise
+            # Bazel will consider the execution result of the aspect to be "success",
+            # and Clippy won't be re-triggered unless the source file is modified.
             args.rustc_flags.add("-Dwarnings")
 
     # Upstream clippy requires one of these two filenames or it silently uses
