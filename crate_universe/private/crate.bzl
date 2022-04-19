@@ -65,6 +65,7 @@ def _annotation(
         additive_build_file = None,
         additive_build_file_content = None,
         build_script_data = None,
+        build_script_tools = None,
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
@@ -93,6 +94,7 @@ def _annotation(
         additive_build_file (str, optional): A file containing extra contents to write to the bottom of
             generated BUILD files.
         build_script_data (list, optional): A list of labels to add to a crate's `cargo_build_script::data` attribute.
+        build_script_tools (list, optional): A list of labels to add to a crate's `cargo_build_script::tools` attribute.
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
             attribute.
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
@@ -142,6 +144,7 @@ def _annotation(
             additive_build_file = additive_build_file,
             additive_build_file_content = additive_build_file_content,
             build_script_data = build_script_data,
+            build_script_tools = build_script_tools,
             build_script_data_glob = build_script_data_glob,
             build_script_deps = build_script_deps,
             build_script_env = build_script_env,
