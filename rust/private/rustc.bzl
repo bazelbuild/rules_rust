@@ -780,7 +780,7 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, attr.experimental_use_whole_archive_for_native_deps)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct)
@@ -1259,13 +1259,16 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
     if lib.static_library or lib.pic_static_library:
+        modifiers = ""
+        if experimental_use_whole_archive_for_native_deps:
+            modifiers = ":+whole-archive"
         return [
-            "-lstatic=%s" % get_lib_name(artifact),
+            "-lstatic%s=%s" % (modifiers, get_lib_name(artifact)),
         ]
     elif _is_dylib(lib):
         return [
@@ -1274,18 +1277,18 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs):
 
     return []
 
-def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
-    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
+def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps):
+    linker_input, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps = linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
             ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps))
     return ret
 
-def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
-    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
+def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps):
+    linker_input, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps = linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
@@ -1294,11 +1297,11 @@ def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
                 ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps))
     return ret
 
-def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
-    linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
+def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps):
+    linker_input, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps = linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
@@ -1311,16 +1314,16 @@ def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
                 "link-arg=-Wl,--no-whole-archive",
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps))
     return ret
 
-def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
-    link_input, use_pic, _ = linker_input_and_use_pic_and_ambiguous_libs
+def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps):
+    link_input, use_pic, _, _ = linker_input_and_use_pic_and_ambiguous_libs_and_experimental_use_whole_archive_for_native_deps
 
     # De-duplicate names.
     return depset([get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]).to_list()
 
-def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration):
+def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration, experimental_use_whole_archive_for_native_deps):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
@@ -1332,7 +1335,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
-
+        experimental_use_whole_archive_for_native_deps (bool): Whether to use the whole-archive link modifier for native deps, see https://github.com/bazelbuild/rules_rust/issues/1268
     """
     if crate_type in ["lib", "rlib"]:
         return
@@ -1347,15 +1350,15 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         make_link_flags = _make_link_flags_default
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
-    args_and_pic_and_ambiguous_libs = [(arg, use_pic, ambiguous_libs) for arg in dep_info.transitive_noncrates.to_list()]
-    args.add_all(args_and_pic_and_ambiguous_libs, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
+    args_and_pic_and_ambiguous_libs_and_use_whole_archive_for_native_deps = [(arg, use_pic, ambiguous_libs, experimental_use_whole_archive_for_native_deps) for arg in dep_info.transitive_noncrates.to_list()]
+    args.add_all(args_and_pic_and_ambiguous_libs_and_use_whole_archive_for_native_deps, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
     if ambiguous_libs:
         # If there are ambiguous libs, the disambiguation symlinks to them are
         # all created in the same directory. Add it to the library search path.
         ambiguous_libs_dirname = ambiguous_libs.values()[0].dirname
         args.add("-Lnative={}".format(ambiguous_libs_dirname))
 
-    args.add_all(args_and_pic_and_ambiguous_libs, map_each = make_link_flags)
+    args.add_all(args_and_pic_and_ambiguous_libs_and_use_whole_archive_for_native_deps, map_each = make_link_flags)
 
     for linkstamp_out in linkstamp_outs:
         args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])

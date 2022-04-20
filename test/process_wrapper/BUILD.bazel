@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
 load("//test/process_wrapper:process_wrapper_tester.bzl", "process_wrapper_tester")
 
 cc_binary(
@@ -147,4 +148,19 @@ build_test(
     targets = [
         ":process_wrapper_combined",
     ],
+)
+
+rust_binary(
+    name = "fake_rustc",
+    srcs = ["fake_rustc.rs"],
+)
+
+rust_test(
+    name = "rustc_quit_on_rmeta",
+    srcs = ["rustc_quit_on_rmeta.rs"],
+    data = [
+        ":fake_rustc",
+        "//util/process_wrapper",
+    ],
+    deps = ["//tools/runfiles"],
 )
