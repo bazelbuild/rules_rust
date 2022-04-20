@@ -59,6 +59,16 @@ def rules_rust_dependencies():
         url = "https://github.com/bazelbuild/apple_support/releases/download/0.11.0/apple_support.0.11.0.tar.gz",
     )
 
+    # process_wrapper needs a low-dependency way to process json.
+    maybe(
+        http_archive,
+        name = "rules_rust_tinyjson",
+        sha256 = "9c21866c7f051ebcefd028996494a374b7408ef946826cefc9761d58cce0fd36",
+        url = "https://github.com/rhysd/tinyjson/archive/refs/tags/v2.3.0.zip",
+        strip_prefix = "tinyjson-2.3.0",
+        build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
+    )
+
 # buildifier: disable=unnamed-macro
 def rust_register_toolchains(
         dev_components = False,

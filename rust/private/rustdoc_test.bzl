@@ -154,6 +154,15 @@ rust_doc_test = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
+        "experimental_use_whole_archive_for_native_deps": attr.bool(
+            doc = dedent("""\
+                Whether to use +whole-archive linking modifier for native dependencies.
+
+                TODO: This is a stopgap feature and will be removed,
+                see https://github.com/bazelbuild/rules_rust/issues/1268.
+            """),
+            default = False,
+        ),
         "_cc_toolchain": attr.label(
             doc = (
                 "In order to use find_cc_toolchain, your rule has to depend " +
