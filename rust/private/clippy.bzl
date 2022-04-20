@@ -131,11 +131,12 @@ def _clippy_aspect_impl(target, ctx):
         args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
 
         if clippy_flags:
-            args.rustc_flags.extend(clippy_flags)
-        else:
-            # If we are capturing the output, we want the build system to be able to keep going
-            # and consume the output. Some clippy lints are denials, so we treat them as warnings.
-            args.rustc_flags.add("-Wclippy::all")
+            fail("""Combining @rules_rust//:clippy_flags with @rules_rust//:capture_clippy_output=true is currently not supported.
+See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for more detail.""")
+
+        # If we are capturing the output, we want the build system to be able to keep going
+        # and consume the output. Some clippy lints are denials, so we treat them as warnings.
+        args.rustc_flags.add("-Wclippy::all")
     else:
         # A marker file indicating clippy has executed successfully.
         # This file is necessary because "ctx.actions.run" mandates an output.
