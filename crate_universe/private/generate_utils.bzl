@@ -205,16 +205,14 @@ def generate_config(repository_ctx):
     annotations = collect_crate_annotations(repository_ctx.attr.annotations, repository_ctx.name)
 
     # Load additive build files if any have been provided.
-    content = list()
     for data in annotations.values():
-        additive_build_file_content = data.pop("additive_build_file_content", None)
-        if additive_build_file_content:
-            content.append(additive_build_file_content)
-        additive_build_file = data.pop("additive_build_file", None)
-        if additive_build_file:
-            file_path = repository_ctx.path(Label(additive_build_file))
-            content.append(repository_ctx.read(file_path))
-        data.update({"additive_build_file_content": "\n".join(content) if content else None})
+        f = data.pop("additive_build_file", None)
+        content = [x for x in [
+            data.pop("additive_build_file_content", None),
+            repository_ctx.read(Label(f)) if f else None,
+        ] if x]
+        if content:
+            data.update({"additive_build_file_content": "\n".join(content)})
 
     config = struct(
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,
