@@ -1027,7 +1027,7 @@ rust_test(
 )
 ```
 
-Run the test with `bazel build //hello_lib:hello_lib_test`.
+Run the test with `bazel build //hello_lib:greeting_test`.
 
 **ATTRIBUTES**
 
