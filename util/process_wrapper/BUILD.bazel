@@ -8,6 +8,9 @@ rust_binary_without_process_wrapper(
     srcs = glob(["*.rs"]),
     edition = "2018",
     visibility = ["//visibility:public"],
+    deps = [
+        "@rules_rust_tinyjson//:tinyjson",
+    ],
 )
 
 rust_test(
