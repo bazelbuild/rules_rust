@@ -956,7 +956,9 @@ mod test {
 }
 ```
 
-To build and run the tests, simply add a `rust_test` rule with no `srcs` and         only depends on the `hello_lib` `rust_library` target:
+To build and run the tests, simply add a `rust_test` rule with no `srcs`
+and only depends on the `hello_lib` `rust_library` target via the
+`crate` attribute:
 
 `hello_lib/BUILD`:
 ```python
@@ -969,22 +971,12 @@ rust_library(
 
 rust_test(
     name = "hello_lib_test",
-    deps = [":hello_lib"],
-)
-```
-
-Run the test with `bazel build //hello_lib:hello_lib_test`.
-
-To run a crate or lib with the `#[cfg(test)]` configuration, handling inline         tests, you should specify the crate directly like so.
-
-```python
-rust_test(
-    name = "hello_lib_test",
     crate = ":hello_lib",
     # You may add other deps that are specific to the test configuration
     deps = ["//some/dev/dep"],
-)
 ```
+
+Run the test with `bazel build //hello_lib:hello_lib_test`.
 
 ### Example: `test` directory
 
@@ -1035,7 +1027,7 @@ rust_test(
 )
 ```
 
-Run the test with `bazel build //hello_lib:hello_lib_test`.
+Run the test with `bazel build //hello_lib:greeting_test`.
 
 **ATTRIBUTES**
 

@@ -116,7 +116,7 @@ def render_config(
             available format keys are [`{repository}`, `{name}`, `{version}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
-        default_package_name (str, optional): The default package name to in the rendered macros. This affects the
+        default_package_name (str, optional): The default package name to use in the rendered macros. This affects the
             auto package detection of things like `all_crate_deps`.
         platforms_template (str, optional): The base template to use for platform names.
             See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format
@@ -205,16 +205,14 @@ def generate_config(repository_ctx):
     annotations = collect_crate_annotations(repository_ctx.attr.annotations, repository_ctx.name)
 
     # Load additive build files if any have been provided.
-    content = list()
     for data in annotations.values():
-        additive_build_file_content = data.pop("additive_build_file_content", None)
-        if additive_build_file_content:
-            content.append(additive_build_file_content)
-        additive_build_file = data.pop("additive_build_file", None)
-        if additive_build_file:
-            file_path = repository_ctx.path(Label(additive_build_file))
-            content.append(repository_ctx.read(file_path))
-        data.update({"additive_build_file_content": "\n".join(content) if content else None})
+        f = data.pop("additive_build_file", None)
+        content = [x for x in [
+            data.pop("additive_build_file_content", None),
+            repository_ctx.read(Label(f)) if f else None,
+        ] if x]
+        if content:
+            data.update({"additive_build_file_content": "\n".join(content)})
 
     config = struct(
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,

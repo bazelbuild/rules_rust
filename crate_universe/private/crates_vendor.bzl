@@ -242,7 +242,7 @@ crates_vendor = rule(
     doc = "A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace",
     attrs = {
         "annotations": attr.string_list_dict(
-            doc = "Extra settings to apply to crates. See [crate.annotations](#crateannotations).",
+            doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
         ),
         "buildifier": attr.label(
             doc = "The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.",

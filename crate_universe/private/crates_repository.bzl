@@ -116,7 +116,7 @@ Environment Variables:
     implementation = _crates_repository_impl,
     attrs = {
         "annotations": attr.string_list_dict(
-            doc = "Extra settings to apply to crates. See [crate.annotations](#crateannotations).",
+            doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
         ),
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
