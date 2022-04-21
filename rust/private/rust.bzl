@@ -742,7 +742,7 @@ rust_library = rule(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    provides = _common_providers,
+    provides = [CcInfo],
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -766,7 +766,7 @@ rust_static_library = rule(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    provides = _common_providers,
+    provides = [CcInfo],
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
