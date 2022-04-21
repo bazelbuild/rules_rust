@@ -18,6 +18,11 @@ VERSIONS="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_VERSIONS.txt")"
 BETA_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_BETA_ISO_DATES.txt")"
 NIGHTLY_ISO_DATES="$(cat "${BUILD_WORKSPACE_DIRECTORY}/util/fetch_shas_NIGHTLY_ISO_DATES.txt")"
 
+EXTENSIONS=(
+   tar.gz
+   tar.xz
+)
+
 enumerate_keys() {
   for TOOL in $TOOLS
   do
@@ -50,11 +55,42 @@ enumerate_keys() {
 }
 
 emit_bzl_file_contents() {
-  echo "$@" \
-    | parallel --trim lr -d ' ' --will-cite 'printf "%s %s\n", {}, $(curl --fail https://static.rust-lang.org/dist/{}.tar.gz.sha256 | cut -f1 -d" ")' \
-    | sed "s/,//g" \
-    | grep -v " $" \
-    > /tmp/reload_shas_shalist.txt
+  if which parallel > /dev/null; then
+    for ext in "${EXTENSIONS[@]}"; do
+    echo "$@" \
+      | parallel --trim lr -d ' ' --will-cite 'printf "%s %s\n", {}, $(curl --fail https://static.rust-lang.org/dist/{}.'"${ext}"'.sha256 | cut -f1 -d" ")' \
+      | sed "s/,//g" \
+      | grep -v " $" \
+      > "${TMPDIR}"/shas.txt
+    done
+  else
+    mkdir "$TMPDIR"/outs
+
+    echo "--parallel" >> "${TMPDIR}"/curl_config
+    echo "--fail" >> "${TMPDIR}"/curl_config
+    echo "--silent" >> "${TMPDIR}"/curl_config
+    echo "--create-dirs" >> "${TMPDIR}"/curl_config
+    for key in "$@"; do
+      for ext in "${EXTENSIONS[@]}"; do
+        echo "--output ${TMPDIR}/outs/${key}.${ext}" >> "${TMPDIR}"/curl_config
+        echo "--url https://static.rust-lang.org/dist/${key}.${ext}.sha256" >> "${TMPDIR}"/curl_config
+      done
+    done
+    curl --config "${TMPDIR}"/curl_config
+
+    pushd "$TMPDIR"/outs >/dev/null
+        find . -type f -print | \
+        awk '{
+            file_key=substr($1, 3);
+            getline <$1;
+            printf("%s %s\n", file_key, $1);
+            if (match(file_key, /\.tar\.gz$/)) {
+                printf("%s %s\n", substr(file_key, 1, length(file_key)-7), $1);
+            }
+        }' \
+        > "${TMPDIR}"/shas.txt
+    popd >/dev/null
+  fi
 
   echo "\"\"\"A module containing a mapping of Rust tools to checksums"
   echo ""
@@ -62,9 +98,10 @@ emit_bzl_file_contents() {
   echo "\"\"\""
   echo ""
   echo "FILE_KEY_TO_SHA = {"
-  cat /tmp/reload_shas_shalist.txt | sed '/^[[:space:]]*$/d' | sort | awk '{print "    \"" $1 "\": \"" $2 "\","}'
+  cat "${TMPDIR}"/shas.txt | sed '/^[[:space:]]*$/d' | sort | awk '{print "    \"" $1 "\": \"" $2 "\","}'
   echo "}"
-  rm /tmp/reload_shas_shalist.txt
 }
 
+export TMPDIR="$(mktemp -d -t bazel_reload_shas_shalists)"
 echo "$(emit_bzl_file_contents $(enumerate_keys))" > "${BUILD_WORKSPACE_DIRECTORY}/rust/known_shas.bzl"
+rm -rf "${TMPDIR}"
