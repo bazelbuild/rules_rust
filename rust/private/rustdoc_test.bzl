@@ -171,6 +171,14 @@ rust_doc_test = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
+        "deps": attr.label_list(
+            doc = dedent("""\
+                List of other libraries to be linked to this library target.
+
+                These can be either other `rust_library` targets or `cc_library` targets if
+                linking a native library.
+            """),
+        ),
         "experimental_use_whole_archive_for_native_deps": attr.bool(
             doc = dedent("""\
                 Whether to use +whole-archive linking modifier for native dependencies.
@@ -179,14 +187,6 @@ rust_doc_test = rule(
                 see https://github.com/bazelbuild/rules_rust/issues/1268.
             """),
             default = False,
-        ),
-        "deps": attr.label_list(
-            doc = dedent("""\
-            List of other libraries to be linked to this library target.
-
-            These can be either other `rust_library` targets or `cc_library` targets if
-            linking a native library.
-        """),
         ),
         "_cc_toolchain": attr.label(
             doc = (
