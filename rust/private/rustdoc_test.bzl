@@ -17,6 +17,7 @@
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
+load("//rust/private:providers.bzl", "CrateInfo")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
@@ -178,6 +179,7 @@ rust_doc_test = rule(
                 These can be either other `rust_library` targets or `cc_library` targets if
                 linking a native library.
             """),
+            providers = [CrateInfo, CcInfo],
         ),
         "experimental_use_whole_archive_for_native_deps": attr.bool(
             doc = dedent("""\

@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Properly frobnicates the input.
-pub fn frobnicate(mut bytes: Vec<u8>) -> Vec<u8> {
-    bytes.reverse();
-    bytes
+/// Increments the input.
+pub fn inc(n: u32) -> u32 {
+    n + 1
 }
