@@ -13,6 +13,17 @@
 // limitations under the License.
 
 /// Object that displays a greeting.
+///
+/// # Examples
+///
+/// ```
+/// use hello_lib::greeter::Greeter;
+/// use frobnicate::frobnicate;
+///
+/// let greeter = Greeter::new("Some men interpret");
+/// let greeting = greeter.greeting("nine memos");
+/// assert_eq!(frobnicate(greeting.into_bytes()).as_slice(), b"somem enin terpretni nem emoS");
+/// ```
 pub struct Greeter {
     greeting: String,
 }
