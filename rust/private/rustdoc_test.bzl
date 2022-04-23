@@ -15,9 +15,9 @@
 """Rules for performing `rustdoc --test` on Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
-load("//rust/private:providers.bzl", "CrateInfo")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
