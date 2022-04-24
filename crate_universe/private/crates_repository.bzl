@@ -1,6 +1,6 @@
 """`crates_repository` rule implementation"""
 
-load("//crate_universe/private:common_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//crate_universe/private:common_utils.bzl", "get_rust_tools")
 load(
     "//crate_universe/private:generate_utils.bzl",
     "CRATES_REPOSITORY_ENVIRON",
@@ -17,6 +17,7 @@ load(
 )
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 def _crates_repository_impl(repository_ctx):
