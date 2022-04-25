@@ -4,6 +4,7 @@ load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
 cargo_build_script(
     name = "build_script",
     srcs = ["build.rs"],
+    edition = "2018",
 )
 
 rust_library(
@@ -11,12 +12,14 @@ rust_library(
     srcs = [
         "src/lib.rs",
     ],
+    edition = "2018",
     deps = [":build_script"],
 )
 
 rust_test(
     name = "demo_lib_test",
     crate = ":demo_lib",
+    edition = "2018",
 )
 
 rust_test_suite(
@@ -26,4 +29,5 @@ rust_test_suite(
     # to the underlying rust_test rules. This will make OUT_DIR
     # available when compiling integration tests.
     crate = ":demo_lib",
+    edition = "2018",
 )

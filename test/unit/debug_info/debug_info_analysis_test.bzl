@@ -38,6 +38,7 @@ def debug_info_analysis_test_suite(name):
     rust_shared_library(
         name = "mylib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     native.filegroup(
@@ -67,6 +68,7 @@ def debug_info_analysis_test_suite(name):
     rust_binary(
         name = "myrustbin",
         srcs = ["main.rs"],
+        edition = "2018",
     )
 
     native.filegroup(

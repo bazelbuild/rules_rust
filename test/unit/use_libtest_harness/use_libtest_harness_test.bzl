@@ -31,11 +31,13 @@ def _use_libtest_harness_test():
     rust_test(
         name = "mytest",
         srcs = ["mytest.rs"],
+        edition = "2018",
     )
 
     rust_test(
         name = "mytest_noharness",
         srcs = ["mytest_noharness.rs"],
+        edition = "2018",
         use_libtest_harness = False,
     )
 

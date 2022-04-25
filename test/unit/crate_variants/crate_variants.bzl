@@ -18,17 +18,20 @@ def _crate_variants_test():
     rust_library(
         name = "foo",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "foo2",
         crate_name = "foo",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "bar",
         srcs = ["bar.rs"],
+        edition = "2018",
         deps = [":foo", ":foo2"],
     )
 

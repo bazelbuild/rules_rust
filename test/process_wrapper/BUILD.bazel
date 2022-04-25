@@ -153,6 +153,7 @@ build_test(
 rust_binary(
     name = "fake_rustc",
     srcs = ["fake_rustc.rs"],
+    edition = "2018",
 )
 
 rust_test(
@@ -162,5 +163,6 @@ rust_test(
         ":fake_rustc",
         "//util/process_wrapper",
     ],
+    edition = "2018",
     deps = ["//tools/runfiles"],
 )
