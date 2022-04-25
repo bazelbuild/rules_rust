@@ -269,13 +269,6 @@ def triple_to_constraint_set(target_triple):
             "@rules_rust//rust/platform/os:unknown",
         ]
 
-    # Workaround for https://github.com/bazelbuild/bazel/issues/14982
-    if target_triple in ("armv7-linux-androideabi", "thumbv7neon-linux-androideabi"):
-        return [
-            "@platforms//cpu:arm",
-            "@platforms//os:android",
-        ]
-
     triple_struct = triple(target_triple)
 
     constraint_set = []
