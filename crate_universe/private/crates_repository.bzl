@@ -27,7 +27,7 @@ def _crates_repository_impl(repository_ctx):
     generator, generator_sha256 = get_generator(repository_ctx, host_triple.triple)
 
     # Generate a config file for all settings
-    config = generate_config(repository_ctx)
+    config_path = generate_config(repository_ctx)
 
     # Locate the lockfile
     lockfile = get_lockfile(repository_ctx)
@@ -46,7 +46,7 @@ def _crates_repository_impl(repository_ctx):
         generator = generator,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         cargo = cargo_path,
         rustc = rustc_path,
@@ -74,7 +74,7 @@ def _crates_repository_impl(repository_ctx):
     execute_generator(
         repository_ctx = repository_ctx,
         generator = generator,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,

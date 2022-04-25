@@ -492,4 +492,36 @@ mod test {
         id.version = "<1".to_owned();
         assert!(!id.matches(&package));
     }
+
+    #[test]
+    fn deserialize_config() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let path = runfiles
+            .rlocation("rules_rust/crate_universe/test_data/serialized_configs/config.json");
+
+        let content = std::fs::read_to_string(path).unwrap();
+
+        let config: Config = serde_json::from_str(&content).unwrap();
+
+        println!("{:#?}", config);
+        // Annotations
+        let annotation = config
+            .annotations
+            .get(&CrateId::new("rand".to_owned(), "0.8.5".to_owned()))
+            .unwrap();
+        assert_eq!(
+            annotation.crate_features,
+            Some(BTreeSet::from(["small_rng".to_owned()]))
+        );
+
+        // Global settings
+        assert!(config.cargo_config.is_none());
+        assert!(!config.generate_build_scripts);
+
+        // Render Config
+        assert_eq!(
+            config.rendering.platforms_template,
+            "//custom/platform:{triple}"
+        );
+    }
 }

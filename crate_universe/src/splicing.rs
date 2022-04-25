@@ -493,3 +493,52 @@ pub fn generate_lockfile(
 
     Ok(lockfile)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use std::path::PathBuf;
+
+    #[test]
+    fn deserialize_splicing_manifest() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json",
+        );
+
+        let content = std::fs::read_to_string(path).unwrap();
+
+        let manifest: SplicingManifest = serde_json::from_str(&content).unwrap();
+
+        // Check splicing configs
+        assert_eq!(manifest.resolver_version, cargo_toml::Resolver::V2);
+
+        // Check manifests
+        assert_eq!(manifest.manifests.len(), 1);
+        let maniefst_label = manifest
+            .manifests
+            .get(&PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"))
+            .unwrap();
+        assert_eq!(maniefst_label, &Label::from_str("//:Cargo.toml").unwrap());
+
+        // Check packages
+        assert_eq!(manifest.direct_packages.len(), 1);
+        let package = manifest.direct_packages.get("rand").unwrap();
+        assert_eq!(
+            package,
+            &cargo_toml::DependencyDetail {
+                default_features: Some(false),
+                features: vec!["small_rng".to_owned()],
+                version: Some("0.8.5".to_owned()),
+                ..Default::default()
+            }
+        );
+
+        // Check cargo config
+        assert_eq!(
+            manifest.cargo_config,
+            Some(PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"))
+        );
+    }
+}
