@@ -519,8 +519,10 @@ rust_toolchain = rule(
             },
         ),
         "default_edition": attr.string(
-            doc = "The edition to use for rust_* rules that don't specify an edition.",
-            default = rust_common.default_edition,
+            doc = (
+                "The edition to use for rust_* rules that don't specify an edition. " +
+                "If absent, every rule is required to specify its `edition` attribute."
+            ),
         ),
         "dylib_ext": attr.string(
             doc = "The extension for dynamic libraries created from rustc.",
