@@ -8,6 +8,7 @@ load(
 rust_library(
     name = "runfiles",
     srcs = ["runfiles.rs"],
+    edition = "2018",
     visibility = ["//visibility:public"],
 )
 

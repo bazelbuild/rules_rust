@@ -30,24 +30,28 @@ def _check_runfiles_test():
     rust_library(
         name = "foo_lib",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":libbar.so"],
     )
 
     rust_binary(
         name = "foo_bin",
         srcs = ["foo_main.rs"],
+        edition = "2018",
         deps = [":libbar.so"],
     )
 
     rust_shared_library(
         name = "foo_dylib",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":libbar.so"],
     )
 
     rust_static_library(
         name = "foo_static",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":libbar.so"],
     )
 

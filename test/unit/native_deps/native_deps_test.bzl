@@ -153,37 +153,42 @@ def _native_dep_test():
     rust_library(
         name = "rlib_has_no_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_static_library(
         name = "staticlib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_shared_library(
         name = "cdylib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_proc_macro(
         name = "proc_macro_has_native_dep",
         srcs = ["proc_macro_using_native_dep.rs"],
-        deps = [":native_dep"],
         edition = "2018",
+        deps = [":native_dep"],
     )
 
     rust_binary(
         name = "bin_has_native_dep",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_binary(
         name = "bin_has_native_dep_and_alwayslink",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep", ":alwayslink"],
     )
 
@@ -202,6 +207,7 @@ def _native_dep_test():
     rust_shared_library(
         name = "cdylib_has_native_dep_and_alwayslink",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep", ":alwayslink"],
     )
 
@@ -262,6 +268,7 @@ def _linkopts_test():
     rust_binary(
         name = "linkopts_rust_bin",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":linkopts_native_dep_a"],
     )
 
@@ -303,18 +310,21 @@ def _additional_deps_test():
     rust_binary(
         name = "bin_additional_deps",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":additional_deps_cc"],
     )
 
     rust_shared_library(
         name = "cdylib_additional_deps",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":additional_deps_cc"],
     )
 
     rust_library(
         name = "lib_additional_deps",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = ["additional_deps_cc"],
     )
 

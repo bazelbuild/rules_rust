@@ -106,18 +106,21 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
         extension = extension,
     )
 
-def get_edition(attr, toolchain):
+def get_edition(attr, toolchain, label):
     """Returns the Rust edition from either the current rule's attirbutes or the current `rust_toolchain`
 
     Args:
         attr (struct): The current rule's attributes
         toolchain (rust_toolchain): The `rust_toolchain` for the current target
+        label (Label): The label of the target being built
 
     Returns:
         str: The target Rust edition
     """
     if getattr(attr, "edition"):
         return attr.edition
+    elif not toolchain.default_edition:
+        fail("Attribute `edition` is required for {}.".format(label))
     else:
         return toolchain.default_edition
 
@@ -280,7 +283,7 @@ def _rust_library_common(ctx, crate_type):
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
-            edition = get_edition(ctx.attr, toolchain),
+            edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
@@ -320,7 +323,7 @@ def _rust_binary_impl(ctx):
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
-            edition = get_edition(ctx.attr, toolchain),
+            edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
@@ -386,7 +389,7 @@ def _rust_test_common(ctx, toolchain, output):
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
-            edition = get_edition(ctx.attr, toolchain),
+            edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),

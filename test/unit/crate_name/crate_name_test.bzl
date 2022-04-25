@@ -121,39 +121,46 @@ def _crate_name_test():
     rust_library(
         name = "default-crate-name-library",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "custom-crate-name-library",
         crate_name = "custom_name",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_binary(
         name = "default-crate-name-binary",
         srcs = ["main.rs"],
+        edition = "2018",
     )
 
     rust_binary(
         name = "custom-crate-name-binary",
         crate_name = "custom_name",
         srcs = ["main.rs"],
+        edition = "2018",
     )
 
     rust_test(
         name = "default-crate-name-test",
         srcs = ["main.rs"],
+        edition = "2018",
     )
 
     rust_test(
         name = "custom-crate-name-test",
         crate_name = "custom_name",
         srcs = ["main.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "invalid/default-crate-name",
         srcs = ["lib.rs"],
+        edition = "2018",
         tags = ["manual", "norustfmt"],
     )
 
@@ -161,22 +168,26 @@ def _crate_name_test():
         name = "invalid-custom-crate-name",
         crate_name = "hyphens-not-allowed",
         srcs = ["lib.rs"],
+        edition = "2018",
         tags = ["manual", "norustfmt"],
     )
 
     rust_library(
         name = "slib",
         srcs = ["slib.rs"],
+        edition = "2018",
     )
 
     rust_shared_library(
         name = "shared_lib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_static_library(
         name = "static_lib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     slib_library_name_test(
