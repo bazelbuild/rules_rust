@@ -16,6 +16,7 @@ rust_binary(
         ":cross",
         "@rules_rust//rust/toolchain:current_exec_cargo_files",
     ],
+    edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_exec_cargo_files)",
@@ -29,9 +30,11 @@ cross_binary(name = "cross")
 
 filegroup(
     name = "distro",
-    srcs = [
+    srcs = glob([
+        "**/*.rs",
+        "**/*.toml",
+    ]) + [
         "BUILD.bazel",
-        "Cargo.toml",
         "cross_installer_deps.bzl",
     ],
     visibility = ["//crate_universe/tools:__pkg__"],

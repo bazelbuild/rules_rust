@@ -1,16 +1,11 @@
 # buildifier: disable=module-docstring
 load("//rust:repositories.bzl", "load_arbitrary_tool")
+load("//rust/platform:triple.bzl", "get_host_triple")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
 def _load_arbitrary_tool_test_impl(repository_ctx):
-    if "mac" in repository_ctx.os.name:
-        target_triple = "x86_64-apple-darwin"
-        cargo_bin = "bin/cargo"
-    elif "windows" in repository_ctx.os.name:
-        target_triple = "x86_64-pc-windows-msvc"
-        cargo_bin = "bin/cargo.exe"
-    else:
-        target_triple = "x86_64-unknown-linux-gnu"
-        cargo_bin = "bin/cargo"
+    host_triple = get_host_triple(repository_ctx)
+    cargo_bin = "bin/cargo" + system_to_binary_ext(host_triple.system)
 
     # Download cargo
     load_arbitrary_tool(
@@ -19,7 +14,7 @@ def _load_arbitrary_tool_test_impl(repository_ctx):
         tool_subdirectories = ["cargo"],
         version = "1.53.0",
         iso_date = None,
-        target_triple = target_triple,
+        target_triple = host_triple.str,
     )
 
     repo_path = repository_ctx.path(".")

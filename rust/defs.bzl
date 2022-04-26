@@ -21,6 +21,7 @@ load(
 load(
     "//rust/private:clippy.bzl",
     _capture_clippy_output = "capture_clippy_output",
+    _clippy_flags = "clippy_flags",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
@@ -86,6 +87,9 @@ rust_doc = _rust_doc
 
 rust_doc_test = _rust_doc_test
 # See @rules_rust//rust/private:rustdoc_test.bzl for a complete description.
+
+clippy_flags = _clippy_flags
+# See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 rust_clippy_aspect = _rust_clippy_aspect
 # See @rules_rust//rust/private:clippy.bzl for a complete description.

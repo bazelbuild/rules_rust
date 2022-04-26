@@ -1,7 +1,8 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
-load("//cargo/private:cargo_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//cargo/private:cargo_utils.bzl", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple.bzl", "get_host_triple")
 
 _CARGO_BUILD_MODES = [
     "release",

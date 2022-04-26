@@ -29,12 +29,14 @@ def _proc_macro_does_not_leak_deps_test():
     rust_proc_macro(
         name = "proc_macro_definition",
         srcs = ["leaks_deps/proc_macro_definition.rs"],
+        edition = "2018",
         deps = ["//test/unit/proc_macro/leaks_deps/proc_macro_dep"],
     )
 
     rust_test(
         name = "deps_not_leaked",
         srcs = ["leaks_deps/proc_macro_user.rs"],
+        edition = "2018",
         proc_macro_deps = [":proc_macro_definition"],
     )
 

@@ -68,6 +68,7 @@ def _linkstamps_test():
     rust_binary(
         name = "some_rust_binary",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":cc_lib_with_linkstamp"],
     )
 
@@ -79,12 +80,14 @@ def _linkstamps_test():
     rust_library(
         name = "some_rust_library_with_linkstamp_transitively",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":cc_lib_with_linkstamp"],
     )
 
     rust_binary(
         name = "some_rust_binary_with_linkstamp_transitively",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":some_rust_library_with_linkstamp_transitively"],
     )
 
@@ -101,6 +104,7 @@ def _linkstamps_test():
     rust_binary(
         name = "some_rust_binary_with_multiple_paths_to_a_linkstamp",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":cc_lib_with_linkstamp", ":cc_lib_with_linkstamp_transitively"],
     )
 
@@ -112,6 +116,7 @@ def _linkstamps_test():
     rust_test(
         name = "some_rust_test1",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":cc_lib_with_linkstamp"],
     )
 
@@ -123,6 +128,7 @@ def _linkstamps_test():
     rust_test(
         name = "some_rust_test2",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":cc_lib_with_linkstamp"],
     )
 

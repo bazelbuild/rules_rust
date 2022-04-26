@@ -92,6 +92,38 @@ def kebab_case_keys(data):
         for (key, val) in data.items()
     }
 
+def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, packages):
+    """Produce a manifest containing required components for splciing a new Cargo workspace
+
+    [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
+    [cargo_toml]: https://doc.rust-lang.org/cargo/reference/manifest.html
+
+    Args:
+        splicing_config (dict): A deserialized `splicing_config`
+        manifests (dict): A mapping of paths to Bazel labels which represent [Cargo manifests][cargo_toml].
+        cargo_config_path (str): The absolute path to a [Cargo config][cargo_config].
+        packages (dict): A set of crates (packages) specifications to depend on
+
+    Returns:
+        dict: A dictionary representation of a `cargo_bazel::splicing::SplicingManifest`
+    """
+
+    # Deserialize information about direct packges
+    direct_packages_info = {
+        # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
+        pkg: kebab_case_keys(dict(json.decode(data)))
+        for (pkg, data) in packages.items()
+    }
+
+    # Auto-generated splicier manifest values
+    splicing_manifest_content = {
+        "cargo_config": cargo_config_path,
+        "direct_packages": direct_packages_info,
+        "manifests": manifests,
+    }
+
+    return dict(splicing_config.items() + splicing_manifest_content.items())
+
 def create_splicing_manifest(repository_ctx):
     """Produce a manifest containing required components for splciing a new Cargo workspace
 
@@ -101,14 +133,6 @@ def create_splicing_manifest(repository_ctx):
     Returns:
         path: The path to a json encoded manifest
     """
-    repo_dir = repository_ctx.path(".")
-
-    # Deserialize information about direct packges
-    direct_packages_info = {
-        # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
-        pkg: kebab_case_keys(dict(json.decode(data)))
-        for (pkg, data) in repository_ctx.attr.packages.items()
-    }
 
     manifests = {str(repository_ctx.path(m)): str(m) for m in repository_ctx.attr.manifests}
 
@@ -120,19 +144,22 @@ def create_splicing_manifest(repository_ctx):
     # Load user configurable splicing settings
     config = json.decode(repository_ctx.attr.splicing_config or splicing_config())
 
-    # Auto-generated splicier manifest values
-    splicing_manifest_content = {
-        "cargo_config": cargo_config,
-        "direct_packages": direct_packages_info,
-        "manifests": manifests,
-    }
+    repo_dir = repository_ctx.path(".")
+
+    splicing_manifest = repository_ctx.path("{}/splicing_manifest.json".format(repo_dir))
+
+    data = compile_splicing_manifest(
+        splicing_config = config,
+        manifests = manifests,
+        cargo_config_path = cargo_config,
+        packages = repository_ctx.attr.packages,
+    )
 
     # Serialize information required for splicing
-    splicing_manifest = repository_ctx.path("{}/splicing_manifest.json".format(repo_dir))
     repository_ctx.file(
         splicing_manifest,
         json.encode_indent(
-            dict(dict(config).items() + splicing_manifest_content.items()),
+            data,
             indent = " " * 4,
         ),
     )

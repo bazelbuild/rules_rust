@@ -35,6 +35,7 @@ def cdylib_name_analysis_test_suite(name):
     rust_shared_library(
         name = "something",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     cdylib_name_test(

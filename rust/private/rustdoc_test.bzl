@@ -15,8 +15,9 @@
 """Rules for performing `rustdoc --test` on Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain")
+load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
@@ -90,8 +91,25 @@ def _rust_doc_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    crate = ctx.attr.crate
-    crate_info = crate[rust_common.crate_info]
+    crate = ctx.attr.crate[rust_common.crate_info]
+    deps = transform_deps(ctx.attr.deps)
+
+    crate_info = rust_common.create_crate_info(
+        name = crate.name,
+        type = crate.type,
+        root = crate.root,
+        srcs = crate.srcs,
+        deps = depset(deps, transitive = [crate.deps]),
+        proc_macro_deps = crate.proc_macro_deps,
+        aliases = {},
+        output = crate.output,
+        edition = crate.edition,
+        rustc_env = crate.rustc_env,
+        is_test = True,
+        compile_data = crate.compile_data,
+        wrapped_crate_type = crate.type,
+        owner = ctx.label,
+    )
 
     if toolchain.os == "windows":
         test_runner = ctx.actions.declare_file(ctx.label.name + ".rustdoc_test.bat")
@@ -127,7 +145,7 @@ def _rust_doc_test_impl(ctx):
 
     ctx.actions.run(
         mnemonic = "RustdocTestWriter",
-        progress_message = "Generating Rustdoc test runner for {}".format(crate.label),
+        progress_message = "Generating Rustdoc test runner for {}".format(ctx.attr.crate.label),
         executable = ctx.executable._test_writer,
         inputs = action.inputs,
         tools = tools,
@@ -153,6 +171,15 @@ rust_doc_test = rule(
             ),
             providers = [rust_common.crate_info],
             mandatory = True,
+        ),
+        "deps": attr.label_list(
+            doc = dedent("""\
+                List of other libraries to be linked to this library target.
+
+                These can be either other `rust_library` targets or `cc_library` targets if
+                linking a native library.
+            """),
+            providers = [CrateInfo, CcInfo],
         ),
         "experimental_use_whole_archive_for_native_deps": attr.bool(
             doc = dedent("""\

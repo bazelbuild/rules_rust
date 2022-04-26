@@ -21,12 +21,14 @@ def _transitive_crate_outputs_test():
     rust_library(
         name = "foo",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":bar", ":baz"],
     )
 
     rust_library(
         name = "bar",
         srcs = ["bar.rs"],
+        edition = "2018",
     )
 
     # buildifier: disable=native-cc

@@ -26,6 +26,7 @@ def _location_expansion_test():
     rust_library(
         name = "mylibrary",
         srcs = ["mylibrary.rs"],
+        edition = "2018",
         rustc_flags = [
             "@$(location :flag_generator)",
         ],

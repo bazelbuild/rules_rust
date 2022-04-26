@@ -1,6 +1,6 @@
 """`crates_repository` rule implementation"""
 
-load("//crate_universe/private:common_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//crate_universe/private:common_utils.bzl", "get_rust_tools")
 load(
     "//crate_universe/private:generate_utils.bzl",
     "CRATES_REPOSITORY_ENVIRON",
@@ -17,6 +17,7 @@ load(
 )
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 def _crates_repository_impl(repository_ctx):
@@ -27,7 +28,7 @@ def _crates_repository_impl(repository_ctx):
     generator, generator_sha256 = get_generator(repository_ctx, host_triple.triple)
 
     # Generate a config file for all settings
-    config = generate_config(repository_ctx)
+    config_path = generate_config(repository_ctx)
 
     # Locate the lockfile
     lockfile = get_lockfile(repository_ctx)
@@ -46,7 +47,7 @@ def _crates_repository_impl(repository_ctx):
         generator = generator,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         cargo = cargo_path,
         rustc = rustc_path,
@@ -74,7 +75,7 @@ def _crates_repository_impl(repository_ctx):
     execute_generator(
         repository_ctx = repository_ctx,
         generator = generator,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,

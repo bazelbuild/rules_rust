@@ -101,7 +101,7 @@ def rust_register_toolchains(
 
     Args:
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
-        edition (str, optional): The rust edition to be used by default (2015, 2018 (default), or 2021)
+        edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
             See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
         iso_date (str, optional): The date of the nightly or beta release (ignored if the version is a specific version).
@@ -212,8 +212,10 @@ rust_toolchain_repository = repository_rule(
             default = False,
         ),
         "edition": attr.string(
-            doc = "The rust edition to be used by default.",
-            default = rust_common.default_edition,
+            doc = (
+                "The rust edition to be used by default (2015, 2018, or 2021). " +
+                "If absent, every rule is required to specify its `edition` attribute."
+            ),
         ),
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
@@ -311,7 +313,7 @@ def rust_repository_set(
         iso_date (str, optional): The date of the tool. Defaults to None.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain. Defaults to None.
-        edition (str, optional): The rust edition to be used by default (2015, 2018 (if None), or 2021).
+        edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See

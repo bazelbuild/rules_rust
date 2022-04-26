@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
 # buildifier: disable=bzl-visibility
@@ -14,6 +15,7 @@ rust_proc_macro(
         "import.rs",
     ],
     crate_name = "import",
+    edition = "2018",
     deps = [
         ":import_internal",
         "//util/import/raze:syn",
@@ -25,6 +27,7 @@ rust_library(
     srcs = [
         "import_internal.rs",
     ],
+    edition = "2018",
     deps = [
         "//util/import/raze:aho_corasick",
         "//util/import/raze:lazy_static",
@@ -38,6 +41,7 @@ rust_library(
 rust_test(
     name = "import_internal_test",
     crate = ":import_internal",
+    edition = "2018",
     deps = [
         "//util/import/raze:quickcheck",
     ],
@@ -67,9 +71,9 @@ config_setting(
     },
 )
 
-sh_binary(
+cc_binary(
     name = "fake_import_macro_impl",
-    srcs = ["fake_import_macro_impl.sh"],
+    srcs = ["fake_import_macro_impl.cc"],
 )
 
 filegroup(
@@ -77,10 +81,10 @@ filegroup(
     srcs = glob([
         "*.bzl",
         "**/*.rs",
+        "**/*.cc",
     ]) + [
         "//util/import/raze:srcs",
         "//util/import/raze/remote:srcs",
-        "fake_import_macro_impl.sh",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],
