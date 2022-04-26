@@ -29,21 +29,25 @@ def _crate_info_test():
     rust_library(
         name = "rlib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_proc_macro(
         name = "proc_macro",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_static_library(
         name = "staticlib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_shared_library(
         name = "cdylib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rule_provides_crate_info_test(
