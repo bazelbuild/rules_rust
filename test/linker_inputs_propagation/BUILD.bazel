@@ -1,0 +1,72 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_library",
+    "rust_shared_library",
+    "rust_static_library",
+)
+
+package(default_visibility = ["//test/unit/linker_inputs_propagation:__pkg__"])
+
+rust_library(
+    name = "foo",
+    srcs = ["foo.rs"],
+    edition = "2018",
+)
+
+rust_shared_library(
+    name = "foo_shared",
+    srcs = ["foo_shared.rs"],
+    edition = "2018",
+)
+
+rust_static_library(
+    name = "staticlib_uses_foo",
+    srcs = ["bar_uses_foo.rs"],
+    edition = "2018",
+    deps = [":foo"],
+)
+
+rust_shared_library(
+    name = "sharedlib_uses_foo",
+    srcs = ["bar_uses_foo.rs"],
+    edition = "2018",
+    deps = [":foo"],
+)
+
+rust_static_library(
+    name = "staticlib_uses_shared_foo",
+    srcs = ["bar_uses_shared_foo.rs"],
+    edition = "2018",
+    deps = [":foo_shared"],
+)
+
+rust_static_library(
+    name = "sharedlib_uses_shared_foo",
+    srcs = ["bar_uses_shared_foo.rs"],
+    edition = "2018",
+    deps = [":foo_shared"],
+)
+
+cc_test(
+    name = "depends_on_foo_via_staticlib",
+    srcs = ["baz.cc"],
+    deps = [":staticlib_uses_foo"],
+)
+
+cc_test(
+    name = "depends_on_foo_via_sharedlib",
+    srcs = ["baz.cc"],
+    deps = [":sharedlib_uses_foo"],
+)
+
+cc_test(
+    name = "depends_on_shared_foo_via_sharedlib",
+    srcs = ["baz.cc"],
+    deps = [":sharedlib_uses_shared_foo"],
+)
+
+cc_test(
+    name = "depends_on_shared_foo_via_staticlib",
+    srcs = ["baz.cc"],
+    deps = [":staticlib_uses_shared_foo"],
+)

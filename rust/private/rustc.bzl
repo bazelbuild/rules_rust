@@ -1007,6 +1007,21 @@ def rustc_compile_action(
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
 
+def _collect_nonstatic_linker_inputs(cc_info):
+    shared_linker_inputs = []
+    for linker_input in cc_info.linking_context.linker_inputs.to_list():
+        dylibs = [
+            lib
+            for lib in linker_input.libraries
+            if _is_dylib(lib)
+        ]
+        if dylibs:
+            shared_linker_inputs.append(cc_common.create_linker_input(
+                owner = linker_input.owner,
+                libraries = depset(dylibs),
+            ))
+    return shared_linker_inputs
+
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
@@ -1085,9 +1100,20 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         CcInfo(linking_context = linking_context),
         toolchain.stdlib_linkflags,
     ]
+
     for dep in getattr(attr, "deps", []):
         if CcInfo in dep:
-            cc_infos.append(dep[CcInfo])
+            # A Rust staticlib or shared library doesn't need to propagate linker inputs
+            # of its dependencies, except for shared libraries.
+            if crate_info.type in ["cdylib", "staticlib"]:
+                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep[CcInfo])
+                if shared_linker_inputs:
+                    linking_context = cc_common.create_linking_context(
+                        linker_inputs = depset(shared_linker_inputs),
+                    )
+                    cc_infos.append(CcInfo(linking_context = linking_context))
+            else:
+                cc_infos.append(dep[CcInfo])
 
     if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
         # TODO: if we already have an rlib in our deps, we could skip this
