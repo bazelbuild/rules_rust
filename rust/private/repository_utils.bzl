@@ -46,7 +46,7 @@ filegroup(
 """
 
 def BUILD_for_compiler(target_triple):
-    """Emits a BUILD file the compiler `.tar.gz`.
+    """Emits a BUILD file the compiler archive.
 
     Args:
         target_triple (str): The triple of the target platform
@@ -72,7 +72,7 @@ filegroup(
 )"""
 
 def BUILD_for_cargo(target_triple):
-    """Emits a BUILD file the cargo `.tar.gz`.
+    """Emits a BUILD file the cargo archive.
 
     Args:
         target_triple (str): The triple of the target platform
@@ -102,7 +102,7 @@ sh_binary(
 """
 
 def BUILD_for_rustfmt(target_triple):
-    """Emits a BUILD file the rustfmt `.tar.gz`.
+    """Emits a BUILD file the rustfmt archive.
 
     Args:
         target_triple (str): The triple of the target platform
@@ -126,7 +126,7 @@ filegroup(
 """
 
 def BUILD_for_clippy(target_triple):
-    """Emits a BUILD file the clippy `.tar.gz`.
+    """Emits a BUILD file the clippy archive.
 
     Args:
         target_triple (str): The triple of the target platform
@@ -164,7 +164,7 @@ alias(
 """
 
 def BUILD_for_stdlib(target_triple):
-    """Emits a BUILD file the stdlib `.tar.gz`.
+    """Emits a BUILD file the stdlib archive.
 
     Args:
         target_triple (str): The triple of the target platform
@@ -344,15 +344,14 @@ def load_rust_src(ctx):
         ctx (ctx): A repository_ctx.
     """
     tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
-    static_rust = ctx.os.environ.get("STATIC_RUST_URL", "https://static.rust-lang.org")
-    url = "{}/dist/{}.tar.gz".format(static_rust, tool_suburl)
+    url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
-    archive_path = tool_path + ".tar.gz"
+    archive_path = tool_path + _get_tool_extension(ctx)
     ctx.download(
         url,
         output = archive_path,
-        sha256 = ctx.attr.sha256s.get(tool_suburl) or FILE_KEY_TO_SHA.get(tool_suburl) or "",
+        sha256 = ctx.attr.sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or "",
         auth = _make_auth_dict(ctx, [url]),
     )
     ctx.extract(
@@ -551,22 +550,19 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
     urls = []
 
-    static_rust_url_from_env = ctx.os.environ.get("STATIC_RUST_URL")
-    if static_rust_url_from_env:
-        urls.append("{}/dist/{}.tar.gz".format(static_rust_url_from_env, tool_suburl))
-
     for url in getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES):
         new_url = url.format(tool_suburl)
         if new_url not in urls:
             urls.append(new_url)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
-    archive_path = "{}.tar.gz".format(tool_path)
+
+    archive_path = tool_path + _get_tool_extension(ctx)
     ctx.download(
         urls,
         output = archive_path,
-        sha256 = getattr(ctx.attr, "sha256s", dict()).get(tool_suburl) or
-                 FILE_KEY_TO_SHA.get(tool_suburl) or
+        sha256 = getattr(ctx.attr, "sha256s", dict()).get(archive_path) or
+                 FILE_KEY_TO_SHA.get(archive_path) or
                  sha256,
         auth = _make_auth_dict(ctx, urls),
     )
@@ -574,7 +570,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         ctx.extract(
             archive_path,
             output = "",
-            stripPrefix = "{}/{}".format(tool_path, subdirectory),
+            stripPrefix = "{}/{}".format(tool_suburl, subdirectory),
         )
 
 def _make_auth_dict(ctx, urls):
@@ -585,3 +581,12 @@ def _make_auth_dict(ctx, urls):
     for url in urls:
         ret[url] = auth
     return ret
+
+def _get_tool_extension(ctx):
+    urls = getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES)
+    if urls[0][-7:] == ".tar.gz":
+        return ".tar.gz"
+    elif urls[0][-7:] == ".tar.xz":
+        return ".tar.xz"
+    else:
+        return ""
