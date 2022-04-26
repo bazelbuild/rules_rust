@@ -1,6 +1,7 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "cargo_environ", "execute")
+load("//cargo:defs.bzl", "cargo_environ")
+load(":common_utils.bzl", "execute")
 
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 

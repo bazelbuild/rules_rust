@@ -31,16 +31,17 @@ _MANIFESTS = [
     "@rules_rust//crate_universe/tools/urls_generator:Cargo.toml",
 ]
 
-def crate_universe_dependencies(rust_version = rust_common.default_version, bootstrap = False):
+def crate_universe_dependencies(rust_version = rust_common.default_version, bootstrap = False, bootstrap_cargo_config = None):
     """Define dependencies of the `cargo-bazel` Rust target
 
     Args:
         rust_version (str, optional): The version of rust to use when generating dependencies.
         bootstrap (bool, optional): If true, a `cargo_bootstrap_repository` target will be generated.
+        bootstrap_cargo_config (label, optional):  "A target containing a Cargo configuration",
     """
     third_party_deps()
 
-    cargo_bazel_bootstrap(rust_version = rust_version)
+    cargo_bazel_bootstrap(rust_version = rust_version, cargo_config = bootstrap_cargo_config)
 
     if USE_CRATES_REPOSITORY:
         crates_repository(
