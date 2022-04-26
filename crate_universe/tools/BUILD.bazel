@@ -1,6 +1,7 @@
 filegroup(
     name = "distro",
     srcs = [
+        "BUILD.bazel",
         "//crate_universe/tools/cross_installer:distro",
         "//crate_universe/tools/urls_generator:distro",
     ],

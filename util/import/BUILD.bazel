@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
 # buildifier: disable=bzl-visibility
@@ -70,9 +71,9 @@ config_setting(
     },
 )
 
-sh_binary(
+cc_binary(
     name = "fake_import_macro_impl",
-    srcs = ["fake_import_macro_impl.sh"],
+    srcs = ["fake_import_macro_impl.cc"],
 )
 
 filegroup(
@@ -80,10 +81,10 @@ filegroup(
     srcs = glob([
         "*.bzl",
         "**/*.rs",
+        "**/*.cc",
     ]) + [
         "//util/import/raze:srcs",
         "//util/import/raze/remote:srcs",
-        "fake_import_macro_impl.sh",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],

@@ -8,7 +8,9 @@ exports_files(
 
 filegroup(
     name = "distro",
-    srcs = [
+    srcs = glob([
+        "**/*.rs",
+    ]) + [
         "BUILD.bazel",
         "Cargo.toml",
     ],
