@@ -22,10 +22,9 @@ rust_test(
 filegroup(
     name = "distro",
     srcs = glob([
+        "**/*.bazel",
         "**/*.cc",
         "**/*.rs",
-    ]) + [
-        "BUILD.bazel",
-    ],
+    ]),
     visibility = ["//:__subpackages__"],
 )
