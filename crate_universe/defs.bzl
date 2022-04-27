@@ -22,16 +22,19 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 ## Rules
 
-- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
+
+## Utility Macros
+
+- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crate.annotation](#crateannotation)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
 - [render_config](#render_config)
 - [splicing_config](#splicing_config)
 
-## `crates_repository` Workflows
+## Workflows
 
 The [`crates_repository`](#crates_repository) rule (the primary repository rule of `cargo-bazel`) supports a number of different ways users
 can express and organize their dependencies. The most common are listed below though there are more to be found in
@@ -157,7 +160,6 @@ rust_test(
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
-
 """
 
 load(
@@ -185,9 +187,12 @@ load(
     _splicing_config = "splicing_config",
 )
 
-crate = _crate
-crate_universe_dependencies = _crate_universe_dependencies
+# Rules
 crates_repository = _crates_repository
 crates_vendor = _crates_vendor
+
+# Utility Macros
+crate_universe_dependencies = _crate_universe_dependencies
+crate = _crate
 render_config = _render_config
 splicing_config = _splicing_config

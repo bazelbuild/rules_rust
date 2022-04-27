@@ -231,7 +231,53 @@ def _crates_vendor_impl(ctx):
 
 crates_vendor = rule(
     implementation = _crates_vendor_impl,
-    doc = "A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace",
+    doc = """\
+A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
+This rule is useful for users who's workspaces are expected to be consumed in other workspaces as the
+rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
+
+Example: 
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    3rdparty/
+        BUILD
+    src/
+        main.rs
+```
+
+The following is something that'd be found in `3rdparty/BUILD`:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "crate")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    manifests = ["//:Cargo.toml"],
+    mode = "remote",
+    vendor_path = "crates",
+    tags = ["manual"],
+)
+```
+
+The above creates a target that can be run to write `BUILD` files into the `3rdparty`
+directory next to where the target is defined. To run it, simply call:
+
+```shell
+bazel run //3rdparty:crates_vendor
+```
+""",
     attrs = {
         "annotations": attr.string_list_dict(
             doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
