@@ -10,7 +10,11 @@ default_macos_targets: &default_macos_targets
   - "//..."
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-  - "//test/linker_inputs_propagation/..."
+  - "//..."
+  - "-//bindgen/..."
+  - "-//test/proto/..."
+  - "-//tools/rust_analyzer/..."
+  - "-//test/rustfmt/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
