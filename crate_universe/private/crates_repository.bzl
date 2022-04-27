@@ -151,7 +151,7 @@ The above will create an external repository which contains aliases and macros f
 Rust targets found in the dependency graph defined by the given manifests.
 
 **NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
-it on it's own.
+it on its own.
 
 ### Repinning / Updating Dependencies
 
