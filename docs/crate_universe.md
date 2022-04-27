@@ -226,7 +226,7 @@ The above will create an external repository which contains aliases and macros f
 Rust targets found in the dependency graph defined by the given manifests.
 
 **NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
-it on it's own.
+it on its own.
 
 ### Repinning / Updating Dependencies
 
@@ -281,7 +281,7 @@ crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-an
 </pre>
 
 A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
-This rule is useful for users who's workspaces are expected to be consumed in other workspaces as the
+This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
 rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
 handles all the same [workflows](#workflows) `crate_universe` rules do.
 
