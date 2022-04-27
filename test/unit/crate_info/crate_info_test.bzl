@@ -13,13 +13,26 @@ load(
 def _rule_provides_crate_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    asserts.true(env, rust_common.crate_info in tut, "{} should provide CrateInfo".format(tut.label.name))
+    asserts.true(
+        env,
+        rust_common.crate_info in tut,
+        "{} should provide CrateInfo".format(tut.label.name),
+    )
     return analysistest.end(env)
 
 def _rule_does_not_provide_crate_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    asserts.false(env, rust_common.crate_info in tut, "{} should not provide CrateInfo".format(tut.label.name))
+    asserts.false(
+        env,
+        rust_common.crate_info in tut,
+        "{} should not provide CrateInfo".format(tut.label.name),
+    )
+    asserts.true(
+        env,
+        rust_common.test_crate_info in tut,
+        "{} should provide a TestCrateInfo".format(tut.label.name),
+    )
     return analysistest.end(env)
 
 rule_provides_crate_info_test = analysistest.make(_rule_provides_crate_info_test_impl)
