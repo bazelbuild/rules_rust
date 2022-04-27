@@ -119,7 +119,7 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             has_grep_includes)
 
 def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
-    if crate_type in ("cdylib" or "dylib"):
+    if crate_type in ("cdylib", "dylib"):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     return False
 

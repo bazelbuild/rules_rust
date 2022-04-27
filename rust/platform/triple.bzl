@@ -20,7 +20,6 @@ def triple(triple):
             - system (str): The name of the system
             - abi (str, optional): The abi to use or None if abi does not apply.
             - str (str): Original string representation of the triple
-            - triple (str): Deprecated; same as str
     """
     if triple == "wasm32-wasi":
         return struct(
@@ -29,7 +28,6 @@ def triple(triple):
             vendor = "wasi",
             abi = None,
             str = triple,
-            triple = triple,
         )
 
     component_parts = triple.split("-")
@@ -54,7 +52,6 @@ def triple(triple):
         system = system,
         abi = abi,
         str = triple,
-        triple = triple,
     )
 
 _CPU_ARCH_ERROR_MSG = """\

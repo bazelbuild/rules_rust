@@ -153,16 +153,12 @@ def _create_single_crate(ctx, info):
 
     # Switch on external/ to determine if crates are in the workspace or remote.
     # TODO: Some folks may want to override this for vendored dependencies.
-    root_path = info.crate.root.path
-    root_dirname = info.crate.root.dirname
-    if root_path.startswith("external/"):
-        crate["is_workspace_member"] = False
-        crate["root_module"] = _exec_root_tmpl + root_path
-        crate_root = _exec_root_tmpl + root_dirname
-    else:
-        crate["is_workspace_member"] = True
-        crate["root_module"] = root_path
-        crate_root = root_dirname
+    is_external = info.crate.root.path.startswith("external/")
+    is_generated = not info.crate.root.is_source
+    path_prefix = _exec_root_tmpl if is_external or is_generated else ""
+    crate["is_workspace_member"] = not is_external
+    crate["root_module"] = path_prefix + info.crate.root.path
+    crate_root = path_prefix + info.crate.root.dirname
 
     if info.build_info != None:
         out_dir_path = info.build_info.out_dir.path
