@@ -25,7 +25,7 @@ def _crates_repository_impl(repository_ctx):
     host_triple = get_host_triple(repository_ctx)
 
     # Locate the generator to use
-    generator, generator_sha256 = get_generator(repository_ctx, host_triple.triple)
+    generator, generator_sha256 = get_generator(repository_ctx, host_triple.str)
 
     # Generate a config file for all settings
     config_path = generate_config(repository_ctx)

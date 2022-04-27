@@ -66,7 +66,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, version):
     cargo_label = Label(_resolve_repository_template(
         template = cargo_template,
         version = version,
-        triple = host_triple.triple,
+        triple = host_triple.str,
         arch = host_triple.arch,
         vendor = host_triple.vendor,
         system = host_triple.system,
@@ -77,7 +77,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, version):
     rustc_label = Label(_resolve_repository_template(
         template = rustc_template,
         version = version,
-        triple = host_triple.triple,
+        triple = host_triple.str,
         arch = host_triple.arch,
         vendor = host_triple.vendor,
         system = host_triple.system,
