@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_test")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_library",
@@ -14,10 +14,19 @@ rust_library(
     edition = "2018",
 )
 
-rust_shared_library(
+cc_binary(
+    name = "libfoo_shared.so",
+    srcs = [
+        "foo_shared.cc",
+        "foo_shared.h",
+    ],
+    linkshared = True,
+)
+
+cc_import(
     name = "foo_shared",
-    srcs = ["foo_shared.rs"],
-    edition = "2018",
+    hdrs = ["foo_shared.h"],
+    shared_library = "libfoo_shared.so",
 )
 
 rust_static_library(
