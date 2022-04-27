@@ -8,7 +8,7 @@ rust_static_library(
 
 rust_test(
     name = "rusty_test",
-    srcs = ["lib.rs"],
+    crate = ":rusty",
 )
 
 cc_test(

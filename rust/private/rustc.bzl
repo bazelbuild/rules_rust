@@ -994,7 +994,13 @@ def rustc_compile_action(
         ),
     ]
 
-    if crate_info.type not in ["staticlib", "cdylib"]:
+    if crate_info.type in ["staticlib", "cdylib"]:
+        # These rules are not supposed to be depended on by other rust targets, and
+        # as such they shouldn't provide a CrateInfo. However, one may still want to
+        # write a rust_test for them, so we provide the CrateInfo wrapped in a provider
+        # that rust_test understands.
+        providers.extend([rust_common.test_crate_info(crate = crate_info), dep_info])
+    else:
         providers.extend([crate_info, dep_info])
 
     if toolchain.target_arch != "wasm32":
