@@ -163,7 +163,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "unknown": [],
     "uwp": ["ws2_32.lib"],
     "wasi": [],
-    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib"],
+    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
 def cpu_arch_to_constraints(cpu_arch):
