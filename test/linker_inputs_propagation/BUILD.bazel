@@ -46,35 +46,24 @@ cc_import(
     name = "import_foo_shared.so",
     hdrs = ["foo_shared.h"],
     shared_library = "libfoo_shared.so",
-    target_compatible_with = ["@platforms//os:linux"],
 )
 
 cc_import(
     name = "import_foo_shared.dylib",
     hdrs = ["foo_shared.h"],
     shared_library = "libfoo_shared.dylib",
-    target_compatible_with = ["@platforms//os:macos"],
 )
 
 cc_import(
     name = "import_foo_shared.dll",
     interface_library = ":foo_shared.lib",
     shared_library = ":foo_shared.dll",
-    target_compatible_with = ["@platforms//os:windows"],
-)
-
-filegroup(
-    name = "foo_interface_lib",
-    srcs = [":foo_shared.dll"],
-    output_group = "interface_library",
-    target_compatible_with = ["@platforms//os:windows"],
 )
 
 copy_file(
-    name = "copy_foo_interface_lib",
-    src = ":foo_interface_lib",
+    name = "foo_interface_lib",
+    src = ":foo_shared.dll",
     out = "foo_shared.lib",
-    target_compatible_with = ["@platforms//os:windows"],
 )
 
 rust_static_library(
@@ -94,9 +83,9 @@ rust_shared_library(
 alias(
     name = "foo_shared_alias",
     actual = select({
-        "@platforms//os:windows": "import_foo_shared.dll",
-        "@platforms//os:macos": "import_foo_shared.dylib",
         "@platforms//os:linux": "import_foo_shared.so",
+        "@platforms//os:macos": "import_foo_shared.dylib",
+        "@platforms//os:windows": "import_foo_shared.dll",
     }),
 )
 
