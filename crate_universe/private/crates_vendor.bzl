@@ -233,7 +233,7 @@ crates_vendor = rule(
     implementation = _crates_vendor_impl,
     doc = """\
 A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
-This rule is useful for users who's workspaces are expected to be consumed in other workspaces as the
+This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
 rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
 handles all the same [workflows](#workflows) `crate_universe` rules do.
 
