@@ -34,7 +34,7 @@ filegroup(
     name = "shared_library_file",
     srcs = select({
         "@platforms//os:windows": [":foo_shared.dll"],
-        "//conditions:default": [":foo_shaerd"],
+        "//conditions:default": [":foo_shared"],
     }),
     output_group = "dynamic_library",
 )
@@ -43,7 +43,7 @@ filegroup(
     name = "interface_library_file",
     srcs = select({
         "@platforms//os:windows": [":foo_shared.dll"],
-        "//conditions:default": [":foo_shaerd"],
+        "//conditions:default": [":foo_shared"],
     }),
     output_group = "interface_library",
 )
