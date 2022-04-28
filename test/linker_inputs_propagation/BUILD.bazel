@@ -38,8 +38,8 @@ cc_import(
     name = "import_foo_shared",
     hdrs = ["foo_shared.h"],
     interface_library = select({
-        "@platforms//os:macos": "shared_library_file",
-        "//conditions:default": "interface_library_file",
+        "@platforms//os:windows": "interface_library_file",
+        "//conditions:default": "shared_library_file",
     }),
     shared_library = "shared_library_file",
 )
