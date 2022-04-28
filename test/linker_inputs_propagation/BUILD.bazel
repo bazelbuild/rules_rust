@@ -1,5 +1,4 @@
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_test")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_library",
@@ -15,55 +14,34 @@ rust_library(
     edition = "2018",
 )
 
-cc_binary(
-    name = "libfoo_shared.dylib",
+cc_library(
+    name = "foo_shared",
     srcs = [
         "foo_shared.cc",
     ],
-    linkshared = True,
-    target_compatible_with = ["@platforms//os:macos"],
-)
-
-cc_binary(
-    name = "foo_shared.dll",
-    srcs = [
-        "foo_shared.cc",
-    ],
-    linkshared = True,
-    target_compatible_with = ["@platforms//os:windows"],
-)
-
-cc_binary(
-    name = "libfoo_shared.so",
-    srcs = [
-        "foo_shared.cc",
-    ],
-    linkshared = True,
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
-cc_import(
-    name = "import_foo_shared.so",
     hdrs = ["foo_shared.h"],
-    shared_library = "libfoo_shared.so",
+)
+
+filegroup(
+    name = "shared_library_file",
+    srcs = [":foo_shared"],
+    output_group = "dynamic_library",
+)
+
+filegroup(
+    name = "interface_library_file",
+    srcs = [":foo_shared"],
+    output_group = "interface_library",
 )
 
 cc_import(
-    name = "import_foo_shared.dylib",
+    name = "import_foo_shared",
     hdrs = ["foo_shared.h"],
-    shared_library = "libfoo_shared.dylib",
-)
-
-cc_import(
-    name = "import_foo_shared.dll",
-    interface_library = ":foo_shared.lib",
-    shared_library = ":foo_shared.dll",
-)
-
-copy_file(
-    name = "foo_interface_lib",
-    src = ":foo_shared.dll",
-    out = "foo_shared.lib",
+    interface_library = select({
+        "@platforms//os:macos": "shared_library_file",
+        "//conditions:default": "interface_library_file",
+    }),
+    shared_library = "shared_library_file",
 )
 
 rust_static_library(
@@ -80,27 +58,18 @@ rust_shared_library(
     deps = [":foo"],
 )
 
-alias(
-    name = "foo_shared_alias",
-    actual = select({
-        "@platforms//os:linux": "import_foo_shared.so",
-        "@platforms//os:macos": "import_foo_shared.dylib",
-        "@platforms//os:windows": "import_foo_shared.dll",
-    }),
-)
-
 rust_static_library(
     name = "staticlib_uses_shared_foo",
     srcs = ["bar_uses_shared_foo.rs"],
     edition = "2018",
-    deps = [":foo_shared_alias"],
+    deps = [":import_foo_shared"],
 )
 
 rust_static_library(
     name = "sharedlib_uses_shared_foo",
     srcs = ["bar_uses_shared_foo.rs"],
     edition = "2018",
-    deps = [":foo_shared_alias"],
+    deps = [":import_foo_shared"],
 )
 
 cc_test(
