@@ -570,7 +570,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         ctx.extract(
             archive_path,
             output = "",
-            stripPrefix = "{}/{}".format(tool_suburl, subdirectory),
+            stripPrefix = "{}/{}".format(tool_path, subdirectory),
         )
 
 def _make_auth_dict(ctx, urls):
