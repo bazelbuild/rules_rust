@@ -24,16 +24,19 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 ## Rules
 
-- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
+
+## Utility Macros
+
+- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crate.annotation](#crateannotation)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
 - [render_config](#render_config)
 - [splicing_config](#splicing_config)
 
-## `crates_repository` Workflows
+## Workflows
 
 The [`crates_repository`](#crates_repository) rule (the primary repository rule of `cargo-bazel`) supports a number of different ways users
 can express and organize their dependencies. The most common are listed below though there are more to be found in
@@ -161,7 +164,6 @@ rust_test(
 [ra]: https://rust-analyzer.github.io/
 
 
-
 <a id="#crates_repository"></a>
 
 ## crates_repository
@@ -175,7 +177,8 @@ crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_r
                   <a href="#crates_repository-supported_platform_triples">supported_platform_triples</a>)
 </pre>
 
-A rule for defining and downloading Rust dependencies (crates).
+A rule for defining and downloading Rust dependencies (crates). This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
 
 Environment Variables:
 
@@ -185,6 +188,57 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
+
+Example:
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    Cargo.Bazel.lock
+    src/
+        main.rs
+```
+
+The following is something that'd be found in the `WORKSPACE` file:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
+
+crates_repository(
+    name = "crate_index",
+    annotations = annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    lockfile = "//:Cargo.Bazel.lock",
+    manifests = ["//:Cargo.toml"],
+    # Should match the version represented by the currently registered `rust_toolchain`.
+    rust_version = "1.60.0",
+)
+```
+
+The above will create an external repository which contains aliases and macros for accessing
+Rust targets found in the dependency graph defined by the given manifests.
+
+**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+it on its own.
+
+### Repinning / Updating Dependencies
+
+Dependency syncing and updating is done in the repository rule which means it's done during the
+analysis phase of builds. As mentioned in the environments variable table above, the `CARGO_BAZEL_REPIN`
+(or `REPIN`) environment variables can be used to force the rule to update dependencies and potentially
+render a new lockfile. Given an instance of this repository rule named `crate_index`, the easiest way to
+repin dependencies is to run:
+
+```shell
+CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+```
 
 
 
@@ -226,7 +280,52 @@ crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-an
               <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
 </pre>
 
-A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace
+A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
+This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
+rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
+
+Example: 
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    3rdparty/
+        BUILD
+    src/
+        main.rs
+```
+
+The following is something that'd be found in `3rdparty/BUILD`:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "crate")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    manifests = ["//:Cargo.toml"],
+    mode = "remote",
+    vendor_path = "crates",
+    tags = ["manual"],
+)
+```
+
+The above creates a target that can be run to write `BUILD` files into the `3rdparty`
+directory next to where the target is defined. To run it, simply call:
+
+```shell
+bazel run //3rdparty:crates_vendor
+```
+
 
 **ATTRIBUTES**
 
