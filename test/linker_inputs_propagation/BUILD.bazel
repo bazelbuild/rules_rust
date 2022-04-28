@@ -28,6 +28,7 @@ cc_binary(
         "foo_shared.cc",
         "foo_shared.h",
     ],
+    features = ["windows_export_all_symbols"],
     linkshared = True,
 )
 
