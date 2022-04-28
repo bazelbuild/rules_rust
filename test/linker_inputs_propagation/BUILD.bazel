@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library", "cc_test")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_library",
@@ -26,25 +26,20 @@ cc_binary(
     name = "foo_shared.dll",
     srcs = [
         "foo_shared.cc",
+        "foo_shared.h",
     ],
     linkshared = True,
 )
 
 filegroup(
     name = "shared_library_file",
-    srcs = select({
-        "@platforms//os:windows": [":foo_shared.dll"],
-        "//conditions:default": [":foo_shared"],
-    }),
+    srcs = [":foo_shared"],
     output_group = "dynamic_library",
 )
 
 filegroup(
     name = "interface_library_file",
-    srcs = select({
-        "@platforms//os:windows": [":foo_shared.dll"],
-        "//conditions:default": [":foo_shared"],
-    }),
+    srcs = [":foo_shared.dll"],
     output_group = "interface_library",
 )
 
@@ -55,7 +50,10 @@ cc_import(
         "@platforms//os:windows": "interface_library_file",
         "//conditions:default": "shared_library_file",
     }),
-    shared_library = "shared_library_file",
+    shared_library = select({
+        "@platforms//os:windows": "foo_shared.dll",
+        "//conditions:default": "shared_library_file",
+    }),
 )
 
 rust_static_library(
