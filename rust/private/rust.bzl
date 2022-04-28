@@ -353,7 +353,7 @@ def _rust_test_common(ctx, toolchain, output):
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
-        crate = ctx.attr.crate[rust_common.crate_info]
+        crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
 
         # Optionally join compile data
         if crate.compile_data:
@@ -745,7 +745,6 @@ rust_library = rule(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -769,7 +768,6 @@ rust_static_library = rule(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    provides = _common_providers,
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
