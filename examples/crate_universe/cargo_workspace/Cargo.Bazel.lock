@@ -1,5 +1,5 @@
 {
-  "checksum": "8821fea6b6cb36398a73044fedda8c07079cb7805c4da2f713c515329d157060",
+  "checksum": "0e1cf60cfb70bf002c6db0504a6cfeb73938d3f34220fe052eea2644769eea56",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -84,7 +84,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.122",
+                "id": "libc 0.2.125",
                 "target": "libc"
               }
             ],
@@ -389,7 +389,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.122",
+                "id": "libc 0.2.125",
                 "target": "libc"
               }
             ]
@@ -439,7 +439,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.122",
+              "id": "libc 0.2.125",
               "target": "libc"
             }
           ],
@@ -450,13 +450,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.122": {
+    "libc 0.2.125": {
       "name": "libc",
-      "version": "0.2.122",
+      "version": "0.2.125",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.122/download",
-          "sha256": "ec647867e2bf0772e28c8bcde4f0d19a9216916e890543b5a03ed8ef27b8f259"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.125/download",
+          "sha256": "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
         }
       },
       "targets": [
@@ -493,14 +493,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.122",
+              "id": "libc 0.2.125",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.122"
+        "version": "0.2.125"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -683,7 +683,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.122",
+                "id": "libc 0.2.125",
                 "target": "libc"
               }
             ]
@@ -1383,6 +1383,7 @@
     "cfg(not(target_os = \"emscripten\"))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -1406,6 +1407,7 @@
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -1436,6 +1438,7 @@
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
