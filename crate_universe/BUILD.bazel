@@ -9,6 +9,7 @@ exports_files(
         "Cargo.lock",
         "Cargo.Bazel.lock",
         "defs.bzl",
+        "docs.bzl",
     ],
     visibility = ["//visibility:public"],
 )
