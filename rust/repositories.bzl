@@ -63,9 +63,10 @@ def rules_rust_dependencies():
     maybe(
         http_archive,
         name = "rules_rust_tinyjson",
-        sha256 = "9c21866c7f051ebcefd028996494a374b7408ef946826cefc9761d58cce0fd36",
-        url = "https://github.com/rhysd/tinyjson/archive/refs/tags/v2.3.0.zip",
+        sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
+        url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
         strip_prefix = "tinyjson-2.3.0",
+        type = "tar.gz",
         build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
     )
 
