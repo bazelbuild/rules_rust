@@ -5,7 +5,7 @@ load(":common_utils.bzl", "cargo_environ", "execute")
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 
 def splicing_config(resolver_version = "1"):
-    """arious settings used to configure Cargo manifest splicing behavior.
+    """Various settings used to configure Cargo manifest splicing behavior.
 
     [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
 
