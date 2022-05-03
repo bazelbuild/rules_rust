@@ -1,7 +1,8 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
 # Rust Wasm Bindgen
 
-* [rust_wasm_bindgen_repositories](#rust_wasm_bindgen_repositories)
+* [rust_wasm_bindgen_dependencies](#rust_wasm_bindgen_dependencies)
+* [rust_wasm_bindgen_register_toolchains](#rust_wasm_bindgen_register_toolchains)
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
 * [rust_wasm_bindgen](#rust_wasm_bindgen)
 
@@ -109,21 +110,38 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 | <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen-cli</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
-<a id="#rust_wasm_bindgen_repositories"></a>
+<a id="#rust_wasm_bindgen_dependencies"></a>
 
-## rust_wasm_bindgen_repositories
+## rust_wasm_bindgen_dependencies
 
 <pre>
-rust_wasm_bindgen_repositories(<a href="#rust_wasm_bindgen_repositories-register_default_toolchain">register_default_toolchain</a>)
+rust_wasm_bindgen_dependencies()
 </pre>
 
-Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
+Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
+
+[wb]: https://github.com/rustwasm/wasm-bindgen
+
+
+
+<a id="#rust_wasm_bindgen_register_toolchains"></a>
+
+## rust_wasm_bindgen_register_toolchains
+
+<pre>
+rust_wasm_bindgen_register_toolchains(<a href="#rust_wasm_bindgen_register_toolchains-register_toolchains">register_toolchains</a>)
+</pre>
+
+Registers the default toolchains for the `rules_rust` [wasm-bindgen][wb] rules.
+
+[wb]: https://github.com/rustwasm/wasm-bindgen
+
 
 **PARAMETERS**
 
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_wasm_bindgen_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) (<code>@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
+| <a id="rust_wasm_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  <code>True</code> |
 
 
