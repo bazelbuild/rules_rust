@@ -38,8 +38,8 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 ## Workflows
 
-The [`crates_repository`](#crates_repository) rule (the primary repository rule of `cargo-bazel`) supports a number of different ways users
-can express and organize their dependencies. The most common are listed below though there are more to be found in
+The [`crates_repository`](#crates_repository) rule (the primary repository rule of `rules_rust`'s cargo support) supports a number of different
+ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
 the [./examples/crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe) directory.
 
 ### Cargo Workspaces
@@ -62,9 +62,9 @@ crate_repositories()
 ```
 
 The generated `crates_repository` contains helper macros which make collecting dependencies for Bazel targets simpler.
-Notably, the `all_crate_deps` and `aliases` macros commonly allow the `Cargo.toml` files to be the single source of
-truth for dependencies. Since these macros come from the generated repository, the dependencies and alias definitions
-they return will automatically update BUILD targets.
+Notably, the `all_crate_deps` and `aliases` macros (see [Dependencies API](#dependencies-api)) commonly allow the
+`Cargo.toml` files to be the single source of truth for dependencies. Since these macros come from the generated
+repository, the dependencies and alias definitions they return will automatically update BUILD targets.
 
 ```python
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
@@ -158,6 +158,20 @@ rust_test(
 )
 ```
 
+## Dependencies API
+
+After rendering dependencies, convenience macros may also be generated to provide
+convenient accessors to larger sections of the dependency graph.
+
+- [aliases](#aliases)
+- [crate_deps](#crate_deps)
+- [all_crate_deps](#all_crate_deps)
+- [crate_repositories](#crate_repositories)
+
+---
+
+---
+
 [cw]: https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
@@ -226,7 +240,8 @@ The above will create an external repository which contains aliases and macros f
 Rust targets found in the dependency graph defined by the given manifests.
 
 **NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
-it on its own.
+it on its own. When initially setting up this rule, an empty file should be created and then
+populated by repinning dependencies.
 
 ### Repinning / Updating Dependencies
 
@@ -346,6 +361,71 @@ bazel run //3rdparty:crates_vendor
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional | "crates" |
 
 
+<a id="#aliases"></a>
+
+## aliases
+
+<pre>
+aliases(<a href="#aliases-normal">normal</a>, <a href="#aliases-normal_dev">normal_dev</a>, <a href="#aliases-proc_macro">proc_macro</a>, <a href="#aliases-proc_macro_dev">proc_macro_dev</a>, <a href="#aliases-build">build</a>, <a href="#aliases-build_proc_macro">build_proc_macro</a>, <a href="#aliases-package_name">package_name</a>)
+</pre>
+
+Produces a map of Crate alias names to their original label
+
+If no dependency kinds are specified, `normal` and `proc_macro` are used by default.
+Setting any one flag will otherwise determine the contents of the returned dict.
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="aliases-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  <code>False</code> |
+| <a id="aliases-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-build"></a>build |  If True, build dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code> when unset.   |  <code>None</code> |
+
+**RETURNS**
+
+dict: The aliases of all associated packages
+
+
+<a id="#all_crate_deps"></a>
+
+## all_crate_deps
+
+<pre>
+all_crate_deps(<a href="#all_crate_deps-normal">normal</a>, <a href="#all_crate_deps-normal_dev">normal_dev</a>, <a href="#all_crate_deps-proc_macro">proc_macro</a>, <a href="#all_crate_deps-proc_macro_dev">proc_macro_dev</a>, <a href="#all_crate_deps-build">build</a>, <a href="#all_crate_deps-build_proc_macro">build_proc_macro</a>,
+               <a href="#all_crate_deps-package_name">package_name</a>)
+</pre>
+
+Finds the fully qualified label of all requested direct crate dependencies     for the package where this macro is called.
+
+If no parameters are set, all normal dependencies are returned. Setting any one flag will
+otherwise impact the contents of the returned list.
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="all_crate_deps-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  <code>False</code> |
+| <a id="all_crate_deps-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-build"></a>build |  If True, build dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code> when unset.   |  <code>None</code> |
+
+**RETURNS**
+
+list: A list of labels to generated rust targets (str)
+
+
 <a id="#crate.spec"></a>
 
 ## crate.spec
@@ -450,6 +530,41 @@ Define information for extra workspace members
 **RETURNS**
 
 string: A json encoded string of all inputs
+
+
+<a id="#crate_deps"></a>
+
+## crate_deps
+
+<pre>
+crate_deps(<a href="#crate_deps-deps">deps</a>, <a href="#crate_deps-package_name">package_name</a>)
+</pre>
+
+Finds the fully qualified label of the requested crates for the package where this macro is called.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="crate_deps-deps"></a>deps |  The desired list of crate targets.   |  none |
+| <a id="crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code>.   |  <code>None</code> |
+
+**RETURNS**
+
+list: A list of labels to generated rust targets (str)
+
+
+<a id="#crate_repositories"></a>
+
+## crate_repositories
+
+<pre>
+crate_repositories()
+</pre>
+
+A macro for defining repositories for all generated crates
+
 
 
 <a id="#crate_universe_dependencies"></a>
