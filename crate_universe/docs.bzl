@@ -36,7 +36,7 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 ## Workflows
 
-The [`crates_repository`](#crates_repository) rule (the primary repository rule of `cargo-bazel`) supports a number of different
+The [`crates_repository`](#crates_repository) rule (the primary repository rule of `rules_rust`'s cargo support) supports a number of different
 ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
 the [./examples/crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe) directory.
 
