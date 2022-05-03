@@ -8,8 +8,8 @@ bzl_library(
     name = "docs_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@build_bazel_rules_nodejs//:bzl",
         "@com_google_protobuf//:bzl_srcs",
+        "@rules_nodejs//nodejs:bzl",
     ],
     deps = [
         "@bazel_skylib//lib:paths",

@@ -29,9 +29,9 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
 
     maybe(
         http_archive,
-        name = "build_bazel_rules_nodejs",
-        sha256 = "ddb78717b802f8dd5d4c01c340ecdc007c8ced5c1df7db421d0df3d642ea0580",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.6.0/rules_nodejs-4.6.0.tar.gz"],
+        name = "rules_nodejs",
+        sha256 = "26766278d815a6e2c43d2f6c9c72fde3fec8729e84138ffa4dabee47edc7702a",
+        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.4.2/rules_nodejs-core-5.4.2.tar.gz"],
     )
 
     # Load dependencies of the default toolchain and register it.
