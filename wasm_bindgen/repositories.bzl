@@ -18,13 +18,10 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_crates")
 
 # buildifier: disable=unnamed-macro
-def rust_wasm_bindgen_repositories(register_default_toolchain = True):
-    """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
+def rust_wasm_bindgen_dependencies():
+    """Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
 
-    Args:
-        register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
-            (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+    [wb]: https://github.com/rustwasm/wasm-bindgen
     """
 
     maybe(
@@ -34,7 +31,33 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
         urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.4.2/rules_nodejs-core-5.4.2.tar.gz"],
     )
 
-    # Load dependencies of the default toolchain and register it.
-    if register_default_toolchain:
-        rules_rust_wasm_bindgen_fetch_remote_crates()
+    rules_rust_wasm_bindgen_fetch_remote_crates()
+
+# buildifier: disable=unnamed-macro
+def rust_wasm_bindgen_register_toolchains(register_toolchains = True):
+    """Registers the default toolchains for the `rules_rust` [wasm-bindgen][wb] rules.
+
+    [wb]: https://github.com/rustwasm/wasm-bindgen
+
+    Args:
+        register_toolchains (bool, optional): Whether or not to register toolchains.
+    """
+
+    if register_toolchains:
         native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))
+
+# buildifier: disable=unnamed-macro
+def rust_wasm_bindgen_repositories(register_default_toolchain = True):
+    """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
+
+    **Deprecated**: Use [rust_wasm_bindgen_dependencies](#rust_wasm_bindgen_depednencies) and [rust_wasm_bindgen_register_toolchains](#rust_wasm_bindgen_register_toolchains).
+
+    Args:
+        register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
+            (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
+            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+    """
+
+    rust_wasm_bindgen_dependencies()
+
+    rust_wasm_bindgen_register_toolchains(register_toolchains = register_default_toolchain)
