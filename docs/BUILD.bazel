@@ -184,7 +184,7 @@ stardoc(
 stardoc(
     name = "crate_universe",
     out = "crate_universe.md",
-    input = "@rules_rust//crate_universe:defs.bzl",
+    input = "@rules_rust//crate_universe:docs.bzl",
     deps = [":all_docs"],
 )
 
