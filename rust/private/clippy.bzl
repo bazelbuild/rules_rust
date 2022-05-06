@@ -145,14 +145,6 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
 
         if clippy_flags:
             args.rustc_flags.extend(clippy_flags)
-
-        elif "__bindgen" in ctx.rule.attr.tags:
-            # bindgen-generated content is likely to trigger warnings, so
-            # only fail on clippy warnings
-            args.rustc_flags.add("-Dclippy::style")
-            args.rustc_flags.add("-Dclippy::correctness")
-            args.rustc_flags.add("-Dclippy::complexity")
-            args.rustc_flags.add("-Dclippy::perf")
         else:
             # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
 
