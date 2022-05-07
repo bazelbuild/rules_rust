@@ -649,6 +649,11 @@ _common_attrs = {
     "_cc_toolchain": attr.label(
         default = "@bazel_tools//tools/cpp:current_cc_toolchain",
     ),
+    "_collect_cc_coverage": attr.label(
+        default = "//util:collect_coverage",
+        executable = True,
+        cfg = "exec",
+    ),
     "_error_format": attr.label(default = "//:error_format"),
     "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
     "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
