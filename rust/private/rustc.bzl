@@ -584,6 +584,29 @@ def collect_inputs(
 
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
+def _collect_ld_library_path(env, rust_toolchain, cc_toolchain):
+    sep = ";"
+    ld_paths = []
+
+    # Maintain existing values
+    if "LD_LIBRARY_PATH" in env:
+        ld_paths.extend(env["LD_LIBRARY_PATH"].split(sep))
+
+    # Add the rustc sysroot
+    ld_paths.append("{}/lib".format(rust_toolchain.sysroot))
+
+    # When possible add the cc sysroot
+    if cc_toolchain.sysroot:
+        ld_paths.extend([
+            "{}/{}".format(cc_toolchain.sysroot, path)
+            for path in [
+                "lib64",
+                "lib",
+            ]
+        ])
+
+    return sep.join(ld_paths)
+
 def construct_arguments(
         ctx,
         attr,
@@ -809,6 +832,15 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
+
+    # Explicitly set the `LD_LIBRARY_PATH` variable to make `rustc` more hermetic.
+    ld_library_path = _collect_ld_library_path(
+        env = env,
+        rust_toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+    )
+    env["LD_LIBRARY_PATH"] = ld_library_path
+    env["DYLD_LIBRARY_PATH"] = ld_library_path
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
