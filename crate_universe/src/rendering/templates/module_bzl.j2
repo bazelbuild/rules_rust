@@ -195,7 +195,10 @@ def all_crate_deps(
     dependencies = _flatten_dependency_maps(all_dependency_maps).pop(package_name, None)
 
     if not dependencies:
-        return []
+        if dependencies == None:
+            fail("Tried to get all_crate_deps for package " + package_name + " but that package had no Cargo.toml file")
+        else:
+            return []
 
     crate_deps = list(dependencies.pop(_COMMON_CONDITION, {}).values())
     for condition, deps in dependencies.items():
