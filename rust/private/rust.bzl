@@ -840,7 +840,6 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
