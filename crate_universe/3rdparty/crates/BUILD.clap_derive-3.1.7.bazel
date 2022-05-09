@@ -82,8 +82,8 @@ rust_proc_macro(
         "//conditions:default": [
             "@crate_universe_crate_index__heck-0.4.0//:heck",
             "@crate_universe_crate_index__proc-macro-error-1.0.4//:proc_macro_error",
-            "@crate_universe_crate_index__proc-macro2-1.0.37//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.17//:quote",
+            "@crate_universe_crate_index__proc-macro2-1.0.38//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.18//:quote",
             "@crate_universe_crate_index__syn-1.0.90//:syn",
         ],
     }),

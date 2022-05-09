@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "libz_sys",
+    name = "unicode_xid",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,7 +41,7 @@ rust_library(
         ],
     }),
     crate_features = [
-        "libc",
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -76,12 +76,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.1.5",
+    version = "0.2.3",
     deps = [
-        "@zlib",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.122//:libc",
         ],
     }),
 )

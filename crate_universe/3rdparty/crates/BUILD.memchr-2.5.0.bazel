@@ -24,11 +24,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # Unlicense/MIT
 # ])
 
 rust_library(
-    name = "log",
+    name = "memchr",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -45,13 +45,15 @@ rust_library(
         ],
     }),
     crate_features = [
+        "default",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -79,19 +81,18 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.16",
+    version = "2.5.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__cfg-if-1.0.0//:cfg_if",
-            "@crate_universe_crate_index__log-0.4.16//:build_script_build",
+            "@crate_universe_crate_index__memchr-2.5.0//:build_script_build",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "log_build_script",
+    name = "memchr_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -110,6 +111,8 @@ cargo_build_script(
         ],
     }),
     crate_features = [
+        "default",
+        "std",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -117,7 +120,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -149,7 +152,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "0.4.16",
+    version = "2.5.0",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
@@ -165,7 +168,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "log_build_script",
+    actual = "memchr_build_script",
     tags = [
         "manual",
     ],

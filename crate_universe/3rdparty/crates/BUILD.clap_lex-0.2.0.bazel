@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "quote",
+    name = "clap_lex",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,8 +41,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "default",
-        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -77,11 +75,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.17",
+    version = "0.2.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro2-1.0.37//:proc_macro2",
+            "@crate_universe_crate_index__os_str_bytes-6.0.0//:os_str_bytes",
         ],
     }),
 )

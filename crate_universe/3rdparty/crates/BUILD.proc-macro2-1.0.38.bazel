@@ -24,11 +24,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Unlicense/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "memchr",
+    name = "proc_macro2",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -46,7 +46,7 @@ rust_library(
     }),
     crate_features = [
         "default",
-        "std",
+        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,18 +81,19 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "2.4.1",
+    version = "1.0.38",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__memchr-2.4.1//:build_script_build",
+            "@crate_universe_crate_index__proc-macro2-1.0.38//:build_script_build",
+            "@crate_universe_crate_index__unicode-xid-0.2.3//:unicode_xid",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "memchr_build_script",
+    name = "proc-macro2_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -112,7 +113,7 @@ cargo_build_script(
     }),
     crate_features = [
         "default",
-        "std",
+        "proc-macro",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -152,7 +153,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "2.4.1",
+    version = "1.0.38",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
@@ -168,7 +169,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "memchr_build_script",
+    actual = "proc-macro2_build_script",
     tags = [
         "manual",
     ],
