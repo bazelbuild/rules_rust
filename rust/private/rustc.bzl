@@ -806,7 +806,7 @@ def construct_arguments(
         rustc_flags.add("proc_macro")
 
     if ctx.configuration.coverage_enabled:
-        rustc_flags.add("-Cinstrument-coverage")
+        rustc_flags.add("--codegen=instrument-coverage")
 
     # Make bin crate data deps available to tests.
     for data in getattr(attr, "data", []):
@@ -996,8 +996,12 @@ def rustc_compile_action(
             ),
         )
 
+    coverage_runfiles = []
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
+        coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
+
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []),
+        files = getattr(ctx.files, "data", []) + coverage_runfiles,
         collect_data = True,
     )
 

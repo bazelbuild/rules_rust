@@ -1,33 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
-set -x
 
-echo here!
+if [[ -n "${VERBOSE_COVERAGE:-}" ]]; then
+  set -x
+fi
 
-# export LLVM_PROFILE_FILE="${COVERAGE_DIR}/%h-%p-%m.profraw"
-output_file=$COVERAGE_DIR/_cc_coverage.dat
+readonly profdata_file=$COVERAGE_DIR/coverage.profdata
 
-/Users/ksmiley/dev/rules_rust/examples/bazel-examples/external/rust_darwin_aarch64/lib/rustlib/aarch64-apple-darwin/bin/llvm-profdata \
-  merge --sparse \
-  "${COVERAGE_DIR}"/*.profraw \
-  -output "${output_file}.data"
+"$RUNFILES_DIR/$TEST_WORKSPACE/$RUST_LLVM_PROFDATA" \
+  merge \
+  --sparse "$COVERAGE_DIR"/*.profraw \
+  -output "$profdata_file"
 
-# object_param=""
-# while read -r line; do
-#   if [[ ${line: -24} == "runtime_objects_list.txt" ]]; then
-#     while read -r line_runtime_object; do
-#       if [[ -e "${RUNFILES_DIR}/${TEST_WORKSPACE}/${line_runtime_object}" ]]; then
-#         object_param+=" -object ${RUNFILES_DIR}/${TEST_WORKSPACE}/${line_runtime_object}"
-#       fi
-#     done < "${line}"
-#   fi
-# done < "${COVERAGE_MANIFEST}"
-
-
-# /Users/ksmiley/dev/rules_rust/examples/bazel-examples/external/rust_darwin_aarch64/lib/rustlib/aarch64-apple-darwin/bin/llvm-cov export -instr-profile "${output_file}.data" -format=lcov \
-#   -ignore-filename-regex='.*external/.+' \
-#   -ignore-filename-regex='/tmp/.+' \
-#   ${object_param} | sed 's#/proc/self/cwd/##' > "${output_file}"
-
-# exit 1
+"$RUNFILES_DIR/$TEST_WORKSPACE/$RUST_LLVM_COV" \
+  export \
+  -format=lcov \
+  -instr-profile "$profdata_file" \
+  -ignore-filename-regex='.*external/.+' \
+  -ignore-filename-regex='/tmp/.+' \
+  -path-equivalence="$ROOT",. \
+  "$RUNFILES_DIR/$TEST_WORKSPACE/$TEST_BINARY" \
+  | sed 's#/proc/self/cwd/##' > "$COVERAGE_OUTPUT_FILE"

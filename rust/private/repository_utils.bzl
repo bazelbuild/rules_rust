@@ -137,6 +137,35 @@ def BUILD_for_clippy(target_triple):
     system = triple_to_system(target_triple)
     return _build_file_for_clippy_template.format(binary_ext = system_to_binary_ext(system))
 
+_build_file_for_llvm_tools = """\
+filegroup(
+    name = "llvm_cov_bin",
+    srcs = ["lib/rustlib/{target_triple}/bin/llvm-cov{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "llvm_profdata_bin",
+    srcs = ["lib/rustlib/{target_triple}/bin/llvm-profdata{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_llvm_tools(target_triple):
+    """Emits a BUILD file the llvm-tools binaries.
+
+    Args:
+        target_triple (str): The triple of the target platform
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    system = triple_to_system(target_triple)
+    return _build_file_for_llvm_tools.format(
+        binary_ext = system_to_binary_ext(system),
+        target_triple = target_triple,
+    )
+
 _build_file_for_stdlib_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
 
@@ -189,6 +218,8 @@ rust_toolchain(
     rustfmt = {rustfmt_label},
     cargo = "@{workspace_name}//:cargo",
     clippy_driver = "@{workspace_name}//:clippy_driver_bin",
+    llvm_cov = {llvm_cov_label},
+    llvm_profdata = {llvm_profdata_label},
     rustc_lib = "@{workspace_name}//:rustc_lib",
     rustc_srcs = {rustc_srcs},
     binary_ext = "{binary_ext}",
@@ -211,6 +242,7 @@ def BUILD_for_rust_toolchain(
         include_rustc_srcs,
         default_edition,
         include_rustfmt,
+        include_llvm_tools,
         stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -222,6 +254,7 @@ def BUILD_for_rust_toolchain(
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
+        include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -240,6 +273,11 @@ def BUILD_for_rust_toolchain(
     rustfmt_label = "None"
     if include_rustfmt:
         rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
+    llvm_cov_label = "None"
+    llvm_profdata_label = "None"
+    if include_llvm_tools:
+        llvm_cov_label = "\"@{workspace_name}//:llvm_cov_bin\"".format(workspace_name = workspace_name)
+        llvm_profdata_label = "\"@{workspace_name}//:llvm_profdata_bin\"".format(workspace_name = workspace_name)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
@@ -254,6 +292,8 @@ def BUILD_for_rust_toolchain(
         exec_triple = exec_triple,
         target_triple = target_triple,
         rustfmt_label = rustfmt_label,
+        llvm_cov_label = llvm_cov_label,
+        llvm_profdata_label = llvm_profdata_label,
     )
 
 _build_file_for_toolchain_template = """\
@@ -369,12 +409,13 @@ filegroup(
 )""",
     )
 
-def load_rust_stdlib(ctx, target_triple):
+def load_rust_stdlib(ctx, target_triple, include_llvm_tools):
     """Loads a rust standard library and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
         target_triple (str): The rust-style target triple of the tool
+        include_llvm_tools (bool): Whether to include LLVM tools in the toolchain
 
     Returns:
         str: The BUILD file contents for this stdlib, and a toolchain decl to match
@@ -408,6 +449,7 @@ def load_rust_stdlib(ctx, target_triple):
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
+        include_llvm_tools = include_llvm_tools,
     )
 
     return stdlib_build_file + toolchain_build_file
@@ -448,6 +490,8 @@ def load_llvm_tools(ctx, target_triple):
         tool_subdirectories = ["llvm-tools-preview"],
         version = ctx.attr.version,
     )
+
+    return BUILD_for_llvm_tools(target_triple)
 
 def check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense.

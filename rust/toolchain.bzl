@@ -495,6 +495,8 @@ def _rust_toolchain_impl(ctx):
         env = ctx.attr.env,
         exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
+        llvm_cov = ctx.file.llvm_cov,
+        llvm_profdata = ctx.file.llvm_profdata,
         make_variables = platform_common.TemplateVariableInfo(make_variables),
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
@@ -568,6 +570,16 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
+        ),
+        "llvm_cov": attr.label(
+            doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        "llvm_profdata": attr.label(
+            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
         ),
         "llvm_tools": attr.label(
             doc = "LLVM tools that are shipped with the Rust toolchain.",

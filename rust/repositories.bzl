@@ -173,11 +173,12 @@ def _rust_toolchain_repository_impl(ctx):
         build_components.append(load_rustfmt(ctx))
 
     # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    if ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22"):
-        load_llvm_tools(ctx, ctx.attr.exec_triple)
+    include_llvm_tools = ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22")
+    if include_llvm_tools:
+        build_components.append(load_llvm_tools(ctx, ctx.attr.exec_triple))
 
     for target_triple in [ctx.attr.exec_triple] + ctx.attr.extra_target_triples:
-        build_components.append(load_rust_stdlib(ctx, target_triple))
+        build_components.append(load_rust_stdlib(ctx, target_triple, include_llvm_tools))
 
         # extra_target_triples contains targets such as wasm, which don't have rustc_dev components
         if ctx.attr.dev_components and target_triple not in ctx.attr.extra_target_triples:
