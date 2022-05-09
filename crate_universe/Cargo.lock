@@ -113,6 +113,8 @@ dependencies = [
  "clap",
  "crates-index",
  "hex",
+ "maplit",
+ "normpath",
  "pathdiff",
  "regex",
  "semver",
@@ -614,6 +616,15 @@ name = "memchr"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
+
+[[package]]
+name = "normpath"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04aaf5e9cb0fbf883cc0423159eacdf96a9878022084b35c462c428cab73bcaf"
+dependencies = [
+ "winapi",
+]
 
 [[package]]
 name = "num"
