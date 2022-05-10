@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_library")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,4 +16,9 @@ rust_binary(
     srcs = ["src/main.rs"],
     edition = "2018",
     deps = [":hello_lib"],
+)
+
+rust_test(
+    name = "hello_lib_test",
+    crate = ":hello_lib",
 )
