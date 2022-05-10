@@ -978,7 +978,9 @@ rust_test(
     deps = ["//some/dev/dep"],
 ```
 
-Run the test with `bazel build //hello_lib:hello_lib_test`.
+Run the test with `bazel test //hello_lib:hello_lib_test`. The crate
+will be built using the same crate name as the underlying ":hello_lib"
+crate.
 
 ### Example: `test` directory
 
@@ -1029,7 +1031,7 @@ rust_test(
 )
 ```
 
-Run the test with `bazel build //hello_lib:greeting_test`.
+Run the test with `bazel test //hello_lib:greeting_test`.
 
 **ATTRIBUTES**
 
