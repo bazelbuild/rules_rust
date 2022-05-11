@@ -48,7 +48,7 @@ def _custom_crate_name_test_test_impl(ctx):
 
 def _invalid_default_crate_name_test_impl(ctx):
     env = analysistest.begin(ctx)
-    asserts.expect_failure(env, "contains invalid character(s): /")
+    asserts.expect_failure(env, "contains invalid character(s): @")
     return analysistest.end(env)
 
 def _invalid_custom_crate_name_test_impl(ctx):
@@ -158,7 +158,7 @@ def _crate_name_test():
     )
 
     rust_library(
-        name = "invalid/default-crate-name",
+        name = "invalid@default-crate-name",
         srcs = ["lib.rs"],
         edition = "2018",
         tags = ["manual", "norustfmt"],
@@ -227,7 +227,7 @@ def _crate_name_test():
 
     invalid_default_crate_name_test(
         name = "invalid_default_crate_name_test",
-        target_under_test = ":invalid/default-crate-name",
+        target_under_test = ":invalid@default-crate-name",
     )
 
     invalid_custom_crate_name_test(
