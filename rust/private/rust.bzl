@@ -305,7 +305,9 @@ def _rust_binary_impl(ctx):
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
-    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    # If the target's label contains "/" characters, we need to convert those to
+    # something safe, otherwise they get converted into path separators.
+    output = ctx.actions.declare_file(ctx.label.name.replace("/", "_") + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
