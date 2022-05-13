@@ -124,12 +124,47 @@ def get_edition(attr, toolchain, label):
     else:
         return toolchain.default_edition
 
-def crate_root_src(attr, srcs, crate_type):
+def transform_sources(ctx, srcs, crate_root):
+    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+
+    if not has_generated_sources:
+        return srcs, crate_root
+
+    generated_sources = []
+
+    generated_root = crate_root
+    if crate_root and crate_root.is_source:
+        generated_root = ctx.actions.declare_file(crate_root.basename)
+        ctx.actions.symlink(
+            output = generated_root,
+            target_file = crate_root,
+            progress_message = "Creating symlink to source file: {}".format(crate_root.path),
+        )
+    if generated_root:
+        generated_sources.append(generated_root)
+
+    for src in srcs:
+        if src == crate_root:
+            continue
+        if src.is_source:
+            src_symlink = ctx.actions.declare_file(src.basename)
+            ctx.actions.symlink(
+                output = src_symlink,
+                target_file = src,
+                progress_message = "Creating symlink to source file: {}".format(src.path),
+            )
+            generated_sources.append(src_symlink)
+        else:
+            generated_sources.append(src)
+
+    return generated_sources, generated_root
+
+def crate_root_src(name, srcs, crate_type):
     """Finds the source file for the crate root.
 
     Args:
-        attr (struct): The attributes of the current target
         srcs (list): A list of all sources for the target Crate.
+        crate_root(File): The .rs filed specified via attr.crate_root.
         crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
 
     Returns:
@@ -139,19 +174,13 @@ def crate_root_src(attr, srcs, crate_type):
     """
     default_crate_root_filename = "main.rs" if crate_type == "bin" else "lib.rs"
 
-    crate_root = None
-    if hasattr(attr, "crate_root"):
-        if attr.crate_root:
-            crate_root = attr.crate_root.files.to_list()[0]
-
+    crate_root = (
+        (srcs[0] if len(srcs) == 1 else None) or
+        _shortest_src_with_basename(srcs, default_crate_root_filename) or
+        _shortest_src_with_basename(srcs, name + ".rs")
+    )
     if not crate_root:
-        crate_root = (
-            (srcs[0] if len(srcs) == 1 else None) or
-            _shortest_src_with_basename(srcs, default_crate_root_filename) or
-            _shortest_src_with_basename(srcs, attr.name + ".rs")
-        )
-    if not crate_root:
-        file_names = [default_crate_root_filename, attr.name + ".rs"]
+        file_names = [default_crate_root_filename, name + ".rs"]
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
 
@@ -241,8 +270,9 @@ def _rust_library_common(ctx, crate_type):
         list: A list of providers. See `rustc_compile_action`
     """
 
-    # Find lib.rs
-    crate_root = crate_root_src(ctx.attr, ctx.files.srcs, "lib")
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    if not crate_root:
+        crate_root = crate_root_src(ctx.attr.name, srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
@@ -278,7 +308,7 @@ def _rust_library_common(ctx, crate_type):
             name = crate_name,
             type = crate_type,
             root = crate_root,
-            srcs = depset(ctx.files.srcs),
+            srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
@@ -312,6 +342,10 @@ def _rust_binary_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    if not crate_root:
+        crate_root = crate_root_src(ctx.attr.name, srcs, ctx.attr.crate_type)
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -319,8 +353,8 @@ def _rust_binary_impl(ctx):
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = ctx.attr.crate_type,
-            root = crate_root_src(ctx.attr, ctx.files.srcs, ctx.attr.crate_type),
-            srcs = depset(ctx.files.srcs),
+            root = crate_root,
+            srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
@@ -347,6 +381,8 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_type = "bin"
 
@@ -368,7 +404,7 @@ def _rust_test_common(ctx, toolchain, output):
             name = crate_name,
             type = crate_type,
             root = crate.root,
-            srcs = depset(ctx.files.srcs, transitive = [crate.srcs]),
+            srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
@@ -381,12 +417,14 @@ def _rust_test_common(ctx, toolchain, output):
             owner = ctx.label,
         )
     else:
+        if not crate_root:
+            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, "lib")
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
             name = crate_name,
             type = crate_type,
-            root = crate_root_src(ctx.attr, ctx.files.srcs, "lib"),
-            srcs = depset(ctx.files.srcs),
+            root = crate_root,
+            srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,

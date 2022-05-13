@@ -1,4 +1,4 @@
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 genrule(
     name = "generate_src",
@@ -11,8 +11,8 @@ pub fn forty_two() -> i32 { 42 }
 mod lib_for_src;
 
 #[cfg(generated_file_as_root)]
-pub fn print_forty_two() {
-    println!("{}", lib_for_src::forty_two());
+pub fn get_forty_two_as_string() -> String {
+    format!("{}", lib_for_src::forty_two())
 }
 EOF"""
 )
@@ -32,7 +32,7 @@ rust_library(
 
 rust_library(
     name = "use_generated_src_as_crate_root",
-    srcs = ["lib.rs", ":src.rs"],
+    srcs = ["lib.rs", "lib_for_src.rs", ":src.rs"],
     edition = "2018",
     crate_root = ":src.rs",
     rustc_flags = ["--cfg=generated_file_as_root"],
@@ -44,5 +44,17 @@ rust_library(
     name = "src",
     srcs = ["lib_for_src.rs", ":src.rs"],
     rustc_flags = ["--cfg=generated_file_as_root"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "generated_src_test",
+    crate = ":use_generated_src_with_crate_root_defined",
+    edition = "2018",
+)
+
+rust_binary(
+    name = "print_42",
+    srcs = [":src.rs", "main.rs"],
     edition = "2018",
 )
