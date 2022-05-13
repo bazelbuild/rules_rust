@@ -1301,8 +1301,26 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, experimental_use_whole_ar
         modifiers = ""
         if experimental_use_whole_archive_for_native_deps:
             modifiers = ":+whole-archive"
+
+        # To ensure appropriate linker library argument order, in the presence
+        # of both native libraries that depend on rlibs and rlibs that depend
+        # on native libraries, we use an approach where we "sandwich" the
+        # rust libraries between two similar sections of all of native
+        # libraries:
+        # n1 n2 ... r1 r2 ... n1 n2 ...
+        # A         B         C
+        # This way any dependency from a native library to a rust library
+        # is resolved from A to B, and any dependency from a rust library to
+        # a native one is resolved from B to C.
+        # The question of resolving dependencies from a native library from A
+        # to any rust library is addressed in a different place, where we
+        # create symlinks to the rlibs, pretending they are native libraries,
+        # and adding references to these symlinks in the native section A.
+        # We rely in the behavior of -Clink-arg to put the linker args
+        # at the end of the linker invocation constructed by rustc.
         return [
             "-lstatic%s=%s" % (modifiers, get_lib_name(artifact)),
+            "-Clink-arg=-l%s" % get_lib_name(artifact),
         ]
     elif _is_dylib(lib):
         return [

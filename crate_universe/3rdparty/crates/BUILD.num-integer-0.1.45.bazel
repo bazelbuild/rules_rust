@@ -28,7 +28,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "serde",
+    name = "num_integer",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -46,9 +46,6 @@ rust_library(
     }),
     crate_features = [
         "default",
-        "derive",
-        "rc",
-        "serde_derive",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -60,7 +57,6 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__serde_derive-1.0.136//:serde_derive",
         ],
     }),
     rustc_env = {
@@ -85,18 +81,19 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.136",
+    version = "0.1.45",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__serde-1.0.136//:build_script_build",
+            "@crate_universe_crate_index__num-integer-0.1.45//:build_script_build",
+            "@crate_universe_crate_index__num-traits-0.2.15//:num_traits",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "serde_build_script",
+    name = "num-integer_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -116,9 +113,6 @@ cargo_build_script(
     }),
     crate_features = [
         "default",
-        "derive",
-        "rc",
-        "serde_derive",
         "std",
     ],
     crate_name = "build_script_build",
@@ -159,11 +153,12 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.136",
+    version = "0.1.45",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__autocfg-1.1.0//:autocfg",
         ],
     }),
 )
@@ -175,7 +170,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "serde_build_script",
+    actual = "num-integer_build_script",
     tags = [
         "manual",
     ],

@@ -22,6 +22,7 @@ SUPPORTED_T1_PLATFORM_TRIPLES = [
 SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios",
+    "aarch64-apple-ios-sim",
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
@@ -189,13 +190,29 @@ def system_to_constraints(system):
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
-def abi_to_constraints(abi):
-    # iOS simulator
-    if abi == "sim":
+def abi_to_constraints(_abi):
+    # TODO(acmcarther): Implement when C++ toolchain is more mature and we
+    # figure out how they're doing this
+    return []
+
+def extra_ios_constriants(triple):
+    """Add constraints specific to iOS targets.
+
+    Args:
+        triple: The full triple struct for the target
+
+    Returns:
+        A list of constraints to add to the target
+    """
+
+    # TODO: Simplify if https://github.com/bazelbuild/bazel/issues/11454 is fixed
+    if triple.system != "ios":
+        return []
+    if triple.abi == "sim":
         return ["@build_bazel_apple_support//constraints:simulator"]
+    elif triple.arch == "aarch64":  # Only add device for archs that have both
+        return ["@build_bazel_apple_support//constraints:device"]
     else:
-        # TODO(acmcarther): Implement when C++ toolchain is more mature and we
-        # figure out how they're doing this
         return []
 
 def triple_to_system(target_triple):
@@ -276,5 +293,6 @@ def triple_to_constraint_set(target_triple):
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(triple_struct.abi)
+    constraint_set += extra_ios_constriants(triple_struct)
 
     return constraint_set

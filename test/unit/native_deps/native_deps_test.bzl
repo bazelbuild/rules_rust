@@ -30,6 +30,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -40,6 +41,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -51,6 +53,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -60,6 +63,7 @@ def _bin_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 

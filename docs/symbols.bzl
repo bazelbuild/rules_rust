@@ -88,7 +88,8 @@ load(
 )
 load(
     "@rules_rust//wasm_bindgen:repositories.bzl",
-    _rust_wasm_bindgen_repositories = "rust_wasm_bindgen_repositories",
+    _rust_wasm_bindgen_dependencies = "rust_wasm_bindgen_dependencies",
+    _rust_wasm_bindgen_register_toolchains = "rust_wasm_bindgen_register_toolchains",
 )
 load(
     "@rules_rust//wasm_bindgen:wasm_bindgen.bzl",
@@ -125,8 +126,9 @@ cargo_bootstrap_repository = _cargo_bootstrap_repository
 cargo_env = _cargo_env
 
 rust_wasm_bindgen = _rust_wasm_bindgen
+rust_wasm_bindgen_dependencies = _rust_wasm_bindgen_dependencies
+rust_wasm_bindgen_register_toolchains = _rust_wasm_bindgen_register_toolchains
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
-rust_wasm_bindgen_repositories = _rust_wasm_bindgen_repositories
 
 rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set

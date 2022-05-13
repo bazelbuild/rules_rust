@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT / Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "unicode_bidi",
+    name = "libz_sys",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,15 +41,14 @@ rust_library(
         ],
     }),
     crate_features = [
-        "default",
-        "std",
+        "libc",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2018",
+    edition = "2015",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -77,10 +76,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.3.7",
+    version = "1.1.6",
     deps = [
+        "@zlib",
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__libc-0.2.125//:libc",
         ],
     }),
 )

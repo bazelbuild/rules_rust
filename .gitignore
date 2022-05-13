@@ -6,6 +6,8 @@
 # bazel
 /bazel-*
 /examples/bazel-*
+/examples/cargo_manifest_dir/external_crate/bazel-*
+/examples/crate_universe/bazel-*
 /examples/crate_universe/*/bazel-*
 /docs/bazel-*
 user.bazelrc

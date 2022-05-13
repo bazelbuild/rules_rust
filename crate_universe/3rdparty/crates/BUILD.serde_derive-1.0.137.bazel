@@ -9,23 +9,26 @@ load(
     "@bazel_skylib//lib:selects.bzl",
     "selects",
 )
+load(
+    "@rules_rust//cargo:defs.bzl",
+    "cargo_build_script",
+)
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_binary",
-    "rust_library",
+    "rust_proc_macro",
 )
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0 OR MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
-rust_library(
-    name = "cargo_lock",
+rust_proc_macro(
+    name = "serde_derive",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -42,13 +45,14 @@ rust_library(
         ],
     }),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2018",
+    edition = "2015",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -76,20 +80,21 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "7.0.1",
+    version = "1.0.137",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.7//:semver",
-            "@crate_universe_crate_index__serde-1.0.136//:serde",
-            "@crate_universe_crate_index__toml-0.5.8//:toml",
-            "@crate_universe_crate_index__url-2.2.2//:url",
+            "@crate_universe_crate_index__proc-macro2-1.0.38//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.18//:quote",
+            "@crate_universe_crate_index__serde_derive-1.0.137//:build_script_build",
+            "@crate_universe_crate_index__syn-1.0.90//:syn",
         ],
     }),
 )
 
-rust_binary(
-    name = "cargo-lock__bin",
+cargo_build_script(
+    # See comment associated with alias. Do not change this name
+    name = "serde_derive_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -101,18 +106,22 @@ rust_binary(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    build_script_env = {
+    },
+    compile_data = select_with_or({
         "//conditions:default": [
         ],
     }),
     crate_features = [
+        "default",
     ],
-    crate_root = "src/bin/cargo-lock/main.rs",
-    data = select_with_or({
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(["**"]) + select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2018",
+    edition = "2015",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -140,15 +149,28 @@ rust_binary(
         "noclippy",
         "norustfmt",
     ],
-    version = "7.0.1",
-    deps = [
-        ":cargo_lock",
-    ] + select_with_or({
+    tools = select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.7//:semver",
-            "@crate_universe_crate_index__serde-1.0.136//:serde",
-            "@crate_universe_crate_index__toml-0.5.8//:toml",
-            "@crate_universe_crate_index__url-2.2.2//:url",
         ],
     }),
+    version = "1.0.137",
+    visibility = ["//visibility:private"],
+    deps = [
+    ] + select_with_or({
+        "//conditions:default": [
+        ],
+    }),
+)
+
+alias(
+    # Because `cargo_build_script` does some invisible target name mutating to
+    # determine the package and crate name for a build script, the Bazel
+    # target namename of any build script cannot be the Cargo canonical name
+    # of `build_script_build` without losing out on having certain Cargo
+    # environment variables set.
+    name = "build_script_build",
+    actual = "serde_derive_build_script",
+    tags = [
+        "manual",
+    ],
 )

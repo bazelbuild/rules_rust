@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Zlib OR Apache-2.0 OR MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "tinyvec",
+    name = "quote",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,9 +41,8 @@ rust_library(
         ],
     }),
     crate_features = [
-        "alloc",
         "default",
-        "tinyvec_macros",
+        "proc-macro",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -78,11 +77,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.5.1",
+    version = "1.0.18",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__tinyvec_macros-0.1.0//:tinyvec_macros",
+            "@crate_universe_crate_index__proc-macro2-1.0.38//:proc_macro2",
         ],
     }),
 )
