@@ -272,9 +272,7 @@ def name_to_crate_name(name):
     Returns:
         str: The name of the crate for this target.
     """
-    for illegal in ("-", "/"):
-        name = name.replace(illegal, "_")
-    return name
+    return name.replace("-", "_")
 
 def _invalid_chars_in_crate_name(name):
     """Returns any invalid chars in the given crate name.
