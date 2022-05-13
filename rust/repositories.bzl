@@ -10,11 +10,10 @@ load(
     "check_version_valid",
     "load_llvm_tools",
     "load_rust_compiler",
-    "load_rust_src",
     "load_rust_stdlib",
     "load_rustc_dev_nightly",
     "load_rustfmt",
-    "should_include_rustc_srcs",
+    "maybe_rust_src_repo",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
@@ -119,8 +118,7 @@ def rust_register_toolchains(
         rustfmt_version = version
 
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
-        maybe(
-            rust_repository_set,
+        rust_repository_set(
             name = name,
             dev_components = dev_components,
             edition = edition,
@@ -151,10 +149,6 @@ def _rust_toolchain_repository_impl(ctx):
     """The implementation of the rust toolchain repository rule."""
 
     check_version_valid(ctx.attr.version, ctx.attr.iso_date)
-
-    # Conditionally download rustc sources. Generally used for `rust-analyzer`
-    if should_include_rustc_srcs(ctx):
-        load_rust_src(ctx)
 
     build_components = [load_rust_compiler(ctx)]
 
@@ -323,8 +317,11 @@ def rust_repository_set(
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
     """
+    src_repo_name = "rust-src_{}".format(version)
+    maybe_rust_src_repo(src_repo_name, iso_date, version, urls)
 
-    rust_toolchain_repository(
+    maybe(
+        rust_toolchain_repository,
         name = name,
         exec_triple = exec_triple,
         include_rustc_srcs = include_rustc_srcs,
@@ -340,7 +337,8 @@ def rust_repository_set(
         auth = auth,
     )
 
-    rust_toolchain_repository_proxy(
+    maybe(
+        rust_toolchain_repository_proxy,
         name = name + "_toolchains",
         exec_triple = exec_triple,
         extra_target_triples = extra_target_triples,

@@ -1,5 +1,7 @@
 """Utility macros for use in rules_rust repository rules"""
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//rust:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(
     "//rust/platform:triple_mappings.bzl",
@@ -208,9 +210,9 @@ def BUILD_for_rust_toolchain(
         name,
         exec_triple,
         target_triple,
-        include_rustc_srcs,
         default_edition,
         include_rustfmt,
+        rustc_srcs = None,
         stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -219,9 +221,9 @@ def BUILD_for_rust_toolchain(
         name (str): The name of the toolchain declaration
         exec_triple (str): The rust-style target that this compiler runs on
         target_triple (str): The rust-style target triple of the tool
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
+        rustc_srcs (label, optional): label for the sources for the rust compiler
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -234,9 +236,6 @@ def BUILD_for_rust_toolchain(
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
 
-    rustc_srcs = "None"
-    if include_rustc_srcs:
-        rustc_srcs = "\"@{workspace_name}//lib/rustlib/src:rustc_srcs\"".format(workspace_name = workspace_name)
     rustfmt_label = "None"
     if include_rustfmt:
         rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
@@ -247,7 +246,7 @@ def BUILD_for_rust_toolchain(
         binary_ext = system_to_binary_ext(system),
         staticlib_ext = system_to_staticlib_ext(system),
         dylib_ext = system_to_dylib_ext(system),
-        rustc_srcs = rustc_srcs,
+        rustc_srcs = rustc_srcs or "None",
         stdlib_linkflags = stdlib_linkflags,
         system = system,
         default_edition = default_edition,
@@ -337,36 +336,46 @@ def should_include_rustc_srcs(repository_ctx):
 
     return getattr(repository_ctx.attr, "include_rustc_srcs", False)
 
-def load_rust_src(ctx):
-    """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
+def maybe_rust_src_repo(name, iso_date, version, urls, sha256s = None, auth_patterns = None):
+    """Add the rust source repo for a particular version of rust.
+
+    If the repo has already been added, this will be a noop.
 
     Args:
-        ctx (ctx): A repository_ctx.
+        name (str): the name of the src repository
+        iso_date (str): The date of the nightly or beta release (ignored if the version is a specific version).
+        version (str): version string for the release or None if using nightly
+        urls (list): a list of strs that are url templates and include {} to insert the tool path into
+        sha256s (dict, optional): a dict of tool paths to shas that will be used in addition to the known shas list
+        auth_patterns (dict): Auth object compatible with http_archive to use when downloading files.
     """
-    tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
-    url = ctx.attr.urls[0].format(tool_suburl)
+    if sha256s == None:
+        sha256s = {}
+    tool_suburl = produce_tool_suburl("rust-src", None, version, iso_date)
+    tool_path = produce_tool_path("rust-src", None, version)
 
-    tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
-    archive_path = tool_path + _get_tool_extension(ctx)
-    ctx.download(
-        url,
-        output = archive_path,
-        sha256 = ctx.attr.sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or "",
-        auth = _make_auth_dict(ctx, [url]),
-    )
-    ctx.extract(
-        archive_path,
-        output = "lib/rustlib/src",
-        stripPrefix = "{}/rust-src/lib/rustlib/src/rust".format(tool_path),
-    )
-    ctx.file(
-        "lib/rustlib/src/BUILD.bazel",
-        """\
+    real_urls = []
+    for url in urls:
+        real_urls.append(url.format(tool_suburl))
+
+    archive_path = tool_suburl + _get_tool_extension_from_url(urls[0])
+
+    build_file_content = """\
 filegroup(
     name = "rustc_srcs",
-    srcs = glob(["**/*"]),
+    srcs = glob(["**/*"], exclude=["BUILD.bazel", "WORKSPACE"]),
     visibility = ["//visibility:public"],
-)""",
+)"""
+
+    maybe(
+        http_archive,
+        name = name,
+        urls = real_urls,
+        sha256 = sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or "",
+        strip_prefix = "{}/rust-src/lib/rustlib/src/rust".format(tool_path),
+        auth_patterns = auth_patterns,
+        build_file_content = build_file_content,
+        workspace_file_content = "",
     )
 
 def load_rust_stdlib(ctx, target_triple):
@@ -396,13 +405,17 @@ def load_rust_stdlib(ctx, target_triple):
     if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
         stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
 
+    rustc_srcs = None
+    if should_include_rustc_srcs(ctx):
+        rustc_srcs = "\"@rust-src_{}//:rustc_srcs\"".format(ctx.attr.version)
+
     toolchain_build_file = BUILD_for_rust_toolchain(
         name = "{toolchain_prefix}_{target_triple}".format(
             toolchain_prefix = toolchain_prefix,
             target_triple = target_triple,
         ),
         exec_triple = ctx.attr.exec_triple,
-        include_rustc_srcs = should_include_rustc_srcs(ctx),
+        rustc_srcs = rustc_srcs,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
@@ -580,9 +593,12 @@ def _make_auth_dict(ctx, urls):
 
 def _get_tool_extension(ctx):
     urls = getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES)
-    if urls[0][-7:] == ".tar.gz":
+    return _get_tool_extension_from_url(urls[0])
+
+def _get_tool_extension_from_url(url):
+    if url[-7:] == ".tar.gz":
         return ".tar.gz"
-    elif urls[0][-7:] == ".tar.xz":
+    elif url[-7:] == ".tar.xz":
         return ".tar.xz"
     else:
         return ""
