@@ -11,4 +11,3 @@ rust_test(
     crate = ":main",
     edition = "2018",
 )
-
