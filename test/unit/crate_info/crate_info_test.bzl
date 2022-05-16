@@ -31,8 +31,8 @@ def _rule_does_not_provide_crate_info_test_impl(ctx):
     )
     asserts.true(
         env,
-        rust_common.test_crate_info in tut,
-        "{} should provide a TestCrateInfo".format(tut.label.name),
+        rust_common.wrapped_crate_info in tut,
+        "{} should provide a WrappedCrateInfo".format(tut.label.name),
     )
     return analysistest.end(env)
 

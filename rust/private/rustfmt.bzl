@@ -15,8 +15,8 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
     """
     crate_info = None
 
-    if rust_common.test_crate_info in target:
-        crate_info = target[rust_common.test_crate_info].crate
+    if rust_common.wrapped_crate_info in target:
+        crate_info = target[rust_common.wrapped_crate_info].crate
 
     if rust_common.crate_info in target:
         crate_info = target[rust_common.crate_info]
@@ -87,7 +87,7 @@ def _rustfmt_aspect_impl(target, ctx):
     if not srcs:
         return []
 
-    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.test_crate_info].crate
+    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.wrapped_crate_info].crate
 
     # Parse the edition to use for formatting from the target
     edition = crate_info.edition
@@ -180,7 +180,7 @@ rustfmt_test = rule(
     attrs = {
         "targets": attr.label_list(
             doc = "Rust targets to run `rustfmt --check` on.",
-            providers = [[rust_common.crate_info], [rust_common.test_crate_info]],
+            providers = [[rust_common.crate_info], [rust_common.wrapped_crate_info]],
             aspects = [rustfmt_aspect],
         ),
         "_runner": attr.label(

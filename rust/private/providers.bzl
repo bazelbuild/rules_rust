@@ -108,13 +108,13 @@ ClippyInfo = provider(
     },
 )
 
-TestCrateInfo = provider(
+WrappedCrateInfo = provider(
     doc = "A wrapper around a CrateInfo. " +
           "Certain rule types, like rust_static_library and rust_shared_library " +
           "are not intended for consumption by other Rust targets, and should not " +
           "provide a CrateInfo. However, one should still be able to write a rust_test " +
-          "for them. Thus, we create a CrateInfo, but do not advertise it as such, " +
-          "but rather through this provider, that rust_test understands.",
+          "for them, or attach an aspect to them. Thus, we create a CrateInfo, but do not " +
+          "advertise it as such, but rather through this provider, that rust_test understands.",
     fields = {
         "crate": "CrateInfo: The underlying CrateInfo of the dependency",
     },

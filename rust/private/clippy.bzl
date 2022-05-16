@@ -64,8 +64,8 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
     if aspect_ctx and "noclippy" in aspect_ctx.rule.attr.tags:
         return None
 
-    if rust_common.test_crate_info in target:
-        return target[rust_common.test_crate_info].crate
+    if rust_common.wrapped_crate_info in target:
+        return target[rust_common.wrapped_crate_info].crate
 
     # Obviously ignore any targets that don't contain `CrateInfo`
     if rust_common.crate_info not in target:
@@ -267,7 +267,7 @@ rust_clippy = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "Rust targets to run clippy on.",
-            providers = [[rust_common.crate_info], [rust_common.test_crate_info]],
+            providers = [[rust_common.crate_info], [rust_common.wrapped_crate_info]],
             aspects = [rust_clippy_aspect],
         ),
     },

@@ -8,7 +8,7 @@ def _target_has_compile_data(ctx, expected):
     target = analysistest.target_under_test(env)
 
     # Extract compile_data from a target expected to have a `CrateInfo` provider
-    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.test_crate_info].crate
+    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.wrapped_crate_info].crate
     compile_data = crate_info.compile_data.to_list()
 
     # Ensure compile data was correctly propagated to the provider

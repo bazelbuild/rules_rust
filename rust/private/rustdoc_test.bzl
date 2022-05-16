@@ -91,7 +91,7 @@ def _rust_doc_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+    crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.wrapped_crate_info].crate
     deps = transform_deps(ctx.attr.deps)
 
     crate_info = rust_common.create_crate_info(
@@ -169,7 +169,7 @@ rust_doc_test = rule(
                 "`rust_doc_test` can generate HTML code documentation for the " +
                 "source files of `rust_library` or `rust_binary` targets."
             ),
-            providers = [[rust_common.crate_info], [rust_common.test_crate_info]],
+            providers = [[rust_common.crate_info], [rust_common.wrapped_crate_info]],
             mandatory = True,
         ),
         "deps": attr.label_list(

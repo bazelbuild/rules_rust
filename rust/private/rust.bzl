@@ -353,7 +353,7 @@ def _rust_test_common(ctx, toolchain, output):
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
-        crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+        crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.wrapped_crate_info].crate
 
         # Optionally join compile data
         if crate.compile_data:
@@ -840,7 +840,7 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = [rust_common.test_crate_info],
+    provides = [rust_common.wrapped_crate_info],
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -994,7 +994,7 @@ rust_library_without_process_wrapper = rule(
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    provides = [rust_common.test_crate_info],
+    provides = [rust_common.wrapped_crate_info],
     attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,

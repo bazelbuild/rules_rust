@@ -39,7 +39,13 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
-    if rust_common.crate_info not in target:
+    crate_info = None
+    if rust_common.crate_info in target:
+        crate_info = target[rust_common.crate_info]
+    elif rust_common.wrapped_crate_info in target:
+        crate_info = target[rust_common.wrapped_crate_info].crate
+
+    if not crate_info:
         return []
 
     toolchain = find_toolchain(ctx)
@@ -70,8 +76,6 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
 
-    crate_info = target[rust_common.crate_info]
-
     rust_analyzer_info = RustAnalyzerInfo(
         crate = crate_info,
         cfgs = cfgs,
@@ -101,7 +105,8 @@ def find_proc_macro_dylib_path(toolchain, target):
     Returns:
         (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
     """
-    if target[rust_common.crate_info].type != "proc-macro":
+    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.wrapped_crate_info].crate
+    if crate_info.type != "proc-macro":
         return None
 
     dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
