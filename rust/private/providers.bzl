@@ -114,7 +114,7 @@ WrappedCrateInfo = provider(
           "are not intended for consumption by other Rust targets, and should not " +
           "provide a CrateInfo. However, one should still be able to write a rust_test " +
           "for them, or attach an aspect to them. Thus, we create a CrateInfo, but do not " +
-          "advertise it as such, but rather through this provider, that rust_test understands.",
+          "advertise it as such, but rather we wrap it in this provider.",
     fields = {
         "crate": "CrateInfo: The underlying CrateInfo of the dependency",
     },
