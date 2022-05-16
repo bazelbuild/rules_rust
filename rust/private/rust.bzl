@@ -497,15 +497,6 @@ _common_attrs = {
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
     ),
-    "experimental_use_whole_archive_for_native_deps": attr.bool(
-        doc = dedent("""\
-            Whether to use +whole-archive linking modifier for native dependencies.
-
-            TODO: This is a stopgap feature and will be removed,
-            see https://github.com/bazelbuild/rules_rust/issues/1268.
-        """),
-        default = False,
-    ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.
     # This fails for remote execution, which needs cfg="exec", and there isn't anything like
