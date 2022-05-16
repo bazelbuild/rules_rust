@@ -417,6 +417,7 @@ def _rust_test_common(ctx, toolchain, output):
     else:
         if not crate_root:
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, "lib")
+
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
             name = crate_name,

@@ -14,27 +14,37 @@ mod lib_for_src;
 pub fn get_forty_two_as_string() -> String {
     format!("{}", lib_for_src::forty_two())
 }
-EOF"""
+EOF""",
 )
 
 rust_library(
     name = "use_generated_src",
-    srcs = ["lib.rs", ":src.rs"],
+    srcs = [
+        "lib.rs",
+        ":src.rs",
+    ],
     edition = "2018",
 )
 
 rust_library(
     name = "use_generated_src_with_crate_root_defined",
-    srcs = ["lib.rs", ":src.rs"],
+    srcs = [
+        "lib.rs",
+        ":src.rs",
+    ],
     crate_root = "lib.rs",
     edition = "2018",
 )
 
 rust_library(
     name = "use_generated_src_as_crate_root",
-    srcs = ["lib.rs", "lib_for_src.rs", ":src.rs"],
-    edition = "2018",
+    srcs = [
+        "lib.rs",
+        "lib_for_src.rs",
+        ":src.rs",
+    ],
     crate_root = ":src.rs",
+    edition = "2018",
     rustc_flags = ["--cfg=generated_file_as_root"],
 )
 
@@ -42,9 +52,12 @@ rust_library(
 # the target's name as a crate_root.
 rust_library(
     name = "src",
-    srcs = ["lib_for_src.rs", ":src.rs"],
-    rustc_flags = ["--cfg=generated_file_as_root"],
+    srcs = [
+        "lib_for_src.rs",
+        ":src.rs",
+    ],
     edition = "2018",
+    rustc_flags = ["--cfg=generated_file_as_root"],
 )
 
 rust_test(
@@ -55,6 +68,9 @@ rust_test(
 
 rust_binary(
     name = "print_42",
-    srcs = [":src.rs", "main.rs"],
+    srcs = [
+        "main.rs",
+        ":src.rs",
+    ],
     edition = "2018",
 )
