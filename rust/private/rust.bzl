@@ -305,9 +305,7 @@ def _rust_binary_impl(ctx):
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
-    # If the target's label contains "/" characters, we need to convert those to
-    # something safe, otherwise they get converted into path separators.
-    output = ctx.actions.declare_file(ctx.label.name.replace("/", "_") + toolchain.binary_ext)
+    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
@@ -842,7 +840,7 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
+    provides = [rust_common.test_crate_info],
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -970,7 +968,6 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -997,7 +994,7 @@ rust_library_without_process_wrapper = rule(
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    provides = _common_providers,
+    provides = [rust_common.test_crate_info],
     attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,

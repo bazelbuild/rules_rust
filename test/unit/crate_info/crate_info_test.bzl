@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load(
     "//rust:defs.bzl",
+    "rust_binary",
     "rust_common",
     "rust_library",
     "rust_proc_macro",
@@ -63,6 +64,12 @@ def _crate_info_test():
         edition = "2018",
     )
 
+    rust_binary(
+        name = "bin",
+        srcs = ["main.rs"],
+        edition = "2018",
+    )
+
     rule_provides_crate_info_test(
         name = "rlib_provides_crate_info_test",
         target_under_test = ":rlib",
@@ -83,6 +90,11 @@ def _crate_info_test():
         target_under_test = ":staticlib",
     )
 
+    rule_does_not_provide_crate_info_test(
+        name = "bin_does_not_provide_crate_info_test",
+        target_under_test = ":bin",
+    )
+
 def crate_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -98,5 +110,6 @@ def crate_info_test_suite(name):
             ":proc_macro_provides_crate_info_test",
             ":cdylib_does_not_provide_crate_info_test",
             ":staticlib_does_not_provide_crate_info_test",
+            ":bin_does_not_provide_crate_info_test",
         ],
     )

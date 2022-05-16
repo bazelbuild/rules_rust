@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "main",
+    srcs = ["main.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "test_main",
+    crate = ":main",
+    edition = "2018",
+)
+
