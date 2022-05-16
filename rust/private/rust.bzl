@@ -124,7 +124,24 @@ def get_edition(attr, toolchain, label):
     else:
         return toolchain.default_edition
 
-def transform_sources(ctx, srcs, crate_root):
+def _transform_sources(ctx, srcs, crate_root):
+    """Creates symlinks of the source files if needed.
+
+    Rustc assumes that the source files are located next to the crate root.
+    In case of a mix between generated and non-generated source files, this
+    we violate this assumption, as part of the sources will be located under
+    bazel-out/... . In order to allow for targets that contain both generated
+    and non-generated source files, we generate symlinks for all non-generated
+    files.
+
+    Args:
+        ctx (struct): The current rule's context.
+        srcs (List[File]): The sources listed in the `srcs` attribute
+        crate_root (File): The file specified in the `crate_root` attribute
+
+    Returns:
+        (List[File], File): The transformed srcs and crate_root
+    """
     has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
 
     if not has_generated_sources:
@@ -160,11 +177,11 @@ def transform_sources(ctx, srcs, crate_root):
     return generated_sources, generated_root
 
 def crate_root_src(name, srcs, crate_type):
-    """Finds the source file for the crate root.
+    """Determines the source file for the crate root, should it not be specified in `attr.crate_root`.
 
     Args:
+        name (str): The name of the target.
         srcs (list): A list of all sources for the target Crate.
-        crate_root(File): The .rs filed specified via attr.crate_root.
         crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
 
     Returns:
@@ -270,7 +287,7 @@ def _rust_library_common(ctx, crate_type):
         list: A list of providers. See `rustc_compile_action`
     """
 
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
@@ -340,7 +357,7 @@ def _rust_binary_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, srcs, ctx.attr.crate_type)
 
@@ -379,7 +396,7 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
 
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_type = "bin"
