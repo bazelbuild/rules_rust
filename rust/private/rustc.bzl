@@ -923,7 +923,7 @@ def rustc_compile_action(
     if toolchain.os == "windows" and crate_info.type == "cdylib":
         # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
         # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
-        interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib")
+        interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
         outputs.append(interface_library)
 
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
@@ -935,10 +935,10 @@ def rustc_compile_action(
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
         if toolchain.os == "windows":
-            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb")
+            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
         elif toolchain.os == "darwin":
-            dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM")
+            dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
     if ctx.executable._process_wrapper:
