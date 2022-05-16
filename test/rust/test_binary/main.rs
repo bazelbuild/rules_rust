@@ -2,7 +2,7 @@ fn get_forty_two() -> i32 {
     42
 }
 
-fn main () {
+fn main() {
     println!("{}", get_forty_two());
 }
 
