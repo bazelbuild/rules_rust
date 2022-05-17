@@ -82,7 +82,7 @@ rust_library(
             "@crates_vendor_pkgs__form_urlencoded-1.0.1//:form_urlencoded",
             "@crates_vendor_pkgs__itoa-1.0.1//:itoa",
             "@crates_vendor_pkgs__ryu-1.0.9//:ryu",
-            "@crates_vendor_pkgs__serde-1.0.136//:serde",
+            "@crates_vendor_pkgs__serde-1.0.137//:serde",
         ],
     }),
 )

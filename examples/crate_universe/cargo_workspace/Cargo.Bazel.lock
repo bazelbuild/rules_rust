@@ -1,5 +1,5 @@
 {
-  "checksum": "0e1cf60cfb70bf002c6db0504a6cfeb73938d3f34220fe052eea2644769eea56",
+  "checksum": "d1f309eaa51dddd711a40f7a2f107108b991b32760f207133233e4e50d72e736",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1394,6 +1394,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
@@ -1417,6 +1418,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",

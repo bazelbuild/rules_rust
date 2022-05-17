@@ -194,7 +194,10 @@ def all_crate_deps(
     dependencies = _flatten_dependency_maps(all_dependency_maps).pop(package_name, None)
 
     if not dependencies:
-        return []
+        if dependencies == None:
+            fail("Tried to get all_crate_deps for package " + package_name + " but that package had no Cargo.toml file")
+        else:
+            return []
 
     crate_deps = list(dependencies.pop(_COMMON_CONDITION, {}).values())
     for condition, deps in dependencies.items():
@@ -287,7 +290,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tokio": "@crates_vendor_manifests__tokio-1.17.0//:tokio",
+            "tokio": "@crates_vendor_manifests__tokio-1.18.2//:tokio",
         },
     },
 }
@@ -361,12 +364,12 @@ _CONDITIONS = {
     "aarch64-pc-windows-msvc": [],
     "aarch64-uwp-windows-msvc": [],
     "cfg(all(any(target_arch = \"x86_64\", target_arch = \"aarch64\"), target_os = \"hermit\"))": [],
-    "cfg(any(unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(any(unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(target_arch = \"wasm32\")": ["wasm32-unknown-unknown", "wasm32-wasi"],
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": ["wasm32-wasi"],
-    "cfg(unix)": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(unix)": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(windows)": ["i686-pc-windows-msvc", "x86_64-pc-windows-msvc"],
     "i686-pc-windows-gnu": [],
     "i686-pc-windows-msvc": ["i686-pc-windows-msvc"],
@@ -400,6 +403,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/async-stream-impl/0.3.3/download"],
         strip_prefix = "async-stream-impl-0.3.3",
         build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.async-stream-impl-0.3.3.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "crates_vendor_manifests__autocfg-1.1.0",
+        sha256 = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/autocfg/1.1.0/download"],
+        strip_prefix = "autocfg-1.1.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.autocfg-1.1.0.bazel"),
     )
 
     maybe(
@@ -474,72 +487,52 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__libc-0.2.121",
-        sha256 = "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f",
+        name = "crates_vendor_manifests__libc-0.2.125",
+        sha256 = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libc/0.2.121/download"],
-        strip_prefix = "libc-0.2.121",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.121.bazel"),
+        urls = ["https://crates.io/api/v1/crates/libc/0.2.125/download"],
+        strip_prefix = "libc-0.2.125",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.125.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__lock_api-0.4.6",
-        sha256 = "88943dd7ef4a2e5a4bfa2753aaab3013e34ce2533d1996fb18ef591e315e2b3b",
+        name = "crates_vendor_manifests__lock_api-0.4.7",
+        sha256 = "327fa5b6a6940e4699ec49a9beae1ea4845c6bab9314e4f84ac68742139d8c53",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/lock_api/0.4.6/download"],
-        strip_prefix = "lock_api-0.4.6",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.lock_api-0.4.6.bazel"),
+        urls = ["https://crates.io/api/v1/crates/lock_api/0.4.7/download"],
+        strip_prefix = "lock_api-0.4.7",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.lock_api-0.4.7.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__log-0.4.16",
-        sha256 = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8",
+        name = "crates_vendor_manifests__log-0.4.17",
+        sha256 = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/log/0.4.16/download"],
-        strip_prefix = "log-0.4.16",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.log-0.4.16.bazel"),
+        urls = ["https://crates.io/api/v1/crates/log/0.4.17/download"],
+        strip_prefix = "log-0.4.17",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.log-0.4.17.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__memchr-2.4.1",
-        sha256 = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a",
+        name = "crates_vendor_manifests__memchr-2.5.0",
+        sha256 = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/memchr/2.4.1/download"],
-        strip_prefix = "memchr-2.4.1",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.memchr-2.4.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/memchr/2.5.0/download"],
+        strip_prefix = "memchr-2.5.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.memchr-2.5.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__mio-0.8.2",
-        sha256 = "52da4364ffb0e4fe33a9841a98a3f3014fb964045ce4f7a45a398243c8d6b0c9",
+        name = "crates_vendor_manifests__mio-0.8.3",
+        sha256 = "713d550d9b44d89174e066b7a6217ae06234c10cb47819a88290d2b353c31799",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/mio/0.8.2/download"],
-        strip_prefix = "mio-0.8.2",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.mio-0.8.2.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "crates_vendor_manifests__miow-0.3.7",
-        sha256 = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21",
-        type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/miow/0.3.7/download"],
-        strip_prefix = "miow-0.3.7",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.miow-0.3.7.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "crates_vendor_manifests__ntapi-0.3.7",
-        sha256 = "c28774a7fd2fbb4f0babd8237ce554b73af68021b5f695a3cebd6c59bac0980f",
-        type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/ntapi/0.3.7/download"],
-        strip_prefix = "ntapi-0.3.7",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.ntapi-0.3.7.bazel"),
+        urls = ["https://crates.io/api/v1/crates/mio/0.8.3/download"],
+        strip_prefix = "mio-0.8.3",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.mio-0.8.3.bazel"),
     )
 
     maybe(
@@ -574,52 +567,52 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__parking_lot_core-0.9.1",
-        sha256 = "28141e0cc4143da2443301914478dc976a61ffdb3f043058310c70df2fed8954",
+        name = "crates_vendor_manifests__parking_lot_core-0.9.3",
+        sha256 = "09a279cbf25cb0757810394fbc1e359949b59e348145c643a939a525692e6929",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/parking_lot_core/0.9.1/download"],
-        strip_prefix = "parking_lot_core-0.9.1",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.parking_lot_core-0.9.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/parking_lot_core/0.9.3/download"],
+        strip_prefix = "parking_lot_core-0.9.3",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.parking_lot_core-0.9.3.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__pin-project-lite-0.2.8",
-        sha256 = "e280fbe77cc62c91527259e9442153f4688736748d24660126286329742b4c6c",
+        name = "crates_vendor_manifests__pin-project-lite-0.2.9",
+        sha256 = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/pin-project-lite/0.2.8/download"],
-        strip_prefix = "pin-project-lite-0.2.8",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.pin-project-lite-0.2.8.bazel"),
+        urls = ["https://crates.io/api/v1/crates/pin-project-lite/0.2.9/download"],
+        strip_prefix = "pin-project-lite-0.2.9",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.pin-project-lite-0.2.9.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__proc-macro2-1.0.36",
-        sha256 = "c7342d5883fbccae1cc37a2353b09c87c9b0f3afd73f5fb9bba687a1f733b029",
+        name = "crates_vendor_manifests__proc-macro2-1.0.38",
+        sha256 = "9027b48e9d4c9175fa2218adf3557f91c1137021739951d4932f5f8268ac48aa",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/proc-macro2/1.0.36/download"],
-        strip_prefix = "proc-macro2-1.0.36",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.proc-macro2-1.0.36.bazel"),
+        urls = ["https://crates.io/api/v1/crates/proc-macro2/1.0.38/download"],
+        strip_prefix = "proc-macro2-1.0.38",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.proc-macro2-1.0.38.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__quote-1.0.17",
-        sha256 = "632d02bff7f874a36f33ea8bb416cd484b90cc66c1194b1a1110d067a7013f58",
+        name = "crates_vendor_manifests__quote-1.0.18",
+        sha256 = "a1feb54ed693b93a84e14094943b84b7c4eae204c512b7ccb95ab0c66d278ad1",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/quote/1.0.17/download"],
-        strip_prefix = "quote-1.0.17",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.quote-1.0.17.bazel"),
+        urls = ["https://crates.io/api/v1/crates/quote/1.0.18/download"],
+        strip_prefix = "quote-1.0.18",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.quote-1.0.18.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__redox_syscall-0.2.12",
-        sha256 = "8ae183fc1b06c149f0c1793e1eb447c8b04bfe46d48e9e48bfb8d2d7ed64ecf0",
+        name = "crates_vendor_manifests__redox_syscall-0.2.13",
+        sha256 = "62f25bc4c7e55e0b0b7a1d43fb893f4fa1361d0abe38b9ce4f323c2adfe6ef42",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/redox_syscall/0.2.12/download"],
-        strip_prefix = "redox_syscall-0.2.12",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.2.12.bazel"),
+        urls = ["https://crates.io/api/v1/crates/redox_syscall/0.2.13/download"],
+        strip_prefix = "redox_syscall-0.2.13",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.2.13.bazel"),
     )
 
     maybe(
@@ -674,12 +667,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__syn-1.0.90",
-        sha256 = "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f",
+        name = "crates_vendor_manifests__syn-1.0.93",
+        sha256 = "04066589568b72ec65f42d65a1a52436e954b168773148893c020269563decf2",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/syn/1.0.90/download"],
-        strip_prefix = "syn-1.0.90",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-1.0.90.bazel"),
+        urls = ["https://crates.io/api/v1/crates/syn/1.0.93/download"],
+        strip_prefix = "syn-1.0.93",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-1.0.93.bazel"),
     )
 
     maybe(
@@ -694,12 +687,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__tokio-1.17.0",
-        sha256 = "2af73ac49756f3f7c01172e34a23e5d0216f6c32333757c2c61feb2bbff5a5ee",
+        name = "crates_vendor_manifests__tokio-1.18.2",
+        sha256 = "4903bf0427cf68dddd5aa6a93220756f8be0c34fcfa9f5e6191e103e15a31395",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/tokio/1.17.0/download"],
-        strip_prefix = "tokio-1.17.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-1.17.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/tokio/1.18.2/download"],
+        strip_prefix = "tokio-1.18.2",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-1.18.2.bazel"),
     )
 
     maybe(
@@ -734,12 +727,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__unicode-xid-0.2.2",
-        sha256 = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3",
+        name = "crates_vendor_manifests__unicode-xid-0.2.3",
+        sha256 = "957e51f3646910546462e67d5f7599b9e4fb8acdd304b087a6494730f9eebf04",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/unicode-xid/0.2.2/download"],
-        strip_prefix = "unicode-xid-0.2.2",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.unicode-xid-0.2.2.bazel"),
+        urls = ["https://crates.io/api/v1/crates/unicode-xid/0.2.3/download"],
+        strip_prefix = "unicode-xid-0.2.3",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.unicode-xid-0.2.3.bazel"),
     )
 
     maybe(
@@ -784,60 +777,60 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows-sys-0.32.0",
-        sha256 = "3df6e476185f92a12c072be4a189a0210dcdcf512a1891d6dff9edb874deadc6",
+        name = "crates_vendor_manifests__windows-sys-0.36.1",
+        sha256 = "ea04155a16a59f9eab786fe12a4a450e75cdb175f9e0d80da1e17db09f55b8d2",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows-sys/0.32.0/download"],
-        strip_prefix = "windows-sys-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows-sys-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows-sys/0.36.1/download"],
+        strip_prefix = "windows-sys-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows-sys-0.36.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows_aarch64_msvc-0.32.0",
-        sha256 = "d8e92753b1c443191654ec532f14c199742964a061be25d77d7a96f09db20bf5",
+        name = "crates_vendor_manifests__windows_aarch64_msvc-0.36.1",
+        sha256 = "9bb8c3fd39ade2d67e9874ac4f3db21f0d710bee00fe7cab16949ec184eeaa47",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows_aarch64_msvc/0.32.0/download"],
-        strip_prefix = "windows_aarch64_msvc-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows_aarch64_msvc/0.36.1/download"],
+        strip_prefix = "windows_aarch64_msvc-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.36.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows_i686_gnu-0.32.0",
-        sha256 = "6a711c68811799e017b6038e0922cb27a5e2f43a2ddb609fe0b6f3eeda9de615",
+        name = "crates_vendor_manifests__windows_i686_gnu-0.36.1",
+        sha256 = "180e6ccf01daf4c426b846dfc66db1fc518f074baa793aa7d9b9aaeffad6a3b6",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows_i686_gnu/0.32.0/download"],
-        strip_prefix = "windows_i686_gnu-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows_i686_gnu/0.36.1/download"],
+        strip_prefix = "windows_i686_gnu-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.36.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows_i686_msvc-0.32.0",
-        sha256 = "146c11bb1a02615db74680b32a68e2d61f553cc24c4eb5b4ca10311740e44172",
+        name = "crates_vendor_manifests__windows_i686_msvc-0.36.1",
+        sha256 = "e2e7917148b2812d1eeafaeb22a97e4813dfa60a3f8f78ebe204bcc88f12f024",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows_i686_msvc/0.32.0/download"],
-        strip_prefix = "windows_i686_msvc-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows_i686_msvc/0.36.1/download"],
+        strip_prefix = "windows_i686_msvc-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.36.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows_x86_64_gnu-0.32.0",
-        sha256 = "c912b12f7454c6620635bbff3450962753834be2a594819bd5e945af18ec64bc",
+        name = "crates_vendor_manifests__windows_x86_64_gnu-0.36.1",
+        sha256 = "4dcd171b8776c41b97521e5da127a2d86ad280114807d0b2ab1e462bc764d9e1",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows_x86_64_gnu/0.32.0/download"],
-        strip_prefix = "windows_x86_64_gnu-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows_x86_64_gnu/0.36.1/download"],
+        strip_prefix = "windows_x86_64_gnu-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.36.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__windows_x86_64_msvc-0.32.0",
-        sha256 = "504a2476202769977a040c6364301a3f65d0cc9e3fb08600b2bda150a0488316",
+        name = "crates_vendor_manifests__windows_x86_64_msvc-0.36.1",
+        sha256 = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/windows_x86_64_msvc/0.32.0/download"],
-        strip_prefix = "windows_x86_64_msvc-0.32.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.32.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/windows_x86_64_msvc/0.36.1/download"],
+        strip_prefix = "windows_x86_64_msvc-0.36.1",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.36.1.bazel"),
     )

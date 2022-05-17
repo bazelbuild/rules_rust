@@ -33,6 +33,16 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 
 def rules_rust_dependencies():
     """Dependencies used in the implementation of `rules_rust`."""
+
+    maybe(
+        http_archive,
+        name = "platforms",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.5/platforms-0.0.5.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.5/platforms-0.0.5.tar.gz",
+        ],
+        sha256 = "379113459b0feaf6bfbb584a91874c065078aa673222846ac765f86661c27407",
+    )
     maybe(
         http_archive,
         name = "rules_cc",
