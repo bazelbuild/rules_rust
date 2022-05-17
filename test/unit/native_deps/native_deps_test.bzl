@@ -190,6 +190,13 @@ def _native_dep_test():
     )
 
     rust_binary(
+        name = "bin_has_native_dep_with_experimental_use_whole_archive_for_native_deps",
+        srcs = ["bin_using_native_dep.rs"],
+        deps = [":native_dep"],
+        experimental_use_whole_archive_for_native_deps = True,
+    )
+
+    rust_binary(
         name = "bin_has_native_dep_and_alwayslink",
         srcs = ["bin_using_native_dep.rs"],
         edition = "2018",
