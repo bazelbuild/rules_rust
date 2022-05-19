@@ -104,6 +104,9 @@ def _rust_wasm_bindgen_impl(ctx):
     js_out = [ctx.actions.declare_file(ctx.attr.name + ".js")]
     ts_out = [ctx.actions.declare_file(ctx.attr.name + ".d.ts")]
 
+    if ctx.attr.target == "web" or ctx.attr.target == "bundler":
+        js_out.append(ctx.actions.declare_directory("snippets"))
+    
     if ctx.attr.target == "bundler":
         js_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.js"))
         ts_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.wasm.d.ts"))
