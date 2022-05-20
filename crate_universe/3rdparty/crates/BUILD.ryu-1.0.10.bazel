@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # Apache-2.0 OR BSL-1.0
 # ])
 
 rust_library(
-    name = "libgit2_sys",
+    name = "ryu",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -42,7 +42,7 @@ rust_library(
     }),
     crate_features = [
     ],
-    crate_root = "lib.rs",
+    crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
@@ -75,13 +75,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.13.3+1.4.2",
+    version = "1.0.10",
     deps = [
-        "@libgit2",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.125//:libc",
-            "@crate_universe_crate_index__libz-sys-1.1.6//:libz_sys",
         ],
     }),
 )

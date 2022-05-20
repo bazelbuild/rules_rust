@@ -1,5 +1,6 @@
 //! Utility module for interracting with different kinds of lock files
 
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
@@ -207,8 +208,19 @@ impl Digest {
         // computed consistently. If a new binary is released then this
         // condition should be removed
         // https://github.com/rust-lang/cargo/issues/10547
-        if version == "cargo 1.60.0 (d1fd9fe 2022-03-01)" {
-            Ok("cargo 1.60.0 (d1fd9fe2c 2022-03-01)".to_owned())
+        let corrections = HashMap::from([
+            (
+                "cargo 1.60.0 (d1fd9fe 2022-03-01)",
+                "cargo 1.60.0 (d1fd9fe2c 2022-03-01)",
+            ),
+            (
+                "cargo 1.61.0 (a028ae4 2022-04-29)",
+                "cargo 1.61.0 (a028ae42f 2022-04-29)",
+            ),
+        ]);
+
+        if corrections.contains_key(version.as_str()) {
+            Ok(corrections[version.as_str()].to_string())
         } else {
             Ok(version)
         }
