@@ -58,13 +58,13 @@ alias(
 
 alias(
     name = "cfg-expr",
-    actual = "@crate_universe_crate_index__cfg-expr-0.10.2//:cfg_expr",
+    actual = "@crate_universe_crate_index__cfg-expr-0.10.3//:cfg_expr",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
-    actual = "@crate_universe_crate_index__clap-3.1.17//:clap",
+    actual = "@crate_universe_crate_index__clap-3.1.18//:clap",
     tags = ["manual"],
 )
 
@@ -179,7 +179,7 @@ alias(
 
 alias(
     name = "clap__stdio-fixture",
-    actual = "@crate_universe_crate_index__clap-3.1.17//:stdio-fixture__bin",
+    actual = "@crate_universe_crate_index__clap-3.1.18//:stdio-fixture__bin",
     tags = ["manual"],
 )
 

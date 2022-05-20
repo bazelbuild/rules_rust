@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "os_str_bytes",
+    name = "cfg_expr",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,7 +41,7 @@ rust_library(
         ],
     }),
     crate_features = [
-        "raw_os_str",
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -76,10 +76,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "6.0.0",
+    version = "0.10.3",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__smallvec-1.8.0//:smallvec",
         ],
     }),
 )
