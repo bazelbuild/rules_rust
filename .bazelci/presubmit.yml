@@ -331,8 +331,16 @@ tasks:
     build_flags: *aspects_flags
     build_targets:
       - "//..."
+      # TODO: Temporarily disable this windows build as it recently started
+      # failing. This is likely an issue with the windows workers in CI.
+      - "-//vendor_local_pkgs/..."
+      - "-//vendor_remote_pkgs/..."
     test_targets:
       - "//..."
+      # TODO: Temporarily disable this windows build as it recently started
+      # failing. This is likely an issue with the windows workers in CI.
+      - "-//vendor_local_pkgs/..."
+      - "-//vendor_remote_pkgs/..."
 buildifier:
   version: latest
   warnings: "all"
