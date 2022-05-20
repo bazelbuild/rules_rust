@@ -335,12 +335,16 @@ tasks:
       # failing. This is likely an issue with the windows workers in CI.
       - "-//vendor_local_pkgs/..."
       - "-//vendor_remote_pkgs/..."
+      - "-//extra_workspace_members/..."
+      - "-//no_cargo_manifests/..."
     test_targets:
       - "//..."
       # TODO: Temporarily disable this windows build as it recently started
       # failing. This is likely an issue with the windows workers in CI.
       - "-//vendor_local_pkgs/..."
       - "-//vendor_remote_pkgs/..."
+      - "-//extra_workspace_members/..."
+      - "-//no_cargo_manifests/..."
 buildifier:
   version: latest
   warnings: "all"
