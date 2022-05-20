@@ -91,6 +91,7 @@ StdLibInfo = provider(
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
+        "memchr_files": "Depset[File]: `.a` files associated with the `memchr` module.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
     },
