@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0 OR BSL-1.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "ryu",
+    name = "itoa",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -75,7 +75,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.9",
+    version = "1.0.2",
     deps = [
     ] + select_with_or({
         "//conditions:default": [

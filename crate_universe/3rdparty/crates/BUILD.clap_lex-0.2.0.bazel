@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__os_str_bytes-6.0.0//:os_str_bytes",
+            "@crate_universe_crate_index__os_str_bytes-6.0.1//:os_str_bytes",
         ],
     }),
 )

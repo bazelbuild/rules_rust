@@ -9,15 +9,12 @@ load(
     "@bazel_skylib//lib:selects.bzl",
     "selects",
 )
-load(
-    "@rules_rust//cargo:defs.bzl",
-    "cargo_build_script",
-)
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
+    "rust_binary",
     "rust_library",
 )
 
@@ -28,7 +25,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "proc_macro2",
+    name = "clap",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -45,8 +42,17 @@ rust_library(
         ],
     }),
     crate_features = [
+        "atty",
+        "clap_derive",
+        "color",
         "default",
-        "proc-macro",
+        "derive",
+        "env",
+        "lazy_static",
+        "std",
+        "strsim",
+        "suggestions",
+        "termcolor",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -57,6 +63,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__clap_derive-3.1.18//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -81,19 +88,24 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.38",
+    version = "3.1.18",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro2-1.0.38//:build_script_build",
-            "@crate_universe_crate_index__unicode-xid-0.2.3//:unicode_xid",
+            "@crate_universe_crate_index__atty-0.2.14//:atty",
+            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
+            "@crate_universe_crate_index__clap_lex-0.2.0//:clap_lex",
+            "@crate_universe_crate_index__indexmap-1.8.1//:indexmap",
+            "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
+            "@crate_universe_crate_index__strsim-0.10.0//:strsim",
+            "@crate_universe_crate_index__termcolor-1.1.3//:termcolor",
+            "@crate_universe_crate_index__textwrap-0.15.0//:textwrap",
         ],
     }),
 )
 
-cargo_build_script(
-    # See comment associated with alias. Do not change this name
-    name = "proc-macro2_build_script",
+rust_binary(
+    name = "stdio-fixture__bin",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -105,19 +117,25 @@ cargo_build_script(
         "//conditions:default": {
         },
     }),
-    build_script_env = {
-    },
-    compile_data = select_with_or({
+    compile_data = glob(["**"]) + select_with_or({
         "//conditions:default": [
         ],
     }),
     crate_features = [
+        "atty",
+        "clap_derive",
+        "color",
         "default",
-        "proc-macro",
+        "derive",
+        "env",
+        "lazy_static",
+        "std",
+        "strsim",
+        "suggestions",
+        "termcolor",
     ],
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    crate_root = "src/bin/stdio-fixture.rs",
+    data = select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -125,6 +143,7 @@ cargo_build_script(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__clap_derive-3.1.18//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -149,28 +168,19 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    tools = select_with_or({
-        "//conditions:default": [
-        ],
-    }),
-    version = "1.0.38",
-    visibility = ["//visibility:private"],
+    version = "3.1.18",
     deps = [
+        ":clap",
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__atty-0.2.14//:atty",
+            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
+            "@crate_universe_crate_index__clap_lex-0.2.0//:clap_lex",
+            "@crate_universe_crate_index__indexmap-1.8.1//:indexmap",
+            "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
+            "@crate_universe_crate_index__strsim-0.10.0//:strsim",
+            "@crate_universe_crate_index__termcolor-1.1.3//:termcolor",
+            "@crate_universe_crate_index__textwrap-0.15.0//:textwrap",
         ],
     }),
-)
-
-alias(
-    # Because `cargo_build_script` does some invisible target name mutating to
-    # determine the package and crate name for a build script, the Bazel
-    # target namename of any build script cannot be the Cargo canonical name
-    # of `build_script_build` without losing out on having certain Cargo
-    # environment variables set.
-    name = "build_script_build",
-    actual = "proc-macro2_build_script",
-    tags = [
-        "manual",
-    ],
 )
