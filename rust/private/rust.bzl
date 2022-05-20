@@ -23,7 +23,6 @@ load(
     "expand_dict_value_locations",
     "find_toolchain",
     "get_import_macro_deps",
-    "name_to_crate_name",
     "transform_deps",
 )
 
@@ -1185,7 +1184,6 @@ def rust_test_suite(name, srcs, **kwargs):
         test_name = name + "_" + src[:-3]
         rust_test(
             name = test_name,
-            crate_name = name_to_crate_name(test_name.replace("/", "_")),
             srcs = [src],
             **kwargs
         )
