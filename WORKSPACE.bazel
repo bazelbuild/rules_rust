@@ -18,9 +18,11 @@ load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_re
 
 rust_proto_transitive_repositories()
 
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
-rust_bindgen_repositories()
+rust_bindgen_dependencies()
+
+rust_bindgen_register_toolchains()
 
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
 
