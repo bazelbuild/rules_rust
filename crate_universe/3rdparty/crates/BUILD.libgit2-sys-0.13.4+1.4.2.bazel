@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "itoa",
+    name = "libgit2_sys",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -42,7 +42,7 @@ rust_library(
     }),
     crate_features = [
     ],
-    crate_root = "src/lib.rs",
+    crate_root = "lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
@@ -75,10 +75,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.1",
+    version = "0.13.4+1.4.2",
     deps = [
+        "@libgit2",
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__libc-0.2.126//:libc",
+            "@crate_universe_crate_index__libz-sys-1.1.6//:libz_sys",
         ],
     }),
 )

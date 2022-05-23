@@ -28,7 +28,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "uncased",
+    name = "camino",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -45,6 +45,8 @@ rust_library(
         ],
     }),
     crate_features = [
+        "serde",
+        "serde1",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -79,18 +81,19 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.9.6",
+    version = "1.0.9",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__uncased-0.9.6//:build_script_build",
+            "@crate_universe_crate_index__camino-1.0.9//:build_script_build",
+            "@crate_universe_crate_index__serde-1.0.137//:serde",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "uncased_build_script",
+    name = "camino_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -109,6 +112,8 @@ cargo_build_script(
         ],
     }),
     crate_features = [
+        "serde",
+        "serde1",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -148,12 +153,11 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "0.9.6",
+    version = "1.0.9",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__version_check-0.9.4//:version_check",
         ],
     }),
 )
@@ -165,7 +169,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "uncased_build_script",
+    actual = "camino_build_script",
     tags = [
         "manual",
     ],

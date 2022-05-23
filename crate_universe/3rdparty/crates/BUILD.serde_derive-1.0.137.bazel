@@ -84,7 +84,7 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro2-1.0.38//:proc_macro2",
+            "@crate_universe_crate_index__proc-macro2-1.0.39//:proc_macro2",
             "@crate_universe_crate_index__quote-1.0.18//:quote",
             "@crate_universe_crate_index__serde_derive-1.0.137//:build_script_build",
             "@crate_universe_crate_index__syn-1.0.90//:syn",

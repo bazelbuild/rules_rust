@@ -16,8 +16,9 @@
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_binary](#rust_binary)
 * [rust_bindgen](#rust_bindgen)
+* [rust_bindgen_dependencies](#rust_bindgen_dependencies)
 * [rust_bindgen_library](#rust_bindgen_library)
-* [rust_bindgen_repositories](#rust_bindgen_repositories)
+* [rust_bindgen_register_toolchains](#rust_bindgen_register_toolchains)
 * [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_clippy](#rust_clippy)
 * [rust_clippy_aspect](#rust_clippy_aspect)
@@ -99,7 +100,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
 | <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional | 600 |
-| <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.60.0" |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.61.0" |
 
 
 <a id="#error_format"></a>
@@ -317,9 +318,9 @@ Generates a rust source file from a cc_library and a header.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_bindgen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rust_bindgen-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   | List of strings | optional | [] |
-| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the .h file. This is used to find the transitive includes.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the <code>.h</code> file. This is used to find the transitive includes.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_bindgen-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   | List of strings | optional | [] |
-| <a id="rust_bindgen-header"></a>header |  The .h file to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_bindgen-header"></a>header |  The <code>.h</code> file to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | True |
 
 
@@ -332,6 +333,32 @@ rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href=
 </pre>
 
 The tools required for the `rust_bindgen` rule.
+
+This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it 
+in turn depends on both a clang binary and the clang library. To obtain these dependencies,
+`rust_bindgen_dependencies` imports bindgen and its dependencies.
+
+```python
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+
+rust_bindgen_toolchain(
+    name = "bindgen_toolchain_impl",
+    bindgen = "//my/rust:bindgen",
+    clang = "//my/clang:clang",
+    libclang = "//my/clang:libclang.so",
+    libstdcxx = "//my/cpp:libstdc++",
+)
+
+toolchain(
+    name = "bindgen_toolchain",
+    toolchain = "bindgen_toolchain_impl",
+    toolchain_type = "@rules_rust//bindgen:bindgen_toolchain",
+)
+```
+
+This toolchain will then need to be registered in the current `WORKSPACE`.
+For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
+
 
 **ATTRIBUTES**
 
@@ -1539,18 +1566,6 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  <code>None</code> |
 | <a id="rust_bindgen_library-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   |  <code>True</code> |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
-
-
-<a id="#rust_bindgen_repositories"></a>
-
-## rust_bindgen_repositories
-
-<pre>
-rust_bindgen_repositories()
-</pre>
-
-Declare dependencies needed for bindgen.
-
 
 
 <a id="#rust_proto_repositories"></a>
