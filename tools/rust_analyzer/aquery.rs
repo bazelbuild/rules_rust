@@ -48,7 +48,7 @@ pub struct CrateSpec {
     pub deps: BTreeSet<String>,
     pub proc_macro_dylib_path: Option<String>,
     pub source: Option<CrateSpecSource>,
-    pub cfg: Vec<String>,
+    pub cfg: BTreeSet<String>,
     pub env: BTreeMap<String, String>,
     pub target: String,
     pub crate_type: String,
@@ -168,6 +168,8 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
             existing.deps.extend(spec.deps);
+
+            existing.cfg.extend(spec.cfg);
 
             // display_name should match the library's crate name because Rust Analyzer
             // seems to use display_name for matching crate entries in rust-project.json

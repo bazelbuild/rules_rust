@@ -147,7 +147,7 @@ pub fn generate_rust_project(
                         exclude_dirs: s.exclude_dirs.clone(),
                         include_dirs: s.include_dirs.clone(),
                     }),
-                    cfg: c.cfg.clone(),
+                    cfg: c.cfg.clone().into_iter().collect(),
                     target: Some(c.target.clone()),
                     env: Some(c.env.clone()),
                     is_proc_macro: c.proc_macro_dylib_path.is_some(),
