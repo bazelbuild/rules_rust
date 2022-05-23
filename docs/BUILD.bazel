@@ -8,8 +8,8 @@ bzl_library(
     name = "docs_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@build_bazel_rules_nodejs//:bzl",
         "@com_google_protobuf//:bzl_srcs",
+        "@rules_nodejs//nodejs:bzl",
     ],
     deps = [
         "@bazel_skylib//lib:paths",
@@ -134,7 +134,8 @@ PAGES = dict([
         name = "rust_wasm_bindgen",
         header_template = ":rust_wasm_bindgen.vm",
         symbols = [
-            "rust_wasm_bindgen_repositories",
+            "rust_wasm_bindgen_dependencies",
+            "rust_wasm_bindgen_register_toolchains",
             "rust_wasm_bindgen_toolchain",
             "rust_wasm_bindgen",
         ],
@@ -184,7 +185,7 @@ stardoc(
 stardoc(
     name = "crate_universe",
     out = "crate_universe.md",
-    input = "@rules_rust//crate_universe:defs.bzl",
+    input = "@rules_rust//crate_universe:docs.bzl",
     deps = [":all_docs"],
 )
 

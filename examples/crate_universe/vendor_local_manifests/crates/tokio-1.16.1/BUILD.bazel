@@ -107,6 +107,7 @@ rust_library(
         (
             "@rules_rust//rust/platform:aarch64-apple-darwin",
             "@rules_rust//rust/platform:aarch64-apple-ios",
+            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
             "@rules_rust//rust/platform:aarch64-linux-android",
             "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
@@ -124,17 +125,17 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "//vendor_local_manifests/crates/libc-0.2.121:libc",
+            "//vendor_local_manifests/crates/libc-0.2.125:libc",
             "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",
 
             # Common Deps
             "//vendor_local_manifests/crates/bytes-1.1.0:bytes",
-            "//vendor_local_manifests/crates/memchr-2.4.1:memchr",
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
             "//vendor_local_manifests/crates/once_cell-1.10.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
-            "//vendor_local_manifests/crates/pin-project-lite-0.2.8:pin_project_lite",
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
         # cfg(windows)
         (
@@ -146,21 +147,21 @@ rust_library(
 
             # Common Deps
             "//vendor_local_manifests/crates/bytes-1.1.0:bytes",
-            "//vendor_local_manifests/crates/memchr-2.4.1:memchr",
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
             "//vendor_local_manifests/crates/once_cell-1.10.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
-            "//vendor_local_manifests/crates/pin-project-lite-0.2.8:pin_project_lite",
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
         "//conditions:default": [
             "//vendor_local_manifests/crates/bytes-1.1.0:bytes",
-            "//vendor_local_manifests/crates/memchr-2.4.1:memchr",
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
             "//vendor_local_manifests/crates/once_cell-1.10.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
-            "//vendor_local_manifests/crates/pin-project-lite-0.2.8:pin_project_lite",
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
     }),
 )

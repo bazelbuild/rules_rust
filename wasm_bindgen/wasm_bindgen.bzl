@@ -20,9 +20,7 @@ load("//rust/private:transitions.bzl", "wasm_bindgen_transition")
 load(
     "//wasm_bindgen:providers.bzl",
     "DeclarationInfo",
-    "JSEcmaScriptModuleInfo",
     "JSModuleInfo",
-    "JSNamedModuleInfo",
 )
 
 _WASM_BINDGEN_DOC = """\
@@ -131,7 +129,6 @@ def _rust_wasm_bindgen_impl(ctx):
     # Return a structure that is compatible with the deps[] of a ts_library.
     declarations = depset(ts_out)
     es5_sources = depset(js_out)
-    es6_sources = depset(js_out)
 
     return [
         DefaultInfo(
@@ -145,14 +142,6 @@ def _rust_wasm_bindgen_impl(ctx):
         JSModuleInfo(
             direct_sources = es5_sources,
             sources = es5_sources,
-        ),
-        JSNamedModuleInfo(
-            direct_sources = es5_sources,
-            sources = es5_sources,
-        ),
-        JSEcmaScriptModuleInfo(
-            direct_sources = es6_sources,
-            sources = es6_sources,
         ),
     ]
 

@@ -33,6 +33,16 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 
 def rules_rust_dependencies():
     """Dependencies used in the implementation of `rules_rust`."""
+
+    maybe(
+        http_archive,
+        name = "platforms",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.5/platforms-0.0.5.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.5/platforms-0.0.5.tar.gz",
+        ],
+        sha256 = "379113459b0feaf6bfbb584a91874c065078aa673222846ac765f86661c27407",
+    )
     maybe(
         http_archive,
         name = "rules_cc",
@@ -55,17 +65,18 @@ def rules_rust_dependencies():
     maybe(
         http_archive,
         name = "build_bazel_apple_support",
-        sha256 = "76df040ade90836ff5543888d64616e7ba6c3a7b33b916aa3a4b68f342d1b447",
-        url = "https://github.com/bazelbuild/apple_support/releases/download/0.11.0/apple_support.0.11.0.tar.gz",
+        sha256 = "5bbce1b2b9a3d4b03c0697687023ef5471578e76f994363c641c5f50ff0c7268",
+        url = "https://github.com/bazelbuild/apple_support/releases/download/0.13.0/apple_support.0.13.0.tar.gz",
     )
 
     # process_wrapper needs a low-dependency way to process json.
     maybe(
         http_archive,
         name = "rules_rust_tinyjson",
-        sha256 = "9c21866c7f051ebcefd028996494a374b7408ef946826cefc9761d58cce0fd36",
-        url = "https://github.com/rhysd/tinyjson/archive/refs/tags/v2.3.0.zip",
+        sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
+        url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
         strip_prefix = "tinyjson-2.3.0",
+        type = "tar.gz",
         build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
     )
 
