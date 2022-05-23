@@ -1,0 +1,28 @@
+#[[
+## Overview
+
+These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings to C (and some C++) libraries.
+
+[rust]: http://www.rust-lang.org/
+[bindgen]: https://github.com/rust-lang/rust-bindgen
+
+See the [bindgen example](https://github.com/bazelbuild/rules_rust/tree/main/examples/ffi/rust_calling_c/simple/BUILD.bazel#L9) for a more complete example of use.
+
+### Setup
+
+To use the Rust bindgen rules, add the following to your `WORKSPACE` file to add the
+external repositories for the Rust bindgen toolchain (in addition to the [rust rules setup](https://bazelbuild.github.io/rules_rust/#setup)):
+
+```python
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
+
+rust_bindgen_dependencies()
+
+rust_bindgen_register_toolchains()
+```
+
+---
+
+---
+
+]]#
