@@ -637,7 +637,7 @@ string: A json encoded struct to match the Rust `config::RenderConfig` struct
 splicing_config(<a href="#splicing_config-resolver_version">resolver_version</a>)
 </pre>
 
-arious settings used to configure Cargo manifest splicing behavior.
+Various settings used to configure Cargo manifest splicing behavior.
 
 [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
 
