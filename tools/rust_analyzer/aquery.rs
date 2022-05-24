@@ -164,10 +164,13 @@ fn path_from_fragments(
 /// a rust_test depends on a rust_library, for example.
 fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeSet<CrateSpec>> {
     let mut consolidated_specs: BTreeMap<String, CrateSpec> = BTreeMap::new();
-    for spec in crate_specs.into_iter() {
+    for mut spec in crate_specs.into_iter() {
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
             existing.deps.extend(spec.deps);
+
+            spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
+            existing.cfg.extend(spec.cfg);
 
             // display_name should match the library's crate name because Rust Analyzer
             // seems to use display_name for matching crate entries in rust-project.json
