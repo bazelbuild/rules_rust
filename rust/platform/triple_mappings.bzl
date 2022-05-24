@@ -22,6 +22,7 @@ SUPPORTED_T1_PLATFORM_TRIPLES = [
 SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios",
+    "aarch64-apple-ios-sim",
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
@@ -35,6 +36,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
+    "riscv32imc-unknown-none-elf",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
@@ -55,6 +57,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "powerpc": "ppc",
     "powerpc64": None,
     "powerpc64le": None,
+    "riscv32": "riscv32",
+    "riscv32imc": "riscv32",
     "s390": None,
     "s390x": "s390x",
     "thumbv7m": "armv7",
@@ -75,6 +79,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "linux": "linux",
     "nacl": None,
     "netbsd": None,
+    "none": "none",
     "openbsd": "openbsd",
     "solaris": None,
     "unknown": None,
@@ -90,6 +95,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "freebsd": "",
     "ios": "",
     "linux": "",
+    "none": "",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
@@ -106,6 +112,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "freebsd": ".a",
     "ios": ".a",
     "linux": ".a",
+    "none": ".a",
     "unknown": "",
     "wasi": "",
     "windows": ".lib",
@@ -119,6 +126,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "freebsd": ".so",
     "ios": ".dylib",
     "linux": ".so",
+    "none": ".so",
     "unknown": ".wasm",
     "wasi": ".wasm",
     "windows": ".dll",
@@ -158,6 +166,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "linux": ["-ldl", "-lpthread"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
+    "none": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
     "unknown": [],
@@ -189,13 +198,29 @@ def system_to_constraints(system):
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
-def abi_to_constraints(abi):
-    # iOS simulator
-    if abi == "sim":
+def abi_to_constraints(_abi):
+    # TODO(acmcarther): Implement when C++ toolchain is more mature and we
+    # figure out how they're doing this
+    return []
+
+def extra_ios_constriants(triple):
+    """Add constraints specific to iOS targets.
+
+    Args:
+        triple: The full triple struct for the target
+
+    Returns:
+        A list of constraints to add to the target
+    """
+
+    # TODO: Simplify if https://github.com/bazelbuild/bazel/issues/11454 is fixed
+    if triple.system != "ios":
+        return []
+    if triple.abi == "sim":
         return ["@build_bazel_apple_support//constraints:simulator"]
+    elif triple.arch == "aarch64":  # Only add device for archs that have both
+        return ["@build_bazel_apple_support//constraints:device"]
     else:
-        # TODO(acmcarther): Implement when C++ toolchain is more mature and we
-        # figure out how they're doing this
         return []
 
 def triple_to_system(target_triple):
@@ -276,5 +301,6 @@ def triple_to_constraint_set(target_triple):
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(triple_struct.abi)
+    constraint_set += extra_ios_constriants(triple_struct)
 
     return constraint_set

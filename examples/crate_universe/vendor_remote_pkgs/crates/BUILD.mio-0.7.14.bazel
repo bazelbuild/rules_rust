@@ -90,6 +90,7 @@ rust_library(
         (
             "@rules_rust//rust/platform:aarch64-apple-darwin",
             "@rules_rust//rust/platform:aarch64-apple-ios",
+            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
             "@rules_rust//rust/platform:aarch64-linux-android",
             "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
@@ -107,10 +108,10 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_pkgs__libc-0.2.121//:libc",
+            "@crates_vendor_pkgs__libc-0.2.126//:libc",
 
             # Common Deps
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
         # cfg(windows)
         (
@@ -123,10 +124,10 @@ rust_library(
             "@crates_vendor_pkgs__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
         "//conditions:default": [
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
     }),
 )

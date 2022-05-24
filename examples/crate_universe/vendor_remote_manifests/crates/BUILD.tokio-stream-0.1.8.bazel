@@ -82,8 +82,8 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@crates_vendor_manifests__futures-core-0.3.21//:futures_core",
-            "@crates_vendor_manifests__pin-project-lite-0.2.8//:pin_project_lite",
-            "@crates_vendor_manifests__tokio-1.17.0//:tokio",
+            "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
+            "@crates_vendor_manifests__tokio-1.18.2//:tokio",
         ],
     }),
 )

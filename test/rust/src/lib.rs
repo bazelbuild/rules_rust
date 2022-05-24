@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![crate_name = "hello_lib"]
 pub mod greeter;

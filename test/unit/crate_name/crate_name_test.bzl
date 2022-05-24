@@ -48,7 +48,7 @@ def _custom_crate_name_test_test_impl(ctx):
 
 def _invalid_default_crate_name_test_impl(ctx):
     env = analysistest.begin(ctx)
-    asserts.expect_failure(env, "contains invalid character(s): /")
+    asserts.expect_failure(env, "contains invalid character(s): @")
     return analysistest.end(env)
 
 def _invalid_custom_crate_name_test_impl(ctx):
@@ -119,7 +119,7 @@ no_extra_filename_test = analysistest.make(
 
 def _crate_name_test():
     rust_library(
-        name = "default-crate-name-library",
+        name = "default/crate-name-library",
         srcs = ["lib.rs"],
         edition = "2018",
     )
@@ -132,7 +132,7 @@ def _crate_name_test():
     )
 
     rust_binary(
-        name = "default-crate-name-binary",
+        name = "default/crate-name-binary",
         srcs = ["main.rs"],
         edition = "2018",
     )
@@ -145,7 +145,7 @@ def _crate_name_test():
     )
 
     rust_test(
-        name = "default-crate-name-test",
+        name = "default/crate-name-test",
         srcs = ["main.rs"],
         edition = "2018",
     )
@@ -158,7 +158,7 @@ def _crate_name_test():
     )
 
     rust_library(
-        name = "invalid/default-crate-name",
+        name = "invalid@default-crate-name",
         srcs = ["lib.rs"],
         edition = "2018",
         tags = ["manual", "norustfmt"],
@@ -197,7 +197,7 @@ def _crate_name_test():
 
     default_crate_name_library_test(
         name = "default_crate_name_library_test",
-        target_under_test = ":default-crate-name-library",
+        target_under_test = ":default/crate-name-library",
     )
 
     custom_crate_name_library_test(
@@ -207,7 +207,7 @@ def _crate_name_test():
 
     default_crate_name_binary_test(
         name = "default_crate_name_binary_test",
-        target_under_test = ":default-crate-name-binary",
+        target_under_test = ":default/crate-name-binary",
     )
 
     custom_crate_name_binary_test(
@@ -217,7 +217,7 @@ def _crate_name_test():
 
     default_crate_name_test_test(
         name = "default_crate_name_test_test",
-        target_under_test = ":default-crate-name-test",
+        target_under_test = ":default/crate-name-test",
     )
 
     custom_crate_name_test_test(
@@ -227,7 +227,7 @@ def _crate_name_test():
 
     invalid_default_crate_name_test(
         name = "invalid_default_crate_name_test",
-        target_under_test = ":invalid/default-crate-name",
+        target_under_test = ":invalid@default-crate-name",
     )
 
     invalid_custom_crate_name_test(
