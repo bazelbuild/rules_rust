@@ -83,7 +83,7 @@ rust_library(
             "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
             "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.7:http",
-            "//vendor_local_pkgs/crates/http-body-0.4.4:http_body",
+            "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
             "//vendor_local_pkgs/crates/mime-0.3.16:mime",
         ],
     }),

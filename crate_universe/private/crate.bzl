@@ -71,6 +71,7 @@ def _annotation(
         build_script_env = None,
         build_script_proc_macro_deps = None,
         build_script_rustc_env = None,
+        build_script_toolchains = None,
         compile_data = None,
         compile_data_glob = None,
         crate_features = None,
@@ -104,6 +105,7 @@ def _annotation(
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rustc_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
+        build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
             attribute.
@@ -150,6 +152,7 @@ def _annotation(
             build_script_env = build_script_env,
             build_script_proc_macro_deps = build_script_proc_macro_deps,
             build_script_rustc_env = build_script_rustc_env,
+            build_script_toolchains = build_script_toolchains,
             compile_data = compile_data,
             compile_data_glob = compile_data_glob,
             crate_features = crate_features,

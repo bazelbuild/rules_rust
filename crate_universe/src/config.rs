@@ -211,6 +211,10 @@ pub struct CrateAnnotations {
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub build_script_rustc_env: Option<BTreeMap<String, String>>,
 
+    /// Additional labels to pass to a build script's
+    /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
+    pub build_script_toolchains: Option<BTreeSet<String>>,
+
     /// A scratch pad used to write arbitrary text to target BUILD files.
     pub additive_build_file_content: Option<String>,
 
@@ -302,6 +306,7 @@ impl Add for CrateAnnotations {
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: joined_extra_member!(self.build_script_env, rhs.build_script_env, BTreeMap::new, BTreeMap::extend),
             build_script_rustc_env: joined_extra_member!(self.build_script_rustc_env, rhs.build_script_rustc_env, BTreeMap::new, BTreeMap::extend),
+            build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
             shallow_since,
             patch_args: joined_extra_member!(self.patch_args, rhs.patch_args, Vec::new, Vec::extend),

@@ -1,5 +1,5 @@
 {
-  "checksum": "b89aeac9dd7e48e35f724bf721523531d58afab33e912bbb5d69f076d1a314be",
+  "checksum": "894d383e72b82e75bc66aae5b9f3fe69de643e149c60b266ccbc98d88da3c278",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -208,7 +208,7 @@
               "target": "http"
             },
             {
-              "id": "http-body 0.4.4",
+              "id": "http-body 0.4.5",
               "target": "http_body"
             },
             {
@@ -331,7 +331,7 @@
               "target": "http"
             },
             {
-              "id": "http-body 0.4.4",
+              "id": "http-body 0.4.5",
               "target": "http_body"
             },
             {
@@ -1136,13 +1136,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "http-body 0.4.4": {
+    "http-body 0.4.5": {
       "name": "http-body",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/http-body/0.4.4/download",
-          "sha256": "1ff4f84919677303da5f147645dbea6b1881f368d03ac84e1dc09031ebd7b2c6"
+          "url": "https://crates.io/api/v1/crates/http-body/0.4.5/download",
+          "sha256": "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
         }
       },
       "targets": [
@@ -1182,7 +1182,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.4.4"
+        "version": "0.4.5"
       },
       "license": "MIT"
     },
@@ -1383,7 +1383,7 @@
               "target": "http"
             },
             {
-              "id": "http-body 0.4.4",
+              "id": "http-body 0.4.5",
               "target": "http_body"
             },
             {
@@ -2058,13 +2058,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "once_cell 1.11.0": {
+    "once_cell 1.12.0": {
       "name": "once_cell",
-      "version": "1.11.0",
+      "version": "1.12.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/once_cell/1.11.0/download",
-          "sha256": "7b10983b38c53aebdf33f542c6275b0f58a238129d00c4ae0e6fb59738d783ca"
+          "url": "https://crates.io/api/v1/crates/once_cell/1.12.0/download",
+          "sha256": "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
         }
       },
       "targets": [
@@ -2093,7 +2093,7 @@
           "std"
         ],
         "edition": "2018",
-        "version": "1.11.0"
+        "version": "1.12.0"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -3192,7 +3192,7 @@
         "deps": {
           "common": [
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             }
           ],
@@ -3276,7 +3276,7 @@
               "target": "num_cpus"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -3590,7 +3590,7 @@
               "target": "http"
             },
             {
-              "id": "http-body 0.4.4",
+              "id": "http-body 0.4.5",
               "target": "http_body"
             },
             {

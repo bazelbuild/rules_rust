@@ -54,6 +54,13 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
+    {%- if crate.build_script_attrs | get(key="toolchains", default=Null) %}
+    toolchains = [
+        {%- for toolchain in crate.build_script_attrs.toolchains %}
+        "{{ toolchain }}",
+        {%- endfor %}
+    ],
+    {%- endif %}
     visibility = ["//visibility:private"],
 )
 alias(

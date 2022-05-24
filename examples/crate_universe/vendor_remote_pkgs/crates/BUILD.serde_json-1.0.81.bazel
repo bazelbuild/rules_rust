@@ -86,8 +86,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_pkgs__itoa-1.0.1//:itoa",
-            "@crates_vendor_pkgs__ryu-1.0.9//:ryu",
+            "@crates_vendor_pkgs__itoa-1.0.2//:itoa",
+            "@crates_vendor_pkgs__ryu-1.0.10//:ryu",
             "@crates_vendor_pkgs__serde-1.0.137//:serde",
             "@crates_vendor_pkgs__serde_json-1.0.81//:build_script_build",
         ],

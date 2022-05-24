@@ -126,7 +126,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_manifests__libc-0.2.125//:libc",
+            "@crates_vendor_manifests__libc-0.2.126//:libc",
             "@crates_vendor_manifests__signal-hook-registry-1.4.0//:signal_hook_registry",
 
             # Common Deps
@@ -134,7 +134,7 @@ rust_library(
             "@crates_vendor_manifests__memchr-2.5.0//:memchr",
             "@crates_vendor_manifests__mio-0.8.3//:mio",
             "@crates_vendor_manifests__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_manifests__once_cell-1.10.0//:once_cell",
+            "@crates_vendor_manifests__once_cell-1.12.0//:once_cell",
             "@crates_vendor_manifests__parking_lot-0.12.0//:parking_lot",
             "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
             "@crates_vendor_manifests__socket2-0.4.4//:socket2",
@@ -152,7 +152,7 @@ rust_library(
             "@crates_vendor_manifests__memchr-2.5.0//:memchr",
             "@crates_vendor_manifests__mio-0.8.3//:mio",
             "@crates_vendor_manifests__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_manifests__once_cell-1.10.0//:once_cell",
+            "@crates_vendor_manifests__once_cell-1.12.0//:once_cell",
             "@crates_vendor_manifests__parking_lot-0.12.0//:parking_lot",
             "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
             "@crates_vendor_manifests__socket2-0.4.4//:socket2",
@@ -162,7 +162,7 @@ rust_library(
             "@crates_vendor_manifests__memchr-2.5.0//:memchr",
             "@crates_vendor_manifests__mio-0.8.3//:mio",
             "@crates_vendor_manifests__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_manifests__once_cell-1.10.0//:once_cell",
+            "@crates_vendor_manifests__once_cell-1.12.0//:once_cell",
             "@crates_vendor_manifests__parking_lot-0.12.0//:parking_lot",
             "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
             "@crates_vendor_manifests__socket2-0.4.4//:socket2",

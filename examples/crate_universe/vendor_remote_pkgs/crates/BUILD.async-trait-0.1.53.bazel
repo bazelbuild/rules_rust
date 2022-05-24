@@ -84,9 +84,9 @@ rust_proc_macro(
     ] + select_with_or({
         "//conditions:default": [
             "@crates_vendor_pkgs__async-trait-0.1.53//:build_script_build",
-            "@crates_vendor_pkgs__proc-macro2-1.0.38//:proc_macro2",
+            "@crates_vendor_pkgs__proc-macro2-1.0.39//:proc_macro2",
             "@crates_vendor_pkgs__quote-1.0.18//:quote",
-            "@crates_vendor_pkgs__syn-1.0.93//:syn",
+            "@crates_vendor_pkgs__syn-1.0.95//:syn",
         ],
     }),
 )
