@@ -10,6 +10,8 @@ load(
 )
 load(
     "@rules_rust//bindgen:repositories.bzl",
+    _rust_bindgen_dependencies = "rust_bindgen_dependencies",
+    _rust_bindgen_register_toolchains = "rust_bindgen_register_toolchains",
     _rust_bindgen_repositories = "rust_bindgen_repositories",
 )
 load(
@@ -19,8 +21,9 @@ load(
     _cargo_env = "cargo_env",
 )
 load(
-    "@rules_rust//crate_universe:defs.bzl",
+    "@rules_rust//crate_universe:docs.bzl",
     _crate = "crate",
+    _crate_universe_dependencies = "crate_universe_dependencies",
     _crates_repository = "crates_repository",
     _crates_vendor = "crates_vendor",
 )
@@ -64,6 +67,8 @@ load(
 )
 load(
     "@rules_rust//rust:repositories.bzl",
+    _rules_rust_dependencies = "rules_rust_dependencies",
+    _rust_register_toolchains = "rust_register_toolchains",
     _rust_repositories = "rust_repositories",
     _rust_repository_set = "rust_repository_set",
     _rust_toolchain_repository = "rust_toolchain_repository",
@@ -110,10 +115,12 @@ rust_doc_test = _rust_doc_test
 rust_proto_library = _rust_proto_library
 rust_grpc_library = _rust_grpc_library
 
-rust_bindgen_toolchain = _rust_bindgen_toolchain
 rust_bindgen = _rust_bindgen
+rust_bindgen_dependencies = _rust_bindgen_dependencies
 rust_bindgen_library = _rust_bindgen_library
+rust_bindgen_register_toolchains = _rust_bindgen_register_toolchains
 rust_bindgen_repositories = _rust_bindgen_repositories
+rust_bindgen_toolchain = _rust_bindgen_toolchain
 
 rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
@@ -130,6 +137,8 @@ rust_wasm_bindgen_dependencies = _rust_wasm_bindgen_dependencies
 rust_wasm_bindgen_register_toolchains = _rust_wasm_bindgen_register_toolchains
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
 
+rules_rust_dependencies = _rules_rust_dependencies
+rust_register_toolchains = _rust_register_toolchains
 rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
@@ -143,6 +152,7 @@ rust_analyzer_aspect = _rust_analyzer_aspect
 crate = _crate
 crates_repository = _crates_repository
 crates_vendor = _crates_vendor
+crate_universe_dependencies = _crate_universe_dependencies
 
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
