@@ -191,7 +191,9 @@ def collect_deps(
                     ] else [dep_info.transitive_crate_outputs],
                 ),
             )
-            transitive_noncrates.append(dep_info.transitive_noncrates)
+
+            if "proc-macro" not in [crate_info.type, crate_info.wrapped_crate_type]:
+                transitive_noncrates.append(dep_info.transitive_noncrates)
             transitive_build_infos.append(dep_info.transitive_build_infos)
             transitive_link_search_paths.append(dep_info.link_search_path_files)
 
