@@ -107,10 +107,10 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_pkgs__libc-0.2.121//:libc",
+            "@crates_vendor_pkgs__libc-0.2.126//:libc",
 
             # Common Deps
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
         # cfg(windows)
         (
@@ -123,10 +123,10 @@ rust_library(
             "@crates_vendor_pkgs__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
         "//conditions:default": [
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
         ],
     }),
 )
