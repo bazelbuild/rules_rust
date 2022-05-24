@@ -1,5 +1,5 @@
 {
-  "checksum": "195e234aa2bf1797fc89e6c8124cf28bc81b3e4054d003a5cb7e6fc9e6adf7ff",
+  "checksum": "799e2e9efee060cfe7143c608d6cabb668b55b74374104819e48e5ff662dfce5",
   "crates": {
     "adler32 1.2.0": {
       "name": "adler32",
@@ -3197,6 +3197,7 @@
     "cfg(not(target_arch = \"wasm32\"))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -3207,6 +3208,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
@@ -3218,6 +3220,7 @@
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -3227,6 +3230,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
@@ -3244,6 +3248,7 @@
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",

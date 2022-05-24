@@ -1,5 +1,5 @@
 {
-  "checksum": "aff5c61174d44db362468d80a4681409f44551abf80a92b35d88d9c63b4d5341",
+  "checksum": "e037ba0ff46a2c03d0b19e86a67296e7530468763f3635ab06b0f25301230e77",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1383,6 +1383,7 @@
     "cfg(not(target_os = \"emscripten\"))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -1393,6 +1394,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
@@ -1406,6 +1408,7 @@
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -1415,6 +1418,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
@@ -1436,6 +1440,7 @@
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",

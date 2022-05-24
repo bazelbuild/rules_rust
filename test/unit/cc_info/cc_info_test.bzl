@@ -105,27 +105,32 @@ def _cc_info_test():
     rust_library(
         name = "rlib",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "rlib_with_dep",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":rlib"],
     )
 
     rust_binary(
         name = "bin",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_static_library(
         name = "staticlib",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_shared_library(
         name = "cdylib",
         srcs = ["foo.rs"],
+        edition = "2018",
     )
 
     rust_proc_macro(

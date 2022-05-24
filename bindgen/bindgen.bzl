@@ -77,7 +77,7 @@ def rust_bindgen_library(
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        tags = tags + ["__bindgen"],
+        tags = tags + ["__bindgen", "noclippy"],
         deps = deps + [cc_lib],
         **kwargs
     )
@@ -187,14 +187,14 @@ rust_bindgen = rule(
             doc = "Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.",
         ),
         "cc_lib": attr.label(
-            doc = "The cc_library that contains the .h file. This is used to find the transitive includes.",
+            doc = "The cc_library that contains the `.h` file. This is used to find the transitive includes.",
             providers = [CcInfo],
         ),
         "clang_flags": attr.string_list(
             doc = "Flags to pass directly to the clang executable.",
         ),
         "header": attr.label(
-            doc = "The .h file to generate bindings for.",
+            doc = "The `.h` file to generate bindings for.",
             allow_single_file = True,
         ),
         "rustfmt": attr.bool(
@@ -232,7 +232,34 @@ def _rust_bindgen_toolchain_impl(ctx):
 
 rust_bindgen_toolchain = rule(
     _rust_bindgen_toolchain_impl,
-    doc = "The tools required for the `rust_bindgen` rule.",
+    doc = """\
+The tools required for the `rust_bindgen` rule.
+
+This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it 
+in turn depends on both a clang binary and the clang library. To obtain these dependencies,
+`rust_bindgen_dependencies` imports bindgen and its dependencies.
+
+```python
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+
+rust_bindgen_toolchain(
+    name = "bindgen_toolchain_impl",
+    bindgen = "//my/rust:bindgen",
+    clang = "//my/clang:clang",
+    libclang = "//my/clang:libclang.so",
+    libstdcxx = "//my/cpp:libstdc++",
+)
+
+toolchain(
+    name = "bindgen_toolchain",
+    toolchain = "bindgen_toolchain_impl",
+    toolchain_type = "@rules_rust//bindgen:bindgen_toolchain",
+)
+```
+
+This toolchain will then need to be registered in the current `WORKSPACE`.
+For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
+""",
     attrs = {
         "bindgen": attr.label(
             doc = "The label of a `bindgen` executable.",

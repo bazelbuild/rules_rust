@@ -89,6 +89,7 @@ StdLibInfo = provider(
         "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
+        "memchr_files": "Depset[File]: `.a` files associated with the `memchr` module.",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
@@ -105,5 +106,17 @@ ClippyInfo = provider(
     doc = "Provides information on a clippy run.",
     fields = {
         "output": "File with the clippy output.",
+    },
+)
+
+TestCrateInfo = provider(
+    doc = "A wrapper around a CrateInfo. " +
+          "Certain rule types, like rust_static_library and rust_shared_library " +
+          "are not intended for consumption by other Rust targets, and should not " +
+          "provide a CrateInfo. However, one should still be able to write a rust_test " +
+          "for them. Thus, we create a CrateInfo, but do not advertise it as such, " +
+          "but rather through this provider, that rust_test understands.",
+    fields = {
+        "crate": "CrateInfo: The underlying CrateInfo of the dependency",
     },
 )

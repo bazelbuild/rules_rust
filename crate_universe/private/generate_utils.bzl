@@ -182,16 +182,80 @@ def _read_cargo_config(repository_ctx):
         return repository_ctx.read(config)
     return None
 
+def _update_render_config(config, repository_name):
+    """Add the repository name to the render config
+
+    Args:
+        config (dict): A `render_config` struct
+        repository_name (str): The name of the repository that owns the config
+
+    Returns:
+        struct: An updated `render_config`.
+    """
+
+    # Add the repository name as it's very relevant to rendering.
+    config.update({"repository_name": repository_name})
+
+    return struct(**config)
+
 def _get_render_config(repository_ctx):
     if repository_ctx.attr.render_config:
         config = dict(json.decode(repository_ctx.attr.render_config))
     else:
         config = dict(json.decode(render_config()))
 
-    # Add the repository name as it's very relevant to rendering.
-    config.update({"repository_name": repository_ctx.name})
+    return config
 
-    return struct(**config)
+def compile_config(crate_annotations, generate_build_scripts, cargo_config, render_config, supported_platform_triples, repository_name, repository_ctx = None):
+    """Create a config file for generating crate targets
+
+    [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
+
+    Args:
+        crate_annotations (dict): Extra settings to apply to crates. See
+            `crates_repository.annotations` or `crates_vendor.annotations`.
+        generate_build_scripts (bool): Whether or not to globally disable build scripts.
+        cargo_config (str): The optional contents of a [Cargo config][cargo_config].
+        render_config (dict): The deserialized dict of the `render_config` function.
+        supported_platform_triples (list): A list of platform triples
+        repository_name (str): The name of the repository being generated
+        repository_ctx (repository_ctx, optional): A repository context object used for enabling
+            certain functionality.
+
+    Returns:
+        struct: A struct matching a `cargo_bazel::config::Config`.
+    """
+    annotations = collect_crate_annotations(crate_annotations, repository_name)
+
+    # Load additive build files if any have been provided.
+    unexpected = []
+    for name, data in annotations.items():
+        f = data.pop("additive_build_file", None)
+        if f and not repository_ctx:
+            unexpected.append(name)
+            f = None
+        content = [x for x in [
+            data.pop("additive_build_file_content", None),
+            repository_ctx.read(Label(f)) if f else None,
+        ] if x]
+        if content:
+            data.update({"additive_build_file_content": "\n".join(content)})
+
+    if unexpected:
+        fail("The following annotations use `additive_build_file` which is not supported for {}: {}".format(repository_name, unexpected))
+
+    config = struct(
+        generate_build_scripts = generate_build_scripts,
+        annotations = annotations,
+        cargo_config = cargo_config,
+        rendering = _update_render_config(
+            config = render_config,
+            repository_name = repository_name,
+        ),
+        supported_platform_triples = supported_platform_triples,
+    )
+
+    return config
 
 def generate_config(repository_ctx):
     """Generate a config file from various attributes passed to the rule.
@@ -202,24 +266,15 @@ def generate_config(repository_ctx):
     Returns:
         struct: A struct containing the path to a config and it's contents
     """
-    annotations = collect_crate_annotations(repository_ctx.attr.annotations, repository_ctx.name)
 
-    # Load additive build files if any have been provided.
-    for data in annotations.values():
-        f = data.pop("additive_build_file", None)
-        content = [x for x in [
-            data.pop("additive_build_file_content", None),
-            repository_ctx.read(Label(f)) if f else None,
-        ] if x]
-        if content:
-            data.update({"additive_build_file_content": "\n".join(content)})
-
-    config = struct(
+    config = compile_config(
+        crate_annotations = repository_ctx.attr.annotations,
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,
-        annotations = annotations,
         cargo_config = _read_cargo_config(repository_ctx),
-        rendering = _get_render_config(repository_ctx),
+        render_config = _get_render_config(repository_ctx),
         supported_platform_triples = repository_ctx.attr.supported_platform_triples,
+        repository_name = repository_ctx.name,
+        repository_ctx = repository_ctx,
     )
 
     config_path = repository_ctx.path("cargo-bazel.json")
@@ -228,13 +283,7 @@ def generate_config(repository_ctx):
         json.encode_indent(config, indent = " " * 4),
     )
 
-    # This was originally written to return a struct and not just the config path
-    # so splicing can have access to some rendering information embedded in the config
-    # If splicing should no longer need that info, it'd be simpler to just return a `path`.
-    return struct(
-        path = config_path,
-        info = config,
-    )
+    return config_path
 
 def get_lockfile(repository_ctx):
     """Locate the lockfile and identify the it's type (Cargo or Bazel).

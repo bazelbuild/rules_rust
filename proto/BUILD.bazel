@@ -34,6 +34,7 @@ toolchain_type(name = "toolchain")
 rust_binary(
     name = "optional_output_wrapper",
     srcs = ["optional_output_wrapper.rs"],
+    edition = "2018",
     visibility = ["//visibility:public"],
 )
 
@@ -43,7 +44,10 @@ toolchain(
     toolchain_type = "@rules_rust//proto:toolchain",
 )
 
-rust_proto_toolchain(name = "default-proto-toolchain-impl")
+rust_proto_toolchain(
+    name = "default-proto-toolchain-impl",
+    edition = "2018",
+)
 
 bzl_library(
     name = "bzl_lib",

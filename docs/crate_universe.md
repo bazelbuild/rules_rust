@@ -24,19 +24,22 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 ## Rules
 
-- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crates_repository](#crates_repository)
 - [crates_vendor](#crates_vendor)
+
+## Utility Macros
+
+- [crate_universe_dependencies](#crate_universe_dependencies)
 - [crate.annotation](#crateannotation)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
 - [render_config](#render_config)
 - [splicing_config](#splicing_config)
 
-## `crates_repository` Workflows
+## Workflows
 
-The [`crates_repository`](#crates_repository) rule (the primary repository rule of `cargo-bazel`) supports a number of different ways users
-can express and organize their dependencies. The most common are listed below though there are more to be found in
+The [`crates_repository`](#crates_repository) rule (the primary repository rule of `rules_rust`'s cargo support) supports a number of different
+ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
 the [./examples/crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe) directory.
 
 ### Cargo Workspaces
@@ -59,9 +62,9 @@ crate_repositories()
 ```
 
 The generated `crates_repository` contains helper macros which make collecting dependencies for Bazel targets simpler.
-Notably, the `all_crate_deps` and `aliases` macros commonly allow the `Cargo.toml` files to be the single source of
-truth for dependencies. Since these macros come from the generated repository, the dependencies and alias definitions
-they return will automatically update BUILD targets.
+Notably, the `all_crate_deps` and `aliases` macros (see [Dependencies API](#dependencies-api)) commonly allow the
+`Cargo.toml` files to be the single source of truth for dependencies. Since these macros come from the generated
+repository, the dependencies and alias definitions they return will automatically update BUILD targets.
 
 ```python
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
@@ -155,11 +158,24 @@ rust_test(
 )
 ```
 
+## Dependencies API
+
+After rendering dependencies, convenience macros may also be generated to provide
+convenient accessors to larger sections of the dependency graph.
+
+- [aliases](#aliases)
+- [crate_deps](#crate_deps)
+- [all_crate_deps](#all_crate_deps)
+- [crate_repositories](#crate_repositories)
+
+---
+
+---
+
 [cw]: https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
-
 
 
 <a id="#crates_repository"></a>
@@ -175,7 +191,8 @@ crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_r
                   <a href="#crates_repository-supported_platform_triples">supported_platform_triples</a>)
 </pre>
 
-A rule for defining and downloading Rust dependencies (crates).
+A rule for defining and downloading Rust dependencies (crates). This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
 
 Environment Variables:
 
@@ -185,6 +202,58 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
+
+Example:
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    Cargo.Bazel.lock
+    src/
+        main.rs
+```
+
+The following is something that'd be found in the `WORKSPACE` file:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
+
+crates_repository(
+    name = "crate_index",
+    annotations = annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    lockfile = "//:Cargo.Bazel.lock",
+    manifests = ["//:Cargo.toml"],
+    # Should match the version represented by the currently registered `rust_toolchain`.
+    rust_version = "1.60.0",
+)
+```
+
+The above will create an external repository which contains aliases and macros for accessing
+Rust targets found in the dependency graph defined by the given manifests.
+
+**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+it on its own. When initially setting up this rule, an empty file should be created and then
+populated by repinning dependencies.
+
+### Repinning / Updating Dependencies
+
+Dependency syncing and updating is done in the repository rule which means it's done during the
+analysis phase of builds. As mentioned in the environments variable table above, the `CARGO_BAZEL_REPIN`
+(or `REPIN`) environment variables can be used to force the rule to update dependencies and potentially
+render a new lockfile. Given an instance of this repository rule named `crate_index`, the easiest way to
+repin dependencies is to run:
+
+```shell
+CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+```
 
 
 
@@ -212,9 +281,9 @@ Environment Variables:
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
 | <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
 | <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
-| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.60.0" |
+| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.61.0" |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
-| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd"] |
+| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 
 
 <a id="#crates_vendor"></a>
@@ -226,7 +295,52 @@ crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-an
               <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
 </pre>
 
-A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace
+A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
+This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
+rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
+
+Example: 
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    3rdparty/
+        BUILD
+    src/
+        main.rs
+```
+
+The following is something that'd be found in `3rdparty/BUILD`:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "crate")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    manifests = ["//:Cargo.toml"],
+    mode = "remote",
+    vendor_path = "crates",
+    tags = ["manual"],
+)
+```
+
+The above creates a target that can be run to write `BUILD` files into the `3rdparty`
+directory next to where the target is defined. To run it, simply call:
+
+```shell
+bazel run //3rdparty:crates_vendor
+```
+
 
 **ATTRIBUTES**
 
@@ -243,8 +357,73 @@ A rule for defining Rust dependencies (crates) and writing targets for them to t
 | <a id="crates_vendor-packages"></a>packages |  A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crates_vendor-repository_name"></a>repository_name |  The name of the repository to generate for <code>remote</code> vendor modes. If unset, the label name will be used   | String | optional | "" |
 | <a id="crates_vendor-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
-| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd"] |
+| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional | "crates" |
+
+
+<a id="#aliases"></a>
+
+## aliases
+
+<pre>
+aliases(<a href="#aliases-normal">normal</a>, <a href="#aliases-normal_dev">normal_dev</a>, <a href="#aliases-proc_macro">proc_macro</a>, <a href="#aliases-proc_macro_dev">proc_macro_dev</a>, <a href="#aliases-build">build</a>, <a href="#aliases-build_proc_macro">build_proc_macro</a>, <a href="#aliases-package_name">package_name</a>)
+</pre>
+
+Produces a map of Crate alias names to their original label
+
+If no dependency kinds are specified, `normal` and `proc_macro` are used by default.
+Setting any one flag will otherwise determine the contents of the returned dict.
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="aliases-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  <code>False</code> |
+| <a id="aliases-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-build"></a>build |  If True, build dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="aliases-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code> when unset.   |  <code>None</code> |
+
+**RETURNS**
+
+dict: The aliases of all associated packages
+
+
+<a id="#all_crate_deps"></a>
+
+## all_crate_deps
+
+<pre>
+all_crate_deps(<a href="#all_crate_deps-normal">normal</a>, <a href="#all_crate_deps-normal_dev">normal_dev</a>, <a href="#all_crate_deps-proc_macro">proc_macro</a>, <a href="#all_crate_deps-proc_macro_dev">proc_macro_dev</a>, <a href="#all_crate_deps-build">build</a>, <a href="#all_crate_deps-build_proc_macro">build_proc_macro</a>,
+               <a href="#all_crate_deps-package_name">package_name</a>)
+</pre>
+
+Finds the fully qualified label of all requested direct crate dependencies     for the package where this macro is called.
+
+If no parameters are set, all normal dependencies are returned. Setting any one flag will
+otherwise impact the contents of the returned list.
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="all_crate_deps-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  <code>False</code> |
+| <a id="all_crate_deps-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-build"></a>build |  If True, build dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  <code>False</code> |
+| <a id="all_crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code> when unset.   |  <code>None</code> |
+
+**RETURNS**
+
+list: A list of labels to generated rust targets (str)
 
 
 <a id="#crate.spec"></a>
@@ -354,6 +533,41 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
+<a id="#crate_deps"></a>
+
+## crate_deps
+
+<pre>
+crate_deps(<a href="#crate_deps-deps">deps</a>, <a href="#crate_deps-package_name">package_name</a>)
+</pre>
+
+Finds the fully qualified label of the requested crates for the package where this macro is called.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="crate_deps-deps"></a>deps |  The desired list of crate targets.   |  none |
+| <a id="crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to <code>native.package_name()</code>.   |  <code>None</code> |
+
+**RETURNS**
+
+list: A list of labels to generated rust targets (str)
+
+
+<a id="#crate_repositories"></a>
+
+## crate_repositories
+
+<pre>
+crate_repositories()
+</pre>
+
+A macro for defining repositories for all generated crates
+
+
+
 <a id="#crate_universe_dependencies"></a>
 
 ## crate_universe_dependencies
@@ -369,7 +583,7 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.60.0"</code> |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.61.0"</code> |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 

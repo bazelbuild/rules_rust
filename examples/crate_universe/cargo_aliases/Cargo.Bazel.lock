@@ -1,5 +1,5 @@
 {
-  "checksum": "6c651edbaea6ab6d90793c36809fbaf0c01c146751fbe77296155decd9be6466",
+  "checksum": "bffc2bdf02e641c6ef454734fa4def3bc6087685845c1f2a8062f9f09828c791",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -2550,6 +2550,7 @@
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",

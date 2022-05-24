@@ -74,15 +74,17 @@ rustdoc_for_lib_with_proc_macro_test = analysistest.make(_rustdoc_for_lib_with_p
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
 
-def _target_maker(rule_fn, name, **kwargs):
+def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     rule_fn(
         name = name,
+        edition = "2018",
         **kwargs
     )
 
     rust_test(
         name = "{}_test".format(name),
         crate = ":{}".format(name),
+        edition = "2018",
     )
 
     rust_doc(
@@ -93,9 +95,16 @@ def _target_maker(rule_fn, name, **kwargs):
     rust_doc_test(
         name = "{}_doctest".format(name),
         crate = ":{}".format(name),
+        deps = rustdoc_deps,
     )
 
 def _define_targets():
+    rust_library(
+        name = "adder",
+        srcs = ["adder.rs"],
+        edition = "2018",
+    )
+
     _target_maker(
         rust_binary,
         name = "bin",
@@ -106,19 +115,20 @@ def _define_targets():
         rust_library,
         name = "lib",
         srcs = ["rustdoc_lib.rs"],
+        rustdoc_deps = [":adder"],
     )
 
     _target_maker(
         rust_proc_macro,
         name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
-        edition = "2018",
     )
 
     _target_maker(
         rust_library,
         name = "lib_with_proc_macro",
         srcs = ["rustdoc_lib.rs"],
+        rustdoc_deps = [":adder"],
         proc_macro_deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
     )
@@ -142,6 +152,7 @@ def _define_targets():
         rust_library,
         name = "lib_with_cc",
         srcs = ["rustdoc_lib.rs"],
+        rustdoc_deps = [":adder"],
         crate_features = ["with_cc"],
         deps = [":cc_lib"],
     )

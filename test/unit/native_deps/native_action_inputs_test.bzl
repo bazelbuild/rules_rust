@@ -77,30 +77,35 @@ def _native_action_inputs_test():
     rust_library(
         name = "foo_lib",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":bar"],
     )
 
     rust_binary(
         name = "foo_bin",
         srcs = ["foo_main.rs"],
+        edition = "2018",
         deps = [":bar"],
     )
 
     rust_shared_library(
         name = "foo_dylib",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":bar"],
     )
 
     rust_static_library(
         name = "foo_static",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":bar"],
     )
 
     rust_proc_macro(
         name = "foo_proc_macro",
         srcs = ["foo.rs"],
+        edition = "2018",
         deps = [":bar"],
     )
 

@@ -30,6 +30,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -40,6 +41,7 @@ def _staticlib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -51,6 +53,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -60,6 +63,7 @@ def _bin_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -153,37 +157,42 @@ def _native_dep_test():
     rust_library(
         name = "rlib_has_no_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_static_library(
         name = "staticlib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_shared_library(
         name = "cdylib_has_native_dep",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_proc_macro(
         name = "proc_macro_has_native_dep",
         srcs = ["proc_macro_using_native_dep.rs"],
-        deps = [":native_dep"],
         edition = "2018",
+        deps = [":native_dep"],
     )
 
     rust_binary(
         name = "bin_has_native_dep",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep"],
     )
 
     rust_binary(
         name = "bin_has_native_dep_and_alwayslink",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep", ":alwayslink"],
     )
 
@@ -202,6 +211,7 @@ def _native_dep_test():
     rust_shared_library(
         name = "cdylib_has_native_dep_and_alwayslink",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":native_dep", ":alwayslink"],
     )
 
@@ -262,6 +272,7 @@ def _linkopts_test():
     rust_binary(
         name = "linkopts_rust_bin",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":linkopts_native_dep_a"],
     )
 
@@ -303,18 +314,21 @@ def _additional_deps_test():
     rust_binary(
         name = "bin_additional_deps",
         srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
         deps = [":additional_deps_cc"],
     )
 
     rust_shared_library(
         name = "cdylib_additional_deps",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = [":additional_deps_cc"],
     )
 
     rust_library(
         name = "lib_additional_deps",
         srcs = ["lib_using_native_dep.rs"],
+        edition = "2018",
         deps = ["additional_deps_cc"],
     )
 

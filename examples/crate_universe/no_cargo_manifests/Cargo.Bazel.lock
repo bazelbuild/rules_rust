@@ -1,5 +1,5 @@
 {
-  "checksum": "777c0ae52a2bc92b969761874933d456945f6c2bcbb80178bb6c674ec2d617e4",
+  "checksum": "894d383e72b82e75bc66aae5b9f3fe69de643e149c60b266ccbc98d88da3c278",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -4832,6 +4832,7 @@
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -4841,6 +4842,7 @@
       "i686-unknown-freebsd",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
@@ -4862,6 +4864,7 @@
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",

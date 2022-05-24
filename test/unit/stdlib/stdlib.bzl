@@ -65,6 +65,7 @@ def _native_dep_test():
     rust_library(
         name = "some_rlib",
         srcs = ["some_rlib.rs"],
+        edition = "2018",
     )
 
     libstd_ordering_test(

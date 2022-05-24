@@ -28,6 +28,7 @@ cfg-expr = "0.10.2"
 clap = { version = "3.1.6", features = ["derive", "env"] }
 crates-index = { version = "0.18.7", default-features = false }
 hex = "0.4.3"
+normpath = "0.3"
 pathdiff = "0.2.1"
 regex = "1.5.5"
 semver = "1.0.6"
@@ -45,4 +46,5 @@ toml = "0.5.8"
 syn = "=1.0.90"
 
 [dev-dependencies]
+maplit = "1"
 spectral = "0.6.0"

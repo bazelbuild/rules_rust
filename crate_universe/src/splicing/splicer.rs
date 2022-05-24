@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use cargo_toml::{Dependency, Manifest};
+use normpath::PathExt;
 
 use crate::config::CrateId;
 use crate::splicing::{SplicedManifest, SplicingManifest};
@@ -87,38 +88,22 @@ impl<'a> SplicerKind<'a> {
                 bail!("A package was provided that appears to be a part of another workspace.\nworkspace root: '{}'\nexternal packages: {:#?}", root_manifest_path.display(), external_workspace_members)
             }
 
-            // Ensure all workspace members are present for the given workspace
-            let workspace_members = root_manifest.workspace.as_ref().unwrap().members.clone();
-            let missing_manifests: BTreeSet<String> = workspace_members
-                .into_iter()
-                .filter(|member| {
-                    // Check for any members that are missing from the list of manifests
-                    !manifests.keys().any(|path| {
-                        let path_str = path.to_string_lossy().to_string();
-                        // Account for windows paths.
-                        let path_str = path_str.replace('\\', "/");
-                        // Workspace members are represented as directories.
-                        path_str.trim_end_matches("/Cargo.toml").ends_with(member)
+            // UNWRAP: Safe because a Cargo.toml file must have a parent directory.
+            let root_manifest_dir = root_manifest_path.parent().unwrap();
+            let missing_manifests = Self::find_missing_manifests(
+                root_manifest,
+                root_manifest_dir,
+                &manifests
+                    .keys()
+                    .map(|p| {
+                        p.normalize()
+                            .with_context(|| format!("Failed to normalize path {:?}", p))
                     })
-                })
-                .filter_map(|path_str| {
-                    // UNWRAP: Safe because a Cargo.toml file must have a parent directory.
-                    let cargo_manifest_dir = root_manifest_path.parent().unwrap();
-                    let label = Label::from_absolute_path(
-                        &cargo_manifest_dir.join(path_str).join("Cargo.toml"),
-                    );
-                    match label {
-                        Ok(label) => Some(label.to_string()),
-                        Err(err) => {
-                            eprintln!("Failed to identify label for missing manifest: {}", err);
-                            None
-                        }
-                    }
-                })
-                .collect();
-
+                    .collect::<Result<_, _>>()?,
+            )
+            .context("Identifying missing manifests")?;
             if !missing_manifests.is_empty() {
-                bail!("Some manifests are not being tracked. Please add the following labels to the `manifests` key: {:#?}", missing_manifests)
+                bail!("Some manifests are not being tracked. Please add the following labels to the `manifests` key: {:#?}", missing_manifests);
             }
 
             root_workspace_pair = Some((root_manifest_path, root_manifest));
@@ -146,6 +131,43 @@ impl<'a> SplicerKind<'a> {
                 extra_manifests_manifest,
             })
         }
+    }
+
+    fn find_missing_manifests(
+        root_manifest: &Manifest,
+        root_manifest_dir: &Path,
+        known_manifest_paths: &BTreeSet<normpath::BasePathBuf>,
+    ) -> Result<BTreeSet<String>> {
+        let workspace_manifest_paths = root_manifest
+            .workspace
+            .as_ref()
+            .unwrap()
+            .members
+            .iter()
+            .map(|member| {
+                let path = root_manifest_dir.join(member).join("Cargo.toml");
+                path.normalize()
+                    .with_context(|| format!("Failed to normalize path {:?}", path))
+            })
+            .collect::<Result<BTreeSet<normpath::BasePathBuf>, _>>()?;
+
+        // Ensure all workspace members are present for the given workspace
+        workspace_manifest_paths
+            .into_iter()
+            .filter(|workspace_manifest_path| {
+                !known_manifest_paths.contains(workspace_manifest_path)
+            })
+            .map(|workspace_manifest_path| {
+                let label = Label::from_absolute_path(workspace_manifest_path.as_path())
+                    .with_context(|| {
+                        format!(
+                            "Failed to identify label for path {:?}",
+                            workspace_manifest_path
+                        )
+                    })?;
+                Ok(label.to_string())
+            })
+            .collect()
     }
 
     /// Performs splicing based on the current variant.
@@ -745,6 +767,7 @@ mod test {
     use std::str::FromStr;
 
     use cargo_metadata::{MetadataCommand, PackageId};
+    use maplit::btreeset;
 
     use crate::splicing::ExtraManifestInfo;
     use crate::utils::starlark::Label;
@@ -1561,5 +1584,211 @@ mod test {
         assert!(err_str.starts_with("A Cargo config file was found in a parent directory"));
         assert!(err_str.contains(&format!("Workspace = {}", workspace_root.display())));
         assert!(err_str.contains(&format!("Cargo config = {}", external_config.display())));
+    }
+
+    #[test]
+    fn find_missing_manifests_correct_without_root() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let root_manifest_dir = temp_dir.path();
+        touch(&root_manifest_dir.join("WORKSPACE.bazel"));
+        touch(&root_manifest_dir.join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("Cargo.toml"));
+        touch(&root_manifest_dir.join("foo").join("Cargo.toml"));
+        touch(&root_manifest_dir.join("bar").join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("bar").join("Cargo.toml"));
+
+        let known_manifest_paths = btreeset![
+            root_manifest_dir
+                .join("foo")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+            root_manifest_dir
+                .join("bar")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+        ];
+
+        let root_manifest: cargo_toml::Manifest = toml::toml! {
+            [workspace]
+            members = [
+                "foo",
+                "bar",
+            ]
+            [package]
+            name = "root_pkg"
+            version = "0.0.1"
+
+            [lib]
+            path = "lib.rs"
+        }
+        .try_into()
+        .unwrap();
+        let missing_manifests = SplicerKind::find_missing_manifests(
+            &root_manifest,
+            root_manifest_dir,
+            &known_manifest_paths,
+        )
+        .unwrap();
+        assert_eq!(missing_manifests, btreeset![]);
+    }
+
+    #[test]
+    fn find_missing_manifests_correct_with_root() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let root_manifest_dir = temp_dir.path();
+        touch(&root_manifest_dir.join("WORKSPACE.bazel"));
+        touch(&root_manifest_dir.join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("Cargo.toml"));
+        touch(&root_manifest_dir.join("foo").join("Cargo.toml"));
+        touch(&root_manifest_dir.join("bar").join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("bar").join("Cargo.toml"));
+
+        let known_manifest_paths = btreeset![
+            root_manifest_dir.join("Cargo.toml").normalize().unwrap(),
+            root_manifest_dir
+                .join("foo")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+            root_manifest_dir
+                .join("bar")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+        ];
+
+        let root_manifest: cargo_toml::Manifest = toml::toml! {
+            [workspace]
+            members = [
+                ".",
+                "foo",
+                "bar",
+            ]
+            [package]
+            name = "root_pkg"
+            version = "0.0.1"
+
+            [lib]
+            path = "lib.rs"
+        }
+        .try_into()
+        .unwrap();
+        let missing_manifests = SplicerKind::find_missing_manifests(
+            &root_manifest,
+            root_manifest_dir,
+            &known_manifest_paths,
+        )
+        .unwrap();
+        assert_eq!(missing_manifests, btreeset![]);
+    }
+
+    #[test]
+    fn find_missing_manifests_missing_root() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let root_manifest_dir = temp_dir.path();
+        touch(&root_manifest_dir.join("WORKSPACE.bazel"));
+        touch(&root_manifest_dir.join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("Cargo.toml"));
+        touch(&root_manifest_dir.join("foo").join("Cargo.toml"));
+        touch(&root_manifest_dir.join("bar").join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("bar").join("Cargo.toml"));
+
+        let known_manifest_paths = btreeset![
+            root_manifest_dir
+                .join("foo")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+            root_manifest_dir
+                .join("bar")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+        ];
+
+        let root_manifest: cargo_toml::Manifest = toml::toml! {
+            [workspace]
+            members = [
+                ".",
+                "foo",
+                "bar",
+            ]
+            [package]
+            name = "root_pkg"
+            version = "0.0.1"
+
+            [lib]
+            path = "lib.rs"
+        }
+        .try_into()
+        .unwrap();
+        let missing_manifests = SplicerKind::find_missing_manifests(
+            &root_manifest,
+            root_manifest_dir,
+            &known_manifest_paths,
+        )
+        .unwrap();
+        assert_eq!(missing_manifests, btreeset![String::from("//:Cargo.toml")]);
+    }
+
+    #[test]
+    fn find_missing_manifests_missing_nonroot() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let root_manifest_dir = temp_dir.path();
+        touch(&root_manifest_dir.join("WORKSPACE.bazel"));
+        touch(&root_manifest_dir.join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("Cargo.toml"));
+        touch(&root_manifest_dir.join("foo").join("Cargo.toml"));
+        touch(&root_manifest_dir.join("bar").join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("bar").join("Cargo.toml"));
+        touch(&root_manifest_dir.join("baz").join("BUILD.bazel"));
+        touch(&root_manifest_dir.join("baz").join("Cargo.toml"));
+
+        let known_manifest_paths = btreeset![
+            root_manifest_dir
+                .join("foo")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+            root_manifest_dir
+                .join("bar")
+                .join("Cargo.toml")
+                .normalize()
+                .unwrap(),
+        ];
+
+        let root_manifest: cargo_toml::Manifest = toml::toml! {
+            [workspace]
+            members = [
+                "foo",
+                "bar",
+                "baz",
+            ]
+            [package]
+            name = "root_pkg"
+            version = "0.0.1"
+
+            [lib]
+            path = "lib.rs"
+        }
+        .try_into()
+        .unwrap();
+        let missing_manifests = SplicerKind::find_missing_manifests(
+            &root_manifest,
+            root_manifest_dir,
+            &known_manifest_paths,
+        )
+        .unwrap();
+        assert_eq!(
+            missing_manifests,
+            btreeset![String::from("//baz:Cargo.toml")]
+        );
+    }
+
+    fn touch(path: &Path) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, &[]).unwrap();
     }
 }

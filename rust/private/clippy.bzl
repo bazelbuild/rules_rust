@@ -29,6 +29,22 @@ load(
     "find_toolchain",
 )
 
+ClippyFlagsInfo = provider(
+    doc = "Pass each value as an additional flag to clippy invocations",
+    fields = {"clippy_flags": "List[string] Flags to pass to clippy"},
+)
+
+def _clippy_flags_impl(ctx):
+    return ClippyFlagsInfo(clippy_flags = ctx.build_setting_value)
+
+clippy_flags = rule(
+    doc = (
+        "Add custom clippy flags from the command line with `--@rules_rust//:clippy_flags`."
+    ),
+    implementation = _clippy_flags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
 def _get_clippy_ready_crate_info(target, aspect_ctx):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
 
@@ -106,11 +122,17 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
+    clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
         args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
+
+        if clippy_flags:
+            fail("""Combining @rules_rust//:clippy_flags with @rules_rust//:capture_clippy_output=true is currently not supported.
+See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for more detail.""")
 
         # If we are capturing the output, we want the build system to be able to keep going
         # and consume the output. Some clippy lints are denials, so we treat them as warnings.
@@ -121,18 +143,14 @@ def _clippy_aspect_impl(target, ctx):
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
         args.process_wrapper_flags.add("--touch-file", clippy_out.path)
 
-        # Turn any warnings from clippy or rustc into an error, as otherwise
-        # Bazel will consider the execution result of the aspect to be "success",
-        # and Clippy won't be re-triggered unless the source file is modified.
-        if "__bindgen" in ctx.rule.attr.tags:
-            # bindgen-generated content is likely to trigger warnings, so
-            # only fail on clippy warnings
-            args.rustc_flags.add("-Dclippy::style")
-            args.rustc_flags.add("-Dclippy::correctness")
-            args.rustc_flags.add("-Dclippy::complexity")
-            args.rustc_flags.add("-Dclippy::perf")
+        if clippy_flags:
+            args.rustc_flags.extend(clippy_flags)
         else:
-            # fail on any warning
+            # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
+
+            # Turn any warnings from clippy or rustc into an error, as otherwise
+            # Bazel will consider the execution result of the aspect to be "success",
+            # and Clippy won't be re-triggered unless the source file is modified.
             args.rustc_flags.add("-Dwarnings")
 
     # Upstream clippy requires one of these two filenames or it silently uses
@@ -176,6 +194,10 @@ rust_clippy_aspect = aspect(
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_clippy_flags": attr.label(
+            doc = "Arguments to pass to clippy",
+            default = Label("//:clippy_flags"),
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",

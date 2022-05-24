@@ -7,6 +7,8 @@ use regex::Regex;
 use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
 
+// Note that this type assumes there's no such thing as a relative label;
+// `:foo` is assumed to be relative to the repo root, and parses out to equivalent to `//:foo`.
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Label {
     pub repository: Option<String>,
@@ -52,19 +54,21 @@ impl FromStr for Label {
 
 impl Display for Label {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut label = String::new();
-
         // Add the repository
         if let Some(repo) = &self.repository {
-            label = format!("@{}", repo);
+            write!(f, "@{}", repo)?;
         }
+
+        write!(f, "//")?;
 
         // Add the package
         if let Some(pkg) = &self.package {
-            label = format!("{}//{}", label, pkg);
+            write!(f, "{}", pkg)?;
         }
 
-        write!(f, "{}:{}", &label, &self.target,)
+        write!(f, ":{}", self.target)?;
+
+        Ok(())
     }
 }
 
@@ -190,6 +194,7 @@ mod test {
     #[test]
     fn full_label() {
         let label = Label::from_str("@repo//package/sub_package:target").unwrap();
+        assert_eq!(label.to_string(), "@repo//package/sub_package:target");
         assert_eq!(label.repository.unwrap(), "repo");
         assert_eq!(label.package.unwrap(), "package/sub_package");
         assert_eq!(label.target, "target");
@@ -198,6 +203,7 @@ mod test {
     #[test]
     fn no_repository() {
         let label = Label::from_str("//package:target").unwrap();
+        assert_eq!(label.to_string(), "//package:target");
         assert_eq!(label.repository, None);
         assert_eq!(label.package.unwrap(), "package");
         assert_eq!(label.target, "target");
@@ -206,6 +212,7 @@ mod test {
     #[test]
     fn no_slashes() {
         let label = Label::from_str("package:target").unwrap();
+        assert_eq!(label.to_string(), "//package:target");
         assert_eq!(label.repository, None);
         assert_eq!(label.package.unwrap(), "package");
         assert_eq!(label.target, "target");
@@ -214,6 +221,7 @@ mod test {
     #[test]
     fn root_label() {
         let label = Label::from_str("@repo//:target").unwrap();
+        assert_eq!(label.to_string(), "@repo//:target");
         assert_eq!(label.repository.unwrap(), "repo");
         assert_eq!(label.package, None);
         assert_eq!(label.target, "target");
@@ -222,6 +230,7 @@ mod test {
     #[test]
     fn root_label_no_repository() {
         let label = Label::from_str("//:target").unwrap();
+        assert_eq!(label.to_string(), "//:target");
         assert_eq!(label.repository, None);
         assert_eq!(label.package, None);
         assert_eq!(label.target, "target");
@@ -230,6 +239,7 @@ mod test {
     #[test]
     fn root_label_no_slashes() {
         let label = Label::from_str(":target").unwrap();
+        assert_eq!(label.to_string(), "//:target");
         assert_eq!(label.repository, None);
         assert_eq!(label.package, None);
         assert_eq!(label.target, "target");
@@ -238,6 +248,10 @@ mod test {
     #[test]
     fn full_label_with_slash_after_colon() {
         let label = Label::from_str("@repo//package/sub_package:subdir/target").unwrap();
+        assert_eq!(
+            label.to_string(),
+            "@repo//package/sub_package:subdir/target"
+        );
         assert_eq!(label.repository.unwrap(), "repo");
         assert_eq!(label.package.unwrap(), "package/sub_package");
         assert_eq!(label.target, "subdir/target");

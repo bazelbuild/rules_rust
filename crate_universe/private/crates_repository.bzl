@@ -1,6 +1,6 @@
 """`crates_repository` rule implementation"""
 
-load("//crate_universe/private:common_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//crate_universe/private:common_utils.bzl", "get_rust_tools")
 load(
     "//crate_universe/private:generate_utils.bzl",
     "CRATES_REPOSITORY_ENVIRON",
@@ -17,6 +17,7 @@ load(
 )
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 def _crates_repository_impl(repository_ctx):
@@ -24,10 +25,10 @@ def _crates_repository_impl(repository_ctx):
     host_triple = get_host_triple(repository_ctx)
 
     # Locate the generator to use
-    generator, generator_sha256 = get_generator(repository_ctx, host_triple.triple)
+    generator, generator_sha256 = get_generator(repository_ctx, host_triple.str)
 
     # Generate a config file for all settings
-    config = generate_config(repository_ctx)
+    config_path = generate_config(repository_ctx)
 
     # Locate the lockfile
     lockfile = get_lockfile(repository_ctx)
@@ -46,7 +47,7 @@ def _crates_repository_impl(repository_ctx):
         generator = generator,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         cargo = cargo_path,
         rustc = rustc_path,
@@ -74,7 +75,7 @@ def _crates_repository_impl(repository_ctx):
     execute_generator(
         repository_ctx = repository_ctx,
         generator = generator,
-        config = config.path,
+        config = config_path,
         splicing_manifest = splicing_manifest,
         lockfile_path = lockfile.path,
         lockfile_kind = lockfile.kind,
@@ -101,7 +102,8 @@ def _crates_repository_impl(repository_ctx):
 
 crates_repository = repository_rule(
     doc = """\
-A rule for defining and downloading Rust dependencies (crates).
+A rule for defining and downloading Rust dependencies (crates). This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
 
 Environment Variables:
 
@@ -111,6 +113,58 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
+
+Example:
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    Cargo.Bazel.lock
+    src/
+        main.rs
+```
+
+The following is something that'd be found in the `WORKSPACE` file:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
+
+crates_repository(
+    name = "crate_index",
+    annotations = annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    lockfile = "//:Cargo.Bazel.lock",
+    manifests = ["//:Cargo.toml"],
+    # Should match the version represented by the currently registered `rust_toolchain`.
+    rust_version = "1.60.0",
+)
+```
+
+The above will create an external repository which contains aliases and macros for accessing
+Rust targets found in the dependency graph defined by the given manifests.
+
+**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+it on its own. When initially setting up this rule, an empty file should be created and then
+populated by repinning dependencies.
+
+### Repinning / Updating Dependencies
+
+Dependency syncing and updating is done in the repository rule which means it's done during the
+analysis phase of builds. As mentioned in the environments variable table above, the `CARGO_BAZEL_REPIN`
+(or `REPIN`) environment variables can be used to force the rule to update dependencies and potentially
+render a new lockfile. Given an instance of this repository rule named `crate_index`, the easiest way to
+repin dependencies is to run:
+
+```shell
+CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+```
 
 """,
     implementation = _crates_repository_impl,

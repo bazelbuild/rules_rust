@@ -1,6 +1,6 @@
 """Rules for vendoring Bazel targets into existing workspaces"""
 
-load("//crate_universe/private:generate_utils.bzl", "collect_crate_annotations", "render_config")
+load("//crate_universe/private:generate_utils.bzl", "compile_config", "render_config")
 load("//crate_universe/private:splicing_utils.bzl", "kebab_case_keys", "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
@@ -104,14 +104,6 @@ def _write_extra_manifests_manifest(ctx):
     return args, runfiles
 
 def _write_config_file(ctx):
-    annotations = collect_crate_annotations(ctx.attr.annotations, str(ctx.label))
-    unexpected = []
-    for id, annotation in annotations.items():
-        if annotation.get("additive_build_file", None):
-            unexpected.append(id)
-    if unexpected:
-        fail("The following annotations use `additive_build_file` which is not supported for `crates_vendor`: {}".format(unexpected))
-
     rendering_config = dict(json.decode(render_config()))
 
     output_pkg = _get_output_package(ctx)
@@ -135,16 +127,16 @@ def _write_config_file(ctx):
             ctx.workspace_name,
             output_pkg,
         ),
-        "repository_name": ctx.attr.repository_name or ctx.label.name,
         "vendor_mode": ctx.attr.mode,
     })
 
-    config_data = struct(
-        annotations = annotations,
-        rendering = rendering_config,
+    config_data = compile_config(
+        crate_annotations = ctx.attr.annotations,
         generate_build_scripts = ctx.attr.generate_build_scripts,
         cargo_config = None,
+        render_config = rendering_config,
         supported_platform_triples = ctx.attr.supported_platform_triples,
+        repository_name = ctx.attr.repository_name or ctx.label.name,
     )
 
     config = _write_data_file(
@@ -239,7 +231,53 @@ def _crates_vendor_impl(ctx):
 
 crates_vendor = rule(
     implementation = _crates_vendor_impl,
-    doc = "A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace",
+    doc = """\
+A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
+This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
+rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
+handles all the same [workflows](#workflows) `crate_universe` rules do.
+
+Example: 
+
+Given the following workspace structure:
+```
+[workspace]/
+    WORKSPACE
+    BUILD
+    Cargo.toml
+    3rdparty/
+        BUILD
+    src/
+        main.rs
+```
+
+The following is something that'd be found in `3rdparty/BUILD`:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "crate")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "rand": [crate.annotation(
+            default_features = False,
+            features = ["small_rng"],
+        )],
+    },
+    manifests = ["//:Cargo.toml"],
+    mode = "remote",
+    vendor_path = "crates",
+    tags = ["manual"],
+)
+```
+
+The above creates a target that can be run to write `BUILD` files into the `3rdparty`
+directory next to where the target is defined. To run it, simply call:
+
+```shell
+bazel run //3rdparty:crates_vendor
+```
+""",
     attrs = {
         "annotations": attr.string_list_dict(
             doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",

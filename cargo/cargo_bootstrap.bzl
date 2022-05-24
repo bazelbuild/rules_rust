@@ -1,7 +1,8 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
-load("//cargo/private:cargo_utils.bzl", "get_host_triple", "get_rust_tools")
+load("//cargo/private:cargo_utils.bzl", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
+load("//rust/platform:triple.bzl", "get_host_triple")
 
 _CARGO_BUILD_MODES = [
     "release",
@@ -203,7 +204,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
 
     # In addition to platform specific environment variables, a common set (indicated by `*`) will always
     # be gathered.
-    environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.triple).items())
+    environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.str).items())
 
     built_binary = cargo_bootstrap(
         repository_ctx = repository_ctx,

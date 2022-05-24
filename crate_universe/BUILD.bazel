@@ -9,6 +9,7 @@ exports_files(
         "Cargo.lock",
         "Cargo.Bazel.lock",
         "defs.bzl",
+        "docs.bzl",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66,6 +67,7 @@ rust_library(
         include = ["src/**"],
         exclude = ["src/**/*.rs"],
     ),
+    edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     version = VERSION,
     visibility = ["//visibility:public"],
@@ -75,6 +77,7 @@ rust_library(
 rust_binary(
     name = "cargo_bazel_bin",
     srcs = ["src/main.rs"],
+    edition = "2018",
     version = VERSION,
     visibility = ["//visibility:public"],
     deps = [":cargo_bazel"],
@@ -93,6 +96,7 @@ rust_test(
     data = glob(["test_data/**"]) + [
         "@rules_rust//rust/toolchain:current_exec_cargo_files",
         "@rules_rust//rust/toolchain:current_exec_rustc_files",
+        "//crate_universe/test_data/serialized_configs",
     ],
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,

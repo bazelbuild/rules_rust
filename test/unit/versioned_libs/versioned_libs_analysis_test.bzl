@@ -45,6 +45,7 @@ def _test_linux():
     rust_shared_library(
         name = "linux_no_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_libsterling.so"],
         target_compatible_with = ["@platforms//os:linux"],
     )
@@ -66,6 +67,7 @@ def _test_linux():
     rust_shared_library(
         name = "linux_suffix_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_libcheryl.so.3.8", ":import_libcheryl.so"],
         target_compatible_with = ["@platforms//os:linux"],
     )
@@ -102,6 +104,7 @@ def _test_macos():
     rust_shared_library(
         name = "no_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_liblana.dylib"],
         target_compatible_with = ["@platforms//os:macos"],
     )
@@ -123,6 +126,7 @@ def _test_macos():
     rust_shared_library(
         name = "prefix_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_libpam3.8.dylib"],
         target_compatible_with = ["@platforms//os:macos"],
     )
@@ -150,6 +154,7 @@ def _test_windows():
     rust_shared_library(
         name = "windows_no_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_malory.dll"],
         target_compatible_with = ["@platforms//os:windows"],
     )
@@ -182,6 +187,7 @@ def _test_windows():
     rust_shared_library(
         name = "windows_prefix_version",
         srcs = ["a.rs"],
+        edition = "2018",
         deps = [":import_cyril3.8.dll"],
         target_compatible_with = ["@platforms//os:windows"],
     )
