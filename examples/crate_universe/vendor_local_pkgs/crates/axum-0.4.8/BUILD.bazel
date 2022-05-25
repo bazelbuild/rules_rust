@@ -93,7 +93,7 @@ rust_library(
             "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
             "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.7:http",
-            "//vendor_local_pkgs/crates/http-body-0.4.4:http_body",
+            "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
             "//vendor_local_pkgs/crates/hyper-0.14.18:hyper",
             "//vendor_local_pkgs/crates/matchit-0.4.6:matchit",
             "//vendor_local_pkgs/crates/memchr-2.5.0:memchr",

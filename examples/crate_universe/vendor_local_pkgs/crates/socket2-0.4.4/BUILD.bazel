@@ -100,7 +100,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "//vendor_local_pkgs/crates/libc-0.2.125:libc",
+            "//vendor_local_pkgs/crates/libc-0.2.126:libc",
 
             # Common Deps
         ],

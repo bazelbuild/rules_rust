@@ -1,5 +1,5 @@
 {
-  "checksum": "897d1faad580137708be283e1c1d9c47ee35fec48dbc0e6758c1b6df8c204ff0",
+  "checksum": "ea885db356e90ed4eda3af0e0830d2979f71982a599c2c3f1cba23f735a77cbb",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -295,7 +295,7 @@
               "target": "futures_lite"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -373,7 +373,7 @@
               "target": "num_cpus"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             }
           ],
@@ -427,7 +427,7 @@
               "target": "log"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -640,7 +640,7 @@
               "target": "futures_lite"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             }
           ],
@@ -769,7 +769,7 @@
               "target": "num_cpus"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -1143,7 +1143,7 @@
               "target": "lalrpop_util"
             },
             {
-              "id": "regex 1.5.5",
+              "id": "regex 1.5.6",
               "target": "regex"
             }
           ],
@@ -1372,7 +1372,7 @@
               "target": "futures_lite"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             }
           ],
@@ -3671,13 +3671,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "http-body 0.4.4": {
+    "http-body 0.4.5": {
       "name": "http-body",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/http-body/0.4.4/download",
-          "sha256": "1ff4f84919677303da5f147645dbea6b1881f368d03ac84e1dc09031ebd7b2c6"
+          "url": "https://crates.io/api/v1/crates/http-body/0.4.5/download",
+          "sha256": "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
         }
       },
       "targets": [
@@ -3717,7 +3717,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.4.4"
+        "version": "0.4.5"
       },
       "license": "MIT"
     },
@@ -3913,7 +3913,7 @@
               "target": "log"
             },
             {
-              "id": "regex 1.5.5",
+              "id": "regex 1.5.6",
               "target": "regex"
             },
             {
@@ -4023,7 +4023,7 @@
               "target": "http"
             },
             {
-              "id": "http-body 0.4.4",
+              "id": "http-body 0.4.5",
               "target": "http_body"
             },
             {
@@ -4430,7 +4430,7 @@
               "target": "mime"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -4724,11 +4724,11 @@
               "target": "pico_args"
             },
             {
-              "id": "regex 1.5.5",
+              "id": "regex 1.5.6",
               "target": "regex"
             },
             {
-              "id": "regex-syntax 0.6.25",
+              "id": "regex-syntax 0.6.26",
               "target": "regex_syntax"
             },
             {
@@ -4792,7 +4792,7 @@
         "deps": {
           "common": [
             {
-              "id": "regex 1.5.5",
+              "id": "regex 1.5.6",
               "target": "regex"
             }
           ],
@@ -5682,13 +5682,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "once_cell 1.11.0": {
+    "once_cell 1.12.0": {
       "name": "once_cell",
-      "version": "1.11.0",
+      "version": "1.12.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/once_cell/1.11.0/download",
-          "sha256": "7b10983b38c53aebdf33f542c6275b0f58a238129d00c4ae0e6fb59738d783ca"
+          "url": "https://crates.io/api/v1/crates/once_cell/1.12.0/download",
+          "sha256": "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
         }
       },
       "targets": [
@@ -5717,7 +5717,7 @@
           "std"
         ],
         "edition": "2018",
-        "version": "1.11.0"
+        "version": "1.12.0"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -5813,7 +5813,7 @@
               "target": "libc"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -7007,13 +7007,13 @@
       },
       "license": "MIT"
     },
-    "regex 1.5.5": {
+    "regex 1.5.6": {
       "name": "regex",
-      "version": "1.5.5",
+      "version": "1.5.6",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex/1.5.5/download",
-          "sha256": "1a11647b6b25ff05a515cb92c365cec08801e83423a235b51e231e1808747286"
+          "url": "https://crates.io/api/v1/crates/regex/1.5.6/download",
+          "sha256": "d83f127d94bdbcda4c8cc2e50f6f84f4b611f69c902699ca385a39c3a75f9ff1"
         }
       },
       "targets": [
@@ -7065,24 +7065,24 @@
               "target": "memchr"
             },
             {
-              "id": "regex-syntax 0.6.25",
+              "id": "regex-syntax 0.6.26",
               "target": "regex_syntax"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.5.5"
+        "version": "1.5.6"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex-syntax 0.6.25": {
+    "regex-syntax 0.6.26": {
       "name": "regex-syntax",
-      "version": "0.6.25",
+      "version": "0.6.26",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex-syntax/0.6.25/download",
-          "sha256": "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
+          "url": "https://crates.io/api/v1/crates/regex-syntax/0.6.26/download",
+          "sha256": "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
         }
       },
       "targets": [
@@ -7116,9 +7116,9 @@
           "unicode-segment"
         ],
         "edition": "2018",
-        "version": "0.6.25"
+        "version": "0.6.26"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT OR Apache-2.0"
     },
     "remove_dir_all 0.5.3": {
       "name": "remove_dir_all",
@@ -7253,7 +7253,7 @@
                 "target": "h2"
               },
               {
-                "id": "http-body 0.4.4",
+                "id": "http-body 0.4.5",
                 "target": "http_body"
               },
               {
@@ -7874,7 +7874,7 @@
         "deps": {
           "common": [
             {
-              "id": "regex 1.5.5",
+              "id": "regex 1.5.6",
               "target": "regex"
             },
             {
@@ -8338,7 +8338,7 @@
               "target": "debug_unreachable"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {
@@ -8884,7 +8884,7 @@
               "target": "num_cpus"
             },
             {
-              "id": "once_cell 1.11.0",
+              "id": "once_cell 1.12.0",
               "target": "once_cell"
             },
             {

@@ -465,10 +465,10 @@ string: A json encoded string of all inputs
 <pre>
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>,
                  <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
-                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-compile_data">compile_data</a>,
-                 <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>,
-                 <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>,
-                 <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
+                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
+                 <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>,
+                 <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
+                 <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -488,6 +488,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-build_script_env"></a>build_script_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-build_script_proc_macro_deps"></a>build_script_proc_macro_deps |  A list of labels to add to a crate's <code>cargo_build_script::proc_macro_deps</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-build_script_rustc_env"></a>build_script_rustc_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  <code>None</code> |
+| <a id="crate.annotation-build_script_toolchains"></a>build_script_toolchains |  A list of labels to set on a crates's <code>cargo_build_script::toolchains</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-compile_data"></a>compile_data |  A list of labels to add to a crate's <code>rust_library::compile_data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-compile_data_glob"></a>compile_data_glob |  A list of glob patterns to add to a crate's <code>rust_library::compile_data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-crate_features"></a>crate_features |  A list of strings to add to a crate's <code>rust_library::crate_features</code> attribute.   |  <code>None</code> |
@@ -636,7 +637,7 @@ string: A json encoded struct to match the Rust `config::RenderConfig` struct
 splicing_config(<a href="#splicing_config-resolver_version">resolver_version</a>)
 </pre>
 
-arious settings used to configure Cargo manifest splicing behavior.
+Various settings used to configure Cargo manifest splicing behavior.
 
 [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
 

@@ -87,7 +87,7 @@ rust_library(
             "@rules_rust//rust/platform:wasm32-wasi",
         ): [
             # Target Deps
-            "@crates_vendor_manifests__libc-0.2.125//:libc",
+            "@crates_vendor_manifests__libc-0.2.126//:libc",
             "@crates_vendor_manifests__wasi-0.11.0-wasi-snapshot-preview1//:wasi",
 
             # Common Deps
@@ -115,7 +115,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_manifests__libc-0.2.125//:libc",
+            "@crates_vendor_manifests__libc-0.2.126//:libc",
 
             # Common Deps
             "@crates_vendor_manifests__log-0.4.17//:log",

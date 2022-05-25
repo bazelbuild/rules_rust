@@ -88,7 +88,7 @@ rust_library(
             "@crates_vendor_pkgs__indexmap-1.8.1//:indexmap",
             "@crates_vendor_pkgs__slab-0.4.6//:slab",
             "@crates_vendor_pkgs__tokio-1.16.1//:tokio",
-            "@crates_vendor_pkgs__tokio-util-0.7.1//:tokio_util",
+            "@crates_vendor_pkgs__tokio-util-0.7.2//:tokio_util",
             "@crates_vendor_pkgs__tracing-0.1.34//:tracing",
         ],
     }),

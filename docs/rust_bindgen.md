@@ -108,6 +108,18 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  The label of a <code>rustfmt</code> executable. If this is not provided, falls back to the rust_toolchain rustfmt.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
+<a id="#rust_bindgen_dependencies"></a>
+
+## rust_bindgen_dependencies
+
+<pre>
+rust_bindgen_dependencies()
+</pre>
+
+Declare dependencies needed for bindgen.
+
+
+
 <a id="#rust_bindgen_library"></a>
 
 ## rust_bindgen_library
@@ -133,5 +145,26 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  <code>None</code> |
 | <a id="rust_bindgen_library-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   |  <code>True</code> |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
+
+
+<a id="#rust_bindgen_register_toolchains"></a>
+
+## rust_bindgen_register_toolchains
+
+<pre>
+rust_bindgen_register_toolchains(<a href="#rust_bindgen_register_toolchains-register_toolchains">register_toolchains</a>)
+</pre>
+
+Registers the default toolchains for the `rules_rust` [bindgen][bg] rules.
+
+[bg]: https://rust-lang.github.io/rust-bindgen/
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  <code>True</code> |
 
 
