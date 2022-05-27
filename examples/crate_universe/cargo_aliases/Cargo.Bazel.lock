@@ -1,5 +1,5 @@
 {
-  "checksum": "bffc2bdf02e641c6ef454734fa4def3bc6087685845c1f2a8062f9f09828c791",
+  "checksum": "0af67791b870efd229f1d2dad1266a7d8b74fbcd9f5564f0264751f26a40e37f",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -464,7 +464,7 @@
         "deps": {
           "common": [
             {
-              "id": "os_str_bytes 6.0.1",
+              "id": "os_str_bytes 6.1.0",
               "target": "os_str_bytes"
             }
           ],
@@ -1307,13 +1307,13 @@
       },
       "license": "MIT"
     },
-    "os_str_bytes 6.0.1": {
+    "os_str_bytes 6.1.0": {
       "name": "os_str_bytes",
-      "version": "6.0.1",
+      "version": "6.1.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/os_str_bytes/6.0.1/download",
-          "sha256": "029d8d0b2f198229de29dca79676f2738ff952edf3fde542eb8bf94d8c21b435"
+          "url": "https://crates.io/api/v1/crates/os_str_bytes/6.1.0/download",
+          "sha256": "21326818e99cfe6ce1e524c2a805c189a99b5ae555a35d19f9a284b427d86afa"
         }
       },
       "targets": [
@@ -1339,7 +1339,7 @@
           "raw_os_str"
         ],
         "edition": "2018",
-        "version": "6.0.1"
+        "version": "6.1.0"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -2554,6 +2554,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
