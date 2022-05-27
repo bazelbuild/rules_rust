@@ -463,36 +463,36 @@ def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
 # the second element is an encoding of that char suitable for use in a crate
 # name.
 _encodings = (
-    (":", "colon"),
+    (":", "c"),
     ("!", "bang"),
-    ("%", "percent"),
+    ("%", "perc"),
     ("@", "at"),
     ("^", "caret"),
-    ("`", "backtick"),
-    (" ", "space"),
-    ("\"", "quote"),
+    ("`", "bt"),
+    (" ", "sp"),
+    ("\"", "dq"),
     ("#", "hash"),
     ("$", "dollar"),
-    ("&", "ampersand"),
-    ("'", "backslash"),
-    ("(", "lparen"),
-    (")", "rparen"),
+    ("&", "amp"),
+    ("'", "sq"),
+    ("(", "lp"),
+    (")", "rp"),
     ("*", "star"),
-    ("-", "dash"),
+    ("-", "d"),
     ("+", "plus"),
     (",", "comma"),
-    (";", "semicolon"),
+    (";", "semi"),
     ("<", "langle"),
-    ("=", "equal"),
+    ("=", "eq"),
     (">", "rangle"),
-    ("?", "question"),
-    ("[", "lbracket"),
-    ("]", "rbracket"),
+    ("?", "qm"),
+    ("[", "lbrack"),
+    ("]", "rbrack"),
     ("{", "lbrace"),
     ("|", "pipe"),
     ("}", "rbrace"),
     ("~", "tilde"),
-    ("/", "slash"),
+    ("/", "s"),
     (".", "dot"),
 )
 
@@ -501,14 +501,17 @@ _encodings = (
 # aren't clobbered by this translation, and one that does the encoding itself.
 # We also include a rule that protects the clobbering-protection rules from
 # getting clobbered.
-_substitutions = [("_quote", "_quotequote_")] + [
+_substitutions = [("_z", "_zz_")] + [
     subst
     for (pattern, replacement) in _encodings
     for subst in (
-        ("_{}_".format(replacement), "_quote{}_".format(replacement)),
+        ("_{}_".format(replacement), "_z{}_".format(replacement)),
         (pattern, "_{}_".format(replacement)),
     )
 ]
+
+# Expose the substitutions for testing only.
+substitutions_for_testing = _substitutions
 
 def encode_label_as_crate_name(package, name):
     """Encodes the package and target names in a format suitable for a crate name.
@@ -520,8 +523,21 @@ def encode_label_as_crate_name(package, name):
     Returns:
         A string that encodes the package and target name, to be used as the crate's name.
     """
-    full_name = package + ":" + name
-    return _replace_all(full_name, _substitutions)
+    return _encode_raw_string(package + ":" + name)
+
+def _encode_raw_string(str):
+    """Encodes a string using the above encoding format.
+
+    Args:
+        str (string): The string to be encoded.
+
+    Returns:
+        An encoded version of the input string.
+    """
+    return _replace_all(str, _substitutions)
+
+# Expose the underlying encoding function for testing only.
+encode_raw_string_for_testing = _encode_raw_string
 
 def decode_crate_name_as_label_for_testing(crate_name):
     """Decodes a crate_name that was encoded by encode_label_as_crate_name.

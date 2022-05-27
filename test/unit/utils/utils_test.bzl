@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "decode_crate_name_as_label_for_testing", "encode_label_as_crate_name", "should_encode_label_in_crate_name")
+load("//rust/private:utils.bzl", "decode_crate_name_as_label_for_testing", "encode_label_as_crate_name", "encode_raw_string_for_testing", "should_encode_label_in_crate_name", "substitutions_for_testing")
 
 def _encode_label_as_crate_name_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -11,48 +11,86 @@ def _encode_label_as_crate_name_test_impl(ctx):
     # Typical cases.
     asserts.equals(
         env,
-        "x_slash_y_colon_z",
+        "x_s_y_c_z",
         encode_label_as_crate_name("x/y", "z"),
     )
     asserts.equals(
         env,
-        "some_slash_package_colon_target",
+        "some_s_package_c_target",
         encode_label_as_crate_name("some/package", "target"),
     )
 
     # Target name includes a character illegal in crate names.
     asserts.equals(
         env,
-        "some_slash_package_colon_foo_slash_target",
+        "some_s_package_c_foo_s_target",
         encode_label_as_crate_name("some/package", "foo/target"),
     )
 
     # Package/target includes some of the encodings.
     asserts.equals(
         env,
-        "some_quoteslash__slash_package_colon_target_quotedot_foo",
-        encode_label_as_crate_name("some_slash_/package", "target_dot_foo"),
+        "some_zs__s_package_c_target_zdot_foo",
+        encode_label_as_crate_name("some_s_/package", "target_dot_foo"),
     )
 
     # Some pathological cases: test that round-tripping the encoding works as
     # expected.
 
     # Label includes a quoted encoding.
-    package = "_quotedot_"
+    package = "_zdot_"
     target = "target"
-    asserts.equals(env, "_quotequote_dot__colon_target", encode_label_as_crate_name(package, target))
+    asserts.equals(env, "_zz_dot__c_target", encode_label_as_crate_name(package, target))
     asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
 
-    package = "x_slash_y"
+    package = "x_s_y"
     target = "z"
-    asserts.equals(env, "x_quoteslash_y_colon_z", encode_label_as_crate_name(package, target))
+    asserts.equals(env, "x_zs_y_c_z", encode_label_as_crate_name(package, target))
     asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
 
     # Package is identical to a valid encoding already.
-    package = "_quotequote_dot__colon_target"
+    package = "_zz_dot__c_target"
     target = "target"
-    asserts.equals(env, "_quotequote_quote_quotedot__quotecolon_target_colon_target", encode_label_as_crate_name(package, target))
+    asserts.equals(env, "_zz_z_zdot__zc_target_c_target", encode_label_as_crate_name(package, target))
     asserts.equals(env, package + ":" + target, decode_crate_name_as_label_for_testing(encode_label_as_crate_name(package, target)))
+    return unittest.end(env)
+
+def _substitutions_concatenate_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Every combination of orig + orig, orig + encoded, encoded + orig, and
+    # encoded + encoded round trips the encoding successfully.
+    all_symbols = [s for pair in substitutions_for_testing for s in pair]
+    for s in all_symbols:
+        for t in all_symbols:
+            concatenated = s + t
+            asserts.equals(env, decode_crate_name_as_label_for_testing(encode_raw_string_for_testing(concatenated)), concatenated)
+
+    return unittest.end(env)
+
+def _encode_raw_string_test_impl(ctx):
+    env = unittest.begin(ctx)
+    asserts.equals(env, encode_raw_string_for_testing("some_project:utils"), "some_project_c_utils")
+    asserts.equals(env, encode_raw_string_for_testing("_zdot_"), "_zz_dot_")
+
+    # No surprises in the application of the substitutions, everything is
+    # encoded as expected.
+    for (orig, encoded) in substitutions_for_testing:
+        asserts.equals(env, encode_raw_string_for_testing(orig), encoded)
+
+    return unittest.end(env)
+
+#
+def _decode_test_impl(ctx):
+    env = unittest.begin(ctx)
+    asserts.equals(env, decode_crate_name_as_label_for_testing("some_project_c_utils"), "some_project:utils")
+    asserts.equals(env, decode_crate_name_as_label_for_testing("_zz_dot_"), "_zdot_")
+
+    # No surprises in the application of the substitutions, everything is
+    # decoded as expected.
+    for (orig, encoded) in substitutions_for_testing:
+        asserts.equals(env, decode_crate_name_as_label_for_testing(encoded), orig)
+
     return unittest.end(env)
 
 def _is_third_party_crate_test_impl(ctx):
@@ -79,10 +117,16 @@ def _is_third_party_crate_test_impl(ctx):
 
 encode_label_as_crate_name_test = unittest.make(_encode_label_as_crate_name_test_impl)
 is_third_party_crate_test = unittest.make(_is_third_party_crate_test_impl)
+substitutions_concatenate_test = unittest.make(_substitutions_concatenate_test_impl)
+encode_raw_string_test = unittest.make(_encode_raw_string_test_impl)
+decode_test = unittest.make(_decode_test_impl)
 
 def utils_test_suite(name):
     unittest.suite(
         name,
         encode_label_as_crate_name_test,
         is_third_party_crate_test,
+        substitutions_concatenate_test,
+        encode_raw_string_test,
+        decode_test,
     )
