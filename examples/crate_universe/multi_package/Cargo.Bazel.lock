@@ -1,5 +1,5 @@
 {
-  "checksum": "ea885db356e90ed4eda3af0e0830d2979f71982a599c2c3f1cba23f735a77cbb",
+  "checksum": "ba369f4ca1f9d8933986d97b8decf6f1efc66d7c5bd52054c6a41d014ef97618",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -353,7 +353,7 @@
               "target": "async_executor"
             },
             {
-              "id": "async-io 1.6.0",
+              "id": "async-io 1.7.0",
               "target": "async_io"
             },
             {
@@ -384,13 +384,13 @@
       },
       "license": "Apache-2.0 OR MIT"
     },
-    "async-io 1.6.0": {
+    "async-io 1.7.0": {
       "name": "async-io",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/async-io/1.6.0/download",
-          "sha256": "a811e6a479f2439f0c04038796b5cfb3d2ad56c230e0f2d3f7b04d68cfee607b"
+          "url": "https://crates.io/api/v1/crates/async-io/1.7.0/download",
+          "sha256": "e5e18f61464ae81cde0a23e713ae8fd299580c54d697a35820cfd0625b8b0e07"
         }
       },
       "targets": [
@@ -467,7 +467,7 @@
           }
         },
         "edition": "2018",
-        "version": "1.6.0"
+        "version": "1.7.0"
       },
       "license": "Apache-2.0 OR MIT"
     },
@@ -647,7 +647,7 @@
           "selects": {
             "cfg(unix)": [
               {
-                "id": "async-io 1.6.0",
+                "id": "async-io 1.7.0",
                 "target": "async_io"
               },
               {
@@ -792,7 +792,7 @@
                 "target": "async_global_executor"
               },
               {
-                "id": "async-io 1.6.0",
+                "id": "async-io 1.7.0",
                 "target": "async_io"
               },
               {
@@ -11164,6 +11164,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-linux-android",
       "i686-unknown-freebsd",
@@ -11190,6 +11191,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -11210,6 +11212,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -11228,6 +11231,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-linux-android",
       "i686-unknown-freebsd",
@@ -11248,6 +11252,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -11271,6 +11276,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -11295,6 +11301,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -11336,6 +11343,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
       "i686-apple-darwin",
       "i686-linux-android",
