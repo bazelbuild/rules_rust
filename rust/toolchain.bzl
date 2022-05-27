@@ -474,6 +474,7 @@ def _rust_toolchain_impl(ctx):
         crosstool_files = ctx.files._cc_toolchain,
         default_edition = ctx.attr.default_edition,
         dylib_ext = ctx.attr.dylib_ext,
+        env = ctx.attr.env,
         exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         os = ctx.attr.os,
@@ -538,6 +539,9 @@ rust_toolchain = rule(
         "dylib_ext": attr.string(
             doc = "The extension for dynamic libraries created from rustc.",
             mandatory = True,
+        ),
+        "env": attr.string_dict(
+            doc = "Environment variables to set in actions.",
         ),
         "exec_triple": attr.string(
             doc = (
