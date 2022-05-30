@@ -148,6 +148,9 @@ def _build_script_impl(ctx):
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
+    # Add environment variables from the Rust toolchain.
+    env.update(toolchain.env)
+
     env.update(expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,

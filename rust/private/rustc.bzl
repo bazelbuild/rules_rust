@@ -802,6 +802,9 @@ def construct_arguments(
                 env_basename = dep_crate_info.output.basename[:-(1 + len(dep_crate_info.output.extension))] if len(dep_crate_info.output.extension) > 0 else dep_crate_info.output.basename
                 env["CARGO_BIN_EXE_" + env_basename] = dep_crate_info.output.short_path
 
+    # Add environment variables from the Rust toolchain.
+    env.update(toolchain.env)
+
     # Update environment with user provided variables.
     env.update(expand_dict_value_locations(
         ctx,
