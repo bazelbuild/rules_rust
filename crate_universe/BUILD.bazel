@@ -94,16 +94,16 @@ rust_test(
     aliases = aliases(),
     crate = ":cargo_bazel",
     data = glob(["test_data/**"]) + [
-        "@rules_rust//rust/toolchain:current_exec_cargo_files",
-        "@rules_rust//rust/toolchain:current_exec_rustc_files",
+        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//rust/toolchain:current_rustc_files",
         "//crate_universe/test_data/serialized_configs",
     ],
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
     rustc_env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_exec_cargo_files)",
-        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_exec_rustc_files)",
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
     deps = [
         "@rules_rust//tools/runfiles",
