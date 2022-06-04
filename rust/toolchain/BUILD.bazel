@@ -1,4 +1,4 @@
-load("//rust/private:toolchain_utils.bzl", "toolchain_files")
+load("//rust/private:toolchain_utils.bzl", "current_rust_toolchain", "toolchain_files")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -88,6 +88,10 @@ alias(
     name = "current_exec_rust_stdlib_files",
     actual = "current_rust_stdlib_files",
     deprecation = "instead use `@rules_rust//rust/toolchain:current_rust_stdlib_files`",
+)
+
+current_rust_toolchain(
+    name = "current_rust_toolchain",
 )
 
 filegroup(
