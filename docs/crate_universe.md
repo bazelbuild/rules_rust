@@ -291,8 +291,9 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 ## crates_vendor
 
 <pre>
-crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>,
-              <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
+crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>,
+              <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>,
+              <a href="#crates_vendor-vendor_path">vendor_path</a>)
 </pre>
 
 A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
@@ -351,6 +352,7 @@ bazel run //3rdparty:crates_vendor
 | <a id="crates_vendor-annotations"></a>annotations |  Extra settings to apply to crates. See [crate.annotation](#crateannotation).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> List of strings</a> | optional | {} |
 | <a id="crates_vendor-buildifier"></a>buildifier |  The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //crate_universe/private/vendor:buildifier |
 | <a id="crates_vendor-cargo_bazel"></a>cargo_bazel |  The cargo-bazel binary to use for vendoring. If this attribute is not set, then a <code>CARGO_BAZEL_GENERATOR_PATH</code> action env will be used.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @cargo_bazel_bootstrap//:binary |
+| <a id="crates_vendor-cargo_config"></a>cargo_config |  A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="crates_vendor-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | True |
 | <a id="crates_vendor-manifests"></a>manifests |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="crates_vendor-mode"></a>mode |  Flags determining how crates should be vendored. <code>local</code> is where crate source and BUILD files are written to the repository. <code>remote</code> is where only BUILD files are written and repository rules used to fetch source code.   | String | optional | "remote" |
