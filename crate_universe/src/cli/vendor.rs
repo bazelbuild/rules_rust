@@ -1,6 +1,7 @@
 //! The cli entrypoint for the `vendor` subcommand
 
 use std::collections::BTreeSet;
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitStatus};
@@ -58,6 +59,10 @@ pub struct VendorOptions {
     #[clap(long)]
     pub extra_manifests_manifest: PathBuf,
 
+    /// The path to a bazel binary
+    #[clap(long, env = "BAZEL_REAL", default_value = "bazel")]
+    pub bazel: PathBuf,
+
     /// The directory in which to build the workspace. A `Cargo.toml` file
     /// should always be produced within this directory.
     #[clap(long, env = "BUILD_WORKSPACE_DIRECTORY")]
@@ -83,12 +88,37 @@ fn buildifier_format(bin: &Path, file: &Path) -> Result<ExitStatus> {
     Ok(status)
 }
 
+/// Query the Bazel output_base to determine the location of external repositories.
+fn locate_bazel_output_base(bazel: &Path, workspace_dir: &Path) -> Result<PathBuf> {
+    // Allow a predefined environment variable to take precedent. This
+    // solves for the specific needs of Bazel CI on Github.
+    if let Ok(output_base) = env::var("OUTPUT_BASE") {
+        return Ok(PathBuf::from(output_base));
+    }
+
+    let output = process::Command::new(bazel)
+        .current_dir(workspace_dir)
+        .args(["info", "output_base"])
+        .output()
+        .context("Failed to query the Bazel workspace's `output_base`")?;
+
+    if !output.status.success() {
+        bail!(output.status)
+    }
+
+    Ok(PathBuf::from(
+        String::from_utf8_lossy(&output.stdout).trim(),
+    ))
+}
+
 pub fn vendor(opt: VendorOptions) -> Result<()> {
+    let output_base = locate_bazel_output_base(&opt.bazel, &opt.workspace_dir)?;
+
     // Load the all config files required for splicing a workspace
-    let splicing_manifest =
-        SplicingManifest::try_from_path(&opt.splicing_manifest)?.absoulutize(&opt.workspace_dir);
+    let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?
+        .resolve(&opt.workspace_dir, &output_base);
     let extra_manifests_manifest =
-        ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?.absoulutize();
+        ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?.absolutize();
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
 
@@ -98,7 +128,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         splicing_manifest,
         extra_manifests_manifest,
     )
-    .context("Failed to crate splicer")?;
+    .context("Failed to create splicer")?;
 
     // Splice together the manifest
     let manifest_path = splicer
