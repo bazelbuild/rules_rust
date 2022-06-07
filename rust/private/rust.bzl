@@ -136,7 +136,8 @@ def _transform_sources(ctx, srcs, crate_root):
     Args:
         ctx (struct): The current rule's context.
         srcs (List[File]): The sources listed in the `srcs` attribute
-        crate_root (File): The file specified in the `crate_root` attribute
+        crate_root (File): The file specified in the `crate_root` attribute,
+                           if it exists, otherwise None
 
     Returns:
         (List[File], File): The transformed srcs and crate_root
@@ -149,7 +150,8 @@ def _transform_sources(ctx, srcs, crate_root):
     generated_sources = []
 
     generated_root = crate_root
-    if crate_root and crate_root.is_source:
+
+    if crate_root and (crate_root.is_source or crate_root.root.path != ctx.bin_dir.path):
         generated_root = ctx.actions.declare_file(crate_root.basename)
         ctx.actions.symlink(
             output = generated_root,
@@ -160,9 +162,10 @@ def _transform_sources(ctx, srcs, crate_root):
         generated_sources.append(generated_root)
 
     for src in srcs:
+        # We took care of the crate root above.
         if src == crate_root:
             continue
-        if src.is_source:
+        if src.is_source or src.root.path != ctx.bin_dir.path:
             src_symlink = ctx.actions.declare_file(src.basename)
             ctx.actions.symlink(
                 output = src_symlink,
