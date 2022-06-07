@@ -17,7 +17,8 @@ mod lib_for_src;
 pub fn get_forty_two_as_string() -> String {
     format!("{}", lib_for_src::forty_two())
 }
-"""],
+""".splitlines()],
+    newline = "unix",
 )
 
 rust_library(
