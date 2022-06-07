@@ -140,7 +140,7 @@ def _transform_sources(ctx, srcs, crate_root):
                            if it exists, otherwise None
 
     Returns:
-        (List[File], File): The transformed srcs and crate_root
+        Tuple(List[File], File): The transformed srcs and crate_root
     """
     has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
 
