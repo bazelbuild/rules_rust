@@ -144,7 +144,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         args.process_wrapper_flags.add("--touch-file", clippy_out.path)
 
         if clippy_flags:
-            args.rustc_flags.extend(clippy_flags)
+            args.rustc_flags.add_all(clippy_flags)
         else:
             # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
 
