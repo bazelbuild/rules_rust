@@ -9,8 +9,6 @@ default_linux_targets: &default_linux_targets
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
-  # TODO: CI toolchain does not support dynamic linking.
-  - "-//test/linker_inputs_propagation/..."
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
