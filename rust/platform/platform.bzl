@@ -12,10 +12,12 @@ load(
 _SUPPORTED_CPU_ARCH = [
     "aarch64",
     "arm",
+    "armv7",
     "i686",
     "powerpc",
     "s390x",
     "x86_64",
+    "riscv32",
 ]
 
 _SUPPORTED_SYSTEMS = [

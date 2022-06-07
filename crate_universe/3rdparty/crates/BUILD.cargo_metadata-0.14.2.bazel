@@ -80,7 +80,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__camino-1.0.7//:camino",
+            "@crate_universe_crate_index__camino-1.0.9//:camino",
             "@crate_universe_crate_index__cargo-platform-0.1.2//:cargo_platform",
             "@crate_universe_crate_index__semver-1.0.9//:semver",
             "@crate_universe_crate_index__serde-1.0.137//:serde",

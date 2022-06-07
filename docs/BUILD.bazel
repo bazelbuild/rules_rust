@@ -76,9 +76,11 @@ PAGES = dict([
     ),
     page(
         name = "rust_bindgen",
+        header_template = ":rust_bindgen.vm",
         symbols = [
             "rust_bindgen_library",
-            "rust_bindgen_repositories",
+            "rust_bindgen_dependencies",
+            "rust_bindgen_register_toolchains",
             "rust_bindgen_toolchain",
             "rust_bindgen",
         ],

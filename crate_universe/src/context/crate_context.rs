@@ -179,6 +179,9 @@ pub struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
+
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub toolchains: BTreeSet<String>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -198,6 +201,7 @@ impl Default for BuildScriptAttributes {
             rustc_env_files: Default::default(),
             tools: Default::default(),
             links: Default::default(),
+            toolchains: Default::default(),
         }
     }
 }
@@ -460,6 +464,13 @@ impl CrateContext {
                 if let Some(extra) = &crate_extra.build_script_tools {
                     for data in extra {
                         attrs.tools.insert(data.clone(), None);
+                    }
+                }
+
+                // Toolchains
+                if let Some(extra) = &crate_extra.build_script_toolchains {
+                    for data in extra {
+                        attrs.toolchains.insert(data.clone());
                     }
                 }
 

@@ -23,7 +23,6 @@ load(
     "expand_dict_value_locations",
     "find_toolchain",
     "get_import_macro_deps",
-    "name_to_crate_name",
     "transform_deps",
 )
 
@@ -397,8 +396,6 @@ def _rust_test_common(ctx, toolchain, output):
     _assert_correct_dep_mapping(ctx)
 
     srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
-
-    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_type = "bin"
 
     deps = transform_deps(ctx.attr.deps)
@@ -416,7 +413,7 @@ def _rust_test_common(ctx, toolchain, output):
 
         # Build the test binary using the dependency's srcs.
         crate_info = rust_common.create_crate_info(
-            name = crate_name,
+            name = crate.name,
             type = crate_type,
             root = crate.root,
             srcs = depset(srcs, transitive = [crate.srcs]),
@@ -437,7 +434,7 @@ def _rust_test_common(ctx, toolchain, output):
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
-            name = crate_name,
+            name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name),
             type = crate_type,
             root = crate_root,
             srcs = depset(srcs),
@@ -552,15 +549,6 @@ _common_attrs = {
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
-    ),
-    "experimental_use_whole_archive_for_native_deps": attr.bool(
-        doc = dedent("""\
-            Whether to use +whole-archive linking modifier for native dependencies.
-
-            TODO: This is a stopgap feature and will be removed,
-            see https://github.com/bazelbuild/rules_rust/issues/1268.
-        """),
-        default = False,
     ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.
@@ -1128,7 +1116,9 @@ rust_test = rule(
             deps = ["//some/dev/dep"],
         ```
 
-        Run the test with `bazel build //hello_lib:hello_lib_test`.
+        Run the test with `bazel test //hello_lib:hello_lib_test`. The crate
+        will be built using the same crate name as the underlying ":hello_lib"
+        crate.
 
         ### Example: `test` directory
 
@@ -1182,7 +1172,7 @@ rust_test = rule(
         )
         ```
 
-        Run the test with `bazel build //hello_lib:greeting_test`.
+        Run the test with `bazel test //hello_lib:greeting_test`.
 """),
 )
 
@@ -1249,7 +1239,6 @@ def rust_test_suite(name, srcs, **kwargs):
         test_name = name + "_" + src[:-3]
         rust_test(
             name = test_name,
-            crate_name = name_to_crate_name(test_name.replace("/", "_")),
             srcs = [src],
             **kwargs
         )

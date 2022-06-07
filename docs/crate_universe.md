@@ -281,9 +281,9 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
 | <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
 | <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
-| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.60.0" |
+| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.61.0" |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
-| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd"] |
+| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "armv7-linux-androideabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 
 
 <a id="#crates_vendor"></a>
@@ -357,7 +357,7 @@ bazel run //3rdparty:crates_vendor
 | <a id="crates_vendor-packages"></a>packages |  A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crates_vendor-repository_name"></a>repository_name |  The name of the repository to generate for <code>remote</code> vendor modes. If unset, the label name will be used   | String | optional | "" |
 | <a id="crates_vendor-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
-| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd"] |
+| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "armv7-linux-androideabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional | "crates" |
 
 
@@ -465,10 +465,10 @@ string: A json encoded string of all inputs
 <pre>
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>,
                  <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
-                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-compile_data">compile_data</a>,
-                 <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>,
-                 <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>,
-                 <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
+                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
+                 <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>,
+                 <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
+                 <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -488,6 +488,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-build_script_env"></a>build_script_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-build_script_proc_macro_deps"></a>build_script_proc_macro_deps |  A list of labels to add to a crate's <code>cargo_build_script::proc_macro_deps</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-build_script_rustc_env"></a>build_script_rustc_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  <code>None</code> |
+| <a id="crate.annotation-build_script_toolchains"></a>build_script_toolchains |  A list of labels to set on a crates's <code>cargo_build_script::toolchains</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-compile_data"></a>compile_data |  A list of labels to add to a crate's <code>rust_library::compile_data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-compile_data_glob"></a>compile_data_glob |  A list of glob patterns to add to a crate's <code>rust_library::compile_data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-crate_features"></a>crate_features |  A list of strings to add to a crate's <code>rust_library::crate_features</code> attribute.   |  <code>None</code> |
@@ -582,7 +583,7 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.60.0"</code> |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.61.0"</code> |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 
@@ -636,7 +637,7 @@ string: A json encoded struct to match the Rust `config::RenderConfig` struct
 splicing_config(<a href="#splicing_config-resolver_version">resolver_version</a>)
 </pre>
 
-arious settings used to configure Cargo manifest splicing behavior.
+Various settings used to configure Cargo manifest splicing behavior.
 
 [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
 

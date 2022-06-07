@@ -11,6 +11,7 @@ def _rust_stdlib_filegroup_impl(ctx):
     core_files = []
     between_core_and_std_files = []
     std_files = []
+    memchr_files = []
     alloc_files = []
     self_contained_files = [
         file
@@ -35,13 +36,14 @@ def _rust_stdlib_filegroup_impl(ctx):
         between_core_and_std_files = [
             f
             for f in dot_a_files
-            if "alloc" not in f.basename and "compiler_builtins" not in f.basename and "core" not in f.basename and "adler" not in f.basename and "std" not in f.basename
+            if "alloc" not in f.basename and "compiler_builtins" not in f.basename and "core" not in f.basename and "adler" not in f.basename and "std" not in f.basename and "memchr" not in f.basename
         ]
+        memchr_files = [f for f in dot_a_files if "memchr" in f.basename]
         std_files = [f for f in dot_a_files if "std" in f.basename]
 
-        partitioned_files_len = len(alloc_files) + len(between_alloc_and_core_files) + len(core_files) + len(between_core_and_std_files) + len(std_files)
+        partitioned_files_len = len(alloc_files) + len(between_alloc_and_core_files) + len(core_files) + len(between_core_and_std_files) + len(memchr_files) + len(std_files)
         if partitioned_files_len != len(dot_a_files):
-            partitioned = alloc_files + between_alloc_and_core_files + core_files + between_core_and_std_files + std_files
+            partitioned = alloc_files + between_alloc_and_core_files + core_files + between_core_and_std_files + memchr_files + std_files
             for f in sorted(partitioned):
                 # buildifier: disable=print
                 print("File partitioned: {}".format(f.basename))
@@ -58,6 +60,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             core_files = core_files,
             between_core_and_std_files = between_core_and_std_files,
             std_files = std_files,
+            memchr_files = memchr_files,
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
             srcs = ctx.attr.srcs,
@@ -168,12 +171,20 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
                 for f in filtered_between_core_and_std_files
                 if "panic_abort" not in f.basename
             ]
+        memchr_inputs = depset(
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in rust_stdlib_info.memchr_files
+            ],
+            transitive = [core_inputs],
+            order = "topological",
+        )
         between_core_and_std_inputs = depset(
             [
                 _ltl(f, ctx, cc_toolchain, feature_configuration)
                 for f in filtered_between_core_and_std_files
             ],
-            transitive = [core_inputs],
+            transitive = [memchr_inputs],
             order = "topological",
         )
         std_inputs = depset(
@@ -463,6 +474,7 @@ def _rust_toolchain_impl(ctx):
         crosstool_files = ctx.files._cc_toolchain,
         default_edition = ctx.attr.default_edition,
         dylib_ext = ctx.attr.dylib_ext,
+        env = ctx.attr.env,
         exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         os = ctx.attr.os,
@@ -527,6 +539,9 @@ rust_toolchain = rule(
         "dylib_ext": attr.string(
             doc = "The extension for dynamic libraries created from rustc.",
             mandatory = True,
+        ),
+        "env": attr.string_dict(
+            doc = "Environment variables to set in actions.",
         ),
         "exec_triple": attr.string(
             doc = (

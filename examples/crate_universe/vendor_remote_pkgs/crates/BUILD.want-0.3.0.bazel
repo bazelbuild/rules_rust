@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_pkgs__log-0.4.16//:log",
+            "@crates_vendor_pkgs__log-0.4.17//:log",
             "@crates_vendor_pkgs__try-lock-0.2.3//:try_lock",
         ],
     }),
