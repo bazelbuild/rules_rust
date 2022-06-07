@@ -1,4 +1,6 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load(":input_from_different_cfg.bzl", "input_from_different_cfg")
 
 genrule(
     name = "generate_src",
@@ -73,4 +75,47 @@ rust_binary(
         ":src.rs",
     ],
     edition = "2018",
+)
+
+input_from_different_cfg(
+    name = "generated_in_different_cfg",
+)
+
+filegroup(
+    name = "input_from_different_cfg",
+    srcs = [":generated_in_different_cfg"],
+    output_group = "generated_file",
+)
+
+rust_library(
+    name = "generated_src_in_different_cfg_as_root",
+    srcs = [":input_from_different_cfg"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "generated_src_in_different_cfg_as_root_test",
+    crate = "generated_src_in_different_cfg_as_root",
+    edition = "2018",
+)
+
+rust_library(
+    name = "generated_src_in_different_cfg",
+    srcs = [
+        "root.rs",
+        ":input_from_different_cfg",
+    ],
+    crate_root = "root.rs",
+    edition = "2018",
+)
+
+rust_test(
+    name = "generated_src_in_different_cfg_test",
+    crate = "generated_src_in_different_cfg",
+    edition = "2018",
+)
+
+bool_flag(
+    name = "change_cfg",
+    build_setting_default = False,
 )
