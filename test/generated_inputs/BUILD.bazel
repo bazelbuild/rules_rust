@@ -6,7 +6,7 @@ load(":input_from_different_cfg.bzl", "input_from_different_cfg")
 write_file(
     name = "generate_src",
     out = "src.rs",
-    content = ["""
+    content = """
 #[cfg(not(generated_file_as_root))]
 pub fn forty_two() -> i32 { 42 }
 
@@ -17,7 +17,7 @@ mod lib_for_src;
 pub fn get_forty_two_as_string() -> String {
     format!("{}", lib_for_src::forty_two())
 }
-""".splitlines()],
+""".splitlines(),
     newline = "unix",
 )
 
