@@ -119,6 +119,18 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             has_grep_includes)
 
 def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
+    """Whether or not [PIC][pic] should be enabled
+
+    [pic]: https://en.wikipedia.org/wiki/Position-independent_code
+
+    Args:
+        cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
+        crate_type (str): A Rust target's crate type.
+
+    Returns:
+        bool: Whether or not [PIC][pic] should be enabled.
+    """
     if crate_type in ("cdylib", "dylib"):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     return False
