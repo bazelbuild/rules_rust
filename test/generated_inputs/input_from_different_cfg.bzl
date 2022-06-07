@@ -1,15 +1,6 @@
-"""A custom rule that generates a .rs file."""
+"""A custom rule that generates a .rs file in a different configuration."""
 
 def _change_cfg_impl(_settings, _attr):
-    """A simple transition to provide us a different configuration
-    Args:
-        _settings (dict): a dict {String:Object} of all settings declared in the
-            inputs parameter to `transition()`.
-        _attr (dict): A dict of attributes and values of the rule to which the
-            transition is attached.
-    Returns:
-        dict: A dict of new build settings values to apply.
-    """
     return {"//test/generated_inputs:change_cfg": True}
 
 change_cfg_transition = transition(

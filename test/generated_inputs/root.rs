@@ -1,6 +1,6 @@
 mod generated_in_different_cfg;
 
-fn use_generated_fn() -> String {
+pub fn use_generated_fn() -> String {
     "Using generated function: ".to_owned() + &generated_in_different_cfg::generated_fn() 
 }
 

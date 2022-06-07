@@ -1,11 +1,12 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":input_from_different_cfg.bzl", "input_from_different_cfg")
 
-genrule(
+write_file(
     name = "generate_src",
-    outs = ["src.rs"],
-    cmd = """cat <<EOF > $(location src.rs)
+    out = "src.rs",
+    content = ["""
 #[cfg(not(generated_file_as_root))]
 pub fn forty_two() -> i32 { 42 }
 
@@ -16,7 +17,7 @@ mod lib_for_src;
 pub fn get_forty_two_as_string() -> String {
     format!("{}", lib_for_src::forty_two())
 }
-EOF""",
+"""],
 )
 
 rust_library(
