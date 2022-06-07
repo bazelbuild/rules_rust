@@ -11,7 +11,10 @@ change_cfg_transition = transition(
 
 def _input_from_different_cfg_impl(ctx):
     rs_file = ctx.actions.declare_file(ctx.label.name + ".rs")
-    code = """
+
+    ctx.actions.write(
+        output = rs_file,
+        content = """
 pub fn generated_fn() -> String {
     "Generated".to_owned()
 }
@@ -23,14 +26,7 @@ mod tests {
         assert_eq!(super::generated_fn(), "Generated".to_owned());
     }
 }
-"""
-    ctx.actions.run_shell(
-        outputs = [rs_file],
-        command = """cat <<EOF > {}
-{}
-EOF
-""".format(rs_file.path, code),
-        mnemonic = "WriteRsFile",
+""",
     )
 
     return OutputGroupInfo(generated_file = depset([rs_file]))
