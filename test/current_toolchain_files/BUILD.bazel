@@ -15,9 +15,9 @@ _FILES = {
 [
     genrule(
         name = "{}_manifest_genrule".format(files),
-        srcs = ["//rust/toolchain:current_exec_{}_files".format(files)],
+        srcs = ["//rust/toolchain:current_{}_files".format(files)],
         outs = ["{}_manifest".format(files)],
-        cmd = "for file in $(rootpaths //rust/toolchain:current_exec_{}_files); do echo $$file >> $@; done".format(files),
+        cmd = "for file in $(rootpaths //rust/toolchain:current_{}_files); do echo $$file >> $@; done".format(files),
     )
     for files in _FILES
     if "--files" in _FILES[files]
@@ -29,12 +29,12 @@ _FILES = {
         name = tool + "_test",
         srcs = ["current_exec_files_test.sh"],
         args = [
-            "$(rootpath //rust/toolchain:current_exec_{}_files)".format(tool) if "--executable" == arg else "$(rootpath {}_manifest)".format(tool),
+            "$(rootpath //rust/toolchain:current_{}_files)".format(tool) if "--executable" == arg else "$(rootpath {}_manifest)".format(tool),
             arg,
             "'{}'".format(pattern),
         ],
         data = [
-            "//rust/toolchain:current_exec_{}_files".format(tool),
+            "//rust/toolchain:current_{}_files".format(tool),
         ] + (
             ["{}_manifest".format(tool)] if "--files" == arg else []
         ),
