@@ -11,8 +11,11 @@ exports_files([
 rust_library(
     name = "rustfmt_lib",
     srcs = glob(
-        ["srcs/**/*.rs"],
-        exclude = ["srcs/**/*main.rs"],
+        include = ["src/**/*.rs"],
+        exclude = [
+            "src/**/*main.rs",
+            "src/bin/**",
+        ],
     ),
     data = [
         "//:rustfmt.toml",
@@ -34,7 +37,7 @@ rust_library(
 rust_binary(
     name = "rustfmt",
     srcs = [
-        "srcs/main.rs",
+        "src/main.rs",
     ],
     data = [
         "//:rustfmt.toml",
@@ -56,7 +59,7 @@ rust_binary(
 rust_binary(
     name = "rustfmt_test",
     srcs = [
-        "srcs/test_main.rs",
+        "src/bin/test_main.rs",
     ],
     edition = "2018",
     deps = [
