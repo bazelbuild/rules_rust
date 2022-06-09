@@ -45,4 +45,4 @@ int matrix_equal(const Matrix* a, const Matrix* b);
 // Frees the matrix.
 void matrix_free(Matrix* matrix);
 
-#endif // MATRIX_SRC_MATRIX_H_
+#endif  // MATRIX_SRC_MATRIX_H_

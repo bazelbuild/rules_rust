@@ -1,3 +1,1 @@
-extern "C" int func() {
-  return 123;
-}
+extern "C" int func() { return 123; }
