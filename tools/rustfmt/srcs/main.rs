@@ -63,29 +63,8 @@ fn bazel_command(bazel_bin: &Path, args: &[String], current_dir: &Path) -> Vec<S
         .collect()
 }
 
-/// Query for all `*.rs` files in a workspace that are dependencies of targets with an unspecified edition.
-/// This indicates that the edition is expected to be provided by the `rust_toolchain`.
-fn unspecified_edition_query(bazel_bin: &Path, scope: &str, current_dir: &Path) -> Vec<String> {
-    let query_args = vec![
-        "query".to_owned(),
-        // Query explanation:
-        // Filter all local targets ending in `*.rs`.
-        //     Get all source files.
-        //         Get direct dependencies.
-        //             Get all targets with an empty `edition` attribute.
-        //             Except for targets tagged with `norustfmt`.
-        //             And except for targets with a populated `crate` attribute since `crate` defines edition for this target
-        format!(
-            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )norustfmt(, |\]$)", $scope) + attr(crate, ".*", $scope), 1)))"#,
-            edition = "^$",
-            scope = scope,
-        ),
-        "--keep_going".to_owned(),
-        "--noimplicit_deps".to_owned(),
-    ];
-
-    bazel_command(bazel_bin, &query_args, current_dir)
-}
+/// The regex representation of an empty `edition` attribute
+const EMPTY_EDITION: &str = "^$";
 
 /// Query for all `*.rs` files in a workspace that are dependencies of targets with the requested edition.
 fn edition_query(bazel_bin: &Path, edition: &str, scope: &str, current_dir: &Path) -> Vec<String> {
@@ -93,12 +72,13 @@ fn edition_query(bazel_bin: &Path, edition: &str, scope: &str, current_dir: &Pat
         "query".to_owned(),
         // Query explanation:
         // Filter all local targets ending in `*.rs`.
-        //     Get all source files
+        //     Get all source files.
         //         Get direct dependencies.
-        //             Get all targets with an `edition` attribute matching a specific value.
+        //             Get all targets with the specified `edition` attribute.
         //             Except for targets tagged with `norustfmt`.
+        //             And except for targets with a populated `crate` attribute since `crate` defines edition for this target
         format!(
-            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )norustfmt(, |\]$)", $scope), 1)))"#,
+            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )norustfmt(, |\]$)", $scope) + attr(crate, ".*", $scope), 1)))"#,
             edition = edition,
             scope = scope,
         ),
@@ -130,8 +110,9 @@ fn query_rustfmt_targets(options: &Config) -> HashMap<String, Vec<String>> {
             // For all targets relying on the toolchain for it's edition,
             // query anything with an unset edition
             if edition == default_edition {
-                targets.extend(unspecified_edition_query(
+                targets.extend(edition_query(
                     &options.bazel,
+                    EMPTY_EDITION,
                     &scope,
                     &options.workspace,
                 ))
