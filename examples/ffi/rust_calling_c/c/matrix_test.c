@@ -25,7 +25,7 @@ void matrix_print(const Matrix* m) {
     for (size_t j = 0; j < m->cols; ++j) {
       uint64_t val = 0;
       matrix_at(m, i, j, &val);
-      printf("%"PRIu64" ", val);
+      printf("%" PRIu64 " ", val);
     }
     printf("\n");
   }
@@ -44,30 +44,38 @@ int check_equal(const Matrix* a, const Matrix* b) {
 }
 
 void test_equal() {
+  // clang-format off
   static uint64_t a_data[] = {11, 12, 13, 14,
                               21, 22, 23, 24};
+  // clang-format on
   Matrix* a = matrix_new(2, 4, a_data);
   assert(a != NULL);
   assert(check_equal(a, a));
 
+  // clang-format off
   static uint64_t b_data[] = {13, 14, 15, 16,
                               22, 23, 24, 25};
+  // clang-format on
   Matrix* b = matrix_new(2, 4, b_data);
   assert(b != NULL);
   assert(!matrix_equal(a, b));
 }
 
 void test_transpose() {
+  // clang-format off
   static uint64_t matrix_data[] = {11, 12, 13, 14,
                                    21, 22, 23, 24};
+  // clang-format on
   Matrix* matrix = matrix_new(2, 4, matrix_data);
   assert(matrix != NULL);
   matrix_transpose(matrix);
 
+  // clang-format off
   static uint64_t expected_transpose_data[] = {11, 21,
                                                12, 22,
                                                13, 23,
                                                14, 24};
+  // clang-format off
   Matrix* expected_transpose = matrix_new(4, 2, expected_transpose_data);
 
   assert(check_equal(expected_transpose, matrix));

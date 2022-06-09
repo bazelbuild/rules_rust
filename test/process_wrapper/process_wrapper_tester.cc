@@ -53,7 +53,8 @@ void subst_pwd_test(std::string current_dir, const char* envp[]) {
     if (env.rfind("CURRENT_DIR", 0) == 0) {
       found = true;
       if (env.find("${pwd}") != std::string::npos) {
-        std::cerr << "error: environment variable ${pwd} substitution failed.\n";
+        std::cerr
+            << "error: environment variable ${pwd} substitution failed.\n";
         std::exit(1);
       }
       break;
@@ -131,9 +132,7 @@ void test_stdout() {
   }
 }
 
-void test_stderr() {
-  std::cerr << "This is the stderr output";
-}
+void test_stderr() { std::cerr << "This is the stderr output"; }
 
 int main(int argc, const char* argv[], const char* envp[]) {
   if (argc < 4) {
