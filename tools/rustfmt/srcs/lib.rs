@@ -88,7 +88,7 @@ const PATH_ENV_SEP: &str = ";";
 const PATH_ENV_SEP: &str = ":";
 
 /// Parse the runfiles of the current executable for manifests generated
-/// but the `rustfmt_aspect` aspect.
+/// by the `rustfmt_aspect` aspect.
 pub fn find_manifests() -> Vec<PathBuf> {
     let runfiles = runfiles::Runfiles::create().unwrap();
 
