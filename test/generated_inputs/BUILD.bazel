@@ -28,6 +28,7 @@ rust_library(
         ":src.rs",
     ],
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_library(
@@ -38,6 +39,7 @@ rust_library(
     ],
     crate_root = "lib.rs",
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_library(
@@ -50,6 +52,7 @@ rust_library(
     crate_root = ":src.rs",
     edition = "2018",
     rustc_flags = ["--cfg=generated_file_as_root"],
+    tags = ["norustfmt"],
 )
 
 # When no lib.rs, main.rs file exists, we try to use the file that carries
@@ -62,12 +65,14 @@ rust_library(
     ],
     edition = "2018",
     rustc_flags = ["--cfg=generated_file_as_root"],
+    tags = ["norustfmt"],
 )
 
 rust_test(
     name = "generated_src_test",
     crate = ":use_generated_src_with_crate_root_defined",
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_binary(
@@ -77,6 +82,7 @@ rust_binary(
         ":src.rs",
     ],
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 input_from_different_cfg(
@@ -93,12 +99,14 @@ rust_library(
     name = "generated_src_in_different_cfg_as_root",
     srcs = [":input_from_different_cfg"],
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_test(
     name = "generated_src_in_different_cfg_as_root_test",
     crate = "generated_src_in_different_cfg_as_root",
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_library(
@@ -109,12 +117,14 @@ rust_library(
     ],
     crate_root = "root.rs",
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_test(
     name = "generated_src_in_different_cfg_test",
     crate = "generated_src_in_different_cfg",
     edition = "2018",
+    tags = ["norustfmt"],
 )
 
 bool_flag(
