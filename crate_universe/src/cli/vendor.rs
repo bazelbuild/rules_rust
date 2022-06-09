@@ -14,9 +14,7 @@ use crate::context::Context;
 use crate::metadata::{Annotations, VendorGenerator};
 use crate::metadata::{Generator, MetadataGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
-use crate::splicing::{
-    generate_lockfile, ExtraManifestsManifest, Splicer, SplicingManifest, WorkspaceMetadata,
-};
+use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `vendor` subcommand
 #[derive(Parser, Debug)]
@@ -54,10 +52,6 @@ pub struct VendorOptions {
     /// The path to a Cargo metadata `json` file.
     #[clap(long)]
     pub metadata: Option<PathBuf>,
-
-    /// A generated manifest of "extra workspace members"
-    #[clap(long)]
-    pub extra_manifests_manifest: PathBuf,
 
     /// The path to a bazel binary
     #[clap(long, env = "BAZEL_REAL", default_value = "bazel")]
@@ -117,18 +111,12 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     // Load the all config files required for splicing a workspace
     let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?
         .resolve(&opt.workspace_dir, &output_base);
-    let extra_manifests_manifest =
-        ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?.absolutize();
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(
-        PathBuf::from(temp_dir.as_ref()),
-        splicing_manifest,
-        extra_manifests_manifest,
-    )
-    .context("Failed to create splicer")?;
+    let splicer = Splicer::new(PathBuf::from(temp_dir.as_ref()), splicing_manifest)
+        .context("Failed to create splicer")?;
 
     // Splice together the manifest
     let manifest_path = splicer
