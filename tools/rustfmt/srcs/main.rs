@@ -24,17 +24,11 @@ const FALLBACK_EDITION: &str = "2018";
 /// Determine the Rust edition to use in cases where a target has not explicitly
 /// specified the edition via an `edition` attribute.
 fn get_default_edition() -> &'static str {
-    // TODO: THe `RUST_DEFAULT_EDITION` should be set by the `rust_toolchain`
-    // this binary is compiled with.
-    option_env!("RUST_DEFAULT_EDITION")
-        .map(|var| {
-            if var.is_empty() {
-                FALLBACK_EDITION
-            } else {
-                var
-            }
-        })
-        .unwrap_or(FALLBACK_EDITION)
+    if !env!("RUST_DEFAULT_EDITION").is_empty() {
+        env!("RUST_DEFAULT_EDITION")
+    } else {
+        FALLBACK_EDITION
+    }
 }
 
 /// Get a list of all editions to run formatting for
