@@ -26,8 +26,8 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
             "no-format",
             "no-rustfmt",
             "norustfmt",
-        ] 
-        
+        ]
+
         for tag in ignore_tags:
             if tag in aspect_ctx.rule.attr.tags:
                 return []

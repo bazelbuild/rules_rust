@@ -65,7 +65,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
         ignore_tags = [
             "noclippy",
             "no-clippy",
-        ] 
+        ]
 
         for tag in ignore_tags:
             if tag in aspect_ctx.rule.attr.tags:
