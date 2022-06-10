@@ -108,7 +108,7 @@ impl Runfiles {
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
-pub fn find_runfiles_dir() -> io::Result<PathBuf> {
+fn find_runfiles_dir() -> io::Result<PathBuf> {
     assert_ne!(
         std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or_else(|| OsString::from("0")),
         "1"
