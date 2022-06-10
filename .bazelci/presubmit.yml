@@ -17,6 +17,7 @@ default_windows_targets: &default_windows_targets
   - "-//tools/rust_analyzer/..."
   - "-//test/rustfmt/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor_manifests"

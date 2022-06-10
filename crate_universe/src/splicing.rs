@@ -65,33 +65,35 @@ impl SplicingManifest {
         Self::from_str(&content).context("Failed to load SplicingManifest")
     }
 
-    pub fn absoulutize(self, relative_to: &Path) -> Self {
+    pub fn resolve(self, workspace_dir: &Path, output_base: &Path) -> Self {
         let Self {
             manifests,
             cargo_config,
             ..
         } = self;
 
+        let workspace_dir_str = workspace_dir.to_string_lossy();
+        let output_base_str = output_base.to_string_lossy();
+
         // Ensure manifests all have absolute paths
         let manifests = manifests
             .into_iter()
             .map(|(path, label)| {
-                if !path.is_absolute() {
-                    let path = relative_to.join(path);
-                    (path, label)
-                } else {
-                    (path, label)
-                }
+                let resolved_path = path
+                    .to_string_lossy()
+                    .replace("${build_workspace_directory}", &workspace_dir_str)
+                    .replace("${output_base}", &output_base_str);
+                (PathBuf::from(resolved_path), label)
             })
             .collect();
 
         // Ensure the cargo config is located at an absolute path
         let cargo_config = cargo_config.map(|path| {
-            if !path.is_absolute() {
-                relative_to.join(path)
-            } else {
-                path
-            }
+            let resolved_path = path
+                .to_string_lossy()
+                .replace("${build_workspace_directory}", &workspace_dir_str)
+                .replace("${output_base}", &output_base_str);
+            PathBuf::from(resolved_path)
         });
 
         Self {
@@ -168,7 +170,7 @@ impl ExtraManifestsManifest {
         Self::from_str(&content).context("Failed to load ExtraManifestsManifest")
     }
 
-    pub fn absoulutize(self) -> Self {
+    pub fn absolutize(self) -> Self {
         self
     }
 }
@@ -511,16 +513,27 @@ mod test {
 
         let manifest: SplicingManifest = serde_json::from_str(&content).unwrap();
 
+        // Check manifests
+        assert_eq!(
+            manifest.manifests,
+            BTreeMap::from([
+                (
+                    PathBuf::from("${build_workspace_directory}/submod/Cargo.toml"),
+                    Label::from_str("//submod:Cargo.toml").unwrap()
+                ),
+                (
+                    PathBuf::from("${output_base}/external_crate/Cargo.toml"),
+                    Label::from_str("@external_crate//:Cargo.toml").unwrap()
+                ),
+                (
+                    PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    Label::from_str("//:Cargo.toml").unwrap()
+                ),
+            ])
+        );
+
         // Check splicing configs
         assert_eq!(manifest.resolver_version, cargo_toml::Resolver::V2);
-
-        // Check manifests
-        assert_eq!(manifest.manifests.len(), 1);
-        let maniefst_label = manifest
-            .manifests
-            .get(&PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"))
-            .unwrap();
-        assert_eq!(maniefst_label, &Label::from_str("//:Cargo.toml").unwrap());
 
         // Check packages
         assert_eq!(manifest.direct_packages.len(), 1);
@@ -540,5 +553,49 @@ mod test {
             manifest.cargo_config,
             Some(PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"))
         );
+    }
+
+    #[test]
+    fn splicing_manifest_resolve() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json",
+        );
+
+        let content = std::fs::read_to_string(path).unwrap();
+
+        let mut manifest: SplicingManifest = serde_json::from_str(&content).unwrap();
+        manifest.cargo_config = Some(PathBuf::from(
+            "${build_workspace_directory}/.cargo/config.toml",
+        ));
+        manifest = manifest.resolve(
+            &PathBuf::from("/tmp/abs/path/workspace"),
+            &PathBuf::from("/tmp/output_base"),
+        );
+
+        // Check manifests
+        assert_eq!(
+            manifest.manifests,
+            BTreeMap::from([
+                (
+                    PathBuf::from("/tmp/abs/path/workspace/submod/Cargo.toml"),
+                    Label::from_str("//submod:Cargo.toml").unwrap()
+                ),
+                (
+                    PathBuf::from("/tmp/output_base/external_crate/Cargo.toml"),
+                    Label::from_str("@external_crate//:Cargo.toml").unwrap()
+                ),
+                (
+                    PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    Label::from_str("//:Cargo.toml").unwrap()
+                ),
+            ])
+        );
+
+        // Check cargo config
+        assert_eq!(
+            manifest.cargo_config.unwrap(),
+            PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"),
+        )
     }
 }
