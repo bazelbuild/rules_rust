@@ -60,9 +60,16 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
     if target.label.workspace_root.startswith("external"):
         return None
 
-    # Targets annotated with `noclippy` will not be formatted
-    if aspect_ctx and "noclippy" in aspect_ctx.rule.attr.tags:
-        return None
+    # Targets with specific will not be formatted
+    if aspect_ctx:
+        ignore_tags = [
+            "noclippy",
+            "no-clippy",
+        ] 
+
+        for tag in ignore_tags:
+            if tag in aspect_ctx.rule.attr.tags:
+                return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
     if rust_common.crate_info not in target:
