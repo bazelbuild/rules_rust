@@ -1,8 +1,12 @@
+//! A tool for querying Rust source files wired into Bazel and running Rustfmt on them.
+
+use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str;
 
+/// The Bazel Rustfmt tool entry point
 fn main() {
     // Gather all command line and environment settings
     let options = parse_args();
@@ -14,52 +18,40 @@ fn main() {
     apply_rustfmt(&options, &targets);
 }
 
-/// Perform a `bazel` query to determine a list of Bazel targets which are to be formatted.
-fn query_rustfmt_targets(options: &Config) -> Vec<String> {
-    // Determine what packages to query
-    let scope = match options.packages.is_empty() {
-        true => "//...:all".to_owned(),
-        false => {
-            // Check to see if all the provided packages are actually targets
-            let is_all_targets = options
-                .packages
-                .iter()
-                .all(|pkg| match label::analyze(pkg) {
-                    Ok(tgt) => tgt.name != "all",
-                    Err(_) => false,
-                });
+/// The edition to use in cases where the default edition is unspecified by Bazel
+const FALLBACK_EDITION: &str = "2018";
 
-            // Early return if a list of targets and not packages were provided
-            if is_all_targets {
-                return options.packages.clone();
-            }
+/// Determine the Rust edition to use in cases where a target has not explicitly
+/// specified the edition via an `edition` attribute.
+fn get_default_edition() -> &'static str {
+    if !env!("RUST_DEFAULT_EDITION").is_empty() {
+        env!("RUST_DEFAULT_EDITION")
+    } else {
+        FALLBACK_EDITION
+    }
+}
 
-            options.packages.join(" + ")
-        }
-    };
+/// Get a list of all editions to run formatting for
+fn get_editions() -> Vec<String> {
+    vec!["2015".to_owned(), "2018".to_owned(), "2021".to_owned()]
+}
 
-    let query_args = vec![
-        "query".to_owned(),
-        format!(
-            r#"kind('{types}', {scope}) except attr(tags, 'norustfmt', kind('{types}', {scope}))"#,
-            types = "^rust_",
-            scope = scope
-        ),
-    ];
-
-    let child = Command::new(&options.bazel)
-        .current_dir(&options.workspace)
-        .args(query_args)
+/// Run a bazel command, capturing stdout while streaming stderr to surface errors
+fn bazel_command(bazel_bin: &Path, args: &[String], current_dir: &Path) -> Vec<String> {
+    let child = Command::new(bazel_bin)
+        .current_dir(current_dir)
+        .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()
-        .expect("Failed to spawn bazel query command");
+        .expect("Failed to spawn bazel command");
 
     let output = child
         .wait_with_output()
         .expect("Failed to wait on spawned command");
 
     if !output.status.success() {
+        eprintln!("Failed to perform `bazel query` command.");
         std::process::exit(output.status.code().unwrap_or(1));
     }
 
@@ -71,74 +63,92 @@ fn query_rustfmt_targets(options: &Config) -> Vec<String> {
         .collect()
 }
 
-/// Build a list of Bazel targets using the `rustfmt_aspect` to produce the
-/// arguments to use when formatting the sources of those targets.
-fn generate_rustfmt_target_manifests(options: &Config, targets: &[String]) {
-    let build_args = vec![
-        "build".to_owned(),
+/// The regex representation of an empty `edition` attribute
+const EMPTY_EDITION: &str = "^$";
+
+/// Query for all `*.rs` files in a workspace that are dependencies of targets with the requested edition.
+fn edition_query(bazel_bin: &Path, edition: &str, scope: &str, current_dir: &Path) -> Vec<String> {
+    let query_args = vec![
+        "query".to_owned(),
+        // Query explanation:
+        // Filter all local targets ending in `*.rs`.
+        //     Get all source files.
+        //         Get direct dependencies.
+        //             Get all targets with the specified `edition` attribute.
+        //             Except for targets tagged with `norustfmt`.
+        //             And except for targets with a populated `crate` attribute since `crate` defines edition for this target
         format!(
-            "--aspects={}//rust:defs.bzl%rustfmt_aspect",
-            env!("ASPECT_REPOSITORY")
+            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )norustfmt(, |\]$)", $scope) + attr(crate, ".*", $scope), 1)))"#,
+            edition = edition,
+            scope = scope,
         ),
-        "--output_groups=rustfmt_manifest".to_owned(),
+        "--keep_going".to_owned(),
+        "--noimplicit_deps".to_owned(),
     ];
 
-    let child = Command::new(&options.bazel)
-        .current_dir(&options.workspace)
-        .args(build_args)
-        .args(targets)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .expect("Failed to spawn command");
+    bazel_command(bazel_bin, &query_args, current_dir)
+}
 
-    let output = child
-        .wait_with_output()
-        .expect("Failed to wait on spawned command");
+/// Perform a `bazel` query to determine all source files which are to be
+/// formatted for particular Rust editions.
+fn query_rustfmt_targets(options: &Config) -> HashMap<String, Vec<String>> {
+    let scope = options
+        .packages
+        .clone()
+        .into_iter()
+        .reduce(|acc, item| acc + " " + &item)
+        .unwrap_or_else(|| "//...:all".to_owned());
 
-    if !output.status.success() {
-        std::process::exit(output.status.code().unwrap_or(1));
-    }
+    let editions = get_editions();
+    let default_edition = get_default_edition();
+
+    editions
+        .into_iter()
+        .map(|edition| {
+            let mut targets = edition_query(&options.bazel, &edition, &scope, &options.workspace);
+
+            // For all targets relying on the toolchain for it's edition,
+            // query anything with an unset edition
+            if edition == default_edition {
+                targets.extend(edition_query(
+                    &options.bazel,
+                    EMPTY_EDITION,
+                    &scope,
+                    &options.workspace,
+                ))
+            }
+
+            (edition, targets)
+        })
+        .collect()
 }
 
 /// Run rustfmt on a set of Bazel targets
-fn apply_rustfmt(options: &Config, targets: &[String]) {
-    // Ensure the targets are first built and a manifest containing `rustfmt`
-    // arguments are generated before formatting source files.
-    generate_rustfmt_target_manifests(options, targets);
+fn apply_rustfmt(options: &Config, editions_and_targets: &HashMap<String, Vec<String>>) {
+    // There is no work to do if the list of targets is empty
+    if editions_and_targets.is_empty() {
+        return;
+    }
 
-    for target in targets.iter() {
-        // Replace any `:` characters and strip leading slashes
-        let target_path = target.replace(':', "/").trim_start_matches('/').to_owned();
-
-        // Find a manifest for the current target. Not all targets will have one
-        let manifest = options.workspace.join("bazel-bin").join(format!(
-            "{}.{}",
-            &target_path,
-            rustfmt_lib::RUSTFMT_MANIFEST_EXTENSION,
-        ));
-
-        if !manifest.exists() {
+    for (edition, targets) in editions_and_targets.iter() {
+        if targets.is_empty() {
             continue;
         }
 
-        // Load the manifest containing rustfmt arguments
-        let rustfmt_config = rustfmt_lib::parse_rustfmt_manifest(&manifest);
-
-        // Ignore any targets which do not have source files. This can
-        // occur in cases where all source files are generated.
-        if rustfmt_config.sources.is_empty() {
-            continue;
-        }
+        // Get paths to all formattable sources
+        let sources: Vec<String> = targets
+            .iter()
+            .map(|target| target.replace(':', "/").trim_start_matches('/').to_owned())
+            .collect();
 
         // Run rustfmt
         let status = Command::new(&options.rustfmt_config.rustfmt)
             .current_dir(&options.workspace)
             .arg("--edition")
-            .arg(rustfmt_config.edition)
+            .arg(edition)
             .arg("--config-path")
             .arg(&options.rustfmt_config.config)
-            .args(rustfmt_config.sources)
+            .args(sources)
             .status()
             .expect("Failed to run rustfmt");
 

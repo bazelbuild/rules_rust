@@ -465,6 +465,24 @@ def _rust_toolchain_impl(ctx):
     sysroot_path = sysroot.sysroot_anchor.dirname
     sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
 
+    # Variables for make variable expansion
+    make_variables = {
+        "RUSTC": sysroot.rustc.path,
+        "RUSTDOC": sysroot.rustdoc.path,
+        "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
+        "RUST_SYSROOT": sysroot_path,
+    }
+
+    if sysroot.cargo:
+        make_variables.update({
+            "CARGO": sysroot.cargo.path,
+        })
+
+    if sysroot.rustfmt:
+        make_variables.update({
+            "RUSTFMT": sysroot.rustfmt.path,
+        })
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
@@ -477,6 +495,7 @@ def _rust_toolchain_impl(ctx):
         env = ctx.attr.env,
         exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
+        make_variables = platform_common.TemplateVariableInfo(make_variables),
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
         rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.

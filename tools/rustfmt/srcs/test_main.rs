@@ -1,5 +1,4 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -55,31 +54,9 @@ struct Config {
     pub manifests: Vec<rustfmt_lib::RustfmtManifest>,
 }
 
-/// Parse the runfiles of the current executable for manifests generated
-/// but the `rustfmt_aspect` aspect.
-fn find_manifests(dir: &Path, manifests: &mut Vec<PathBuf>) {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir).expect("Failed to read directory contents") {
-            let entry = entry.expect("Failed to read directory entry");
-            let path = entry.path();
-            if path.is_dir() {
-                find_manifests(&path, manifests);
-            } else if let Some(ext) = path.extension() {
-                if ext == rustfmt_lib::RUSTFMT_MANIFEST_EXTENSION {
-                    manifests.extend(vec![path]);
-                }
-            }
-        }
-    }
-}
-
 /// Parse settings from the environment into a config struct
 fn parse_args() -> Config {
-    let mut manifests: Vec<PathBuf> = Vec::new();
-    find_manifests(
-        &runfiles::find_runfiles_dir().expect("Failed to find runfiles directory"),
-        &mut manifests,
-    );
+    let manifests: Vec<PathBuf> = rustfmt_lib::find_manifests();
 
     if manifests.is_empty() {
         panic!("No manifests were found");
