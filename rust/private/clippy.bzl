@@ -60,7 +60,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
     if target.label.workspace_root.startswith("external"):
         return None
 
-    # Targets with specific will not be formatted
+    # Targets with specific tags will not be formatted
     if aspect_ctx:
         ignore_tags = [
             "noclippy",
