@@ -20,9 +20,17 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
     if target.label.workspace_root.startswith("external"):
         return []
 
-    # Targets annotated with `norustfmt` will not be formatted
-    if aspect_ctx and "norustfmt" in aspect_ctx.rule.attr.tags:
-        return []
+    if aspect_ctx:
+        # Targets with specifc tags will not be formatted
+        ignore_tags = [
+            "no-format",
+            "no-rustfmt",
+            "norustfmt",
+        ] 
+        
+        for tag in ignore_tags:
+            if tag in aspect_ctx.rule.attr.tags:
+                return []
 
     crate_info = target[rust_common.crate_info]
 
@@ -110,8 +118,8 @@ used at runtime.
 [cs]: https://rust-lang.github.io/rustfmt/
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
-users may tag a target with `norustfmt` to have it skipped. Additionally, generated
-source files are also ignored by this aspect.
+users may tag a target with `no-rustfmt` or `no-format` to have it skipped. Additionally,
+generated source files are also ignored by this aspect.
 """,
     attrs = {
         "_config": attr.label(
