@@ -101,8 +101,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
     pub rustc_env_files: SelectStringList,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
-    pub rustc_flags: SelectStringList,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
 
     pub version: String,
 
@@ -424,9 +424,7 @@ impl CrateContext {
             // TODO: SelectList is currently backed by `BTreeSet` which is generally incorrect
             // for rustc flags. Should SelectList be refactored?
             if let Some(extra) = &crate_extra.rustc_flags {
-                for data in extra.iter() {
-                    self.common_attrs.rustc_flags.insert(data.clone(), None);
-                }
+                self.common_attrs.rustc_flags.append(&mut extra.clone());
             }
 
             // Rustc env
