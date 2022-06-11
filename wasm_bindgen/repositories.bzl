@@ -15,7 +15,9 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//wasm_bindgen/raze:crates.bzl", "rules_rust_wasm_bindgen_fetch_remote_crates")
+load("//wasm_bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
+
+WASM_BINDGEN_VERSION = "0.2.78"
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_dependencies():
@@ -26,12 +28,22 @@ def rust_wasm_bindgen_dependencies():
 
     maybe(
         http_archive,
+        name = "rules_rust_wasm_bindgen_cli",
+        sha256 = "262a79690c18f5160ca109e839814783e29b71f1fd28448f80838145f93c08b6",
+        urls = ["https://crates.io/api/v1/crates/wasm-bindgen-cli/{}/download".format(WASM_BINDGEN_VERSION)],
+        type = "tar.gz",
+        strip_prefix = "wasm-bindgen-cli-{}".format(WASM_BINDGEN_VERSION),
+        build_file = Label("//wasm_bindgen/3rdparty:BUILD.wasm-bindgen-cli.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rules_nodejs",
         sha256 = "26766278d815a6e2c43d2f6c9c72fde3fec8729e84138ffa4dabee47edc7702a",
         urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.4.2/rules_nodejs-core-5.4.2.tar.gz"],
     )
 
-    rules_rust_wasm_bindgen_fetch_remote_crates()
+    crate_repositories()
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_register_toolchains(register_toolchains = True):
