@@ -61,7 +61,7 @@ extra_rustc_flags(
 # to that target. This can be useful for passing build-wide options such as LTO.
 extra_exec_rustc_flags(
     name = "extra_exec_rustc_flags",
-    build_setting_default = [],
+    build_setting_default = "",
     visibility = ["//visibility:public"],
 )
 
