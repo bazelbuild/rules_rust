@@ -1493,7 +1493,10 @@ error_format = rule(
 )
 
 def _extra_rustc_flags_impl(ctx):
-    return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
+    extra_rustc_flags = []
+    for flags in [flags.split(",") for flags in ctx.build_setting_value if flags != ""]:
+        extra_rustc_flags.extend(flags)
+    return ExtraRustcFlagsInfo(extra_rustc_flags = extra_rustc_flags)
 
 extra_rustc_flags = rule(
     doc = (
@@ -1501,10 +1504,11 @@ extra_rustc_flags = rule(
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
         "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
-        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
+        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration." +
+        "Accept comma separated strings and multiple uses of this flag are accumulated."
     ),
     implementation = _extra_rustc_flags_impl,
-    build_setting = config.string_list(flag = True),
+    build_setting = config.string(flag = True, allow_multiple = True),
 )
 
 def _extra_exec_rustc_flags_impl(ctx):
