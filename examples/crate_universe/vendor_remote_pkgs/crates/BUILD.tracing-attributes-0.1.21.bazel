@@ -65,10 +65,7 @@ rust_proc_macro(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -81,7 +78,7 @@ rust_proc_macro(
         "//conditions:default": [
             "@crates_vendor_pkgs__proc-macro2-1.0.39//:proc_macro2",
             "@crates_vendor_pkgs__quote-1.0.18//:quote",
-            "@crates_vendor_pkgs__syn-1.0.95//:syn",
+            "@crates_vendor_pkgs__syn-1.0.96//:syn",
         ],
     }),
 )
