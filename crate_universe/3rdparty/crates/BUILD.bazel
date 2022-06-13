@@ -70,7 +70,7 @@ alias(
 
 alias(
     name = "crates-index",
-    actual = "@crate_universe_crate_index__crates-index-0.18.7//:crates_index",
+    actual = "@crate_universe_crate_index__crates-index-0.18.8//:crates_index",
     tags = ["manual"],
 )
 
@@ -100,13 +100,13 @@ alias(
 
 alias(
     name = "regex",
-    actual = "@crate_universe_crate_index__regex-1.5.5//:regex",
+    actual = "@crate_universe_crate_index__regex-1.5.6//:regex",
     tags = ["manual"],
 )
 
 alias(
     name = "semver",
-    actual = "@crate_universe_crate_index__semver-1.0.9//:semver",
+    actual = "@crate_universe_crate_index__semver-1.0.10//:semver",
     tags = ["manual"],
 )
 
@@ -135,12 +135,6 @@ alias(
 )
 
 alias(
-    name = "syn",
-    actual = "@crate_universe_crate_index__syn-1.0.90//:syn",
-    tags = ["manual"],
-)
-
-alias(
     name = "tempfile",
     actual = "@crate_universe_crate_index__tempfile-3.3.0//:tempfile",
     tags = ["manual"],
@@ -148,7 +142,7 @@ alias(
 
 alias(
     name = "tera",
-    actual = "@crate_universe_crate_index__tera-1.15.0//:tera",
+    actual = "@crate_universe_crate_index__tera-1.16.0//:tera",
     tags = ["manual"],
 )
 

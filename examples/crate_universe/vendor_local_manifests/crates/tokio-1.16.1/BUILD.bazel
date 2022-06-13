@@ -75,7 +75,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/tokio-macros-1.7.0:tokio_macros",
+            "//vendor_local_manifests/crates/tokio-macros-1.8.0:tokio_macros",
         ],
     }),
     rustc_env = {
@@ -90,10 +90,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -111,6 +108,7 @@ rust_library(
             "@rules_rust//rust/platform:aarch64-linux-android",
             "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@rules_rust//rust/platform:armv7-linux-androideabi",
             "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
             "@rules_rust//rust/platform:i686-apple-darwin",
             "@rules_rust//rust/platform:i686-linux-android",

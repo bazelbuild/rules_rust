@@ -66,10 +66,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -80,7 +77,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.9//:semver",
+            "@crate_universe_crate_index__semver-1.0.10//:semver",
             "@crate_universe_crate_index__serde-1.0.137//:serde",
             "@crate_universe_crate_index__toml-0.5.9//:toml",
             "@crate_universe_crate_index__url-2.2.2//:url",
@@ -130,10 +127,7 @@ rust_binary(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -145,7 +139,7 @@ rust_binary(
         ":cargo_lock",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.9//:semver",
+            "@crate_universe_crate_index__semver-1.0.10//:semver",
             "@crate_universe_crate_index__serde-1.0.137//:serde",
             "@crate_universe_crate_index__toml-0.5.9//:toml",
             "@crate_universe_crate_index__url-2.2.2//:url",

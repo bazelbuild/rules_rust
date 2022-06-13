@@ -129,32 +129,6 @@ load(
 cargo_workspace_crate_repositories()
 
 ###############################################################################
-# E X T R A   W O R K S P A C E   M E M B E R S
-###############################################################################
-
-crates_repository(
-    name = "crate_index_extra_members",
-    extra_workspace_members = {
-        "texture-synthesis-cli": crate.workspace_member(
-            sha256 = "a7dbdf13f5e6f214750fce1073279b71ce3076157a8d337c9b0f0e14334e2aec",
-            version = "0.8.2",
-        ),
-    },
-    # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
-    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//extra_workspace_members:Cargo.Bazel.lock",
-    manifests = ["//extra_workspace_members:Cargo.toml"],
-)
-
-load(
-    "@crate_index_extra_members//:defs.bzl",
-    extra_workspace_members_crate_repositories = "crate_repositories",
-)
-
-extra_workspace_members_crate_repositories()
-
-###############################################################################
 # M U L T I   P A C K A G E
 ###############################################################################
 
@@ -304,6 +278,25 @@ load(
 )
 
 no_cargo_crate_repositories()
+
+###############################################################################
+# V E N D O R   E X T E R N A L
+###############################################################################
+
+http_archive(
+    name = "names_external",
+    build_file = "//cargo_remote:BUILD.names.bazel",
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
+)
+
+load(
+    "//vendor_external/crates:crates.bzl",
+    crates_vendor_external_repositories = "crate_repositories",
+)
+
+crates_vendor_external_repositories()
 
 ###############################################################################
 # V E N D O R   R E M O T E   M A N I F E S T S

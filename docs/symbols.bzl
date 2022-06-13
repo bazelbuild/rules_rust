@@ -49,7 +49,6 @@ load(
     _capture_clippy_output = "capture_clippy_output",
     _error_format = "error_format",
     _extra_rustc_flags = "extra_rustc_flags",
-    _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
@@ -146,7 +145,6 @@ rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
 
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
-rust_analyzer = _rust_analyzer
 rust_analyzer_aspect = _rust_analyzer_aspect
 
 crate = _crate

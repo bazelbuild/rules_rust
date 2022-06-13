@@ -11,8 +11,11 @@ exports_files([
 rust_library(
     name = "rustfmt_lib",
     srcs = glob(
-        ["srcs/**/*.rs"],
-        exclude = ["srcs/**/*main.rs"],
+        include = ["src/**/*.rs"],
+        exclude = [
+            "src/**/*main.rs",
+            "src/bin/**",
+        ],
     ),
     data = [
         "//:rustfmt.toml",
@@ -23,12 +26,18 @@ rust_library(
         "RUSTFMT": "$(rootpath //rust/toolchain:current_exec_rustfmt_files)",
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
+    rustc_env_files = [
+        "@rules_rust//rust/private:rustfmt_workspace_name",
+    ],
+    deps = [
+        "//tools/runfiles",
+    ],
 )
 
 rust_binary(
     name = "rustfmt",
     srcs = [
-        "srcs/main.rs",
+        "src/main.rs",
     ],
     data = [
         "//:rustfmt.toml",
@@ -36,7 +45,11 @@ rust_binary(
     edition = "2018",
     rustc_env = {
         "ASPECT_REPOSITORY": aspect_repository(),
+        "RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     },
+    toolchains = [
+        "@rules_rust//rust/toolchain:current_rust_toolchain",
+    ],
     deps = [
         ":rustfmt_lib",
         "//util/label",
@@ -46,7 +59,7 @@ rust_binary(
 rust_binary(
     name = "rustfmt_test",
     srcs = [
-        "srcs/test_main.rs",
+        "src/bin/test_main.rs",
     ],
     edition = "2018",
     deps = [

@@ -1,4 +1,12 @@
-load("@rules_rust//rust:defs.bzl", "rust_analyzer", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_doc",
+    "rust_doc_test",
+    "rust_library",
+    "rust_shared_library",
+    "rust_static_library",
+    "rust_test",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -65,9 +73,4 @@ rust_doc(
 rust_doc_test(
     name = "hello_lib_doc_test",
     crate = ":hello_lib",
-)
-
-rust_analyzer(
-    name = "hello_rust_analyzer",
-    targets = [":hello_lib"],
 )

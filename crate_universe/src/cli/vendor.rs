@@ -1,6 +1,7 @@
 //! The cli entrypoint for the `vendor` subcommand
 
 use std::collections::BTreeSet;
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitStatus};
@@ -13,9 +14,7 @@ use crate::context::Context;
 use crate::metadata::{Annotations, VendorGenerator};
 use crate::metadata::{Generator, MetadataGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
-use crate::splicing::{
-    generate_lockfile, ExtraManifestsManifest, Splicer, SplicingManifest, WorkspaceMetadata,
-};
+use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `vendor` subcommand
 #[derive(Parser, Debug)]
@@ -54,9 +53,9 @@ pub struct VendorOptions {
     #[clap(long)]
     pub metadata: Option<PathBuf>,
 
-    /// A generated manifest of "extra workspace members"
-    #[clap(long)]
-    pub extra_manifests_manifest: PathBuf,
+    /// The path to a bazel binary
+    #[clap(long, env = "BAZEL_REAL", default_value = "bazel")]
+    pub bazel: PathBuf,
 
     /// The directory in which to build the workspace. A `Cargo.toml` file
     /// should always be produced within this directory.
@@ -83,22 +82,41 @@ fn buildifier_format(bin: &Path, file: &Path) -> Result<ExitStatus> {
     Ok(status)
 }
 
+/// Query the Bazel output_base to determine the location of external repositories.
+fn locate_bazel_output_base(bazel: &Path, workspace_dir: &Path) -> Result<PathBuf> {
+    // Allow a predefined environment variable to take precedent. This
+    // solves for the specific needs of Bazel CI on Github.
+    if let Ok(output_base) = env::var("OUTPUT_BASE") {
+        return Ok(PathBuf::from(output_base));
+    }
+
+    let output = process::Command::new(bazel)
+        .current_dir(workspace_dir)
+        .args(["info", "output_base"])
+        .output()
+        .context("Failed to query the Bazel workspace's `output_base`")?;
+
+    if !output.status.success() {
+        bail!(output.status)
+    }
+
+    Ok(PathBuf::from(
+        String::from_utf8_lossy(&output.stdout).trim(),
+    ))
+}
+
 pub fn vendor(opt: VendorOptions) -> Result<()> {
+    let output_base = locate_bazel_output_base(&opt.bazel, &opt.workspace_dir)?;
+
     // Load the all config files required for splicing a workspace
-    let splicing_manifest =
-        SplicingManifest::try_from_path(&opt.splicing_manifest)?.absoulutize(&opt.workspace_dir);
-    let extra_manifests_manifest =
-        ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?.absoulutize();
+    let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?
+        .resolve(&opt.workspace_dir, &output_base);
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(
-        PathBuf::from(temp_dir.as_ref()),
-        splicing_manifest,
-        extra_manifests_manifest,
-    )
-    .context("Failed to crate splicer")?;
+    let splicer = Splicer::new(PathBuf::from(temp_dir.as_ref()), splicing_manifest)
+        .context("Failed to create splicer")?;
 
     // Splice together the manifest
     let manifest_path = splicer

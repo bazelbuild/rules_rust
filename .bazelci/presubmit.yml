@@ -15,8 +15,8 @@ default_windows_targets: &default_windows_targets
   - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
-  - "-//test/rustfmt/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor_manifests"
@@ -333,7 +333,6 @@ tasks:
       # failing. This is likely an issue with the windows workers in CI.
       - "-//vendor_local_pkgs/..."
       - "-//vendor_remote_pkgs/..."
-      - "-//extra_workspace_members/..."
       - "-//no_cargo_manifests/..."
     test_targets:
       - "//..."
@@ -341,7 +340,6 @@ tasks:
       # failing. This is likely an issue with the windows workers in CI.
       - "-//vendor_local_pkgs/..."
       - "-//vendor_remote_pkgs/..."
-      - "-//extra_workspace_members/..."
       - "-//no_cargo_manifests/..."
 buildifier:
   version: latest
