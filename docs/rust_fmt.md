@@ -86,8 +86,8 @@ used at runtime.
 [cs]: https://rust-lang.github.io/rustfmt/
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
-users may tag a target with `norustfmt` to have it skipped. Additionally, generated
-source files are also ignored by this aspect.
+users may tag a target with `no-rustfmt` or `no-format` to have it skipped. Additionally,
+generated source files are also ignored by this aspect.
 
 
 **ASPECT ATTRIBUTES**

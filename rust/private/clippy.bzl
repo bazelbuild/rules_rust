@@ -60,9 +60,16 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
     if target.label.workspace_root.startswith("external"):
         return None
 
-    # Targets annotated with `noclippy` will not be formatted
-    if aspect_ctx and "noclippy" in aspect_ctx.rule.attr.tags:
-        return None
+    # Targets with specific tags will not be formatted
+    if aspect_ctx:
+        ignore_tags = [
+            "noclippy",
+            "no-clippy",
+        ]
+
+        for tag in ignore_tags:
+            if tag in aspect_ctx.rule.attr.tags:
+                return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
     if rust_common.crate_info not in target:
@@ -144,7 +151,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         args.process_wrapper_flags.add("--touch-file", clippy_out.path)
 
         if clippy_flags:
-            args.rustc_flags.extend(clippy_flags)
+            args.rustc_flags.add_all(clippy_flags)
         else:
             # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
 

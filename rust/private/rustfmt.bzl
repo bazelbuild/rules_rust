@@ -20,9 +20,17 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
     if target.label.workspace_root.startswith("external"):
         return []
 
-    # Targets annotated with `norustfmt` will not be formatted
-    if aspect_ctx and "norustfmt" in aspect_ctx.rule.attr.tags:
-        return []
+    if aspect_ctx:
+        # Targets with specifc tags will not be formatted
+        ignore_tags = [
+            "no-format",
+            "no-rustfmt",
+            "norustfmt",
+        ]
+
+        for tag in ignore_tags:
+            if tag in aspect_ctx.rule.attr.tags:
+                return []
 
     crate_info = target[rust_common.crate_info]
 
@@ -110,8 +118,8 @@ used at runtime.
 [cs]: https://rust-lang.github.io/rustfmt/
 
 This aspect is executed on any target which provides the `CrateInfo` provider. However
-users may tag a target with `norustfmt` to have it skipped. Additionally, generated
-source files are also ignored by this aspect.
+users may tag a target with `no-rustfmt` or `no-format` to have it skipped. Additionally,
+generated source files are also ignored by this aspect.
 """,
     attrs = {
         "_config": attr.label(
@@ -138,9 +146,10 @@ def _rustfmt_test_impl(ctx):
     # The executable of a test target must be the output of an action in
     # the rule implementation. This file is simply a symlink to the real
     # rustfmt test runner.
+    is_windows = ctx.executable._runner.extension == ".exe"
     runner = ctx.actions.declare_file("{}{}".format(
         ctx.label.name,
-        ctx.executable._runner.extension,
+        ".exe" if is_windows else "",
     ))
 
     ctx.actions.symlink(
@@ -149,22 +158,33 @@ def _rustfmt_test_impl(ctx):
         is_executable = True,
     )
 
-    manifests = [target[OutputGroupInfo].rustfmt_manifest for target in ctx.attr.targets]
+    manifests = depset(transitive = [target[OutputGroupInfo].rustfmt_manifest for target in ctx.attr.targets])
     srcs = [depset(_find_rustfmtable_srcs(target)) for target in ctx.attr.targets]
 
     runfiles = ctx.runfiles(
-        transitive_files = depset(transitive = manifests + srcs),
+        transitive_files = depset(transitive = srcs + [manifests]),
     )
 
     runfiles = runfiles.merge(
         ctx.attr._runner[DefaultInfo].default_runfiles,
     )
 
-    return [DefaultInfo(
-        files = depset([runner]),
-        runfiles = runfiles,
-        executable = runner,
-    )]
+    path_env_sep = ";" if is_windows else ":"
+
+    return [
+        DefaultInfo(
+            files = depset([runner]),
+            runfiles = runfiles,
+            executable = runner,
+        ),
+        testing.TestEnvironment({
+            "RUSTFMT_MANIFESTS": path_env_sep.join([
+                manifest.short_path
+                for manifest in sorted(manifests.to_list())
+            ]),
+            "RUST_BACKTRACE": "1",
+        }),
+    ]
 
 rustfmt_test = rule(
     implementation = _rustfmt_test_impl,
@@ -183,4 +203,23 @@ rustfmt_test = rule(
         ),
     },
     test = True,
+)
+
+def _rustfmt_workspace_name_impl(ctx):
+    output = ctx.actions.declare_file(ctx.label.name)
+
+    ctx.actions.write(
+        output = output,
+        content = "RUSTFMT_WORKSPACE={}".format(
+            ctx.workspace_name,
+        ),
+    )
+
+    return [DefaultInfo(
+        files = depset([output]),
+    )]
+
+rustfmt_workspace_name = rule(
+    implementation = _rustfmt_workspace_name_impl,
+    doc = "A rule for detecting the workspace name for Rustfmt runfiles.",
 )

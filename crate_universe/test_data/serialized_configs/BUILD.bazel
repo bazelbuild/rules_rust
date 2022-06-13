@@ -39,7 +39,11 @@ write_file(
     out = "splicing_manifest.json",
     content = [json.encode(compile_splicing_manifest(
         cargo_config_path = "/tmp/abs/path/workspace/.cargo/config.toml",
-        manifests = {"/tmp/abs/path/workspace/Cargo.toml": "//:Cargo.toml"},
+        manifests = {
+            "${build_workspace_directory}/submod/Cargo.toml": "//submod:Cargo.toml",
+            "${output_base}/external_crate/Cargo.toml": "@external_crate//:Cargo.toml",
+            "/tmp/abs/path/workspace/Cargo.toml": "//:Cargo.toml",
+        },
         packages = {
             "rand": crate.spec(
                 default_features = False,

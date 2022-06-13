@@ -9,16 +9,14 @@ default_linux_targets: &default_linux_targets
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
-  # TODO: CI toolchain does not support dynamic linking.
-  - "-//test/linker_inputs_propagation/..."
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
   - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
-  - "-//test/rustfmt/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor_manifests"

@@ -9,7 +9,10 @@ _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
 set -euo pipefail
 export RUNTIME_PWD="$(pwd)"
-eval exec env - BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
+if [[ -z "${{BAZEL_REAL:-}}" ]]; then
+    BAZEL_REAL="$(which bazel || echo 'bazel')"
+fi
+eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
 "{bin}" {args} "$@"
 """
 
@@ -55,6 +58,35 @@ def _write_data_file(ctx, name, data):
     )
     return file
 
+def _prepare_manifest_path(target):
+    """Generate manifest paths that are resolvable by `cargo_bazel::SplicingManifest::resolve`
+
+    Args:
+        target (Target): A `crate_vendor.manifest` target
+
+    Returns:
+        str: A string representing the path to a manifest.
+    """
+    files = target[DefaultInfo].files.to_list()
+    if len(files) != 1:
+        fail("The manifest {} hand an unexpected number of files: {}".format(
+            target.label,
+            files,
+        ))
+
+    manifest = files[0]
+
+    if target.label.workspace_root.startswith("external"):
+        # The short path of an external file is expected to start with `../`
+        if not manifest.short_path.startswith("../"):
+            fail("Unexpected shortpath for {}: {}".format(
+                manifest,
+                manifest.short_path,
+            ))
+        return manifest.short_path.replace("../", "${output_base}/external/", 1)
+
+    return "${build_workspace_directory}/" + manifest.short_path
+
 def _write_splicing_manifest(ctx):
     # Deserialize information about direct packges
     direct_packages_info = {
@@ -64,12 +96,11 @@ def _write_splicing_manifest(ctx):
     }
 
     # Manifests are required to be single files
-    manifests = {m[DefaultInfo].files.to_list()[0].short_path: str(m.label) for m in ctx.attr.manifests}
+    manifests = {_prepare_manifest_path(m): str(m.label) for m in ctx.attr.manifests}
 
     config = json.decode(ctx.attr.splicing_config or splicing_config())
     splicing_manifest_content = {
-        # TODO: How do cargo config files get factored into vendored builds
-        "cargo_config": None,
+        "cargo_config": _prepare_manifest_path(ctx.attr.cargo_config) if ctx.attr.cargo_config else None,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
     }
@@ -86,7 +117,7 @@ def _write_splicing_manifest(ctx):
     is_windows = _is_windows(ctx)
 
     args = ["--splicing-manifest", _runfiles_path(manifest.short_path, is_windows)]
-    runfiles = [manifest]
+    runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, runfiles
 
 def _write_extra_manifests_manifest(ctx):
@@ -297,6 +328,10 @@ bazel run //3rdparty:crates_vendor
             executable = True,
             allow_files = True,
             default = CARGO_BAZEL_LABEL,
+        ),
+        "cargo_config": attr.label(
+            doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
+            allow_single_file = True,
         ),
         "generate_build_scripts": attr.bool(
             doc = (

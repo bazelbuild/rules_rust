@@ -186,12 +186,12 @@ def get_preferred_artifact(library_to_link, use_pic):
         )
 
 def _expand_location(ctx, env, data):
-    """A trivial helper for `_expand_locations`
+    """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
         ctx (ctx): The rule's context object
         env (str): The value possibly containing location macros to expand.
-        data (sequence of Targets): see `_expand_locations`
+        data (sequence of Targets): See one of the parent functions.
 
     Returns:
         string: The location-macro expanded version of the string.
@@ -199,8 +199,12 @@ def _expand_location(ctx, env, data):
     for directive in ("$(execpath ", "$(location "):
         if directive in env:
             # build script runner will expand pwd to execroot for us
-            env = env.replace(directive, "${pwd}/" + directive)
-    return ctx.expand_location(env, data)
+            env = env.replace(directive, "$${pwd}/" + directive)
+    return ctx.expand_make_variables(
+        env,
+        ctx.expand_location(env, data),
+        {},
+    )
 
 def expand_dict_value_locations(ctx, env, data):
     """Performs location-macro expansion on string values.
@@ -217,7 +221,9 @@ def expand_dict_value_locations(ctx, env, data):
     as compilation happens in a separate sandbox folder, so when it comes time
     to read the file at runtime, the path is no longer valid.
 
-    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+    For detailed documentation, see:
+    - [`expand_location`](https://bazel.build/rules/lib/ctx#expand_location)
+    - [`expand_make_variables`](https://bazel.build/rules/lib/ctx#expand_make_variables)
 
     Args:
         ctx (ctx): The rule's context object
@@ -238,7 +244,9 @@ def expand_list_element_locations(ctx, args, data):
     which process_wrapper and build_script_runner will expand at run time
     to the absolute path.
 
-    See [`expand_location`](https://docs.bazel.build/versions/main/skylark/lib/ctx.html#expand_location) for detailed documentation.
+    For detailed documentation, see:
+    - [`expand_location`](https://bazel.build/rules/lib/ctx#expand_location)
+    - [`expand_make_variables`](https://bazel.build/rules/lib/ctx#expand_make_variables)
 
     Args:
         ctx (ctx): The rule's context object
@@ -463,37 +471,37 @@ def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
 # the second element is an encoding of that char suitable for use in a crate
 # name.
 _encodings = (
-    (":", "c"),
-    ("!", "bang"),
-    ("%", "perc"),
-    ("@", "at"),
+    (":", "x"),
+    ("!", "excl"),
+    ("%", "prc"),
+    ("@", "ao"),
     ("^", "caret"),
     ("`", "bt"),
     (" ", "sp"),
     ("\"", "dq"),
-    ("#", "hash"),
-    ("$", "dollar"),
+    ("#", "octo"),
+    ("$", "dllr"),
     ("&", "amp"),
     ("'", "sq"),
     ("(", "lp"),
     (")", "rp"),
-    ("*", "star"),
+    ("*", "astr"),
     ("-", "d"),
-    ("+", "plus"),
-    (",", "comma"),
-    (";", "semi"),
-    ("<", "langle"),
+    ("+", "pl"),
+    (",", "cm"),
+    (";", "sm"),
+    ("<", "la"),
     ("=", "eq"),
-    (">", "rangle"),
+    (">", "ra"),
     ("?", "qm"),
-    ("[", "lbrack"),
-    ("]", "rbrack"),
-    ("{", "lbrace"),
-    ("|", "pipe"),
-    ("}", "rbrace"),
-    ("~", "tilde"),
-    ("/", "s"),
-    (".", "dot"),
+    ("[", "lbk"),
+    ("]", "rbk"),
+    ("{", "lbe"),
+    ("|", "pp"),
+    ("}", "rbe"),
+    ("~", "td"),
+    ("/", "y"),
+    (".", "pd"),
 )
 
 # For each of the above encodings, we generate two substitution rules: one that

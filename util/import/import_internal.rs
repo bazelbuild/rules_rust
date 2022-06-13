@@ -77,37 +77,37 @@ lazy_static! {
     // //rust/private/utils.bzl exactly.
     static ref ENCODINGS: Vec<(&'static str, &'static str)> =
             vec![
-                    (":", "c"),
-                    ("!", "bang"),
-                    ("%", "perc"),
-                    ("@", "at"),
+                    (":", "x"),
+                    ("!", "excl"),
+                    ("%", "prc"),
+                    ("@", "ao"),
                     ("^", "caret"),
                     ("`", "bt"),
                     (" ", "sp"),
                     ("\"", "dq"),
-                    ("#", "hash"),
-                    ("$", "dollar"),
+                    ("#", "octo"),
+                    ("$", "dllr"),
                     ("&", "amp"),
                     ("'", "sq"),
                     ("(", "lp"),
                     (")", "rp"),
-                    ("*", "star"),
+                    ("*", "astr"),
                     ("-", "d"),
-                    ("+", "plus"),
-                    (",", "comma"),
-                    (";", "semi"),
-                    ("<", "langle"),
+                    ("+", "pl"),
+                    (",", "cm"),
+                    (";", "sm"),
+                    ("<", "la"),
                     ("=", "eq"),
-                    (">", "rangle"),
+                    (">", "ra"),
                     ("?", "qm"),
-                    ("[", "lbrack"),
-                    ("]", "rbrack"),
-                    ("{", "lbrace"),
-                    ("|", "pipe"),
-                    ("}", "rbrace"),
-                    ("~", "tilde"),
-                    ("/", "s"),
-                    (".", "dot"),
+                    ("[", "lbk"),
+                    ("]", "rbk"),
+                    ("{", "lbe"),
+                    ("|", "pp"),
+                    ("}", "rbe"),
+                    ("~", "td"),
+                    ("/", "y"),
+                    (".", "pd"),
             ];
 
     // Transformations are stored as "(unencoded, encoded)" tuples.
@@ -311,42 +311,42 @@ mod tests {
         let expanded = expand_imports(parse_quote! { "//some_project:utils"; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_utils as utils ;"
+            "extern crate some_project_x_utils as utils ;"
         );
 
         // Package and a target, with a no-op alias.
         let expanded = expand_imports(parse_quote! { "//some_project:utils" as utils; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_utils as utils ;"
+            "extern crate some_project_x_utils as utils ;"
         );
 
         // Package and a target, with an alias.
         let expanded = expand_imports(parse_quote! { "//some_project:utils" as my_utils; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_utils as my_utils ;"
+            "extern crate some_project_x_utils as my_utils ;"
         );
 
         // Package and an implicit target.
         let expanded = expand_imports(parse_quote! { "//some_project/utils"; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_s_utils_c_utils as utils ;"
+            "extern crate some_project_y_utils_x_utils as utils ;"
         );
 
         // Package and an implicit target, with a no-op alias.
         let expanded = expand_imports(parse_quote! { "//some_project/utils" as utils; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_s_utils_c_utils as utils ;"
+            "extern crate some_project_y_utils_x_utils as utils ;"
         );
 
         // Package and an implicit target, with an alias.
         let expanded = expand_imports(parse_quote! { "//some_project/utils" as my_utils; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_s_utils_c_utils as my_utils ;"
+            "extern crate some_project_y_utils_x_utils as my_utils ;"
         );
 
         // A third-party target.
@@ -375,14 +375,14 @@ mod tests {
         )?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_utils as utils ; extern crate serde ;"
+            "extern crate some_project_x_utils as utils ; extern crate serde ;"
         );
 
         // Problematic target name.
         let expanded = expand_imports(parse_quote! { "//some_project:thing-types"; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_thing_d_types as thing_d_types ;"
+            "extern crate some_project_x_thing_d_types as thing_d_types ;"
         );
 
         // Problematic target name with alias.
@@ -392,14 +392,14 @@ mod tests {
         )?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_c_thing_d_types as types ;"
+            "extern crate some_project_x_thing_d_types as types ;"
         );
 
         // Problematic package name.
         let expanded = expand_imports(parse_quote! { "//some_project-prototype:utils"; }, &mode)?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_d_prototype_c_utils as utils ;"
+            "extern crate some_project_d_prototype_x_utils as utils ;"
         );
 
         // Problematic package and target names.
@@ -409,7 +409,7 @@ mod tests {
         )?;
         assert_eq!(
             expanded.to_string(),
-            "extern crate some_project_d_prototype_c_thing_d_types as thing_d_types ;"
+            "extern crate some_project_d_prototype_x_thing_d_types as thing_d_types ;"
         );
 
         Ok(())
@@ -541,8 +541,8 @@ mod tests {
 
     #[test]
     fn test_encode() -> Result<()> {
-        assert_eq!(encode("some_project:utils"), "some_project_c_utils");
-        assert_eq!(&encode("_zdot_"), "_zz_dot_");
+        assert_eq!(encode("some_project:utils"), "some_project_x_utils");
+        assert_eq!(&encode("_zpd_"), "_zz_pd_");
 
         // All the encodings should be what we expect.
         for (orig, encoded) in SUBSTITUTIONS.0.iter().zip(SUBSTITUTIONS.1.iter()) {
@@ -554,8 +554,8 @@ mod tests {
 
     #[test]
     fn test_decode() -> Result<()> {
-        assert_eq!(decode("some_project_c_utils"), "some_project:utils");
-        assert_eq!(decode("_zz_dot_"), "_zdot_");
+        assert_eq!(decode("some_project_x_utils"), "some_project:utils");
+        assert_eq!(decode("_zz_pd_"), "_zpd_");
 
         // All the decodings should be what we expect.
         for (orig, encoded) in SUBSTITUTIONS.0.iter().zip(SUBSTITUTIONS.1.iter()) {

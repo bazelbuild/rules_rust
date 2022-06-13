@@ -62,15 +62,29 @@ def _test_clippy_aspect_action_has_warnings_flag_test_impl(ctx):
         ],
     )
 
-def make_clippy_aspect_unittest(impl):
+_CLIPPY_EXPLICIT_FLAGS = [
+    "-Dwarnings",
+    "-A",
+    "clippy::needless_return",
+]
+
+def _clippy_aspect_with_explicit_flags_test_impl(ctx):
+    return _clippy_aspect_action_has_flag_impl(
+        ctx,
+        _CLIPPY_EXPLICIT_FLAGS,
+    )
+
+def make_clippy_aspect_unittest(impl, **kwargs):
     return analysistest.make(
         impl,
         extra_target_under_test_aspects = [rust_clippy_aspect],
+        **kwargs
     )
 
 binary_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_binary_clippy_aspect_action_has_warnings_flag_test_impl)
 library_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_library_clippy_aspect_action_has_warnings_flag_test_impl)
 test_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_test_clippy_aspect_action_has_warnings_flag_test_impl)
+clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(_clippy_aspect_with_explicit_flags_test_impl, config_settings = {"@//:clippy_flags": _CLIPPY_EXPLICIT_FLAGS})
 
 def clippy_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -91,6 +105,18 @@ def clippy_test_suite(name):
         name = "test_clippy_aspect_action_has_warnings_flag_test",
         target_under_test = Label("//test/clippy:ok_test"),
     )
+    clippy_aspect_with_explicit_flags_test(
+        name = "binary_clippy_aspect_with_explicit_flags_test",
+        target_under_test = Label("//test/clippy:ok_binary"),
+    )
+    clippy_aspect_with_explicit_flags_test(
+        name = "library_clippy_aspect_with_explicit_flags_test",
+        target_under_test = Label("//test/clippy:ok_library"),
+    )
+    clippy_aspect_with_explicit_flags_test(
+        name = "test_clippy_aspect_with_explicit_flags_test",
+        target_under_test = Label("//test/clippy:ok_test"),
+    )
 
     native.test_suite(
         name = name,
@@ -98,5 +124,8 @@ def clippy_test_suite(name):
             ":binary_clippy_aspect_action_has_warnings_flag_test",
             ":library_clippy_aspect_action_has_warnings_flag_test",
             ":test_clippy_aspect_action_has_warnings_flag_test",
+            ":binary_clippy_aspect_with_explicit_flags_test",
+            ":library_clippy_aspect_with_explicit_flags_test",
+            ":test_clippy_aspect_with_explicit_flags_test",
         ],
     )
