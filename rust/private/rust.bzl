@@ -662,10 +662,6 @@ _common_attrs = {
         allow_single_file = True,
         cfg = "exec",
     ),
-    "_stamp_flag": attr.label(
-        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
-        default = Label("//rust/private:stamp"),
-    ),
 }
 
 _rust_test_attrs = {
@@ -882,6 +878,10 @@ _rust_binary_attrs = {
         cfg = "exec",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
+    ),
+    "_stamp_flag": attr.label(
+        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
+        default = Label("//rust/private:stamp"),
     ),
 }
 
