@@ -7,9 +7,7 @@ use clap::Parser;
 
 use crate::cli::Result;
 use crate::metadata::{write_metadata, Generator, MetadataGenerator};
-use crate::splicing::{
-    generate_lockfile, ExtraManifestsManifest, Splicer, SplicingManifest, WorkspaceMetadata,
-};
+use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `splice` subcommand
 #[derive(Parser, Debug)]
@@ -18,10 +16,6 @@ pub struct SpliceOptions {
     /// A generated manifest of splicing inputs
     #[clap(long)]
     pub splicing_manifest: PathBuf,
-
-    /// A generated manifest of "extra workspace members"
-    #[clap(long)]
-    pub extra_manifests_manifest: PathBuf,
 
     /// A Cargo lockfile (Cargo.lock).
     #[clap(long)]
@@ -57,8 +51,6 @@ pub struct SpliceOptions {
 pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Load the all config files required for splicing a workspace
     let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
-    let extra_manifests_manifest =
-        ExtraManifestsManifest::try_from_path(opt.extra_manifests_manifest)?;
 
     // Determine the splicing workspace
     let temp_dir;
@@ -71,7 +63,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     };
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(splicing_dir, splicing_manifest, extra_manifests_manifest)?;
+    let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
 
     // Splice together the manifest
     let manifest_path = splicer.splice_workspace()?;

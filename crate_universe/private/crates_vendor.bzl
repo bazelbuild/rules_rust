@@ -120,20 +120,6 @@ def _write_splicing_manifest(ctx):
     runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, runfiles
 
-def _write_extra_manifests_manifest(ctx):
-    manifest = _write_data_file(
-        ctx = ctx,
-        name = "cargo-bazel-extra-manifests-manifest.json",
-        data = json.encode(struct(
-            # TODO: This is for extra workspace members
-            manifests = [],
-        )),
-    )
-    is_windows = _is_windows(ctx)
-    args = ["--extra-manifests-manifest", _runfiles_path(manifest.short_path, is_windows)]
-    runfiles = [manifest]
-    return args, runfiles
-
 def _write_config_file(ctx):
     rendering_config = dict(json.decode(render_config()))
 
@@ -218,11 +204,6 @@ def _crates_vendor_impl(ctx):
     splicing_manifest_args, splicing_manifest_runfiles = _write_splicing_manifest(ctx)
     args.extend(splicing_manifest_args)
     cargo_bazel_runfiles.extend(splicing_manifest_runfiles)
-
-    # Generate extra-manifests manifest
-    extra_manifests_manifest_args, extra_manifests_manifest_runfiles = _write_extra_manifests_manifest(ctx)
-    args.extend(extra_manifests_manifest_args)
-    cargo_bazel_runfiles.extend(extra_manifests_manifest_runfiles)
 
     # Optionally include buildifier
     if ctx.attr.buildifier:

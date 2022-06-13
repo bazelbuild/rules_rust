@@ -21,20 +21,9 @@ use crate::utils::starlark::Label;
 use self::cargo_config::CargoConfig;
 pub use self::splicer::*;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ExtraManifestInfo {
-    // The path to a Cargo Manifest
-    pub manifest: PathBuf,
-
-    // The URL where the manifest's package can be downloaded
-    pub url: String,
-
-    // The Sha256 checksum of the downloaded package located at `url`.
-    pub sha256: String,
-}
-
 type DirectPackageManifest = BTreeMap<String, cargo_toml::DependencyDetail>;
 
+/// A collection of information used for splicing together a new Cargo manifest.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SplicingManifest {
@@ -104,6 +93,7 @@ impl SplicingManifest {
     }
 }
 
+/// The result of fully resolving a [SplicingManifest] in preparation for splicing.
 #[derive(Debug, Serialize, Default)]
 pub struct SplicingMetadata {
     /// A set of all packages directly written to the rule
@@ -146,32 +136,6 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             manifests,
             cargo_config,
         })
-    }
-}
-
-/// A collection of information required for reproducible "extra worksspace members".
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ExtraManifestsManifest {
-    pub manifests: Vec<ExtraManifestInfo>,
-}
-
-impl FromStr for ExtraManifestsManifest {
-    type Err = serde_json::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s)
-    }
-}
-
-impl ExtraManifestsManifest {
-    pub fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
-        let content = fs::read_to_string(path.as_ref())?;
-        Self::from_str(&content).context("Failed to load ExtraManifestsManifest")
-    }
-
-    pub fn absolutize(self) -> Self {
-        self
     }
 }
 
@@ -229,30 +193,9 @@ impl TryFrom<serde_json::Value> for WorkspaceMetadata {
 impl WorkspaceMetadata {
     fn new(
         splicing_manifest: &SplicingManifest,
-        extra_manifests_manifest: &ExtraManifestsManifest,
-        injected_manifests: HashMap<&PathBuf, String>,
+        member_manifests: HashMap<&PathBuf, String>,
     ) -> Result<Self> {
-        let mut sources = BTreeMap::new();
-
-        for config in extra_manifests_manifest.manifests.iter() {
-            let package = match read_manifest(&config.manifest) {
-                Ok(manifest) => match manifest.package {
-                    Some(pkg) => pkg,
-                    None => continue,
-                },
-                Err(e) => return Err(e),
-            };
-
-            let id = CrateId::new(package.name, package.version);
-            let info = SourceInfo {
-                url: config.url.clone(),
-                sha256: config.sha256.clone(),
-            };
-
-            sources.insert(id, info);
-        }
-
-        let mut package_prefixes: BTreeMap<String, String> = injected_manifests
+        let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
             .filter_map(|(original_manifest, cargo_pkg_name)| {
                 let label = match splicing_manifest.manifests.get(*original_manifest) {
@@ -287,7 +230,7 @@ impl WorkspaceMetadata {
             .collect();
 
         Ok(Self {
-            sources,
+            sources: BTreeMap::new(),
             workspace_prefix,
             package_prefixes,
         })

@@ -175,18 +175,6 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
         ),
-        "extra_workspace_member_url_template": attr.string(
-            doc = "The registry url to use when fetching extra workspace members",
-            default = "https://crates.io/api/v1/crates/{name}/{version}/download",
-        ),
-        "extra_workspace_members": attr.string_dict(
-            doc = (
-                "Additional crates to download and include as a workspace member. This is unfortunately required in " +
-                "order to add information about \"binary-only\" crates so that a `rust_binary` may be generated for " +
-                "it. [rust-lang/cargo#9096](https://github.com/rust-lang/cargo/issues/9096) tracks an RFC which may " +
-                "solve for this."
-            ),
-        ),
         "generate_build_scripts": attr.bool(
             doc = (
                 "Whether or not to generate " +
