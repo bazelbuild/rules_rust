@@ -1,4 +1,5 @@
 # buildifier: disable=module-docstring
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
@@ -42,6 +43,24 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         variables = compile_variables,
     )
     return cc_c_args, cc_cxx_args, cc_env
+
+def _pwd_flags(args):
+    """Prefix execroot-relative paths of known arguments with ${pwd}.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list.
+    """
+    res = []
+    for arg in args:
+        s, opt, path = arg.partition("--sysroot=")
+        if s == "" and not paths.is_absolute(path):
+            res.append("{}${{pwd}}/{}".format(opt, path))
+        else:
+            res.append(arg)
+    return res
 
 def _build_script_impl(ctx):
     """The implementation for the `_build_script_run` rule.
@@ -111,7 +130,7 @@ def _build_script_impl(ctx):
     linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
-    env["LDFLAGS"] = " ".join(link_args)
+    env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
     # MSVC requires INCLUDE to be set
     cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
@@ -129,14 +148,12 @@ def _build_script_impl(ctx):
         ar_executable = cc_toolchain.ar_executable
         if ar_executable:
             env["AR"] = ar_executable
-        if cc_toolchain.sysroot:
-            env["SYSROOT"] = cc_toolchain.sysroot
 
         # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
         # to determine the deployment target when building for apple platforms (`macosx-version-min`
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
-        env["CFLAGS"] = " ".join(cc_c_args)
-        env["CXXFLAGS"] = " ".join(cc_cxx_args)
+        env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
+        env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
