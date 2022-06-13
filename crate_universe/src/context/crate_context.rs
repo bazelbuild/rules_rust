@@ -421,8 +421,6 @@ impl CrateContext {
             }
 
             // Rustc flags
-            // TODO: SelectList is currently backed by `BTreeSet` which is generally incorrect
-            // for rustc flags. Should SelectList be refactored?
             if let Some(extra) = &crate_extra.rustc_flags {
                 self.common_attrs.rustc_flags.append(&mut extra.clone());
             }
