@@ -12,7 +12,6 @@
 * [fail_when_enabled](#fail_when_enabled)
 * [incompatible_flag](#incompatible_flag)
 * [rules_rust_dependencies](#rules_rust_dependencies)
-* [rust_analyzer](#rust_analyzer)
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_binary](#rust_binary)
 * [rust_bindgen](#rust_bindgen)
@@ -156,26 +155,6 @@ A rule defining an incompatible flag.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="incompatible_flag-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="incompatible_flag-issue"></a>issue |  The link to the github issue associated with this flag   | String | required |  |
-
-
-<a id="#rust_analyzer"></a>
-
-## rust_analyzer
-
-<pre>
-rust_analyzer(<a href="#rust_analyzer-name">name</a>, <a href="#rust_analyzer-targets">targets</a>)
-</pre>
-
-Deprecated: gen_rust_project can now create a rust-project.json without a rust_analyzer rule.
-
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rust_analyzer-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_analyzer-targets"></a>targets |  List of all targets to be included in the index   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
 <a id="#rust_binary"></a>

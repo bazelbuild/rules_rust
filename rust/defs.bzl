@@ -38,7 +38,6 @@ load(
 )
 load(
     "//rust/private:rust_analyzer.bzl",
-    _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
 )
 load(
@@ -113,9 +112,6 @@ rust_common = _rust_common
 # See @rules_rust//rust/private:common.bzl for a complete description.
 
 rust_analyzer_aspect = _rust_analyzer_aspect
-# See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
-
-rust_analyzer = _rust_analyzer
 # See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
 
 rustfmt_aspect = _rustfmt_aspect

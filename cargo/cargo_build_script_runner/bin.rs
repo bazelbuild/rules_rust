@@ -89,14 +89,9 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    for compiler_env_var in &["CC", "CXX"] {
-        if let Some(compiler_path) = env::var_os(compiler_env_var) {
-            let mut compiler_path = exec_root.join(compiler_path).into_os_string();
-            if let Some(sysroot_path) = env::var_os("SYSROOT") {
-                compiler_path.push(" --sysroot=");
-                compiler_path.push(&exec_root.join(sysroot_path));
-            }
-            command.env(compiler_env_var, compiler_path);
+    for tool_env_var in &["CC", "CXX", "LD"] {
+        if let Some(tool_path) = env::var_os(tool_env_var) {
+            command.env(tool_env_var, exec_root.join(tool_path));
         }
     }
 
@@ -109,10 +104,6 @@ fn run_buildrs() -> Result<(), String> {
         } else {
             command.env("AR", exec_root.join(ar_path));
         }
-    }
-
-    if let Some(ld_path) = env::var_os("LD") {
-        command.env("LD", exec_root.join(ld_path));
     }
 
     // replace env vars with a ${pwd} prefix with the exec_root

@@ -220,21 +220,3 @@ rust_analyzer_detect_sysroot = rule(
         Detect the sysroot and store in a file for use by the gen_rust_project tool.
     """),
 )
-
-def _rust_analyzer_impl(_ctx):
-    pass
-
-rust_analyzer = rule(
-    attrs = {
-        "targets": attr.label_list(
-            aspects = [rust_analyzer_aspect],
-            doc = "List of all targets to be included in the index",
-        ),
-    },
-    implementation = _rust_analyzer_impl,
-    toolchains = [str(Label("//rust:toolchain"))],
-    incompatible_use_toolchain_transition = True,
-    doc = dedent("""\
-        Deprecated: gen_rust_project can now create a rust-project.json without a rust_analyzer rule.
-    """),
-)
