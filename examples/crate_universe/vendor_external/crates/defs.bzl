@@ -685,12 +685,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor__semver-1.0.9",
-        sha256 = "8cb243bdfdb5936c8dc3c45762a19d12ab4550cdc753bc247637d4ec35a040fd",
+        name = "crates_vendor__semver-1.0.10",
+        sha256 = "a41d061efea015927ac527063765e73601444cdc344ba855bc7bd44578b25e1c",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/semver/1.0.9/download"],
-        strip_prefix = "semver-1.0.9",
-        build_file = Label("@examples//vendor_external/crates:BUILD.semver-1.0.9.bazel"),
+        urls = ["https://crates.io/api/v1/crates/semver/1.0.10/download"],
+        strip_prefix = "semver-1.0.10",
+        build_file = Label("@examples//vendor_external/crates:BUILD.semver-1.0.10.bazel"),
     )
 
     maybe(

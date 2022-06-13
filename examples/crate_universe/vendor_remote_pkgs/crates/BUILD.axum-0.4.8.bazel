@@ -59,7 +59,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_pkgs__async-trait-0.1.53//:async_trait",
+            "@crates_vendor_pkgs__async-trait-0.1.56//:async_trait",
         ],
     }),
     rustc_env = {
@@ -74,10 +74,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -92,9 +89,9 @@ rust_library(
             "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
             "@crates_vendor_pkgs__bytes-1.1.0//:bytes",
             "@crates_vendor_pkgs__futures-util-0.3.21//:futures_util",
-            "@crates_vendor_pkgs__http-0.2.7//:http",
+            "@crates_vendor_pkgs__http-0.2.8//:http",
             "@crates_vendor_pkgs__http-body-0.4.5//:http_body",
-            "@crates_vendor_pkgs__hyper-0.14.18//:hyper",
+            "@crates_vendor_pkgs__hyper-0.14.19//:hyper",
             "@crates_vendor_pkgs__matchit-0.4.6//:matchit",
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mime-0.3.16//:mime",

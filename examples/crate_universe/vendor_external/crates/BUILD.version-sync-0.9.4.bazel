@@ -76,10 +76,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -93,7 +90,7 @@ rust_library(
             "@crates_vendor__proc-macro2-1.0.39//:proc_macro2",
             "@crates_vendor__pulldown-cmark-0.8.0//:pulldown_cmark",
             "@crates_vendor__regex-1.5.6//:regex",
-            "@crates_vendor__semver-1.0.9//:semver",
+            "@crates_vendor__semver-1.0.10//:semver",
             "@crates_vendor__syn-1.0.96//:syn",
             "@crates_vendor__toml-0.5.9//:toml",
             "@crates_vendor__url-2.2.2//:url",

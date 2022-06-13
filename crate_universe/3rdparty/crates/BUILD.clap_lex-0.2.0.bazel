@@ -65,10 +65,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -79,7 +76,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__os_str_bytes-6.0.1//:os_str_bytes",
+            "@crate_universe_crate_index__os_str_bytes-6.1.0//:os_str_bytes",
         ],
     }),
 )
