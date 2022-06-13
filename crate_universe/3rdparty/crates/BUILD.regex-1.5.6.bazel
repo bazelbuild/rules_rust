@@ -82,23 +82,20 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.5.5",
+    version = "1.5.6",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
             "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
             "@crate_universe_crate_index__memchr-2.5.0//:memchr",
-            "@crate_universe_crate_index__regex-syntax-0.6.25//:regex_syntax",
+            "@crate_universe_crate_index__regex-syntax-0.6.26//:regex_syntax",
         ],
     }),
 )

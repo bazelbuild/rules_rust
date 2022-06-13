@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "libz_sys",
+    name = "once_cell",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,14 +41,17 @@ rust_library(
         ],
     }),
     crate_features = [
-        "libc",
+        "alloc",
+        "default",
+        "race",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -66,22 +69,17 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.1.6",
+    version = "1.12.0",
     deps = [
-        "@zlib",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
         ],
     }),
 )

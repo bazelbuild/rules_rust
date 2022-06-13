@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Unlicense/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "globset",
+    name = "libz_sys",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,6 +41,7 @@ rust_library(
         ],
     }),
     crate_features = [
+        "libc",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -65,25 +66,19 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.8",
+    version = "1.1.8",
     deps = [
+        "@zlib",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
-            "@crate_universe_crate_index__bstr-0.2.17//:bstr",
-            "@crate_universe_crate_index__fnv-1.0.7//:fnv",
-            "@crate_universe_crate_index__log-0.4.17//:log",
-            "@crate_universe_crate_index__regex-1.5.5//:regex",
+            "@crate_universe_crate_index__libc-0.2.126//:libc",
         ],
     }),
 )

@@ -65,10 +65,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -88,22 +85,22 @@ rust_library(
 
             # Common Deps
             "@crate_universe_crate_index__crossbeam-utils-0.8.8//:crossbeam_utils",
-            "@crate_universe_crate_index__globset-0.4.8//:globset",
+            "@crate_universe_crate_index__globset-0.4.9//:globset",
             "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
             "@crate_universe_crate_index__log-0.4.17//:log",
             "@crate_universe_crate_index__memchr-2.5.0//:memchr",
-            "@crate_universe_crate_index__regex-1.5.5//:regex",
+            "@crate_universe_crate_index__regex-1.5.6//:regex",
             "@crate_universe_crate_index__same-file-1.0.6//:same_file",
             "@crate_universe_crate_index__thread_local-1.1.4//:thread_local",
             "@crate_universe_crate_index__walkdir-2.3.2//:walkdir",
         ],
         "//conditions:default": [
             "@crate_universe_crate_index__crossbeam-utils-0.8.8//:crossbeam_utils",
-            "@crate_universe_crate_index__globset-0.4.8//:globset",
+            "@crate_universe_crate_index__globset-0.4.9//:globset",
             "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
             "@crate_universe_crate_index__log-0.4.17//:log",
             "@crate_universe_crate_index__memchr-2.5.0//:memchr",
-            "@crate_universe_crate_index__regex-1.5.5//:regex",
+            "@crate_universe_crate_index__regex-1.5.6//:regex",
             "@crate_universe_crate_index__same-file-1.0.6//:same_file",
             "@crate_universe_crate_index__thread_local-1.1.4//:thread_local",
             "@crate_universe_crate_index__walkdir-2.3.2//:walkdir",

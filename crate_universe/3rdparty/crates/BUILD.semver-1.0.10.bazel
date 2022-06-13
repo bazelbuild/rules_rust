@@ -72,21 +72,18 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.9",
+    version = "1.0.10",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.9//:build_script_build",
+            "@crate_universe_crate_index__semver-1.0.10//:build_script_build",
             "@crate_universe_crate_index__serde-1.0.137//:serde",
         ],
     }),
@@ -141,10 +138,7 @@ cargo_build_script(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -155,7 +149,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.9",
+    version = "1.0.10",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({

@@ -24,11 +24,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "indexmap",
+    name = "syn",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -45,7 +45,14 @@ rust_library(
         ],
     }),
     crate_features = [
-        "std",
+        "clone-impls",
+        "default",
+        "derive",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "quote",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -70,29 +77,28 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.8.1",
+    version = "1.0.96",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__hashbrown-0.11.2//:hashbrown",
-            "@crate_universe_crate_index__indexmap-1.8.1//:build_script_build",
+            "@crate_universe_crate_index__proc-macro2-1.0.39//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.18//:quote",
+            "@crate_universe_crate_index__syn-1.0.96//:build_script_build",
+            "@crate_universe_crate_index__unicode-ident-1.0.0//:unicode_ident",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "indexmap_build_script",
+    name = "syn_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -111,7 +117,14 @@ cargo_build_script(
         ],
     }),
     crate_features = [
-        "std",
+        "clone-impls",
+        "default",
+        "derive",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "quote",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -137,10 +150,7 @@ cargo_build_script(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -151,12 +161,11 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.8.1",
+    version = "1.0.96",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__autocfg-1.1.0//:autocfg",
         ],
     }),
 )
@@ -168,7 +177,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "indexmap_build_script",
+    actual = "syn_build_script",
     tags = [
         "manual",
     ],
