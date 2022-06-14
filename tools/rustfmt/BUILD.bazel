@@ -1,5 +1,4 @@
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
-load("//tools:tool_utils.bzl", "aspect_repository")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -27,7 +26,7 @@ rust_library(
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
     rustc_env_files = [
-        "@rules_rust//rust/private:rustfmt_workspace_name",
+        "@rules_rust//rust/private:workspace_name.env",
     ],
     deps = [
         "//tools/runfiles",
@@ -44,7 +43,6 @@ rust_binary(
     ],
     edition = "2018",
     rustc_env = {
-        "ASPECT_REPOSITORY": aspect_repository(),
         "RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     },
     toolchains = [

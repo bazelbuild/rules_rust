@@ -21,13 +21,17 @@ pub struct RustfmtConfig {
 pub fn parse_rustfmt_config() -> RustfmtConfig {
     let runfiles = runfiles::Runfiles::create().unwrap();
 
-    let rustfmt = runfiles.rlocation(concat!(env!("RUSTFMT_WORKSPACE"), "/", env!("RUSTFMT")));
+    let rustfmt = runfiles.rlocation(concat!(
+        env!("RULES_RUST_CONSUMER_WORKSPACE"),
+        "/",
+        env!("RUSTFMT")
+    ));
     if !rustfmt.exists() {
         panic!("rustfmt does not exist at: {}", rustfmt.display());
     }
 
     let config = runfiles.rlocation(concat!(
-        env!("RUSTFMT_WORKSPACE"),
+        env!("RULES_RUST_CONSUMER_WORKSPACE"),
         "/",
         env!("RUSTFMT_CONFIG")
     ));
@@ -76,7 +80,9 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
         edition,
         sources: lines
             .into_iter()
-            .map(|src| runfiles.rlocation(format!("{}/{}", env!("RUSTFMT_WORKSPACE"), src)))
+            .map(|src| {
+                runfiles.rlocation(format!("{}/{}", env!("RULES_RUST_CONSUMER_WORKSPACE"), src))
+            })
             .collect(),
     }
 }
@@ -95,7 +101,13 @@ pub fn find_manifests() -> Vec<PathBuf> {
     std::env::var("RUSTFMT_MANIFESTS")
         .map(|var| {
             var.split(PATH_ENV_SEP)
-                .map(|path| runfiles.rlocation(format!("{}/{}", env!("RUSTFMT_WORKSPACE"), path)))
+                .map(|path| {
+                    runfiles.rlocation(format!(
+                        "{}/{}",
+                        env!("RULES_RUST_CONSUMER_WORKSPACE"),
+                        path
+                    ))
+                })
                 .collect()
         })
         .unwrap_or_default()

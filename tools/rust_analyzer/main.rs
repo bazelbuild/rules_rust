@@ -26,7 +26,14 @@ fn main() -> anyhow::Result<()> {
         .as_ref()
         .expect("failed to find execution root, is --execution-root set correctly?");
 
-    let rules_rust_name = env!("ASPECT_REPOSITORY");
+    // In order to support rust-analzyer within rules_rust itself, this binary needs
+    // to understand if the name of the current workspace is rules_rust to account for
+    // https://github.com/bazelbuild/bazel/issues/11734
+    let rules_rust_name = if env!("RULES_RUST_CONSUMER_WORKSPACE") == "rules_rust" {
+        ""
+    } else {
+        "@rules_rust"
+    };
 
     // Generate the crate specs.
     generate_crate_info(

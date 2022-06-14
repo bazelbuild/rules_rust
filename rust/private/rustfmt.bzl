@@ -204,22 +204,3 @@ rustfmt_test = rule(
     },
     test = True,
 )
-
-def _rustfmt_workspace_name_impl(ctx):
-    output = ctx.actions.declare_file(ctx.label.name)
-
-    ctx.actions.write(
-        output = output,
-        content = "RUSTFMT_WORKSPACE={}".format(
-            ctx.workspace_name,
-        ),
-    )
-
-    return [DefaultInfo(
-        files = depset([output]),
-    )]
-
-rustfmt_workspace_name = rule(
-    implementation = _rustfmt_workspace_name_impl,
-    doc = "A rule for detecting the workspace name for Rustfmt runfiles.",
-)

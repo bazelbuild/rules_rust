@@ -610,3 +610,28 @@ def _replace_all(string, substitutions):
         string = string[:pattern_start] + replacement + string[after_pattern:]
 
     return string
+
+_RULES_RUST_CONSUMER_WORKSPACE = "RULES_RUST_CONSUMER_WORKSPACE"
+
+def _workspace_name_impl(ctx):
+    output = ctx.actions.declare_file(ctx.label.name)
+
+    ctx.actions.write(
+        output = output,
+        content = "{}={}".format(
+            _RULES_RUST_CONSUMER_WORKSPACE,
+            ctx.workspace_name,
+        ),
+    )
+
+    return [DefaultInfo(
+        files = depset([output]),
+    )]
+
+workspace_name = rule(
+    implementation = _workspace_name_impl,
+    doc = """\
+A rule for detecting the workspace name and writing it to a file for
+exposing it as `{}` for use with `rustc_env_files` attributes on `rust_*`
+rules.""".format(_RULES_RUST_CONSUMER_WORKSPACE),
+)
