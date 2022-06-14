@@ -33,6 +33,7 @@ filegroup(
             "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
         ],
+	exclude = ["**/*libstd-*{dylib_ext}", "**/*libtest-*{dylib_ext}"],
         allow_empty = True,
     ),
     visibility = ["//visibility:public"],
@@ -149,6 +150,7 @@ rust_stdlib_filegroup(
             "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
             "lib/rustlib/{target_triple}/lib/self-contained/**",
         ],
+	exclude = ["lib/rustlib/{target_triple}/lib/*libstd-*{dylib_ext}", "lib/rustlib/{target_triple}/lib/*libtest-*{dylib_ext}"],
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
         allow_empty = True,
     ),
