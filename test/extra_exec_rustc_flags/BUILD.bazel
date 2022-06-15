@@ -21,13 +21,27 @@ rust_library(
 with_extra_exec_rustc_flags_cfg(
     name = "lib_with_exec_flags_do_not_build_directly",
     srcs = ["lib_do_not_build_directly"],
+    extra_exec_rustc_flag = [],
     extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+    tags = ["manual"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_with_singular_exec_flags_do_not_build_directly",
+    srcs = ["lib_do_not_build_directly"],
+    extra_exec_rustc_flag = ["--cfg=bazel_exec"],
+    extra_exec_rustc_flags = [],
     tags = ["manual"],
 )
 
 with_exec_cfg(
     name = "lib",
     srcs = ["lib_with_exec_flags_do_not_build_directly"],
+)
+
+with_exec_cfg(
+    name = "lib_singular",
+    srcs = ["lib_with_singular_exec_flags_do_not_build_directly"],
 )
 
 # Checks that extra_exec_rustc_flags are not passed in non-exec configurations.
@@ -43,14 +57,24 @@ rust_library(
 with_extra_exec_rustc_flags_cfg(
     name = "lib_no_exec_with_extra_build_flags",
     srcs = ["lib_no_exec"],
+    extra_exec_rustc_flag = [],
     extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_no_exec_with_singular_extra_build_flags",
+    srcs = ["lib_no_exec"],
+    extra_exec_rustc_flag = ["--cfg=bazel_exec"],
+    extra_exec_rustc_flags = [],
 )
 
 build_test(
     name = "lib_build",
     targets = [
         ":lib",
+        ":lib_singular",
         ":lib_no_exec",
         ":lib_no_exec_with_extra_build_flags",
+        ":lib_no_exec_with_singular_extra_build_flags",
     ],
 )
