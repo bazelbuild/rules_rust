@@ -483,6 +483,8 @@ def _rust_toolchain_impl(ctx):
             "RUSTFMT": sysroot.rustfmt.path,
         })
 
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
@@ -497,7 +499,7 @@ def _rust_toolchain_impl(ctx):
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
-        make_variables = platform_common.TemplateVariableInfo(make_variables),
+        make_variables = make_variable_info,
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
         rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
@@ -520,7 +522,10 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
-    return [toolchain]
+    return [
+        toolchain,
+        make_variable_info,
+    ]
 
 rust_toolchain = rule(
     implementation = _rust_toolchain_impl,
