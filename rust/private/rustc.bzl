@@ -229,7 +229,7 @@ def collect_deps(
 
     dep_env = None
     if build_info and dep_env_file:
-        fail("Only a dependency or a dep_env_file may provide build information")
+        fail("Only one of a dependency or a dep_env_file may provide build information")
     if build_info:
         if build_info.dep_env:
             dep_env = build_info.dep_env
