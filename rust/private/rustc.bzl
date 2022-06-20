@@ -139,16 +139,14 @@ def collect_deps(
         deps,
         proc_macro_deps,
         aliases,
-        are_linkstamps_supported = False,
-        dep_env_file = None):
+        are_linkstamps_supported = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps.
-        dep_env_file (File): The file from ctx.attr.dep_env_file.
+        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps..
 
     Returns:
         tuple: Returns a tuple of:
@@ -227,15 +225,6 @@ def collect_deps(
 
     transitive_crates_depset = depset(transitive = transitive_crates)
 
-    dep_env = None
-    if build_info and dep_env_file:
-        fail("Only one of a dependency or a dep_env_file may provide build information")
-    if build_info:
-        if build_info.dep_env:
-            dep_env = build_info.dep_env
-    else:
-        dep_env = dep_env_file
-
     return (
         rust_common.dep_info(
             direct_crates = depset(direct_crates),
@@ -247,7 +236,7 @@ def collect_deps(
             transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
             transitive_build_infos = depset(transitive = transitive_build_infos),
             link_search_path_files = depset(transitive = transitive_link_search_paths),
-            dep_env = dep_env,
+            dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
         depset(transitive = linkstamps),
@@ -888,7 +877,6 @@ def rustc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, linkstamps = collect_deps(
-        dep_env_file = getattr(ctx.file, "dep_env_file", None),
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,

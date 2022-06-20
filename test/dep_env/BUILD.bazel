@@ -1,6 +1,6 @@
 """Tests for passing configuration to cargo_build_script rules"""
 
-load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//cargo:cargo_build_script.bzl", "cargo_build_script", "cargo_dep_env")
 load("//rust:defs.bzl", "rust_binary", "rust_library")
 
 cargo_build_script(
@@ -17,11 +17,9 @@ rust_library(
     deps = [":set_a_build"],
 )
 
-rust_library(
+cargo_dep_env(
     name = "set_b",
-    srcs = ["empty.rs"],
-    dep_env_file = "set_b.env",
-    edition = "2018",
+    src = "set_b.env",
 )
 
 cargo_build_script(

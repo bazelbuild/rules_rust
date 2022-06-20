@@ -542,20 +542,6 @@ _common_attrs = {
         """),
         allow_files = True,
     ),
-    "dep_env_file": attr.label(
-        doc = dedent("""\
-            File containing additional environment variables to set for build scripts of direct dependencies.
-
-            This has the same effect as a `cargo_build_script` this target depends on printing
-            `cargo:VAR=VALUE` lines, but without requiring a build script.
-
-            This is useful for using Bazel rules instead of a build script, while also
-            generating configuration information for build scripts which depend on this crate.
-
-            See `rustc_env_files` for formatting details.
-        """),
-        allow_single_file = True,
-    ),
     "deps": attr.label_list(
         doc = dedent("""\
             List of other libraries to be linked to this library target.

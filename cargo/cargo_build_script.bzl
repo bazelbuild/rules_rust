@@ -3,6 +3,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//rust:defs.bzl", "rust_binary", "rust_common")
+load("//rust/private:providers.bzl", _DepInfo = "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
@@ -435,3 +436,61 @@ def _name_to_pkg_name(name):
     if name.endswith("_build_script"):
         return name[:-len("_build_script")]
     return name
+
+def _cargo_dep_env_implementation(ctx):
+    empty_file = ctx.actions.declare_file(ctx.label.name + ".empty_file")
+    empty_dir = ctx.actions.declare_directory(ctx.label.name + ".empty_dir")
+    ctx.actions.write(
+        output = empty_file,
+        content = "",
+    )
+    ctx.actions.run(
+        outputs = [empty_dir],
+        executable = "true",
+    )
+    return [
+        DefaultInfo(files = depset(ctx.files.src)),
+        BuildInfo(
+            dep_env = empty_file,
+            flags = empty_file,
+            link_flags = empty_file,
+            link_search_paths = empty_file,
+            out_dir = empty_dir,
+            rustc_env = empty_file,
+        ),
+        _DepInfo(
+            dep_env = ctx.file.src,
+            direct_crates = depset(),
+            link_search_path_files = depset(),
+            transitive_build_infos = depset(),
+            transitive_crate_outputs = depset(),
+            transitive_crates = depset(),
+            transitive_noncrates = depset(),
+        ),
+    ]
+
+cargo_dep_env = rule(
+    implementation = _cargo_dep_env_implementation,
+    doc = (
+        "A rule for generating variables for dependent `cargo_build_script`s " +
+        "without a build script. This is useful for using Bazel rules instead " +
+        "of a build script, while also generating configuration information " +
+        "for build scripts which depend on this crate."
+    ),
+    attrs = {
+        "src": attr.label(
+            doc = dedent("""\
+                File containing additional environment variables to set for build scripts of direct dependencies.
+
+                This has the same effect as a `cargo_build_script` which prints
+                `cargo:VAR=VALUE` lines, but without requiring a build script.
+
+                This files should  contain a single variable per line, of format
+                `NAME=value`, and newlines may be included in a value by ending a
+                line with a trailing back-slash (`\\\\`).
+            """),
+            allow_single_file = True,
+            mandatory = True,
+        ),
+    },
+)
