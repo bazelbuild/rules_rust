@@ -157,7 +157,11 @@ def _create_single_crate(ctx, info):
     is_generated = not info.crate.root.is_source
     path_prefix = _exec_root_tmpl if is_external or is_generated else ""
     crate["is_workspace_member"] = not is_external
-    crate["root_module"] = path_prefix + info.crate.root.path
+
+    if info.crate.root.is_directory:
+        crate["root_module"] = path_prefix + info.crate.root.path + "/lib.rs"
+    else:
+        crate["root_module"] = path_prefix + info.crate.root.path
     crate_root = path_prefix + info.crate.root.dirname
 
     if info.build_info != None:
