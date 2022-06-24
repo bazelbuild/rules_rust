@@ -1,0 +1,51 @@
+"""Tests for passing configuration to cargo_build_script rules"""
+
+load("//cargo:cargo_build_script.bzl", "cargo_build_script", "cargo_dep_env")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
+
+cargo_build_script(
+    name = "set_a_build",
+    srcs = ["set_a.rs"],
+    edition = "2018",
+    links = "X",
+)
+
+rust_library(
+    name = "set_a",
+    srcs = ["empty.rs"],
+    edition = "2018",
+    deps = [":set_a_build"],
+)
+
+cargo_dep_env(
+    name = "set_b",
+    src = "set_b.env",
+)
+
+cargo_build_script(
+    name = "read_a",
+    srcs = ["read_a.rs"],
+    edition = "2018",
+    deps = [":set_a"],
+)
+
+cargo_build_script(
+    name = "read_b",
+    srcs = ["read_b.rs"],
+    edition = "2018",
+    deps = [":set_b"],
+)
+
+rust_binary(
+    name = "build_read_a",
+    srcs = ["empty_main.rs"],
+    edition = "2018",
+    deps = [":read_a"],
+)
+
+rust_binary(
+    name = "build_read_b",
+    srcs = ["empty_main.rs"],
+    edition = "2018",
+    deps = [":read_b"],
+)
