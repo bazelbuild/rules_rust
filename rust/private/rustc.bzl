@@ -1352,7 +1352,7 @@ def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
             artifact = get_preferred_artifact(lib, use_pic)
             if ambiguous_libs and artifact.path in ambiguous_libs:
                 artifact = ambiguous_libs[artifact.path]
-            ret.extend(["-lstatic=%s" % get_lib_name(artifact), "-Clink-arg=-l%s" % artifact.basename])
+            ret.extend(["-lstatic=%s" % get_lib_name(artifact), "-Clink-arg=%s" % artifact.basename])
         else:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
     return ret
