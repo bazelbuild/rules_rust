@@ -650,21 +650,33 @@ _common_attrs = {
         default = "0.0.0",
     ),
     "_cc_toolchain": attr.label(
-        default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        doc = (
+            "In order to use find_cc_toolchain, your rule has to depend " +
+            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
+            "docs for details."
+        ),
+        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
     "_collect_cc_coverage": attr.label(
-        default = "//util:collect_coverage",
+        default = Label("//util:collect_coverage"),
         executable = True,
         cfg = "exec",
     ),
-    "_error_format": attr.label(default = "//:error_format"),
-    "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
-    "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
+    "_error_format": attr.label(
+        default = Label("//:error_format"),
+    ),
+    "_extra_exec_rustc_flags": attr.label(
+        default = Label("//:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_flags": attr.label(
+        default = Label("//:extra_rustc_flags"),
+    ),
     "_import_macro_dep": attr.label(
-        default = "@rules_rust//util/import",
+        default = Label("//util/import"),
         cfg = "exec",
     ),
     "_process_wrapper": attr.label(
+        doc = "A process wrapper for running rustc on all platforms.",
         default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,

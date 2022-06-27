@@ -651,13 +651,13 @@ rust_toolchain = rule(
             ),
         ),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_rename_first_party_crates": attr.label(
-            default = "@rules_rust//rust/settings:rename_first_party_crates",
+            default = Label("//rust/settings:rename_first_party_crates"),
         ),
         "_third_party_dir": attr.label(
-            default = "@rules_rust//rust/settings:third_party_dir",
+            default = Label("//rust/settings:third_party_dir"),
         ),
     },
     toolchains = [
