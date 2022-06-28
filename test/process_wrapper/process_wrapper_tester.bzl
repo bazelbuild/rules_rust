@@ -83,7 +83,7 @@ process_wrapper_tester = rule(
             cfg = "exec",
         ),
         "_process_wrapper_tester": attr.label(
-            default = "//test/process_wrapper:process_wrapper_tester",
+            default = Label("//test/process_wrapper:process_wrapper_tester"),
             executable = True,
             cfg = "exec",
         ),

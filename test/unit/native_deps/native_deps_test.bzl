@@ -48,7 +48,10 @@ def _staticlib_has_native_libs_test_impl(ctx):
 def _proc_macro_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    asserts.equals(env, 1, len(tut.actions))
+    if ctx.configuration.coverage_enabled:
+        asserts.equals(env, 2, len(tut.actions))
+    else:
+        asserts.equals(env, 1, len(tut.actions))
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")

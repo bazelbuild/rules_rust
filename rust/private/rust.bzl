@@ -466,6 +466,9 @@ def _rust_test_common(ctx, toolchain, output):
         getattr(ctx.attr, "env", {}),
         data,
     )
+    if ctx.configuration.coverage_enabled:
+        env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
+        env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
     providers.append(testing.TestEnvironment(env))
 
     return providers
@@ -647,18 +650,39 @@ _common_attrs = {
         default = "0.0.0",
     ),
     "_cc_toolchain": attr.label(
-        default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        doc = (
+            "In order to use find_cc_toolchain, your rule has to depend " +
+            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
+            "docs for details."
+        ),
+        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
-    "_error_format": attr.label(default = "//:error_format"),
-    "_extra_exec_rustc_flag": attr.label(default = "//:extra_exec_rustc_flag"),
-    "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
-    "_extra_rustc_flag": attr.label(default = "//:extra_rustc_flag"),
-    "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
+    "_collect_cc_coverage": attr.label(
+        default = Label("//util:collect_coverage"),
+        executable = True,
+        cfg = "exec",
+    ),
+    "_error_format": attr.label(
+        default = "//:error_format",
+    ),
+    "_extra_exec_rustc_flag": attr.label(
+        default = "//:extra_exec_rustc_flag",
+    ),
+    "_extra_exec_rustc_flags": attr.label(
+        default = "//:extra_exec_rustc_flags",
+    ),
+    "_extra_rustc_flag": attr.label(
+        default = "//:extra_rustc_flag",
+    ),
+    "_extra_rustc_flags": attr.label(
+        default = "//:extra_rustc_flags",
+    ),
     "_import_macro_dep": attr.label(
-        default = "@rules_rust//util/import",
+        default = Label("//util/import"),
         cfg = "exec",
     ),
     "_process_wrapper": attr.label(
+        doc = "A process wrapper for running rustc on all platforms.",
         default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,

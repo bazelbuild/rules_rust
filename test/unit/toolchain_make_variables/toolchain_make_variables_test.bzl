@@ -13,7 +13,7 @@ _ENV = {
     "ENV_VAR_RUST_SYSROOT": "$(RUST_SYSROOT)",
 }
 
-def _rustc_env_variable_expansion_test_impl(ctx):
+def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
     action = target.actions[0]
@@ -21,7 +21,7 @@ def _rustc_env_variable_expansion_test_impl(ctx):
     assert_action_mnemonic(
         env = env,
         action = action,
-        mnemonic = "Rustc",
+        mnemonic = mnemonic,
     )
 
     toolchain = ctx.attr._current_rust_toolchain[platform_common.ToolchainInfo]
@@ -45,12 +45,105 @@ def _rustc_env_variable_expansion_test_impl(ctx):
 
     return analysistest.end(env)
 
-rustc_env_variable_expansion_test = analysistest.make(
+def make_toolchain_make_variable_test(impl):
+    return analysistest.make(
+        impl = impl,
+        attrs = {
+            "_current_rust_toolchain": attr.label(
+                doc = "The currently registered rust toolchain",
+                default = Label("//rust/toolchain:current_rust_toolchain"),
+            ),
+        },
+    )
+
+def _rustc_env_variable_expansion_test_impl(ctx):
+    return _rust_toolchain_make_variable_expansion_test_common_impl(ctx, "Rustc")
+
+rustc_env_variable_expansion_test = make_toolchain_make_variable_test(
     impl = _rustc_env_variable_expansion_test_impl,
+)
+
+def _rust_toolchain_make_variable_expansion_test(ctx):
+    return _rust_toolchain_make_variable_expansion_test_common_impl(ctx, "RustToolchainConsumer")
+
+rust_toolchain_make_variable_expansion_test = make_toolchain_make_variable_test(
+    impl = _rust_toolchain_make_variable_expansion_test,
+)
+
+def _current_rust_toolchain_make_variable_expansion_test_impl(ctx):
+    return _rust_toolchain_make_variable_expansion_test_common_impl(ctx, "CurrentRustToolchainConsumer")
+
+current_rust_toolchain_make_variable_expansion_test = make_toolchain_make_variable_test(
+    impl = _current_rust_toolchain_make_variable_expansion_test_impl,
+)
+
+def _rust_toolchain_consumer_common_impl(ctx, mnemonic):
+    output = ctx.actions.declare_file(ctx.label.name)
+
+    args = ctx.actions.args()
+    args.add(output)
+
+    # Expand make variables
+    env = {
+        key: ctx.expand_make_variables(
+            key,
+            val,
+            {},
+        )
+        for key, val in ctx.attr.env.items()
+    }
+
+    ctx.actions.run(
+        outputs = [output],
+        executable = ctx.executable.writer,
+        mnemonic = mnemonic,
+        env = env,
+        arguments = [args],
+    )
+
+    return DefaultInfo(
+        files = depset([output]),
+    )
+
+def _rust_toolchain_consumer_impl(ctx):
+    return _rust_toolchain_consumer_common_impl(ctx, "RustToolchainConsumer")
+
+rust_toolchain_consumer = rule(
+    implementation = _rust_toolchain_consumer_impl,
+    doc = "A helper rule to test make variable expansion of rules that depend on `rust_toolchain`.",
     attrs = {
-        "_current_rust_toolchain": attr.label(
-            doc = "The currently registered rust toolchain",
-            default = Label("//rust/toolchain:current_rust_toolchain"),
+        "env": attr.string_dict(
+            doc = "Environment variables used for expansion",
+            mandatory = True,
+        ),
+        "writer": attr.label(
+            doc = "An executable for creating an action output",
+            cfg = "exec",
+            executable = True,
+            mandatory = True,
+        ),
+    },
+    toolchains = [
+        "@rules_rust//rust:toolchain",
+    ],
+)
+
+def _current_rust_toolchain_consumer_impl(ctx):
+    return _rust_toolchain_consumer_common_impl(ctx, "CurrentRustToolchainConsumer")
+
+current_rust_toolchain_consumer = rule(
+    implementation = _current_rust_toolchain_consumer_impl,
+    doc = "A helper rule to test make variable expansion of `current_rust_toolchain`.",
+    attrs = {
+        "env": attr.string_dict(
+            doc = "Environment variables used for expansion",
+            mandatory = True,
+        ),
+        "writer": attr.label(
+            doc = "An executable for creating an action output",
+            cfg = "exec",
+            executable = True,
+            mandatory = True,
         ),
     },
 )
@@ -59,7 +152,6 @@ def _define_targets():
     rust_library(
         name = "library",
         srcs = ["main.rs"],
-        toolchains = ["//rust/toolchain:current_rust_toolchain"],
         rustc_env = _ENV,
         edition = "2018",
     )
@@ -67,15 +159,13 @@ def _define_targets():
     rust_binary(
         name = "binary",
         srcs = ["main.rs"],
-        toolchains = ["//rust/toolchain:current_rust_toolchain"],
         rustc_env = _ENV,
         edition = "2018",
     )
 
     rust_test(
         name = "integration_test",
-        srcs = ["main.rs"],
-        toolchains = ["//rust/toolchain:current_rust_toolchain"],
+        srcs = ["test.rs"],
         rustc_env = _ENV,
         edition = "2018",
     )
@@ -83,8 +173,20 @@ def _define_targets():
     rust_test(
         name = "unit_test",
         crate = "library",
-        toolchains = ["//rust/toolchain:current_rust_toolchain"],
         rustc_env = _ENV,
+    )
+
+    rust_toolchain_consumer(
+        name = "rust_toolchain_consumer",
+        env = _ENV,
+        writer = ":binary",
+    )
+
+    current_rust_toolchain_consumer(
+        name = "current_rust_toolchain_consumer",
+        env = _ENV,
+        toolchains = ["//rust/toolchain:current_rust_toolchain"],
+        writer = ":binary",
     )
 
 def toolchain_make_variable_test_suite(name):
@@ -115,6 +217,16 @@ def toolchain_make_variable_test_suite(name):
         target_under_test = ":unit_test",
     )
 
+    rust_toolchain_make_variable_expansion_test(
+        name = "rust_toolchain_make_variable_expansion_test",
+        target_under_test = ":rust_toolchain_consumer",
+    )
+
+    current_rust_toolchain_make_variable_expansion_test(
+        name = "current_rust_toolchain_make_variable_expansion_test",
+        target_under_test = ":current_rust_toolchain_consumer",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -122,5 +234,7 @@ def toolchain_make_variable_test_suite(name):
             ":rustc_env_variable_expansion_binary_test",
             ":rustc_env_variable_expansion_integration_test_test",
             ":rustc_env_variable_expansion_unit_test_test",
+            ":rust_toolchain_make_variable_expansion_test",
+            ":current_rust_toolchain_make_variable_expansion_test",
         ],
     )

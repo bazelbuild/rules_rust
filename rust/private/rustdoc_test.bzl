@@ -187,7 +187,7 @@ rust_doc_test = rule(
                 "on C++ toolchain. See @rules_cc//cc:find_cc_toolchain.bzl " +
                 "docs for details."
             ),
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",
