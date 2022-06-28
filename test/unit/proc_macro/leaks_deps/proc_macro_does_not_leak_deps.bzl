@@ -22,15 +22,22 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     asserts.equals(env, 0, len(proc_macro_dep_inputs))
     asserts.equals(env, 0, len(proc_macro_dep_args))
 
+    link_arg_prefix = "-Clink-arg=native" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstrainValueInfo]) else "-Clink-arg=-lnative"
+
     # Our test target depends on proc_macro_dep:native directly, as well as transitively through the
     # proc_macro. The proc_macro should not leak its dependency, so we should only get the "native"
     # library once on the command line.
-    native_deps = [arg for arg in rustc_action.argv if arg.startswith("-Clink-arg=-lnative")]
+    native_deps = [arg for arg in rustc_action.argv if arg.startswith(link_arg_prefix)]
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)
 
-proc_macro_does_not_leak_deps_test = analysistest.make(_proc_macro_does_not_leak_deps_impl)
+proc_macro_does_not_leak_deps_test = analysistest.make(
+    _proc_macro_does_not_leak_deps_impl,
+    attrs = {
+        "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
 
 def _proc_macro_does_not_leak_deps_test():
     rust_proc_macro(
