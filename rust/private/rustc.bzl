@@ -373,7 +373,7 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
 
     # Take the absolute value of hash() since it could be negative.
     path_hash = abs(hash(lib.path))
-    lib_name = get_lib_name(lib)
+    lib_name = get_lib_name(lib, for_windows = toolchain.os.startswith("windows"))
 
     prefix = "lib"
     extension = ".a"
@@ -436,7 +436,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             if _is_dylib(lib):
                 continue
             artifact = get_preferred_artifact(lib, use_pic)
-            name = get_lib_name(artifact)
+            name = get_lib_name(artifact, toolchain.os.startswith("windows"))
 
             # On Linux-like platforms, normally library base names start with
             # `lib`, following the pattern `lib[name].(a|lo)` and we pass
@@ -1310,79 +1310,82 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs):
+def _get_disambiguated_artifact(lib, use_pic, ambiguous_libs):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
-    if lib.static_library or lib.pic_static_library:
-        # To ensure appropriate linker library argument order, in the presence
-        # of both native libraries that depend on rlibs and rlibs that depend
-        # on native libraries, we use an approach where we "sandwich" the
-        # rust libraries between two similar sections of all of native
-        # libraries:
-        # n1 n2 ... r1 r2 ... n1 n2 ...
-        # A         B         C
-        # This way any dependency from a native library to a rust library
-        # is resolved from A to B, and any dependency from a rust library to
-        # a native one is resolved from B to C.
-        # The question of resolving dependencies from a native library from A
-        # to any rust library is addressed in a different place, where we
-        # create symlinks to the rlibs, pretending they are native libraries,
-        # and adding references to these symlinks in the native section A.
-        # We rely in the behavior of -Clink-arg to put the linker args
-        # at the end of the linker invocation constructed by rustc.
-        return [
-            "-lstatic=%s" % get_lib_name(artifact),
-            "-Clink-arg=-l%s" % get_lib_name(artifact),
-        ]
-    elif _is_dylib(lib):
-        return [
-            "-ldylib=%s" % get_lib_name(artifact),
-        ]
+    return artifact
 
-    return []
+# To ensure appropriate linker library argument order, in the presence
+# of both native libraries that depend on rlibs and rlibs that depend
+# on native libraries, we use an approach where we "sandwich" the
+# rust libraries between two similar sections of all of native
+# libraries:
+# n1 n2 ... r1 r2 ... n1 n2 ...
+# A         B         C
+# This way any dependency from a native library to a rust library
+# is resolved from A to B, and any dependency from a rust library to
+# a native one is resolved from B to C.
+# The question of resolving dependencies from a native library from A
+# to any rust library is addressed in a different place, where we
+# create symlinks to the rlibs, pretending they are native libraries,
+# and adding references to these symlinks in the native section A.
+# We rely in the behavior of -Clink-arg to put the linker args
+# at the end of the linker invocation constructed by rustc.
 
 def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
+        artifact = _get_disambiguated_artifact(linker_input, use_pic, ambiguous_libs)
         if lib.alwayslink:
-            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
+            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % artifact.path])
         elif lib.static_library or lib.pic_static_library:
-            artifact = get_preferred_artifact(lib, use_pic)
-            ret.extend(["-lstatic=%s" % artifact.basename[:-4], "-C", "link-arg=%s" % artifact.basename])
-        else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.append("-lstatic=%s" % get_lib_name(artifact, for_windows = True))
+            if not artifact.basename.startswith("std-") and not artifact.basename.startswith("test-"):
+                ret.append("-Clink-arg=%s" % artifact.basename)
+        elif _is_dylib(lib):
+            ret.append("-ldylib=%s" % get_lib_name(artifact, for_windows = True))
     return ret
 
 def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
+        artifact = _get_disambiguated_artifact(lib, use_pic, ambiguous_libs)
         if lib.alwayslink:
             ret.extend([
                 "-C",
-                ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
+                ("link-arg=-Wl,-force_load,%s" % artifact.path),
             ])
-        else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+        elif lib.static_library or lib.pic_static_library:
+            ret.append("-lstatic=%s" % get_lib_name(artifact))
+            if not artifact.basename.startswith("libstd-") and not artifact.basename.startswith("libtest-"):
+                ret.append("-Clink-arg=-l%s" % get_lib_name(artifact))
+        elif _is_dylib(lib):
+            ret.append("-ldylib=%s" % get_lib_name(artifact))
     return ret
 
 def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
+        artifact = _get_disambiguated_artifact(lib, use_pic, ambiguous_libs)
         if lib.alwayslink:
             ret.extend([
                 "-C",
                 "link-arg=-Wl,--whole-archive",
                 "-C",
-                ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
+                ("link-arg=%s" % artifact.path),
                 "-C",
                 "link-arg=-Wl,--no-whole-archive",
             ])
-        else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+        elif lib.static_library or lib.pic_static_library:
+            ret.append("-lstatic=%s" % get_lib_name(artifact))
+            if not artifact.basename.startswith("libstd-") and not artifact.basename.startswith("libtest-"):
+                ret.append("-Clink-arg=-l%s" % get_lib_name(artifact))
+        elif _is_dylib(lib):
+            ret.append("-ldylib=%s" % get_lib_name(artifact))
     return ret
 
 def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
