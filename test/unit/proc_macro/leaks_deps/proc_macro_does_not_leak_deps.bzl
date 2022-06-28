@@ -22,7 +22,7 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     asserts.equals(env, 0, len(proc_macro_dep_inputs))
     asserts.equals(env, 0, len(proc_macro_dep_args))
 
-    link_arg_prefix = "-Clink-arg=native" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstrainValueInfo]) else "-Clink-arg=-lnative"
+    link_arg_prefix = "-Clink-arg=native" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative"
 
     # Our test target depends on proc_macro_dep:native directly, as well as transitively through the
     # proc_macro. The proc_macro should not leak its dependency, so we should only get the "native"
