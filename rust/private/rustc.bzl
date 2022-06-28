@@ -1337,7 +1337,7 @@ def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
-        artifact = _get_disambiguated_artifact(linker_input, use_pic, ambiguous_libs)
+        artifact = _get_disambiguated_artifact(lib, use_pic, ambiguous_libs)
         if lib.alwayslink:
             ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % artifact.path])
         elif lib.static_library or lib.pic_static_library:

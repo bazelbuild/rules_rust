@@ -22,6 +22,5 @@ rust_test(
     name = "main",
     srcs = ["main.rs"],
     edition = "2018",
-    rustc_flags = ["--print=link-args"],
     deps = ["direct"],
 )
