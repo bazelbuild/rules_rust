@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__getrandom-0.2.6//:getrandom",
+            "@crates_vendor__getrandom-0.2.7//:getrandom",
         ],
     }),
 )

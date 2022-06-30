@@ -84,7 +84,7 @@ rust_library(
             "@crate_universe_crate_index__winapi-util-0.1.5//:winapi_util",
 
             # Common Deps
-            "@crate_universe_crate_index__crossbeam-utils-0.8.8//:crossbeam_utils",
+            "@crate_universe_crate_index__crossbeam-utils-0.8.10//:crossbeam_utils",
             "@crate_universe_crate_index__globset-0.4.9//:globset",
             "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
             "@crate_universe_crate_index__log-0.4.17//:log",
@@ -95,7 +95,7 @@ rust_library(
             "@crate_universe_crate_index__walkdir-2.3.2//:walkdir",
         ],
         "//conditions:default": [
-            "@crate_universe_crate_index__crossbeam-utils-0.8.8//:crossbeam_utils",
+            "@crate_universe_crate_index__crossbeam-utils-0.8.10//:crossbeam_utils",
             "@crate_universe_crate_index__globset-0.4.9//:globset",
             "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
             "@crate_universe_crate_index__log-0.4.17//:log",

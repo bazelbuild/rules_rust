@@ -79,7 +79,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__getrandom-0.2.6//:getrandom",
+            "@rules_rust_wasm_bindgen__getrandom-0.2.7//:getrandom",
         ],
     }),
 )

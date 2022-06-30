@@ -77,7 +77,7 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__quote-1.0.18//:quote",
+            "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
             "@rules_rust_wasm_bindgen__wasm-bindgen-macro-support-0.2.78//:wasm_bindgen_macro_support",
         ],
     }),
