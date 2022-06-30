@@ -8,7 +8,7 @@ load(
     "execute_generator",
     "generate_config",
     "get_generator",
-    "get_lockfile",
+    "get_lockfiles",
 )
 load(
     "//crate_universe/private:splicing_utils.bzl",
@@ -30,8 +30,8 @@ def _crates_repository_impl(repository_ctx):
     # Generate a config file for all settings
     config_path = generate_config(repository_ctx)
 
-    # Locate the lockfile
-    lockfile = get_lockfile(repository_ctx)
+    # Locate the lockfiles
+    lockfiles = get_lockfiles(repository_ctx)
 
     # Locate Rust tools (cargo, rustc)
     tools = get_rust_tools(repository_ctx, host_triple)
@@ -45,8 +45,7 @@ def _crates_repository_impl(repository_ctx):
     repin = determine_repin(
         repository_ctx = repository_ctx,
         generator = generator,
-        lockfile_path = lockfile.path,
-        lockfile_kind = lockfile.kind,
+        lockfile_path = lockfiles.bazel,
         config = config_path,
         splicing_manifest = splicing_manifest,
         cargo = cargo_path,
@@ -55,12 +54,12 @@ def _crates_repository_impl(repository_ctx):
 
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
-    if repin or lockfile.kind == "cargo":
+    if repin:
         # Generate a top level Cargo workspace and manifest for use in generation
         metadata_path = splice_workspace_manifest(
             repository_ctx = repository_ctx,
             generator = generator,
-            lockfile = lockfile,
+            cargo_lockfile = lockfiles.cargo,
             splicing_manifest = splicing_manifest,
             cargo = cargo_path,
             rustc = rustc_path,
@@ -68,7 +67,6 @@ def _crates_repository_impl(repository_ctx):
 
         kwargs.update({
             "metadata": metadata_path,
-            "repin": True,
         })
 
     # Run the generator
@@ -77,8 +75,8 @@ def _crates_repository_impl(repository_ctx):
         generator = generator,
         config = config_path,
         splicing_manifest = splicing_manifest,
-        lockfile_path = lockfile.path,
-        lockfile_kind = lockfile.kind,
+        lockfile_path = lockfiles.bazel,
+        cargo_lockfile_path = lockfiles.cargo,
         repository_dir = repository_ctx.path("."),
         cargo = cargo_path,
         rustc = rustc_path,
@@ -98,6 +96,11 @@ def _crates_repository_impl(repository_ctx):
     if generator_sha256:
         attrs.update({"generator_sha256s": generator_sha256})
 
+    # Inform users that the repository rule can be made deterministic if they
+    # add a label to a lockfile path specifically for Bazel.
+    if not lockfiles.bazel:
+        attrs.update({"lockfile": repository_ctx.attr.cargo_lockfile.relative("cargo-bazel-lock.json")})
+
     return attrs
 
 crates_repository = repository_rule(
@@ -112,12 +115,13 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning_updating_dependencies) for more details. |
 
 Example:
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -140,7 +144,8 @@ crates_repository(
             features = ["small_rng"],
         )],
     },
-    lockfile = "//:Cargo.Bazel.lock",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
     manifests = ["//:Cargo.toml"],
     # Should match the version represented by the currently registered `rust_toolchain`.
     rust_version = "1.60.0",
@@ -154,6 +159,8 @@ Rust targets found in the dependency graph defined by the given manifests.
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
+<a id="#repinning_updating_dependencies"></a>
+
 ### Repinning / Updating Dependencies
 
 Dependency syncing and updating is done in the repository rule which means it's done during the
@@ -166,6 +173,18 @@ repin dependencies is to run:
 CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 ```
 
+This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN` environment variable
+can also be used to customize how dependencies are updated. The following table shows translations from environment
+variable values to the equivilant [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
+that is called behind the scenes to update dependencies.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
 """,
     implementation = _crates_repository_impl,
     attrs = {
@@ -174,6 +193,14 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
         ),
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
+        ),
+        "cargo_lockfile": attr.label(
+            doc = (
+                "The path used to store the `crates_repository` specific " +
+                "[Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. " +
+                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+            ),
+            mandatory = True,
         ),
         "generate_build_scripts": attr.bool(
             doc = (
@@ -210,28 +237,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
             default = True,
         ),
         "lockfile": attr.label(
-            doc = (
-                "The path to a file to use for reproducible renderings. Two kinds of lock files are supported, " +
-                "Cargo (`Cargo.lock` files) and Bazel (custom files generated by this rule, naming is irrelevant). " +
-                "Bazel lockfiles should be the prefered kind as they're desigend with Bazel's notions of " +
-                "reporducibility in mind. Cargo lockfiles can be used in cases where it's intended to be the " +
-                "source of truth, but more work will need to be done to generate BUILD files which are not " +
-                "guaranteed to be determinsitic."
-            ),
-            mandatory = True,
-        ),
-        "lockfile_kind": attr.string(
-            doc = (
-                "Two different kinds of lockfiles are supported, the custom \"Bazel\" lockfile, which is generated " +
-                "by this rule, and Cargo lockfiles (`Cargo.lock`). This attribute allows for explicitly defining " +
-                "the type in cases where it may not be auto-detectable."
-            ),
-            values = [
-                "auto",
-                "bazel",
-                "cargo",
-            ],
-            default = "auto",
+            doc = "The path to a file to use for reproducible renderings.",
         ),
         "manifests": attr.label_list(
             doc = "A list of Cargo manifests (`Cargo.toml` files).",

@@ -205,6 +205,14 @@ def _crates_vendor_impl(ctx):
     args.extend(splicing_manifest_args)
     cargo_bazel_runfiles.extend(splicing_manifest_runfiles)
 
+    # Add an optional `Cargo.lock` file.
+    if ctx.attr.cargo_lockfile:
+        args.extend([
+            "--cargo-lockfile",
+            _runfiles_path(ctx.file.cargo_lockfile.short_path, is_windows),
+        ])
+        cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
+
     # Optionally include buildifier
     if ctx.attr.buildifier:
         args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier.short_path, is_windows)])
@@ -252,7 +260,8 @@ handles all the same [workflows](#workflows) `crate_universe` rules do.
 Example: 
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -276,6 +285,7 @@ crates_vendor(
             features = ["small_rng"],
         )],
     },
+    cargo_lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
     mode = "remote",
     vendor_path = "crates",
@@ -312,6 +322,10 @@ bazel run //3rdparty:crates_vendor
         ),
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
+            allow_single_file = True,
+        ),
+        "cargo_lockfile": attr.label(
+            doc = "The path to an existing `Cargo.lock` file",
             allow_single_file = True,
         ),
         "generate_build_scripts": attr.bool(

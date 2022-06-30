@@ -11,6 +11,7 @@ use clap::Parser;
 
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
+use crate::metadata::CargoUpdateRequest;
 use crate::metadata::{Annotations, VendorGenerator};
 use crate::metadata::{Generator, MetadataGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
@@ -40,7 +41,7 @@ pub struct VendorOptions {
     #[clap(long)]
     pub splicing_manifest: PathBuf,
 
-    /// The path to a Cargo lockfile
+    /// The path to a [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file.
     #[clap(long)]
     pub cargo_lockfile: Option<PathBuf>,
 
@@ -48,6 +49,12 @@ pub struct VendorOptions {
     /// file to use when gathering metadata
     #[clap(long)]
     pub cargo_config: Option<PathBuf>,
+
+    /// The desired update/repin behavior. The arguments passed here are forward to
+    /// [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html). See
+    /// [metadata::CargoUpdateRequest] for details on the values to pass here.
+    #[clap(long, env = "CARGO_BAZEL_REPIN")]
+    pub repin: Option<CargoUpdateRequest>,
 
     /// The path to a Cargo metadata `json` file.
     #[clap(long)]
@@ -123,9 +130,14 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         .splice_workspace()
         .context("Failed to splice workspace")?;
 
-    // Generate a lockfile
-    let cargo_lockfile =
-        generate_lockfile(&manifest_path, &opt.cargo_lockfile, &opt.cargo, &opt.rustc)?;
+    // Gather a cargo lockfile
+    let cargo_lockfile = generate_lockfile(
+        &manifest_path,
+        &opt.cargo_lockfile,
+        &opt.cargo,
+        &opt.rustc,
+        &opt.repin,
+    )?;
 
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;
@@ -140,7 +152,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     let config = Config::try_from_path(&opt.config)?;
 
     // Annotate metadata
-    let annotations = Annotations::new(cargo_metadata, cargo_lockfile, config.clone())?;
+    let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
 
     // Generate renderable contexts for earch package
     let context = Context::new(annotations)?;
@@ -159,6 +171,12 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     if vendor_dir.exists() {
         fs::remove_dir_all(&vendor_dir)
             .with_context(|| format!("Failed to delete {}", vendor_dir.display()))?;
+    }
+
+    // Store the updated Cargo.lock
+    if let Some(path) = &opt.cargo_lockfile {
+        fs::write(path, cargo_lockfile.to_string())
+            .context("Failed to write Cargo.lock file back to the workspace.")?;
     }
 
     // Vendor the crates from the spliced workspace

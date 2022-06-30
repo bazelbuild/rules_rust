@@ -1,6 +1,6 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
 
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 
@@ -109,13 +109,13 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_manifest, cargo, rustc):
+def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, cargo, rustc):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
         generator (path): The `cargo-bazel` binary.
-        lockfile (path): The path to a "lock" file for reproducible `cargo-bazel` renderings.
+        cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
         cargo (path): The path to a Cargo binary.
         rustc (path): The Path to a Rustc binary.
@@ -140,6 +140,8 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
         cargo,
         "--rustc",
         rustc,
+        "--cargo-lockfile",
+        cargo_lockfile,
     ]
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
@@ -150,19 +152,15 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
             repository_ctx.path("{}/splicing-workspace".format(repo_dir)),
         ])
 
-    # Splicing accepts a Cargo.lock file in some scenarios. Ensure it's passed
-    # if the lockfile is a actually a Cargo lockfile.
-    if lockfile.kind == "cargo":
-        arguments.extend([
-            "--cargo-lockfile",
-            lockfile.path,
-        ])
-
     env = {
         "CARGO": str(cargo),
         "RUSTC": str(rustc),
         "RUST_BACKTRACE": "full",
     }
+
+    # Ensure the short hand repin variable is set to the full name.
+    if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
+        env.update({CARGO_BAZEL_REPIN: repository_ctx.os.environ[REPIN]})
 
     # Add any Cargo environment variables to the `cargo-bazel` execution
     env.update(cargo_environ(repository_ctx))
