@@ -77,8 +77,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.11//:semver",
-            "@crate_universe_crate_index__serde-1.0.137//:serde",
+            "@crate_universe_crate_index__semver-1.0.12//:semver",
+            "@crate_universe_crate_index__serde-1.0.138//:serde",
             "@crate_universe_crate_index__toml-0.5.9//:toml",
             "@crate_universe_crate_index__url-2.2.2//:url",
         ],
@@ -139,8 +139,8 @@ rust_binary(
         ":cargo_lock",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__semver-1.0.11//:semver",
-            "@crate_universe_crate_index__serde-1.0.137//:serde",
+            "@crate_universe_crate_index__semver-1.0.12//:semver",
+            "@crate_universe_crate_index__serde-1.0.138//:serde",
             "@crate_universe_crate_index__toml-0.5.9//:toml",
             "@crate_universe_crate_index__url-2.2.2//:url",
         ],

@@ -51,7 +51,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__serde_derive-1.0.137//:serde_derive",
+            "@crate_universe_crate_index__serde_derive-1.0.138//:serde_derive",
         ],
     }),
     rustc_env = {
@@ -83,8 +83,8 @@ rust_library(
             "@crate_universe_crate_index__memchr-2.5.0//:memchr",
             "@crate_universe_crate_index__num_cpus-1.13.1//:num_cpus",
             "@crate_universe_crate_index__rustc-hash-1.1.0//:rustc_hash",
-            "@crate_universe_crate_index__semver-1.0.11//:semver",
-            "@crate_universe_crate_index__serde-1.0.137//:serde",
+            "@crate_universe_crate_index__semver-1.0.12//:semver",
+            "@crate_universe_crate_index__serde-1.0.138//:serde",
             "@crate_universe_crate_index__serde_json-1.0.82//:serde_json",
             "@crate_universe_crate_index__smartstring-1.0.1//:smartstring",
         ],

@@ -106,13 +106,13 @@ alias(
 
 alias(
     name = "semver",
-    actual = "@crate_universe_crate_index__semver-1.0.11//:semver",
+    actual = "@crate_universe_crate_index__semver-1.0.12//:semver",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
-    actual = "@crate_universe_crate_index__serde-1.0.137//:serde",
+    actual = "@crate_universe_crate_index__serde-1.0.138//:serde",
     tags = ["manual"],
 )
 

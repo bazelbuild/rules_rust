@@ -14,7 +14,7 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_library",
+    "rust_proc_macro",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -23,8 +23,8 @@ package(default_visibility = ["//visibility:public"])
 #     "TODO",  # Apache-2.0 OR MIT
 # ])
 
-rust_library(
-    name = "pin_project",
+rust_proc_macro(
+    name = "pin_project_internal",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -51,7 +51,6 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/pin-project-internal-1.0.10:pin_project_internal",
         ],
     }),
     rustc_env = {
@@ -73,10 +72,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.10",
+    version = "1.0.11",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crates_vendor_pkgs__proc-macro2-1.0.40//:proc_macro2",
+            "@crates_vendor_pkgs__quote-1.0.20//:quote",
+            "@crates_vendor_pkgs__syn-1.0.98//:syn",
         ],
     }),
 )

@@ -78,7 +78,7 @@ rust_library(
         "//conditions:default": [
             "@crate_universe_crate_index__matches-0.1.9//:matches",
             "@crate_universe_crate_index__unicode-bidi-0.3.8//:unicode_bidi",
-            "@crate_universe_crate_index__unicode-normalization-0.1.20//:unicode_normalization",
+            "@crate_universe_crate_index__unicode-normalization-0.1.21//:unicode_normalization",
         ],
     }),
 )

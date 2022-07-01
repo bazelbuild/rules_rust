@@ -56,7 +56,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_pkgs__tracing-attributes-0.1.21//:tracing_attributes",
+            "@crates_vendor_pkgs__tracing-attributes-0.1.22//:tracing_attributes",
         ],
     }),
     rustc_env = {

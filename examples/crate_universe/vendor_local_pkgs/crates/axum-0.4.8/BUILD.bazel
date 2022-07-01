@@ -97,7 +97,7 @@ rust_library(
             "//vendor_local_pkgs/crates/mime-0.3.16:mime",
             "//vendor_local_pkgs/crates/percent-encoding-2.1.0:percent_encoding",
             "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
-            "//vendor_local_pkgs/crates/serde-1.0.137:serde",
+            "//vendor_local_pkgs/crates/serde-1.0.138:serde",
             "//vendor_local_pkgs/crates/serde_json-1.0.82:serde_json",
             "//vendor_local_pkgs/crates/serde_urlencoded-0.7.1:serde_urlencoded",
             "//vendor_local_pkgs/crates/sync_wrapper-0.1.1:sync_wrapper",

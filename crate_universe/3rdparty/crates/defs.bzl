@@ -302,8 +302,8 @@ _NORMAL_DEPENDENCIES = {
             "normpath": "@crate_universe_crate_index__normpath-0.3.2//:normpath",
             "pathdiff": "@crate_universe_crate_index__pathdiff-0.2.1//:pathdiff",
             "regex": "@crate_universe_crate_index__regex-1.5.6//:regex",
-            "semver": "@crate_universe_crate_index__semver-1.0.11//:semver",
-            "serde": "@crate_universe_crate_index__serde-1.0.137//:serde",
+            "semver": "@crate_universe_crate_index__semver-1.0.12//:semver",
+            "serde": "@crate_universe_crate_index__serde-1.0.138//:serde",
             "serde_json": "@crate_universe_crate_index__serde_json-1.0.82//:serde_json",
             "sha2": "@crate_universe_crate_index__sha2-0.10.2//:sha2",
             "tempfile": "@crate_universe_crate_index__tempfile-3.3.0//:tempfile",
@@ -746,12 +746,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__crypto-common-0.1.3",
-        sha256 = "57952ca27b5e3606ff4dd79b0020231aaf9d6aa76dc05fd30137538c50bd3ce8",
+        name = "crate_universe_crate_index__crypto-common-0.1.4",
+        sha256 = "5999502d32b9c48d492abe66392408144895020ec4709e549e840799f3bb74c0",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/crypto-common/0.1.3/download"],
-        strip_prefix = "crypto-common-0.1.3",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.crypto-common-0.1.3.bazel"),
+        urls = ["https://crates.io/api/v1/crates/crypto-common/0.1.4/download"],
+        strip_prefix = "crypto-common-0.1.4",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.crypto-common-0.1.4.bazel"),
     )
 
     maybe(
@@ -1186,12 +1186,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__once_cell-1.12.0",
-        sha256 = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225",
+        name = "crate_universe_crate_index__once_cell-1.12.1",
+        sha256 = "ac8b1a9b2518dc799a2271eff1688707eb315f0d4697aa6b0871369ca4c4da55",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/once_cell/1.12.0/download"],
-        strip_prefix = "once_cell-1.12.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.12.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/once_cell/1.12.1/download"],
+        strip_prefix = "once_cell-1.12.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.12.1.bazel"),
     )
 
     maybe(
@@ -1536,32 +1536,32 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__semver-1.0.11",
-        sha256 = "3d92beeab217753479be2f74e54187a6aed4c125ff0703a866c3147a02f0c6dd",
+        name = "crate_universe_crate_index__semver-1.0.12",
+        sha256 = "a2333e6df6d6598f2b1974829f853c2b4c5f4a6e503c10af918081aa6f8564e1",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/semver/1.0.11/download"],
-        strip_prefix = "semver-1.0.11",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.semver-1.0.11.bazel"),
+        urls = ["https://crates.io/api/v1/crates/semver/1.0.12/download"],
+        strip_prefix = "semver-1.0.12",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.semver-1.0.12.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__serde-1.0.137",
-        sha256 = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1",
+        name = "crate_universe_crate_index__serde-1.0.138",
+        sha256 = "1578c6245786b9d168c5447eeacfb96856573ca56c9d68fdcf394be134882a47",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/serde/1.0.137/download"],
-        strip_prefix = "serde-1.0.137",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde-1.0.137.bazel"),
+        urls = ["https://crates.io/api/v1/crates/serde/1.0.138/download"],
+        strip_prefix = "serde-1.0.138",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde-1.0.138.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__serde_derive-1.0.137",
-        sha256 = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be",
+        name = "crate_universe_crate_index__serde_derive-1.0.138",
+        sha256 = "023e9b1467aef8a10fb88f25611870ada9800ef7e22afce356bb0d2387b6f27c",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/serde_derive/1.0.137/download"],
-        strip_prefix = "serde_derive-1.0.137",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde_derive-1.0.137.bazel"),
+        urls = ["https://crates.io/api/v1/crates/serde_derive/1.0.138/download"],
+        strip_prefix = "serde_derive-1.0.138",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde_derive-1.0.138.bazel"),
     )
 
     maybe(
@@ -1886,12 +1886,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__unicode-normalization-0.1.20",
-        sha256 = "81dee68f85cab8cf68dec42158baf3a79a1cdc065a8b103025965d6ccb7f6cbd",
+        name = "crate_universe_crate_index__unicode-normalization-0.1.21",
+        sha256 = "854cbdc4f7bc6ae19c820d44abdc3277ac3e1b2b93db20a636825d9322fb60e6",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/unicode-normalization/0.1.20/download"],
-        strip_prefix = "unicode-normalization-0.1.20",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.unicode-normalization-0.1.20.bazel"),
+        urls = ["https://crates.io/api/v1/crates/unicode-normalization/0.1.21/download"],
+        strip_prefix = "unicode-normalization-0.1.21",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.unicode-normalization-0.1.21.bazel"),
     )
 
     maybe(

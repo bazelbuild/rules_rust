@@ -72,13 +72,13 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.21",
+    version = "0.1.22",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/proc-macro2-1.0.40:proc_macro2",
-            "//vendor_local_pkgs/crates/quote-1.0.20:quote",
-            "//vendor_local_pkgs/crates/syn-1.0.98:syn",
+            "@crates_vendor_pkgs__proc-macro2-1.0.40//:proc_macro2",
+            "@crates_vendor_pkgs__quote-1.0.20//:quote",
+            "@crates_vendor_pkgs__syn-1.0.98//:syn",
         ],
     }),
 )

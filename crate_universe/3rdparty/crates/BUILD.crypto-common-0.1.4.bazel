@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "unicode_normalization",
+    name = "crypto_common",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,7 +41,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -74,11 +73,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.20",
+    version = "0.1.4",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__tinyvec-1.6.0//:tinyvec",
+            "@crate_universe_crate_index__generic-array-0.14.5//:generic_array",
+            "@crate_universe_crate_index__typenum-1.15.0//:typenum",
         ],
     }),
 )
