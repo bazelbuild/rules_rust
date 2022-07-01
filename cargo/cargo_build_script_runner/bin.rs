@@ -72,9 +72,8 @@ fn run_buildrs() -> Result<(), String> {
                 if line.is_empty() {
                     continue;
                 }
-                let mut key_val = line.splitn(2, '=');
-                match (key_val.next(), key_val.next()) {
-                    (Some(key), Some(value)) => {
+                match line.split_once('=') {
+                    Some((key, value)) => {
                         command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
                     }
                     _ => {
@@ -255,10 +254,8 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
 
     for line in stdout.lines() {
         if line.starts_with("target_") && line.contains('=') {
-            let mut parts = line.splitn(2, '=');
             // UNWRAP: Verified that line contains = and split into exactly 2 parts.
-            let key = parts.next().unwrap();
-            let value = parts.next().unwrap();
+            let (key, value) = line.split_once('=').unwrap();
             if value.starts_with('"') && value.ends_with('"') && value.len() >= 2 {
                 values
                     .entry(key)
