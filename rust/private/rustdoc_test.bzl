@@ -16,7 +16,7 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
-load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
+load("//rust/private:rustdoc.bzl", "rustdoc_compile_action", "strip_crate_info_output")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info):
@@ -132,6 +132,8 @@ def _rust_doc_test_impl(ctx):
     )
 
     tools = action.tools + [ctx.executable._process_wrapper]
+
+    crate_info = strip_crate_info_output(crate_info)
 
     writer_args, env = _construct_writer_arguments(
         ctx = ctx,

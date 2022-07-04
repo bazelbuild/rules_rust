@@ -18,7 +18,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
 
-def _strip_crate_info_output(crate_info):
+def strip_crate_info_output(crate_info):
     """Set the CrateInfo.output to None for a given CrateInfo provider.
 
     Args:
@@ -96,7 +96,7 @@ def rustdoc_compile_action(
     # given CrateInfo, this attribute needs to be stripped to allow the rest
     # of the rustc functionality in `construct_arguments` to avoid generating
     # arguments expecting to do so.
-    rustdoc_crate_info = _strip_crate_info_output(crate_info)
+    rustdoc_crate_info = strip_crate_info_output(crate_info)
 
     args, env = construct_arguments(
         ctx = ctx,
