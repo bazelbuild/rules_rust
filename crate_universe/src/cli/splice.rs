@@ -22,7 +22,7 @@ pub struct SpliceOptions {
     pub cargo_lockfile: Option<PathBuf>,
 
     /// The desired update/repin behavior
-    #[clap(long, env = "CARGO_BAZEL_REPIN")]
+    #[clap(long, env = "CARGO_BAZEL_REPIN", default_missing_value = "true")]
     pub repin: Option<CargoUpdateRequest>,
 
     /// The directory in which to build the workspace. If this argument is not
