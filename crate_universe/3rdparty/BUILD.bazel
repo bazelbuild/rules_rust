@@ -2,6 +2,11 @@ load("//crate_universe:repositories.bzl", "crate_deps_target")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "Cargo.Bazel.lock",
+    "cargo-bazel-lock.json",
+])
+
 crate_deps_target()
 
 filegroup(
@@ -10,6 +15,8 @@ filegroup(
         "*.bzl",
         "*.bazel",
     ]) + [
+        "Cargo.Bazel.lock",
+        "cargo-bazel-lock.json",
         "//crate_universe/3rdparty/crates:srcs",
     ],
 )

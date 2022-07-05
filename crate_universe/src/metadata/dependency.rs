@@ -1,4 +1,5 @@
 ///! Gathering dependencies is the largest part of annotating.
+use anyhow::{bail, Result};
 use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
@@ -120,7 +121,8 @@ fn collect_deps_selectable(
 
     for dep in deps.into_iter() {
         let dep_pkg = &metadata[&dep.pkg];
-        let target_name = get_library_target_name(dep_pkg, &dep.name);
+        let target_name = get_library_target_name(dep_pkg, &dep.name)
+            .expect("Nodes Dependencies are expected to exclusively be library-like targets");
         let alias = get_target_alias(&dep.name, dep_pkg);
 
         for kind_info in &dep.dep_kinds {
@@ -190,25 +192,35 @@ fn is_workspace_member(node_dep: &NodeDep, metadata: &CargoMetadata) -> bool {
         .any(|id| id == &node_dep.pkg)
 }
 
-fn get_library_target_name(package: &Package, potential_name: &str) -> String {
+fn get_library_target_name(package: &Package, potential_name: &str) -> Result<String> {
     // If the potential name is not an alias in a dependent's package, a target's name
     // should match which means we already know what the target library name is.
     if package.targets.iter().any(|t| t.name == potential_name) {
-        return potential_name.to_string();
+        return Ok(potential_name.to_string());
     }
 
     // Locate any library type targets
     let lib_targets: Vec<&cargo_metadata::Target> = package
         .targets
         .iter()
-        .filter(|t| t.kind.iter().any(|k| k == "lib" || k == "proc-macro"))
+        .filter(|t| {
+            t.kind
+                .iter()
+                .any(|k| k == "lib" || k == "rlib" || k == "proc-macro")
+        })
         .collect();
 
     // Only one target should be found
-    assert_eq!(lib_targets.len(), 1);
+    if lib_targets.len() != 1 {
+        bail!(
+            "Unexpected number of 'library-like' targets found for {}: {:?}",
+            package.name,
+            package.targets
+        )
+    }
 
     let target = lib_targets.into_iter().last().unwrap();
-    target.name.clone()
+    Ok(target.name.clone())
 }
 
 /// The resolve graph (resolve.nodes[#].deps[#].name) of Cargo metadata uses module names
@@ -234,6 +246,124 @@ mod test {
     use super::*;
 
     use crate::test::*;
+
+    #[test]
+    fn get_expected_lib_target_name() {
+        let mut package = mock_cargo_metadata_package();
+        package
+            .targets
+            .extend(vec![serde_json::from_value(serde_json::json!({
+                "name": "potential",
+                "kind": ["lib"],
+                "crate_types": [],
+                "required_features": [],
+                "src_path": "/tmp/mock.rs",
+                "edition": "2021",
+                "doctest": false,
+                "test": false,
+                "doc": false,
+            }))
+            .unwrap()]);
+
+        assert_eq!(
+            get_library_target_name(&package, "potential").unwrap(),
+            "potential"
+        );
+    }
+
+    #[test]
+    fn get_lib_target_name() {
+        let mut package = mock_cargo_metadata_package();
+        package
+            .targets
+            .extend(vec![serde_json::from_value(serde_json::json!({
+                "name": "lib_target",
+                "kind": ["lib"],
+                "crate_types": [],
+                "required_features": [],
+                "src_path": "/tmp/mock.rs",
+                "edition": "2021",
+                "doctest": false,
+                "test": false,
+                "doc": false,
+            }))
+            .unwrap()]);
+
+        assert_eq!(
+            get_library_target_name(&package, "mock-pkg").unwrap(),
+            "lib_target"
+        );
+    }
+
+    #[test]
+    fn get_rlib_target_name() {
+        let mut package = mock_cargo_metadata_package();
+        package
+            .targets
+            .extend(vec![serde_json::from_value(serde_json::json!({
+                "name": "rlib_target",
+                "kind": ["rlib"],
+                "crate_types": [],
+                "required_features": [],
+                "src_path": "/tmp/mock.rs",
+                "edition": "2021",
+                "doctest": false,
+                "test": false,
+                "doc": false,
+            }))
+            .unwrap()]);
+
+        assert_eq!(
+            get_library_target_name(&package, "mock-pkg").unwrap(),
+            "rlib_target"
+        );
+    }
+
+    #[test]
+    fn get_proc_macro_target_name() {
+        let mut package = mock_cargo_metadata_package();
+        package
+            .targets
+            .extend(vec![serde_json::from_value(serde_json::json!({
+                "name": "proc_macro_target",
+                "kind": ["proc-macro"],
+                "crate_types": [],
+                "required_features": [],
+                "src_path": "/tmp/mock.rs",
+                "edition": "2021",
+                "doctest": false,
+                "test": false,
+                "doc": false,
+            }))
+            .unwrap()]);
+
+        assert_eq!(
+            get_library_target_name(&package, "mock-pkg").unwrap(),
+            "proc_macro_target"
+        );
+    }
+
+    #[test]
+    fn get_bin_target_name() {
+        let mut package = mock_cargo_metadata_package();
+        package
+            .targets
+            .extend(vec![serde_json::from_value(serde_json::json!({
+                "name": "bin_target",
+                "kind": ["bin"],
+                "crate_types": [],
+                "required_features": [],
+                "src_path": "/tmp/mock.rs",
+                "edition": "2021",
+                "doctest": false,
+                "test": false,
+                "doc": false,
+            }))
+            .unwrap()]);
+
+        // It's an error for no library target to be found.
+        assert!(get_library_target_name(&package, "mock-pkg").is_err());
+    }
 
     /// Locate the [cargo_metadata::Node] for the crate matching the given name
     fn find_metadata_node<'a>(

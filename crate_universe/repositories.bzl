@@ -47,7 +47,8 @@ def crate_universe_dependencies(rust_version = rust_common.default_version, boot
             name = _REPOSITORY_NAME,
             annotations = _ANNOTATIONS,
             generator = "@cargo_bazel_bootstrap//:cargo-bazel" if bootstrap else None,
-            lockfile = "@rules_rust//crate_universe:Cargo.Bazel.lock",
+            lockfile = "@rules_rust//crate_universe/3rdparty:cargo-bazel-lock.json",
+            cargo_lockfile = "@rules_rust//crate_universe/3rdparty:Cargo.Bazel.lock",
             manifests = _MANIFESTS,
             rust_version = rust_version,
         )
@@ -65,6 +66,7 @@ def crate_deps_target(name = "crates_vendor", vendor_path = "crates"):
         annotations = _ANNOTATIONS,
         manifests = _MANIFESTS,
         vendor_path = vendor_path,
+        cargo_lockfile = "@rules_rust//crate_universe/3rdparty:Cargo.Bazel.lock",
         mode = "remote",
         tags = ["manual"],
     )

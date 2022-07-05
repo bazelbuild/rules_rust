@@ -577,12 +577,12 @@ rust_toolchain = rule(
             mandatory = True,
         ),
         "llvm_cov": attr.label(
-            doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item.",
+            doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item. If None, rust code is not instrumented for coverage.",
             allow_single_file = True,
             cfg = "exec",
         ),
         "llvm_profdata": attr.label(
-            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item.",
+            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
             allow_single_file = True,
             cfg = "exec",
         ),

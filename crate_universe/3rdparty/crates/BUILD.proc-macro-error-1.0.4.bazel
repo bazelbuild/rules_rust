@@ -85,9 +85,9 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@crate_universe_crate_index__proc-macro-error-1.0.4//:build_script_build",
-            "@crate_universe_crate_index__proc-macro2-1.0.39//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.18//:quote",
-            "@crate_universe_crate_index__syn-1.0.96//:syn",
+            "@crate_universe_crate_index__proc-macro2-1.0.40//:proc_macro2",
+            "@crate_universe_crate_index__quote-1.0.20//:quote",
+            "@crate_universe_crate_index__syn-1.0.98//:syn",
         ],
     }),
 )

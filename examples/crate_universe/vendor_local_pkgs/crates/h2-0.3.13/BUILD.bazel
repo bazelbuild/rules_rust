@@ -82,7 +82,7 @@ rust_library(
             "//vendor_local_pkgs/crates/futures-sink-0.3.21:futures_sink",
             "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.8:http",
-            "//vendor_local_pkgs/crates/indexmap-1.8.2:indexmap",
+            "//vendor_local_pkgs/crates/indexmap-1.9.1:indexmap",
             "//vendor_local_pkgs/crates/slab-0.4.6:slab",
             "//vendor_local_pkgs/crates/tokio-1.16.1:tokio",
             "//vendor_local_pkgs/crates/tokio-util-0.7.2:tokio_util",

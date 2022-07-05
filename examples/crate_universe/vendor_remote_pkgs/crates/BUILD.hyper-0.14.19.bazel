@@ -100,7 +100,7 @@ rust_library(
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
             "@crates_vendor_pkgs__socket2-0.4.4//:socket2",
             "@crates_vendor_pkgs__tokio-1.16.1//:tokio",
-            "@crates_vendor_pkgs__tower-service-0.3.1//:tower_service",
+            "@crates_vendor_pkgs__tower-service-0.3.2//:tower_service",
             "@crates_vendor_pkgs__tracing-0.1.35//:tracing",
             "@crates_vendor_pkgs__want-0.3.0//:want",
         ],

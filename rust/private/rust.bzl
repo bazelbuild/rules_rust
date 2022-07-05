@@ -466,7 +466,10 @@ def _rust_test_common(ctx, toolchain, output):
         getattr(ctx.attr, "env", {}),
         data,
     )
-    if ctx.configuration.coverage_enabled:
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+        if not toolchain.llvm_profdata:
+            fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
+
         env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
         env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
     providers.append(testing.TestEnvironment(env))
