@@ -20,11 +20,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "ucd_trie",
+    name = "regex",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,8 +41,23 @@ rust_library(
         ],
     }),
     crate_features = [
+        "aho-corasick",
         "default",
+        "memchr",
+        "perf",
+        "perf-cache",
+        "perf-dfa",
+        "perf-inline",
+        "perf-literal",
         "std",
+        "unicode",
+        "unicode-age",
+        "unicode-bool",
+        "unicode-case",
+        "unicode-gencat",
+        "unicode-perl",
+        "unicode-script",
+        "unicode-segment",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -74,10 +89,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.3",
+    version = "1.6.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
+            "@crate_universe_crate_index__memchr-2.5.0//:memchr",
+            "@crate_universe_crate_index__regex-syntax-0.6.27//:regex_syntax",
         ],
     }),
 )

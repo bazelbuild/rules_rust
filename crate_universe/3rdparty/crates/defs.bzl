@@ -301,7 +301,7 @@ _NORMAL_DEPENDENCIES = {
             "hex": "@crate_universe_crate_index__hex-0.4.3//:hex",
             "normpath": "@crate_universe_crate_index__normpath-0.3.2//:normpath",
             "pathdiff": "@crate_universe_crate_index__pathdiff-0.2.1//:pathdiff",
-            "regex": "@crate_universe_crate_index__regex-1.5.6//:regex",
+            "regex": "@crate_universe_crate_index__regex-1.6.0//:regex",
             "semver": "@crate_universe_crate_index__semver-1.0.12//:semver",
             "serde": "@crate_universe_crate_index__serde-1.0.138//:serde",
             "serde_json": "@crate_universe_crate_index__serde_json-1.0.82//:serde_json",
@@ -1186,12 +1186,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__once_cell-1.12.1",
-        sha256 = "ac8b1a9b2518dc799a2271eff1688707eb315f0d4697aa6b0871369ca4c4da55",
+        name = "crate_universe_crate_index__once_cell-1.13.0",
+        sha256 = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/once_cell/1.12.1/download"],
-        strip_prefix = "once_cell-1.12.1",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.12.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/once_cell/1.13.0/download"],
+        strip_prefix = "once_cell-1.13.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.13.0.bazel"),
     )
 
     maybe(
@@ -1466,22 +1466,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__regex-1.5.6",
-        sha256 = "d83f127d94bdbcda4c8cc2e50f6f84f4b611f69c902699ca385a39c3a75f9ff1",
+        name = "crate_universe_crate_index__regex-1.6.0",
+        sha256 = "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/regex/1.5.6/download"],
-        strip_prefix = "regex-1.5.6",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.regex-1.5.6.bazel"),
+        urls = ["https://crates.io/api/v1/crates/regex/1.6.0/download"],
+        strip_prefix = "regex-1.6.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.regex-1.6.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__regex-syntax-0.6.26",
-        sha256 = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64",
+        name = "crate_universe_crate_index__regex-syntax-0.6.27",
+        sha256 = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/regex-syntax/0.6.26/download"],
-        strip_prefix = "regex-syntax-0.6.26",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.regex-syntax-0.6.26.bazel"),
+        urls = ["https://crates.io/api/v1/crates/regex-syntax/0.6.27/download"],
+        strip_prefix = "regex-syntax-0.6.27",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.regex-syntax-0.6.27.bazel"),
     )
 
     maybe(
@@ -1776,12 +1776,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crate_universe_crate_index__ucd-trie-0.1.3",
-        sha256 = "56dee185309b50d1f11bfedef0fe6d036842e3fb77413abef29f8f8d1c5d4c1c",
+        name = "crate_universe_crate_index__ucd-trie-0.1.4",
+        sha256 = "89570599c4fe5585de2b388aab47e99f7fa4e9238a1399f707a02e356058141c",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/ucd-trie/0.1.3/download"],
-        strip_prefix = "ucd-trie-0.1.3",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.ucd-trie-0.1.3.bazel"),
+        urls = ["https://crates.io/api/v1/crates/ucd-trie/0.1.4/download"],
+        strip_prefix = "ucd-trie-0.1.4",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.ucd-trie-0.1.4.bazel"),
     )
 
     maybe(

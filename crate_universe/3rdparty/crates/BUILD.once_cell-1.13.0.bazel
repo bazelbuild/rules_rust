@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "regex_syntax",
+    name = "once_cell",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,15 +41,10 @@ rust_library(
         ],
     }),
     crate_features = [
+        "alloc",
         "default",
-        "unicode",
-        "unicode-age",
-        "unicode-bool",
-        "unicode-case",
-        "unicode-gencat",
-        "unicode-perl",
-        "unicode-script",
-        "unicode-segment",
+        "race",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,7 +76,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.6.26",
+    version = "1.13.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
