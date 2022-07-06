@@ -36,10 +36,18 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob([
-        "**",
-        "**/*.md",
-    ]) + select_with_or({
+    compile_data = glob(
+        include = [
+            "**",
+            "**/*.md",
+        ],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
