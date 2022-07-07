@@ -384,8 +384,8 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _rust_test_common(ctx):
-    """Builds a Rust test binary.
+def _rust_test_impl(ctx):
+    """The implementation of the `rust_test` rule.
 
     Args:
         ctx (ctx): The ctx object for the current target.
@@ -493,17 +493,6 @@ def _rust_test_common(ctx):
     providers.append(testing.TestEnvironment(env))
 
     return providers
-
-def _rust_test_impl(ctx):
-    """The implementation of the `rust_test` rule
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers. See `_rust_test_common`
-    """
-    return _rust_test_common(ctx)
 
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
