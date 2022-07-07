@@ -1,5 +1,5 @@
 {
-  "checksum": "4b64098043f159f00827d941f003f6c725f54967043da4b90320194edde061e3",
+  "checksum": "27317adc4a76e0128d380211229984daffaf6db85b2fb6e6579e053ff460cd21",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -2058,13 +2058,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "once_cell 1.12.1": {
+    "once_cell 1.13.0": {
       "name": "once_cell",
-      "version": "1.12.1",
+      "version": "1.13.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/once_cell/1.12.1/download",
-          "sha256": "ac8b1a9b2518dc799a2271eff1688707eb315f0d4697aa6b0871369ca4c4da55"
+          "url": "https://crates.io/api/v1/crates/once_cell/1.13.0/download",
+          "sha256": "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
         }
       },
       "targets": [
@@ -2093,7 +2093,7 @@
           "std"
         ],
         "edition": "2018",
-        "version": "1.12.1"
+        "version": "1.13.0"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -3213,7 +3213,7 @@
         "deps": {
           "common": [
             {
-              "id": "once_cell 1.12.1",
+              "id": "once_cell 1.13.0",
               "target": "once_cell"
             }
           ],
@@ -3297,7 +3297,7 @@
               "target": "num_cpus"
             },
             {
-              "id": "once_cell 1.12.1",
+              "id": "once_cell 1.13.0",
               "target": "once_cell"
             },
             {
@@ -3869,7 +3869,7 @@
         "deps": {
           "common": [
             {
-              "id": "once_cell 1.12.1",
+              "id": "once_cell 1.13.0",
               "target": "once_cell"
             }
           ],

@@ -24,7 +24,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "regex",
+    name = "regex_syntax",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -41,15 +41,7 @@ rust_library(
         ],
     }),
     crate_features = [
-        "aho-corasick",
         "default",
-        "memchr",
-        "perf",
-        "perf-cache",
-        "perf-dfa",
-        "perf-inline",
-        "perf-literal",
-        "std",
         "unicode",
         "unicode-age",
         "unicode-bool",
@@ -89,13 +81,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.5.6",
+    version = "0.6.27",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
-            "@crate_universe_crate_index__memchr-2.5.0//:memchr",
-            "@crate_universe_crate_index__regex-syntax-0.6.26//:regex_syntax",
         ],
     }),
 )

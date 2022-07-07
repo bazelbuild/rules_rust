@@ -200,7 +200,7 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning_updating_dependencies) for more details. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#crates_repository_repinning_updating_dependencies) for more details. |
 
 Example:
 
@@ -244,7 +244,7 @@ Rust targets found in the dependency graph defined by the given manifests.
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
-<a id="#repinning_updating_dependencies"></a>
+<a id="#crates_repository_repinning_updating_dependencies"></a>
 
 ### Repinning / Updating Dependencies
 
@@ -356,6 +356,29 @@ directory next to where the target is defined. To run it, simply call:
 ```shell
 bazel run //3rdparty:crates_vendor
 ```
+
+<a id="#crates_vendor_repinning_updating_dependencies"></a>
+
+### Repinning / Updating Dependencies
+
+Repinning dependencies is controlled by both the `CARGO_BAZEL_REPIN` environment variable or the `--repin`
+flag to the `crates_vendor` binary. To update dependencies, simply add the flag ro your `bazel run` invocation.
+
+```shell
+bazel run //3rdparty:crates_vendor -- --repin
+```
+
+Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
+call against the generated workspace. The following table describes how to controll particular values passed to the
+`cargo update` command.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
 
 
 **ATTRIBUTES**

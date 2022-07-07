@@ -147,7 +147,7 @@ cargo_build_script(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__regex-1.5.6//:regex",
+            "@crate_universe_crate_index__regex-1.6.0//:regex",
         ],
     }),
 )

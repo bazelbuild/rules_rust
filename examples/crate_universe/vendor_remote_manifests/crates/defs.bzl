@@ -547,12 +547,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__once_cell-1.12.1",
-        sha256 = "ac8b1a9b2518dc799a2271eff1688707eb315f0d4697aa6b0871369ca4c4da55",
+        name = "crates_vendor_manifests__once_cell-1.13.0",
+        sha256 = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/once_cell/1.12.1/download"],
-        strip_prefix = "once_cell-1.12.1",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.once_cell-1.12.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/once_cell/1.13.0/download"],
+        strip_prefix = "once_cell-1.13.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.once_cell-1.13.0.bazel"),
     )
 
     maybe(
