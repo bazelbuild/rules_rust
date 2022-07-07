@@ -384,19 +384,19 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _rust_test_common(ctx, toolchain, output):
-    """Builds a Rust test binary.
+def _rust_test_impl(ctx):
+    """The implementation of the `rust_test` rule.
 
     Args:
         ctx (ctx): The ctx object for the current target.
-        toolchain (rust_toolchain): The current `rust_toolchain`
-        output (File): The output File that will be produced, depends on crate type.
 
     Returns:
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
+
+    toolchain = find_toolchain(ctx)
 
     srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     crate_type = "bin"
@@ -407,6 +407,15 @@ def _rust_test_common(ctx, toolchain, output):
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+
+        output_hash = determine_output_hash(crate.root, ctx.label)
+        output = ctx.actions.declare_file(
+            "test-%s/%s%s" % (
+                output_hash,
+                ctx.label.name,
+                toolchain.binary_ext,
+            ),
+        )
 
         # Optionally join compile data
         if crate.compile_data:
@@ -434,6 +443,15 @@ def _rust_test_common(ctx, toolchain, output):
     else:
         if not crate_root:
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, "lib")
+
+        output_hash = determine_output_hash(crate_root, ctx.label)
+        output = ctx.actions.declare_file(
+            "test-%s/%s%s" % (
+                output_hash,
+                ctx.label.name,
+                toolchain.binary_ext,
+            ),
+        )
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
@@ -475,23 +493,6 @@ def _rust_test_common(ctx, toolchain, output):
     providers.append(testing.TestEnvironment(env))
 
     return providers
-
-def _rust_test_impl(ctx):
-    """The implementation of the `rust_test` rule
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers. See `_rust_test_common`
-    """
-    toolchain = find_toolchain(ctx)
-
-    output = ctx.actions.declare_file(
-        ctx.label.name + toolchain.binary_ext,
-    )
-
-    return _rust_test_common(ctx, toolchain, output)
 
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
