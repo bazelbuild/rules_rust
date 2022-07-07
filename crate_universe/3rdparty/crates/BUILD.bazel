@@ -100,7 +100,7 @@ alias(
 
 alias(
     name = "regex",
-    actual = "@crate_universe_crate_index__regex-1.5.6//:regex",
+    actual = "@crate_universe_crate_index__regex-1.6.0//:regex",
     tags = ["manual"],
 )
 
