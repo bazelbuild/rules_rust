@@ -72,6 +72,7 @@ load(
     _rust_repository_set = "rust_repository_set",
     _rust_toolchain_repository = "rust_toolchain_repository",
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
+    _rust_toolchain_tools_repository = "rust_toolchain_tools_repository",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
@@ -142,6 +143,7 @@ rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
+rust_toolchain_tools_repository = _rust_toolchain_tools_repository
 
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
