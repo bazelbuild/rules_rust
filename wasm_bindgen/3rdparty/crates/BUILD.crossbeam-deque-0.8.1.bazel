@@ -81,8 +81,8 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__cfg-if-1.0.0//:cfg_if",
-            "@rules_rust_wasm_bindgen__crossbeam-epoch-0.9.8//:crossbeam_epoch",
-            "@rules_rust_wasm_bindgen__crossbeam-utils-0.8.8//:crossbeam_utils",
+            "@rules_rust_wasm_bindgen__crossbeam-epoch-0.9.9//:crossbeam_epoch",
+            "@rules_rust_wasm_bindgen__crossbeam-utils-0.8.10//:crossbeam_utils",
         ],
     }),
 )

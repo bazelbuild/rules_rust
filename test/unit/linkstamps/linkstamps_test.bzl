@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 def _is_running_on_linux(ctx):
@@ -20,8 +20,13 @@ def _supports_linkstamps_test(ctx):
     linkstamp_out = linkstamp_action.outputs.to_list()[0]
     asserts.equals(env, linkstamp_out.basename, "linkstamp.o")
     tut_out = tut.files.to_list()[0]
+    is_test = tut[rust_common.crate_info].is_test
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "/external/rules_rust"
-    expected_linkstamp_path = tut_out.dirname + "/_objs/" + tut_out.basename + workspace_prefix + "/test/unit/linkstamps/linkstamp.o"
+
+    # Rust compilation outputs coming from a test are put in test-{hash} directory
+    # which we need to remove in order to obtain the linkstamp file path.
+    dirname = "/".join(tut_out.dirname.split("/")[:-1]) if is_test else tut_out.dirname
+    expected_linkstamp_path = dirname + "/_objs/" + tut_out.basename + workspace_prefix + "/test/unit/linkstamps/linkstamp.o"
     asserts.equals(
         env,
         linkstamp_out.path,

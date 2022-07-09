@@ -6,7 +6,7 @@ members = [
 
 [package]
 name = "cargo-bazel"
-version = "0.3.0"
+version = "0.4.0"
 authors = [
     "Andre Brisco - andre.brisco@protonmail.com",
 ]
@@ -22,8 +22,7 @@ default = ["cargo"]
 anyhow = "1.0.57"
 cargo_metadata = "0.14.2"
 cargo_toml = "0.11.5"
-# TODO: https://github.com/rustsec/rustsec/issues/587
-cargo-lock = "<8.0.0"
+cargo-lock = "8.0.2"
 cargo-platform = "0.1.2"
 cfg-expr = "0.10.3"
 clap = { version = "3.1.18", features = ["derive", "env"] }

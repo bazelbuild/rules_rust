@@ -36,7 +36,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -79,7 +87,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__getrandom-0.2.6//:getrandom",
+            "@crates_vendor__getrandom-0.2.7//:getrandom",
         ],
     }),
 )

@@ -36,7 +36,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -77,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__smallvec-1.8.0//:smallvec",
+            "@crate_universe_crate_index__smallvec-1.9.0//:smallvec",
         ],
     }),
 )

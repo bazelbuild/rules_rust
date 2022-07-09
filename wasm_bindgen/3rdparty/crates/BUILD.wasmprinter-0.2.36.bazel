@@ -76,7 +76,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__anyhow-1.0.57//:anyhow",
+            "@rules_rust_wasm_bindgen__anyhow-1.0.58//:anyhow",
             "@rules_rust_wasm_bindgen__wasmparser-0.86.0//:wasmparser",
         ],
     }),

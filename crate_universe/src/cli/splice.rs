@@ -6,7 +6,7 @@ use anyhow::Context;
 use clap::Parser;
 
 use crate::cli::Result;
-use crate::metadata::{write_metadata, Generator, MetadataGenerator};
+use crate::metadata::{write_metadata, CargoUpdateRequest, Generator, MetadataGenerator};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `splice` subcommand
@@ -17,9 +17,13 @@ pub struct SpliceOptions {
     #[clap(long)]
     pub splicing_manifest: PathBuf,
 
-    /// A Cargo lockfile (Cargo.lock).
+    /// The path to a [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file.
     #[clap(long)]
     pub cargo_lockfile: Option<PathBuf>,
+
+    /// The desired update/repin behavior
+    #[clap(long, env = "CARGO_BAZEL_REPIN", default_missing_value = "true")]
+    pub repin: Option<CargoUpdateRequest>,
 
     /// The directory in which to build the workspace. If this argument is not
     /// passed, a temporary directory will be generated.
@@ -69,8 +73,13 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let manifest_path = splicer.splice_workspace()?;
 
     // Generate a lockfile
-    let cargo_lockfile =
-        generate_lockfile(&manifest_path, &opt.cargo_lockfile, &opt.cargo, &opt.rustc)?;
+    let cargo_lockfile = generate_lockfile(
+        &manifest_path,
+        &opt.cargo_lockfile,
+        &opt.cargo,
+        &opt.rustc,
+        &opt.repin,
+    )?;
 
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;

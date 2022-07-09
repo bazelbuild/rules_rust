@@ -183,8 +183,8 @@ convenient accessors to larger sections of the dependency graph.
 ## crates_repository
 
 <pre>
-crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_repository-generator">generator</a>,
-                  <a href="#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="#crates_repository-generator_urls">generator_urls</a>, <a href="#crates_repository-isolated">isolated</a>, <a href="#crates_repository-lockfile">lockfile</a>, <a href="#crates_repository-lockfile_kind">lockfile_kind</a>, <a href="#crates_repository-manifests">manifests</a>,
+crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>,
+                  <a href="#crates_repository-generator">generator</a>, <a href="#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="#crates_repository-generator_urls">generator_urls</a>, <a href="#crates_repository-isolated">isolated</a>, <a href="#crates_repository-lockfile">lockfile</a>, <a href="#crates_repository-manifests">manifests</a>,
                   <a href="#crates_repository-packages">packages</a>, <a href="#crates_repository-quiet">quiet</a>, <a href="#crates_repository-render_config">render_config</a>, <a href="#crates_repository-repo_mapping">repo_mapping</a>, <a href="#crates_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>,
                   <a href="#crates_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#crates_repository-rust_version">rust_version</a>, <a href="#crates_repository-splicing_config">splicing_config</a>,
                   <a href="#crates_repository-supported_platform_triples">supported_platform_triples</a>)
@@ -200,12 +200,13 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#crates_repository_repinning_updating_dependencies) for more details. |
 
 Example:
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -228,7 +229,8 @@ crates_repository(
             features = ["small_rng"],
         )],
     },
-    lockfile = "//:Cargo.Bazel.lock",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
     manifests = ["//:Cargo.toml"],
     # Should match the version represented by the currently registered `rust_toolchain`.
     rust_version = "1.60.0",
@@ -242,6 +244,8 @@ Rust targets found in the dependency graph defined by the given manifests.
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
+<a id="#crates_repository_repinning_updating_dependencies"></a>
+
 ### Repinning / Updating Dependencies
 
 Dependency syncing and updating is done in the repository rule which means it's done during the
@@ -254,6 +258,18 @@ repin dependencies is to run:
 CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 ```
 
+This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN` environment variable
+can also be used to customize how dependencies are updated. The following table shows translations from environment
+variable values to the equivilant [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
+that is called behind the scenes to update dependencies.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
 
 
 **ATTRIBUTES**
@@ -264,13 +280,13 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 | <a id="crates_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="crates_repository-annotations"></a>annotations |  Extra settings to apply to crates. See [crate.annotation](#crateannotation).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> List of strings</a> | optional | {} |
 | <a id="crates_repository-cargo_config"></a>cargo_config |  A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="crates_repository-cargo_lockfile"></a>cargo_lockfile |  The path used to store the <code>crates_repository</code> specific [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. If set, this file must exist within the workspace (but can be empty) before this rule will work.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 | <a id="crates_repository-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | True |
 | <a id="crates_repository-generator"></a>generator |  The absolute label of a generator. Eg. <code>@cargo_bazel_bootstrap//:cargo-bazel</code>. This is typically used when bootstrapping   | String | optional | "" |
 | <a id="crates_repository-generator_sha256s"></a>generator_sha256s |  Dictionary of <code>host_triple</code> -&gt; <code>sha256</code> for a <code>cargo-bazel</code> binary.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crates_repository-generator_urls"></a>generator_urls |  URL template from which to download the <code>cargo-bazel</code> binary. <code>{host_triple}</code> and will be filled in according to the host platform.   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crates_repository-isolated"></a>isolated |  If true, <code>CARGO_HOME</code> will be overwritten to a directory within the generated repository in order to prevent other uses of Cargo from impacting having any effect on the generated targets produced by this rule. For users who either have multiple <code>crate_repository</code> definitions in a WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This variable is also controled by <code>CARGO_BAZEL_ISOLATED</code> environment variable.   | Boolean | optional | True |
-| <a id="crates_repository-lockfile"></a>lockfile |  The path to a file to use for reproducible renderings. Two kinds of lock files are supported, Cargo (<code>Cargo.lock</code> files) and Bazel (custom files generated by this rule, naming is irrelevant). Bazel lockfiles should be the prefered kind as they're desigend with Bazel's notions of reporducibility in mind. Cargo lockfiles can be used in cases where it's intended to be the source of truth, but more work will need to be done to generate BUILD files which are not guaranteed to be determinsitic.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
-| <a id="crates_repository-lockfile_kind"></a>lockfile_kind |  Two different kinds of lockfiles are supported, the custom "Bazel" lockfile, which is generated by this rule, and Cargo lockfiles (<code>Cargo.lock</code>). This attribute allows for explicitly defining the type in cases where it may not be auto-detectable.   | String | optional | "auto" |
+| <a id="crates_repository-lockfile"></a>lockfile |  The path to a file to use for reproducible renderings.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="crates_repository-manifests"></a>manifests |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="crates_repository-packages"></a>packages |  A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | optional | {} |
 | <a id="crates_repository-quiet"></a>quiet |  If stdout and stderr should not be printed to the terminal.   | Boolean | optional | True |
@@ -278,7 +294,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
 | <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
 | <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
-| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.61.0" |
+| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.62.0" |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
 | <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "armv7-linux-androideabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 
@@ -288,9 +304,9 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 ## crates_vendor
 
 <pre>
-crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>,
-              <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>,
-              <a href="#crates_vendor-vendor_path">vendor_path</a>)
+crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-cargo_lockfile">cargo_lockfile</a>,
+              <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>,
+              <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
 </pre>
 
 A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
@@ -301,7 +317,8 @@ handles all the same [workflows](#workflows) `crate_universe` rules do.
 Example: 
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -325,6 +342,7 @@ crates_vendor(
             features = ["small_rng"],
         )],
     },
+    cargo_lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
     mode = "remote",
     vendor_path = "crates",
@@ -339,6 +357,29 @@ directory next to where the target is defined. To run it, simply call:
 bazel run //3rdparty:crates_vendor
 ```
 
+<a id="#crates_vendor_repinning_updating_dependencies"></a>
+
+### Repinning / Updating Dependencies
+
+Repinning dependencies is controlled by both the `CARGO_BAZEL_REPIN` environment variable or the `--repin`
+flag to the `crates_vendor` binary. To update dependencies, simply add the flag ro your `bazel run` invocation.
+
+```shell
+bazel run //3rdparty:crates_vendor -- --repin
+```
+
+Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
+call against the generated workspace. The following table describes how to controll particular values passed to the
+`cargo update` command.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
+
 
 **ATTRIBUTES**
 
@@ -350,6 +391,7 @@ bazel run //3rdparty:crates_vendor
 | <a id="crates_vendor-buildifier"></a>buildifier |  The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | //crate_universe/private/vendor:buildifier |
 | <a id="crates_vendor-cargo_bazel"></a>cargo_bazel |  The cargo-bazel binary to use for vendoring. If this attribute is not set, then a <code>CARGO_BAZEL_GENERATOR_PATH</code> action env will be used.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @cargo_bazel_bootstrap//:binary |
 | <a id="crates_vendor-cargo_config"></a>cargo_config |  A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="crates_vendor-cargo_lockfile"></a>cargo_lockfile |  The path to an existing <code>Cargo.lock</code> file   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="crates_vendor-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | True |
 | <a id="crates_vendor-manifests"></a>manifests |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 | <a id="crates_vendor-mode"></a>mode |  Flags determining how crates should be vendored. <code>local</code> is where crate source and BUILD files are written to the repository. <code>remote</code> is where only BUILD files are written and repository rules used to fetch source code.   | String | optional | "remote" |
@@ -582,7 +624,7 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.61.0"</code> |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  <code>"1.62.0"</code> |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 

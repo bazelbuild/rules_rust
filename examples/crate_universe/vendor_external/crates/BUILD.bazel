@@ -28,7 +28,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "clap",
-    actual = "@crates_vendor__clap-3.1.18//:clap",
+    actual = "@crates_vendor__clap-3.2.8//:clap",
     tags = ["manual"],
 )
 
@@ -53,7 +53,7 @@ alias(
 # Binaries
 alias(
     name = "clap__stdio-fixture",
-    actual = "@crates_vendor__clap-3.1.18//:stdio-fixture__bin",
+    actual = "@crates_vendor__clap-3.2.8//:stdio-fixture__bin",
     tags = ["manual"],
 )
 

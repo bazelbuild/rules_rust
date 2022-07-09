@@ -7,7 +7,6 @@ exports_files(
     glob(["src/**"]) + [
         "Cargo.toml",
         "Cargo.lock",
-        "Cargo.Bazel.lock",
         "defs.bzl",
         "docs.bzl",
     ],
@@ -22,7 +21,6 @@ filegroup(
         "//crate_universe/private:distro",
         "//crate_universe/tools:distro",
         "BUILD.bazel",
-        "Cargo.Bazel.lock",
         "Cargo.lock",
         "Cargo.toml",
         "README.md",

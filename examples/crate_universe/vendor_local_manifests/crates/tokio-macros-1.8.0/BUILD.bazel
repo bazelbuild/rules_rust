@@ -36,7 +36,15 @@ rust_proc_macro(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -76,9 +84,9 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/proc-macro2-1.0.39:proc_macro2",
-            "//vendor_local_manifests/crates/quote-1.0.18:quote",
-            "//vendor_local_manifests/crates/syn-1.0.96:syn",
+            "//vendor_local_manifests/crates/proc-macro2-1.0.40:proc_macro2",
+            "//vendor_local_manifests/crates/quote-1.0.20:quote",
+            "//vendor_local_manifests/crates/syn-1.0.98:syn",
         ],
     }),
 )

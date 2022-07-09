@@ -77,9 +77,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.39//:proc_macro2",
-            "@rules_rust_wasm_bindgen__quote-1.0.18//:quote",
-            "@rules_rust_wasm_bindgen__syn-1.0.96//:syn",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.40//:proc_macro2",
+            "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
+            "@rules_rust_wasm_bindgen__syn-1.0.98//:syn",
             "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.78//:wasm_bindgen_backend",
             "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.78//:wasm_bindgen_shared",
         ],

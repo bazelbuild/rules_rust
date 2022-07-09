@@ -205,6 +205,14 @@ def _crates_vendor_impl(ctx):
     args.extend(splicing_manifest_args)
     cargo_bazel_runfiles.extend(splicing_manifest_runfiles)
 
+    # Add an optional `Cargo.lock` file.
+    if ctx.attr.cargo_lockfile:
+        args.extend([
+            "--cargo-lockfile",
+            _runfiles_path(ctx.file.cargo_lockfile.short_path, is_windows),
+        ])
+        cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
+
     # Optionally include buildifier
     if ctx.attr.buildifier:
         args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier.short_path, is_windows)])
@@ -252,7 +260,8 @@ handles all the same [workflows](#workflows) `crate_universe` rules do.
 Example: 
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -276,6 +285,7 @@ crates_vendor(
             features = ["small_rng"],
         )],
     },
+    cargo_lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
     mode = "remote",
     vendor_path = "crates",
@@ -289,6 +299,29 @@ directory next to where the target is defined. To run it, simply call:
 ```shell
 bazel run //3rdparty:crates_vendor
 ```
+
+<a id="#crates_vendor_repinning_updating_dependencies"></a>
+
+### Repinning / Updating Dependencies
+
+Repinning dependencies is controlled by both the `CARGO_BAZEL_REPIN` environment variable or the `--repin`
+flag to the `crates_vendor` binary. To update dependencies, simply add the flag ro your `bazel run` invocation.
+
+```shell
+bazel run //3rdparty:crates_vendor -- --repin
+```
+
+Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
+call against the generated workspace. The following table describes how to controll particular values passed to the
+`cargo update` command.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
 """,
     attrs = {
         "annotations": attr.string_list_dict(
@@ -312,6 +345,10 @@ bazel run //3rdparty:crates_vendor
         ),
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
+            allow_single_file = True,
+        ),
+        "cargo_lockfile": attr.label(
+            doc = "The path to an existing `Cargo.lock` file",
             allow_single_file = True,
         ),
         "generate_build_scripts": attr.bool(

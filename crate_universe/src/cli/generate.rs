@@ -1,13 +1,14 @@
 //! The cli entrypoint for the `generate` subcommand
 
+use std::fs;
 use std::path::PathBuf;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context as AnyhowContext, Result};
 use clap::Parser;
 
 use crate::config::Config;
 use crate::context::Context;
-use crate::lockfile::{is_cargo_lockfile, lock_context, write_lockfile, LockfileKind};
+use crate::lockfile::{lock_context, write_lockfile};
 use crate::metadata::load_metadata;
 use crate::metadata::Annotations;
 use crate::rendering::{write_outputs, Renderer};
@@ -35,11 +36,11 @@ pub struct GenerateOptions {
 
     /// The path to either a Cargo or Bazel lockfile
     #[clap(long)]
-    pub lockfile: PathBuf,
+    pub lockfile: Option<PathBuf>,
 
-    /// The type of lockfile
+    /// The path to a [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file.
     #[clap(long)]
-    pub lockfile_kind: LockfileKind,
+    pub cargo_lockfile: PathBuf,
 
     /// The directory of the current repository rule
     #[clap(long)]
@@ -54,7 +55,7 @@ pub struct GenerateOptions {
     #[clap(long)]
     pub repin: bool,
 
-    /// The path to a Cargo metadata `json` file.
+    /// The path to a Cargo metadata `json` file. This file must be next to a `Cargo.toml` and `Cargo.lock` file.
     #[clap(long)]
     pub metadata: Option<PathBuf>,
 
@@ -67,25 +68,19 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     // Load the config
     let config = Config::try_from_path(&opt.config)?;
 
-    // Determine if the dependencies need to be repinned.
-    let mut should_repin = opt.repin;
-
-    // Cargo lockfiles must always be repinned.
-    if is_cargo_lockfile(&opt.lockfile, &opt.lockfile_kind) {
-        should_repin = true;
-    }
-
     // Go straight to rendering if there is no need to repin
-    if !should_repin {
-        let context = Context::try_from_path(opt.lockfile)?;
+    if !opt.repin {
+        if let Some(lockfile) = &opt.lockfile {
+            let context = Context::try_from_path(lockfile)?;
 
-        // Render build files
-        let outputs = Renderer::new(config.rendering).render(&context)?;
+            // Render build files
+            let outputs = Renderer::new(config.rendering).render(&context)?;
 
-        // Write the outputs to disk
-        write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
+            // Write the outputs to disk
+            write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
 
-        return Ok(());
+            return Ok(());
+        }
     }
 
     // Ensure Cargo and Rustc are available for use during generation.
@@ -105,20 +100,13 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     };
 
     // Load Metadata and Lockfile
-    let (cargo_metadata, cargo_lockfile) = load_metadata(
-        metadata_path,
-        if is_cargo_lockfile(&opt.lockfile, &opt.lockfile_kind) {
-            Some(&opt.lockfile)
-        } else {
-            None
-        },
-    )?;
+    let (cargo_metadata, cargo_lockfile) = load_metadata(metadata_path)?;
 
     // Copy the rendering config for later use
     let render_config = config.rendering.clone();
 
     // Annotate metadata
-    let annotations = Annotations::new(cargo_metadata, cargo_lockfile, config.clone())?;
+    let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
 
     // Generate renderable contexts for earch package
     let context = Context::new(annotations)?;
@@ -130,13 +118,18 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
 
     // Ensure Bazel lockfiles are written to disk so future generations can be short-circuted.
-    if matches!(opt.lockfile_kind, LockfileKind::Bazel) {
+    if let Some(lockfile) = opt.lockfile {
         let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
 
-        let lockfile = lock_context(context, &config, &splicing_manifest, cargo_bin, rustc_bin)?;
+        let lock_content =
+            lock_context(context, &config, &splicing_manifest, cargo_bin, rustc_bin)?;
 
-        write_lockfile(lockfile, &opt.lockfile, opt.dry_run)?;
+        write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
+
+    // Write the updated Cargo.lock file
+    fs::write(&opt.cargo_lockfile, cargo_lockfile.to_string())
+        .context("Failed to write Cargo.lock file back to the workspace.")?;
 
     Ok(())
 }
