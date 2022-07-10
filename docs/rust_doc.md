@@ -4,7 +4,7 @@
 * [rust_doc](#rust_doc)
 * [rust_doc_test](#rust_doc_test)
 
-<a id="#rust_doc"></a>
+<a id="rust_doc"></a>
 
 ## rust_doc
 
@@ -62,7 +62,7 @@ Running `bazel build //hello_lib:hello_lib_doc` will build a zip file containing
 | <a id="rust_doc-markdown_css"></a>markdown_css |  CSS files to include via <code>&lt;link&gt;</code> in a rendered Markdown file.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_doc_test"></a>
+<a id="rust_doc_test"></a>
 
 ## rust_doc_test
 

@@ -5,7 +5,7 @@
 * [cargo_build_script](#cargo_build_script)
 * [cargo_env](#cargo_env)
 
-<a id="#cargo_bootstrap_repository"></a>
+<a id="cargo_bootstrap_repository"></a>
 
 ## cargo_bootstrap_repository
 
@@ -40,7 +40,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.62.0" |
 
 
-<a id="#cargo_build_script"></a>
+<a id="cargo_build_script"></a>
 
 ## cargo_build_script
 
@@ -127,7 +127,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
 
 
-<a id="#cargo_env"></a>
+<a id="cargo_env"></a>
 
 ## cargo_env
 

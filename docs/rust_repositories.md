@@ -10,7 +10,7 @@
 * [rust_toolchain_repository](#rust_toolchain_repository)
 * [rust_toolchain](#rust_toolchain)
 
-<a id="#rust_stdlib_filegroup"></a>
+<a id="rust_stdlib_filegroup"></a>
 
 ## rust_stdlib_filegroup
 
@@ -29,7 +29,7 @@ A dedicated filegroup-like rule for Rust stdlib artifacts.
 | <a id="rust_stdlib_filegroup-srcs"></a>srcs |  The list of targets/files that are components of the rust-stdlib file group   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
 
 
-<a id="#rust_toolchain"></a>
+<a id="rust_toolchain"></a>
 
 ## rust_toolchain
 
@@ -114,7 +114,7 @@ See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX r
 | <a id="rust_toolchain-target_triple"></a>target_triple |  The platform triple for the toolchains target environment. For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations   | String | optional | "" |
 
 
-<a id="#rust_toolchain_repository"></a>
+<a id="rust_toolchain_repository"></a>
 
 ## rust_toolchain_repository
 
@@ -149,7 +149,7 @@ A given instance of this rule should be accompanied by a rust_toolchain_reposito
 | <a id="rust_toolchain_repository-version"></a>version |  The version of the tool among "nightly", "beta", or an exact version.   | String | required |  |
 
 
-<a id="#rust_toolchain_repository_proxy"></a>
+<a id="rust_toolchain_repository_proxy"></a>
 
 ## rust_toolchain_repository_proxy
 
@@ -173,7 +173,7 @@ Generates a toolchain-bearing repository that declares the toolchains from some 
 | <a id="rust_toolchain_repository_proxy-toolchain_name_prefix"></a>toolchain_name_prefix |  The per-target prefix expected for the rust_toolchain declarations in the parent workspace.   | String | optional | "" |
 
 
-<a id="#rules_rust_dependencies"></a>
+<a id="rules_rust_dependencies"></a>
 
 ## rules_rust_dependencies
 
@@ -185,7 +185,7 @@ Dependencies used in the implementation of `rules_rust`.
 
 
 
-<a id="#rust_register_toolchains"></a>
+<a id="rust_register_toolchains"></a>
 
 ## rust_register_toolchains
 
@@ -228,7 +228,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-version"></a>version |  The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.   |  <code>"1.62.0"</code> |
 
 
-<a id="#rust_repositories"></a>
+<a id="rust_repositories"></a>
 
 ## rust_repositories
 
@@ -246,7 +246,7 @@ rust_repositories(<a href="#rust_repositories-kwargs">kwargs</a>)
 | <a id="rust_repositories-kwargs"></a>kwargs |  Keyword arguments for the <code>rust_register_toolchains</code> macro.   |  none |
 
 
-<a id="#rust_repository_set"></a>
+<a id="rust_repository_set"></a>
 
 ## rust_repository_set
 

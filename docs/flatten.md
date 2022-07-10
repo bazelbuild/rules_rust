@@ -49,7 +49,7 @@
 * [rustfmt_test](#rustfmt_test)
 
 
-<a id="#capture_clippy_output"></a>
+<a id="capture_clippy_output"></a>
 
 ## capture_clippy_output
 
@@ -67,7 +67,7 @@ Control whether to print clippy output or store it to a file, using the configur
 | <a id="capture_clippy_output-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#cargo_bootstrap_repository"></a>
+<a id="cargo_bootstrap_repository"></a>
 
 ## cargo_bootstrap_repository
 
@@ -102,7 +102,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.62.0" |
 
 
-<a id="#error_format"></a>
+<a id="error_format"></a>
 
 ## error_format
 
@@ -120,7 +120,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 | <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#extra_rustc_flags"></a>
+<a id="extra_rustc_flags"></a>
 
 ## extra_rustc_flags
 
@@ -138,7 +138,7 @@ Add additional rustc_flags from the command line with `--@rules_rust//:extra_rus
 | <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#incompatible_flag"></a>
+<a id="incompatible_flag"></a>
 
 ## incompatible_flag
 
@@ -157,7 +157,7 @@ A rule defining an incompatible flag.
 | <a id="incompatible_flag-issue"></a>issue |  The link to the github issue associated with this flag   | String | required |  |
 
 
-<a id="#rust_binary"></a>
+<a id="rust_binary"></a>
 
 ## rust_binary
 
@@ -280,7 +280,7 @@ is available under the key `dsym_folder` in `OutputGroupInfo`.
 | <a id="rust_binary-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_bindgen"></a>
+<a id="rust_bindgen"></a>
 
 ## rust_bindgen
 
@@ -303,7 +303,7 @@ Generates a rust source file from a cc_library and a header.
 | <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | True |
 
 
-<a id="#rust_bindgen_toolchain"></a>
+<a id="rust_bindgen_toolchain"></a>
 
 ## rust_bindgen_toolchain
 
@@ -352,7 +352,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  The label of a <code>rustfmt</code> executable. If this is not provided, falls back to the rust_toolchain rustfmt.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
-<a id="#rust_clippy"></a>
+<a id="rust_clippy"></a>
 
 ## rust_clippy
 
@@ -406,7 +406,7 @@ rust_clippy(
 | <a id="rust_clippy-deps"></a>deps |  Rust targets to run clippy on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_doc"></a>
+<a id="rust_doc"></a>
 
 ## rust_doc
 
@@ -464,7 +464,7 @@ Running `bazel build //hello_lib:hello_lib_doc` will build a zip file containing
 | <a id="rust_doc-markdown_css"></a>markdown_css |  CSS files to include via <code>&lt;link&gt;</code> in a rendered Markdown file.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_doc_test"></a>
+<a id="rust_doc_test"></a>
 
 ## rust_doc_test
 
@@ -520,7 +520,7 @@ Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation t
 | <a id="rust_doc_test-deps"></a>deps |  List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_grpc_library"></a>
+<a id="rust_grpc_library"></a>
 
 ## rust_grpc_library
 
@@ -563,7 +563,7 @@ rust_binary(
 | <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_library"></a>
+<a id="rust_library"></a>
 
 ## rust_library
 
@@ -659,7 +659,7 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 | <a id="rust_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_proc_macro"></a>
+<a id="rust_proc_macro"></a>
 
 ## rust_proc_macro
 
@@ -695,7 +695,7 @@ Builds a Rust proc-macro crate.
 | <a id="rust_proc_macro-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_proto_library"></a>
+<a id="rust_proto_library"></a>
 
 ## rust_proto_library
 
@@ -738,7 +738,7 @@ rust_binary(
 | <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_proto_toolchain"></a>
+<a id="rust_proto_toolchain"></a>
 
 ## rust_proto_toolchain
 
@@ -795,7 +795,7 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 | <a id="rust_proto_toolchain-protoc"></a>protoc |  The location of the <code>protoc</code> binary. It should be an executable target.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @com_google_protobuf//:protoc |
 
 
-<a id="#rust_shared_library"></a>
+<a id="rust_shared_library"></a>
 
 ## rust_shared_library
 
@@ -839,7 +839,7 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_shared_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_static_library"></a>
+<a id="rust_static_library"></a>
 
 ## rust_static_library
 
@@ -883,7 +883,7 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_static_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_stdlib_filegroup"></a>
+<a id="rust_stdlib_filegroup"></a>
 
 ## rust_stdlib_filegroup
 
@@ -902,7 +902,7 @@ A dedicated filegroup-like rule for Rust stdlib artifacts.
 | <a id="rust_stdlib_filegroup-srcs"></a>srcs |  The list of targets/files that are components of the rust-stdlib file group   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | required |  |
 
 
-<a id="#rust_test"></a>
+<a id="rust_test"></a>
 
 ## rust_test
 
@@ -1056,7 +1056,7 @@ Run the test with `bazel test //hello_lib:greeting_test`.
 | <a id="rust_test-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_toolchain"></a>
+<a id="rust_toolchain"></a>
 
 ## rust_toolchain
 
@@ -1141,7 +1141,7 @@ See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX r
 | <a id="rust_toolchain-target_triple"></a>target_triple |  The platform triple for the toolchains target environment. For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations   | String | optional | "" |
 
 
-<a id="#rust_toolchain_repository"></a>
+<a id="rust_toolchain_repository"></a>
 
 ## rust_toolchain_repository
 
@@ -1176,7 +1176,7 @@ A given instance of this rule should be accompanied by a rust_toolchain_reposito
 | <a id="rust_toolchain_repository-version"></a>version |  The version of the tool among "nightly", "beta", or an exact version.   | String | required |  |
 
 
-<a id="#rust_toolchain_repository_proxy"></a>
+<a id="rust_toolchain_repository_proxy"></a>
 
 ## rust_toolchain_repository_proxy
 
@@ -1200,7 +1200,7 @@ Generates a toolchain-bearing repository that declares the toolchains from some 
 | <a id="rust_toolchain_repository_proxy-toolchain_name_prefix"></a>toolchain_name_prefix |  The per-target prefix expected for the rust_toolchain declarations in the parent workspace.   | String | optional | "" |
 
 
-<a id="#rust_wasm_bindgen"></a>
+<a id="rust_wasm_bindgen"></a>
 
 ## rust_wasm_bindgen
 
@@ -1237,7 +1237,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 | <a id="rust_wasm_bindgen-wasm_file"></a>wasm_file |  The <code>.wasm</code> file or crate to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 
 
-<a id="#rust_wasm_bindgen_toolchain"></a>
+<a id="rust_wasm_bindgen_toolchain"></a>
 
 ## rust_wasm_bindgen_toolchain
 
@@ -1285,7 +1285,7 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 | <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen-cli</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
-<a id="#rustfmt_test"></a>
+<a id="rustfmt_test"></a>
 
 ## rustfmt_test
 
@@ -1304,7 +1304,7 @@ A test rule for performing `rustfmt --check` on a set of targets
 | <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#CrateInfo"></a>
+<a id="CrateInfo"></a>
 
 ## CrateInfo
 
@@ -1336,7 +1336,7 @@ A provider containing general Crate information.
 | <a id="CrateInfo-wrapped_crate_type"></a>wrapped_crate_type |  str, optional: The original crate type for targets generated using a previously defined crate (typically tests using the <code>rust_test::crate</code> attribute)    |
 
 
-<a id="#DepInfo"></a>
+<a id="DepInfo"></a>
 
 ## DepInfo
 
@@ -1361,7 +1361,7 @@ A provider containing information about a Crate's dependencies.
 | <a id="DepInfo-transitive_noncrates"></a>transitive_noncrates |  depset[LinkerInput]: All transitive dependencies that aren't crates.    |
 
 
-<a id="#StdLibInfo"></a>
+<a id="StdLibInfo"></a>
 
 ## StdLibInfo
 
@@ -1389,7 +1389,7 @@ A collection of files either found within the `rust-stdlib` artifact or generate
 | <a id="StdLibInfo-std_rlibs"></a>std_rlibs |  List[File]: All <code>.rlib</code> files    |
 
 
-<a id="#cargo_build_script"></a>
+<a id="cargo_build_script"></a>
 
 ## cargo_build_script
 
@@ -1476,7 +1476,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
 
 
-<a id="#cargo_env"></a>
+<a id="cargo_env"></a>
 
 ## cargo_env
 
@@ -1523,7 +1523,7 @@ cargo_bootstrap_repository(
 str: A json encoded string of the environment variables
 
 
-<a id="#rules_rust_dependencies"></a>
+<a id="rules_rust_dependencies"></a>
 
 ## rules_rust_dependencies
 
@@ -1535,7 +1535,7 @@ Dependencies used in the implementation of `rules_rust`.
 
 
 
-<a id="#rust_bindgen_dependencies"></a>
+<a id="rust_bindgen_dependencies"></a>
 
 ## rust_bindgen_dependencies
 
@@ -1547,7 +1547,7 @@ Declare dependencies needed for bindgen.
 
 
 
-<a id="#rust_bindgen_library"></a>
+<a id="rust_bindgen_library"></a>
 
 ## rust_bindgen_library
 
@@ -1574,7 +1574,7 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
 
 
-<a id="#rust_bindgen_register_toolchains"></a>
+<a id="rust_bindgen_register_toolchains"></a>
 
 ## rust_bindgen_register_toolchains
 
@@ -1595,7 +1595,7 @@ Registers the default toolchains for the `rules_rust` [bindgen][bg] rules.
 | <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  <code>True</code> |
 
 
-<a id="#rust_proto_repositories"></a>
+<a id="rust_proto_repositories"></a>
 
 ## rust_proto_repositories
 
@@ -1613,7 +1613,7 @@ Declare dependencies needed for proto compilation.
 | <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
-<a id="#rust_proto_transitive_repositories"></a>
+<a id="rust_proto_transitive_repositories"></a>
 
 ## rust_proto_transitive_repositories
 
@@ -1627,7 +1627,7 @@ This macro should be called immediately after the `rust_proto_repositories` macr
 
 
 
-<a id="#rust_register_toolchains"></a>
+<a id="rust_register_toolchains"></a>
 
 ## rust_register_toolchains
 
@@ -1670,7 +1670,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-version"></a>version |  The version of Rust. Either "nightly", "beta", or an exact version. Defaults to a modern version.   |  <code>"1.62.0"</code> |
 
 
-<a id="#rust_repositories"></a>
+<a id="rust_repositories"></a>
 
 ## rust_repositories
 
@@ -1688,7 +1688,7 @@ rust_repositories(<a href="#rust_repositories-kwargs">kwargs</a>)
 | <a id="rust_repositories-kwargs"></a>kwargs |  Keyword arguments for the <code>rust_register_toolchains</code> macro.   |  none |
 
 
-<a id="#rust_repository_set"></a>
+<a id="rust_repository_set"></a>
 
 ## rust_repository_set
 
@@ -1722,7 +1722,7 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-register_toolchain"></a>register_toolchain |  If True, the generated <code>rust_toolchain</code> target will become a registered toolchain.   |  <code>True</code> |
 
 
-<a id="#rust_test_suite"></a>
+<a id="rust_test_suite"></a>
 
 ## rust_test_suite
 
@@ -1786,7 +1786,7 @@ rust_test_suite(
 | <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The <code>tags</code> argument is also passed to the generated <code>test_suite</code> target.   |  none |
 
 
-<a id="#rust_wasm_bindgen_dependencies"></a>
+<a id="rust_wasm_bindgen_dependencies"></a>
 
 ## rust_wasm_bindgen_dependencies
 
@@ -1800,7 +1800,7 @@ Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
 
 
 
-<a id="#rust_wasm_bindgen_register_toolchains"></a>
+<a id="rust_wasm_bindgen_register_toolchains"></a>
 
 ## rust_wasm_bindgen_register_toolchains
 
@@ -1821,7 +1821,7 @@ Registers the default toolchains for the `rules_rust` [wasm-bindgen][wb] rules.
 | <a id="rust_wasm_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  <code>True</code> |
 
 
-<a id="#rust_analyzer_aspect"></a>
+<a id="rust_analyzer_aspect"></a>
 
 ## rust_analyzer_aspect
 
@@ -1850,7 +1850,7 @@ Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.js
 | <a id="rust_analyzer_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
 
 
-<a id="#rust_clippy_aspect"></a>
+<a id="rust_clippy_aspect"></a>
 
 ## rust_clippy_aspect
 
@@ -1898,7 +1898,7 @@ $ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect           
 | <a id="rust_clippy_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
 
 
-<a id="#rustfmt_aspect"></a>
+<a id="rustfmt_aspect"></a>
 
 ## rustfmt_aspect
 

@@ -36,7 +36,7 @@ rust_bindgen_register_toolchains()
 
 
 
-<a id="#rust_bindgen"></a>
+<a id="rust_bindgen"></a>
 
 ## rust_bindgen
 
@@ -59,7 +59,7 @@ Generates a rust source file from a cc_library and a header.
 | <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | True |
 
 
-<a id="#rust_bindgen_toolchain"></a>
+<a id="rust_bindgen_toolchain"></a>
 
 ## rust_bindgen_toolchain
 
@@ -108,7 +108,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  The label of a <code>rustfmt</code> executable. If this is not provided, falls back to the rust_toolchain rustfmt.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
-<a id="#rust_bindgen_dependencies"></a>
+<a id="rust_bindgen_dependencies"></a>
 
 ## rust_bindgen_dependencies
 
@@ -120,7 +120,7 @@ Declare dependencies needed for bindgen.
 
 
 
-<a id="#rust_bindgen_library"></a>
+<a id="rust_bindgen_library"></a>
 
 ## rust_bindgen_library
 
@@ -147,7 +147,7 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
 
 
-<a id="#rust_bindgen_register_toolchains"></a>
+<a id="rust_bindgen_register_toolchains"></a>
 
 ## rust_bindgen_register_toolchains
 

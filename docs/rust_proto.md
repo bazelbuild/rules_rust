@@ -117,7 +117,7 @@ all dependencies added via the toolchain ends-up being in the wrong
 configuration.
 
 
-<a id="#rust_grpc_library"></a>
+<a id="rust_grpc_library"></a>
 
 ## rust_grpc_library
 
@@ -160,7 +160,7 @@ rust_binary(
 | <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_proto_library"></a>
+<a id="rust_proto_library"></a>
 
 ## rust_proto_library
 
@@ -203,7 +203,7 @@ rust_binary(
 | <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_proto_toolchain"></a>
+<a id="rust_proto_toolchain"></a>
 
 ## rust_proto_toolchain
 
@@ -260,7 +260,7 @@ See @rules_rust//proto:BUILD for examples of defining the toolchain.
 | <a id="rust_proto_toolchain-protoc"></a>protoc |  The location of the <code>protoc</code> binary. It should be an executable target.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | @com_google_protobuf//:protoc |
 
 
-<a id="#rust_proto_repositories"></a>
+<a id="rust_proto_repositories"></a>
 
 ## rust_proto_repositories
 
@@ -278,7 +278,7 @@ Declare dependencies needed for proto compilation.
 | <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  <code>True</code> |
 
 
-<a id="#rust_proto_transitive_repositories"></a>
+<a id="rust_proto_transitive_repositories"></a>
 
 ## rust_proto_transitive_repositories
 
