@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -20,4 +20,16 @@ sh_test(
     srcs = ["output_test.sh"],
     args = ["$(location :hello_env)"],
     data = [":hello_env"],
+)
+
+rust_library(
+    name = "hello_env_crate",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+rust_test(
+    name = "hello_env_crate_test",
+    crate = ":hello_env_crate",
 )

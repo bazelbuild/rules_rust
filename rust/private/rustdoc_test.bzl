@@ -105,6 +105,7 @@ def _rust_doc_test_impl(ctx):
         output = crate.output,
         edition = crate.edition,
         rustc_env = crate.rustc_env,
+        rustc_env_files = crate.rustc_env_files,
         is_test = True,
         compile_data = crate.compile_data,
         wrapped_crate_type = crate.type,

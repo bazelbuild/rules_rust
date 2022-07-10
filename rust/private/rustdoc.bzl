@@ -39,6 +39,7 @@ def _strip_crate_info_output(crate_info):
         output = None,
         edition = crate_info.edition,
         rustc_env = crate_info.rustc_env,
+        rustc_env_files = crate_info.rustc_env_files,
         is_test = crate_info.is_test,
         compile_data = crate_info.compile_data,
     )
