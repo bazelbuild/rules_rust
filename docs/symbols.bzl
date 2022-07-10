@@ -48,6 +48,7 @@ load(
     "@rules_rust//rust:defs.bzl",
     _capture_clippy_output = "capture_clippy_output",
     _error_format = "error_format",
+    _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_binary = "rust_binary",
@@ -156,6 +157,7 @@ rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
 
 error_format = _error_format
+extra_rustc_flag = _extra_rustc_flag
 extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
 capture_clippy_output = _capture_clippy_output
