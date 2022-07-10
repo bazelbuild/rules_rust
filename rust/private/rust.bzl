@@ -666,19 +666,19 @@ _common_attrs = {
         cfg = "exec",
     ),
     "_error_format": attr.label(
-        default = "//:error_format",
+        default = Label("//:error_format"),
     ),
     "_extra_exec_rustc_flag": attr.label(
-        default = "//:extra_exec_rustc_flag",
+        default = Label("//:extra_exec_rustc_flag"),
     ),
     "_extra_exec_rustc_flags": attr.label(
-        default = "//:extra_exec_rustc_flags",
+        default = Label("//:extra_exec_rustc_flags"),
     ),
     "_extra_rustc_flag": attr.label(
-        default = "//:extra_rustc_flag",
+        default = Label("//:extra_rustc_flag"),
     ),
     "_extra_rustc_flags": attr.label(
-        default = "//:extra_rustc_flags",
+        default = Label("//:extra_rustc_flags"),
     ),
     "_import_macro_dep": attr.label(
         default = Label("//util/import"),
