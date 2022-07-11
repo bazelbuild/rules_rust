@@ -11,10 +11,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":gen_rust_project_lib",
-        "//tools/rust_analyzer/raze:anyhow",
-        "//tools/rust_analyzer/raze:env_logger",
-        "//tools/rust_analyzer/raze:log",
-        "//tools/rust_analyzer/raze:structopt",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:structopt",
         "//util/label",
     ],
 )
@@ -31,10 +31,10 @@ rust_library(
     edition = "2018",
     deps = [
         "//tools/runfiles",
-        "//tools/rust_analyzer/raze:anyhow",
-        "//tools/rust_analyzer/raze:log",
-        "//tools/rust_analyzer/raze:serde",
-        "//tools/rust_analyzer/raze:serde_json",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
     ],
 )
 
@@ -42,7 +42,7 @@ rust_test(
     name = "gen_rust_project_lib_test",
     crate = ":gen_rust_project_lib",
     deps = [
-        "//tools/rust_analyzer/raze:itertools",
+        "//tools/rust_analyzer/3rdparty/crates:itertools",
     ],
 )
 
@@ -61,8 +61,7 @@ filegroup(
         "*.bzl",
         "**/*.rs",
     ]) + [
-        "//tools/rust_analyzer/raze:srcs",
-        "//tools/rust_analyzer/raze/remote:srcs",
+        "//tools/rust_analyzer/3rdparty:distro",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],

@@ -11,9 +11,9 @@ such a file.
 First, add the following to the `WORKSPACE` file:
 
 ```python
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
+load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
-rust_analyzer_deps()
+rust_analyzer_dependencies()
 ```
 
 Next, add the following lines to the `.bazelrc` file of your workspace:
