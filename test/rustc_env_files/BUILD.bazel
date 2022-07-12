@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -9,15 +10,19 @@ rust_binary(
     rustc_env_files = [":generate_rustc_env_file"],
 )
 
-genrule(
+write_file(
     name = "generate_rustc_env_file",
-    outs = ["rustc_env_file"],
-    cmd = "echo CARGO_PKG_VERSION=1.2.3 >> $@ && echo GREETING=Howdy >> $@",
+    out = "rustc_env_file",
+    content = [
+        "CARGO_PKG_VERSION=1.2.3",
+        "GREETING=Howdy",
+        "",
+    ],
 )
 
 sh_test(
     name = "output_test",
     srcs = ["output_test.sh"],
-    args = ["$(location :hello_env)"],
+    args = ["$(rootpath :hello_env)"],
     data = [":hello_env"],
 )
