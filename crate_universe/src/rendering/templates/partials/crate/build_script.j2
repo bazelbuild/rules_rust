@@ -39,7 +39,14 @@ cargo_build_script(
         # warnings. For more details see: 
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + {% set selectable = crate.build_script_attrs | get(key="rustc_flags", default=Null) %}{% include "partials/starlark/selectable_list.j2" %},
+        {%- if crate.common_attrs | get(key="rustc_flags", default=Null) %}
+
+        # User provided rustc_flags
+        {%- for rustc_flag in crate.common_attrs.rustc_flags %}
+        "{{ rustc_flag }}",
+        {%- endfor %}
+        {%- endif %}
+    ],
     srcs = {% set glob = target.srcs %}{% include "partials/starlark/glob.j2" -%},
     tools = {% set selectable = crate.build_script_attrs | get(key="tools", default=Null) %}{% include "partials/starlark/selectable_list.j2" %},
     version = "{{ crate.common_attrs.version }}",

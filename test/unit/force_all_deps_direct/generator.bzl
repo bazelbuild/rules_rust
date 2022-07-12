@@ -76,11 +76,13 @@ generator = rule(
     attrs = {
         "deps": attr.label_list(),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
-        "_error_format": attr.label(default = "@rules_rust//:error_format"),
+        "_error_format": attr.label(
+            default = Label("//:error_format"),
+        ),
         "_process_wrapper": attr.label(
-            default = Label("@rules_rust//util/process_wrapper"),
+            default = Label("//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",

@@ -36,7 +36,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -65,10 +73,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -79,7 +84,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__once_cell-1.11.0//:once_cell",
+            "@crate_universe_crate_index__once_cell-1.13.0//:once_cell",
         ],
     }),
 )

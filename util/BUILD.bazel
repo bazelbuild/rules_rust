@@ -16,3 +16,9 @@ filegroup(
     ],
     visibility = ["//:__subpackages__"],
 )
+
+filegroup(
+    name = "collect_coverage",
+    srcs = ["collect_coverage.sh"],
+    visibility = ["//visibility:public"],
+)

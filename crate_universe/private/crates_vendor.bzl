@@ -9,7 +9,10 @@ _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
 set -euo pipefail
 export RUNTIME_PWD="$(pwd)"
-eval exec env - BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
+if [[ -z "${{BAZEL_REAL:-}}" ]]; then
+    BAZEL_REAL="$(which bazel || echo 'bazel')"
+fi
+eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
 "{bin}" {args} "$@"
 """
 
@@ -55,6 +58,35 @@ def _write_data_file(ctx, name, data):
     )
     return file
 
+def _prepare_manifest_path(target):
+    """Generate manifest paths that are resolvable by `cargo_bazel::SplicingManifest::resolve`
+
+    Args:
+        target (Target): A `crate_vendor.manifest` target
+
+    Returns:
+        str: A string representing the path to a manifest.
+    """
+    files = target[DefaultInfo].files.to_list()
+    if len(files) != 1:
+        fail("The manifest {} hand an unexpected number of files: {}".format(
+            target.label,
+            files,
+        ))
+
+    manifest = files[0]
+
+    if target.label.workspace_root.startswith("external"):
+        # The short path of an external file is expected to start with `../`
+        if not manifest.short_path.startswith("../"):
+            fail("Unexpected shortpath for {}: {}".format(
+                manifest,
+                manifest.short_path,
+            ))
+        return manifest.short_path.replace("../", "${output_base}/external/", 1)
+
+    return "${build_workspace_directory}/" + manifest.short_path
+
 def _write_splicing_manifest(ctx):
     # Deserialize information about direct packges
     direct_packages_info = {
@@ -64,12 +96,11 @@ def _write_splicing_manifest(ctx):
     }
 
     # Manifests are required to be single files
-    manifests = {m[DefaultInfo].files.to_list()[0].short_path: str(m.label) for m in ctx.attr.manifests}
+    manifests = {_prepare_manifest_path(m): str(m.label) for m in ctx.attr.manifests}
 
     config = json.decode(ctx.attr.splicing_config or splicing_config())
     splicing_manifest_content = {
-        # TODO: How do cargo config files get factored into vendored builds
-        "cargo_config": None,
+        "cargo_config": _prepare_manifest_path(ctx.attr.cargo_config) if ctx.attr.cargo_config else None,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
     }
@@ -86,21 +117,7 @@ def _write_splicing_manifest(ctx):
     is_windows = _is_windows(ctx)
 
     args = ["--splicing-manifest", _runfiles_path(manifest.short_path, is_windows)]
-    runfiles = [manifest]
-    return args, runfiles
-
-def _write_extra_manifests_manifest(ctx):
-    manifest = _write_data_file(
-        ctx = ctx,
-        name = "cargo-bazel-extra-manifests-manifest.json",
-        data = json.encode(struct(
-            # TODO: This is for extra workspace members
-            manifests = [],
-        )),
-    )
-    is_windows = _is_windows(ctx)
-    args = ["--extra-manifests-manifest", _runfiles_path(manifest.short_path, is_windows)]
-    runfiles = [manifest]
+    runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, runfiles
 
 def _write_config_file(ctx):
@@ -188,10 +205,13 @@ def _crates_vendor_impl(ctx):
     args.extend(splicing_manifest_args)
     cargo_bazel_runfiles.extend(splicing_manifest_runfiles)
 
-    # Generate extra-manifests manifest
-    extra_manifests_manifest_args, extra_manifests_manifest_runfiles = _write_extra_manifests_manifest(ctx)
-    args.extend(extra_manifests_manifest_args)
-    cargo_bazel_runfiles.extend(extra_manifests_manifest_runfiles)
+    # Add an optional `Cargo.lock` file.
+    if ctx.attr.cargo_lockfile:
+        args.extend([
+            "--cargo-lockfile",
+            _runfiles_path(ctx.file.cargo_lockfile.short_path, is_windows),
+        ])
+        cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
 
     # Optionally include buildifier
     if ctx.attr.buildifier:
@@ -240,7 +260,8 @@ handles all the same [workflows](#workflows) `crate_universe` rules do.
 Example: 
 
 Given the following workspace structure:
-```
+
+```text
 [workspace]/
     WORKSPACE
     BUILD
@@ -264,6 +285,7 @@ crates_vendor(
             features = ["small_rng"],
         )],
     },
+    cargo_lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
     mode = "remote",
     vendor_path = "crates",
@@ -277,6 +299,29 @@ directory next to where the target is defined. To run it, simply call:
 ```shell
 bazel run //3rdparty:crates_vendor
 ```
+
+<a id="#crates_vendor_repinning_updating_dependencies"></a>
+
+### Repinning / Updating Dependencies
+
+Repinning dependencies is controlled by both the `CARGO_BAZEL_REPIN` environment variable or the `--repin`
+flag to the `crates_vendor` binary. To update dependencies, simply add the flag ro your `bazel run` invocation.
+
+```shell
+bazel run //3rdparty:crates_vendor -- --repin
+```
+
+Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
+call against the generated workspace. The following table describes how to controll particular values passed to the
+`cargo update` command.
+
+| Value | Cargo command |
+| --- | --- |
+| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
+| `workspace` | `cargo update --workspace` |
+| `package_name` | `cargo upgrade --package package_name` |
+| `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
 """,
     attrs = {
         "annotations": attr.string_list_dict(
@@ -297,6 +342,14 @@ bazel run //3rdparty:crates_vendor
             executable = True,
             allow_files = True,
             default = CARGO_BAZEL_LABEL,
+        ),
+        "cargo_config": attr.label(
+            doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
+            allow_single_file = True,
+        ),
+        "cargo_lockfile": attr.label(
+            doc = "The path to an existing `Cargo.lock` file",
+            allow_single_file = True,
         ),
         "generate_build_scripts": attr.bool(
             doc = (

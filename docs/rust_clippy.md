@@ -27,7 +27,7 @@ build --output_groups=+clippy_checks
 
 This will enable clippy on all [Rust targets](./defs.md).
 
-Note that targets tagged with `noclippy` will not perform clippy checks
+Note that targets tagged with `no-clippy` will not perform clippy checks
 
 To use a local clippy.toml, add the following flag to your `.bazelrc`. Note that due to
 the upstream implementation of clippy, this file must be named either `.clippy.toml` or
@@ -37,7 +37,7 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 build --@rules_rust//:clippy.toml=//:clippy.toml
 ```
 
-<a id="#rust_clippy"></a>
+<a id="rust_clippy"></a>
 
 ## rust_clippy
 
@@ -91,7 +91,7 @@ rust_clippy(
 | <a id="rust_clippy-deps"></a>deps |  Rust targets to run clippy on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_clippy_aspect"></a>
+<a id="rust_clippy_aspect"></a>
 
 ## rust_clippy_aspect
 

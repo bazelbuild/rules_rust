@@ -1,6 +1,6 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
 
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 
@@ -20,63 +20,6 @@ def splicing_config(resolver_version = "1"):
     return json.encode(struct(
         resolver_version = resolver_version,
     ))
-
-def download_extra_workspace_members(repository_ctx, cache_dir, render_template_registry_url):
-    """Download additional workspace members for use in splicing.
-
-    Args:
-        repository_ctx (repository_ctx): The rule's context object.
-        cache_dir (path): A directory in which to download and extract extra workspace members
-        render_template_registry_url (str): The base template to use for determining the crate's registry URL.
-
-    Returns:
-        list: A list of information related to the downloaded crates
-            - manifest: The path of the manifest.
-            - url: The url the manifest came from.
-            - sha256: The sha256 checksum of the new manifest.
-    """
-    manifests = []
-    extra_workspace_members = repository_ctx.attr.extra_workspace_members
-    if extra_workspace_members:
-        repository_ctx.report_progress("Downloading extra workspace members.")
-
-    for name, spec in repository_ctx.attr.extra_workspace_members.items():
-        spec = struct(**json.decode(spec))
-
-        url = render_template_registry_url
-        url = url.replace("{name}", name)
-        url = url.replace("{version}", spec.version)
-
-        if spec.sha256:
-            result = repository_ctx.download_and_extract(
-                output = cache_dir,
-                url = url,
-                sha256 = spec.sha256,
-                type = "tar.gz",
-            )
-        else:
-            result = repository_ctx.download_and_extract(
-                output = cache_dir,
-                url = url,
-                type = "tar.gz",
-            )
-
-        manifest = repository_ctx.path("{}/{}-{}/Cargo.toml".format(
-            cache_dir,
-            name,
-            spec.version,
-        ))
-
-        if not manifest.exists:
-            fail("Extra workspace member '{}' has no root Cargo.toml file".format(name))
-
-        manifests.append(struct(
-            manifest = str(manifest),
-            url = url,
-            sha256 = result.sha256,
-        ))
-
-    return manifests
 
 def kebab_case_keys(data):
     """Ensure the key value of the data given are kebab-case
@@ -166,13 +109,13 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_manifest, cargo, rustc):
+def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, cargo, rustc):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
         generator (path): The `cargo-bazel` binary.
-        lockfile (path): The path to a "lock" file for reproducible `cargo-bazel` renderings.
+        cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
         cargo (path): The path to a Cargo binary.
         rustc (path): The Path to a Rustc binary.
@@ -182,22 +125,6 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
     """
     repository_ctx.report_progress("Splicing Cargo workspace.")
     repo_dir = repository_ctx.path(".")
-
-    # Download extra workspace members
-    crates_cache_dir = repository_ctx.path("{}/.crates_cache".format(repo_dir))
-    extra_manifest_info = download_extra_workspace_members(
-        repository_ctx = repository_ctx,
-        cache_dir = crates_cache_dir,
-        render_template_registry_url = repository_ctx.attr.extra_workspace_member_url_template,
-    )
-
-    extra_manifests_manifest = repository_ctx.path("{}/extra_manifests_manifest.json".format(repo_dir))
-    repository_ctx.file(
-        extra_manifests_manifest,
-        json.encode_indent(struct(
-            manifests = extra_manifest_info,
-        ), indent = " " * 4),
-    )
 
     splicing_output_dir = repository_ctx.path("splicing-output")
 
@@ -209,12 +136,12 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
         splicing_output_dir,
         "--splicing-manifest",
         splicing_manifest,
-        "--extra-manifests-manifest",
-        extra_manifests_manifest,
         "--cargo",
         cargo,
         "--rustc",
         rustc,
+        "--cargo-lockfile",
+        cargo_lockfile,
     ]
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
@@ -225,19 +152,15 @@ def splice_workspace_manifest(repository_ctx, generator, lockfile, splicing_mani
             repository_ctx.path("{}/splicing-workspace".format(repo_dir)),
         ])
 
-    # Splicing accepts a Cargo.lock file in some scenarios. Ensure it's passed
-    # if the lockfile is a actually a Cargo lockfile.
-    if lockfile.kind == "cargo":
-        arguments.extend([
-            "--cargo-lockfile",
-            lockfile.path,
-        ])
-
     env = {
         "CARGO": str(cargo),
         "RUSTC": str(rustc),
         "RUST_BACKTRACE": "full",
     }
+
+    # Ensure the short hand repin variable is set to the full name.
+    if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
+        env.update({CARGO_BAZEL_REPIN: repository_ctx.os.environ[REPIN]})
 
     # Add any Cargo environment variables to the `cargo-bazel` execution
     env.update(cargo_environ(repository_ctx))

@@ -80,3 +80,28 @@ toolchain_files = rule(
     ],
     incompatible_use_toolchain_transition = True,
 )
+
+def _current_rust_toolchain_impl(ctx):
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain"))]
+
+    return [
+        toolchain,
+        toolchain.make_variables,
+        DefaultInfo(
+            files = depset([
+                toolchain.rustc,
+                toolchain.rust_doc,
+                toolchain.rustfmt,
+                toolchain.cargo,
+            ]),
+        ),
+    ]
+
+current_rust_toolchain = rule(
+    doc = "A rule for exposing the current registered `rust_toolchain`.",
+    implementation = _current_rust_toolchain_impl,
+    toolchains = [
+        str(Label("@rules_rust//rust:toolchain")),
+    ],
+    incompatible_use_toolchain_transition = True,
+)

@@ -8,7 +8,7 @@ use std::path::Path;
 use std::{fmt, fs};
 
 use anyhow::Result;
-use cargo_lock::package::source::GitReference;
+use cargo_lock::package::GitReference;
 use cargo_metadata::Package;
 use semver::VersionReq;
 use serde::de::Visitor;
@@ -508,7 +508,6 @@ mod test {
 
         let config: Config = serde_json::from_str(&content).unwrap();
 
-        println!("{:#?}", config);
         // Annotations
         let annotation = config
             .annotations

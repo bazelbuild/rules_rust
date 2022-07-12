@@ -15,8 +15,8 @@ default_windows_targets: &default_windows_targets
   - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//tools/rust_analyzer/..."
-  - "-//test/rustfmt/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor_manifests"
@@ -25,6 +25,7 @@ tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
   rbe_ubuntu1604:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
@@ -39,6 +40,7 @@ tasks:
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
     build_flags: *aspects_flags
   windows:
     build_flags:
@@ -149,13 +151,13 @@ tasks:
     bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
-    bazel: "4.0.0"
+    bazel: "5.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "4.0.0"
+    bazel: "5.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -329,20 +331,8 @@ tasks:
     build_flags: *aspects_flags
     build_targets:
       - "//..."
-      # TODO: Temporarily disable this windows build as it recently started
-      # failing. This is likely an issue with the windows workers in CI.
-      - "-//vendor_local_pkgs/..."
-      - "-//vendor_remote_pkgs/..."
-      - "-//extra_workspace_members/..."
-      - "-//no_cargo_manifests/..."
     test_targets:
       - "//..."
-      # TODO: Temporarily disable this windows build as it recently started
-      # failing. This is likely an issue with the windows workers in CI.
-      - "-//vendor_local_pkgs/..."
-      - "-//vendor_remote_pkgs/..."
-      - "-//extra_workspace_members/..."
-      - "-//no_cargo_manifests/..."
 buildifier:
   version: latest
   warnings: "all"

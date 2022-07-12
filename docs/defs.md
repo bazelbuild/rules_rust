@@ -12,7 +12,7 @@
 * [extra_rustc_flags](#extra_rustc_flags)
 * [capture_clippy_output](#capture_clippy_output)
 
-<a id="#capture_clippy_output"></a>
+<a id="capture_clippy_output"></a>
 
 ## capture_clippy_output
 
@@ -30,7 +30,7 @@ Control whether to print clippy output or store it to a file, using the configur
 | <a id="capture_clippy_output-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#error_format"></a>
+<a id="error_format"></a>
 
 ## error_format
 
@@ -48,7 +48,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 | <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#extra_rustc_flags"></a>
+<a id="extra_rustc_flags"></a>
 
 ## extra_rustc_flags
 
@@ -66,7 +66,7 @@ Add additional rustc_flags from the command line with `--@rules_rust//:extra_rus
 | <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
-<a id="#rust_binary"></a>
+<a id="rust_binary"></a>
 
 ## rust_binary
 
@@ -189,7 +189,7 @@ is available under the key `dsym_folder` in `OutputGroupInfo`.
 | <a id="rust_binary-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_library"></a>
+<a id="rust_library"></a>
 
 ## rust_library
 
@@ -285,7 +285,7 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 | <a id="rust_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_proc_macro"></a>
+<a id="rust_proc_macro"></a>
 
 ## rust_proc_macro
 
@@ -321,7 +321,7 @@ Builds a Rust proc-macro crate.
 | <a id="rust_proc_macro-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_shared_library"></a>
+<a id="rust_shared_library"></a>
 
 ## rust_shared_library
 
@@ -365,7 +365,7 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_shared_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_static_library"></a>
+<a id="rust_static_library"></a>
 
 ## rust_static_library
 
@@ -409,7 +409,7 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_static_library-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_test"></a>
+<a id="rust_test"></a>
 
 ## rust_test
 
@@ -563,7 +563,7 @@ Run the test with `bazel test //hello_lib:greeting_test`.
 | <a id="rust_test-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
 
 
-<a id="#rust_test_suite"></a>
+<a id="rust_test_suite"></a>
 
 ## rust_test_suite
 

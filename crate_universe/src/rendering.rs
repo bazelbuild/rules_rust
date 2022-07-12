@@ -211,7 +211,7 @@ mod test {
 
     use crate::config::{Config, CrateId, VendorMode};
     use crate::context::crate_context::{CrateContext, Rule};
-    use crate::context::{BuildScriptAttributes, Context, TargetAttributes};
+    use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
     use crate::metadata::Annotations;
     use crate::test;
 
@@ -466,5 +466,55 @@ mod test {
 
         // Local vendoring does not produce a `crates.bzl` file.
         assert!(output.get(&PathBuf::from("crates.bzl")).is_none());
+    }
+
+    #[test]
+    fn duplicate_rustc_flags() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+
+        let rustc_flags = vec![
+            "-l".to_owned(),
+            "dylib=ssl".to_owned(),
+            "-l".to_owned(),
+            "dylib=crypto".to_owned(),
+        ];
+
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                targets: vec![Rule::Library(mock_target_attributes())],
+                common_attrs: CommonAttributes {
+                    rustc_flags: rustc_flags.clone(),
+                    ..CommonAttributes::default()
+                },
+                ..CrateContext::default()
+            },
+        );
+
+        // Enable local vendor mode
+        let config = RenderConfig {
+            vendor_mode: Some(VendorMode::Local),
+            ..mock_render_config()
+        };
+
+        let renderer = Renderer::new(config);
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        // Strip all spaces from the generated BUILD file and ensure it has the flags
+        // represented by `rustc_flags` in the same order.
+        assert!(build_file_content.replace(' ', "").contains(
+            &rustc_flags
+                .iter()
+                .map(|s| format!("\"{}\",", s))
+                .collect::<Vec<String>>()
+                .join("\n")
+        ));
     }
 }
