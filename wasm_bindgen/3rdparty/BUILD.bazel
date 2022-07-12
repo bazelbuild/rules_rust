@@ -89,6 +89,7 @@ filegroup(
         "*.bazel",
     ]) + [
         "//wasm_bindgen/3rdparty/crates:srcs",
+        "Cargo.Bazel.lock",
     ],
     visibility = ["//wasm_bindgen:__pkg__"],
 )
