@@ -265,6 +265,16 @@ rust_doc = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
+        "rustc_flags": attr.string_list(
+            doc = dedent("""\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
+        ),
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",
             allow_single_file = [".html", ".md"],
