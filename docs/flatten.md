@@ -8,6 +8,7 @@
 * [cargo_build_script](#cargo_build_script)
 * [cargo_env](#cargo_env)
 * [error_format](#error_format)
+* [extra_rustc_flag](#extra_rustc_flag)
 * [extra_rustc_flags](#extra_rustc_flags)
 * [fail_when_enabled](#fail_when_enabled)
 * [incompatible_flag](#incompatible_flag)
@@ -119,6 +120,24 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+
+
+<a id="extra_rustc_flag"></a>
+
+## extra_rustc_flag
+
+<pre>
+extra_rustc_flag(<a href="#extra_rustc_flag-name">name</a>)
+</pre>
+
+Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="extra_rustc_flag-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="extra_rustc_flags"></a>
