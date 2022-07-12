@@ -72,6 +72,7 @@ PAGES = dict([
         header_template = ":rust_analyzer.vm",
         symbols = [
             "rust_analyzer_aspect",
+            "rust_analyzer_toolchain",
         ],
     ),
     page(

@@ -11,7 +11,6 @@ rules_rust_dependencies()
 
 rust_register_toolchains(
     edition = "2018",
-    include_rustc_srcs = True,
 )
 
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")

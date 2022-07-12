@@ -1,0 +1,13 @@
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+filegroup(
+    name = "distro",
+    srcs = [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__subpackages__"],
+)

@@ -191,18 +191,39 @@ def _create_single_crate(ctx, info):
         crate["proc_macro_dylib_path"] = _exec_root_tmpl + info.proc_macro_dylib_path
     return crate
 
-def _rust_analyzer_detect_sysroot_impl(ctx):
-    rust_toolchain = find_toolchain(ctx)
+def _rust_analyzer_toolchain_impl(ctx):
+    toolchain = platform_common.ToolchainInfo(
+        rustc_srcs = ctx.attr.rustc_srcs,
+    )
 
-    if not rust_toolchain.rustc_srcs:
+    return [toolchain]
+
+rust_analyzer_toolchain = rule(
+    implementation = _rust_analyzer_toolchain_impl,
+    doc = "A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).",
+    attrs = {
+        "rustc_srcs": attr.label(
+            doc = "The source code of rustc.",
+            mandatory = True,
+        ),
+    },
+    incompatible_use_toolchain_transition = True,
+)
+
+def _rust_analyzer_detect_sysroot_impl(ctx):
+    rust_analyzer_toolchain = ctx.toolchains[Label("@rules_rust//rust/rust_analyzer:toolchain_type")]
+
+    if not rust_analyzer_toolchain.rustc_srcs:
         fail(
-            "Current Rust toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
-            "These are needed by rust analyzer.",
-            "If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
+            "Current Rust-Analyzer toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
+            "These are needed by rust-analyzer. If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
         )
-    sysroot_src = rust_toolchain.rustc_srcs.label.package + "/library"
-    if rust_toolchain.rustc_srcs.label.workspace_root:
-        sysroot_src = _exec_root_tmpl + rust_toolchain.rustc_srcs.label.workspace_root + "/" + sysroot_src
+
+    rustc_srcs = rust_analyzer_toolchain.rustc_srcs
+
+    sysroot_src = rustc_srcs.label.package + "/library"
+    if rustc_srcs.label.workspace_root:
+        sysroot_src = _exec_root_tmpl + rustc_srcs.label.workspace_root + "/" + sysroot_src
 
     sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
     ctx.actions.write(
@@ -214,7 +235,10 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
 
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,
-    toolchains = ["@rules_rust//rust:toolchain"],
+    toolchains = [
+        "@rules_rust//rust:toolchain",
+        "@rules_rust//rust/rust_analyzer:toolchain_type",
+    ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Detect the sysroot and store in a file for use by the gen_rust_project tool.

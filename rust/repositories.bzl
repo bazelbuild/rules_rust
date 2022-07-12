@@ -8,6 +8,7 @@ load(
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
+    "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
     "BUILD_for_toolchain",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
@@ -135,6 +136,27 @@ def rust_register_toolchains(
     if not rustfmt_version:
         rustfmt_version = version
 
+    rust_analyzer_repo_name = "rust_analyzer_{}".format(version)
+    if iso_date:
+        rust_analyzer_repo_name = "{}-{}".format(
+            rust_analyzer_repo_name,
+            iso_date,
+        )
+
+    maybe(
+        rust_analyzer_toolchain_repository,
+        name = rust_analyzer_repo_name,
+        version = version,
+        urls = urls,
+        sha256s = sha256s,
+        iso_date = iso_date,
+    )
+
+    if register_toolchains:
+        native.register_toolchains("@{}//:toolchain".format(
+            rust_analyzer_repo_name,
+        ))
+
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
         maybe(
             rust_repository_set,
@@ -217,7 +239,7 @@ rust_toolchain_tools_repository = repository_rule(
         "Composes a single workspace containing the toolchain components for compiling on a given " +
         "platform to a series of target platforms.\n" +
         "\n" +
-        "A given instance of this rule should be accompanied by a rust_toolchain_repository_proxy " +
+        "A given instance of this rule should be accompanied by a toolchain_repository_proxy " +
         "invocation to declare its toolchains to Bazel; the indirection allows separating toolchain " +
         "selection from toolchain fetching."
     ),
@@ -278,45 +300,45 @@ rust_toolchain_tools_repository = repository_rule(
     environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
 )
 
-def _rust_toolchain_repository_proxy_impl(repository_ctx):
+def _toolchain_repository_proxy_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
 
     repository_ctx.file("BUILD.bazel", BUILD_for_toolchain(
-        name = "rust_toolchain",
-        parent_workspace_name = repository_ctx.attr.parent_workspace_name,
+        name = "toolchain",
+        toolchain = repository_ctx.attr.toolchain,
+        toolchain_type = repository_ctx.attr.toolchain_type,
         target_compatible_with = json.encode(repository_ctx.attr.target_compatible_with),
         exec_compatible_with = json.encode(repository_ctx.attr.exec_compatible_with),
     ))
 
-rust_toolchain_repository_proxy = repository_rule(
+toolchain_repository_proxy = repository_rule(
     doc = (
         "Generates a toolchain-bearing repository that declares the toolchains from some other " +
         "rust_toolchain_repository."
     ),
     attrs = {
         "exec_compatible_with": attr.string_list(
-            doc = "TODO",
-        ),
-        "exec_triple": attr.string(
-            doc = "The Rust-style target triple for the compilation platform",
-            mandatory = True,
-        ),
-        "parent_workspace_name": attr.string(
-            doc = "The name of the other rust_toolchain_repository",
-            mandatory = True,
+            doc = "A list of constraints for the execution platform for this toolchain.",
         ),
         "target_compatible_with": attr.string_list(
-            doc = "TODO",
+            doc = "A list of constraints for the target platform for this toolchain.",
         ),
-        "target_triple": attr.string(
-            doc = "The Rust-style target that this compiler builds for",
+        "toolchain": attr.string(
+            doc = "The name of the toolchain implementation target.",
+            mandatory = True,
+        ),
+        "toolchain_type": attr.string(
+            doc = "The toolchain type of the toolchain to declare",
             mandatory = True,
         ),
     },
-    implementation = _rust_toolchain_repository_proxy_impl,
+    implementation = _toolchain_repository_proxy_impl,
 )
+
+# For legacy support
+rust_toolchain_repository_proxy = toolchain_repository_proxy
 
 def rust_toolchain_repository(
         name,
@@ -346,10 +368,10 @@ def rust_toolchain_repository(
         target_triple (str): The Rust-style target to build for.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
-        iso_date (str, optional): The date of the tool. Defaults to None.
+        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
+        iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
-            toolchain. Defaults to None.
+            toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
@@ -384,17 +406,101 @@ def rust_toolchain_repository(
         auth = auth,
     )
 
-    rust_toolchain_repository_proxy(
+    toolchain_repository_proxy(
         name = name,
-        exec_triple = exec_triple,
-        target_triple = target_triple,
-        parent_workspace_name = name + "_tools",
+        toolchain = "@{}//:{}".format(name + "_tools", "rust_toolchain"),
+        toolchain_type = "@rules_rust//rust:toolchain",
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
     )
 
-    return "@{name}//:rust_toolchain".format(
+    return "@{name}//:toolchain".format(
         name = name,
+    )
+
+def _rust_analyzer_toolchain_srcs_repository_impl(repository_ctx):
+    load_rust_src(repository_ctx)
+
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        repository_ctx.name,
+    ))
+
+    repository_ctx.file("BUILD.bazel", BUILD_for_rust_analyzer_toolchain(
+        name = "rust_analyzer_toolchain",
+    ))
+
+rust_analyzer_toolchain_srcs_repository = repository_rule(
+    doc = "A repository rule for defining a rust_analyzer_toolchani with a `rust-src` artifact.",
+    attrs = {
+        "auth": attr.string_dict(
+            doc = (
+                "Auth object compatible with repository_ctx.download to use when downloading files. " +
+                "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
+            ),
+        ),
+        "iso_date": attr.string(
+            doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "sha256s": attr.string_dict(
+            doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+        ),
+        "urls": attr.string_list(
+            doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
+            default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        ),
+        "version": attr.string(
+            doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+            mandatory = True,
+        ),
+    },
+    implementation = _rust_analyzer_toolchain_srcs_repository_impl,
+)
+
+def rust_analyzer_toolchain_repository(
+        name,
+        version,
+        exec_compatible_with = [],
+        target_compatible_with = [],
+        iso_date = None,
+        sha256s = None,
+        urls = None,
+        auth = None):
+    """Assemble a remote rust_analyzer_toolchain target based on the given params.
+
+    Args:
+        name (str): The name of the toolchain proxy repository contianing the registerable toolchain.
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
+        target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
+        iso_date (str, optional): The date of the tool.
+        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
+            [rust_repositories](#rust_repositories) for more details.
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
+            See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+
+    Returns:
+        str: The name of a registerable rust_analyzer_toolchain.
+    """
+    rust_analyzer_toolchain_srcs_repository(
+        name = name + "_srcs",
+        version = version,
+        iso_date = iso_date,
+        sha256s = sha256s,
+        urls = urls,
+        auth = auth,
+    )
+
+    toolchain_repository_proxy(
+        name = name,
+        toolchain = "@{}//:{}".format(name + "_srcs", "rust_analyzer_toolchain"),
+        toolchain_type = "@rules_rust//rust/rust_analyzer:toolchain_type",
+        exec_compatible_with = exec_compatible_with,
+        target_compatible_with = target_compatible_with,
+    )
+
+    return "@{}//:toolchain".format(
+        name,
     )
 
 def _rust_toolchain_set_repository_impl(repository_ctx):

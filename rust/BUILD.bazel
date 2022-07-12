@@ -29,6 +29,7 @@ filegroup(
         "//rust/platform:distro",
         "//rust/private:distro",
         "//rust/settings:distro",
+        "//rust/rust_analyzer:distro",
         "//rust/toolchain:distro",
         "BUILD.bazel",
     ],

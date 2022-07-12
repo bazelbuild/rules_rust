@@ -51,6 +51,7 @@ load(
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
+    _rust_analyzer_toolchain = "rust_analyzer_toolchain",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
@@ -149,6 +150,7 @@ rust_toolchain_tools_repository = _rust_toolchain_tools_repository
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
 rust_analyzer_aspect = _rust_analyzer_aspect
+rust_analyzer_toolchain = _rust_analyzer_toolchain
 
 crate = _crate
 crates_repository = _crates_repository
