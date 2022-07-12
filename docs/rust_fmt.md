@@ -46,7 +46,7 @@ build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
 [rfcp]: https://github.com/rust-lang-nursery/fmt-rfcs
 [rgp]: https://rust-lang.github.io/rustfmt/
 
-<a id="#rustfmt_test"></a>
+<a id="rustfmt_test"></a>
 
 ## rustfmt_test
 
@@ -65,7 +65,7 @@ A test rule for performing `rustfmt --check` on a set of targets
 | <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rustfmt_aspect"></a>
+<a id="rustfmt_aspect"></a>
 
 ## rustfmt_aspect
 

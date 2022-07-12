@@ -129,6 +129,7 @@ PAGES = dict([
             "rust_stdlib_filegroup",
             "rust_toolchain_repository_proxy",
             "rust_toolchain_repository",
+            "rust_toolchain_tools_repository",
             "rust_toolchain",
         ],
     ),

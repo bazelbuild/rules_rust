@@ -68,7 +68,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__pest_derive-2.1.0//:pest_derive",
+            "@cui__pest_derive-2.1.0//:pest_derive",
         ],
     }),
     rustc_env = {
@@ -94,19 +94,19 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__chrono-0.4.19//:chrono",
-            "@crate_universe_crate_index__chrono-tz-0.6.1//:chrono_tz",
-            "@crate_universe_crate_index__globwalk-0.8.1//:globwalk",
-            "@crate_universe_crate_index__humansize-1.1.1//:humansize",
-            "@crate_universe_crate_index__lazy_static-1.4.0//:lazy_static",
-            "@crate_universe_crate_index__percent-encoding-2.1.0//:percent_encoding",
-            "@crate_universe_crate_index__pest-2.1.3//:pest",
-            "@crate_universe_crate_index__rand-0.8.5//:rand",
-            "@crate_universe_crate_index__regex-1.6.0//:regex",
-            "@crate_universe_crate_index__serde-1.0.138//:serde",
-            "@crate_universe_crate_index__serde_json-1.0.82//:serde_json",
-            "@crate_universe_crate_index__slug-0.1.4//:slug",
-            "@crate_universe_crate_index__unic-segment-0.9.0//:unic_segment",
+            "@cui__chrono-0.4.19//:chrono",
+            "@cui__chrono-tz-0.6.1//:chrono_tz",
+            "@cui__globwalk-0.8.1//:globwalk",
+            "@cui__humansize-1.1.1//:humansize",
+            "@cui__lazy_static-1.4.0//:lazy_static",
+            "@cui__percent-encoding-2.1.0//:percent_encoding",
+            "@cui__pest-2.1.3//:pest",
+            "@cui__rand-0.8.5//:rand",
+            "@cui__regex-1.6.0//:regex",
+            "@cui__serde-1.0.138//:serde",
+            "@cui__serde_json-1.0.82//:serde_json",
+            "@cui__slug-0.1.4//:slug",
+            "@cui__unic-segment-0.9.0//:unic_segment",
         ],
     }),
 )

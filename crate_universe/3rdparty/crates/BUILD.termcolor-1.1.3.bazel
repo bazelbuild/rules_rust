@@ -89,7 +89,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@crate_universe_crate_index__winapi-util-0.1.5//:winapi_util",
+            "@cui__winapi-util-0.1.5//:winapi_util",
 
             # Common Deps
         ],

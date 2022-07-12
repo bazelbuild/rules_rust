@@ -85,8 +85,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__ppv-lite86-0.2.16//:ppv_lite86",
-            "@crate_universe_crate_index__rand_core-0.6.3//:rand_core",
+            "@cui__ppv-lite86-0.2.16//:ppv_lite86",
+            "@cui__rand_core-0.6.3//:rand_core",
         ],
     }),
 )

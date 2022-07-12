@@ -17,7 +17,7 @@ load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_rem
 def crate_repositories():
     maybe(
         crates_vendor_remote_repository,
-        name = "crate_universe_crate_index",
+        name = "cui",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.bazel"),
         defs_module = Label("@rules_rust//crate_universe/3rdparty/crates:defs.bzl"),
     )

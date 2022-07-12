@@ -92,12 +92,12 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__num-bigint-0.1.44//:num_bigint",
-            "@crate_universe_crate_index__num-complex-0.1.43//:num_complex",
-            "@crate_universe_crate_index__num-integer-0.1.45//:num_integer",
-            "@crate_universe_crate_index__num-iter-0.1.43//:num_iter",
-            "@crate_universe_crate_index__num-rational-0.1.42//:num_rational",
-            "@crate_universe_crate_index__num-traits-0.2.15//:num_traits",
+            "@cui__num-bigint-0.1.44//:num_bigint",
+            "@cui__num-complex-0.1.43//:num_complex",
+            "@cui__num-integer-0.1.45//:num_integer",
+            "@cui__num-iter-0.1.43//:num_iter",
+            "@cui__num-rational-0.1.42//:num_rational",
+            "@cui__num-traits-0.2.15//:num_traits",
         ],
     }),
 )

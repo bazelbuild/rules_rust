@@ -86,7 +86,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__memchr-2.5.0//:memchr",
+            "@cui__memchr-2.5.0//:memchr",
         ],
     }),
 )

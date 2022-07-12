@@ -37,7 +37,7 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 build --@rules_rust//:clippy.toml=//:clippy.toml
 ```
 
-<a id="#rust_clippy"></a>
+<a id="rust_clippy"></a>
 
 ## rust_clippy
 
@@ -91,7 +91,7 @@ rust_clippy(
 | <a id="rust_clippy-deps"></a>deps |  Rust targets to run clippy on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
 
 
-<a id="#rust_clippy_aspect"></a>
+<a id="rust_clippy_aspect"></a>
 
 ## rust_clippy_aspect
 

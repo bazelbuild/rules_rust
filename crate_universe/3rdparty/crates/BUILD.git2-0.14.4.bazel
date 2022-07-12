@@ -84,11 +84,11 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
-            "@crate_universe_crate_index__libgit2-sys-0.13.4-1.4.2//:libgit2_sys",
-            "@crate_universe_crate_index__log-0.4.17//:log",
-            "@crate_universe_crate_index__url-2.2.2//:url",
+            "@cui__bitflags-1.3.2//:bitflags",
+            "@cui__libc-0.2.126//:libc",
+            "@cui__libgit2-sys-0.13.4-1.4.2//:libgit2_sys",
+            "@cui__log-0.4.17//:log",
+            "@cui__url-2.2.2//:url",
         ],
     }),
 )

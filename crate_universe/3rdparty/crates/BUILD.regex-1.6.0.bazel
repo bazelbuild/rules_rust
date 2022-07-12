@@ -101,9 +101,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__aho-corasick-0.7.18//:aho_corasick",
-            "@crate_universe_crate_index__memchr-2.5.0//:memchr",
-            "@crate_universe_crate_index__regex-syntax-0.6.27//:regex_syntax",
+            "@cui__aho-corasick-0.7.18//:aho_corasick",
+            "@cui__memchr-2.5.0//:memchr",
+            "@cui__regex-syntax-0.6.27//:regex_syntax",
         ],
     }),
 )
