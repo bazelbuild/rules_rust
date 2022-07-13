@@ -43,7 +43,9 @@ load(
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
+    _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
 )
 load(
@@ -102,7 +104,13 @@ capture_clippy_output = _capture_clippy_output
 error_format = _error_format
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
+extra_rustc_flag = _extra_rustc_flag
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
 extra_rustc_flags = _extra_rustc_flags
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+extra_exec_rustc_flag = _extra_exec_rustc_flag
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 extra_exec_rustc_flags = _extra_exec_rustc_flags

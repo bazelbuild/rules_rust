@@ -84,7 +84,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__generic-array-0.14.5//:generic_array",
+            "@cui__generic-array-0.14.5//:generic_array",
         ],
     }),
 )

@@ -88,7 +88,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__unicode-linebreak-0.1.2//:build_script_build",
+            "@cui__unicode-linebreak-0.1.2//:build_script_build",
         ],
     }),
 )
@@ -155,7 +155,7 @@ cargo_build_script(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__regex-1.6.0//:regex",
+            "@cui__regex-1.6.0//:regex",
         ],
     }),
 )

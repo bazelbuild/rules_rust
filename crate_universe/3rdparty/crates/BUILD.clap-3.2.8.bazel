@@ -71,7 +71,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__clap_derive-3.2.7//:clap_derive",
+            "@cui__clap_derive-3.2.7//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -97,14 +97,14 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__atty-0.2.14//:atty",
-            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
-            "@crate_universe_crate_index__clap_lex-0.2.4//:clap_lex",
-            "@crate_universe_crate_index__indexmap-1.9.1//:indexmap",
-            "@crate_universe_crate_index__once_cell-1.13.0//:once_cell",
-            "@crate_universe_crate_index__strsim-0.10.0//:strsim",
-            "@crate_universe_crate_index__termcolor-1.1.3//:termcolor",
-            "@crate_universe_crate_index__textwrap-0.15.0//:textwrap",
+            "@cui__atty-0.2.14//:atty",
+            "@cui__bitflags-1.3.2//:bitflags",
+            "@cui__clap_lex-0.2.4//:clap_lex",
+            "@cui__indexmap-1.9.1//:indexmap",
+            "@cui__once_cell-1.13.0//:once_cell",
+            "@cui__strsim-0.10.0//:strsim",
+            "@cui__termcolor-1.1.3//:termcolor",
+            "@cui__textwrap-0.15.0//:textwrap",
         ],
     }),
 )
@@ -156,7 +156,7 @@ rust_binary(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__clap_derive-3.2.7//:clap_derive",
+            "@cui__clap_derive-3.2.7//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -183,14 +183,14 @@ rust_binary(
         ":clap",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__atty-0.2.14//:atty",
-            "@crate_universe_crate_index__bitflags-1.3.2//:bitflags",
-            "@crate_universe_crate_index__clap_lex-0.2.4//:clap_lex",
-            "@crate_universe_crate_index__indexmap-1.9.1//:indexmap",
-            "@crate_universe_crate_index__once_cell-1.13.0//:once_cell",
-            "@crate_universe_crate_index__strsim-0.10.0//:strsim",
-            "@crate_universe_crate_index__termcolor-1.1.3//:termcolor",
-            "@crate_universe_crate_index__textwrap-0.15.0//:textwrap",
+            "@cui__atty-0.2.14//:atty",
+            "@cui__bitflags-1.3.2//:bitflags",
+            "@cui__clap_lex-0.2.4//:clap_lex",
+            "@cui__indexmap-1.9.1//:indexmap",
+            "@cui__once_cell-1.13.0//:once_cell",
+            "@cui__strsim-0.10.0//:strsim",
+            "@cui__termcolor-1.1.3//:termcolor",
+            "@cui__textwrap-0.15.0//:textwrap",
         ],
     }),
 )

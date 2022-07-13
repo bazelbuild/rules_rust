@@ -114,15 +114,15 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
+            "@cui__libc-0.2.126//:libc",
 
             # Common Deps
-            "@crate_universe_crate_index__rand_chacha-0.3.1//:rand_chacha",
-            "@crate_universe_crate_index__rand_core-0.6.3//:rand_core",
+            "@cui__rand_chacha-0.3.1//:rand_chacha",
+            "@cui__rand_core-0.6.3//:rand_core",
         ],
         "//conditions:default": [
-            "@crate_universe_crate_index__rand_chacha-0.3.1//:rand_chacha",
-            "@crate_universe_crate_index__rand_core-0.6.3//:rand_core",
+            "@cui__rand_chacha-0.3.1//:rand_chacha",
+            "@cui__rand_core-0.6.3//:rand_core",
         ],
     }),
 )

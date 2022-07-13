@@ -84,7 +84,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__ucd-trie-0.1.4//:ucd_trie",
+            "@cui__ucd-trie-0.1.4//:ucd_trie",
         ],
     }),
 )

@@ -85,8 +85,8 @@ rust_library(
         "@libgit2",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
-            "@crate_universe_crate_index__libz-sys-1.1.8//:libz_sys",
+            "@cui__libc-0.2.126//:libc",
+            "@cui__libz-sys-1.1.8//:libz_sys",
         ],
     }),
 )

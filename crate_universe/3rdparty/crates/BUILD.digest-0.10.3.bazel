@@ -89,8 +89,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__block-buffer-0.10.2//:block_buffer",
-            "@crate_universe_crate_index__crypto-common-0.1.4//:crypto_common",
+            "@cui__block-buffer-0.10.2//:block_buffer",
+            "@cui__crypto-common-0.1.4//:crypto_common",
         ],
     }),
 )

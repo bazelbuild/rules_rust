@@ -206,8 +206,9 @@ def collect_deps(
 
             if "proc-macro" not in [crate_info.type, crate_info.wrapped_crate_type]:
                 transitive_noncrates.append(dep_info.transitive_noncrates)
+                transitive_link_search_paths.append(dep_info.link_search_path_files)
+
             transitive_build_infos.append(dep_info.transitive_build_infos)
-            transitive_link_search_paths.append(dep_info.link_search_path_files)
 
         elif cc_info:
             # This dependency is a cc_library
@@ -837,8 +838,14 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
+    if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
@@ -1520,6 +1527,18 @@ extra_rustc_flags = rule(
     build_setting = config.string_list(flag = True),
 )
 
+def _extra_rustc_flag_impl(ctx):
+    return ExtraRustcFlagsInfo(extra_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+extra_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. " +
+        "Multiple uses are accumulated and appended after the extra_rustc_flags."
+    ),
+    implementation = _extra_rustc_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
+)
+
 def _extra_exec_rustc_flags_impl(ctx):
     return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = ctx.build_setting_value)
 
@@ -1531,4 +1550,16 @@ extra_exec_rustc_flags = rule(
     ),
     implementation = _extra_exec_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_flag_impl(ctx):
+    return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+extra_exec_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flag`. " +
+        "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
+    ),
+    implementation = _extra_exec_rustc_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
 )

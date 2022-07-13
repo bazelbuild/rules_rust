@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__phf_shared-0.10.0//:phf_shared",
+            "@cui__phf_shared-0.10.0//:phf_shared",
         ],
     }),
 )

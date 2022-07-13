@@ -15,8 +15,16 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 
-pub(crate) fn read_file_to_array(path: String) -> Result<Vec<String>, String> {
-    let file = File::open(path).map_err(|e| e.to_string())?;
+pub(crate) fn read_file_to_array(path: &str) -> Result<Vec<String>, String> {
+    let file = File::open(path).map_err(|e| e.to_string()).map_err(|err| {
+        format!(
+            "{} reading path: {:?}, current directory: {:?}",
+            err,
+            path,
+            std::env::current_dir()
+        )
+    })?;
+
     read_to_array(file)
 }
 

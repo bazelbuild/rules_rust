@@ -88,10 +88,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__num-bigint-0.1.44//:num_bigint",
-            "@crate_universe_crate_index__num-integer-0.1.45//:num_integer",
-            "@crate_universe_crate_index__num-traits-0.2.15//:num_traits",
-            "@crate_universe_crate_index__rustc-serialize-0.3.24//:rustc_serialize",
+            "@cui__num-bigint-0.1.44//:num_bigint",
+            "@cui__num-integer-0.1.45//:num_integer",
+            "@cui__num-traits-0.2.15//:num_traits",
+            "@cui__rustc-serialize-0.3.24//:rustc_serialize",
         ],
     }),
 )

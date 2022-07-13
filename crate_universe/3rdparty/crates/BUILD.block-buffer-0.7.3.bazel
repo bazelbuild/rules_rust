@@ -84,10 +84,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__block-padding-0.1.5//:block_padding",
-            "@crate_universe_crate_index__byte-tools-0.3.1//:byte_tools",
-            "@crate_universe_crate_index__byteorder-1.4.3//:byteorder",
-            "@crate_universe_crate_index__generic-array-0.12.4//:generic_array",
+            "@cui__block-padding-0.1.5//:block_padding",
+            "@cui__byte-tools-0.3.1//:byte_tools",
+            "@cui__byteorder-1.4.3//:byteorder",
+            "@cui__generic-array-0.12.4//:generic_array",
         ],
     }),
 )

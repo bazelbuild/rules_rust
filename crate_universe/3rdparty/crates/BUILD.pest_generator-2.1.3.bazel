@@ -84,11 +84,11 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__pest-2.1.3//:pest",
-            "@crate_universe_crate_index__pest_meta-2.1.3//:pest_meta",
-            "@crate_universe_crate_index__proc-macro2-1.0.40//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.20//:quote",
-            "@crate_universe_crate_index__syn-1.0.98//:syn",
+            "@cui__pest-2.1.3//:pest",
+            "@cui__pest_meta-2.1.3//:pest_meta",
+            "@cui__proc-macro2-1.0.40//:proc_macro2",
+            "@cui__quote-1.0.20//:quote",
+            "@cui__syn-1.0.98//:syn",
         ],
     }),
 )

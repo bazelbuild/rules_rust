@@ -89,7 +89,7 @@ rust_library(
             "@rules_rust//rust/platform:wasm32-wasi",
         ): [
             # Target Deps
-            "@crate_universe_crate_index__instant-0.1.12//:instant",
+            "@cui__instant-0.1.12//:instant",
 
             # Common Deps
         ],

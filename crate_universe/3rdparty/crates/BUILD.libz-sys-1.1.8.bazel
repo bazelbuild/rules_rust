@@ -86,7 +86,7 @@ rust_library(
         "@zlib",
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
+            "@cui__libc-0.2.126//:libc",
         ],
     }),
 )

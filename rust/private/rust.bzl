@@ -669,8 +669,14 @@ _common_attrs = {
     "_error_format": attr.label(
         default = Label("//:error_format"),
     ),
+    "_extra_exec_rustc_flag": attr.label(
+        default = Label("//:extra_exec_rustc_flag"),
+    ),
     "_extra_exec_rustc_flags": attr.label(
         default = Label("//:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_flag": attr.label(
+        default = Label("//:extra_rustc_flag"),
     ),
     "_extra_rustc_flags": attr.label(
         default = Label("//:extra_rustc_flags"),

@@ -201,8 +201,13 @@ pub(crate) fn options() -> Result<Options, OptionError> {
 
 fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
     let mut args = vec![];
-    for path in paths.into_iter() {
-        let mut lines = read_file_to_array(path).map_err(OptionError::Generic)?;
+    for path in paths.iter() {
+        let mut lines = read_file_to_array(path).map_err(|err| {
+            OptionError::Generic(format!(
+                "{} while processing args from file paths: {:?}",
+                err, &paths
+            ))
+        })?;
         args.append(&mut lines);
     }
     Ok(args)
@@ -211,7 +216,7 @@ fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
 fn env_from_files(paths: Vec<String>) -> Result<HashMap<String, String>, OptionError> {
     let mut env_vars = HashMap::new();
     for path in paths.into_iter() {
-        let lines = read_file_to_array(path).map_err(OptionError::Generic)?;
+        let lines = read_file_to_array(&path).map_err(OptionError::Generic)?;
         for line in lines.into_iter() {
             let (k, v) = line
                 .split_once('=')
