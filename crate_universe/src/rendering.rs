@@ -217,7 +217,8 @@ mod test {
 
     fn mock_render_config() -> RenderConfig {
         serde_json::from_value(serde_json::json!({
-            "repository_name": "test_rendering"
+            "repository_name": "test_rendering",
+            "regen_command": "cargo_bazel_regen_command",
         }))
         .unwrap()
     }

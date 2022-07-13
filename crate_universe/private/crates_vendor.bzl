@@ -121,7 +121,11 @@ def _write_splicing_manifest(ctx):
     return args, runfiles
 
 def _write_config_file(ctx):
-    rendering_config = dict(json.decode(render_config()))
+    rendering_config = dict(json.decode(render_config(
+        regen_command = "bazel run {}".format(
+            ctx.label,
+        ),
+    )))
 
     output_pkg = _get_output_package(ctx)
 

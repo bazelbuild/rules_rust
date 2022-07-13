@@ -73,6 +73,9 @@ pub struct RenderConfig {
     #[serde(default = "default_platforms_template")]
     pub platforms_template: String,
 
+    /// The command to use for regenerating generated files.
+    pub regen_command: String,
+
     /// An optional configuration for rendirng content to be rendered into repositories.
     pub vendor_mode: Option<VendorMode>,
 }
