@@ -265,16 +265,6 @@ rust_doc = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
-        "rustc_flags": attr.string_list(
-            doc = dedent("""\
-                List of compiler flags passed to `rustc`.
-
-                These strings are subject to Make variable expansion for predefined
-                source/output path variables like `$location`, `$execpath`, and
-                `$rootpath`. This expansion is useful if you wish to pass a generated
-                file of arguments to rustc: `@$(location //package:target)`.
-            """),
-        ),
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",
             allow_single_file = [".html", ".md"],
@@ -290,6 +280,16 @@ rust_doc = rule(
         "markdown_css": attr.label_list(
             doc = "CSS files to include via `<link>` in a rendered Markdown file.",
             allow_files = [".css"],
+        ),
+        "rustc_flags": attr.string_list(
+            doc = dedent("""\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
         ),
         "_cc_toolchain": attr.label(
             doc = "In order to use find_cpp_toolchain, you must define the '_cc_toolchain' attribute on your rule or aspect.",
