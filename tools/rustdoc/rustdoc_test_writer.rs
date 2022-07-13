@@ -109,6 +109,9 @@ fn expand_params_file(mut options: Options) -> Options {
         ".rustdoc_test.sh-0.params"
     };
 
+    // We always need to produce the params file, we might overwrite this later though
+    fs::write(&options.optional_params_file, b"unused").expect("Failed to write params file");
+
     // extract the path for the params file, if it exists
     let params_path = match options.action_argv.pop() {
         // Found the params file!
@@ -131,7 +134,7 @@ fn expand_params_file(mut options: Options) -> Options {
     let content: Vec<_> = BufReader::new(params_file)
         .lines()
         .map(|line| line.expect("failed to parse param as String"))
-        // Remove any necessary substrings found in the argument
+        // Remove any substrings found in the argument
         .map(|arg| {
             let mut stripped_arg = arg;
             options
