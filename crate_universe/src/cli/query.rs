@@ -13,7 +13,7 @@ use crate::splicing::SplicingManifest;
 
 /// Command line options for the `query` subcommand
 #[derive(Parser, Debug)]
-#[clap(about, version)]
+#[clap(about = "Command line options for the `query` subcommand", version)]
 pub struct QueryOptions {
     /// The lockfile path for reproducible Cargo->Bazel renderings
     #[clap(long)]

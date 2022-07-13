@@ -11,7 +11,7 @@ use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMet
 
 /// Command line options for the `splice` subcommand
 #[derive(Parser, Debug)]
-#[clap(about, version)]
+#[clap(about = "Command line options for the `splice` subcommand", version)]
 pub struct SpliceOptions {
     /// A generated manifest of splicing inputs
     #[clap(long)]

@@ -19,7 +19,11 @@ pub use splice::splice;
 pub use vendor::vendor;
 
 #[derive(Parser, Debug)]
-#[clap(name = "cargo-bazel", about, version)]
+#[clap(
+    name = "cargo-bazel",
+    about = "crate_universe` is a collection of tools which use Cargo to generate build targets for Bazel.",
+    version
+)]
 pub enum Options {
     /// Generate Bazel Build files from a Cargo manifest.
     Generate(GenerateOptions),
