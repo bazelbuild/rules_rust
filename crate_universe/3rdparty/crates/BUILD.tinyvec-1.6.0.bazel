@@ -87,7 +87,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__tinyvec_macros-0.1.0//:tinyvec_macros",
+            "@cui__tinyvec_macros-0.1.0//:tinyvec_macros",
         ],
     }),
 )

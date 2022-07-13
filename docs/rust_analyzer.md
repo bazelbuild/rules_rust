@@ -70,7 +70,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 ```
 
 
-<a id="#rust_analyzer_aspect"></a>
+<a id="rust_analyzer_aspect"></a>
 
 ## rust_analyzer_aspect
 

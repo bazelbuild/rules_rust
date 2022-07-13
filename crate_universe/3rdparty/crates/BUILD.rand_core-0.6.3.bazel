@@ -87,7 +87,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__getrandom-0.2.7//:getrandom",
+            "@cui__getrandom-0.2.7//:getrandom",
         ],
     }),
 )

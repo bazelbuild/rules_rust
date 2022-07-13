@@ -84,10 +84,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__form_urlencoded-1.0.1//:form_urlencoded",
-            "@crate_universe_crate_index__idna-0.2.3//:idna",
-            "@crate_universe_crate_index__matches-0.1.9//:matches",
-            "@crate_universe_crate_index__percent-encoding-2.1.0//:percent_encoding",
+            "@cui__form_urlencoded-1.0.1//:form_urlencoded",
+            "@cui__idna-0.2.3//:idna",
+            "@cui__matches-0.1.9//:matches",
+            "@cui__percent-encoding-2.1.0//:percent_encoding",
         ],
     }),
 )

@@ -88,9 +88,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__smawk-0.3.1//:smawk",
-            "@crate_universe_crate_index__unicode-linebreak-0.1.2//:unicode_linebreak",
-            "@crate_universe_crate_index__unicode-width-0.1.9//:unicode_width",
+            "@cui__smawk-0.3.1//:smawk",
+            "@cui__unicode-linebreak-0.1.2//:unicode_linebreak",
+            "@cui__unicode-width-0.1.9//:unicode_width",
         ],
     }),
 )

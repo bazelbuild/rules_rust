@@ -84,10 +84,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__block-buffer-0.7.3//:block_buffer",
-            "@crate_universe_crate_index__digest-0.8.1//:digest",
-            "@crate_universe_crate_index__fake-simd-0.1.2//:fake_simd",
-            "@crate_universe_crate_index__opaque-debug-0.2.3//:opaque_debug",
+            "@cui__block-buffer-0.7.3//:block_buffer",
+            "@cui__digest-0.8.1//:digest",
+            "@cui__fake-simd-0.1.2//:fake_simd",
+            "@cui__opaque-debug-0.2.3//:opaque_debug",
         ],
     }),
 )

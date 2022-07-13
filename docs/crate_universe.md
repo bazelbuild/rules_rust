@@ -178,7 +178,7 @@ convenient accessors to larger sections of the dependency graph.
 [ra]: https://rust-analyzer.github.io/
 
 
-<a id="#crates_repository"></a>
+<a id="crates_repository"></a>
 
 ## crates_repository
 
@@ -292,14 +292,14 @@ that is called behind the scenes to update dependencies.
 | <a id="crates_repository-quiet"></a>quiet |  If stdout and stderr should not be printed to the terminal.   | Boolean | optional | True |
 | <a id="crates_repository-render_config"></a>render_config |  The configuration flags to use for rendering. Use <code>//crate_universe:defs.bzl\%render_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/docs/skylark/lib/dict.html">Dictionary: String -> String</a> | required |  |
-| <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
-| <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}//:bin/{tool}" |
+| <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}" |
+| <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}" |
 | <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly-2021-09-08</code>   | String | optional | "1.62.0" |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | "" |
 | <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | ["i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "armv7-linux-androideabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "riscv32imc-unknown-none-elf"] |
 
 
-<a id="#crates_vendor"></a>
+<a id="crates_vendor"></a>
 
 ## crates_vendor
 
@@ -402,7 +402,7 @@ call against the generated workspace. The following table describes how to contr
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional | "crates" |
 
 
-<a id="#aliases"></a>
+<a id="aliases"></a>
 
 ## aliases
 
@@ -434,7 +434,7 @@ Setting any one flag will otherwise determine the contents of the returned dict.
 dict: The aliases of all associated packages
 
 
-<a id="#all_crate_deps"></a>
+<a id="all_crate_deps"></a>
 
 ## all_crate_deps
 
@@ -467,7 +467,7 @@ otherwise impact the contents of the returned list.
 list: A list of labels to generated rust targets (str)
 
 
-<a id="#crate.spec"></a>
+<a id="crate.spec"></a>
 
 ## crate.spec
 
@@ -499,7 +499,7 @@ See [specifying dependencies][sd] in the Cargo book for more details.
 string: A json encoded string of all inputs
 
 
-<a id="#crate.annotation"></a>
+<a id="crate.annotation"></a>
 
 ## crate.annotation
 
@@ -551,7 +551,7 @@ A collection of extra attributes and settings for a particular crate
 string: A json encoded string containing the specified version and separately all other inputs.
 
 
-<a id="#crate.workspace_member"></a>
+<a id="crate.workspace_member"></a>
 
 ## crate.workspace_member
 
@@ -574,7 +574,7 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
-<a id="#crate_deps"></a>
+<a id="crate_deps"></a>
 
 ## crate_deps
 
@@ -597,7 +597,7 @@ Finds the fully qualified label of the requested crates for the package where th
 list: A list of labels to generated rust targets (str)
 
 
-<a id="#crate_repositories"></a>
+<a id="crate_repositories"></a>
 
 ## crate_repositories
 
@@ -609,7 +609,7 @@ A macro for defining repositories for all generated crates
 
 
 
-<a id="#crate_universe_dependencies"></a>
+<a id="crate_universe_dependencies"></a>
 
 ## crate_universe_dependencies
 
@@ -628,7 +628,7 @@ Define dependencies of the `cargo-bazel` Rust target
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  <code>False</code> |
 
 
-<a id="#render_config"></a>
+<a id="render_config"></a>
 
 ## render_config
 
@@ -670,7 +670,7 @@ can be found below where the supported keys for each template can be found in th
 string: A json encoded struct to match the Rust `config::RenderConfig` struct
 
 
-<a id="#splicing_config"></a>
+<a id="splicing_config"></a>
 
 ## splicing_config
 

@@ -84,9 +84,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__unic-char-property-0.9.0//:unic_char_property",
-            "@crate_universe_crate_index__unic-char-range-0.9.0//:unic_char_range",
-            "@crate_universe_crate_index__unic-ucd-version-0.9.0//:unic_ucd_version",
+            "@cui__unic-char-property-0.9.0//:unic_char_property",
+            "@cui__unic-char-range-0.9.0//:unic_char_range",
+            "@cui__unic-ucd-version-0.9.0//:unic_ucd_version",
         ],
     }),
 )
