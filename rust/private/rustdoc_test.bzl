@@ -60,19 +60,29 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     # files. To ensure rustdoc can find the appropriate dependencies, the
     # file roots are identified and tracked for each dependency so it can be
     # stripped from the test runner.
+
+    # Collect and dedupe all of the file roots in a list before appending
+    # them to args to prevent generating a large amount of identical args
+    roots = []
     for dep in crate_info.deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
         if dep_crate_info:
             root = dep_crate_info.output.root.path
-            writer_args.add("--strip_substring={}/".format(root))
+            if not root in roots:
+                roots.append(root)
         if dep_dep_info:
             for direct_dep in dep_dep_info.direct_crates.to_list():
                 root = direct_dep.dep.output.root.path
-                writer_args.add("--strip_substring={}/".format(root))
+                if not root in roots:
+                    roots.append(root)
             for transitive_dep in dep_dep_info.transitive_crates.to_list():
                 root = transitive_dep.output.root.path
-                writer_args.add("--strip_substring={}/".format(root))
+                if not root in roots:
+                    roots.append(root)
+
+    for root in roots:
+        writer_args.add("--strip_substring={}/".format(root))
 
     # Indicate that the rustdoc_test args are over.
     writer_args.add("--")
