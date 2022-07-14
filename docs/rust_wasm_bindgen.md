@@ -25,7 +25,7 @@ bazel build @examples//hello_world_wasm --platforms=@rules_rust//rust/platform:w
 building WebAssembly code for the host target.
 
 
-<a id="#rust_wasm_bindgen"></a>
+<a id="rust_wasm_bindgen"></a>
 
 ## rust_wasm_bindgen
 
@@ -62,7 +62,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 | <a id="rust_wasm_bindgen-wasm_file"></a>wasm_file |  The <code>.wasm</code> file or crate to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 
 
-<a id="#rust_wasm_bindgen_toolchain"></a>
+<a id="rust_wasm_bindgen_toolchain"></a>
 
 ## rust_wasm_bindgen_toolchain
 
@@ -110,7 +110,7 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 | <a id="rust_wasm_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>wasm-bindgen-cli</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 
 
-<a id="#rust_wasm_bindgen_dependencies"></a>
+<a id="rust_wasm_bindgen_dependencies"></a>
 
 ## rust_wasm_bindgen_dependencies
 
@@ -124,7 +124,7 @@ Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
 
 
 
-<a id="#rust_wasm_bindgen_register_toolchains"></a>
+<a id="rust_wasm_bindgen_register_toolchains"></a>
 
 ## rust_wasm_bindgen_register_toolchains
 

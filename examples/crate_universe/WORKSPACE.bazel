@@ -36,10 +36,11 @@ crates_repository(
             version = "0.12.1-dev",
         )],
     },
+    cargo_lockfile = "//cargo_aliases:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//cargo_aliases:Cargo.Bazel.lock",
+    lockfile = "//cargo_aliases:cargo-bazel-lock.json",
     manifests = ["//cargo_aliases:Cargo.toml"],
 )
 
@@ -56,11 +57,10 @@ cargo_aliases_crate_repositories()
 
 crates_repository(
     name = "crate_index_cargo_local",
+    cargo_lockfile = "//cargo_local:Cargo.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//cargo_local:Cargo.lock",
-    lockfile_kind = "cargo",
     manifests = ["//cargo_local:Cargo.toml"],
 )
 
@@ -87,11 +87,10 @@ http_archive(
 
 crates_repository(
     name = "crate_index_cargo_remote",
+    cargo_lockfile = "@names//:Cargo.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "@names//:Cargo.lock",
-    lockfile_kind = "cargo",
     manifests = ["@names//:Cargo.toml"],
 )
 
@@ -109,10 +108,11 @@ cargo_remote_crate_repositories()
 crates_repository(
     name = "crate_index_cargo_workspace",
     cargo_config = "//cargo_workspace:.cargo/config.toml",
+    cargo_lockfile = "//cargo_workspace:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//cargo_workspace:Cargo.Bazel.lock",
+    lockfile = "//cargo_workspace:cargo-bazel-lock.json",
     manifests = [
         "//cargo_workspace:Cargo.toml",
         "//cargo_workspace/num_printer:Cargo.toml",
@@ -127,32 +127,6 @@ load(
 )
 
 cargo_workspace_crate_repositories()
-
-###############################################################################
-# E X T R A   W O R K S P A C E   M E M B E R S
-###############################################################################
-
-crates_repository(
-    name = "crate_index_extra_members",
-    extra_workspace_members = {
-        "texture-synthesis-cli": crate.workspace_member(
-            sha256 = "a7dbdf13f5e6f214750fce1073279b71ce3076157a8d337c9b0f0e14334e2aec",
-            version = "0.8.2",
-        ),
-    },
-    # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
-    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//extra_workspace_members:Cargo.Bazel.lock",
-    manifests = ["//extra_workspace_members:Cargo.toml"],
-)
-
-load(
-    "@crate_index_extra_members//:defs.bzl",
-    extra_workspace_members_crate_repositories = "crate_repositories",
-)
-
-extra_workspace_members_crate_repositories()
 
 ###############################################################################
 # M U L T I   P A C K A G E
@@ -194,10 +168,11 @@ crates_repository(
             build_script_data_glob = ["vendor/**"],
         )],
     },
+    cargo_lockfile = "//multi_package:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//multi_package:Cargo.Bazel.lock",
+    lockfile = "//multi_package:cargo-bazel-lock.json",
     manifests = [
         "//multi_package/pkg_a:Cargo.toml",
         "//multi_package/sub_pkgs/pkg_b:Cargo.toml",
@@ -256,10 +231,11 @@ crates_repository(
             compile_data_glob = ["**/*.md"],
         )],
     },
+    cargo_lockfile = "//no_cargo_manifests:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//no_cargo_manifests:Cargo.Bazel.lock",
+    lockfile = "//no_cargo_manifests:cargo-bazel-lock.json",
     packages = {
         "axum": crate.spec(
             version = "0.4.0",
@@ -304,6 +280,25 @@ load(
 )
 
 no_cargo_crate_repositories()
+
+###############################################################################
+# V E N D O R   E X T E R N A L
+###############################################################################
+
+http_archive(
+    name = "names_external",
+    build_file = "//cargo_remote:BUILD.names.bazel",
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
+)
+
+load(
+    "//vendor_external/crates:crates.bzl",
+    crates_vendor_external_repositories = "crate_repositories",
+)
+
+crates_vendor_external_repositories()
 
 ###############################################################################
 # V E N D O R   R E M O T E   M A N I F E S T S

@@ -283,7 +283,7 @@ rust_doc = rule(
         ),
         "_cc_toolchain": attr.label(
             doc = "In order to use find_cpp_toolchain, you must define the '_cc_toolchain' attribute on your rule or aspect.",
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_dir_zipper": attr.label(
             doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",

@@ -36,7 +36,15 @@ rust_proc_macro(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -65,10 +73,7 @@ rust_proc_macro(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -79,8 +84,8 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__pest-2.1.3//:pest",
-            "@crate_universe_crate_index__pest_generator-2.1.3//:pest_generator",
+            "@cui__pest-2.1.3//:pest",
+            "@cui__pest_generator-2.1.3//:pest_generator",
         ],
     }),
 )

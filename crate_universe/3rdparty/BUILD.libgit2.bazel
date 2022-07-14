@@ -179,18 +179,27 @@ write_file(
 )
 
 cc_library(
+    name = "include",
+    hdrs = [":configure_features"] + glob(["include/**/*.h"]),
+    strip_include_prefix = "include",
+)
+
+cc_library(
     name = "git2",
-    srcs = glob(
+    srcs = [
+        "src/allocators/failalloc.c",
+        "src/allocators/stdalloc.c",
+        "src/allocators/win32_leakcheck.c",
+        # Use the CollisionDetection SHA1 implementation.
+        "src/hash/sha1/collisiondetect.c",
+        "src/hash/sha1/sha1dc/sha1.c",
+        "src/hash/sha1/sha1dc/ubc_check.c",
+    ] + glob(
         include = [
             "src/*.c",
-            "src/*.h",
-            "src/xdiff/*.h",
             "src/xdiff/*.c",
-            "src/transports/*.h",
             "src/transports/*.c",
-            "src/streams/*.h",
             "src/streams/*.c",
-            "src/hash/*.h",
             "src/hash/*.c",
         ],
         exclude = [
@@ -198,32 +207,33 @@ cc_library(
             "src/unix/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob([
-            "src/win32/**/*.h",
-            "src/win32/**/*.c",
-        ]),
-        "//conditions:default": glob([
-            "src/unix/**/*.h",
-            "src/unix/**/*.c",
-        ]),
-    }) + [
-        "src/allocators/failalloc.c",
+        "@platforms//os:windows": glob(["src/win32/**/*.c"]),
+        "//conditions:default": glob(["src/unix/**/*.c"]),
+    }),
+    hdrs = [
         "src/allocators/failalloc.h",
-        "src/allocators/stdalloc.c",
         "src/allocators/stdalloc.h",
-        "src/allocators/win32_leakcheck.c",
         "src/allocators/win32_leakcheck.h",
         # Use the CollisionDetection SHA1 implementation.
         "src/hash/sha1/collisiondetect.h",
-        "src/hash/sha1/collisiondetect.c",
         "src/hash/sha1/sha1dc/sha1.h",
-        "src/hash/sha1/sha1dc/sha1.c",
         "src/hash/sha1/sha1dc/ubc_check.h",
-        "src/hash/sha1/sha1dc/ubc_check.c",
-    ],
-    hdrs = glob(["include/**/*.h"]) + [
-        ":configure_features",
-    ],
+    ] + glob(
+        include = [
+            "src/*.h",
+            "src/xdiff/*.h",
+            "src/transports/*.h",
+            "src/streams/*.h",
+            "src/hash/*.h",
+        ],
+        exclude = [
+            "src/win32/**",
+            "src/unix/**",
+        ],
+    ) + select({
+        "@platforms//os:windows": glob(["src/win32/**/*.h"]),
+        "//conditions:default": glob(["src/unix/**/*.h"]),
+    }),
     copts = select({
         "@platforms//os:linux": [
             "-fvisibility=hidden",
@@ -256,15 +266,12 @@ cc_library(
         ":windows": ["STRSAFE_NO_DEPRECATE"],
         "//conditions:default": [],
     }),
-    includes = [
-        "include",
-        "src",
-    ],
     linkstatic = True,
-    strip_include_prefix = "include",
+    strip_include_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
         ":http-parser",
+        ":include",
         ":pcre",
         "@zlib",
     ],

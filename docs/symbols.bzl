@@ -48,8 +48,8 @@ load(
     "@rules_rust//rust:defs.bzl",
     _capture_clippy_output = "capture_clippy_output",
     _error_format = "error_format",
+    _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
-    _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
@@ -73,6 +73,7 @@ load(
     _rust_repository_set = "rust_repository_set",
     _rust_toolchain_repository = "rust_toolchain_repository",
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
+    _rust_toolchain_tools_repository = "rust_toolchain_tools_repository",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
@@ -143,10 +144,10 @@ rust_repositories = _rust_repositories
 rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
+rust_toolchain_tools_repository = _rust_toolchain_tools_repository
 
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
-rust_analyzer = _rust_analyzer
 rust_analyzer_aspect = _rust_analyzer_aspect
 
 crate = _crate
@@ -158,6 +159,7 @@ rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
 
 error_format = _error_format
+extra_rustc_flag = _extra_rustc_flag
 extra_rustc_flags = _extra_rustc_flags
 incompatible_flag = _incompatible_flag
 capture_clippy_output = _capture_clippy_output

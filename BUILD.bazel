@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flags", "extra_rustc_flags")
+load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flag", "extra_exec_rustc_flags", "extra_rustc_flag", "extra_rustc_flags", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
 
 exports_files(["LICENSE"])
 
@@ -45,6 +45,24 @@ clippy_flags(
     visibility = ["//visibility:public"],
 )
 
+# This setting may be used to identify dependencies of proc-macro-s.
+# This feature is only enabled if `is_proc_macro_dep_enabled` is true.
+# Its value controls the BAZEL_RULES_RUST_IS_PROC_MACRO_DEP environment variable
+# made available to the rustc invocation.
+is_proc_macro_dep(
+    name = "is_proc_macro_dep",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+# This setting enables the feature to identify dependencies of proc-macro-s,
+# see `is_proc_macro_dep`.
+is_proc_macro_dep_enabled(
+    name = "is_proc_macro_dep_enabled",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
 # This setting may be used to pass extra options to rustc from the command line
 # in non-exec configuration.
 # It applies across all targets whereas the rustc_flags option on targets applies only
@@ -55,6 +73,12 @@ extra_rustc_flags(
     visibility = ["//visibility:public"],
 )
 
+extra_rustc_flag(
+    name = "extra_rustc_flag",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
 # This setting may be used to pass extra options to rustc from the command line
 # in exec configuration.
 # It applies across all targets whereas the rustc_flags option on targets applies only
@@ -62,6 +86,12 @@ extra_rustc_flags(
 extra_exec_rustc_flags(
     name = "extra_exec_rustc_flags",
     build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+extra_exec_rustc_flag(
+    name = "extra_exec_rustc_flag",
+    build_setting_default = "",
     visibility = ["//visibility:public"],
 )
 

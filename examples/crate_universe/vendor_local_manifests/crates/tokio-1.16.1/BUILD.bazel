@@ -36,7 +36,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -75,7 +83,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/tokio-macros-1.7.0:tokio_macros",
+            "//vendor_local_manifests/crates/tokio-macros-1.8.0:tokio_macros",
         ],
     }),
     rustc_env = {
@@ -90,10 +98,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -111,6 +116,7 @@ rust_library(
             "@rules_rust//rust/platform:aarch64-linux-android",
             "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
+            "@rules_rust//rust/platform:armv7-linux-androideabi",
             "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
             "@rules_rust//rust/platform:i686-apple-darwin",
             "@rules_rust//rust/platform:i686-linux-android",
@@ -133,7 +139,7 @@ rust_library(
             "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
-            "//vendor_local_manifests/crates/once_cell-1.12.0:once_cell",
+            "//vendor_local_manifests/crates/once_cell-1.13.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
             "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
@@ -150,7 +156,7 @@ rust_library(
             "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
-            "//vendor_local_manifests/crates/once_cell-1.12.0:once_cell",
+            "//vendor_local_manifests/crates/once_cell-1.13.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
             "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
@@ -159,7 +165,7 @@ rust_library(
             "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
             "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
-            "//vendor_local_manifests/crates/once_cell-1.12.0:once_cell",
+            "//vendor_local_manifests/crates/once_cell-1.13.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
             "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],

@@ -1,4 +1,4 @@
-load("@crate_universe_crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@cui//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 exports_files(

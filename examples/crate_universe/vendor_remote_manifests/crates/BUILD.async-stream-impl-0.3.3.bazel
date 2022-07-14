@@ -36,7 +36,15 @@ rust_proc_macro(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -65,10 +73,7 @@ rust_proc_macro(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -79,9 +84,9 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_manifests__proc-macro2-1.0.39//:proc_macro2",
-            "@crates_vendor_manifests__quote-1.0.18//:quote",
-            "@crates_vendor_manifests__syn-1.0.95//:syn",
+            "@crates_vendor_manifests__proc-macro2-1.0.40//:proc_macro2",
+            "@crates_vendor_manifests__quote-1.0.20//:quote",
+            "@crates_vendor_manifests__syn-1.0.98//:syn",
         ],
     }),
 )

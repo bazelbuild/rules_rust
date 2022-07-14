@@ -58,6 +58,20 @@ extra_rustc_flags_present_test = analysistest.make(
     },
 )
 
+extra_rustc_flag_present_test = analysistest.make(
+    _extra_rustc_flags_present_test,
+    attrs = {
+        "lib_exec": attr.label(
+            mandatory = True,
+            cfg = "exec",
+        ),
+    },
+    config_settings = {
+        "@//:extra_rustc_flag": [EXTRA_FLAG],
+        "@//:extra_rustc_flags": [],
+    },
+)
+
 def _define_test_targets():
     rust_library(
         name = "lib",
@@ -81,6 +95,12 @@ def extra_rustc_flags_test_suite(name):
 
     extra_rustc_flags_present_test(
         name = "extra_rustc_flags_present_test",
+        target_under_test = ":lib",
+        lib_exec = ":lib",
+    )
+
+    extra_rustc_flag_present_test(
+        name = "extra_rustc_flag_present_test",
         target_under_test = ":lib",
         lib_exec = ":lib",
     )

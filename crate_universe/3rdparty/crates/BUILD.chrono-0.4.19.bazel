@@ -36,7 +36,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -69,10 +77,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -88,17 +93,17 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@crate_universe_crate_index__winapi-0.3.9//:winapi",
+            "@cui__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
-            "@crate_universe_crate_index__num-integer-0.1.45//:num_integer",
-            "@crate_universe_crate_index__num-traits-0.2.15//:num_traits",
+            "@cui__libc-0.2.126//:libc",
+            "@cui__num-integer-0.1.45//:num_integer",
+            "@cui__num-traits-0.2.15//:num_traits",
         ],
         "//conditions:default": [
-            "@crate_universe_crate_index__libc-0.2.126//:libc",
-            "@crate_universe_crate_index__num-integer-0.1.45//:num_integer",
-            "@crate_universe_crate_index__num-traits-0.2.15//:num_traits",
+            "@cui__libc-0.2.126//:libc",
+            "@cui__num-integer-0.1.45//:num_integer",
+            "@cui__num-traits-0.2.15//:num_traits",
         ],
     }),
 )

@@ -38,14 +38,17 @@ load(
 )
 load(
     "//rust/private:rust_analyzer.bzl",
-    _rust_analyzer = "rust_analyzer",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
 )
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
+    _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
+    _is_proc_macro_dep = "is_proc_macro_dep",
+    _is_proc_macro_dep_enabled = "is_proc_macro_dep_enabled",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -103,19 +106,28 @@ capture_clippy_output = _capture_clippy_output
 error_format = _error_format
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
+extra_rustc_flag = _extra_rustc_flag
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
 extra_rustc_flags = _extra_rustc_flags
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
+extra_exec_rustc_flag = _extra_exec_rustc_flag
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
 extra_exec_rustc_flags = _extra_exec_rustc_flags
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+is_proc_macro_dep = _is_proc_macro_dep
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+is_proc_macro_dep_enabled = _is_proc_macro_dep_enabled
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 rust_common = _rust_common
 # See @rules_rust//rust/private:common.bzl for a complete description.
 
 rust_analyzer_aspect = _rust_analyzer_aspect
-# See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
-
-rust_analyzer = _rust_analyzer
 # See @rules_rust//rust/private:rust_analyzer.bzl for a complete description.
 
 rustfmt_aspect = _rustfmt_aspect

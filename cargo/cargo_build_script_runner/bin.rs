@@ -72,9 +72,8 @@ fn run_buildrs() -> Result<(), String> {
                 if line.is_empty() {
                     continue;
                 }
-                let mut key_val = line.splitn(2, '=');
-                match (key_val.next(), key_val.next()) {
-                    (Some(key), Some(value)) => {
+                match line.split_once('=') {
+                    Some((key, value)) => {
                         command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
                     }
                     _ => {
@@ -89,14 +88,9 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    for compiler_env_var in &["CC", "CXX"] {
-        if let Some(compiler_path) = env::var_os(compiler_env_var) {
-            let mut compiler_path = exec_root.join(compiler_path).into_os_string();
-            if let Some(sysroot_path) = env::var_os("SYSROOT") {
-                compiler_path.push(" --sysroot=");
-                compiler_path.push(&exec_root.join(sysroot_path));
-            }
-            command.env(compiler_env_var, compiler_path);
+    for tool_env_var in &["CC", "CXX", "LD"] {
+        if let Some(tool_path) = env::var_os(tool_env_var) {
+            command.env(tool_env_var, exec_root.join(tool_path));
         }
     }
 
@@ -109,10 +103,6 @@ fn run_buildrs() -> Result<(), String> {
         } else {
             command.env("AR", exec_root.join(ar_path));
         }
-    }
-
-    if let Some(ld_path) = env::var_os("LD") {
-        command.env("LD", exec_root.join(ld_path));
     }
 
     // replace env vars with a ${pwd} prefix with the exec_root
@@ -264,10 +254,8 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
 
     for line in stdout.lines() {
         if line.starts_with("target_") && line.contains('=') {
-            let mut parts = line.splitn(2, '=');
             // UNWRAP: Verified that line contains = and split into exactly 2 parts.
-            let key = parts.next().unwrap();
-            let value = parts.next().unwrap();
+            let (key, value) = line.split_once('=').unwrap();
             if value.starts_with('"') && value.ends_with('"') && value.len() >= 2 {
                 values
                     .entry(key)

@@ -465,6 +465,26 @@ def _rust_toolchain_impl(ctx):
     sysroot_path = sysroot.sysroot_anchor.dirname
     sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
 
+    # Variables for make variable expansion
+    make_variables = {
+        "RUSTC": sysroot.rustc.path,
+        "RUSTDOC": sysroot.rustdoc.path,
+        "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
+        "RUST_SYSROOT": sysroot_path,
+    }
+
+    if sysroot.cargo:
+        make_variables.update({
+            "CARGO": sysroot.cargo.path,
+        })
+
+    if sysroot.rustfmt:
+        make_variables.update({
+            "RUSTFMT": sysroot.rustfmt.path,
+        })
+
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
@@ -477,6 +497,9 @@ def _rust_toolchain_impl(ctx):
         env = ctx.attr.env,
         exec_triple = ctx.attr.exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
+        llvm_cov = ctx.file.llvm_cov,
+        llvm_profdata = ctx.file.llvm_profdata,
+        make_variables = make_variable_info,
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
         rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
@@ -499,7 +522,10 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
     )
-    return [toolchain]
+    return [
+        toolchain,
+        make_variable_info,
+    ]
 
 rust_toolchain = rule(
     implementation = _rust_toolchain_impl,
@@ -549,6 +575,16 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
+        ),
+        "llvm_cov": attr.label(
+            doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item. If None, rust code is not instrumented for coverage.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        "llvm_profdata": attr.label(
+            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
+            allow_single_file = True,
+            cfg = "exec",
         ),
         "llvm_tools": attr.label(
             doc = "LLVM tools that are shipped with the Rust toolchain.",
@@ -620,13 +656,13 @@ rust_toolchain = rule(
             ),
         ),
         "_cc_toolchain": attr.label(
-            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_rename_first_party_crates": attr.label(
-            default = "@rules_rust//rust/settings:rename_first_party_crates",
+            default = Label("//rust/settings:rename_first_party_crates"),
         ),
         "_third_party_dir": attr.label(
-            default = "@rules_rust//rust/settings:third_party_dir",
+            default = Label("//rust/settings:third_party_dir"),
         ),
     },
     toolchains = [

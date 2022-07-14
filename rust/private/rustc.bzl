@@ -61,6 +61,34 @@ ExtraExecRustcFlagsInfo = provider(
     fields = {"extra_exec_rustc_flags": "List[string] Extra flags to pass to rustc in exec configuration"},
 )
 
+IsProcMacroDepInfo = provider(
+    doc = "Records if this is a transitive dependency of a proc-macro.",
+    fields = {"is_proc_macro_dep": "Boolean"},
+)
+
+def _is_proc_macro_dep_impl(ctx):
+    return IsProcMacroDepInfo(is_proc_macro_dep = ctx.build_setting_value)
+
+is_proc_macro_dep = rule(
+    doc = "Records if this is a transitive dependency of a proc-macro.",
+    implementation = _is_proc_macro_dep_impl,
+    build_setting = config.bool(flag = True),
+)
+
+IsProcMacroDepEnabledInfo = provider(
+    doc = "Enables the feature to record if a library is a transitive dependency of a proc-macro.",
+    fields = {"enabled": "Boolean"},
+)
+
+def _is_proc_macro_dep_enabled_impl(ctx):
+    return IsProcMacroDepEnabledInfo(enabled = ctx.build_setting_value)
+
+is_proc_macro_dep_enabled = rule(
+    doc = "Enables the feature to record if a library is a transitive dependency of a proc-macro.",
+    implementation = _is_proc_macro_dep_enabled_impl,
+    build_setting = config.bool(flag = True),
+)
+
 def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
@@ -78,7 +106,7 @@ def _get_rustc_env(attr, toolchain, crate_name):
         patch, pre = patch.split("-", 1)
     else:
         pre = ""
-    return {
+    result = {
         "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
         "CARGO_CRATE_NAME": crate_name,
@@ -92,6 +120,12 @@ def _get_rustc_env(attr, toolchain, crate_name):
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
     }
+    if hasattr(attr, "_is_proc_macro_dep_enabled") and attr._is_proc_macro_dep_enabled[IsProcMacroDepEnabledInfo].enabled:
+        is_proc_macro_dep = "0"
+        if hasattr(attr, "_is_proc_macro_dep") and attr._is_proc_macro_dep[IsProcMacroDepInfo].is_proc_macro_dep:
+            is_proc_macro_dep = "1"
+        result["BAZEL_RULES_RUST_IS_PROC_MACRO_DEP"] = is_proc_macro_dep
+    return result
 
 def get_compilation_mode_opts(ctx, toolchain):
     """Gathers rustc flags for the current compilation mode (opt/debug)
@@ -206,8 +240,9 @@ def collect_deps(
 
             if "proc-macro" not in [crate_info.type, crate_info.wrapped_crate_type]:
                 transitive_noncrates.append(dep_info.transitive_noncrates)
+                transitive_link_search_paths.append(dep_info.link_search_path_files)
+
             transitive_build_infos.append(dep_info.transitive_build_infos)
-            transitive_link_search_paths.append(dep_info.link_search_path_files)
 
         elif cc_info:
             # This dependency is a cc_library
@@ -805,6 +840,9 @@ def construct_arguments(
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
 
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+        rustc_flags.add("--codegen=instrument-coverage")
+
     # Make bin crate data deps available to tests.
     for data in getattr(attr, "data", []):
         if rust_common.crate_info in data:
@@ -834,8 +872,14 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
+    if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec_configuration(ctx):
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
@@ -993,8 +1037,12 @@ def rustc_compile_action(
             ),
         )
 
+    coverage_runfiles = []
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
+        coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
+
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []),
+        files = getattr(ctx.files, "data", []) + coverage_runfiles,
         collect_data = True,
     )
 
@@ -1008,6 +1056,12 @@ def rustc_compile_action(
             files = depset(outputs),
             runfiles = runfiles,
             executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
+        ),
+        coverage_common.instrumented_files_info(
+            ctx,
+            dependency_attributes = ["deps", "crate"],
+            extensions = ["rs"],
+            source_attributes = ["srcs"],
         ),
     ]
 
@@ -1507,6 +1561,18 @@ extra_rustc_flags = rule(
     build_setting = config.string_list(flag = True),
 )
 
+def _extra_rustc_flag_impl(ctx):
+    return ExtraRustcFlagsInfo(extra_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+extra_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. " +
+        "Multiple uses are accumulated and appended after the extra_rustc_flags."
+    ),
+    implementation = _extra_rustc_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
+)
+
 def _extra_exec_rustc_flags_impl(ctx):
     return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = ctx.build_setting_value)
 
@@ -1518,4 +1584,16 @@ extra_exec_rustc_flags = rule(
     ),
     implementation = _extra_exec_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_flag_impl(ctx):
+    return ExtraExecRustcFlagsInfo(extra_exec_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+extra_exec_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flag`. " +
+        "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
+    ),
+    implementation = _extra_exec_rustc_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
 )

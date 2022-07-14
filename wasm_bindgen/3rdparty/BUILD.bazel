@@ -1,0 +1,95 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//wasm_bindgen:repositories.bzl", "WASM_BINDGEN_VERSION")
+
+exports_files([
+    "BUILD.wasm-bindgen-cli.bazel",
+])
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "curl-sys": [crate.annotation(
+            gen_build_script = False,
+        )],
+        "log": [crate.annotation(
+            rustc_flags = [
+                "--cfg=atomic_cas",
+                "--cfg=use_std",
+            ],
+            version = "<5",
+        )],
+        "openssl-sys": [crate.annotation(
+            gen_build_script = False,
+            rustc_flags = [
+                # Vendored openssl is 1.0.2m
+                "--cfg=ossl101",
+                "--cfg=ossl102",
+                "--cfg=ossl102f",
+                "--cfg=ossl102h",
+                "--cfg=ossl110",
+                "--cfg=ossl110f",
+                "--cfg=ossl110g",
+                "--cfg=ossl111",
+                "--cfg=ossl111b",
+                "-l",
+                "dylib=ssl",
+                "-l",
+                "dylib=crypto",
+            ],
+        )],
+        "proc-macro2": [crate.annotation(
+            rustc_flags = ["--cfg=use_proc_macro"],
+        )],
+        "unicase": [crate.annotation(
+            rustc_flags = [
+                "--cfg=__unicase__iter_cmp",
+                "--cfg=__unicase__defauler_hasher",
+            ],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    manifests = ["@rules_rust_wasm_bindgen_cli//:Cargo.toml"],
+    mode = "remote",
+    packages = {
+        "wasm-bindgen": crate.spec(
+            version = WASM_BINDGEN_VERSION,
+        ),
+    },
+    repository_name = "rules_rust_wasm_bindgen",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm_bindgen_cli",
+    actual = "@rules_rust_wasm_bindgen_cli",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "wasm_bindgen",
+    actual = "//wasm_bindgen/3rdparty/crates:wasm-bindgen",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]) + [
+        "//wasm_bindgen/3rdparty/crates:defs.bzl",
+        "//wasm_bindgen/3rdparty/crates:crates.bzl",
+    ],
+    visibility = ["//wasm_bindgen:__pkg__"],
+)
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "*.bazel",
+    ]) + [
+        "//wasm_bindgen/3rdparty/crates:srcs",
+        "Cargo.Bazel.lock",
+    ],
+    visibility = ["//wasm_bindgen:__pkg__"],
+)

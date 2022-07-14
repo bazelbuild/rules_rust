@@ -156,10 +156,11 @@ pub enum SourceAnnotation {
     },
 }
 
-/// TODO
+/// Additional information related to [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
+/// data used for improved determinism.
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct LockfileAnnotation {
-    /// TODO
+    /// A mapping of crates/packages to additional source (network location) information.
     pub crates: BTreeMap<PackageId, SourceAnnotation>,
 }
 

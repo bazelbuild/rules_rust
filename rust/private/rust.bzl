@@ -384,19 +384,19 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-def _rust_test_common(ctx, toolchain, output):
-    """Builds a Rust test binary.
+def _rust_test_impl(ctx):
+    """The implementation of the `rust_test` rule.
 
     Args:
         ctx (ctx): The ctx object for the current target.
-        toolchain (rust_toolchain): The current `rust_toolchain`
-        output (File): The output File that will be produced, depends on crate type.
 
     Returns:
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
+
+    toolchain = find_toolchain(ctx)
 
     srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     crate_type = "bin"
@@ -407,6 +407,15 @@ def _rust_test_common(ctx, toolchain, output):
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+
+        output_hash = determine_output_hash(crate.root, ctx.label)
+        output = ctx.actions.declare_file(
+            "test-%s/%s%s" % (
+                output_hash,
+                ctx.label.name,
+                toolchain.binary_ext,
+            ),
+        )
 
         # Optionally join compile data
         if crate.compile_data:
@@ -434,6 +443,15 @@ def _rust_test_common(ctx, toolchain, output):
     else:
         if not crate_root:
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, "lib")
+
+        output_hash = determine_output_hash(crate_root, ctx.label)
+        output = ctx.actions.declare_file(
+            "test-%s/%s%s" % (
+                output_hash,
+                ctx.label.name,
+                toolchain.binary_ext,
+            ),
+        )
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
@@ -466,26 +484,15 @@ def _rust_test_common(ctx, toolchain, output):
         getattr(ctx.attr, "env", {}),
         data,
     )
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+        if not toolchain.llvm_profdata:
+            fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
+
+        env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
+        env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
     providers.append(testing.TestEnvironment(env))
 
     return providers
-
-def _rust_test_impl(ctx):
-    """The implementation of the `rust_test` rule
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers. See `_rust_test_common`
-    """
-    toolchain = find_toolchain(ctx)
-
-    output = ctx.actions.declare_file(
-        ctx.label.name + toolchain.binary_ext,
-    )
-
-    return _rust_test_common(ctx, toolchain, output)
 
 def _stamp_attribute(default_value):
     return attr.int(
@@ -650,16 +657,45 @@ _common_attrs = {
         default = "0.0.0",
     ),
     "_cc_toolchain": attr.label(
-        default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        doc = (
+            "In order to use find_cc_toolchain, your rule has to depend " +
+            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
+            "docs for details."
+        ),
+        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
-    "_error_format": attr.label(default = "//:error_format"),
-    "_extra_exec_rustc_flags": attr.label(default = "//:extra_exec_rustc_flags"),
-    "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
-    "_import_macro_dep": attr.label(
-        default = "@rules_rust//util/import",
+    "_collect_cc_coverage": attr.label(
+        default = Label("//util:collect_coverage"),
+        executable = True,
         cfg = "exec",
     ),
+    "_error_format": attr.label(
+        default = Label("//:error_format"),
+    ),
+    "_extra_exec_rustc_flag": attr.label(
+        default = Label("//:extra_exec_rustc_flag"),
+    ),
+    "_extra_exec_rustc_flags": attr.label(
+        default = Label("//:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_flag": attr.label(
+        default = Label("//:extra_rustc_flag"),
+    ),
+    "_extra_rustc_flags": attr.label(
+        default = Label("//:extra_rustc_flags"),
+    ),
+    "_import_macro_dep": attr.label(
+        default = Label("//util/import"),
+        cfg = "exec",
+    ),
+    "_is_proc_macro_dep": attr.label(
+        default = Label("//:is_proc_macro_dep"),
+    ),
+    "_is_proc_macro_dep_enabled": attr.label(
+        default = Label("//:is_proc_macro_dep_enabled"),
+    ),
     "_process_wrapper": attr.label(
+        doc = "A process wrapper for running rustc on all platforms.",
         default = Label("//util/process_wrapper"),
         executable = True,
         allow_single_file = True,
@@ -839,10 +875,38 @@ rust_shared_library = rule(
         """),
 )
 
+def _proc_macro_dep_transition_impl(settings, _attr):
+    if settings["//:is_proc_macro_dep_enabled"]:
+        return {"//:is_proc_macro_dep": True}
+    else:
+        return []
+
+_proc_macro_dep_transition = transition(
+    inputs = ["//:is_proc_macro_dep_enabled"],
+    outputs = ["//:is_proc_macro_dep"],
+    implementation = _proc_macro_dep_transition_impl,
+)
+
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    # Start by copying the common attributes, then override the `deps` attribute
+    # to apply `_proc_macro_dep_transition`. To add this transition we additionally
+    # need to declare `_allowlist_function_transition`, see
+    # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
+    attrs = dict(
+        _common_attrs.items(),
+        _allowlist_function_transition = attr.label(default = Label("//tools/allowlists/function_transition_allowlist")),
+        deps = attr.label_list(
+            doc = dedent("""\
+            List of other libraries to be linked to this library target.
+
+            These can be either other `rust_library` targets or `cc_library` targets if
+            linking a native library.
+        """),
+            cfg = _proc_macro_dep_transition,
+        ),
+    ),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [

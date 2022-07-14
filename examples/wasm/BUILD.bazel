@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
 load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
 load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
@@ -24,7 +23,7 @@ rust_binary(
     srcs = ["main.rs"],
     edition = "2018",
     deps = [
-        "@rules_rust//wasm_bindgen/raze:wasm_bindgen",
+        "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen",
     ],
 )
 
@@ -33,7 +32,7 @@ rust_shared_library(
     srcs = ["main.rs"],
     edition = "2018",
     deps = [
-        "@rules_rust//wasm_bindgen/raze:wasm_bindgen",
+        "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen",
     ],
 )
 

@@ -5,10 +5,19 @@ sh_binary(
 )
 
 filegroup(
+    name = "collect_coverage",
+    srcs = ["collect_coverage.sh"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "distro",
-    srcs = [
+    srcs = glob([
+        "*.txt",
+    ]) + [
         "BUILD.bazel",
         "fetch_shas.sh",
+        ":collect_coverage",
         "//util/dir_zipper:distro",
         "//util/import:distro",
         "//util/label:distro",

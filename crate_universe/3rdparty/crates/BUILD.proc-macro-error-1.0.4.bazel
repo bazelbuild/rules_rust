@@ -40,7 +40,15 @@ rust_library(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(["**"]) + select_with_or({
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -58,7 +66,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro-error-attr-1.0.4//:proc_macro_error_attr",
+            "@cui__proc-macro-error-attr-1.0.4//:proc_macro_error_attr",
         ],
     }),
     rustc_env = {
@@ -73,10 +81,7 @@ rust_library(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -87,10 +92,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__proc-macro-error-1.0.4//:build_script_build",
-            "@crate_universe_crate_index__proc-macro2-1.0.39//:proc_macro2",
-            "@crate_universe_crate_index__quote-1.0.18//:quote",
-            "@crate_universe_crate_index__syn-1.0.90//:syn",
+            "@cui__proc-macro-error-1.0.4//:build_script_build",
+            "@cui__proc-macro2-1.0.40//:proc_macro2",
+            "@cui__quote-1.0.20//:quote",
+            "@cui__syn-1.0.98//:syn",
         ],
     }),
 )
@@ -144,10 +149,7 @@ cargo_build_script(
         # warnings. For more details see:
         # https://doc.rust-lang.org/rustc/lints/levels.html
         "--cap-lints=allow",
-    ] + select_with_or({
-        "//conditions:default": [
-        ],
-    }),
+    ],
     tags = [
         "cargo-bazel",
         "manual",
@@ -163,7 +165,7 @@ cargo_build_script(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crate_universe_crate_index__version_check-0.9.4//:version_check",
+            "@cui__version_check-0.9.4//:version_check",
         ],
     }),
 )

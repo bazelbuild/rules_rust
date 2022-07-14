@@ -4,7 +4,7 @@
 * [incompatible_flag](#incompatible_flag)
 * [fail_when_enabled](#fail_when_enabled)
 
-<a id="#incompatible_flag"></a>
+<a id="incompatible_flag"></a>
 
 ## incompatible_flag
 

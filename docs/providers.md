@@ -5,7 +5,7 @@
 * [DepInfo](#DepInfo)
 * [StdLibInfo](#StdLibInfo)
 
-<a id="#CrateInfo"></a>
+<a id="CrateInfo"></a>
 
 ## CrateInfo
 
@@ -37,7 +37,7 @@ A provider containing general Crate information.
 | <a id="CrateInfo-wrapped_crate_type"></a>wrapped_crate_type |  str, optional: The original crate type for targets generated using a previously defined crate (typically tests using the <code>rust_test::crate</code> attribute)    |
 
 
-<a id="#DepInfo"></a>
+<a id="DepInfo"></a>
 
 ## DepInfo
 
@@ -62,7 +62,7 @@ A provider containing information about a Crate's dependencies.
 | <a id="DepInfo-transitive_noncrates"></a>transitive_noncrates |  depset[LinkerInput]: All transitive dependencies that aren't crates.    |
 
 
-<a id="#StdLibInfo"></a>
+<a id="StdLibInfo"></a>
 
 ## StdLibInfo
 
