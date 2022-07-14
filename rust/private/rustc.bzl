@@ -615,8 +615,8 @@ def collect_inputs(
                 output_replacement = crate_info.output.path,
             )
 
-    # If stamping is enabled include the volatile status info file
-    stamp_info = [ctx.version_file] if stamp else []
+    # If stamping is enabled include the volatile and stable status info file
+    stamp_info = [ctx.version_file, ctx.info_file] if stamp else []
 
     compile_inputs = depset(
         linkstamp_outs + stamp_info,
@@ -722,6 +722,7 @@ def construct_arguments(
     # If stamping is enabled, enable the functionality in the process wrapper
     if stamp:
         process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
+        process_wrapper_flags.add("--stable-status-file", ctx.info_file)
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
