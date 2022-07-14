@@ -487,6 +487,32 @@ def _rust_test_impl(ctx):
 
     return _rust_test_common(ctx, toolchain, output)
 
+def _stamp_attribute(default_value):
+    return attr.int(
+        doc = dedent("""\
+            Whether to encode build information into the `Rustc` action. Possible values:
+
+            - `stamp = 1`: Always stamp the build information into the `Rustc` action, even in \
+            [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds. \
+            This setting should be avoided, since it potentially kills remote caching for the target and \
+            any downstream actions that depend on it.
+
+            - `stamp = 0`: Always replace build information by constant values. This gives good build result caching.
+
+            - `stamp = -1`: Embedding of build information is controlled by the \
+            [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.
+
+            Stamped targets are not rebuilt unless their dependencies change.
+
+            For example if a `rust_library` is stamped, and a `rust_binary` depends on that library, the stamped
+            library won't be rebuilt when we change sources of the `rust_binary`. This is different from how
+            [`cc_library.linkstamps`](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp)
+            behaves.
+        """),
+        default = default_value,
+        values = [1, 0, -1],
+    )
+
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
@@ -618,30 +644,7 @@ _common_attrs = {
         """),
         allow_files = [".rs"],
     ),
-    "stamp": attr.int(
-        doc = dedent("""\
-            Whether to encode build information into the `Rustc` action. Possible values:
-
-            - `stamp = 1`: Always stamp the build information into the `Rustc` action, even in \
-            [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds. \
-            This setting should be avoided, since it potentially kills remote caching for the target and \
-            any downstream actions that depend on it.
-
-            - `stamp = 0`: Always replace build information by constant values. This gives good build result caching.
-
-            - `stamp = -1`: Embedding of build information is controlled by the \
-            [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.
-
-            Stamped targets are not rebuilt unless their dependencies change.
-
-            For example if a `rust_library` is stamped, and a `rust_binary` depends on that library, the stamped
-            library won't be rebuilt when we change sources of the `rust_binary`. This is different from how
-            [`cc_library.linkstamps`](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp)
-            behaves.
-        """),
-        default = -1,
-        values = [1, 0, -1],
-    ),
+    "stamp": _stamp_attribute(default_value = 0),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
@@ -661,6 +664,10 @@ _common_attrs = {
         executable = True,
         allow_single_file = True,
         cfg = "exec",
+    ),
+    "_stamp_flag": attr.label(
+        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
+        default = Label("//rust/private:stamp"),
     ),
 }
 
@@ -879,10 +886,7 @@ _rust_binary_attrs = {
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
     ),
-    "_stamp_flag": attr.label(
-        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
-        default = Label("//rust/private:stamp"),
-    ),
+    "stamp": _stamp_attribute(default_value = -1),
 }
 
 rust_binary = rule(
