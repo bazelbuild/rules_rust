@@ -944,13 +944,13 @@ _rust_binary_attrs = {
         ),
         default = False,
     ),
+    "stamp": _stamp_attribute(default_value = -1),
     "_grep_includes": attr.label(
         allow_single_file = True,
         cfg = "exec",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
     ),
-    "stamp": _stamp_attribute(default_value = -1),
 }
 
 rust_binary = rule(

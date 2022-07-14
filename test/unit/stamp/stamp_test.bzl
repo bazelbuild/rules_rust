@@ -172,7 +172,7 @@ always_stamp_test_build_flag_is_true_test = analysistest.make(
 )
 
 always_stamp_test_build_flag_is_false_test = analysistest.make(
-    _always_stamp_build_flag_is_true_test_impl,
+    _always_stamp_build_flag_is_false_test_impl,
     config_settings = {
         "//command_line_option:stamp": False,
     },
