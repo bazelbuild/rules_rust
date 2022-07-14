@@ -12,6 +12,11 @@ build:clippy --output_groups=+clippy_checks
 # https://bazel.build/docs/windows#symlink
 startup --windows_enable_symlinks
 
+# Not all rules support remote execution, this flag is useful
+# in being able to disable remote execution on individual targets.
+# https://github.com/bazelbuild/bazel/issues/8830
+common --experimental_allow_tags_propagation
+
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc

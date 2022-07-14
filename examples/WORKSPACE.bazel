@@ -79,14 +79,30 @@ node_repositories()
 
 http_archive(
     name = "rules_foreign_cc",
-    sha256 = "69023642d5781c68911beda769f91fcbc8ca48711db935a75da7f6536b65047f",
-    strip_prefix = "rules_foreign_cc-0.6.0",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.6.0.tar.gz",
+    sha256 = "6041f1374ff32ba711564374ad8e007aef77f71561a7ce784123b9b4b88614fc",
+    strip_prefix = "rules_foreign_cc-0.8.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.8.0.tar.gz",
 )
 
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 
 rules_foreign_cc_dependencies()
+
+# perl is used to build openssl
+http_archive(
+    name = "rules_perl",
+    sha256 = "0c0cc01b158321c3c84af49409393c14b66070249d0affb78a88ca594b2aa9c2",
+    strip_prefix = "rules_perl-43d2db0aafe595fe0ac61b808c9c13ea9769ce03",
+    urls = [
+        "https://github.com/bazelbuild/rules_perl/archive/43d2db0aafe595fe0ac61b808c9c13ea9769ce03.tar.gz",
+    ],
+)
+
+load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
+
+perl_rules_dependencies()
+
+perl_register_toolchains()
 
 load("//sys:sys_deps.bzl", "sys_deps")
 

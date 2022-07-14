@@ -32,14 +32,3 @@ def openssl_repositories():
             "https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip",
         ],
     )
-
-    maybe(
-        http_archive,
-        name = "perl_windows",
-        build_file = Label("//third_party/openssl:BUILD.perl.bazel"),
-        sha256 = "aeb973da474f14210d3e1a1f942dcf779e2ae7e71e4c535e6c53ebabe632cc98",
-        urls = [
-            "https://mirror.bazel.build/strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip",
-            "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip",
-        ],
-    )

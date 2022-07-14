@@ -38,17 +38,6 @@ def third_party_deps(prefix = ""):
 
     maybe(
         http_archive,
-        name = (prefix + "__" + "perl").lstrip("_"),
-        build_file = Label("//multi_package/3rdparty:BUILD.perl.bazel"),
-        sha256 = "aeb973da474f14210d3e1a1f942dcf779e2ae7e71e4c535e6c53ebabe632cc98",
-        urls = [
-            "https://mirror.bazel.build/strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip",
-            "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip",
-        ],
-    )
-
-    maybe(
-        http_archive,
         name = (prefix + "__" + "curl").lstrip("_"),
         build_file = Label("//multi_package/3rdparty:BUILD.curl.bazel"),
         sha256 = "e56b3921eeb7a2951959c02db0912b5fcd5fdba5aca071da819e1accf338bbd7",

@@ -14,6 +14,9 @@ rust_bindgen_library(
     ],
     cc_lib = ":simple",
     header = "simple.h",
+    # TODO: The Rust Bindgen rules do not work in remote build environments (remote execution)
+    # https://github.com/bazelbuild/rules_rust/issues/919
+    tags = ["no-remote-exec"],
 )
 
 rust_binary(
@@ -37,6 +40,9 @@ rust_bindgen_library(
     crate_name = "simple_bindgen",
     header = "simple.h",
     rustfmt = False,
+    # TODO: The Rust Bindgen rules do not work in remote build environments (remote execution)
+    # https://github.com/bazelbuild/rules_rust/issues/919
+    tags = ["no-remote-exec"],
 )
 
 rust_binary(

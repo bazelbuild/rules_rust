@@ -9,6 +9,11 @@ build:rustfmt --output_groups=+rustfmt_checks
 build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
 
+# Not all rules support remote execution, this flag is useful
+# in being able to disable remote execution on individual targets.
+# https://github.com/bazelbuild/bazel/issues/8830
+common --experimental_allow_tags_propagation
+
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc

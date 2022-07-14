@@ -244,13 +244,8 @@ tasks:
     rbe_examples_targets: &rbe_examples_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # TODO: This requires an updated `rules_foreign_cc`
-      - "-//sys/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
-      # The bindgen rules currently do not work on RBE
-      # see: https://github.com/bazelbuild/rules_rust/issues/919
-      - "-//bindgen/..."
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
