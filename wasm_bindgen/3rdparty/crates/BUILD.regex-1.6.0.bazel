@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0 WITH LLVM-exception
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "wasmparser",
+    name = "regex",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,13 +50,30 @@ rust_library(
         ],
     }),
     crate_features = [
+        "aho-corasick",
+        "default",
+        "memchr",
+        "perf",
+        "perf-cache",
+        "perf-dfa",
+        "perf-inline",
+        "perf-literal",
+        "std",
+        "unicode",
+        "unicode-age",
+        "unicode-bool",
+        "unicode-case",
+        "unicode-gencat",
+        "unicode-perl",
+        "unicode-script",
+        "unicode-segment",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2021",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -81,11 +98,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.86.0",
+    version = "1.6.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__indexmap-1.9.1//:indexmap",
+            "@rules_rust_wasm_bindgen__aho-corasick-0.7.18//:aho_corasick",
+            "@rules_rust_wasm_bindgen__memchr-2.5.0//:memchr",
+            "@rules_rust_wasm_bindgen__regex-syntax-0.6.27//:regex_syntax",
         ],
     }),
 )
