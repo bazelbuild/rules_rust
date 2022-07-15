@@ -281,6 +281,16 @@ rust_doc = rule(
             doc = "CSS files to include via `<link>` in a rendered Markdown file.",
             allow_files = [".css"],
         ),
+        "rustc_flags": attr.string_list(
+            doc = dedent("""\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
+        ),
         "_cc_toolchain": attr.label(
             doc = "In order to use find_cpp_toolchain, you must define the '_cc_toolchain' attribute on your rule or aspect.",
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
