@@ -85,6 +85,7 @@ def render_config(
         crates_module_template = "//:{file}",
         default_package_name = None,
         platforms_template = "@rules_rust//rust/platform:{triple}",
+        regen_command = None,
         vendor_mode = None):
     """Various settings used to configure rendered outputs
 
@@ -114,6 +115,7 @@ def render_config(
         platforms_template (str, optional): The base template to use for platform names.
             See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format
             keys are [`{triple}`].
+        regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
 
     Returns:
@@ -126,6 +128,7 @@ def render_config(
         crates_module_template = crates_module_template,
         default_package_name = default_package_name,
         platforms_template = platforms_template,
+        regen_command = regen_command,
         vendor_mode = vendor_mode,
     ))
 
@@ -196,6 +199,11 @@ def _get_render_config(repository_ctx):
         config = dict(json.decode(repository_ctx.attr.render_config))
     else:
         config = dict(json.decode(render_config()))
+
+    if not config.get("regen_command"):
+        config["regen_command"] = "bazel sync --only={}".format(
+            repository_ctx.name,
+        )
 
     return config
 
