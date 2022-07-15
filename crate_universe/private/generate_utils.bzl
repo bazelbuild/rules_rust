@@ -314,7 +314,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
             return True
 
     # If a deterministic lockfile was not added then always repin
-    if not lockfile_path or lockfile_path.exists:
+    if not lockfile_path:
         return True
 
     # Run the binary to check if a repin is needed
