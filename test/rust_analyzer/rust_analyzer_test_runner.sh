@@ -29,8 +29,8 @@ local_repository(
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories(include_rustc_srcs = True)
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
-rust_analyzer_deps()
+load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
+rust_analyzer_dependencies()
 EOF
 
 cat << EOF > "${new_workspace}/.bazelrc"
