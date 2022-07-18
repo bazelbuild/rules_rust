@@ -86,13 +86,13 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.137",
+    version = "1.0.139",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__proc-macro2-1.0.40//:proc_macro2",
             "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_wasm_bindgen__serde_derive-1.0.137//:build_script_build",
+            "@rules_rust_wasm_bindgen__serde_derive-1.0.139//:build_script_build",
             "@rules_rust_wasm_bindgen__syn-1.0.98//:syn",
         ],
     }),
@@ -156,7 +156,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.137",
+    version = "1.0.139",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({

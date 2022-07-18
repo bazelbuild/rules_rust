@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # MIT/Apache-2.0
 # ])
 
 rust_library(
-    name = "regex",
+    name = "wasm_bindgen_macro_support",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,23 +50,7 @@ rust_library(
         ],
     }),
     crate_features = [
-        "aho-corasick",
-        "default",
-        "memchr",
-        "perf",
-        "perf-cache",
-        "perf-dfa",
-        "perf-inline",
-        "perf-literal",
-        "std",
-        "unicode",
-        "unicode-age",
-        "unicode-bool",
-        "unicode-case",
-        "unicode-gencat",
-        "unicode-perl",
-        "unicode-script",
-        "unicode-segment",
+        "spans",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -98,13 +82,15 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.5.6",
+    version = "0.2.81",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__aho-corasick-0.7.18//:aho_corasick",
-            "@rules_rust_wasm_bindgen__memchr-2.5.0//:memchr",
-            "@rules_rust_wasm_bindgen__regex-syntax-0.6.26//:regex_syntax",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.40//:proc_macro2",
+            "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
+            "@rules_rust_wasm_bindgen__syn-1.0.98//:syn",
+            "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.81//:wasm_bindgen_backend",
+            "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.81//:wasm_bindgen_shared",
         ],
     }),
 )

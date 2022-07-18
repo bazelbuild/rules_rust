@@ -15,17 +15,17 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_proc_macro",
+    "rust_library",
 )
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # Apache-2.0 WITH LLVM-exception
 # ])
 
-rust_proc_macro(
-    name = "wasm_bindgen_macro",
+rust_library(
+    name = "wasmparser",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,7 +50,6 @@ rust_proc_macro(
         ],
     }),
     crate_features = [
-        "spans",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -82,12 +81,10 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.78",
+    version = "0.83.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_wasm_bindgen__wasm-bindgen-macro-support-0.2.78//:wasm_bindgen_macro_support",
         ],
     }),
 )

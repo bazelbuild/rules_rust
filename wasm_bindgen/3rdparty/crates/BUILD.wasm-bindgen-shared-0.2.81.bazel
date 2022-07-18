@@ -29,7 +29,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "wasm_bindgen",
+    name = "wasm_bindgen_shared",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -54,9 +54,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "default",
-        "spans",
-        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -67,7 +64,6 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__wasm-bindgen-macro-0.2.78//:wasm_bindgen_macro",
         ],
     }),
     rustc_env = {
@@ -89,19 +85,18 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.78",
+    version = "0.2.81",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__cfg-if-1.0.0//:cfg_if",
-            "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.78//:build_script_build",
+            "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.81//:build_script_build",
         ],
     }),
 )
 
 cargo_build_script(
     # See comment associated with alias. Do not change this name
-    name = "wasm-bindgen_build_script",
+    name = "wasm-bindgen-shared_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -120,9 +115,6 @@ cargo_build_script(
         ],
     }),
     crate_features = [
-        "default",
-        "spans",
-        "std",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -131,6 +123,7 @@ cargo_build_script(
         ],
     }),
     edition = "2018",
+    links = "wasm_bindgen",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -159,7 +152,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "0.2.78",
+    version = "0.2.81",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
@@ -175,7 +168,7 @@ alias(
     # of `build_script_build` without losing out on having certain Cargo
     # environment variables set.
     name = "build_script_build",
-    actual = "wasm-bindgen_build_script",
+    actual = "wasm-bindgen-shared_build_script",
     tags = [
         "manual",
     ],

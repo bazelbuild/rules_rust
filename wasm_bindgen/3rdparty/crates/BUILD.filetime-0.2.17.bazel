@@ -81,7 +81,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.16",
+    version = "0.2.17",
     deps = [
     ] + select_with_or({
         # cfg(target_os = "redox")
@@ -123,7 +123,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",
+            "@rules_rust_wasm_bindgen__windows-sys-0.36.1//:windows_sys",
 
             # Common Deps
             "@rules_rust_wasm_bindgen__cfg-if-1.0.0//:cfg_if",
