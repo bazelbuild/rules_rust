@@ -19,6 +19,7 @@ readonly profdata_file=$COVERAGE_DIR/coverage.profdata
   -instr-profile "$profdata_file" \
   -ignore-filename-regex='.*external/.+' \
   -ignore-filename-regex='/tmp/.+' \
-  -path-equivalence="$ROOT",. \
+  -path-equivalence=.,"$ROOT" \
   "$RUNFILES_DIR/$TEST_WORKSPACE/$TEST_BINARY" \
+  @"$COVERAGE_MANIFEST" \
   | sed 's#/proc/self/cwd/##' > "$COVERAGE_OUTPUT_FILE"
