@@ -13,9 +13,9 @@ rust_binary(
     deps = [
         ":gen_rust_project_lib",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
         "//tools/rust_analyzer/3rdparty/crates:env_logger",
         "//tools/rust_analyzer/3rdparty/crates:log",
-        "//tools/rust_analyzer/3rdparty/crates:structopt",
         "//util/label",
     ],
 )

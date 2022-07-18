@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0 OR MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "structopt",
+    name = "hashbrown",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,18 +50,17 @@ rust_library(
         ],
     }),
     crate_features = [
-        "default",
+        "raw",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2018",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_rust_analyzer__structopt-derive-0.4.18//:structopt_derive",
         ],
     }),
     rustc_env = {
@@ -83,12 +82,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.3.26",
+    version = "0.12.3",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_rust_analyzer__clap-2.34.0//:clap",
-            "@rules_rust_rust_analyzer__lazy_static-1.4.0//:lazy_static",
         ],
     }),
 )

@@ -15,17 +15,17 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_library",
+    "rust_proc_macro",
 )
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
-rust_library(
-    name = "vec_map",
+rust_proc_macro(
+    name = "clap_derive",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,13 +50,14 @@ rust_library(
         ],
     }),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -81,10 +82,15 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.8.2",
+    version = "3.2.7",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@rules_rust_rust_analyzer__heck-0.4.0//:heck",
+            "@rules_rust_rust_analyzer__proc-macro-error-1.0.4//:proc_macro_error",
+            "@rules_rust_rust_analyzer__proc-macro2-1.0.40//:proc_macro2",
+            "@rules_rust_rust_analyzer__quote-1.0.20//:quote",
+            "@rules_rust_rust_analyzer__syn-1.0.98//:syn",
         ],
     }),
 )
