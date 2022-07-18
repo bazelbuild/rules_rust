@@ -15,17 +15,17 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_proc_macro",
+    "rust_library",
 )
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
-rust_proc_macro(
-    name = "structopt_derive",
+rust_library(
+    name = "once_cell",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,6 +50,10 @@ rust_proc_macro(
         ],
     }),
     crate_features = [
+        "alloc",
+        "default",
+        "race",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,15 +85,10 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.18",
+    version = "1.13.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_rust_analyzer__heck-0.3.3//:heck",
-            "@rules_rust_rust_analyzer__proc-macro-error-1.0.4//:proc_macro_error",
-            "@rules_rust_rust_analyzer__proc-macro2-1.0.40//:proc_macro2",
-            "@rules_rust_rust_analyzer__quote-1.0.20//:quote",
-            "@rules_rust_rust_analyzer__syn-1.0.98//:syn",
         ],
     }),
 )

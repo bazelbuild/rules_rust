@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::anyhow;
+use clap::Parser;
 use gen_rust_project_lib::generate_crate_info;
 use gen_rust_project_lib::write_rust_project;
-use structopt::StructOpt;
 
 // TODO(david): This shells out to an expected rule in the workspace root //:rust_analyzer that the user must define.
 // It would be more convenient if it could automatically discover all the rust code in the workspace if this target
@@ -51,7 +51,7 @@ fn main() -> anyhow::Result<()> {
 
 // Parse the configuration flags and supplement with bazel info as needed.
 fn parse_config() -> anyhow::Result<Config> {
-    let mut config = Config::from_args();
+    let mut config = Config::parse();
 
     // Ensure we know the workspace. If we are under `bazel run`, the
     // BUILD_WORKSPACE_DIR environment variable will be present.
@@ -101,20 +101,20 @@ fn parse_config() -> anyhow::Result<Config> {
     Ok(config)
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct Config {
     // If not specified, uses the result of `bazel info workspace`.
-    #[structopt(long)]
+    #[clap(long)]
     workspace: Option<PathBuf>,
 
     // If not specified, uses the result of `bazel info execution_root`.
-    #[structopt(long)]
+    #[clap(long)]
     execution_root: Option<PathBuf>,
 
-    #[structopt(long, default_value = "bazel")]
+    #[clap(long, default_value = "bazel")]
     bazel: PathBuf,
 
     // Space separated list of target patterns that comes after all other args.
-    #[structopt(default_value = "@//...")]
+    #[clap(default_value = "@//...")]
     targets: Vec<String>,
 }
