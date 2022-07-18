@@ -9,6 +9,13 @@ crates_vendor(
         "anyhow": crate.spec(
             version = "1.0.58",
         ),
+        "clap": crate.spec(
+            features = [
+                "derive",
+                "env",
+            ],
+            version = "3.2.12",
+        ),
         "env_logger": crate.spec(
             version = "0.9.0",
         ),
@@ -24,9 +31,6 @@ crates_vendor(
         ),
         "serde_json": crate.spec(
             version = "1.0.82",
-        ),
-        "structopt": crate.spec(
-            version = "0.3.26",
         ),
     },
     repository_name = "rules_rust_rust_analyzer",

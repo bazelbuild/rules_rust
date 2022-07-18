@@ -92,7 +92,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_rust_analyzer__proc-macro2-1.0.40//:build_script_build",
-            "@rules_rust_rust_analyzer__unicode-ident-1.0.1//:unicode_ident",
+            "@rules_rust_rust_analyzer__unicode-ident-1.0.2//:unicode_ident",
         ],
     }),
 )

@@ -7,15 +7,17 @@ toolchain_type(name = "bindgen_toolchain")
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]) + ["//bindgen/raze:crates.bzl"],
-    deps = ["//rust:bzl_lib"],
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//bindgen/3rdparty:bzl_lib",
+        "//rust:bzl_lib",
+    ],
 )
 
 filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [
-        "//bindgen/raze:srcs",
-        "//bindgen/raze/remote:srcs",
+        "//bindgen/3rdparty:distro",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],
@@ -23,7 +25,7 @@ filegroup(
 
 rust_bindgen_toolchain(
     name = "default_bindgen_toolchain_impl",
-    bindgen = "//bindgen/raze:cargo_bin_bindgen",
+    bindgen = "//bindgen/3rdparty:bindgen",
     clang = select({
         "//rust/platform:osx": "@bindgen_clang_osx//:clang",
         "//conditions:default": "@bindgen_clang_linux//:clang",
