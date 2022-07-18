@@ -59,8 +59,8 @@ rust_clippy(
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
-    deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
     visibility = ["//visibility:public"],
+    deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
 )
 
 filegroup(
