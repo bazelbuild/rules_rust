@@ -89,13 +89,13 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@rules_rust_wasm_bindgen__serde-1.0.137//:serde",
+    actual = "@rules_rust_wasm_bindgen__serde-1.0.139//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_derive",
-    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.137//:serde_derive",
+    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.139//:serde_derive",
     tags = ["manual"],
 )
 
@@ -119,19 +119,25 @@ alias(
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.78//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.81//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli-support",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.78//:wasm_bindgen_cli_support",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.81//:wasm_bindgen_cli_support",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-shared",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.78//:wasm_bindgen_shared",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.81//:wasm_bindgen_shared",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasmprinter",
+    actual = "@rules_rust_wasm_bindgen__wasmprinter-0.2.33//:wasmprinter",
     tags = ["manual"],
 )
 

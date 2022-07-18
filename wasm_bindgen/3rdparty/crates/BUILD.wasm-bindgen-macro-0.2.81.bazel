@@ -15,7 +15,7 @@ load(
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_library",
+    "rust_proc_macro",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -24,8 +24,8 @@ package(default_visibility = ["//visibility:public"])
 #     "TODO",  # MIT/Apache-2.0
 # ])
 
-rust_library(
-    name = "wasm_bindgen_backend",
+rust_proc_macro(
+    name = "wasm_bindgen_macro",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -82,17 +82,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.78",
+    version = "0.2.81",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__bumpalo-3.10.0//:bumpalo",
-            "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-            "@rules_rust_wasm_bindgen__log-0.4.17//:log",
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.40//:proc_macro2",
             "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_wasm_bindgen__syn-1.0.98//:syn",
-            "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.78//:wasm_bindgen_shared",
+            "@rules_rust_wasm_bindgen__wasm-bindgen-macro-support-0.2.81//:wasm_bindgen_macro_support",
         ],
     }),
 )

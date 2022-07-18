@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # Apache-2.0 WITH LLVM-exception
 # ])
 
 rust_library(
-    name = "once_cell",
+    name = "wasmprinter",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,10 +50,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "alloc",
-        "default",
-        "race",
-        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -85,10 +81,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.12.0",
+    version = "0.2.33",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@rules_rust_wasm_bindgen__anyhow-1.0.58//:anyhow",
+            "@rules_rust_wasm_bindgen__wasmparser-0.83.0//:wasmparser",
         ],
     }),
 )

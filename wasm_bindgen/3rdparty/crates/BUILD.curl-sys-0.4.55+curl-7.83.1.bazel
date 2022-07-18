@@ -106,7 +106,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.74//:openssl_sys",
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.75//:openssl_sys",
 
             # Common Deps
             "@rules_rust_wasm_bindgen__libc-0.2.126//:libc",
