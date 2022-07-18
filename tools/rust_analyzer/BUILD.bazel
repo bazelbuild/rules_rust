@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
 load("//tools:tool_utils.bzl", "aspect_repository")
 
@@ -53,6 +54,13 @@ rust_clippy(
     deps = [
         ":gen_rust_project",
     ],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
