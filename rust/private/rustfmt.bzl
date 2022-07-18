@@ -13,7 +13,15 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
     Returns:
         list: A list of formattable sources (`File`).
     """
-    if rust_common.crate_info not in target:
+    crate_info = None
+
+    if rust_common.wrapped_crate_info in target:
+        crate_info = target[rust_common.wrapped_crate_info].crate
+
+    if rust_common.crate_info in target:
+        crate_info = target[rust_common.crate_info]
+
+    if not crate_info:
         return []
 
     # Ignore external targets
@@ -31,8 +39,6 @@ def _find_rustfmtable_srcs(target, aspect_ctx = None):
         for tag in ignore_tags:
             if tag in aspect_ctx.rule.attr.tags:
                 return []
-
-    crate_info = target[rust_common.crate_info]
 
     # Filter out any generated files
     srcs = [src for src in crate_info.srcs.to_list() if src.is_source]
@@ -89,8 +95,10 @@ def _rustfmt_aspect_impl(target, ctx):
     if not srcs:
         return []
 
+    crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.wrapped_crate_info].crate
+
     # Parse the edition to use for formatting from the target
-    edition = target[rust_common.crate_info].edition
+    edition = crate_info.edition
 
     manifest = _generate_manifest(edition, srcs, ctx)
     marker = _perform_check(edition, srcs, ctx)
@@ -192,7 +200,7 @@ rustfmt_test = rule(
     attrs = {
         "targets": attr.label_list(
             doc = "Rust targets to run `rustfmt --check` on.",
-            providers = [rust_common.crate_info],
+            providers = [[rust_common.crate_info], [rust_common.wrapped_crate_info]],
             aspects = [rustfmt_aspect],
         ),
         "_runner": attr.label(

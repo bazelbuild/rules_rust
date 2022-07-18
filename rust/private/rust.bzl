@@ -406,7 +406,7 @@ def _rust_test_impl(ctx):
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
-        crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+        crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.wrapped_crate_info].crate
 
         output_hash = determine_output_hash(crate.root, ctx.label)
         output = ctx.actions.declare_file(
@@ -955,7 +955,7 @@ _rust_binary_attrs = {
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
+    provides = [rust_common.wrapped_crate_info],
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -1083,7 +1083,6 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
@@ -1110,7 +1109,7 @@ rust_library_without_process_wrapper = rule(
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    provides = _common_providers,
+    provides = [rust_common.wrapped_crate_info],
     attrs = dict(_common_attrs.items() +
                  _rust_test_attrs.items()),
     executable = True,

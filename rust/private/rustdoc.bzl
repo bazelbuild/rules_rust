@@ -171,7 +171,7 @@ def _rust_doc_impl(ctx):
     """
 
     crate = ctx.attr.crate
-    crate_info = crate[rust_common.crate_info]
+    crate_info = crate[rust_common.crate_info] if rust_common.crate_info in crate else crate[rust_common.wrapped_crate_info].crate
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
@@ -262,7 +262,7 @@ rust_doc = rule(
                 "`rust_doc` can generate HTML code documentation for the source files of " +
                 "`rust_library` or `rust_binary` targets."
             ),
-            providers = [rust_common.crate_info],
+            providers = [[rust_common.crate_info], [rust_common.wrapped_crate_info]],
             mandatory = True,
         ),
         "html_after_content": attr.label(
