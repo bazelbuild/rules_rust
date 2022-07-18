@@ -55,6 +55,7 @@ filegroup(
         "*.bazel",
     ]) + [
         "//bindgen/3rdparty/crates:srcs",
+        "Cargo.Bazel.lock",
     ],
     visibility = ["//bindgen:__pkg__"],
 )

@@ -17,7 +17,6 @@ bzl_library(
 filegroup(
     name = "distro",
     srcs = glob(["*.bzl"]) + [
-        "//bindgen/raze:distro",
         "//bindgen/3rdparty:distro",
         "BUILD.bazel",
     ],
