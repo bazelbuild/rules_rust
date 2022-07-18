@@ -430,7 +430,7 @@ def _rust_analyzer_toolchain_srcs_repository_impl(repository_ctx):
     ))
 
 rust_analyzer_toolchain_srcs_repository = repository_rule(
-    doc = "A repository rule for defining a rust_analyzer_toolchani with a `rust-src` artifact.",
+    doc = "A repository rule for defining a rust_analyzer_toolchain with a `rust-src` artifact.",
     attrs = {
         "auth": attr.string_dict(
             doc = (
