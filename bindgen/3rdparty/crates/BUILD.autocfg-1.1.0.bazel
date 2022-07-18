@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # Apache-2.0 OR MIT
 # ])
 
 rust_library(
-    name = "winapi",
+    name = "autocfg",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,18 +50,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "consoleapi",
-        "errhandlingapi",
-        "fileapi",
-        "libloaderapi",
-        "minwinbase",
-        "minwindef",
-        "processenv",
-        "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -93,19 +81,9 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.3.9",
+    version = "1.1.0",
     deps = [
     ] + select_with_or({
-        # i686-pc-windows-gnu
-        #
-        # No supported platform triples for cfg: 'i686-pc-windows-gnu'
-        # Skipped dependencies: [{"id":"winapi-i686-pc-windows-gnu 0.4.0","target":"winapi_i686_pc_windows_gnu"}]
-        #
-        # x86_64-pc-windows-gnu
-        #
-        # No supported platform triples for cfg: 'x86_64-pc-windows-gnu'
-        # Skipped dependencies: [{"id":"winapi-x86_64-pc-windows-gnu 0.4.0","target":"winapi_x86_64_pc_windows_gnu"}]
-        #
         "//conditions:default": [
         ],
     }),

@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "cfg_if",
+    name = "nom",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,6 +50,8 @@ rust_library(
         ],
     }),
     crate_features = [
+        "alloc",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,10 +83,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.10",
+    version = "7.1.1",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@rules_rust_bindgen__memchr-2.5.0//:memchr",
+            "@rules_rust_bindgen__minimal-lexical-0.2.1//:minimal_lexical",
         ],
     }),
 )

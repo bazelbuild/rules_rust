@@ -10,6 +10,9 @@ crates_vendor(
         "clang-sys": [crate.annotation(
             gen_build_script = True,
         )],
+        "indexmap": [crate.annotation(
+            gen_build_script = True,
+        )],
         "libloading": [crate.annotation(
             gen_build_script = True,
         )],
@@ -22,10 +25,10 @@ crates_vendor(
     mode = "remote",
     packages = {
         "bindgen": crate.spec(
-            version = "0.58.1",
+            version = "0.60.1",
         ),
         "libloading": crate.spec(
-            version = "=0.6.3",
+            version = "0.7.3",
         ),
     },
     repository_name = "rules_rust_bindgen",

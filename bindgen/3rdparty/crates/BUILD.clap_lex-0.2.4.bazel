@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "textwrap",
+    name = "clap_lex",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -56,7 +56,7 @@ rust_library(
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -81,11 +81,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.11.0",
+    version = "0.2.4",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_bindgen__unicode-width-0.1.9//:unicode_width",
+            "@rules_rust_bindgen__os_str_bytes-6.2.0//:os_str_bytes",
         ],
     }),
 )

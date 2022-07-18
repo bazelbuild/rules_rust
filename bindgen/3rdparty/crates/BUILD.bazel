@@ -29,19 +29,25 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "bindgen",
-    actual = "@rules_rust_bindgen__bindgen-0.58.1//:bindgen",
+    actual = "@rules_rust_bindgen__bindgen-0.60.1//:bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "libloading",
-    actual = "@rules_rust_bindgen__libloading-0.6.3//:libloading",
+    actual = "@rules_rust_bindgen__libloading-0.7.3//:libloading",
     tags = ["manual"],
 )
 
 # Binaries
 alias(
     name = "bindgen__bindgen",
-    actual = "@rules_rust_bindgen__bindgen-0.58.1//:bindgen__bin",
+    actual = "@rules_rust_bindgen__bindgen-0.60.1//:bindgen__bin",
+    tags = ["manual"],
+)
+
+alias(
+    name = "clap__stdio-fixture",
+    actual = "@rules_rust_bindgen__clap-3.2.12//:stdio-fixture__bin",
     tags = ["manual"],
 )

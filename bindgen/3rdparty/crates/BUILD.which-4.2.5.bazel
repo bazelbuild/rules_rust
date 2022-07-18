@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "env_logger",
+    name = "which",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,11 +50,6 @@ rust_library(
         ],
     }),
     crate_features = [
-        "atty",
-        "default",
-        "humantime",
-        "regex",
-        "termcolor",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -86,15 +81,24 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.8.4",
+    version = "4.2.5",
     deps = [
     ] + select_with_or({
+        # cfg(windows)
+        (
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
+        ): [
+            # Target Deps
+            "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",
+
+            # Common Deps
+            "@rules_rust_bindgen__either-1.7.0//:either",
+            "@rules_rust_bindgen__libc-0.2.126//:libc",
+        ],
         "//conditions:default": [
-            "@rules_rust_bindgen__atty-0.2.14//:atty",
-            "@rules_rust_bindgen__humantime-2.1.0//:humantime",
-            "@rules_rust_bindgen__log-0.4.17//:log",
-            "@rules_rust_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_bindgen__termcolor-1.1.3//:termcolor",
+            "@rules_rust_bindgen__either-1.7.0//:either",
+            "@rules_rust_bindgen__libc-0.2.126//:libc",
         ],
     }),
 )

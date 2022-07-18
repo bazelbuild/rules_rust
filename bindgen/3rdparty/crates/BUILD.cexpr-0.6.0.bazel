@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # Apache-2.0/MIT
 # ])
 
 rust_library(
-    name = "unicode_ident",
+    name = "cexpr",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -81,10 +81,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.1",
+    version = "0.6.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@rules_rust_bindgen__nom-7.1.1//:nom",
         ],
     }),
 )

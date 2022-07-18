@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT
+#     "TODO",  # MIT/Apache-2.0
 # ])
 
 rust_library(
-    name = "which",
+    name = "minimal_lexical",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,13 +50,14 @@ rust_library(
         ],
     }),
     crate_features = [
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2015",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -81,11 +82,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "3.1.1",
+    version = "0.2.1",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_bindgen__libc-0.2.126//:libc",
         ],
     }),
 )
