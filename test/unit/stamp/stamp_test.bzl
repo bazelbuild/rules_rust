@@ -277,13 +277,39 @@ def _stamp_attribute_tests():
             ])
     return tests
 
+def _process_wrapper_with_stamp_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = target.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+
+    _assert_not_stamped(env, action)
+
+    return analysistest.end(env)
+
+process_wrapper_with_stamp_test = analysistest.make(
+    _process_wrapper_with_stamp_test_impl,
+    config_settings = {
+        "//command_line_option:stamp": True,
+    },
+)
+
+def _process_wrapper_tests():
+    process_wrapper_with_stamp_test(
+        name = "test_process_wrapper_with_stamp_test",
+        target_under_test = "//util/process_wrapper:process_wrapper",
+    )
+
+    return ["test_process_wrapper_with_stamp_test"]
+
 def stamp_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
     Args:
         name (str): Name of the macro.
     """
-    tests = _build_flag_tests() + _stamp_attribute_tests()
+    tests = _build_flag_tests() + _stamp_attribute_tests() + _process_wrapper_tests()
 
     native.test_suite(
         name = name,
