@@ -14,7 +14,7 @@
 
 """Utility functions not specific to the rust toolchain."""
 
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cc_toolchain", use_rules_cc_toolchain = "use_cc_toolchain")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain", use_rules_cc_toolchain = "use_cpp_toolchain")
 load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 UNSUPPORTED_FEATURES = [
