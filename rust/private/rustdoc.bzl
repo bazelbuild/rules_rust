@@ -16,7 +16,7 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain", "use_cc_toolchain")
 
 def _strip_crate_info_output(crate_info):
     """Set the CrateInfo.output to None for a given CrateInfo provider.
@@ -320,9 +320,8 @@ rust_doc = rule(
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )

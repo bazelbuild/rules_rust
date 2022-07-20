@@ -14,7 +14,7 @@
 
 """Utility functions not specific to the rust toolchain."""
 
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cc_toolchain", use_rules_cc_toolchain = "use_cc_toolchain")
 load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 UNSUPPORTED_FEATURES = [
@@ -54,6 +54,17 @@ def find_cc_toolchain(ctx):
         unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features,
     )
     return cc_toolchain, feature_configuration
+
+def use_cc_toolchain(mandatory = False):
+    """Helper to depend on the cc toolchain.
+
+    Args:
+        mandatory: Whether or not it should be an error if the toolchain cannot be resolved.
+
+    Returns:
+        A list that can be used as the value for `rule.toolchains`.
+    """
+    return use_rules_cc_toolchain(mandatory)
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
 # dependency issues or generating docs will break.

@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink", "use_cc_toolchain")
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
@@ -665,9 +665,7 @@ rust_toolchain = rule(
             default = Label("//rust/settings:third_party_dir"),
         ),
     },
-    toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
+    toolchains = use_cc_toolchain(),
     incompatible_use_toolchain_transition = True,
     doc = """Declares a Rust toolchain for use.
 

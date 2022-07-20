@@ -24,6 +24,7 @@ load(
     "find_toolchain",
     "get_import_macro_deps",
     "transform_deps",
+    "use_cc_toolchain",
 )
 
 # TODO(marco): Separate each rule into its own file.
@@ -758,9 +759,8 @@ rust_library = rule(
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -834,9 +834,8 @@ rust_static_library = rule(
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -857,9 +856,8 @@ rust_shared_library = rule(
     attrs = dict(_common_attrs.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -909,9 +907,8 @@ rust_proc_macro = rule(
     ),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -960,9 +957,8 @@ rust_binary = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
@@ -1088,9 +1084,8 @@ rust_binary_without_process_wrapper = rule(
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )
@@ -1101,9 +1096,8 @@ rust_library_without_process_wrapper = rule(
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )
@@ -1117,9 +1111,8 @@ rust_test = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     test = True,
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\

@@ -17,7 +17,7 @@
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
+load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps", "use_cc_toolchain")
 
 def _construct_writer_arguments(ctx, test_runner, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
@@ -205,9 +205,8 @@ rust_doc_test = rule(
     test = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         str(Label("//rust:toolchain")),
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
