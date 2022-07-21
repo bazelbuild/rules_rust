@@ -297,7 +297,7 @@ _NORMAL_DEPENDENCIES = {
             "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
             "tower-http": "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
             "tracing": "//vendor_local_pkgs/crates/tracing-0.1.35:tracing",
-            "tracing-subscriber": "//vendor_local_pkgs/crates/tracing-subscriber-0.3.14:tracing_subscriber",
+            "tracing-subscriber": "//vendor_local_pkgs/crates/tracing-subscriber-0.3.15:tracing_subscriber",
         },
     },
 }
