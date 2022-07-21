@@ -96,7 +96,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
             "//vendor_local_pkgs/crates/futures-channel-0.3.21:futures_channel",
             "//vendor_local_pkgs/crates/futures-core-0.3.21:futures_core",
             "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",

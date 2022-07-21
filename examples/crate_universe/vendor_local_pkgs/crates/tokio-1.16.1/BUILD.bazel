@@ -135,7 +135,7 @@ rust_library(
             "//vendor_local_pkgs/crates/signal-hook-registry-1.4.0:signal_hook_registry",
 
             # Common Deps
-            "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
             "//vendor_local_pkgs/crates/memchr-2.5.0:memchr",
             "//vendor_local_pkgs/crates/mio-0.7.14:mio",
             "//vendor_local_pkgs/crates/num_cpus-1.13.1:num_cpus",
@@ -152,7 +152,7 @@ rust_library(
             "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",
 
             # Common Deps
-            "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
             "//vendor_local_pkgs/crates/memchr-2.5.0:memchr",
             "//vendor_local_pkgs/crates/mio-0.7.14:mio",
             "//vendor_local_pkgs/crates/num_cpus-1.13.1:num_cpus",
@@ -161,7 +161,7 @@ rust_library(
             "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
         ],
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
             "//vendor_local_pkgs/crates/memchr-2.5.0:memchr",
             "//vendor_local_pkgs/crates/mio-0.7.14:mio",
             "//vendor_local_pkgs/crates/num_cpus-1.13.1:num_cpus",

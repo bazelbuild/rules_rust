@@ -90,7 +90,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/hashbrown-0.12.2:hashbrown",
+            "//vendor_local_pkgs/crates/hashbrown-0.12.3:hashbrown",
             "//vendor_local_pkgs/crates/indexmap-1.9.1:build_script_build",
         ],
     }),

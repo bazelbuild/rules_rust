@@ -88,7 +88,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.1.0:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
             "//vendor_local_pkgs/crates/futures-core-0.3.21:futures_core",
             "//vendor_local_pkgs/crates/futures-sink-0.3.21:futures_sink",
             "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
