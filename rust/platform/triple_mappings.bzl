@@ -204,7 +204,7 @@ def abi_to_constraints(_abi):
     # figure out how they're doing this
     return []
 
-def extra_ios_constriants(triple):
+def extra_ios_constraints(triple):
     """Add constraints specific to iOS targets.
 
     Args:
@@ -302,6 +302,6 @@ def triple_to_constraint_set(target_triple):
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(triple_struct.abi)
-    constraint_set += extra_ios_constriants(triple_struct)
+    constraint_set += extra_ios_constraints(triple_struct)
 
     return constraint_set
