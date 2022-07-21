@@ -70,7 +70,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
 
     // Splice together the manifest
-    let manifest_path = splicer.splice_workspace()?;
+    let manifest_path = splicer.splice_workspace(&opt.cargo)?;
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
