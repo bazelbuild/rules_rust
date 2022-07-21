@@ -1056,7 +1056,7 @@ rust_binary = rule(
 )
 
 def _common_attrs_for_binary_without_process_wrapper(attrs):
-    new_attr = dict(attrs.items())
+    new_attr = dict(attrs)
 
     # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
@@ -1084,7 +1084,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
