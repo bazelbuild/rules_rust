@@ -186,7 +186,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     """
 
     # Create all the source in a specific folder
-    proto_toolchain = ctx.toolchains[Label("//proto:toolchain")]
+    proto_toolchain = ctx.toolchains[Label("//proto:toolchain_type")]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
@@ -319,8 +319,8 @@ rust_proto_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//proto:toolchain")),
-        str(Label("//rust:toolchain")),
+        str(Label("//proto:toolchain_type")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
@@ -397,8 +397,8 @@ rust_grpc_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//proto:toolchain")),
-        str(Label("//rust:toolchain")),
+        str(Label("//proto:toolchain_type")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use

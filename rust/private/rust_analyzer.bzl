@@ -117,7 +117,7 @@ def find_proc_macro_dylib_path(toolchain, target):
 rust_analyzer_aspect = aspect(
     attr_aspects = ["deps", "proc_macro_deps", "crate", "actual"],
     implementation = _rust_analyzer_aspect_impl,
-    toolchains = [str(Label("//rust:toolchain"))],
+    toolchains = [str(Label("//rust:toolchain_type"))],
     incompatible_use_toolchain_transition = True,
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
@@ -236,7 +236,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,
     toolchains = [
-        "@rules_rust//rust:toolchain",
+        "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rust_analyzer:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,

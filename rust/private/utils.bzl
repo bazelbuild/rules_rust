@@ -34,7 +34,7 @@ def find_toolchain(ctx):
     Returns:
         rust_toolchain: A Rust toolchain context.
     """
-    return ctx.toolchains[Label("//rust:toolchain")]
+    return ctx.toolchains[Label("//rust:toolchain_type")]
 
 def find_cc_toolchain(ctx):
     """Extracts a CcToolchain from the current target's context

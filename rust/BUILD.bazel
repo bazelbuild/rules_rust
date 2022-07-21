@@ -10,7 +10,13 @@ exports_files([
 ])
 
 toolchain_type(
+    name = "toolchain_type",
+)
+
+alias(
     name = "toolchain",
+    actual = "toolchain_type",
+    tags = ["manual"],
 )
 
 bzl_library(

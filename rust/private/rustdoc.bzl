@@ -321,7 +321,7 @@ rust_doc = rule(
         "rust_doc_zip": "%{name}.zip",
     },
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,

@@ -1,7 +1,7 @@
 """A module defining toolchain utilities"""
 
 def _toolchain_files_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("//rust:toolchain"))]
+    toolchain = ctx.toolchains[str(Label("//rust:toolchain_type"))]
 
     runfiles = None
     if ctx.attr.tool == "cargo":
@@ -73,13 +73,13 @@ toolchain_files = rule(
         ),
     },
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
     ],
     incompatible_use_toolchain_transition = True,
 )
 
 def _current_rust_toolchain_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain"))]
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain_type"))]
 
     return [
         toolchain,
@@ -98,7 +98,7 @@ current_rust_toolchain = rule(
     doc = "A rule for exposing the current registered `rust_toolchain`.",
     implementation = _current_rust_toolchain_impl,
     toolchains = [
-        str(Label("@rules_rust//rust:toolchain")),
+        str(Label("@rules_rust//rust:toolchain_type")),
     ],
     incompatible_use_toolchain_transition = True,
 )

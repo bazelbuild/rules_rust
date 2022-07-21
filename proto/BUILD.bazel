@@ -29,7 +29,15 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
-toolchain_type(name = "toolchain")
+toolchain_type(
+    name = "toolchain_type",
+)
+
+alias(
+    name = "toolchain",
+    actual = "toolchain_type",
+    tags = ["manual"],
+)
 
 rust_binary(
     name = "optional_output_wrapper",
@@ -41,7 +49,7 @@ rust_binary(
 toolchain(
     name = "default-proto-toolchain",
     toolchain = ":default-proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto:toolchain",
+    toolchain_type = "@rules_rust//proto:toolchain_type",
 )
 
 rust_proto_toolchain(

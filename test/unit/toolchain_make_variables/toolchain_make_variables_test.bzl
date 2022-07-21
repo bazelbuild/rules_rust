@@ -124,7 +124,7 @@ rust_toolchain_consumer = rule(
         ),
     },
     toolchains = [
-        "@rules_rust//rust:toolchain",
+        "@rules_rust//rust:toolchain_type",
     ],
 )
 
