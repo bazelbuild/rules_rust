@@ -93,7 +93,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@crates_vendor__proc-macro2-1.0.40//:build_script_build",
-            "@crates_vendor__unicode-ident-1.0.1//:unicode_ident",
+            "@crates_vendor__unicode-ident-1.0.2//:unicode_ident",
         ],
     }),
 )

@@ -294,21 +294,23 @@ toolchain(
     name = "{name}",
     exec_compatible_with = {exec_constraint_sets_serialized},
     target_compatible_with = {target_constraint_sets_serialized},
-    toolchain = "@{parent_workspace_name}//:rust_toolchain",
-    toolchain_type = "@rules_rust//rust:toolchain",
+    toolchain = "{toolchain}",
+    toolchain_type = "{toolchain_type}",
 )
 """
 
 def BUILD_for_toolchain(
         name,
-        parent_workspace_name,
+        toolchain,
+        toolchain_type,
         target_compatible_with,
         exec_compatible_with):
     return _build_file_for_toolchain_template.format(
         name = name,
         exec_constraint_sets_serialized = exec_compatible_with,
         target_constraint_sets_serialized = target_compatible_with,
-        parent_workspace_name = parent_workspace_name,
+        toolchain = toolchain,
+        toolchain_type = toolchain_type,
     )
 
 def load_rustfmt(ctx):
@@ -416,26 +418,24 @@ def should_include_rustc_srcs(repository_ctx):
 
     return getattr(repository_ctx.attr, "include_rustc_srcs", False)
 
-def load_rust_src(ctx):
+def load_rust_src(ctx, sha256 = ""):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
     Args:
         ctx (ctx): A repository_ctx.
+        sha256 (str): The sha256 value for the `rust-src` artifact
     """
     tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
     url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
     archive_path = tool_path + _get_tool_extension(ctx)
-    ctx.download(
+    sha256 = sha256 or getattr(ctx.attr, "sha256s", {}).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or ""
+    ctx.download_and_extract(
         url,
-        output = archive_path,
-        sha256 = ctx.attr.sha256s.get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or "",
-        auth = _make_auth_dict(ctx, [url]),
-    )
-    ctx.extract(
-        archive_path,
         output = "lib/rustlib/src",
+        sha256 = sha256,
+        auth = _make_auth_dict(ctx, [url]),
         stripPrefix = "{}/rust-src/lib/rustlib/src/rust".format(tool_path),
     )
     ctx.file(
@@ -446,6 +446,21 @@ filegroup(
     srcs = glob(["**/*"]),
     visibility = ["//visibility:public"],
 )""",
+    )
+
+_build_file_for_rust_analyzer_toolchain_template = """\
+load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
+
+rust_analyzer_toolchain(
+    name = "{name}",
+    rustc_srcs = "//lib/rustlib/src:rustc_srcs",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_analyzer_toolchain(name):
+    return _build_file_for_rust_analyzer_toolchain_template.format(
+        name = name,
     )
 
 def load_rust_stdlib(ctx, target_triple):

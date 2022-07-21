@@ -101,7 +101,7 @@ rust_library(
             "@crates_vendor_manifests__proc-macro2-1.0.40//:proc_macro2",
             "@crates_vendor_manifests__quote-1.0.20//:quote",
             "@crates_vendor_manifests__syn-1.0.98//:build_script_build",
-            "@crates_vendor_manifests__unicode-ident-1.0.1//:unicode_ident",
+            "@crates_vendor_manifests__unicode-ident-1.0.2//:unicode_ident",
         ],
     }),
 )

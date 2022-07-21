@@ -71,16 +71,11 @@ function emit_bzl_file_contents() {
   curl --config "${TMPDIR}/curl_config"
 
   pushd "${out_dir}" > /dev/null
-  find . -type f -print | \
-  awk '{
-      file_key=substr($1, 3);
-      getline <$1;
-      printf("%s %s\n", file_key, $1);
-      if (match(file_key, /\.tar\.\(gz|xz\)$/)) {
-          printf("%s %s\n", substr(file_key, 1, length(file_key)-7), $1);
-      }
-  }' \
-  > "${TMPDIR}/shas.txt"
+  for file in $(find . -type f)
+  do
+    echo "$(echo ${file} | sed 's|./||') $(cat ${file} | awk '{ print $1 }')" >> "${TMPDIR}/shas.txt"
+  done
+  
   popd > /dev/null
 
   echo "\"\"\"A module containing a mapping of Rust tools to checksums"

@@ -42,8 +42,6 @@ def _toolchain_files_impl(ctx):
         )
     elif ctx.attr.tool == "rustc_lib":
         files = toolchain.rustc_lib
-    elif ctx.attr.tool == "rustc_srcs":
-        files = toolchain.rustc_srcs.files
     elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
         files = toolchain.rust_std
     else:
@@ -67,7 +65,6 @@ toolchain_files = rule(
                 "rust_std",
                 "rust_stdlib",
                 "rustc_lib",
-                "rustc_srcs",
                 "rustc",
                 "rustdoc",
                 "rustfmt",

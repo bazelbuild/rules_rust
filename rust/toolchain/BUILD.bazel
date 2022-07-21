@@ -69,17 +69,6 @@ alias(
 )
 
 toolchain_files(
-    name = "current_rustc_srcs_files",
-    tool = "rustc_srcs",
-)
-
-alias(
-    name = "current_exec_rustc_srcs_files",
-    actual = "current_rustc_srcs_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rustc_srcs_files`",
-)
-
-toolchain_files(
     name = "current_rust_stdlib_files",
     tool = "rust_stdlib",
 )

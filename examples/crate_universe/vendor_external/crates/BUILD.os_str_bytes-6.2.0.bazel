@@ -57,7 +57,7 @@ rust_library(
         "//conditions:default": [
         ],
     }),
-    edition = "2018",
+    edition = "2021",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -82,7 +82,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "6.1.0",
+    version = "6.2.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
