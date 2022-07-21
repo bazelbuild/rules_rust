@@ -198,7 +198,9 @@ that is called behind the scenes to update dependencies.
             doc = (
                 "The path used to store the `crates_repository` specific " +
                 "[Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. " +
-                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+                "In the case that your `crates_repository` corresponds directly with an existing " +
+                "`Cargo.toml` file which has a paired `Cargo.lock` file, that `Cargo.lock` file " +
+                "should be used here, which will keep the versions used by cargo and bazel in sync."
             ),
             mandatory = True,
         ),
@@ -237,7 +239,10 @@ that is called behind the scenes to update dependencies.
             default = True,
         ),
         "lockfile": attr.label(
-            doc = "The path to a file to use for reproducible renderings.",
+            doc = (
+                "The path to a file to use for reproducible renderings. " +
+                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+            ),
         ),
         "manifests": attr.label_list(
             doc = "A list of Cargo manifests (`Cargo.toml` files).",
