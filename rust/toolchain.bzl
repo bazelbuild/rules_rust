@@ -2,7 +2,10 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
+
+rust_analyzer_toolchain = _rust_analyzer_toolchain
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs

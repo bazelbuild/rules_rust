@@ -51,7 +51,6 @@ load(
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
     _rust_analyzer_aspect = "rust_analyzer_aspect",
-    _rust_analyzer_toolchain = "rust_analyzer_toolchain",
     _rust_binary = "rust_binary",
     _rust_clippy = "rust_clippy",
     _rust_clippy_aspect = "rust_clippy_aspect",
@@ -78,6 +77,7 @@ load(
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
+    _rust_analyzer_toolchain = "rust_analyzer_toolchain",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
 )
