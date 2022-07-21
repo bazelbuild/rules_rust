@@ -449,7 +449,7 @@ filegroup(
     )
 
 _build_file_for_rust_analyzer_toolchain_template = """\
-load("@rules_rust//rust:defs.bzl", "rust_analyzer_toolchain")
+load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
 
 rust_analyzer_toolchain(
     name = "{name}",
