@@ -87,7 +87,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen_toolchain",
     toolchain = "bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//bindgen:bindgen_toolchain",
+    toolchain_type = "@rules_rust//bindgen:toolchain_type",
 )
 ```
 
