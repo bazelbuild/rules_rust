@@ -45,6 +45,7 @@ pub fn write_rust_project(
     rules_rust_name: &impl AsRef<str>,
     targets: &[String],
     execution_root: impl AsRef<Path>,
+    output_base: impl AsRef<Path>,
     rust_project_path: impl AsRef<Path>,
 ) -> anyhow::Result<()> {
     let crate_specs = aquery::get_crate_specs(
@@ -72,6 +73,7 @@ pub fn write_rust_project(
     rust_project::write_rust_project(
         rust_project_path.as_ref(),
         execution_root.as_ref(),
+        output_base.as_ref(),
         &rust_project,
     )?;
 
