@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
     let output_base = config
         .output_base
         .as_ref()
-        .expect("failed to find execution root, is -output-base set correctly?");
+        .expect("failed to find output base, is -output-base set correctly?");
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
