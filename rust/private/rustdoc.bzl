@@ -131,7 +131,6 @@ def rustdoc_compile_action(
         # for this, the flag must be explicitly passed to the `rustdoc` binary.
         args.rustc_flags.add("--sysroot=${{pwd}}/{}".format(toolchain.sysroot_short_path))
 
-
     return struct(
         executable = ctx.executable._process_wrapper,
         inputs = depset([crate_info.output], transitive = [compile_inputs]),

@@ -151,7 +151,7 @@ def _rust_doc_test_impl(ctx):
         tools = tools,
         arguments = [writer_args] + action.arguments,
         env = action.env,
-        outputs = [test_runner, action.rustdoc_output],
+        outputs = [test_runner],
     )
 
     return [DefaultInfo(
