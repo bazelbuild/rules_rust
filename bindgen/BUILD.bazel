@@ -10,6 +10,7 @@ toolchain_type(
 alias(
     name = "bindgen_toolchain",
     actual = "toolchain_type",
+    deprecation = "instead use `@rules_rust//bindgen:toolchain_type`",
     tags = ["manual"],
 )
 

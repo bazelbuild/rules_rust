@@ -10,6 +10,7 @@ toolchain_type(
 alias(
     name = "wasm_bindgen_toolchain",
     actual = "toolchain_type",
+    deprecation = "instead use `@rules_rust//wasm_bindgen:toolchain_type`",
     tags = ["manual"],
 )
 

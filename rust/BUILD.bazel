@@ -16,6 +16,7 @@ toolchain_type(
 alias(
     name = "toolchain",
     actual = "toolchain_type",
+    deprecation = "instead use `@rules_rust//rust:toolchain_type`",
     tags = ["manual"],
 )
 
