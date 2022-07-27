@@ -94,6 +94,7 @@ StdLibInfo = provider(
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
+        "test_files": "Depset[File]: `.a` files associated with the `test` module.",
     },
 )
 
