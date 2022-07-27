@@ -177,11 +177,16 @@ pub fn generate_rust_project(
 pub fn write_rust_project(
     rust_project_path: &Path,
     execution_root: &Path,
+    output_base: &Path,
     rust_project: &RustProject,
 ) -> anyhow::Result<()> {
     let execution_root = execution_root
         .to_str()
         .ok_or_else(|| anyhow!("execution_root is not valid UTF-8"))?;
+
+    let output_base = output_base
+        .to_str()
+        .ok_or_else(|| anyhow!("output_base is not valid UTF-8"))?;
 
     // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
     match std::fs::remove_file(rust_project_path) {
@@ -197,8 +202,9 @@ pub fn write_rust_project(
 
     // Render the `rust-project.json` file and replace the exec root
     // placeholders with the path to the local exec root.
-    let rust_project_content =
-        serde_json::to_string(rust_project)?.replace("__EXEC_ROOT__", execution_root);
+    let rust_project_content = serde_json::to_string(rust_project)?
+        .replace("__EXEC_ROOT__", execution_root)
+        .replace("__OUTPUT_BASE__", output_base);
 
     // Write the new rust-project.json file.
     std::fs::write(rust_project_path, rust_project_content)?;

@@ -39,7 +39,7 @@ RustAnalyzerInfo = provider(
 )
 
 def _rust_analyzer_aspect_impl(target, ctx):
-    if rust_common.crate_info not in target:
+    if rust_common.crate_info not in target and rust_common.test_crate_info not in target:
         return []
 
     toolchain = find_toolchain(ctx)
@@ -70,7 +70,12 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
 
-    crate_info = target[rust_common.crate_info]
+    if rust_common.crate_info in target:
+        crate_info = target[rust_common.crate_info]
+    elif rust_common.test_crate_info in target:
+        crate_info = target[rust_common.test_crate_info].crate
+    else:
+        fail("Unexpected target type: {}".format(target))
 
     rust_analyzer_info = RustAnalyzerInfo(
         crate = crate_info,
@@ -101,7 +106,14 @@ def find_proc_macro_dylib_path(toolchain, target):
     Returns:
         (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
     """
-    if target[rust_common.crate_info].type != "proc-macro":
+    if rust_common.crate_info in target:
+        crate_info = target[rust_common.crate_info]
+    elif rust_common.test_crate_info in target:
+        crate_info = target[rust_common.test_crate_info].crate
+    else:
+        return None
+
+    if crate_info.type != "proc-macro":
         return None
 
     dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
@@ -122,7 +134,8 @@ rust_analyzer_aspect = aspect(
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
-_exec_root_tmpl = "__EXEC_ROOT__/"
+_EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
+_OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
 
 def _crate_id(crate_info):
     """Returns a unique stable identifier for a crate
@@ -155,18 +168,18 @@ def _create_single_crate(ctx, info):
     # TODO: Some folks may want to override this for vendored dependencies.
     is_external = info.crate.root.path.startswith("external/")
     is_generated = not info.crate.root.is_source
-    path_prefix = _exec_root_tmpl if is_external or is_generated else ""
+    path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else ""
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
     crate_root = path_prefix + info.crate.root.dirname
 
     if info.build_info != None:
         out_dir_path = info.build_info.out_dir.path
-        crate["env"].update({"OUT_DIR": _exec_root_tmpl + out_dir_path})
+        crate["env"].update({"OUT_DIR": _EXEC_ROOT_TEMPLATE + out_dir_path})
         crate["source"] = {
             # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
             "exclude_dirs": [],
-            "include_dirs": [crate_root, _exec_root_tmpl + out_dir_path],
+            "include_dirs": [crate_root, _EXEC_ROOT_TEMPLATE + out_dir_path],
         }
 
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
@@ -188,7 +201,7 @@ def _create_single_crate(ctx, info):
     crate["cfg"] = info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple
     if info.proc_macro_dylib_path != None:
-        crate["proc_macro_dylib_path"] = _exec_root_tmpl + info.proc_macro_dylib_path
+        crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib_path
     return crate
 
 def _rust_analyzer_toolchain_impl(ctx):
@@ -223,7 +236,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
 
     sysroot_src = rustc_srcs.label.package + "/library"
     if rustc_srcs.label.workspace_root:
-        sysroot_src = _exec_root_tmpl + rustc_srcs.label.workspace_root + "/" + sysroot_src
+        sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
 
     sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
     ctx.actions.write(
