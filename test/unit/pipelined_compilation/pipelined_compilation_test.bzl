@@ -101,10 +101,11 @@ def _pipelined_compilation_test():
         deps = [":second"],
     )
 
-    NOT_WINDOWS = [
-        "@platforms//os:linux",
-        "@platforms//os:macos",
-    ]
+    NOT_WINDOWS = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    })
     second_lib_test(name = "second_lib_test", target_under_test = ":second", target_compatible_with = NOT_WINDOWS)
     bin_test(name = "bin_test", target_under_test = ":bin", target_compatible_with = NOT_WINDOWS)
 

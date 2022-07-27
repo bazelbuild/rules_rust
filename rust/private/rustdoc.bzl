@@ -37,7 +37,7 @@ def _strip_crate_info_output(crate_info):
         aliases = crate_info.aliases,
         # This crate info should have no output
         output = None,
-        metadata = crate_info.metadata,
+        metadata = None,
         edition = crate_info.edition,
         rustc_env = crate_info.rustc_env,
         is_test = crate_info.is_test,

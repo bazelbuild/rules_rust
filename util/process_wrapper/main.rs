@@ -40,7 +40,6 @@ fn status_code(status: ExitStatus, was_killed: bool) -> i32 {
 fn status_code(status: ExitStatus, was_killed: bool) -> i32 {
     // On unix, if code is None it means that the process was killed by a signal.
     // https://doc.rust-lang.org/std/process/struct.ExitStatus.html#method.success
-    // eprintln!("{:?} {}", status, was_killed);
     match status.code() {
         Some(code) => code,
         // If we killed the process, we expect None here

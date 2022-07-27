@@ -237,19 +237,15 @@ def collect_deps(
             if not crate_info.metadata:
                 depend_on = crate_info.output
 
+            # If this dependency is a proc_macro, it still can be used for lib crates
+            # that produce metadata.
+            # In that case, we don't depend on its metadata dependencies.
             transitive_metadata_outputs.append(
                 depset(
                     [depend_on],
-                    transitive = [dep_info.transitive_metadata_outputs],
+                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_metadata_outputs],
                 ),
             )
-
-            # If this dependency is a proc_macro, it still can be used for lib crates
-            # that produce metadata.
-            if _is_proc_macro(crate_info):
-                transitive_metadata_outputs.append(
-                    depset([crate_info.output]),
-                )
 
             transitive_crate_outputs.append(
                 depset(
@@ -922,10 +918,10 @@ def construct_arguments(
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
-    link_to_metadata = _depend_on_metadata(crate_info, force_link_to_objects)
+    use_metadata = _depend_on_metadata(crate_info, force_link_to_objects)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, link_to_metadata = link_to_metadata)
+    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)
 
     needs_extern_proc_macro_flag = _is_proc_macro(crate_info) and crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
@@ -1448,7 +1444,7 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, link_to_metadata = False):
+def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_metadata = False):
     """Adds link flags to an Args object reference
 
     Args:
@@ -1456,39 +1452,18 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, link_to_
         dep_info (DepInfo): The current target's dependency info
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
-        link_to_metadata:
+        use_metadata (bool, optional): Build command line arugments using metadata for crates that provide it.
     """
-    # print(" link_to_metadata ", link_to_metadata)
 
-    if not link_to_metadata:
-        if force_all_deps_direct:
-            args.add_all(
-                depset(
-                    transitive = [
-                        dep_info.direct_crates,
-                        dep_info.transitive_crates,
-                    ],
-                ),
-                uniquify = True,
-                map_each = _crate_to_link_flag,
-            )
-        else:
-            # nb. Direct crates are linked via --extern regardless of their crate_type
-            args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag)
-    elif force_all_deps_direct:
-        args.add_all(
-            depset(
-                transitive = [
-                    dep_info.direct_crates,
-                    dep_info.transitive_crates,
-                ],
-            ),
-            uniquify = True,
-            map_each = _crate_to_link_flag_metadata,
-        )
-    else:
-        # nb. Direct crates are linked via --extern regardless of their crate_type
-        args.add_all(dep_info.direct_crates, map_each = _crate_to_link_flag_metadata)
+    direct_crates = depset(
+        transitive = [
+            dep_info.direct_crates,
+            dep_info.transitive_crates,
+        ],
+    ) if force_all_deps_direct else dep_info.direct_crates
+
+    crate_to_link_flags = _crate_to_link_flag_metadata if use_metadata else _crate_to_link_flag
+    args.add_all(direct_crates, uniquify = True, map_each = crate_to_link_flags)
 
     args.add_all(
         dep_info.transitive_crates,
