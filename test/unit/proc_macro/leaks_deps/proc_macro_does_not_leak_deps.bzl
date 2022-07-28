@@ -1,7 +1,7 @@
 """Unittest to verify proc-macro targets"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_proc_macro", "rust_test")
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
 def _proc_macro_does_not_leak_deps_impl(ctx):
     env = analysistest.begin(ctx)
@@ -29,8 +29,6 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)
-
-proc_macro_does_not_leak_deps_test = analysistest.make(_proc_macro_does_not_leak_deps_impl)
 
 def _proc_macro_does_not_leak_deps_test():
     rust_proc_macro(
@@ -68,6 +66,70 @@ def _proc_macro_does_not_leak_deps_test():
         target_under_test = ":deps_not_leaked",
     )
 
+proc_macro_does_not_leak_deps_test = analysistest.make(_proc_macro_does_not_leak_deps_impl)
+
+# Tests that a lib_a -> proc_macro -> lib_b does not propagate lib_b to the inputs of lib_a
+def _proc_macro_does_not_leak_lib_deps_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = analysistest.target_under_test(env).actions
+    rustc_actions = []
+    for action in actions:
+        if action.mnemonic == "Rustc" or action.mnemonic == "RustcMetadata":
+            rustc_actions.append(action)
+
+    # We should have a RustcMetadata and a Rustc action.
+    asserts.true(env, len(rustc_actions) == 2, "expected 2 actions, got %d" % len(rustc_actions))
+
+    for rustc_action in rustc_actions:
+        # lib :a has a dependency on :my_macro via a rust_proc_macro target.
+        # lib :b (which is a dependency of :my_macro) should not appear in the inputs of :a
+        b_inputs = [i for i in rustc_action.inputs.to_list() if "libb" in i.path]
+        b_args = [arg for arg in rustc_action.argv if "libb" in arg]
+
+        asserts.equals(env, 0, len(b_inputs))
+        asserts.equals(env, 0, len(b_args))
+
+    return analysistest.end(env)
+
+def _proc_macro_does_not_leak_lib_deps_test():
+    rust_library(
+        name = "b",
+        srcs = ["leaks_deps/lib/b.rs"],
+        edition = "2018",
+    )
+
+    rust_proc_macro(
+        name = "my_macro",
+        srcs = ["leaks_deps/lib/my_macro.rs"],
+        edition = "2018",
+        deps = [
+            ":b",
+        ],
+    )
+
+    rust_library(
+        name = "a",
+        srcs = ["leaks_deps/lib/a.rs"],
+        edition = "2018",
+        proc_macro_deps = [
+            ":my_macro",
+        ],
+    )
+
+    NOT_WINDOWS = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    })
+
+    proc_macro_does_not_leak_lib_deps_test(
+        name = "proc_macro_does_not_leak_lib_deps_test",
+        target_under_test = ":a",
+        target_compatible_with = NOT_WINDOWS,
+    )
+
+proc_macro_does_not_leak_lib_deps_test = analysistest.make(_proc_macro_does_not_leak_lib_deps_impl, config_settings = {"@//rust/settings:pipelined_compilation": True})
+
 def proc_macro_does_not_leak_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -75,10 +137,12 @@ def proc_macro_does_not_leak_deps_test_suite(name):
         name: Name of the macro.
     """
     _proc_macro_does_not_leak_deps_test()
+    _proc_macro_does_not_leak_lib_deps_test()
 
     native.test_suite(
         name = name,
         tests = [
             ":proc_macro_does_not_leak_deps_test",
+            ":proc_macro_does_not_leak_lib_deps_test",
         ],
     )
