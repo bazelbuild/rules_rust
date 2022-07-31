@@ -1,0 +1,59 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "anyhow": crate.spec(
+            version = "1.0.58",
+        ),
+        "clap": crate.spec(
+            features = [
+                "derive",
+                "env",
+            ],
+            version = "3.2.12",
+        ),
+        "env_logger": crate.spec(
+            version = "0.9.0",
+        ),
+        "itertools": crate.spec(
+            version = "0.10.3",
+        ),
+        "log": crate.spec(
+            version = "0.4.17",
+        ),
+        "serde": crate.spec(
+            features = ["derive"],
+            version = "1.0.139",
+        ),
+        "serde_json": crate.spec(
+            version = "1.0.82",
+        ),
+    },
+    repository_name = "rules_rust_rust_analyzer",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]) + [
+        "//tools/rust_analyzer/3rdparty/crates:defs.bzl",
+        "//tools/rust_analyzer/3rdparty/crates:crates.bzl",
+    ],
+    visibility = ["//tools/rust_analyzer:__pkg__"],
+)
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "*.bazel",
+    ]) + [
+        "Cargo.Bazel.lock",
+        "//tools/rust_analyzer/3rdparty/crates:srcs",
+    ],
+    visibility = ["//tools/rust_analyzer:__pkg__"],
+)

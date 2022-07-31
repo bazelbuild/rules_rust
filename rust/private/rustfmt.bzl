@@ -138,7 +138,7 @@ generated source files are also ignored by this aspect.
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
     ],
 )
 

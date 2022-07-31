@@ -501,6 +501,32 @@ def _rust_test_impl(ctx):
 
     return providers
 
+def _stamp_attribute(default_value):
+    return attr.int(
+        doc = dedent("""\
+            Whether to encode build information into the `Rustc` action. Possible values:
+
+            - `stamp = 1`: Always stamp the build information into the `Rustc` action, even in \
+            [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds. \
+            This setting should be avoided, since it potentially kills remote caching for the target and \
+            any downstream actions that depend on it.
+
+            - `stamp = 0`: Always replace build information by constant values. This gives good build result caching.
+
+            - `stamp = -1`: Embedding of build information is controlled by the \
+            [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.
+
+            Stamped targets are not rebuilt unless their dependencies change.
+
+            For example if a `rust_library` is stamped, and a `rust_binary` depends on that library, the stamped
+            library won't be rebuilt when we change sources of the `rust_binary`. This is different from how
+            [`cc_library.linkstamps`](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp)
+            behaves.
+        """),
+        default = default_value,
+        values = [1, 0, -1],
+    )
+
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
@@ -632,30 +658,7 @@ _common_attrs = {
         """),
         allow_files = [".rs"],
     ),
-    "stamp": attr.int(
-        doc = dedent("""\
-            Whether to encode build information into the `Rustc` action. Possible values:
-
-            - `stamp = 1`: Always stamp the build information into the `Rustc` action, even in \
-            [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds. \
-            This setting should be avoided, since it potentially kills remote caching for the target and \
-            any downstream actions that depend on it.
-
-            - `stamp = 0`: Always replace build information by constant values. This gives good build result caching.
-
-            - `stamp = -1`: Embedding of build information is controlled by the \
-            [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.
-
-            Stamped targets are not rebuilt unless their dependencies change.
-
-            For example if a `rust_library` is stamped, and a `rust_binary` depends on that library, the stamped
-            library won't be rebuilt when we change sources of the `rust_binary`. This is different from how
-            [`cc_library.linkstamps`](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp)
-            behaves.
-        """),
-        default = -1,
-        values = [1, 0, -1],
-    ),
+    "stamp": _stamp_attribute(default_value = 0),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
@@ -691,6 +694,12 @@ _common_attrs = {
     "_import_macro_dep": attr.label(
         default = Label("//util/import"),
         cfg = "exec",
+    ),
+    "_is_proc_macro_dep": attr.label(
+        default = Label("//:is_proc_macro_dep"),
+    ),
+    "_is_proc_macro_dep_enabled": attr.label(
+        default = Label("//:is_proc_macro_dep_enabled"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
@@ -757,7 +766,7 @@ rust_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -833,7 +842,7 @@ rust_static_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -856,7 +865,7 @@ rust_shared_library = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -873,14 +882,42 @@ rust_shared_library = rule(
         """),
 )
 
+def _proc_macro_dep_transition_impl(settings, _attr):
+    if settings["//:is_proc_macro_dep_enabled"]:
+        return {"//:is_proc_macro_dep": True}
+    else:
+        return []
+
+_proc_macro_dep_transition = transition(
+    inputs = ["//:is_proc_macro_dep_enabled"],
+    outputs = ["//:is_proc_macro_dep"],
+    implementation = _proc_macro_dep_transition_impl,
+)
+
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    # Start by copying the common attributes, then override the `deps` attribute
+    # to apply `_proc_macro_dep_transition`. To add this transition we additionally
+    # need to declare `_allowlist_function_transition`, see
+    # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
+    attrs = dict(
+        _common_attrs.items(),
+        _allowlist_function_transition = attr.label(default = Label("//tools/allowlists/function_transition_allowlist")),
+        deps = attr.label_list(
+            doc = dedent("""\
+            List of other libraries to be linked to this library target.
+
+            These can be either other `rust_library` targets or `cc_library` targets if
+            linking a native library.
+        """),
+            cfg = _proc_macro_dep_transition,
+        ),
+    ),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -914,6 +951,7 @@ _rust_binary_attrs = {
         ),
         default = False,
     ),
+    "stamp": _stamp_attribute(default_value = -1),
     "_grep_includes": attr.label(
         allow_single_file = True,
         cfg = "exec",
@@ -930,7 +968,7 @@ rust_binary = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -1025,7 +1063,7 @@ rust_binary = rule(
 )
 
 def _common_attrs_for_binary_without_process_wrapper(attrs):
-    new_attr = dict(attrs.items())
+    new_attr = dict(attrs)
 
     # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
@@ -1053,12 +1091,12 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items() + _rust_binary_attrs.items()),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -1071,7 +1109,7 @@ rust_library_without_process_wrapper = rule(
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
@@ -1087,7 +1125,7 @@ rust_test = rule(
     host_fragments = ["cpp"],
     test = True,
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,

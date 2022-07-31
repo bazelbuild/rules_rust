@@ -51,6 +51,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     // Process argument list until -- is encountered.
     // Everything after is sent to the child process.
     let mut subst_mapping_raw = None;
+    let mut stable_status_file_raw = None;
     let mut volatile_status_file_raw = None;
     let mut env_file_raw = None;
     let mut arg_file_raw = None;
@@ -62,6 +63,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
+    flags.define_flag("--stable-status-file", "", &mut stable_status_file_raw);
     flags.define_flag("--volatile-status-file", "", &mut volatile_status_file_raw);
     flags.define_repeated_flag(
         "--env-file",
@@ -134,9 +136,10 @@ pub(crate) fn options() -> Result<Options, OptionError> {
             Ok((key.to_owned(), v))
         })
         .collect::<Result<Vec<(String, String)>, OptionError>>()?;
-    let stamp_mappings =
+    let stable_stamp_mappings =
+        stable_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
+    let volatile_stamp_mappings =
         volatile_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-
     let environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     // Process --copy-output
@@ -175,7 +178,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
 
     // Prepare the environment variables, unifying those read from files with the ones
     // of the current process.
-    let vars = environment_block(environment_file_block, &stamp_mappings, &subst_mappings);
+    let vars = environment_block(
+        environment_file_block,
+        &stable_stamp_mappings,
+        &volatile_stamp_mappings,
+        &subst_mappings,
+    );
     // Append all the arguments fetched from files to those provided via command line.
     child_args.append(&mut file_arguments);
     let child_args = prepare_args(child_args, &subst_mappings);
@@ -201,8 +209,13 @@ pub(crate) fn options() -> Result<Options, OptionError> {
 
 fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
     let mut args = vec![];
-    for path in paths.into_iter() {
-        let mut lines = read_file_to_array(path).map_err(OptionError::Generic)?;
+    for path in paths.iter() {
+        let mut lines = read_file_to_array(path).map_err(|err| {
+            OptionError::Generic(format!(
+                "{} while processing args from file paths: {:?}",
+                err, &paths
+            ))
+        })?;
         args.append(&mut lines);
     }
     Ok(args)
@@ -211,7 +224,7 @@ fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
 fn env_from_files(paths: Vec<String>) -> Result<HashMap<String, String>, OptionError> {
     let mut env_vars = HashMap::new();
     for path in paths.into_iter() {
-        let lines = read_file_to_array(path).map_err(OptionError::Generic)?;
+        let lines = read_file_to_array(&path).map_err(OptionError::Generic)?;
         for line in lines.into_iter() {
             let (k, v) = line
                 .split_once('=')
@@ -235,7 +248,8 @@ fn prepare_args(mut args: Vec<String>, subst_mappings: &[(String, String)]) -> V
 
 fn environment_block(
     environment_file_block: HashMap<String, String>,
-    stamp_mappings: &[(String, String)],
+    stable_stamp_mappings: &[(String, String)],
+    volatile_stamp_mappings: &[(String, String)],
     subst_mappings: &[(String, String)],
 ) -> HashMap<String, String> {
     // Taking all environment variables from the current process
@@ -245,7 +259,7 @@ fn environment_block(
     // This is simpler than needing to track duplicates and explicitly override
     // them.
     environment_variables.extend(environment_file_block.into_iter());
-    for (f, replace_with) in stamp_mappings {
+    for (f, replace_with) in &[stable_stamp_mappings, volatile_stamp_mappings].concat() {
         for value in environment_variables.values_mut() {
             let from = format!("{{{}}}", f);
             let new = value.replace(from.as_str(), replace_with);

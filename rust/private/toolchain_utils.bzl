@@ -1,7 +1,7 @@
 """A module defining toolchain utilities"""
 
 def _toolchain_files_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("//rust:toolchain"))]
+    toolchain = ctx.toolchains[str(Label("//rust:toolchain_type"))]
 
     runfiles = None
     if ctx.attr.tool == "cargo":
@@ -42,8 +42,6 @@ def _toolchain_files_impl(ctx):
         )
     elif ctx.attr.tool == "rustc_lib":
         files = toolchain.rustc_lib
-    elif ctx.attr.tool == "rustc_srcs":
-        files = toolchain.rustc_srcs.files
     elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
         files = toolchain.rust_std
     else:
@@ -67,7 +65,6 @@ toolchain_files = rule(
                 "rust_std",
                 "rust_stdlib",
                 "rustc_lib",
-                "rustc_srcs",
                 "rustc",
                 "rustdoc",
                 "rustfmt",
@@ -76,13 +73,13 @@ toolchain_files = rule(
         ),
     },
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
     ],
     incompatible_use_toolchain_transition = True,
 )
 
 def _current_rust_toolchain_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain"))]
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain_type"))]
 
     return [
         toolchain,
@@ -101,7 +98,7 @@ current_rust_toolchain = rule(
     doc = "A rule for exposing the current registered `rust_toolchain`.",
     implementation = _current_rust_toolchain_impl,
     toolchains = [
-        str(Label("@rules_rust//rust:toolchain")),
+        str(Label("@rules_rust//rust:toolchain_type")),
     ],
     incompatible_use_toolchain_transition = True,
 )

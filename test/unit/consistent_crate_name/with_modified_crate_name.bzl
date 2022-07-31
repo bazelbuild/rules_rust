@@ -9,7 +9,7 @@ load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVa
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 def _with_modified_crate_name_impl(ctx):
-    toolchain = ctx.toolchains[Label("//rust:toolchain")]
+    toolchain = ctx.toolchains[Label("//rust:toolchain_type")]
 
     crate_root = ctx.attr.src.files.to_list()[0]
     output_hash = repr(hash(crate_root.path))
@@ -73,7 +73,10 @@ with_modified_crate_name = rule(
             cfg = "exec",
         ),
     },
-    toolchains = ["@rules_rust//rust:toolchain", "@bazel_tools//tools/cpp:toolchain_type"],
+    toolchains = [
+        "@rules_rust//rust:toolchain_type",
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
     incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )

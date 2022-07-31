@@ -36,7 +36,7 @@ def _runfiles_path(path, is_windows):
     return "{}/{}".format(runtime_pwd_var, path)
 
 def _is_windows(ctx):
-    toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain")]
+    toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
     return "windows" in toolchain.target_triple
 
 def _get_output_package(ctx):
@@ -121,7 +121,11 @@ def _write_splicing_manifest(ctx):
     return args, runfiles
 
 def _write_config_file(ctx):
-    rendering_config = dict(json.decode(render_config()))
+    rendering_config = dict(json.decode(render_config(
+        regen_command = "bazel run {}".format(
+            ctx.label,
+        ),
+    )))
 
     output_pkg = _get_output_package(ctx)
 
@@ -171,7 +175,7 @@ def _write_config_file(ctx):
     return args, runfiles
 
 def _crates_vendor_impl(ctx):
-    toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain")]
+    toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
     is_windows = _is_windows(ctx)
 
     environ = {
@@ -396,7 +400,7 @@ call against the generated workspace. The following table describes how to contr
         ),
     },
     executable = True,
-    toolchains = ["@rules_rust//rust:toolchain"],
+    toolchains = ["@rules_rust//rust:toolchain_type"],
 )
 
 def _crates_vendor_remote_repository_impl(repository_ctx):

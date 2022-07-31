@@ -2,6 +2,7 @@
 # Rust Analyzer
 
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
+* [rust_analyzer_toolchain](#rust_analyzer_toolchain)
 
 
 ## Overview
@@ -13,29 +14,37 @@ such a file.
 
 ### Setup
 
-First, add the following to the `WORKSPACE` file:
+First, ensure `rules_rust` is setup in your workspace. By default, `rust_register_toolchains` will
+ensure a [rust_analyzer_toolchain](#rust_analyzer_toolchain) is registered within the WORKSPACE.
+
+Next, load the dependencies for the `rust-project.json` generator tool:
 
 ```python
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
+load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
-rust_analyzer_deps()
+rust_analyzer_dependencies()
 ```
-
-Next, add the following lines to the `.bazelrc` file of your workspace:
-```
-build --repo_env=RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS=true
-```
-
-This will ensure rust source code is available to `rust-analyzer`. Users
-can also set `include_rustc_srcs = True` on any `rust_repository` or
-`rust_repositories` calls in the workspace but the environment variable
-has higher priority and can override the attribute.
 
 Finally, run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project`
 whenever dependencies change to regenerate the `rust-project.json` file. It
 should be added to `.gitignore` because it is effectively a build artifact.
 Once the `rust-project.json` has been generated in the project root,
 rust-analyzer can pick it up upon restart.
+
+For users who do not use `rust_register_toolchains` to register toolchains, the following can be added
+to their WORKSPACE to register a `rust_analyzer_toolchain`. Please make sure the Rust version used in
+this toolchain matches the version used by the currently registered toolchain or the sources/documentation
+# will not match what's being compiled with and can lead to confusing results.
+
+```python
+load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
+
+register_toolchains(rust_analyzer_toolchain_repository(
+    name = "rust_analyzer_toolchain",
+    # This should match the currently registered toolchain.
+    version = "1.62.0",
+))
+```
 
 #### VSCode
 
@@ -68,6 +77,25 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
     ]
 }
 ```
+
+
+<a id="rust_analyzer_toolchain"></a>
+
+## rust_analyzer_toolchain
+
+<pre>
+rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>)
+</pre>
+
+A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_analyzer_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="rust_analyzer_toolchain-rustc_srcs"></a>rustc_srcs |  The source code of rustc.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 
 
 <a id="rust_analyzer_aspect"></a>

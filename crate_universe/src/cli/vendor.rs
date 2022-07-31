@@ -127,7 +127,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace()
+        .splice_workspace(&opt.cargo)
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile

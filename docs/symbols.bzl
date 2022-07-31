@@ -77,6 +77,7 @@ load(
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
+    _rust_analyzer_toolchain = "rust_analyzer_toolchain",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
 )
@@ -149,6 +150,7 @@ rust_toolchain_tools_repository = _rust_toolchain_tools_repository
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
 rust_analyzer_aspect = _rust_analyzer_aspect
+rust_analyzer_toolchain = _rust_analyzer_toolchain
 
 crate = _crate
 crates_repository = _crates_repository

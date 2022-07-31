@@ -194,6 +194,7 @@ impl TemplateEngine {
         context.insert("default_select_dict", &SelectStringDict::default());
         context.insert("repository_name", &render_config.repository_name);
         context.insert("vendor_mode", &render_config.vendor_mode);
+        context.insert("regen_command", &render_config.regen_command);
         context.insert("Null", &tera::Value::Null);
         context.insert(
             "default_package_name",

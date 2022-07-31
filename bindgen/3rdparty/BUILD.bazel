@@ -1,0 +1,64 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "bindgen": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "clang-sys": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "indexmap": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "libloading": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "log": [crate.annotation(
+            rustc_flags = ["--cfg=atomic_cas"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = False,
+    mode = "remote",
+    packages = {
+        "bindgen": crate.spec(
+            version = "0.60.1",
+        ),
+        "libloading": crate.spec(
+            version = "0.7.3",
+        ),
+    },
+    repository_name = "rules_rust_bindgen",
+    tags = ["manual"],
+)
+
+alias(
+    name = "bindgen",
+    actual = "//bindgen/3rdparty/crates:bindgen__bindgen",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]) + [
+        "//bindgen/3rdparty/crates:defs.bzl",
+        "//bindgen/3rdparty/crates:crates.bzl",
+    ],
+    visibility = ["//bindgen:__pkg__"],
+)
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "*.bzl",
+        "*.bazel",
+    ]) + [
+        "//bindgen/3rdparty/crates:srcs",
+        "Cargo.Bazel.lock",
+    ],
+    visibility = ["//bindgen:__pkg__"],
+)
