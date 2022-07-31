@@ -590,7 +590,7 @@ def collect_inputs(
         ],
     )
 
-    build_env_files = getattr(files, "rustc_env_files", []) + crate_info.rustc_env_files
+    build_env_files = crate_info.rustc_env_files
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]

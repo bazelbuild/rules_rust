@@ -28,6 +28,24 @@ rust_test(
     edition = "2018",
 )
 
+rust_library(
+    name = "arbitrary_env_lib_in_test",
+    srcs = ["tests/arbitrary_env_lib.rs"],
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "DIFFERENT_USER_DEFINED_VALUE",
+    },
+)
+
+rust_test(
+    name = "arbitrary_env_lib_test_in_test",
+    crate = ":arbitrary_env_lib_in_test",
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "USER_DEFINED_VALUE",
+    },
+)
+
 rust_test(
     name = "arbitrary_env_test",
     srcs = ["tests/arbitrary_env.rs"],
