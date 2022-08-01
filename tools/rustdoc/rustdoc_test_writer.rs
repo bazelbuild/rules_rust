@@ -20,8 +20,9 @@ struct Options {
     /// The path where the script should be written.
     output: PathBuf,
 
-    /// The path where we can copy the params file Bazel might generate
-    optional_params_file: PathBuf,
+    /// If Bazel generated a params file, we may need to strip roots from it.
+    /// This is the path where we will output our stripped params file.
+    optional_output_params_file: PathBuf,
 
     /// The `argv` of the configured rustdoc build action.
     action_argv: Vec<String>,
@@ -54,7 +55,7 @@ fn parse_args() -> Options {
         .map(PathBuf::from)
         .expect("Missing `--output` argument");
 
-    let optional_params_file = writer_args
+    let optional_output_params_file = writer_args
         .iter()
         .find(|arg| arg.starts_with("--optional_test_params="))
         .and_then(|arg| arg.splitn(2, '=').last())
@@ -96,7 +97,7 @@ fn parse_args() -> Options {
         env_keys,
         strip_substrings,
         output,
-        optional_params_file,
+        optional_output_params_file,
         action_argv,
     }
 }
@@ -110,7 +111,8 @@ fn expand_params_file(mut options: Options) -> Options {
     };
 
     // We always need to produce the params file, we might overwrite this later though
-    fs::write(&options.optional_params_file, b"unused").expect("Failed to write params file");
+    fs::write(&options.optional_output_params_file, b"unused")
+        .expect("Failed to write params file");
 
     // extract the path for the params file, if it exists
     let params_path = match options.action_argv.pop() {
@@ -146,14 +148,14 @@ fn expand_params_file(mut options: Options) -> Options {
         .collect();
 
     // add all arguments
-    fs::write(&options.optional_params_file, content.join("\n"))
+    fs::write(&options.optional_output_params_file, content.join("\n"))
         .expect("Failed to write test runner");
 
     // append the path of our new params file
     let formatted_params_path = format!(
         "@{}",
         options
-            .optional_params_file
+            .optional_output_params_file
             .to_str()
             .expect("invalid UTF-8")
     );
