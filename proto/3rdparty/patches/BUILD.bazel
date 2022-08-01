@@ -8,7 +8,9 @@ filegroup(
     name = "distro",
     srcs = [
         "BUILD.bazel",
-        "com_google_protobuf-v3.10.0-bzl_visibility.patch",
-    ],
+        "README.md",
+    ] + glob([
+        "*.patch",
+    ]),
     visibility = ["//:__subpackages__"],
 )
