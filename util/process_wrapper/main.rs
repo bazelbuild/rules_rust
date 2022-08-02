@@ -94,15 +94,16 @@ fn main() {
         let quit_on_rmeta = opts.rustc_quit_on_rmeta;
         // Process json rustc output and kill the subprocess when we get a signal
         // that we emitted a metadata file.
-        let mut metadata_emitted = false;
+        let mut me = false;
+        let metadata_emitted = &mut me;
         let result = process_output(&mut child_stderr, stderr.as_mut(), move |line| {
             if quit_on_rmeta {
-                rustc::stop_on_rmeta_completion(line, format, &mut metadata_emitted)
+                rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
             } else {
                 rustc::process_json(line, format)
             }
         });
-        if metadata_emitted {
+        if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
             // We can safely ignore the Result from kill() as we don't care if the process already terminated.
             let _ = child.kill();
