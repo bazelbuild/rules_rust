@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "com_google_protobuf-v3.10.0-bzl_visibility.patch",
+])
+
+filegroup(
+    name = "distro",
+    srcs = [
+        "BUILD.bazel",
+        "README.md",
+    ] + glob([
+        "*.patch",
+    ]),
+    visibility = ["//:__subpackages__"],
+)

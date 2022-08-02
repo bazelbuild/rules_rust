@@ -6,12 +6,12 @@ package(default_visibility = ["//visibility:public"])
 
 alias(
     name = "protoc_gen_rust",
-    actual = "//proto/raze:cargo_bin_protoc_gen_rust",
+    actual = "//proto/3rdparty/crates:protobuf-codegen__protoc-gen-rust",
 )
 
 alias(
     name = "protoc_gen_rust_grpc",
-    actual = "//proto/raze:cargo_bin_protoc_gen_rust_grpc",
+    actual = "//proto/3rdparty/crates:grpc-compiler__protoc-gen-rust-grpc",
 )
 
 filegroup(
@@ -20,10 +20,8 @@ filegroup(
         "*.bzl",
         "*.rs",
     ]) + [
-        "//proto/patches:distro",
-        "//proto/raze:srcs",
-        "//proto/raze/patch:distro",
-        "//proto/raze/remote:srcs",
+        "//proto/raze:distro",
+        "//proto/3rdparty:distro",
         "BUILD.bazel",
     ],
     visibility = ["//:__subpackages__"],
@@ -60,5 +58,8 @@ rust_proto_toolchain(
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]) + ["//proto/raze:crates.bzl"],
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//proto/3rdparty:bzl_lib",
+    ],
 )
