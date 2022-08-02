@@ -28,7 +28,6 @@ filegroup(
     srcs = glob(["*.bzl"]) + [
         "BUILD.bazel",
         "//wasm_bindgen/3rdparty:distro",
-        "//wasm_bindgen/raze:distro",
     ],
     visibility = ["//:__subpackages__"],
 )
