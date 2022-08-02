@@ -21,7 +21,7 @@ function generate_workspace() {
     local new_workspace="${temp_dir}/rules_rust_test_rust_analyzer"
 
     mkdir -p "${new_workspace}"
-    cat << EOF > "${new_workspace}/WORKSPACE.bazel"
+    cat <<EOF >"${new_workspace}/WORKSPACE.bazel"
 workspace(name = "rules_rust_test_rust_analyzer")
 local_repository(
     name = "rules_rust",
@@ -29,11 +29,11 @@ local_repository(
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories(include_rustc_srcs = True)
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_deps")
-rust_analyzer_deps()
+load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
+rust_analyzer_dependencies()
 EOF
 
-cat << EOF > "${new_workspace}/.bazelrc"
+    cat <<EOF >"${new_workspace}/.bazelrc"
 build --keep_going
 test --test_output=errors
 # The 'strict' config is used to ensure extra checks are run on the test
@@ -45,17 +45,18 @@ build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:strict --output_groups=+clippy_checks
 EOF
 
-  echo "${new_workspace}"
+    echo "${new_workspace}"
 }
 
 function rust_analyzer_test() {
     local source_dir="$1"
     local workspace="$2"
-    
+    local generator_arg="$3"
+
     echo "Testing '$(basename "${source_dir}")'"
-    rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}/BUILD.bazel"
+    rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}"/*.bzl "${workspace}/BUILD.bazel" "${workspace}/BUILD.bazel-e"
     cp -r "${source_dir}"/* "${workspace}"
-    
+
     # Drop the 'manual' tags
     if [ "$(uname)" == "Darwin" ]; then
         SEDOPTS=(-i '' -e)
@@ -63,17 +64,29 @@ function rust_analyzer_test() {
         SEDOPTS=(-i)
     fi
     sed ${SEDOPTS[@]} 's/"manual"//' "${workspace}/BUILD.bazel"
-    
-    pushd "${workspace}" &> /dev/null
+
+    pushd "${workspace}" &>/dev/null
     echo "Generating rust-project.json..."
-    bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- //:mylib_test
+    if [[ -n "${generator_arg}" ]]; then
+        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
+    else
+        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    fi
     echo "Building..."
     bazel build //...
     echo "Testing..."
     bazel test //...
     echo "Building with Aspects..."
     bazel build //... --config=strict
-    popd &> /dev/null
+    popd &>/dev/null
+}
+
+function cleanup() {
+    local workspace="$1"
+    pushd "${workspace}" &>/dev/null
+    bazel clean --async
+    popd &>/dev/null
+    rm -rf "${workspace}"
 }
 
 function run_test_suite() {
@@ -86,10 +99,20 @@ function run_test_suite() {
             continue
         fi
 
-        rust_analyzer_test "${test_dir}" "${temp_workspace}"
+        # Some tests have arguments that need to be passed to the rust-project.json generator.
+        if [[ "${test_dir}" = "aspect_traversal_test" ]]; then
+            test_arg="//mylib_test"
+        elif [[ "${test_dir}" = "merging_crates_test" ]]; then
+            test_arg="//mylib_test"
+        else
+            test_arg=""
+        fi
+
+        rust_analyzer_test "${test_dir}" "${temp_workspace}" "${test_arg}"
     done
 
-    rm -rf "${temp_workspace}"
+    echo "Done"
+    cleanup "${temp_workspace}"
 }
 
 run_test_suite

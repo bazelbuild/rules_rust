@@ -26,7 +26,7 @@ EOF
         mnemonic = "WriteRsFile",
     )
 
-    toolchain = ctx.toolchains[Label("//rust:toolchain")]
+    toolchain = ctx.toolchains[Label("//rust:toolchain_type")]
 
     # Determine unique hash for this rlib
     output_hash = repr(hash(rs_file.path))
@@ -88,7 +88,10 @@ generator = rule(
             cfg = "exec",
         ),
     },
-    toolchains = ["@rules_rust//rust:toolchain", "@bazel_tools//tools/cpp:toolchain_type"],
+    toolchains = [
+        "@rules_rust//rust:toolchain_type",
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
     incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )

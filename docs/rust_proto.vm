@@ -68,7 +68,7 @@ rust_proto_toolchain(
 toolchain(
     name = "proto-toolchain",
     toolchain = ":proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto:toolchain",
+    toolchain_type = "@rules_rust//proto:toolchain_type",
 )
 ```
 

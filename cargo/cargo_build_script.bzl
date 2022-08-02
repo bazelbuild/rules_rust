@@ -302,7 +302,7 @@ _build_script_run = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,

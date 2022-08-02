@@ -226,7 +226,7 @@ rust_clippy_aspect = aspect(
     },
     provides = [ClippyInfo],
     toolchains = [
-        str(Label("//rust:toolchain")),
+        str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,

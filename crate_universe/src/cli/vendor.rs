@@ -19,7 +19,7 @@ use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMet
 
 /// Command line options for the `vendor` subcommand
 #[derive(Parser, Debug)]
-#[clap(about, version)]
+#[clap(about = "Command line options for the `vendor` subcommand", version)]
 pub struct VendorOptions {
     /// The path to a Cargo binary to use for gathering metadata
     #[clap(long, env = "CARGO")]
@@ -127,7 +127,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace()
+        .splice_workspace(&opt.cargo)
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile

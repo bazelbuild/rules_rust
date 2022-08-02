@@ -11,7 +11,7 @@ use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMet
 
 /// Command line options for the `splice` subcommand
 #[derive(Parser, Debug)]
-#[clap(about, version)]
+#[clap(about = "Command line options for the `splice` subcommand", version)]
 pub struct SpliceOptions {
     /// A generated manifest of splicing inputs
     #[clap(long)]
@@ -70,7 +70,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
 
     // Splice together the manifest
-    let manifest_path = splicer.splice_workspace()?;
+    let manifest_path = splicer.splice_workspace(&opt.cargo)?;
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
