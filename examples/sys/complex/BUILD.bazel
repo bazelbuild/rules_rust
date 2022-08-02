@@ -20,7 +20,7 @@ rust_binary(
     name = "complex_sys",
     srcs = ["src/main.rs"],
     edition = "2018",
-    # Note the `cargo-raze` dependencies here need to have been loaded
+    # Note the `crate_universe` dependencies here need to have been loaded
     # in the WORKSPACE file. See `//sys:sys_deps.bzl` for rmore details.
-    deps = ["//sys/complex/raze:git2"],
+    deps = ["//sys/complex/3rdparty/crates:git2"],
 )

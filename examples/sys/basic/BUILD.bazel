@@ -22,7 +22,7 @@ rust_binary(
     edition = "2018",
     # Note the `cargo-raze` dependencies here need to have been loaded
     # in the WORKSPACE file. See `//sys:sys_deps.bzl` for rmore details.
-    deps = ["//sys/basic/raze:bzip2"],
+    deps = ["//sys/basic/3rdparty/crates:bzip2"],
 )
 
 sh_test(
