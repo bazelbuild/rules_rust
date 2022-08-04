@@ -50,7 +50,7 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
-        "transitive_metadata_outputs": "depset[File]: All transitive metadata dependencies (.rlib, for crates that provide them) and all transitive object dependencies (.rlib) for crates that don't provide metadata.",
+        "transitive_metadata_outputs": "depset[File]: All transitive metadata dependencies (.rmeta, for crates that provide them) and all transitive object dependencies (.rlib) for crates that don't provide metadata.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
     },
 )

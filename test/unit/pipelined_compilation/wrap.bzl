@@ -78,7 +78,6 @@ EOF
             is_test = False,
         ),
         output_hash = output_hash,
-        force_all_deps_direct = True,
     )
 
 wrap = rule(

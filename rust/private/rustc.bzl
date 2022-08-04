@@ -542,9 +542,7 @@ def _depend_on_metadata(crate_info, force_depend_on_objects):
     if force_depend_on_objects:
         return False
 
-    is_lib = crate_info.type in ("rlib", "lib")
-    build_metadata = crate_info.metadata != None
-    return is_lib and build_metadata
+    return crate_info.type in ("rlib", "lib")
 
 def collect_inputs(
         ctx,
@@ -705,7 +703,7 @@ def construct_arguments(
         remap_path_prefix = ".",
         use_json_output = False,
         build_metadata = False,
-        force_link_to_objects = False):
+        force_depend_on_objects = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -734,7 +732,7 @@ def construct_arguments(
         remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
-        force_link_to_objects (bool): Force linking to concrete (rlib) dependencies, instead of metadata (rlib) even if they are available.
+        force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
 
     Returns:
         tuple: A tuple of the following items
@@ -842,9 +840,9 @@ def construct_arguments(
 
         error_format = "json"
 
-        if build_metadata:
-            # Configure process_wrapper to terminate rustc when metadata are emitted
-            process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+    if build_metadata:
+        # Configure process_wrapper to terminate rustc when metadata are emitted
+        process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
 
     rustc_flags.add("--error-format=" + error_format)
 
@@ -918,7 +916,7 @@ def construct_arguments(
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
 
-    use_metadata = _depend_on_metadata(crate_info, force_link_to_objects)
+    use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)

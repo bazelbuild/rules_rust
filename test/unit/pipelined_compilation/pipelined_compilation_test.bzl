@@ -112,7 +112,7 @@ def _pipelined_compilation_test():
     second_lib_test(name = "second_lib_test", target_under_test = ":second", target_compatible_with = NOT_WINDOWS)
     bin_test(name = "bin_test", target_under_test = ":bin", target_compatible_with = NOT_WINDOWS)
 
-def _custom_rule_test_impl(ctx):
+def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
 
@@ -124,54 +124,88 @@ def _custom_rule_test_impl(ctx):
     rlib_inputs = [i for i in rust_action.inputs.to_list() if i.path.endswith(".rlib")]
 
     seen_wrapper_metadata = False
-    seen_to_wrap = False
+    seen_to_wrap_metadata = False
     for mi in metadata_inputs:
         if "libwrapper" in mi.path:
             seen_wrapper_metadata = True
         if "libto_wrap" in mi.path:
-            seen_to_wrap = True
+            seen_to_wrap_metadata = True
 
-    seen_wrapper_rlib = True
+    seen_wrapper_rlib = False
+    seen_to_wrap_rlib = False
     for ri in rlib_inputs:
         if "libwrapper" in ri.path:
             seen_wrapper_rlib = True
+        if "libto_wrap" in ri.path:
+            seen_to_wrap_rlib = True
 
     if ctx.attr.generate_metadata:
         asserts.true(env, seen_wrapper_metadata, "expected dependency on metadata for 'wrapper' but not found")
+        asserts.false(env, seen_wrapper_rlib, "expected no dependency on object for 'wrapper' but it was found")
     else:
-        asserts.true(env, seen_wrapper_rlib, "expected dependency on rlib for 'wrapper' but not found")
+        asserts.true(env, seen_wrapper_rlib, "expected dependency on object for 'wrapper' but not found")
+        asserts.false(env, seen_wrapper_metadata, "expected no dependency on metadata for 'wrapper' but it was found")
 
-    asserts.true(env, seen_to_wrap, "expected dependency on metadata for 'to_wrap' but not found")
+    asserts.true(env, seen_to_wrap_metadata, "expected dependency on metadata for 'to_wrap' but not found")
+    asserts.false(env, seen_to_wrap_rlib, "expected no dependency on object for 'to_wrap' but it was found")
 
     return analysistest.end(env)
 
-custom_rule_test = analysistest.make(_custom_rule_test_impl, attrs = {"generate_metadata": attr.bool()}, config_settings = ENABLE_PIPELINING)
+def _rmeta_is_used_when_building_custom_rule_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
 
-def _custom_rule_test(generate_metadata, prefix):
+    # This is the custom rule invocation of rustc.
+    rust_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
+
+    # We want to check that the action depends on metadata, regardless of ctx.attr.generate_metadata
+    seen_to_wrap_rlib = False
+    seen_to_wrap_rmeta = False
+    for act in rust_action.inputs.to_list():
+        if "libto_wrap" in act.path and act.path.endswith(".rlib"):
+            seen_to_wrap_rlib = True
+        elif "libto_wrap" in act.path and act.path.endswith(".rmeta"):
+            seen_to_wrap_rmeta = True
+
+    asserts.true(env, seen_to_wrap_rmeta, "expected dependency on metadata for 'to_wrap' but not found")
+    asserts.false(env, seen_to_wrap_rlib, "expected no dependency on object for 'to_wrap' but it was found")
+
+    return analysistest.end(env)
+
+rmeta_is_propagated_through_custom_rule_test = analysistest.make(_rmeta_is_propagated_through_custom_rule_test_impl, attrs = {"generate_metadata": attr.bool()}, config_settings = ENABLE_PIPELINING)
+rmeta_is_used_when_building_custom_rule_test = analysistest.make(_rmeta_is_used_when_building_custom_rule_test_impl, config_settings = ENABLE_PIPELINING)
+
+def _custom_rule_test(generate_metadata, suffix):
     rust_library(
-        name = "to_wrap" + prefix,
+        name = "to_wrap" + suffix,
         crate_name = "to_wrap",
         srcs = ["custom_rule_test/to_wrap.rs"],
         edition = "2021",
     )
     wrap(
-        name = "wrapper" + prefix,
+        name = "wrapper" + suffix,
         crate_name = "wrapper",
-        target = ":to_wrap" + prefix,
+        target = ":to_wrap" + suffix,
         generate_metadata = generate_metadata,
     )
     rust_library(
-        name = "uses_wrapper" + prefix,
+        name = "uses_wrapper" + suffix,
         srcs = ["custom_rule_test/uses_wrapper.rs"],
-        deps = [":wrapper" + prefix],
+        deps = [":wrapper" + suffix],
         edition = "2021",
     )
 
-    custom_rule_test(
-        name = "custom_rule_test" + prefix,
+    rmeta_is_propagated_through_custom_rule_test(
+        name = "rmeta_is_propagated_through_custom_rule_test" + suffix,
         generate_metadata = generate_metadata,
         target_compatible_with = NOT_WINDOWS,
-        target_under_test = ":uses_wrapper" + prefix,
+        target_under_test = ":uses_wrapper" + suffix,
+    )
+
+    rmeta_is_used_when_building_custom_rule_test(
+        name = "rmeta_is_used_when_building_custom_rule_test" + suffix,
+        target_compatible_with = NOT_WINDOWS,
+        target_under_test = ":wrapper" + suffix,
     )
 
 def pipelined_compilation_test_suite(name):
@@ -181,15 +215,17 @@ def pipelined_compilation_test_suite(name):
         name: Name of the macro.
     """
     _pipelined_compilation_test()
-    _custom_rule_test(generate_metadata = True, prefix = "_with_metadata")
-    _custom_rule_test(generate_metadata = False, prefix = "_without_metadata")
+    _custom_rule_test(generate_metadata = True, suffix = "_with_metadata")
+    _custom_rule_test(generate_metadata = False, suffix = "_without_metadata")
 
     native.test_suite(
         name = name,
         tests = [
             ":bin_test",
             ":second_lib_test",
-            ":custom_rule_test_with_metadata",
-            ":custom_rule_test_without_metadata",
+            ":rmeta_is_propagated_through_custom_rule_test_with_metadata",
+            ":rmeta_is_propagated_through_custom_rule_test_without_metadata",
+            ":rmeta_is_used_when_building_custom_rule_test_with_metadata",
+            ":rmeta_is_used_when_building_custom_rule_test_without_metadata",
         ],
     )
