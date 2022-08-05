@@ -97,7 +97,7 @@ def _path_parts(path):
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
 
-def get_lib_name(lib):
+def get_lib_name(lib, for_windows = False):
     """Returns the name of a library artifact, eg. libabc.a -> abc
 
     Args:
@@ -105,6 +105,7 @@ def get_lib_name(lib):
 
     Returns:
         str: The name of the library
+        for_windows: Whether we're building on Windows.
     """
     # On macos and windows, dynamic/static libraries always end with the
     # extension and potential versions will be before the extension, and should
@@ -125,7 +126,7 @@ def get_lib_name(lib):
     # The library name is now everything minus the extension.
     libname = ".".join(comps[:-1])
 
-    if libname.startswith("lib"):
+    if not for_windows:
         return libname[3:]
     else:
         return libname
