@@ -126,7 +126,7 @@ def get_lib_name(lib, for_windows = False):
     # The library name is now everything minus the extension.
     libname = ".".join(comps[:-1])
 
-    if not for_windows:
+    if libname.startswith("lib") and not for_windows:
         return libname[3:]
     else:
         return libname
