@@ -1544,6 +1544,24 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs):
         # and adding references to these symlinks in the native section A.
         # We rely in the behavior of -Clink-arg to put the linker args
         # at the end of the linker invocation constructed by rustc.
+
+        # We skip adding `-Clink-arg=-l for libstd and libtest from the standard library, as
+        # these two libraries are present both as an `.rlib` and a `.so` format.
+        # On linux, Rustc adds a -Bdynamic to the linker command line before the libraries specified
+        # with `-Clink-arg`, which leads to us linking agains the `.so`s but not putting the
+        # corresponding value to the runtime library search paths, which results in a
+        # "cannot open shared object file: No such file or directory" error at exectuion time.
+        # We can fix this by adding a `-Clink-arg=-Bstatic` on linux, but we don't have that option for
+        # macos. The proper solution for this issue would be to remove `libtest-{hash}.so` and `libstd-{hash}.so`
+        # from the toolchain. However, it is not enough to change the toolchain's `rust_std_{...}` filegroups
+        # here: https://github.com/bazelbuild/rules_rust/blob/a9d5d894ad801002d007b858efd154e503796b9f/rust/private/repository_utils.bzl#L144
+        # because rustc manages to escape the sandbox and still finds them at linking time.
+        # We need to modify the repository rules to erase those files completely.
+        if "lib/rustlib" in artifact.path and (
+            artifact.basename.startswith("libtest-") or artifact.basename.startswith("libstd-") or
+            artifact.basename.startswith("test-") or artifact.basename.startswith("std-")
+        ):
+            return ["-lstatic=%s" % get_lib_name(artifact)]
         return [
             "-lstatic=%s" % get_lib_name(artifact),
             "-Clink-arg=-l%s" % get_lib_name(artifact),
