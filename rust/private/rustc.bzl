@@ -1564,7 +1564,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, for_windows = False):
             return ["-lstatic=%s" % get_lib_name(artifact, for_windows)]
         return [
             "-lstatic=%s" % get_lib_name(artifact, for_windows),
-            "-Clink-arg=-l%s" % get_lib_name(artifact) if not for_windows else artifact.basename,
+            "-Clink-arg=-l%s" % (get_lib_name(artifact) if not for_windows else artifact.basename),
         ]
     elif _is_dylib(lib):
         return [

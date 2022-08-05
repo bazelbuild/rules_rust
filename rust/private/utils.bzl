@@ -102,10 +102,10 @@ def get_lib_name(lib, for_windows = False):
 
     Args:
         lib (File): A library file
+        for_windows: Whether we're building on Windows.
 
     Returns:
         str: The name of the library
-        for_windows: Whether we're building on Windows.
     """
     # On macos and windows, dynamic/static libraries always end with the
     # extension and potential versions will be before the extension, and should
