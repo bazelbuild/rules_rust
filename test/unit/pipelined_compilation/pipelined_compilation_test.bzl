@@ -175,6 +175,30 @@ def _rmeta_is_used_when_building_custom_rule_test_impl(ctx):
 rmeta_is_propagated_through_custom_rule_test = analysistest.make(_rmeta_is_propagated_through_custom_rule_test_impl, attrs = {"generate_metadata": attr.bool()}, config_settings = ENABLE_PIPELINING)
 rmeta_is_used_when_building_custom_rule_test = analysistest.make(_rmeta_is_used_when_building_custom_rule_test_impl, config_settings = ENABLE_PIPELINING)
 
+def _rmeta_not_produced_if_pipelining_disabled_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    rust_action = [act for act in tut.actions if act.mnemonic == "RustcMetadata"]
+    asserts.true(env, len(rust_action) == 0, "expected no metadata to be produced, but found a metadata action")
+
+    return analysistest.end(env)
+
+rmeta_not_produced_if_pipelining_disabled_test = analysistest.make(_rmeta_not_produced_if_pipelining_disabled_test_impl, config_settings = ENABLE_PIPELINING)
+
+def _disable_pipelining_test():
+    rust_library(
+        name = "lib",
+        srcs = ["custom_rule_test/to_wrap.rs"],
+        edition = "2021",
+        disable_pipelining = True,
+    )
+    rmeta_not_produced_if_pipelining_disabled_test(
+        name = "rmeta_not_produced_if_pipelining_disabled_test",
+        target_compatible_with = NOT_WINDOWS,
+        target_under_test = ":lib",
+    )
+
 def _custom_rule_test(generate_metadata, suffix):
     rust_library(
         name = "to_wrap" + suffix,
@@ -215,6 +239,7 @@ def pipelined_compilation_test_suite(name):
         name: Name of the macro.
     """
     _pipelined_compilation_test()
+    _disable_pipelining_test()
     _custom_rule_test(generate_metadata = True, suffix = "_with_metadata")
     _custom_rule_test(generate_metadata = False, suffix = "_without_metadata")
 
@@ -227,5 +252,6 @@ def pipelined_compilation_test_suite(name):
             ":rmeta_is_propagated_through_custom_rule_test_without_metadata",
             ":rmeta_is_used_when_building_custom_rule_test_with_metadata",
             ":rmeta_is_used_when_building_custom_rule_test_without_metadata",
+            ":rmeta_not_produced_if_pipelining_disabled_test",
         ],
     )

@@ -318,7 +318,7 @@ def _rust_library_common(ctx, crate_type):
     rust_lib = ctx.actions.declare_file(rust_lib_name)
 
     rust_metadata = None
-    if can_build_metadata(toolchain, ctx, crate_type):
+    if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
         rust_metadata = ctx.actions.declare_file(
             paths.replace_extension(rust_lib_name, ".rmeta"),
             sibling = rust_lib,
@@ -764,7 +764,16 @@ _common_providers = [
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs.items()),
+    attrs = dict(_common_attrs.items() + {
+        "disable_pipelining": attr.bool(
+            default = False,
+            doc = dedent("""\
+                Disables pipelining for this rule if it is globally enabled.
+                This will cause this rule to not produce a `.rmeta` file and all the dependent
+                crates will instead use the `.rlib` file.
+            """),
+        ),
+    }.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
