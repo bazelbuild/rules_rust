@@ -1545,10 +1545,10 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, for_windows = False):
         # We rely in the behavior of -Clink-arg to put the linker args
         # at the end of the linker invocation constructed by rustc.
 
-        # We skip adding `-Clink-arg=-l for libstd and libtest from the standard library, as
+        # We skip adding `-Clink-arg=-l` for libstd and libtest from the standard library, as
         # these two libraries are present both as an `.rlib` and a `.so` format.
         # On linux, Rustc adds a -Bdynamic to the linker command line before the libraries specified
-        # with `-Clink-arg`, which leads to us linking agains the `.so`s but not putting the
+        # with `-Clink-arg`, which leads to us linking against the `.so`s but not putting the
         # corresponding value to the runtime library search paths, which results in a
         # "cannot open shared object file: No such file or directory" error at exectuion time.
         # We can fix this by adding a `-Clink-arg=-Bstatic` on linux, but we don't have that option for
