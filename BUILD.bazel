@@ -11,25 +11,6 @@ bzl_library(
     visibility = ["//visibility:public"],
 )
 
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "//bindgen:distro",
-        "//cargo:distro",
-        "//crate_universe:distro",
-        "//proto:distro",
-        "//rust:distro",
-        "//tools:distro",
-        "//util:distro",
-        "//wasm_bindgen:distro",
-        "BUILD.bazel",
-        "README.md",
-        "LICENSE.txt",
-        "WORKSPACE.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
 # This setting may be changed from the command line to generate machine readable errors.
 error_format(
     name = "error_format",

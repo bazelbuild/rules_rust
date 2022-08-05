@@ -41,11 +41,3 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

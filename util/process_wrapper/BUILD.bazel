@@ -18,13 +18,3 @@ rust_test(
     crate = ":process_wrapper",
     edition = "2018",
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "**/*.bazel",
-        "**/*.cc",
-        "**/*.rs",
-    ]),
-    visibility = ["//:__subpackages__"],
-)

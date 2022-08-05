@@ -76,15 +76,3 @@ rust_clippy(
         ":rustfmt",
     ],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "**/*.rs",
-    ]) + [
-        "rustfmt.toml",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

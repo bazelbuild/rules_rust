@@ -29,16 +29,3 @@ bzl_library(
         "//rust/settings:bzl_lib",
     ],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "//rust/platform:distro",
-        "//rust/private:distro",
-        "//rust/settings:distro",
-        "//rust/rust_analyzer:distro",
-        "//rust/toolchain:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

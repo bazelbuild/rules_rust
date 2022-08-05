@@ -6,11 +6,3 @@ rust_binary(
     edition = "2018",
     visibility = ["//visibility:public"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.rs"]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

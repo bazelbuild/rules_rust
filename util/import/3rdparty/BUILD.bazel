@@ -38,15 +38,3 @@ bzl_library(
     ],
     visibility = ["//util/import:__pkg__"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.bazel",
-    ]) + [
-        "//util/import/3rdparty/crates:srcs",
-        "Cargo.Bazel.lock",
-    ],
-    visibility = ["//util/import:__pkg__"],
-)

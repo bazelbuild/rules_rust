@@ -63,9 +63,3 @@ alias(
         "manual",
     ],
 )
-
-filegroup(
-    name = "distro",
-    srcs = ["BUILD.bazel"],
-    visibility = ["//proto:__pkg__"],
-)

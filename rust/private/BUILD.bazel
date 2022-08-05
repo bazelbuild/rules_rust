@@ -10,15 +10,6 @@ bzl_library(
     deps = ["//rust/platform:bzl_lib"],
 )
 
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "//rust/private/dummy_cc_toolchain:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
 stamp_build_setting(name = "stamp")
 
 rust_analyzer_detect_sysroot(

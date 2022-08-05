@@ -62,15 +62,3 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "**/*.rs",
-    ]) + [
-        "//tools/rust_analyzer/3rdparty:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

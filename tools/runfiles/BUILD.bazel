@@ -22,14 +22,3 @@ rust_doc_test(
     name = "runfiles_doc_test",
     crate = ":runfiles",
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "data/**",
-        "**/*.rs",
-    ]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

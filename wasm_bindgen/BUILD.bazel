@@ -23,15 +23,6 @@ bzl_library(
     ],
 )
 
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "BUILD.bazel",
-        "//wasm_bindgen/3rdparty:distro",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
 rust_wasm_bindgen_toolchain(
     name = "default_wasm_bindgen_toolchain_impl",
     bindgen = "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen_cli",

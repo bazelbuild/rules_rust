@@ -7,14 +7,3 @@ bzl_library(
     srcs = glob(["**/*.bzl"]),
     deps = ["//cargo/private:bzl_lib"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "//cargo/bootstrap:distro",
-        "//cargo/cargo_build_script_runner:distro",
-        "//cargo/private:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

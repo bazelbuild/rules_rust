@@ -14,19 +14,6 @@ alias(
     actual = "//proto/3rdparty/crates:grpc-compiler__protoc-gen-rust-grpc",
 )
 
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.rs",
-    ]) + [
-        "//proto/raze:distro",
-        "//proto/3rdparty:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
 toolchain_type(
     name = "toolchain_type",
 )

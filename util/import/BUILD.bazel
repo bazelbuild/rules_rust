@@ -75,16 +75,3 @@ cc_binary(
     name = "fake_import_macro_impl",
     srcs = ["fake_import_macro_impl.cc"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "**/*.rs",
-        "**/*.cc",
-    ]) + [
-        "//util/import/3rdparty:distro",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

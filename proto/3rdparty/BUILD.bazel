@@ -65,16 +65,3 @@ bzl_library(
     ],
     visibility = ["//proto:__pkg__"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.bazel",
-    ]) + [
-        "//proto/3rdparty/patches:distro",
-        "//proto/3rdparty/crates:srcs",
-        "Cargo.Bazel.lock",
-    ],
-    visibility = ["//proto:__pkg__"],
-)

@@ -11,11 +11,3 @@ toolchain(
     toolchain = ":dummy_cc_wasm32",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

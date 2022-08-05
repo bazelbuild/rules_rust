@@ -1,10 +1,1 @@
 exports_files(["clippy.toml"])
-
-filegroup(
-    name = "distro",
-    srcs = [
-        "BUILD.bazel",
-        "clippy.toml",
-    ],
-    visibility = ["//:__subpackages__"],
-)

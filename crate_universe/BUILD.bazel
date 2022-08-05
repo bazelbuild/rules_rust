@@ -14,21 +14,6 @@ exports_files(
 )
 
 filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        ":rust_srcs",
-        "//crate_universe/3rdparty:distro",
-        "//crate_universe/private:distro",
-        "//crate_universe/tools:distro",
-        "BUILD.bazel",
-        "Cargo.lock",
-        "Cargo.toml",
-        "README.md",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
-filegroup(
     name = "bzl_srcs",
     srcs = glob(["*.bzl"]) + [
         "//crate_universe/3rdparty:bzl_srcs",

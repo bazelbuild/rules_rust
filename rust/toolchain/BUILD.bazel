@@ -40,11 +40,3 @@ toolchain_files(
 current_rust_toolchain(
     name = "current_rust_toolchain",
 )
-
-filegroup(
-    name = "distro",
-    srcs = [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

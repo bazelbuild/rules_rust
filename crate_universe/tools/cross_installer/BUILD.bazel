@@ -29,18 +29,6 @@ rust_binary(
 cross_binary(name = "cross")
 
 filegroup(
-    name = "distro",
-    srcs = glob([
-        "**/*.rs",
-        "**/*.toml",
-    ]) + [
-        "BUILD.bazel",
-        "cross_installer_deps.bzl",
-    ],
-    visibility = ["//crate_universe/tools:__pkg__"],
-)
-
-filegroup(
     name = "bzl_srcs",
     srcs = glob(["**/*.bzl"]),
     visibility = ["//crate_universe/tools:__pkg__"],
