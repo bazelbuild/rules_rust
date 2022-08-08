@@ -47,17 +47,19 @@ functional in certain environments.
 - [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
 - [rust_clippy](rust_clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
 - [rust_fmt](rust_fmt.md): rules for running [rustfmt](https://github.com/rust-lang/rustfmt#readme).
-- [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs.
-- [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
+- [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
 - [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate depednencies.
 
 You can also browse the [full API in one page](flatten.md).
 
-### Experimental rules
+### External Tools Rules
 
-- [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
+Rules built for interfacing Rust code with other tools and technologies.
+
+- [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
+- [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs.
+- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 
 ## Specifying Rust version
 
