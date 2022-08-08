@@ -2,10 +2,6 @@
 
 Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 
-## Experimental
-
-`crate_universe` is experimental, and may have breaking API changes at any time. These instructions may also change without notice.
-
 ## Setup
 
 After loading `rules_rust` in your workspace, set the following to begin using `crate_universe`:
