@@ -82,4 +82,4 @@ rust_register_toolchains(rustfmt_version = "1.59.0")
 
 ## External Dependencies
 
-[crate_universe](crate_universe.md) is a tool built into `rules_rust` that can be used to fetch dependencies. Additionally, [cargo-raze](https://github.com/google/cargo-raze)is an older third-party which can also fetch dependencies.
+[crate_universe](crate_universe.md) is a tool built into `rules_rust` that can be used to fetch dependencies. Additionally, [cargo-raze](https://github.com/google/cargo-raze) is an older third-party which can also fetch dependencies.
