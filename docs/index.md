@@ -52,12 +52,12 @@ functional in certain environments.
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
+- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate depednencies.
 
 You can also browse the [full API in one page](flatten.md).
 
 ### Experimental rules
 
-- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate depednencies.
 - [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
 
 ## Specifying Rust version
@@ -82,5 +82,4 @@ rust_register_toolchains(rustfmt_version = "1.59.0")
 
 ## External Dependencies
 
-If [crate_universe](crate_universe.md) does not suit your needs, another common approach to managing external dependencies is using
-[cargo-raze](https://github.com/google/cargo-raze) to generate `BUILD` files for Cargo crates.
+[crate_universe](crate_universe.md) is a tool built into `rules_rust` that can be used to fetch dependencies. Additionally, [cargo-raze](https://github.com/google/cargo-raze)is an older third-party which can also fetch dependencies.
