@@ -97,12 +97,11 @@ def _path_parts(path):
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
 
-def get_lib_name(lib, for_windows = False):
-    """Returns the name of a library artifact, eg. libabc.a -> abc
+def get_lib_name(lib):
+    """Returns the name of a library artifact.
 
     Args:
         lib (File): A library file
-        for_windows: Whether we're building on Windows.
 
     Returns:
         str: The name of the library
@@ -126,10 +125,48 @@ def get_lib_name(lib, for_windows = False):
     # The library name is now everything minus the extension.
     libname = ".".join(comps[:-1])
 
-    if libname.startswith("lib") and not for_windows:
+    if libname.startswith("lib"):
         return libname[3:]
     else:
         return libname
+
+# TODO: Could we remove this function in favor of a "windows" parameter in the
+# above function? It looks like currently lambdas cannot accept local parameters
+# so the following doesn't work:
+#     args.add_all(
+#         cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+#         map_each = lambda x: get_lib_name(x, for_windows = toolchain.os.startswith("windows)),
+#         format_each = "-ldylib=%s",
+#     )
+def get_lib_name_for_windows(lib):
+    """Returns the name of a library artifact for Windows builds.
+
+    Args:
+        lib (File): A library file
+
+    Returns:
+        str: The name of the library
+    """
+    # On macos and windows, dynamic/static libraries always end with the
+    # extension and potential versions will be before the extension, and should
+    # be part of the library name.
+    # On linux, the version usually comes after the extension.
+    # So regardless of the platform we want to find the extension and make
+    # everything left to it the library name.
+
+    # Search for the extension - starting from the right - by removing any
+    # trailing digit.
+    comps = lib.basename.split(".")
+    for comp in reversed(comps):
+        if comp.isdigit():
+            comps.pop()
+        else:
+            break
+
+    # The library name is now everything minus the extension.
+    libname = ".".join(comps[:-1])
+
+    return libname
 
 def abs(value):
     """Returns the absolute value of a number.

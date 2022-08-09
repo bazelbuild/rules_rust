@@ -425,7 +425,7 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
 
     # Take the absolute value of hash() since it could be negative.
     path_hash = abs(hash(lib.path))
-    lib_name = get_lib_name(lib, for_windows = toolchain.os.startswith("windows"))
+    lib_name = get_lib_name_for_windows(lib) if toolchain.os.startswith("windows") else get_lib_name(lib)
 
     prefix = "lib"
     extension = ".a"
@@ -488,7 +488,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             if _is_dylib(lib):
                 continue
             artifact = get_preferred_artifact(lib, use_pic)
-            name = get_lib_name(artifact, for_windows = toolchain.os.startswith("windows"))
+            name = get_lib_name_for_windows(lib) if toolchain.os.startswith("windows") else get_lib_name(lib)
 
             # On Linux-like platforms, normally library base names start with
             # `lib`, following the pattern `lib[name].(a|lo)` and we pass
@@ -1523,7 +1523,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, for_windows = False):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, lib_name, for_windows):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
@@ -1561,14 +1561,14 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, for_windows = False):
             artifact.basename.startswith("libtest-") or artifact.basename.startswith("libstd-") or
             artifact.basename.startswith("test-") or artifact.basename.startswith("std-")
         ):
-            return ["-lstatic=%s" % get_lib_name(artifact, for_windows)]
+            return ["-lstatic=%s" % lib_name(artifact)]
         return [
-            "-lstatic=%s" % get_lib_name(artifact, for_windows),
-            "-Clink-arg=-l%s" % (get_lib_name(artifact) if not for_windows else artifact.basename),
+            "-lstatic=%s" % lib_name(artifact),
+            "-Clink-arg=-l%s" % (lib_name(artifact) if not for_windows else artifact.basename),
         ]
     elif _is_dylib(lib):
         return [
-            "-ldylib=%s" % get_lib_name(artifact, for_windows),
+            "-ldylib=%s" % lib_name(artifact),
         ]
 
     return []
@@ -1580,7 +1580,7 @@ def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
         if lib.alwayslink:
             ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, for_windows = True))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True))
     return ret
 
 def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
@@ -1593,7 +1593,7 @@ def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
                 ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False))
     return ret
 
 def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
@@ -1610,7 +1610,7 @@ def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
                 "link-arg=-Wl,--no-whole-archive",
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False))
     return ret
 
 def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
@@ -1639,10 +1639,13 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     if toolchain.os == "windows":
         make_link_flags = _make_link_flags_windows
+        map_to_lib_name = get_lib_name_for_windows
     elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
         make_link_flags = _make_link_flags_darwin
+        map_to_lib_name = get_lib_name
     else:
         make_link_flags = _make_link_flags_default
+        map_to_lib_name = get_lib_name
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
     args_and_pic_and_ambiguous_libs = [(arg, use_pic, ambiguous_libs) for arg in dep_info.transitive_noncrates.to_list()]
@@ -1668,7 +1671,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         )
         args.add_all(
             cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-            map_each = get_lib_name,
+            map_each = map_to_lib_name,
             format_each = "-ldylib=%s",
         )
     else:
@@ -1681,7 +1684,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         )
         args.add_all(
             cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-            map_each = get_lib_name,
+            map_each = map_to_lib_name,
             format_each = "-lstatic=%s",
         )
 
