@@ -97,7 +97,7 @@ def _path_parts(path):
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
 
-def get_lib_name(lib):
+def get_lib_name_default(lib):
     """Returns the name of a library artifact.
 
     Args:
