@@ -625,7 +625,9 @@ def collect_inputs(
         ],
     )
 
-    build_env_files = crate_info.rustc_env_files
+    # For backwards compatibility, we also check the value of the `rustc_env_files` attribute when
+    # `crate_info.rustc_env_files` is not populated.
+    build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
     compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
