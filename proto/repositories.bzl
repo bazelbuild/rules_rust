@@ -15,7 +15,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//proto/raze:crates.bzl", "rules_rust_proto_fetch_remote_crates")
+load("//proto/3rdparty/crates:defs.bzl", "crate_repositories")
 
 # buildifier: disable=unnamed-macro
 def rust_proto_repositories(register_default_toolchain = True):
@@ -48,11 +48,11 @@ def rust_proto_repositories(register_default_toolchain = True):
         ],
         patch_args = ["-p1"],
         patches = [
-            Label("//proto/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
+            Label("//proto/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
         ],
     )
 
-    rules_rust_proto_fetch_remote_crates()
+    crate_repositories()
 
     # Register toolchains
     if register_default_toolchain:

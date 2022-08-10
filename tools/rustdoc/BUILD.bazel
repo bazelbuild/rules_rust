@@ -10,13 +10,3 @@ rust_binary(
         "//tools/runfiles",
     ],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "**/*.rs",
-    ]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

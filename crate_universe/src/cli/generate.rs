@@ -16,7 +16,7 @@ use crate::splicing::SplicingManifest;
 
 /// Command line options for the `generate` subcommand
 #[derive(Parser, Debug)]
-#[clap(about, version)]
+#[clap(about = "Command line options for the `generate` subcommand", version)]
 pub struct GenerateOptions {
     /// The path to a Cargo binary to use for gathering metadata
     #[clap(long, env = "CARGO")]

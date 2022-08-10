@@ -45,15 +45,3 @@ bzl_library(
     ],
     visibility = ["//tools/rust_analyzer:__pkg__"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.bazel",
-    ]) + [
-        "Cargo.Bazel.lock",
-        "//tools/rust_analyzer/3rdparty/crates:srcs",
-    ],
-    visibility = ["//tools/rust_analyzer:__pkg__"],
-)

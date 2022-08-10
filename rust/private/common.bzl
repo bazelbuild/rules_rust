@@ -47,6 +47,8 @@ def _create_crate_info(**kwargs):
     """
     if not "wrapped_crate_type" in kwargs:
         kwargs.update({"wrapped_crate_type": None})
+    if not "metadata" in kwargs:
+        kwargs.update({"metadata": None})
     if not "rustc_env_files" in kwargs:
         kwargs.update({"rustc_env_files": []})
     return CrateInfo(**kwargs)

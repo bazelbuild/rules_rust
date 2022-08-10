@@ -18,7 +18,7 @@ rust_proc_macro(
     edition = "2018",
     deps = [
         ":import_internal",
-        "//util/import/raze:syn",
+        "//util/import/3rdparty/crates:syn",
     ],
 )
 
@@ -29,11 +29,11 @@ rust_library(
     ],
     edition = "2018",
     deps = [
-        "//util/import/raze:aho_corasick",
-        "//util/import/raze:lazy_static",
-        "//util/import/raze:proc_macro2",
-        "//util/import/raze:quote",
-        "//util/import/raze:syn",
+        "//util/import/3rdparty/crates:aho-corasick",
+        "//util/import/3rdparty/crates:lazy_static",
+        "//util/import/3rdparty/crates:proc-macro2",
+        "//util/import/3rdparty/crates:quote",
+        "//util/import/3rdparty/crates:syn",
         "//util/label",
     ],
 )
@@ -43,7 +43,7 @@ rust_test(
     crate = ":import_internal",
     edition = "2018",
     deps = [
-        "//util/import/raze:quickcheck",
+        "//util/import/3rdparty/crates:quickcheck",
     ],
 )
 
@@ -74,18 +74,4 @@ config_setting(
 cc_binary(
     name = "fake_import_macro_impl",
     srcs = ["fake_import_macro_impl.cc"],
-)
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "**/*.rs",
-        "**/*.cc",
-    ]) + [
-        "//util/import/raze:srcs",
-        "//util/import/raze/remote:srcs",
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
 )

@@ -44,7 +44,7 @@ pub(crate) struct Options {
     pub(crate) rustc_quit_on_rmeta: bool,
     // If rustc_quit_on_rmeta is set to true, this controls the
     // output format of rustc messages.
-    pub(crate) rustc_output_format: rustc::ErrorFormat,
+    pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -173,8 +173,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
                 v
             ))),
         })
-        .transpose()?
-        .unwrap_or_default();
+        .transpose()?;
 
     // Prepare the environment variables, unifying those read from files with the ones
     // of the current process.

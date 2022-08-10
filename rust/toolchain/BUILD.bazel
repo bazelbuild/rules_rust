@@ -7,21 +7,9 @@ toolchain_files(
     tool = "cargo",
 )
 
-alias(
-    name = "current_exec_cargo_files",
-    actual = "current_cargo_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_cargo_files`",
-)
-
 toolchain_files(
     name = "current_clippy_files",
     tool = "clippy",
-)
-
-alias(
-    name = "current_exec_clippy_files",
-    actual = "current_clippy_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_clippy_files`",
 )
 
 toolchain_files(
@@ -29,21 +17,9 @@ toolchain_files(
     tool = "rustc",
 )
 
-alias(
-    name = "current_exec_rustc_files",
-    actual = "current_rustc_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rustc_files`",
-)
-
 toolchain_files(
     name = "current_rustdoc_files",
     tool = "rustdoc",
-)
-
-alias(
-    name = "current_exec_rustdoc_files",
-    actual = "current_rustdoc_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rustdoc_files`",
 )
 
 toolchain_files(
@@ -51,21 +27,9 @@ toolchain_files(
     tool = "rustfmt",
 )
 
-alias(
-    name = "current_exec_rustfmt_files",
-    actual = "current_rustfmt_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rustfmt_files`",
-)
-
 toolchain_files(
     name = "current_rustc_lib_files",
     tool = "rustc_lib",
-)
-
-alias(
-    name = "current_exec_rustc_lib_files",
-    actual = "current_rustc_lib_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rustc_lib_files`",
 )
 
 toolchain_files(
@@ -73,20 +37,6 @@ toolchain_files(
     tool = "rust_stdlib",
 )
 
-alias(
-    name = "current_exec_rust_stdlib_files",
-    actual = "current_rust_stdlib_files",
-    deprecation = "instead use `@rules_rust//rust/toolchain:current_rust_stdlib_files`",
-)
-
 current_rust_toolchain(
     name = "current_rust_toolchain",
-)
-
-filegroup(
-    name = "distro",
-    srcs = [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
 )

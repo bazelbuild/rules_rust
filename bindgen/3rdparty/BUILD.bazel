@@ -50,15 +50,3 @@ bzl_library(
     ],
     visibility = ["//bindgen:__pkg__"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.bazel",
-    ]) + [
-        "//bindgen/3rdparty/crates:srcs",
-        "Cargo.Bazel.lock",
-    ],
-    visibility = ["//bindgen:__pkg__"],
-)

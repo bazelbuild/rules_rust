@@ -6,17 +6,6 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "**/*.rs",
-    ]) + [
-        "BUILD.bazel",
-        "Cargo.toml",
-    ],
-    visibility = ["//crate_universe/tools:__pkg__"],
-)
-
 rust_binary(
     name = "urls_generator",
     srcs = glob(["src/**/*.rs"]),

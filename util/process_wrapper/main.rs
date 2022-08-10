@@ -55,19 +55,6 @@ fn main() {
         Ok(v) => v,
     };
 
-    let stderr: Box<dyn io::Write + Send> = if let Some(stderr_file) = opts.stderr_file {
-        Box::new(
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(stderr_file)
-                .expect("process wrapper error: unable to open stderr file"),
-        )
-    } else {
-        Box::new(io::stderr())
-    };
-
     let mut child = Command::new(opts.executable)
         .args(opts.child_arguments)
         .env_clear()
@@ -87,25 +74,45 @@ fn main() {
         .spawn()
         .expect("process wrapper error: failed to spawn child process");
 
-    let child_stderr = Box::new(child.stderr.take().unwrap());
+    let mut stderr: Box<dyn io::Write> = if let Some(stderr_file) = opts.stderr_file {
+        Box::new(
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(stderr_file)
+                .expect("process wrapper error: unable to open stderr file"),
+        )
+    } else {
+        Box::new(io::stderr())
+    };
+
+    let mut child_stderr = child.stderr.take().unwrap();
 
     let mut was_killed = false;
-    let result = if !opts.rustc_quit_on_rmeta {
-        // Process output normally by forwarding stderr
-        process_output(child_stderr, stderr, LineOutput::Message)
-    } else {
-        let format = opts.rustc_output_format;
-        let mut kill = false;
-        let result = process_output(child_stderr, stderr, |line| {
-            rustc::stop_on_rmeta_completion(line, format, &mut kill)
+    let result = if let Some(format) = opts.rustc_output_format {
+        let quit_on_rmeta = opts.rustc_quit_on_rmeta;
+        // Process json rustc output and kill the subprocess when we get a signal
+        // that we emitted a metadata file.
+        let mut me = false;
+        let metadata_emitted = &mut me;
+        let result = process_output(&mut child_stderr, stderr.as_mut(), move |line| {
+            if quit_on_rmeta {
+                rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+            } else {
+                rustc::process_json(line, format)
+            }
         });
-        if kill {
+        if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
             // We can safely ignore the Result from kill() as we don't care if the process already terminated.
             let _ = child.kill();
             was_killed = true;
         }
         result
+    } else {
+        // Process output normally by forwarding stderr
+        process_output(&mut child_stderr, stderr.as_mut(), LineOutput::Message)
     };
     result.expect("process wrapper error: failed to process stderr");
 

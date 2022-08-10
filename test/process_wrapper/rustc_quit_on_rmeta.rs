@@ -6,8 +6,8 @@ mod test {
 
     use runfiles::Runfiles;
 
-    // fake_rustc runs the fake_rustc binary under process_wrapper with the specified
-    // process wrapper arguments. No arguments are passed to fake_rustc itself.
+    /// fake_rustc runs the fake_rustc binary under process_wrapper with the specified
+    /// process wrapper arguments. No arguments are passed to fake_rustc itself.
     fn fake_rustc(process_wrapper_args: &[&'static str]) -> String {
         let r = Runfiles::create().unwrap();
         let fake_rustc = r.rlocation(
@@ -59,7 +59,12 @@ mod test {
 
     #[test]
     fn test_rustc_quit_on_rmeta_quits() {
-        let out_content = fake_rustc(&["--rustc-quit-on-rmeta", "true"]);
+        let out_content = fake_rustc(&[
+            "--rustc-quit-on-rmeta",
+            "true",
+            "--rustc-output-format",
+            "rendered",
+        ]);
         assert!(
             !out_content.contains("should not be in output"),
             "output should not contain 'should not be in output' but did: {}",

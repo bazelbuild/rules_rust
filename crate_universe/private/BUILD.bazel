@@ -14,11 +14,3 @@ filegroup(
     name = "bzl_srcs",
     srcs = glob(["*.bzl"]),
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "BUILD.bazel",
-        "//crate_universe/private/vendor:distro",
-    ],
-)

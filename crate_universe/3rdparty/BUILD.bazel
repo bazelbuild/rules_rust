@@ -36,18 +36,6 @@ crates_vendor(
 )
 
 filegroup(
-    name = "distro",
-    srcs = glob([
-        "*.bzl",
-        "*.bazel",
-    ]) + [
-        "Cargo.Bazel.lock",
-        "cargo-bazel-lock.json",
-        "//crate_universe/3rdparty/crates:srcs",
-    ],
-)
-
-filegroup(
     name = "bzl_srcs",
     srcs = glob(["*.bzl"]) + [
         "//crate_universe/3rdparty/crates:crates.bzl",

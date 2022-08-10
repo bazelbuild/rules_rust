@@ -1,11 +1,3 @@
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps_targets")
 
 crates_vendor_deps_targets()
-
-filegroup(
-    name = "distro",
-    srcs = glob(["*.bzl"]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//crate_universe/private:__subpackages__"],
-)

@@ -9,11 +9,3 @@ constraint_value(
     constraint_setting = "@platforms//os",
     visibility = ["//visibility:public"],
 )
-
-filegroup(
-    name = "distro",
-    srcs = [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

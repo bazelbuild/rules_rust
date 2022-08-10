@@ -14,13 +14,3 @@ rust_test(
     name = "label_test",
     crate = ":label",
 )
-
-filegroup(
-    name = "distro",
-    srcs = glob([
-        "**/*.rs",
-    ]) + [
-        "BUILD.bazel",
-    ],
-    visibility = ["//:__subpackages__"],
-)

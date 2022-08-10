@@ -1,0 +1,40 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = True,
+    mode = "remote",
+    packages = {
+        "aho-corasick": crate.spec(
+            version = "=0.7.15",
+        ),
+        "lazy_static": crate.spec(
+            version = "=1.4.0",
+        ),
+        "proc-macro2": crate.spec(
+            version = "=1.0.33",
+        ),
+        "quickcheck": crate.spec(
+            version = "=1.0.3",
+        ),
+        "quote": crate.spec(
+            version = "=1.0.10",
+        ),
+        "syn": crate.spec(
+            version = "=1.0.82",
+        ),
+    },
+    repository_name = "rules_rust_util_import",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]) + [
+        "//util/import/3rdparty/crates:defs.bzl",
+        "//util/import/3rdparty/crates:crates.bzl",
+    ],
+    visibility = ["//util/import:__pkg__"],
+)

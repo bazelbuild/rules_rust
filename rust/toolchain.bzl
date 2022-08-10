@@ -426,6 +426,7 @@ def _rust_toolchain_impl(ctx):
 
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
+    pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
 
     if ctx.attr.rust_lib:
         # buildifier: disable=print
@@ -536,6 +537,7 @@ def _rust_toolchain_impl(ctx):
         # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
+        _pipelined_compilation = pipelined_compilation,
     )
     return [
         toolchain,
@@ -672,6 +674,9 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_pipelined_compilation": attr.label(
+            default = "@rules_rust//rust/settings:pipelined_compilation",
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),

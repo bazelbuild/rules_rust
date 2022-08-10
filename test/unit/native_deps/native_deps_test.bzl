@@ -30,7 +30,8 @@ def _cdylib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
+    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -41,22 +42,20 @@ def _staticlib_has_native_libs_test_impl(ctx):
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
+    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _proc_macro_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    if ctx.configuration.coverage_enabled:
-        asserts.equals(env, 2, len(tut.actions))
-    else:
-        asserts.equals(env, 1, len(tut.actions))
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
+    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -66,7 +65,8 @@ def _bin_has_native_libs_test_impl(ctx):
     action = tut.actions[0]
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    assert_argv_contains(env, action, "-Clink-arg=-lnative_dep")
+    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -143,10 +143,18 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     return analysistest.end(env)
 
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
-staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl)
-cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl)
-proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl)
-bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl)
+staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl, attrs = {
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
+cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
+proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl, attrs = {
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
+bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, attrs = {
+    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+})
 bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
     "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),

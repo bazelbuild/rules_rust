@@ -97,8 +97,8 @@ def _path_parts(path):
     path_parts = path.split("/")
     return [part for part in path_parts if part != "."]
 
-def get_lib_name(lib):
-    """Returns the name of a library artifact, eg. libabc.a -> abc
+def get_lib_name_default(lib):
+    """Returns the name of a library artifact.
 
     Args:
         lib (File): A library file
@@ -129,6 +129,44 @@ def get_lib_name(lib):
         return libname[3:]
     else:
         return libname
+
+# TODO: Could we remove this function in favor of a "windows" parameter in the
+# above function? It looks like currently lambdas cannot accept local parameters
+# so the following doesn't work:
+#     args.add_all(
+#         cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+#         map_each = lambda x: get_lib_name(x, for_windows = toolchain.os.startswith("windows)),
+#         format_each = "-ldylib=%s",
+#     )
+def get_lib_name_for_windows(lib):
+    """Returns the name of a library artifact for Windows builds.
+
+    Args:
+        lib (File): A library file
+
+    Returns:
+        str: The name of the library
+    """
+    # On macos and windows, dynamic/static libraries always end with the
+    # extension and potential versions will be before the extension, and should
+    # be part of the library name.
+    # On linux, the version usually comes after the extension.
+    # So regardless of the platform we want to find the extension and make
+    # everything left to it the library name.
+
+    # Search for the extension - starting from the right - by removing any
+    # trailing digit.
+    comps = lib.basename.split(".")
+    for comp in reversed(comps):
+        if comp.isdigit():
+            comps.pop()
+        else:
+            break
+
+    # The library name is now everything minus the extension.
+    libname = ".".join(comps[:-1])
+
+    return libname
 
 def abs(value):
     """Returns the absolute value of a number.
@@ -610,3 +648,25 @@ def _replace_all(string, substitutions):
         string = string[:pattern_start] + replacement + string[after_pattern:]
 
     return string
+
+def can_build_metadata(toolchain, ctx, crate_type):
+    """Can we build metadata for this rust_library?
+
+    Args:
+        toolchain (toolchain): The rust toolchain
+        ctx (ctx): The rule's context object
+        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+
+    Returns:
+        bool: whether we can build metadata for this rule.
+    """
+
+    # In order to enable pipelined compilation we require that:
+    # 1) The _pipelined_compilation flag is enabled,
+    # 2) the OS running the rule is something other than windows as we require sandboxing (for now),
+    # 3) process_wrapper is enabled (this is disabled when compiling process_wrapper itself),
+    # 4) the crate_type is rlib or lib.
+    return toolchain._pipelined_compilation and \
+           toolchain.os != "windows" and \
+           ctx.attr._process_wrapper and \
+           crate_type in ("rlib", "lib")

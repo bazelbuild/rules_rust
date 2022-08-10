@@ -31,8 +31,8 @@ pub(crate) enum LineOutput {
 /// Depending on the result of process_line, the modified message may be written
 /// to write_end.
 pub(crate) fn process_output<F>(
-    read_end: Box<dyn Read>,
-    write_end: Box<dyn Write>,
+    read_end: &mut dyn Read,
+    write_end: &mut dyn Write,
     mut process_line: F,
 ) -> io::Result<()>
 where

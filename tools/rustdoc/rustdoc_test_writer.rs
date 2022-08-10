@@ -6,6 +6,7 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -18,6 +19,10 @@ struct Options {
 
     /// The path where the script should be written.
     output: PathBuf,
+
+    /// If Bazel generated a params file, we may need to strip roots from it.
+    /// This is the path where we will output our stripped params file.
+    optional_output_params_file: PathBuf,
 
     /// The `argv` of the configured rustdoc build action.
     action_argv: Vec<String>,
@@ -49,6 +54,13 @@ fn parse_args() -> Options {
         .and_then(|arg| arg.splitn(2, '=').last())
         .map(PathBuf::from)
         .expect("Missing `--output` argument");
+
+    let optional_output_params_file = writer_args
+        .iter()
+        .find(|arg| arg.starts_with("--optional_test_params="))
+        .and_then(|arg| arg.splitn(2, '=').last())
+        .map(PathBuf::from)
+        .expect("Missing `--optional_test_params` argument");
 
     let (strip_substring_args, writer_args): (Vec<String>, Vec<String>) = writer_args
         .into_iter()
@@ -85,8 +97,71 @@ fn parse_args() -> Options {
         env_keys,
         strip_substrings,
         output,
+        optional_output_params_file,
         action_argv,
     }
+}
+
+/// Expand the Bazel Arg file and write it into our manually defined params file
+fn expand_params_file(mut options: Options) -> Options {
+    let params_extension = if cfg!(target_family = "windows") {
+        ".rustdoc_test.bat-0.params"
+    } else {
+        ".rustdoc_test.sh-0.params"
+    };
+
+    // We always need to produce the params file, we might overwrite this later though
+    fs::write(&options.optional_output_params_file, b"unused")
+        .expect("Failed to write params file");
+
+    // extract the path for the params file, if it exists
+    let params_path = match options.action_argv.pop() {
+        // Found the params file!
+        Some(arg) if arg.starts_with('@') && arg.ends_with(params_extension) => {
+            let path_str = arg
+                .strip_prefix('@')
+                .expect("Checked that there is an @ prefix");
+            PathBuf::from(path_str)
+        }
+        // No params file present, exit early
+        Some(arg) => {
+            options.action_argv.push(arg);
+            return options;
+        }
+        None => return options,
+    };
+
+    // read the params file
+    let params_file = fs::File::open(params_path).expect("Failed to read the rustdoc params file");
+    let content: Vec<_> = BufReader::new(params_file)
+        .lines()
+        .map(|line| line.expect("failed to parse param as String"))
+        // Remove any substrings found in the argument
+        .map(|arg| {
+            let mut stripped_arg = arg;
+            options
+                .strip_substrings
+                .iter()
+                .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
+            stripped_arg
+        })
+        .collect();
+
+    // add all arguments
+    fs::write(&options.optional_output_params_file, content.join("\n"))
+        .expect("Failed to write test runner");
+
+    // append the path of our new params file
+    let formatted_params_path = format!(
+        "@{}",
+        options
+            .optional_output_params_file
+            .to_str()
+            .expect("invalid UTF-8")
+    );
+    options.action_argv.push(formatted_params_path);
+
+    options
 }
 
 /// Write a unix compatible test runner
@@ -195,6 +270,7 @@ fn write_test_runner(
 
 fn main() {
     let opt = parse_args();
+    let opt = expand_params_file(opt);
 
     let env: BTreeMap<String, String> = env::vars()
         .into_iter()
