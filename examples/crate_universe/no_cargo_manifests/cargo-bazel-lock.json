@@ -1,5 +1,5 @@
 {
-  "checksum": "4b51399cb949606e8decd4492f40694118346c25f81e405088c43eecdc9b54ad",
+  "checksum": "d025bf481260f81bd1f27c439d328b534c3d36a339bc7b2b59a3b58e56ab751f",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
