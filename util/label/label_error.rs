@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct LabelError(pub String);
 
 impl std::fmt::Display for LabelError {

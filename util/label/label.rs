@@ -26,7 +26,7 @@ pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
     Ok(Label::new(repository_name, package_name, name))
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Label<'s> {
     pub repository_name: Option<&'s str>,
     pub package_name: Option<&'s str>,

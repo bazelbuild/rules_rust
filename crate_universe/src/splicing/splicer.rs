@@ -510,7 +510,7 @@ const DEFAULT_SPLICING_PACKAGE_VERSION: &str = "0.0.1";
 pub fn default_cargo_package_manifest() -> cargo_toml::Manifest {
     // A manifest is generated with a fake workspace member so the [cargo_toml::Manifest::Workspace]
     // member is deseralized and is not `None`.
-    let manifest = cargo_toml::Manifest::from_str(
+    cargo_toml::Manifest::from_str(
         &toml::toml! {
             [package]
             name = DEFAULT_SPLICING_PACKAGE_NAME
@@ -524,9 +524,7 @@ pub fn default_cargo_package_manifest() -> cargo_toml::Manifest {
         }
         .to_string(),
     )
-    .unwrap();
-
-    manifest
+    .unwrap()
 }
 
 pub fn default_splicing_package_crate_id() -> CrateId {
