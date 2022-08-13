@@ -89,9 +89,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__crossbeam-channel-0.5.5//:crossbeam_channel",
-            "@rules_rust_wasm_bindgen__crossbeam-deque-0.8.1//:crossbeam_deque",
-            "@rules_rust_wasm_bindgen__crossbeam-utils-0.8.10//:crossbeam_utils",
+            "@rules_rust_wasm_bindgen__crossbeam-channel-0.5.6//:crossbeam_channel",
+            "@rules_rust_wasm_bindgen__crossbeam-deque-0.8.2//:crossbeam_deque",
+            "@rules_rust_wasm_bindgen__crossbeam-utils-0.8.11//:crossbeam_utils",
             "@rules_rust_wasm_bindgen__num_cpus-1.13.1//:num_cpus",
             "@rules_rust_wasm_bindgen__rayon-core-1.9.3//:build_script_build",
         ],

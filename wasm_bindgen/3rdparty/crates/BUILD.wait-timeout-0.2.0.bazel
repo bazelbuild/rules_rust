@@ -108,7 +108,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.126//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
 
             # Common Deps
         ],
@@ -201,7 +201,7 @@ rust_binary(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.126//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
 
             # Common Deps
         ],
@@ -294,7 +294,7 @@ rust_binary(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.126//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
 
             # Common Deps
         ],
@@ -387,7 +387,7 @@ rust_binary(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.126//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
 
             # Common Deps
         ],
