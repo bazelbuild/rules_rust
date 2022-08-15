@@ -89,7 +89,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__crossbeam-deque-0.8.1//:crossbeam_deque",
+            "@rules_rust_wasm_bindgen__crossbeam-deque-0.8.2//:crossbeam_deque",
             "@rules_rust_wasm_bindgen__either-1.7.0//:either",
             "@rules_rust_wasm_bindgen__rayon-1.5.3//:build_script_build",
             "@rules_rust_wasm_bindgen__rayon-core-1.9.3//:rayon_core",

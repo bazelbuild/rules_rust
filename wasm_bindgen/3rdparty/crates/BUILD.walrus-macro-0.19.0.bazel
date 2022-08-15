@@ -86,9 +86,9 @@ rust_proc_macro(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__heck-0.3.3//:heck",
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.40//:proc_macro2",
-            "@rules_rust_wasm_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_wasm_bindgen__syn-1.0.98//:syn",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.43//:proc_macro2",
+            "@rules_rust_wasm_bindgen__quote-1.0.21//:quote",
+            "@rules_rust_wasm_bindgen__syn-1.0.99//:syn",
         ],
     }),
 )

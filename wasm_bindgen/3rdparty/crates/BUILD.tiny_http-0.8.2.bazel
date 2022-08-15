@@ -87,7 +87,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__ascii-1.0.0//:ascii",
-            "@rules_rust_wasm_bindgen__chrono-0.4.19//:chrono",
+            "@rules_rust_wasm_bindgen__chrono-0.4.22//:chrono",
             "@rules_rust_wasm_bindgen__chunked_transfer-1.4.0//:chunked_transfer",
             "@rules_rust_wasm_bindgen__log-0.4.17//:log",
             "@rules_rust_wasm_bindgen__url-2.2.2//:url",

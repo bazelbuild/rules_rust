@@ -88,7 +88,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__anyhow-1.0.58//:anyhow",
+            "@rules_rust_wasm_bindgen__anyhow-1.0.61//:anyhow",
             "@rules_rust_wasm_bindgen__id-arena-2.2.1//:id_arena",
             "@rules_rust_wasm_bindgen__leb128-0.2.5//:leb128",
             "@rules_rust_wasm_bindgen__log-0.4.17//:log",
