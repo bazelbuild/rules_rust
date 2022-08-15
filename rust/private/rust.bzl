@@ -458,7 +458,8 @@ def _rust_test_impl(ctx):
         )
     else:
         if not crate_root:
-            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, "lib")
+            crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
+            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
 
         output_hash = determine_output_hash(crate_root, ctx.label)
         output = ctx.actions.declare_file(
