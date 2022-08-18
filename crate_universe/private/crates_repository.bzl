@@ -138,7 +138,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
 
 crates_repository(
     name = "crate_index",
-    annotations = annotations = {
+    annotations = {
         "rand": [crate.annotation(
             default_features = False,
             features = ["small_rng"],
