@@ -151,9 +151,10 @@ def _transform_sources(ctx, srcs, crate_root):
     generated_sources = []
 
     generated_root = crate_root
+    package_root = paths.dirname(ctx.build_file_path)
 
     if crate_root and (crate_root.is_source or crate_root.root.path != ctx.bin_dir.path):
-        generated_root = ctx.actions.declare_file(crate_root.basename)
+        generated_root = ctx.actions.declare_file(paths.relativize(crate_root.short_path, package_root))
         ctx.actions.symlink(
             output = generated_root,
             target_file = crate_root,
@@ -167,7 +168,7 @@ def _transform_sources(ctx, srcs, crate_root):
         if src == crate_root:
             continue
         if src.is_source or src.root.path != ctx.bin_dir.path:
-            src_symlink = ctx.actions.declare_file(src.basename)
+            src_symlink = ctx.actions.declare_file(paths.relativize(src.short_path, package_root))
             ctx.actions.symlink(
                 output = src_symlink,
                 target_file = src,

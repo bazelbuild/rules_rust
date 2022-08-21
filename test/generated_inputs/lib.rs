@@ -1,4 +1,5 @@
 mod src;
+mod submodule;
 
 pub fn forty_two_as_string() -> String {
     format!("{}", src::forty_two())

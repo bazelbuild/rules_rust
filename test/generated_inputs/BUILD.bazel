@@ -21,10 +21,26 @@ pub fn get_forty_two_as_string() -> String {
     newline = "unix",
 )
 
+write_file(
+    name = "generate_src_generated",
+    out = "src/generated.rs",
+    content = """
+mod submodule;
+
+#[cfg(test)]
+#[test]
+fn test_foo() {
+    assert_eq!(submodule::foo(), "foo");
+}
+""".splitlines(),
+    newline = "unix",
+)
+
 rust_library(
     name = "use_generated_src",
     srcs = [
         "lib.rs",
+        "submodule/mod.rs",
         ":src.rs",
     ],
     edition = "2018",
@@ -35,6 +51,7 @@ rust_library(
     name = "use_generated_src_with_crate_root_defined",
     srcs = [
         "lib.rs",
+        "submodule/mod.rs",
         ":src.rs",
     ],
     crate_root = "lib.rs",
@@ -52,6 +69,25 @@ rust_library(
     crate_root = ":src.rs",
     edition = "2018",
     rustc_flags = ["--cfg=generated_file_as_root"],
+    tags = ["norustfmt"],
+)
+
+rust_library(
+    name = "use_generated_src_with_crate_root_in_subdir",
+    srcs = [
+        "src/generated.rs",
+        "src/generated/submodule.rs",
+        "src/lib.rs",
+    ],
+    crate_root = "src/lib.rs",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "use_generated_src_with_crate_root_in_subdir_test",
+    crate = "use_generated_src_with_crate_root_in_subdir",
+    edition = "2018",
     tags = ["norustfmt"],
 )
 
