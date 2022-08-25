@@ -64,6 +64,7 @@ load(
     _rust_test_suite = "rust_test_suite",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
+    _source_path_prefix = "source_path_prefix",
 )
 load(
     "@rules_rust//rust:repositories.bzl",
@@ -163,6 +164,7 @@ rustfmt_test = _rustfmt_test
 error_format = _error_format
 extra_rustc_flag = _extra_rustc_flag
 extra_rustc_flags = _extra_rustc_flags
+source_path_prefix = _source_path_prefix
 incompatible_flag = _incompatible_flag
 capture_clippy_output = _capture_clippy_output
 
