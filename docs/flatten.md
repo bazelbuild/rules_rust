@@ -1361,7 +1361,7 @@ A test rule for performing `rustfmt --check` on a set of targets
 source_path_prefix(<a href="#source_path_prefix-name">name</a>)
 </pre>
 
-Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics,debug information, and macro expansions with `--@rules_rust//:static_path_prefix`.Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory.
+Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics,debug information, and macro expansions with `--@rules_rust//:source_path_prefix`.Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory.
 
 **ATTRIBUTES**
 
