@@ -342,6 +342,12 @@ tasks:
       - "//..."
     build_flags: *aspects_flags
     soft_fail: yes
+  ubuntu2004_examples_bzlmod:
+    name: Bzlmod Examples
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/hello_world
+    build_targets:
+      - "//..."
   rbe_ubuntu1604_examples:
     name: Examples
     platform: rbe_ubuntu1604
