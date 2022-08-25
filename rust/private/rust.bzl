@@ -701,9 +701,6 @@ _common_attrs = {
     "_extra_rustc_flags": attr.label(
         default = Label("//:extra_rustc_flags"),
     ),
-    "_source_path_prefix": attr.label(
-        default = Label("//:source_path_prefix"),
-    ),
     "_import_macro_dep": attr.label(
         default = Label("//util/import"),
         cfg = "exec",
@@ -720,6 +717,9 @@ _common_attrs = {
         executable = True,
         allow_single_file = True,
         cfg = "exec",
+    ),
+    "_source_path_prefix": attr.label(
+        default = Label("//:source_path_prefix"),
     ),
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",

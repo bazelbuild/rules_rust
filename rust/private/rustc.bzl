@@ -742,6 +742,7 @@ def construct_arguments(
         force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        remap_path_prefix (bool): Whether to apply the remap-path-prefix compiler setting.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
