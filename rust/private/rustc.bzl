@@ -1848,7 +1848,7 @@ def _source_path_prefix_impl(ctx):
 source_path_prefix = rule(
     doc = (
         "Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics," +
-        "debug information, and macro expansions with `--@rules_rust//:static_path_prefix`." +
+        "debug information, and macro expansions with `--@rules_rust//:source_path_prefix`." +
         "Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory."
     ),
     implementation = _source_path_prefix_impl,
