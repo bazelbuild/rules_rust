@@ -24,6 +24,13 @@ write_file(
 rust_test(
     name = "tools_exec",
     srcs = ["tools_exec.rs"],
+    build_script = ":tools_exec_build_rs",
+    edition = "2018",
+)
+
+rust_test(
+    name = "tools_exec_deprecated_deps",
+    srcs = ["tools_exec.rs"],
     edition = "2018",
     deps = [":tools_exec_build_rs"],
 )

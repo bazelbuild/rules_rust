@@ -88,6 +88,7 @@ def _clippy_aspect_impl(target, ctx):
     dep_info, build_info, linkstamps = collect_deps(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
+        build_script = crate_info.build_script,
         aliases = crate_info.aliases,
         # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
         are_linkstamps_supported = False,

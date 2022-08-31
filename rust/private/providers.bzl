@@ -18,6 +18,7 @@ CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
+        "build_script": "A target that is the cargo build script for this crate. Can set environment variables and generate code.",
         "compile_data": "depset[File]: Compile data required by this crate.",
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",

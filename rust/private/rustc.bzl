@@ -177,6 +177,7 @@ def collect_deps(
         deps,
         proc_macro_deps,
         aliases,
+        build_script = None,
         are_linkstamps_supported = False):
     """Walks through dependencies and collects the transitive dependencies.
 
@@ -184,6 +185,7 @@ def collect_deps(
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        build_script: cargo_build_script dep if needed.
         are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps..
 
     Returns:
@@ -204,7 +206,11 @@ def collect_deps(
     transitive_metadata_outputs = []
 
     aliases = {k.label: v for k, v in aliases.items()}
-    for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
+    if build_script != None:
+        alldeps = depset(transitive = [deps, proc_macro_deps, depset([build_script])]).to_list()
+    else:
+        alldeps = depset(transitive = [deps, proc_macro_deps]).to_list()
+    for dep in alldeps:
         (crate_info, dep_info) = _get_crate_and_dep_info(dep)
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
@@ -1033,6 +1039,7 @@ def rustc_compile_action(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
+        build_script = crate_info.build_script,
         are_linkstamps_supported = _are_linkstamps_supported(
             feature_configuration = feature_configuration,
             has_grep_includes = hasattr(ctx.attr, "_grep_includes"),

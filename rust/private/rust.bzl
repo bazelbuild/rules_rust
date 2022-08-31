@@ -328,6 +328,10 @@ def _rust_library_common(ctx, crate_type):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
+    build_script = ctx.attr.build_script
+    if build_script != None:
+        build_script = transform_deps([ctx.attr.build_script])[0]
+
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -338,6 +342,7 @@ def _rust_library_common(ctx, crate_type):
             root = crate_root,
             srcs = depset(srcs),
             deps = depset(deps),
+            build_script = build_script,
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
@@ -369,6 +374,9 @@ def _rust_binary_impl(ctx):
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    build_script = ctx.attr.build_script
+    if build_script != None:
+        build_script = transform_deps([ctx.attr.build_script])[0]
 
     srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     if not crate_root:
@@ -384,6 +392,7 @@ def _rust_binary_impl(ctx):
             root = crate_root,
             srcs = depset(srcs),
             deps = depset(deps),
+            build_script = build_script,
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
@@ -415,10 +424,15 @@ def _rust_test_impl(ctx):
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    build_script = ctx.attr.build_script
+    if build_script != None:
+        build_script = transform_deps([ctx.attr.build_script])[0]
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
+        if build_script == None:
+            build_script = crate.build_script
 
         output_hash = determine_output_hash(crate.root, ctx.label)
         output = ctx.actions.declare_file(
@@ -445,6 +459,7 @@ def _rust_test_impl(ctx):
             root = crate.root,
             srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
+            build_script = build_script,
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = ctx.attr.aliases,
             output = output,
@@ -477,6 +492,7 @@ def _rust_test_impl(ctx):
             root = crate_root,
             srcs = depset(srcs),
             deps = depset(deps),
+            build_script = build_script,
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = output,
@@ -545,6 +561,15 @@ _common_attrs = {
 
             These are other `rust_library` targets and will be presented as the new name given.
         """),
+    ),
+    # Previously `build_script` was part of `deps`, but much like proc_macro_deps we need to tell
+    # bazel that this is `cfg = "exec"` and making it its own dep line solves the problem.
+    "build_script": attr.label(
+        doc = dedent("""\
+            The `cargo_build_script` dependency, if any, to run as part of building this target.
+        """),
+        cfg = "exec",
+        providers = [rust_common.build_info],
     ),
     "compile_data": attr.label_list(
         doc = dedent("""\
