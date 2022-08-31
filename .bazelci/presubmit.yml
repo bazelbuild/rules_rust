@@ -36,7 +36,7 @@ tasks:
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
-      - "//test/versioned_dylib:versioned_dylib_test"
+      - "-//test/versioned_dylib:versioned_dylib_test"
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -68,7 +68,7 @@ tasks:
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
-      - "//test/versioned_dylib:versioned_dylib_test"
+      - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
   rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
@@ -82,6 +82,8 @@ tasks:
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
+      # TODO: This test does not work on RBE
+      - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
