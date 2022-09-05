@@ -90,7 +90,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__hashbrown-0.12.1//:hashbrown",
+            "@cui__hashbrown-0.12.3//:hashbrown",
             "@cui__indexmap-1.9.1//:build_script_build",
         ],
     }),

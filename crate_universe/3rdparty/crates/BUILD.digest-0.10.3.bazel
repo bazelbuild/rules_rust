@@ -90,8 +90,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__block-buffer-0.10.2//:block_buffer",
-            "@cui__crypto-common-0.1.4//:crypto_common",
+            "@cui__block-buffer-0.10.3//:block_buffer",
+            "@cui__crypto-common-0.1.6//:crypto_common",
         ],
     }),
 )
