@@ -86,6 +86,10 @@ rust_test(
         "@rules_rust//rust/toolchain:current_rustc_files",
         "//crate_universe/test_data/serialized_configs",
     ],
+    env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
+    },
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),

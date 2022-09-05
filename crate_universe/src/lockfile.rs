@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
@@ -181,6 +181,12 @@ impl PartialEq<String> for Digest {
     fn eq(&self, other: &String) -> bool {
         &self.0 == other
     }
+}
+
+pub struct CargoLockfile {
+    pub path: PathBuf,
+    pub parsed: cargo_lock::Lockfile,
+    pub content: String,
 }
 
 #[cfg(test)]

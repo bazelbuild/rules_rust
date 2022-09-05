@@ -10,7 +10,6 @@ use std::process::Command;
 use std::str::FromStr;
 
 use anyhow::{bail, Context, Result};
-use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
 
 pub use self::dependency::*;
@@ -19,7 +18,10 @@ pub use self::metadata_annotation::*;
 // TODO: This should also return a set of [crate-index::IndexConfig]s for packages in metadata.packages
 /// A Trait for generating metadata (`cargo metadata` output and a lock file) from a Cargo manifest.
 pub trait MetadataGenerator {
-    fn generate<T: AsRef<Path>>(&self, manifest_path: T) -> Result<(CargoMetadata, CargoLockfile)>;
+    fn generate<T: AsRef<Path>>(
+        &self,
+        manifest_path: T,
+    ) -> Result<(CargoMetadata, cargo_lock::Lockfile)>;
 }
 
 /// Generates Cargo metadata and a lockfile from a provided manifest.
@@ -51,7 +53,10 @@ impl Generator {
 }
 
 impl MetadataGenerator for Generator {
-    fn generate<T: AsRef<Path>>(&self, manifest_path: T) -> Result<(CargoMetadata, CargoLockfile)> {
+    fn generate<T: AsRef<Path>>(
+        &self,
+        manifest_path: T,
+    ) -> Result<(CargoMetadata, cargo_lock::Lockfile)> {
         let manifest_dir = manifest_path
             .as_ref()
             .parent()
@@ -330,13 +335,13 @@ pub fn write_metadata(path: &Path, metadata: &cargo_metadata::Metadata) -> Resul
 /// A helper function for deserializing Cargo metadata and lockfiles
 pub fn load_metadata(
     metadata_path: &Path,
-) -> Result<(cargo_metadata::Metadata, cargo_lock::Lockfile)> {
+) -> Result<(cargo_metadata::Metadata, crate::lockfile::CargoLockfile)> {
     // Locate the Cargo.lock file related to the metadata file.
-    let lockfile_path = metadata_path
+    let cargo_lockfile_path = metadata_path
         .parent()
         .expect("metadata files should always have parents")
         .join("Cargo.lock");
-    if !lockfile_path.exists() {
+    if !cargo_lockfile_path.exists() {
         bail!(
             "The metadata file at {} is not next to a `Cargo.lock` file.",
             metadata_path.display()
@@ -349,8 +354,21 @@ pub fn load_metadata(
     let metadata =
         serde_json::from_str(&content).context("Unable to deserialize Cargo metadata")?;
 
-    let lockfile = cargo_lock::Lockfile::load(&lockfile_path)
-        .with_context(|| format!("Failed to load lockfile: {}", lockfile_path.display()))?;
+    let cargo_lockfile_content = fs::read_to_string(&cargo_lockfile_path).with_context(|| {
+        format!(
+            "Failed to load Cargo Lockfile: {}",
+            cargo_lockfile_path.display()
+        )
+    })?;
+
+    let parsed_cargo_lockfile = cargo_lock::Lockfile::from_str(&cargo_lockfile_content)
+        .with_context(|| format!("Failed to load lockfile: {}", cargo_lockfile_path.display()))?;
+
+    let lockfile = crate::lockfile::CargoLockfile {
+        path: cargo_lockfile_path,
+        parsed: parsed_cargo_lockfile,
+        content: cargo_lockfile_content,
+    };
 
     Ok((metadata, lockfile))
 }
