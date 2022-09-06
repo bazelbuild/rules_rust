@@ -137,7 +137,7 @@ _SYSTEM_TO_DYLIB_EXT = {
 _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # NOTE: Rust stdlib `build.rs` treats android as a subset of linux, rust rules treat android
     # as its own system.
-    "android": ["-ldl", "-llog", "-lgcc"],
+    "android": ["-ldl", "-llog"],
     "bitrig": [],
     # TODO(gregbowyer): If rust stdlib is compiled for cloudabi with the backtrace feature it
     # includes `-lunwind` but this might not actually be required.
