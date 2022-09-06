@@ -13,7 +13,7 @@ CARGO_BAZEL_SRCS = [
 def _format_src_label(label):
     if label.workspace_name != "":
         fail("`srcs` must be from the rules_rust repository")
-    return "Label('{}'),".format(str(label).lstrip('@'))
+    return "Label(\"{}\"),".format(str(label).lstrip("@"))
 
 def _srcs_module_impl(ctx):
     srcs = [_format_src_label(src.owner) for src in ctx.files.srcs]
