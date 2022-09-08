@@ -347,7 +347,18 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-
+  android_examples_ubuntu2004:
+    name: Android Examples
+    platform: ubuntu2004
+    working_directory: examples/android
+    build_targets:
+      - "//:android_app"
+  android_examples_macos:
+    name: Android Examples
+    platform: macos
+    working_directory: examples/android
+    build_targets:
+      - "//:android_app"
 
 buildifier:
   version: latest
