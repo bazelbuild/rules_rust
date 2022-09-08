@@ -359,6 +359,12 @@ tasks:
     working_directory: examples/android
     build_targets:
       - "//:android_app"
+  ios_examples:
+    name: iOS Examples
+    platform: macos
+    working_directory: examples/ios
+    build_targets:
+      - "//..."
 
 buildifier:
   version: latest
