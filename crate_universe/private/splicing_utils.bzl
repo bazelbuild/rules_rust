@@ -67,6 +67,15 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
 
     return dict(splicing_config.items() + splicing_manifest_content.items())
 
+def _no_at_label(label):
+    """Strips leading '@'s for stringified labels in the main repository for backwards-comaptibility reasons."""
+    s = str(label)
+    if s.startswith("@@//"):
+        return s[2:]
+    if s.startswith("@//"):
+        return s[1:]
+    return s
+
 def create_splicing_manifest(repository_ctx):
     """Produce a manifest containing required components for splciing a new Cargo workspace
 
@@ -77,7 +86,7 @@ def create_splicing_manifest(repository_ctx):
         path: The path to a json encoded manifest
     """
 
-    manifests = {str(repository_ctx.path(m)): str(m) for m in repository_ctx.attr.manifests}
+    manifests = {str(repository_ctx.path(m)): _no_at_label(m) for m in repository_ctx.attr.manifests}
 
     if repository_ctx.attr.cargo_config:
         cargo_config = str(repository_ctx.path(repository_ctx.attr.cargo_config))
