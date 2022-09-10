@@ -17,7 +17,7 @@ rust_library(
     deps = [":allocator_library"],
 )
 
-# This being required is a bug in objc_library, ideally 'main_lib' could depend directly on 'rust_lib'
+# TODO: Remove this once rules_rust doesn't support bazel 5.x
 cc_library(
     name = "shim",
     tags = ["manual"],

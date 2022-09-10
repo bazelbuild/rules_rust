@@ -1,3 +1,4 @@
+# https://github.com/bazelbuild/rules_apple/issues/1658
 flags:
   --cpu=darwin_x86_64
   --apple_platform_type=macos
