@@ -1403,19 +1403,20 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         toolchain.stdlib_linkflags,
     ]
 
-    for dep in getattr(attr, "deps", []):
-        if CcInfo in dep:
+    # Flattening is okay since crate_info.deps only records direct deps.
+    for dep in crate_info.deps.to_list():
+        if dep.cc_info:
             # A Rust staticlib or shared library doesn't need to propagate linker inputs
             # of its dependencies, except for shared libraries.
             if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep[CcInfo])
+                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
                 if shared_linker_inputs:
                     linking_context = cc_common.create_linking_context(
                         linker_inputs = depset(shared_linker_inputs),
                     )
                     cc_infos.append(CcInfo(linking_context = linking_context))
             else:
-                cc_infos.append(dep[CcInfo])
+                cc_infos.append(dep.cc_info)
 
     if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
         # TODO: if we already have an rlib in our deps, we could skip this
