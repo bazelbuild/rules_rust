@@ -34,7 +34,7 @@ rust-analyzer can pick it up upon restart.
 For users who do not use `rust_register_toolchains` to register toolchains, the following can be added
 to their WORKSPACE to register a `rust_analyzer_toolchain`. Please make sure the Rust version used in
 this toolchain matches the version used by the currently registered toolchain or the sources/documentation
-# will not match what's being compiled with and can lead to confusing results.
+will not match what's being compiled with and can lead to confusing results.
 
 ```python
 load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
