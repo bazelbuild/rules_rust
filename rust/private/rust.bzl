@@ -508,6 +508,8 @@ def _rust_test_impl(ctx):
 
         env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
         env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
+    components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
     providers.append(testing.TestEnvironment(env))
 
     return providers
