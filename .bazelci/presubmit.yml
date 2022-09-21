@@ -155,6 +155,7 @@ tasks:
     bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
+    # If updating the minimum bazel version, please also update /docs/index.md
     bazel: "5.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets

@@ -36,10 +36,7 @@ rules_rust_dependencies()
 rust_register_toolchains()
 ```
 
-The rules are under active development, as such the lastest commit on the
-`main` branch should be used. `main` is only tested against `5.0.0` as the
-minimum supported version of Bazel. Though previous versions may still be
-functional in certain environments.
+The rules are released, and releases can be found on [the GitHub Releases page](https://github.com/bazelbuild/rules_rust/releases). We recommend using the latest release from that page.
 
 ## Rules
 
@@ -82,3 +79,17 @@ rust_register_toolchains(rustfmt_version = "1.62.1")
 ## External Dependencies
 
 [crate_universe](crate_universe.md) is a tool built into `rules_rust` that can be used to fetch dependencies. Additionally, [cargo-raze](https://github.com/google/cargo-raze) is an older third-party which can also fetch dependencies.
+
+## Supported bazel versions
+
+The oldest version of Bazel the `main` branch is tested against is `5.0.0`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
+
+We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.
+
+## Supported platforms
+
+We aim to support Linux, macOS, and Windows.
+
+Windows support is less complete than the other two platforms, but most things work, and we welcome contributions to help improve its support.
+
+Windows support for some features requires `--enable_runfiles` to be passed to Bazel, we recommend putting it in your bazelrc. See [Using Bazel on Windows](https://bazel.build/configure/windows) for more Windows-specific recommendations.
