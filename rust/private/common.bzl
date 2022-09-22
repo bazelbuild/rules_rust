@@ -31,7 +31,7 @@ load(":providers.bzl", "CrateInfo", "DepInfo", "StdLibInfo", "TestCrateInfo")
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.63.0"
+DEFAULT_RUST_VERSION = "1.64.0"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider
