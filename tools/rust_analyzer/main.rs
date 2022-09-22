@@ -86,7 +86,7 @@ fn parse_config() -> anyhow::Result<Config> {
         .trim()
         .split('\n')
         .map(|line| line.split_at(line.find(':').expect("missing `:` in bazel info output")))
-        .map(|(k, v)| (k, (&v[1..]).trim()))
+        .map(|(k, v)| (k, (v[1..]).trim()))
         .collect::<HashMap<_, _>>();
 
     if config.workspace.is_none() {
