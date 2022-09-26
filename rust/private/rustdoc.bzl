@@ -142,6 +142,7 @@ def rustdoc_compile_action(
         env = env,
         arguments = args.all,
         tools = [toolchain.rust_doc],
+        process_wrapper_flags = args.process_wrapper_flags,
     )
 
 def _zip_action(ctx, input_dir, output_zip, crate_label):
@@ -194,10 +195,17 @@ def _rust_doc_impl(ctx):
         rustdoc_flags = rustdoc_flags,
     )
 
+    if ctx.attr.capture_output:
+        rustdoc_out = ctx.actions.declare_file(ctx.label.name + ".rustdoc.out", sibling = ctx.outputs.rust_doc_zip)
+        action.process_wrapper_flags.add("--stderr-file", rustdoc_out.path)
+    else:
+        rustdoc_out = ctx.actions.declare_file(ctx.label.name + ".rustdoc.ok", sibling = ctx.outputs.rust_doc_zip)
+        action.process_wrapper_flags.add("--touch-file", rustdoc_out.path)
+
     ctx.actions.run(
         mnemonic = "Rustdoc",
         progress_message = "Generating Rustdoc for {}".format(crate.label),
-        outputs = [output_dir],
+        outputs = [output_dir, rustdoc_out],
         executable = action.executable,
         inputs = action.inputs,
         env = action.env,
@@ -214,6 +222,7 @@ def _rust_doc_impl(ctx):
         ),
         OutputGroupInfo(
             rustdoc_dir = depset([output_dir]),
+            rustdoc_output = depset([rustdoc_out]),
             rustdoc_zip = depset([ctx.outputs.rust_doc_zip]),
         ),
     ]
@@ -260,6 +269,10 @@ rust_doc = rule(
     """),
     implementation = _rust_doc_impl,
     attrs = {
+        "capture_output": attr.bool(
+            doc = "Enable or disable capturing the output of rustdoc to a file.",
+            default = False,
+        ),
         "crate": attr.label(
             doc = (
                 "The label of the target to generate code documentation for.\n" +
