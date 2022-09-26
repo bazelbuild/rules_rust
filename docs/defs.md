@@ -11,6 +11,7 @@
 * [error_format](#error_format)
 * [extra_rustc_flag](#extra_rustc_flag)
 * [extra_rustc_flags](#extra_rustc_flags)
+* [source_path_prefix](#source_path_prefix)
 * [capture_clippy_output](#capture_clippy_output)
 
 <a id="capture_clippy_output"></a>
@@ -584,6 +585,24 @@ Run the test with `bazel test //hello_lib:greeting_test`.
 | <a id="rust_test-stamp"></a>stamp |  Whether to encode build information into the <code>Rustc</code> action. Possible values:<br><br>- <code>stamp = 1</code>: Always stamp the build information into the <code>Rustc</code> action, even in             [--nostamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) builds.             This setting should be avoided, since it potentially kills remote caching for the target and             any downstream actions that depend on it.<br><br>- <code>stamp = 0</code>: Always replace build information by constant values. This gives good build result caching.<br><br>- <code>stamp = -1</code>: Embedding of build information is controlled by the             [--[no]stamp](https://docs.bazel.build/versions/main/user-manual.html#flag--stamp) flag.<br><br>Stamped targets are not rebuilt unless their dependencies change.<br><br>For example if a <code>rust_library</code> is stamped, and a <code>rust_binary</code> depends on that library, the stamped library won't be rebuilt when we change sources of the <code>rust_binary</code>. This is different from how [<code>cc_library.linkstamps</code>](https://docs.bazel.build/versions/main/be/c-cpp.html#cc_library.linkstamp) behaves.   | Integer | optional | 0 |
 | <a id="rust_test-use_libtest_harness"></a>use_libtest_harness |  Whether to use <code>libtest</code>. For targets using this flag, individual tests can be run by using the [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag. E.g. <code>bazel test //src:rust_test --test_arg=foo::test::test_fn</code>.   | Boolean | optional | True |
 | <a id="rust_test-version"></a>version |  A version to inject in the cargo environment variable.   | String | optional | "0.0.0" |
+
+
+<a id="source_path_prefix"></a>
+
+## source_path_prefix
+
+<pre>
+source_path_prefix(<a href="#source_path_prefix-name">name</a>)
+</pre>
+
+Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics,debug information, and macro expansions with `--@rules_rust//:source_path_prefix`.Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="source_path_prefix-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="rust_test_suite"></a>

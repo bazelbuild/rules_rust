@@ -719,6 +719,9 @@ _common_attrs = {
         allow_single_file = True,
         cfg = "exec",
     ),
+    "_source_path_prefix": attr.label(
+        default = Label("//:source_path_prefix"),
+    ),
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),

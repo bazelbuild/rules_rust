@@ -50,6 +50,7 @@
 * [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
 * [rustfmt_aspect](#rustfmt_aspect)
 * [rustfmt_test](#rustfmt_test)
+* [source_path_prefix](#source_path_prefix)
 
 
 <a id="capture_clippy_output"></a>
@@ -1350,6 +1351,24 @@ A test rule for performing `rustfmt --check` on a set of targets
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rustfmt_test-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 | <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
+
+
+<a id="source_path_prefix"></a>
+
+## source_path_prefix
+
+<pre>
+source_path_prefix(<a href="#source_path_prefix-name">name</a>)
+</pre>
+
+Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics,debug information, and macro expansions with `--@rules_rust//:source_path_prefix`.Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="source_path_prefix-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
 
 
 <a id="CrateInfo"></a>

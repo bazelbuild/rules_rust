@@ -56,6 +56,7 @@ PAGES = dict([
             "error_format",
             "extra_rustc_flag",
             "extra_rustc_flags",
+            "source_path_prefix",
             "capture_clippy_output",
         ],
     ),

@@ -90,6 +90,11 @@ is_proc_macro_dep_enabled = rule(
     build_setting = config.bool(flag = True),
 )
 
+SourcePathPrefixInfo = provider(
+    doc = "Remap source path prefixes in all output, including compiler diagnostics, debug information, macro expansions to a path",
+    fields = {"source_path_prefix": "string The path to substitute ${pwd} for"},
+)
+
 def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
@@ -708,7 +713,7 @@ def construct_arguments(
         force_all_deps_direct = False,
         force_link = False,
         stamp = False,
-        remap_path_prefix = ".",
+        remap_path_prefix = True,
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False):
@@ -737,7 +742,7 @@ def construct_arguments(
         force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
-        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
+        remap_path_prefix (bool): Whether to apply the remap-path-prefix compiler setting.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
@@ -874,8 +879,8 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    if remap_path_prefix:
-        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+    if remap_path_prefix and hasattr(ctx.attr, "_source_path_prefix"):
+        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(ctx.attr._source_path_prefix[SourcePathPrefixInfo].source_path_prefix))
 
     if emit:
         rustc_flags.add("--emit=" + ",".join(emit_with_paths))
@@ -1837,6 +1842,19 @@ extra_rustc_flag = rule(
     ),
     implementation = _extra_rustc_flag_impl,
     build_setting = config.string(flag = True, allow_multiple = True),
+)
+
+def _source_path_prefix_impl(ctx):
+    return SourcePathPrefixInfo(source_path_prefix = ctx.build_setting_value)
+
+source_path_prefix = rule(
+    doc = (
+        "Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics," +
+        "debug information, and macro expansions with `--@rules_rust//:source_path_prefix`." +
+        "Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory."
+    ),
+    implementation = _source_path_prefix_impl,
+    build_setting = config.string(flag = True),
 )
 
 def _extra_exec_rustc_flags_impl(ctx):
