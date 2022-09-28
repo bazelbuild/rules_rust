@@ -88,7 +88,7 @@ rust_library(
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
             "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.143//:serde",
+            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),
@@ -158,7 +158,7 @@ rust_binary(
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
             "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.143//:serde",
+            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),
