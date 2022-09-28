@@ -21,7 +21,7 @@ pub enum Mode {
 
 /// A special case of label::Label, which must be absolute and must not specify
 /// a repository.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AbsoluteLabel<'s> {
     package_name: &'s str,
     name: &'s str,
