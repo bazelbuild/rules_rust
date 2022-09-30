@@ -452,13 +452,16 @@ def _cargo_dep_env_implementation(ctx):
     )
 
     build_infos = []
-    if ctx.file.out_dir:
+    out_dir = ctx.file.out_dir
+    if out_dir:
+        if not out_dir.is_directory:
+            fail("out_dir must be a directory artifact")
         build_infos.append(BuildInfo(
             dep_env = empty_file,
             flags = empty_file,
             link_flags = empty_file,
             link_search_paths = empty_file,
-            out_dir = ctx.file.out_dir,
+            out_dir = out_dir,
             rustc_env = empty_file,
         ))
     return [
