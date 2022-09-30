@@ -450,6 +450,17 @@ def _cargo_dep_env_implementation(ctx):
         outputs = [empty_dir],
         executable = "true",
     )
+
+    build_infos = []
+    if ctx.file.out_dir:
+        build_infos.append(BuildInfo(
+            dep_env = empty_file,
+            flags = empty_file,
+            link_flags = empty_file,
+            link_search_paths = empty_file,
+            out_dir = ctx.file.out_dir,
+            rustc_env = empty_file,
+        ))
     return [
         DefaultInfo(files = depset(ctx.files.src)),
         BuildInfo(
@@ -464,7 +475,7 @@ def _cargo_dep_env_implementation(ctx):
             dep_env = ctx.file.src,
             direct_crates = depset(),
             link_search_path_files = depset(),
-            transitive_build_infos = depset(),
+            transitive_build_infos = depset(direct = build_infos),
             transitive_crate_outputs = depset(),
             transitive_crates = depset(),
             transitive_noncrates = depset(),
@@ -480,6 +491,16 @@ cargo_dep_env = rule(
         "for build scripts which depend on this crate."
     ),
     attrs = {
+        "out_dir": attr.label(
+            doc = dedent("""\
+                Folder containing additional inputs when building all direct dependencies.
+
+                This has the same effect as a `cargo_build_script` which prints
+                puts files into `$OUT_DIR`, but without requiring a build script.
+            """),
+            allow_single_file = True,
+            mandatory = False,
+        ),
         "src": attr.label(
             doc = dedent("""\
                 File containing additional environment variables to set for build scripts of direct dependencies.
