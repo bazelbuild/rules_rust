@@ -456,6 +456,11 @@ def _cargo_dep_env_implementation(ctx):
     if out_dir:
         if not out_dir.is_directory:
             fail("out_dir must be a directory artifact")
+        # BuildInfos in this list are collected up for all transitive cargo_build_script
+        # dependencies. This is important for any flags set in `dep_env` which reference this
+        # `out_dir`.
+        #
+        # TLDR: This BuildInfo propagates up build script dependencies.
         build_infos.append(BuildInfo(
             dep_env = empty_file,
             flags = empty_file,
@@ -466,6 +471,14 @@ def _cargo_dep_env_implementation(ctx):
         ))
     return [
         DefaultInfo(files = depset(ctx.files.src)),
+        # Parts of this BuildInfo is used when building all transitive dependencies
+        # (cargo_build_script and otherwise), alongside the DepInfo. This is how other rules
+        # identify this one as a valid dependency, but we don't otherwise have a use for it.
+        #
+        # TLDR: This BuildInfo propagates up normal (non build script) depenencies.
+        #
+        # In the future, we could consider setting rustc_env here, and also propagating dep_dir
+        # so files in it can be referenced there.
         BuildInfo(
             dep_env = empty_file,
             flags = empty_file,
@@ -474,6 +487,9 @@ def _cargo_dep_env_implementation(ctx):
             out_dir = empty_dir,
             rustc_env = empty_file,
         ),
+        # Information here is used directly by dependencies, and it is an error to have more than
+        # one dependency which sets this. This is the main way to specify information from build
+        # scripts, which is what we're looking to do.
         _DepInfo(
             dep_env = ctx.file.src,
             direct_crates = depset(),
