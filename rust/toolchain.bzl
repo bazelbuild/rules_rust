@@ -305,7 +305,8 @@ def _generate_sysroot(
         clippy = None,
         llvm_tools = None,
         rust_std = None,
-        rustfmt = None):
+        rustfmt = None,
+        rust_analyzer_proc_macro_srv = None):
     """Generate a rust sysroot from collection of toolchain components
 
     Args:
@@ -318,6 +319,7 @@ def _generate_sysroot(
         llvm_tools (Target, optional): A collection of llvm tools used by `rustc`.
         rust_std (Target, optional): A collection of Files containing Rust standard library components.
         rustfmt (File, optional): The path to a `rustfmt` executable.
+        rust_analyzer_proc_macro_srv (File, optional): The path to a `rust_analyzer_proc_macro_srv`.
 
     Returns:
         struct: A struct of generated files representing the new sysroot
@@ -372,6 +374,12 @@ def _generate_sysroot(
         sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
         transitive_file_sets.extend([sysroot_rust_std])
 
+    # Rust Analyzer proc_macro Server
+    sysroot_rust_analyzer_proc_macro_srv = None
+    if rust_analyzer_proc_macro_srv:
+        sysroot_rust_analyzer_proc_macro_srv = _symlink_sysroot_bin(ctx, name, "libexec", rust_analyzer_proc_macro_srv)
+        direct_files.extend([sysroot_rust_analyzer_proc_macro_srv])
+
     # Declare a file in the root of the sysroot to make locating the sysroot easy
     sysroot_anchor = ctx.actions.declare_file("{}/rust.sysroot".format(name))
     ctx.actions.write(
@@ -385,6 +393,7 @@ def _generate_sysroot(
             "rustc: {}".format(rustc),
             "rustdoc: {}".format(rustdoc),
             "rustfmt: {}".format(rustfmt),
+            "rust_analyzer_proc_macro_srv: {}".format(rust_analyzer_proc_macro_srv),
         ]),
     )
 
@@ -400,6 +409,7 @@ def _generate_sysroot(
         rustc_lib = sysroot_rustc_lib,
         rustdoc = sysroot_rustdoc,
         rustfmt = sysroot_rustfmt,
+        rust_analyzer_proc_macro_srv = sysroot_rust_analyzer_proc_macro_srv,
         sysroot_anchor = sysroot_anchor,
     )
 
@@ -451,6 +461,7 @@ def _rust_toolchain_impl(ctx):
         clippy = ctx.file.clippy_driver,
         cargo = ctx.file.cargo,
         llvm_tools = ctx.attr.llvm_tools,
+        rust_analyzer_proc_macro_srv = ctx.file.rust_analyzer_proc_macro_srv,
     )
 
     expanded_stdlib_linkflags = []
@@ -519,6 +530,7 @@ def _rust_toolchain_impl(ctx):
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
+        rust_analyzer_proc_macro_srv = sysroot.rust_analyzer_proc_macro_srv,
         make_variables = make_variable_info,
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
@@ -645,6 +657,11 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
             mandatory = True,
+        ),
+        "rust_analyzer_proc_macro_srv": attr.label(
+            doc = "The location of the rust_analyzer_proc_macro_srv binary.",
+            allow_single_file = True,
+            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",

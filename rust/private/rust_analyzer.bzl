@@ -225,6 +225,7 @@ rust_analyzer_toolchain = rule(
 
 def _rust_analyzer_detect_sysroot_impl(ctx):
     rust_analyzer_toolchain = ctx.toolchains[Label("@rules_rust//rust/rust_analyzer:toolchain_type")]
+    rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
 
     if not rust_analyzer_toolchain.rustc_srcs:
         fail(
@@ -238,13 +239,21 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
 
+    sysroot = _OUTPUT_BASE_TEMPLATE + "/".join(rust_toolchain.sysroot.split("/")[3:-1])
+
     sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
     ctx.actions.write(
         output = sysroot_src_file,
         content = sysroot_src,
     )
 
-    return [DefaultInfo(files = depset([sysroot_src_file]))]
+    sysroot_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot")
+    ctx.actions.write(
+        output = sysroot_file,
+        content = sysroot
+    )
+
+    return [DefaultInfo(files = depset([sysroot_src_file, sysroot_file]))]
 
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,

@@ -2,12 +2,13 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::anyhow;
+use log::debug;
 use runfiles::Runfiles;
 
 mod aquery;
 mod rust_project;
 
-const SYSROOT_SRC_FILE_RUNFILES_PREFIX: &str = "rules_rust";
+const DEFAULT_RUNFILES_PREFIX: &str = "rules_rust";
 
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
@@ -39,6 +40,18 @@ pub fn generate_crate_info(
     Ok(())
 }
 
+fn read_runfile(rules_rust_name: impl AsRef<str>, path: &str) -> anyhow::Result<String> {
+    let workspace_name = match rules_rust_name.as_ref().trim_start_matches('@') {
+        "" => DEFAULT_RUNFILES_PREFIX,
+        s => s,
+    };
+
+    let relative_path = format!("{}{}", workspace_name, path);
+    let r = Runfiles::create()?;
+    let path = r.rlocation(relative_path);
+    Ok(std::fs::read_to_string(&path)?)
+}
+
 pub fn write_rust_project(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
@@ -56,19 +69,17 @@ pub fn write_rust_project(
         rules_rust_name.as_ref(),
     )?;
 
-    let workspace_name = match rules_rust_name.as_ref().trim_start_matches('@') {
-        "" => SYSROOT_SRC_FILE_RUNFILES_PREFIX,
-        s => s,
-    };
-    let sysroot_path = format!(
-        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src",
-        workspace_name
-    );
-    let r = Runfiles::create()?;
-    let path = r.rlocation(sysroot_path);
-    let sysroot_src = std::fs::read_to_string(&path)?;
+    let sysroot_src_path = read_runfile(
+        rules_rust_name,
+        "/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src",
+    )?;
+    let sysroot_path = read_runfile(
+        rules_rust_name,
+        "/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot",
+    )?;
 
-    let rust_project = rust_project::generate_rust_project(&sysroot_src, &crate_specs)?;
+    let rust_project =
+        rust_project::generate_rust_project(&sysroot_path, &sysroot_src_path, &crate_specs)?;
 
     rust_project::write_rust_project(
         rust_project_path.as_ref(),

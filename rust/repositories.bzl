@@ -8,6 +8,7 @@ load(
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
+    "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
     "BUILD_for_toolchain",
@@ -212,6 +213,12 @@ def _rust_toolchain_tools_repository_impl(ctx):
     if include_llvm_tools:
         build_components.append(load_llvm_tools(ctx, ctx.attr.exec_triple))
 
+    # 1.64 onwards uses a standalone binary to support proc_macro in rust-analyzer. To support this, we include
+    # the rust-analyzer-proc-macro-srv binary in sysroot.
+    include_rust_analyzer_proc_macro_srv = ctx.attr.version >= "1.64.0"
+    if include_rust_analyzer_proc_macro_srv:
+        build_components.append(BUILD_for_rust_analyzer_proc_macro_srv(ctx.attr.target_triple))
+
     build_components.append(load_rust_stdlib(ctx, ctx.attr.target_triple))
 
     stdlib_linkflags = None
@@ -229,6 +236,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
+        include_proc_macro_srv = include_rust_analyzer_proc_macro_srv,
     ))
 
     # Not all target triples are expected to have dev components

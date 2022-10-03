@@ -116,6 +116,28 @@ filegroup(
 )
 """
 
+_build_file_for_rust_analyzer_proc_macro_srv = """\
+filegroup(
+   name = "rust_analyzer_proc_macro_srv",
+   srcs = ["libexec/rust-analyzer-proc-macro-srv{binary_ext}"],
+   visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_analyzer_proc_macro_srv(target_triple):
+    """Emits a BUILD file the rust_analyzer_proc_macro_srv archive.
+
+    Args:
+        target_triple (str): The triple of the target platform
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    system = triple_to_system(target_triple)
+    return _build_file_for_rust_analyzer_proc_macro_srv.format(
+        binary_ext = system_to_binary_ext(system),
+    )
+
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
 
@@ -224,6 +246,7 @@ rust_toolchain(
     default_edition = "{default_edition}",
     exec_triple = "{exec_triple}",
     target_triple = "{target_triple}",
+    rust_analyzer_proc_macro_srv = {rust_analyzer_proc_macro_srv},
     visibility = ["//visibility:public"],
 )
 """
@@ -238,6 +261,7 @@ def BUILD_for_rust_toolchain(
         default_edition,
         include_rustfmt,
         include_llvm_tools,
+        include_proc_macro_srv,
         stdlib_linkflags = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -251,6 +275,7 @@ def BUILD_for_rust_toolchain(
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
+        include_proc_macro_srv (bool): Whether rust-analyzer-proc-macro-srv is present in the toolchain.
         stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -277,6 +302,9 @@ def BUILD_for_rust_toolchain(
     allocator_library_label = "None"
     if allocator_library:
         allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
+    rust_analyzer_proc_macro_srv = "None"
+    if include_proc_macro_srv:
+      rust_analyzer_proc_macro_srv = "\"@{workspace_name}//:rust_analyzer_proc_macro_srv\"".format(workspace_name = workspace_name)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
@@ -294,6 +322,7 @@ def BUILD_for_rust_toolchain(
         rustfmt_label = rustfmt_label,
         llvm_cov_label = llvm_cov_label,
         llvm_profdata_label = llvm_profdata_label,
+        rust_analyzer_proc_macro_srv = rust_analyzer_proc_macro_srv,
     )
 
 _build_file_for_toolchain_template = """\

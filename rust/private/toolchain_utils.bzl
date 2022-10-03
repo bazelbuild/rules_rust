@@ -42,6 +42,8 @@ def _toolchain_files_impl(ctx):
         )
     elif ctx.attr.tool == "rustc_lib":
         files = toolchain.rustc_lib
+    elif ctx.attr.tool == "rust_analyzer_proc_macro_srv":
+        files = depset([toolchain.rust_analyzer_proc_macro_srv])
     elif ctx.attr.tool == "rust_std" or ctx.attr.tool == "rust_stdlib" or ctx.attr.tool == "rust_lib":
         files = toolchain.rust_std
     else:
@@ -65,6 +67,7 @@ toolchain_files = rule(
                 "rust_std",
                 "rust_stdlib",
                 "rustc_lib",
+                "rust_analyzer_proc_macro_srv",
                 "rustc",
                 "rustdoc",
                 "rustfmt",
