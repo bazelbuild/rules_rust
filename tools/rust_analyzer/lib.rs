@@ -2,7 +2,6 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::anyhow;
-use log::debug;
 use runfiles::Runfiles;
 
 mod aquery;
