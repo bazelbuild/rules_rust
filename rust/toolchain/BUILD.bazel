@@ -37,11 +37,6 @@ toolchain_files(
     tool = "rust_stdlib",
 )
 
-toolchain_files(
-    name = "current_rust_analyzer_proc_macro_srv",
-    tool = "rust_analyzer_proc_macro_srv",
-)
-
 current_rust_toolchain(
     name = "current_rust_toolchain",
 )
