@@ -239,6 +239,9 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
 
+    # Not the most elegant solution, this converts something like
+    # bazel-out/darwin_arm64-fastbuild/bin/external/rust_darwin_aarch64__aarch64-apple-darwin_tools/rust_toolchain
+    # into external/rust_darwin_aarch64__aarch64-apple-darwin_tools/ and prefixes the output base template.
     sysroot = _OUTPUT_BASE_TEMPLATE + "/".join(rust_toolchain.sysroot.split("/")[3:-1])
 
     sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
