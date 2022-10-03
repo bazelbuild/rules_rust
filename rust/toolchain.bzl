@@ -640,6 +640,11 @@ rust_toolchain = rule(
             doc = "The operating system for the current toolchain",
             mandatory = True,
         ),
+        "rust_analyzer_proc_macro_srv": attr.label(
+            doc = "The location of the rust_analyzer_proc_macro_srv binary.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
@@ -657,11 +662,6 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
             mandatory = True,
-        ),
-        "rust_analyzer_proc_macro_srv": attr.label(
-            doc = "The location of the rust_analyzer_proc_macro_srv binary.",
-            allow_single_file = True,
-            cfg = "exec",
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
