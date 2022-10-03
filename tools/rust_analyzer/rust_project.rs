@@ -230,6 +230,7 @@ mod tests {
     fn generate_rust_project_single() {
         let project = generate_rust_project(
             "sysroot",
+            "sysroot_src",
             &BTreeSet::from([CrateSpec {
                 crate_id: "ID-example".into(),
                 display_name: "example".into(),
@@ -259,6 +260,7 @@ mod tests {
     fn generate_rust_project_with_deps() {
         let project = generate_rust_project(
             "sysroot",
+            "sysroot_src",
             &BTreeSet::from([
                 CrateSpec {
                     crate_id: "ID-example".into(),
