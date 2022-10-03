@@ -249,7 +249,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     sysroot_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot")
     ctx.actions.write(
         output = sysroot_file,
-        content = sysroot
+        content = sysroot,
     )
 
     return [DefaultInfo(files = depset([sysroot_src_file, sysroot_file]))]

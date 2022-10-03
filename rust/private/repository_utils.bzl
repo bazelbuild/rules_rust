@@ -304,7 +304,7 @@ def BUILD_for_rust_toolchain(
         allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
     rust_analyzer_proc_macro_srv = "None"
     if include_proc_macro_srv:
-      rust_analyzer_proc_macro_srv = "\"@{workspace_name}//:rust_analyzer_proc_macro_srv\"".format(workspace_name = workspace_name)
+        rust_analyzer_proc_macro_srv = "\"@{workspace_name}//:rust_analyzer_proc_macro_srv\"".format(workspace_name = workspace_name)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
