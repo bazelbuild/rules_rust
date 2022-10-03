@@ -1,3 +1,3 @@
 """The version of rules_rust."""
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"

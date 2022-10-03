@@ -708,7 +708,7 @@ def construct_arguments(
         force_all_deps_direct = False,
         force_link = False,
         stamp = False,
-        remap_path_prefix = ".",
+        remap_path_prefix = "",
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False):
@@ -737,7 +737,7 @@ def construct_arguments(
         force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
-        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
+        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to None, no prefix will be set.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
@@ -874,7 +874,7 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    if remap_path_prefix:
+    if remap_path_prefix != None:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
     if emit:
@@ -1403,19 +1403,20 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         toolchain.stdlib_linkflags,
     ]
 
-    for dep in getattr(attr, "deps", []):
-        if CcInfo in dep:
+    # Flattening is okay since crate_info.deps only records direct deps.
+    for dep in crate_info.deps.to_list():
+        if dep.cc_info:
             # A Rust staticlib or shared library doesn't need to propagate linker inputs
             # of its dependencies, except for shared libraries.
             if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep[CcInfo])
+                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
                 if shared_linker_inputs:
                     linking_context = cc_common.create_linking_context(
                         linker_inputs = depset(shared_linker_inputs),
                     )
                     cc_infos.append(CcInfo(linking_context = linking_context))
             else:
-                cc_infos.append(dep[CcInfo])
+                cc_infos.append(dep.cc_info)
 
     if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
         # TODO: if we already have an rlib in our deps, we could skip this

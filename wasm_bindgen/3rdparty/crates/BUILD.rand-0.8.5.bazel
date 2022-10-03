@@ -114,15 +114,15 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
 
             # Common Deps
             "@rules_rust_wasm_bindgen__rand_chacha-0.3.1//:rand_chacha",
-            "@rules_rust_wasm_bindgen__rand_core-0.6.3//:rand_core",
+            "@rules_rust_wasm_bindgen__rand_core-0.6.4//:rand_core",
         ],
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__rand_chacha-0.3.1//:rand_chacha",
-            "@rules_rust_wasm_bindgen__rand_core-0.6.3//:rand_core",
+            "@rules_rust_wasm_bindgen__rand_core-0.6.4//:rand_core",
         ],
     }),
 )

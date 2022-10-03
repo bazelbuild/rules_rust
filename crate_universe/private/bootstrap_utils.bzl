@@ -10,8 +10,13 @@ CARGO_BAZEL_SRCS = [
 ]
 """
 
+def _format_src_label(label):
+    if label.workspace_name != "":
+        fail("`srcs` must be from the rules_rust repository")
+    return "Label(\"{}\"),".format(str(label).lstrip("@"))
+
 def _srcs_module_impl(ctx):
-    srcs = ["@rules_rust{}".format(src.owner) for src in ctx.files.srcs]
+    srcs = [_format_src_label(src.owner) for src in ctx.files.srcs]
     if not srcs:
         fail("`srcs` cannot be empty")
     output = ctx.actions.declare_file(ctx.label.name)
@@ -19,7 +24,7 @@ def _srcs_module_impl(ctx):
     ctx.actions.write(
         output = output,
         content = _SRCS_TEMPLATE.format(
-            srcs = "\n    ".join(["\"{}\",".format(src) for src in srcs]),
+            srcs = "\n    ".join(srcs),
         ),
     )
 

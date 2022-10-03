@@ -29,7 +29,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@rules_rust_wasm_bindgen__anyhow-1.0.61//:anyhow",
+    actual = "@rules_rust_wasm_bindgen__anyhow-1.0.65//:anyhow",
     tags = ["manual"],
 )
 
@@ -89,19 +89,19 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@rules_rust_wasm_bindgen__serde-1.0.143//:serde",
+    actual = "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_derive",
-    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.143//:serde_derive",
+    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.145//:serde_derive",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@rules_rust_wasm_bindgen__serde_json-1.0.83//:serde_json",
+    actual = "@rules_rust_wasm_bindgen__serde_json-1.0.85//:serde_json",
     tags = ["manual"],
 )
 
@@ -119,19 +119,19 @@ alias(
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.82//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.83//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli-support",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.82//:wasm_bindgen_cli_support",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.83//:wasm_bindgen_cli_support",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-shared",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.82//:wasm_bindgen_shared",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.83//:wasm_bindgen_shared",
     tags = ["manual"],
 )
 
@@ -203,14 +203,14 @@ alias(
 )
 
 alias(
-    name = "wait-timeout__exit",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
+    name = "wait-timeout__sleep",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wait-timeout__sleep",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
+    name = "wait-timeout__exit",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
     tags = ["manual"],
 )
 

@@ -113,13 +113,13 @@ rust_library(
         ): [
             # Target Deps
             "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.75//:openssl_sys",
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.76//:openssl_sys",
 
             # Common Deps
             "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
             "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
-            "@rules_rust_wasm_bindgen__socket2-0.4.4//:socket2",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
         ],
         # cfg(target_env = "msvc")
         (
@@ -133,14 +133,14 @@ rust_library(
             # Common Deps
             "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
             "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
-            "@rules_rust_wasm_bindgen__socket2-0.4.4//:socket2",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
         ],
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
             "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
-            "@rules_rust_wasm_bindgen__socket2-0.4.4//:socket2",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
         ],
     }),
 )

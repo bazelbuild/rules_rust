@@ -102,7 +102,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__aho-corasick-0.7.18//:aho_corasick",
+            "@rules_rust_wasm_bindgen__aho-corasick-0.7.19//:aho_corasick",
             "@rules_rust_wasm_bindgen__memchr-2.5.0//:memchr",
             "@rules_rust_wasm_bindgen__regex-syntax-0.6.27//:regex_syntax",
         ],

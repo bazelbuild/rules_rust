@@ -4,8 +4,6 @@ aspects_flags: &aspects_flags
   - "--config=clippy"
 default_linux_targets: &default_linux_targets
   - "//..."
-  # TODO: Switch manual tag to platform constraint after bazel 4.0.
-  - "//test/versioned_dylib:versioned_dylib_test"
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
@@ -37,6 +35,8 @@ tasks:
       - "//..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
+      # TODO: This test does not work on RBE
+      - "-//test/versioned_dylib:versioned_dylib_test"
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -67,6 +67,8 @@ tasks:
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
+      # TODO: This test does not work on RBE
+      - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
   rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
@@ -80,6 +82,8 @@ tasks:
       - "..."
       - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
+      # TODO: This test does not work on RBE
+      - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
@@ -151,6 +155,7 @@ tasks:
     bazel: "rolling"
   ubuntu1804:
     name: "Min Bazel Version"
+    # If updating the minimum bazel version, please also update /docs/index.md
     bazel: "5.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
@@ -343,7 +348,24 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-
+  android_examples_ubuntu2004:
+    name: Android Examples
+    platform: ubuntu2004
+    working_directory: examples/android
+    build_targets:
+      - "//:android_app"
+  android_examples_macos:
+    name: Android Examples
+    platform: macos
+    working_directory: examples/android
+    build_targets:
+      - "//:android_app"
+  ios_examples:
+    name: iOS Examples
+    platform: macos
+    working_directory: examples/ios
+    build_targets:
+      - "//..."
 
 buildifier:
   version: latest

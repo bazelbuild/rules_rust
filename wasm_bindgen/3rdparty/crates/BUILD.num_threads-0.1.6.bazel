@@ -96,7 +96,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
         ): [
             # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
 
             # Common Deps
         ],

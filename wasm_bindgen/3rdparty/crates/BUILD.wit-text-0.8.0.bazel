@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__anyhow-1.0.61//:anyhow",
+            "@rules_rust_wasm_bindgen__anyhow-1.0.65//:anyhow",
             "@rules_rust_wasm_bindgen__wast-21.0.0//:wast",
             "@rules_rust_wasm_bindgen__wit-writer-0.2.0//:wit_writer",
         ],

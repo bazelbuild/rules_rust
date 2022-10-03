@@ -1,0 +1,53 @@
+load("@build_bazel_rules_android//android:rules.bzl", "android_binary", "android_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+cc_library(
+    name = "allocator_library",
+    srcs = ["allocator_library.cc"],
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "rust_lib",
+    srcs = ["demo.rs"],
+    edition = "2018",
+    deps = [":allocator_library"],
+)
+
+cc_library(
+    name = "jni_shim",
+    srcs = ["android_link_hack.c"],  # Required because of https://github.com/bazelbuild/rules_rust/issues/1271
+    linkopts = [
+        "-lm",  # Required to avoid dlopen runtime failures unrelated to rust
+    ],
+    deps = [":rust_lib"],
+    alwayslink = True,  # Required since JNI symbols appear to be unused
+)
+
+android_library(
+    name = "android_main",
+    srcs = [
+        "AndroidMain.java",
+        "JniShim.java",
+    ],
+    custom_package = "com.example.androidapp",
+    manifest = "AndroidManifest.xml",
+    resource_files = ["res/layout/android_main.xml"],
+    deps = [":jni_shim"],
+)
+
+android_binary(
+    name = "android_app",
+    custom_package = "com.example.androidapp",
+    manifest = "AndroidManifest.xml",
+    deps = [":android_main"],
+)
+
+platform(
+    name = "android_aarch64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:android",
+    ],
+)

@@ -6,7 +6,7 @@ exports_files(["LICENSE"])
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        ":workspace.bzl",
+        ":version.bzl",
     ],
     visibility = ["//visibility:public"],
 )
