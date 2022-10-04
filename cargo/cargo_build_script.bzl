@@ -456,6 +456,7 @@ def _cargo_dep_env_implementation(ctx):
     if out_dir:
         if not out_dir.is_directory:
             fail("out_dir must be a directory artifact")
+
         # BuildInfos in this list are collected up for all transitive cargo_build_script
         # dependencies. This is important for any flags set in `dep_env` which reference this
         # `out_dir`.
