@@ -217,7 +217,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
     # the rust-analyzer-proc-macro-srv binary in sysroot.
     include_rust_analyzer_proc_macro_srv = ctx.attr.version >= "1.64.0"
     if include_rust_analyzer_proc_macro_srv:
-        build_components.append(BUILD_for_rust_analyzer_proc_macro_srv(ctx.attr.target_triple))
+        build_components.append(BUILD_for_rust_analyzer_proc_macro_srv())
 
     build_components.append(load_rust_stdlib(ctx, ctx.attr.target_triple))
 
