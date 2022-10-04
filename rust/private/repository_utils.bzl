@@ -119,18 +119,24 @@ filegroup(
 _build_file_for_rust_analyzer_proc_macro_srv = """\
 filegroup(
    name = "rust_analyzer_proc_macro_srv",
-   srcs = ["libexec/rust-analyzer-proc-macro-srv"],
+   srcs = ["libexec/rust-analyzer-proc-macro-srv{binary_ext}"],
    visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_proc_macro_srv():
+def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     """Emits a BUILD file the rust_analyzer_proc_macro_srv archive.
+
+    Args:
+        exec_triple (str): The triple of the exec platform
 
     Returns:
         str: The contents of a BUILD file
     """
-    return _build_file_for_rust_analyzer_proc_macro_srv
+    system = triple_to_system(exec_triple)
+    return _build_file_for_rust_analyzer_proc_macro_srv.format(
+        binary_ext = system_to_binary_ext(system),
+    )
 
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
