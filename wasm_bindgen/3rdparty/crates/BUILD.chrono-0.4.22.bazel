@@ -97,12 +97,12 @@ rust_library(
             "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",
 
             # Common Deps
-            "@rules_rust_wasm_bindgen__iana-time-zone-0.1.44//:iana_time_zone",
+            "@rules_rust_wasm_bindgen__iana-time-zone-0.1.50//:iana_time_zone",
             "@rules_rust_wasm_bindgen__num-integer-0.1.45//:num_integer",
             "@rules_rust_wasm_bindgen__num-traits-0.2.15//:num_traits",
         ],
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__iana-time-zone-0.1.44//:iana_time_zone",
+            "@rules_rust_wasm_bindgen__iana-time-zone-0.1.50//:iana_time_zone",
             "@rules_rust_wasm_bindgen__num-integer-0.1.45//:num_integer",
             "@rules_rust_wasm_bindgen__num-traits-0.2.15//:num_traits",
         ],

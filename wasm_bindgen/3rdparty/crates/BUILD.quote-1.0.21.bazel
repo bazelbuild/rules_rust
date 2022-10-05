@@ -91,7 +91,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.43//:proc_macro2",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.44//:proc_macro2",
             "@rules_rust_wasm_bindgen__quote-1.0.21//:build_script_build",
         ],
     }),

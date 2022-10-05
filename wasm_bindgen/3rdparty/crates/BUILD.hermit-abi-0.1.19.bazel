@@ -86,7 +86,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__libc-0.2.131//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
         ],
     }),
 )

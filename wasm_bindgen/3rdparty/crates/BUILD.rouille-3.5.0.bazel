@@ -60,7 +60,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__serde_derive-1.0.143//:serde_derive",
+            "@rules_rust_wasm_bindgen__serde_derive-1.0.145//:serde_derive",
         ],
     }),
     rustc_env = {
@@ -91,15 +91,15 @@ rust_library(
             "@rules_rust_wasm_bindgen__filetime-0.2.17//:filetime",
             "@rules_rust_wasm_bindgen__multipart-0.18.0//:multipart",
             "@rules_rust_wasm_bindgen__num_cpus-1.13.1//:num_cpus",
-            "@rules_rust_wasm_bindgen__percent-encoding-2.1.0//:percent_encoding",
+            "@rules_rust_wasm_bindgen__percent-encoding-2.2.0//:percent_encoding",
             "@rules_rust_wasm_bindgen__rand-0.8.5//:rand",
-            "@rules_rust_wasm_bindgen__serde-1.0.143//:serde",
-            "@rules_rust_wasm_bindgen__serde_json-1.0.83//:serde_json",
+            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+            "@rules_rust_wasm_bindgen__serde_json-1.0.85//:serde_json",
             "@rules_rust_wasm_bindgen__sha1-0.6.1//:sha1",
             "@rules_rust_wasm_bindgen__threadpool-1.8.1//:threadpool",
-            "@rules_rust_wasm_bindgen__time-0.3.13//:time",
+            "@rules_rust_wasm_bindgen__time-0.3.14//:time",
             "@rules_rust_wasm_bindgen__tiny_http-0.8.2//:tiny_http",
-            "@rules_rust_wasm_bindgen__url-2.2.2//:url",
+            "@rules_rust_wasm_bindgen__url-2.3.1//:url",
         ],
     }),
 )

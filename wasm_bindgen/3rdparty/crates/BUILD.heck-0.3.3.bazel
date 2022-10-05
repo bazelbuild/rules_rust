@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__unicode-segmentation-1.9.0//:unicode_segmentation",
+            "@rules_rust_wasm_bindgen__unicode-segmentation-1.10.0//:unicode_segmentation",
         ],
     }),
 )

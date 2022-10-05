@@ -93,7 +93,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__buf_redux-0.8.4//:buf_redux",
-            "@rules_rust_wasm_bindgen__httparse-1.7.1//:httparse",
+            "@rules_rust_wasm_bindgen__httparse-1.8.0//:httparse",
             "@rules_rust_wasm_bindgen__log-0.4.17//:log",
             "@rules_rust_wasm_bindgen__mime-0.3.16//:mime",
             "@rules_rust_wasm_bindgen__mime_guess-2.0.4//:mime_guess",
@@ -175,7 +175,7 @@ rust_binary(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__buf_redux-0.8.4//:buf_redux",
-            "@rules_rust_wasm_bindgen__httparse-1.7.1//:httparse",
+            "@rules_rust_wasm_bindgen__httparse-1.8.0//:httparse",
             "@rules_rust_wasm_bindgen__log-0.4.17//:log",
             "@rules_rust_wasm_bindgen__mime-0.3.16//:mime",
             "@rules_rust_wasm_bindgen__mime_guess-2.0.4//:mime_guess",

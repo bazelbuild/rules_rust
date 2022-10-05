@@ -21,8 +21,8 @@ pub enum Mode {
 
 /// A special case of label::Label, which must be absolute and must not specify
 /// a repository.
-#[derive(Debug, PartialEq)]
-struct AbsoluteLabel<'s> {
+#[derive(Debug, PartialEq, Eq)]
+pub struct AbsoluteLabel<'s> {
     package_name: &'s str,
     name: &'s str,
 }
@@ -30,7 +30,7 @@ struct AbsoluteLabel<'s> {
 impl<'s> AbsoluteLabel<'s> {
     /// Parses a string as an absolute Bazel label. Labels must be for the
     /// current repository.
-    fn parse(label: &'s str, span: &'s Span) -> Result<Self> {
+    pub fn parse(label: &'s str, span: &'s Span) -> Result<Self> {
         if let Ok(label::Label {
             repository_name: None,
             package_name: Some(package_name),
@@ -63,7 +63,7 @@ impl<'s> AbsoluteLabel<'s> {
     }
 
     /// Returns the full crate name, encoded if necessary.
-    fn crate_name(&self, mode: &Mode) -> String {
+    pub fn crate_name(&self, mode: &Mode) -> String {
         if self.should_rename(mode) {
             encode(&format!("{}:{}", self.package_name, self.name))
         } else {
