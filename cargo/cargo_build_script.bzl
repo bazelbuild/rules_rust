@@ -11,7 +11,7 @@ load("//rust/private:providers.bzl", _DepInfo = "DepInfo")
 load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
+load("//rust/private:utils.bzl", "cargo_manifest_dir", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
 def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
@@ -82,7 +82,7 @@ def _build_script_impl(ctx):
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
-    manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
+    manifest_dir = cargo_manifest_dir(ctx, runfiles_dir = "%s.runfiles" % script.path)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
     streams = struct(

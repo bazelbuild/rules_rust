@@ -712,3 +712,14 @@ def _shortest_src_with_basename(srcs, basename):
             if not shortest or len(f.dirname) < len(shortest.dirname):
                 shortest = f
     return shortest
+
+def cargo_manifest_dir(ctx, runfiles_dir = None):
+    manifest_dir_parts = []
+    if runfiles_dir:
+        manifest_dir_parts.append(runfiles_dir)
+    workspace = ctx.label.workspace_name or ctx.workspace_name
+    if workspace:
+        manifest_dir_parts.append(workspace)
+    if ctx.label.package:
+        manifest_dir_parts.append(ctx.label.package)
+    return "/".join(manifest_dir_parts)

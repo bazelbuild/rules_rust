@@ -19,6 +19,7 @@ load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
     "can_build_metadata",
+    "cargo_manifest_dir",
     "compute_crate_name",
     "crate_root_src",
     "dedent",
@@ -467,8 +468,7 @@ def _rust_test_impl(ctx):
 
         env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
         env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
-    components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
-    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    env["CARGO_MANIFEST_DIR"] = cargo_manifest_dir(ctx)
     providers.append(testing.TestEnvironment(env))
 
     return providers
