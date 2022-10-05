@@ -1303,6 +1303,8 @@ def rustc_compile_action(
         providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
     if dsym_folder:
         providers.append(OutputGroupInfo(dsym_folder = depset([dsym_folder])))
+    if build_metadata:
+        providers.append(OutputGroupInfo(build_metadata = depset([build_metadata])))
 
     return providers
 
