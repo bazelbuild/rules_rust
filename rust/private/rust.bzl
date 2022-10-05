@@ -20,6 +20,7 @@ load(
     "//rust/private:utils.bzl",
     "can_build_metadata",
     "compute_crate_name",
+    "crate_root_src",
     "dedent",
     "determine_output_hash",
     "expand_dict_value_locations",
@@ -179,48 +180,6 @@ def _transform_sources(ctx, srcs, crate_root):
             generated_sources.append(src)
 
     return generated_sources, generated_root
-
-def crate_root_src(name, srcs, crate_type):
-    """Determines the source file for the crate root, should it not be specified in `attr.crate_root`.
-
-    Args:
-        name (str): The name of the target.
-        srcs (list): A list of all sources for the target Crate.
-        crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
-
-    Returns:
-        File: The root File object for a given crate. See the following links for more details:
-            - https://doc.rust-lang.org/cargo/reference/cargo-targets.html#library
-            - https://doc.rust-lang.org/cargo/reference/cargo-targets.html#binaries
-    """
-    default_crate_root_filename = "main.rs" if crate_type == "bin" else "lib.rs"
-
-    crate_root = (
-        (srcs[0] if len(srcs) == 1 else None) or
-        _shortest_src_with_basename(srcs, default_crate_root_filename) or
-        _shortest_src_with_basename(srcs, name + ".rs")
-    )
-    if not crate_root:
-        file_names = [default_crate_root_filename, name + ".rs"]
-        fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
-    return crate_root
-
-def _shortest_src_with_basename(srcs, basename):
-    """Finds the shortest among the paths in srcs that match the desired basename.
-
-    Args:
-        srcs (list): A list of File objects
-        basename (str): The target basename to match against.
-
-    Returns:
-        File: The File object with the shortest path that matches `basename`
-    """
-    shortest = None
-    for f in srcs:
-        if f.basename == basename:
-            if not shortest or len(f.dirname) < len(shortest.dirname):
-                shortest = f
-    return shortest
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -508,6 +467,8 @@ def _rust_test_impl(ctx):
 
         env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
         env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
+    components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
     providers.append(testing.TestEnvironment(env))
 
     return providers
