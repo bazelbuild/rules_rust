@@ -1,0 +1,65 @@
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+
+rust_static_library(
+    name = "ios_build_lib",
+    srcs = glob(["**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@ios_build//:zstd",
+    ],
+)
+
+filegroup(
+    name = "lib",
+    srcs = ["ios_build_lib"],
+)
+
+sh_test(
+    name = "check_arch",
+    srcs = ["check_arch.sh"],
+    args = ["$(location :lib)"],
+    data = [":lib"],
+)
+
+platform(
+    name = "macos_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:macos",
+    ],
+)
+
+platform(
+    name = "macos_arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:macos",
+    ],
+)
+
+platform(
+    name = "ios_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:ios",
+        "@build_bazel_apple_support//constraints:simulator",
+    ],
+)
+
+platform(
+    name = "ios_sim_arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:ios",
+        "@build_bazel_apple_support//constraints:simulator",
+    ],
+)
+
+platform(
+    name = "ios_arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:ios",
+        "@build_bazel_apple_support//constraints:device",
+    ],
+)

@@ -366,6 +366,14 @@ tasks:
     working_directory: examples/ios
     build_targets:
       - "//..."
+  ios_build:
+    name: iOS build script cross compile test
+    platform: macos
+    working_directory: examples/ios_build
+    test_flags:
+      - "--platforms=//:ios_x86_64"
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest
