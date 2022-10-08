@@ -19,6 +19,9 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor_manifests"
   - "//vendor_remote_pkgs:crates_vendor_pkgs"
+crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
+  - "//vendor_remote_manifests:crates_vendor_manifests"
+  - "//vendor_remote_pkgs:crates_vendor_pkgs"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -302,6 +305,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  crate_universe_unnamed_examples_ubuntu2004:
+    name: Crate Universe Unnamed Examples
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_unnamed
+    run_targets: *crate_universe_unnamed_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
   crate_universe_rbe_ubuntu1604:
     name: Crate Universe Examples
     platform: rbe_ubuntu1604
@@ -310,6 +323,19 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
+  crate_universe_unnamed_rbe_ubuntu1604:
+    name: Crate Universe Unnamed Examples
+    platform: rbe_ubuntu1604
+    working_directory: examples/crate_universe_unnamed
+    shell_commands:
+      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -325,6 +351,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  crate_universe_unnamed_examples_macos:
+    name: Crate Universe Unnamed Examples
+    platform: macos
+    working_directory: examples/crate_universe_unnamed
+    run_targets: *crate_universe_unnamed_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
@@ -333,6 +369,19 @@ tasks:
       - echo startup --windows_enable_symlinks >> user.bazelrc
       - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets: *crate_universe_vendor_example_targets
+    build_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  crate_universe_unnamed_examples_windows:
+    name: Crate Universe Unnamed Examples
+    platform: windows
+    working_directory: examples/crate_universe_unnamed
+    batch_commands:
+      - echo startup --windows_enable_symlinks >> user.bazelrc
+      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
+    run_targets: *crate_universe_unnamed_vendor_example_targets
     build_flags: *aspects_flags
     build_targets:
       - "//..."
