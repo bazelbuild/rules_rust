@@ -261,7 +261,7 @@ def _build_script_impl(ctx):
             link_flags = link_flags,
             link_search_paths = link_search_paths,
         ),
-        OutputGroupInfo(streams = depset([streams.stdout, streams.stderr])),
+        OutputGroupInfo(streams = depset([streams.stdout, streams.stderr]), out_dir = depset([out_dir])),
     ]
 
 _build_script_run = rule(
