@@ -9,4 +9,6 @@ fn test() {
     assert_eq!(generated_data, generated_data2);
     // and we should be able to read (and thus execute) our tool
     assert!(!std::fs::read(env!("SOME_TOOL")).unwrap().is_empty());
+    let included_tool = include_bytes!(env!("SOME_TOOL_PLURAL_SINGLE"));
+    assert!(!included_tool.is_empty());
 }

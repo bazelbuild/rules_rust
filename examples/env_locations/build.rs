@@ -14,4 +14,10 @@ fn main() {
     // and we should be able to read (and thus execute) our tool
     let path = env::var("SOME_TOOL").unwrap();
     assert!(!fs::read(&path).unwrap().is_empty());
+    let path = env::var("SOME_TOOL_PLURAL_SINGLE").unwrap();
+    assert!(!fs::read(&path).unwrap().is_empty());
+
+    for path in env::var("SOME_FILES_PLURAL").unwrap().split(' ') {
+        assert!(!fs::read(path).unwrap().is_empty());
+    }
 }

@@ -238,6 +238,17 @@ def _expand_location(ctx, env, data):
         if directive in env:
             # build script runner will expand pwd to execroot for us
             env = env.replace(directive, "$${pwd}/" + directive)
+    for directive in ("$(execpaths ", "$(locations "):
+        if directive in env:
+            start = env.find(directive)
+            end = env.find(")", start + len(directive))
+            if end == -1:
+                fail("Unterminated %s" % directive)
+
+            # We can't expand these here, because we don't know what they expand
+            # to yet. Instead, mark them for `expand_locations` in
+            # `cargo/cargo_build_script_runner/bin.rs` to deal with.
+            env = env[:start] + "$${multipwd " + env[start:(end + 1)] + "}" + env[(end + 1):]
     return ctx.expand_make_variables(
         env,
         ctx.expand_location(env, data),

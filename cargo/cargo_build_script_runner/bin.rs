@@ -23,6 +23,32 @@ use std::fs::{create_dir_all, read_to_string, write};
 use std::path::Path;
 use std::process::Command;
 
+/// Expands the results of `$(location)`-style expansions, in conjunction with `_expand_location`
+/// in `rust/private/utils.bzl`.
+fn expand_locations(value: &str, exec_root_str: &str) -> String {
+    let mut value = value.replace("${pwd}", exec_root_str);
+    let marker = "${multipwd ";
+    while let Some(start) = value.find(marker) {
+        let end = value[start..].find('}').expect("Unterminated ${multipwd}");
+        let contents = &value[(start + marker.len())..end];
+        let mut new_value: String = value[..start].into();
+        let mut first = true;
+        for value in contents.split(' ') {
+            if first {
+                first = false;
+            } else {
+                new_value.push(' ');
+            }
+            new_value.push_str(exec_root_str);
+            new_value.push('/');
+            new_value.push_str(value);
+        }
+        new_value.push_str(&value[(end + 1)..]);
+        value = new_value;
+    }
+    value
+}
+
 fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
     // some execution strategies and remote execution environments may use symlinks in ways which
@@ -53,6 +79,8 @@ fn run_buildrs() -> Result<(), String> {
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
 
+    let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
+
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
@@ -74,7 +102,7 @@ fn run_buildrs() -> Result<(), String> {
                 }
                 match line.split_once('=') {
                     Some((key, value)) => {
-                        command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
+                        command.env(key, expand_locations(value, exec_root_str));
                     }
                     _ => {
                         return Err(
@@ -105,12 +133,8 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    // replace env vars with a ${pwd} prefix with the exec_root
     for (key, value) in env::vars() {
-        let exec_root_str = exec_root.to_str().expect("exec_root not in utf8");
-        if value.contains("${pwd}") {
-            env::set_var(key, value.replace("${pwd}", exec_root_str));
-        }
+        env::set_var(key, expand_locations(&value, exec_root_str));
     }
 
     // Bazel does not support byte strings so in order to correctly represent `CARGO_ENCODED_RUSTFLAGS`

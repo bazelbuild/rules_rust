@@ -781,6 +781,7 @@ def construct_arguments(
     # Since we cannot get the `exec_root` from starlark, we cheat a little and
     # use `${pwd}` which resolves the `exec_root` at action execution time.
     process_wrapper_flags.add("--subst", "pwd=${pwd}")
+    process_wrapper_flags.add("--subst-multipwd", "true")
 
     # If stamping is enabled, enable the functionality in the process wrapper
     if stamp:

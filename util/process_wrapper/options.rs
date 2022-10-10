@@ -51,6 +51,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     // Process argument list until -- is encountered.
     // Everything after is sent to the child process.
     let mut subst_mapping_raw = None;
+    let mut subst_multipwd = None;
     let mut stable_status_file_raw = None;
     let mut volatile_status_file_raw = None;
     let mut env_file_raw = None;
@@ -63,6 +64,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
+    flags.define_flag("--subst-multipwd", "", &mut subst_multipwd);
     flags.define_flag("--stable-status-file", "", &mut stable_status_file_raw);
     flags.define_flag("--volatile-status-file", "", &mut volatile_status_file_raw);
     flags.define_repeated_flag(
@@ -120,6 +122,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         .to_str()
         .ok_or_else(|| OptionError::Generic("current directory not utf-8".to_owned()))?
         .to_owned();
+    let subst_multipwd = subst_multipwd.is_some();
     let subst_mappings = subst_mapping_raw
         .unwrap_or_default()
         .into_iter()
@@ -182,10 +185,17 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         &stable_stamp_mappings,
         &volatile_stamp_mappings,
         &subst_mappings,
+        subst_multipwd,
+        current_dir.as_str(),
     );
     // Append all the arguments fetched from files to those provided via command line.
     child_args.append(&mut file_arguments);
-    let child_args = prepare_args(child_args, &subst_mappings);
+    let child_args = prepare_args(
+        child_args,
+        &subst_mappings,
+        subst_multipwd,
+        current_dir.as_str(),
+    );
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
@@ -234,12 +244,46 @@ fn env_from_files(paths: Vec<String>) -> Result<HashMap<String, String>, OptionE
     Ok(env_vars)
 }
 
-fn prepare_args(mut args: Vec<String>, subst_mappings: &[(String, String)]) -> Vec<String> {
+fn do_subst_multipwd(value: &str, current_dir: &str) -> String {
+    let mut value = String::from(value);
+    let marker = "${multipwd ";
+    while let Some(start) = value.find(marker) {
+        let end = value[start..].find('}').expect("Unterminated ${multipwd}");
+        let contents = &value[(start + marker.len())..end];
+        let mut new_value: String = value[..start].into();
+        let mut first = true;
+        for value in contents.split(' ') {
+            if first {
+                first = false;
+            } else {
+                new_value.push(' ');
+            }
+            new_value.push_str(current_dir);
+            new_value.push('/');
+            new_value.push_str(value);
+        }
+        new_value.push_str(&value[(end + 1)..]);
+        value = new_value;
+    }
+    value
+}
+
+fn prepare_args(
+    mut args: Vec<String>,
+    subst_mappings: &[(String, String)],
+    subst_multipwd: bool,
+    current_dir: &str,
+) -> Vec<String> {
     for (f, replace_with) in subst_mappings {
         for arg in args.iter_mut() {
             let from = format!("${{{}}}", f);
             let new = arg.replace(from.as_str(), replace_with);
             *arg = new;
+        }
+    }
+    if subst_multipwd {
+        for arg in args.iter_mut() {
+            *arg = do_subst_multipwd(arg, current_dir);
         }
     }
     args
@@ -250,6 +294,8 @@ fn environment_block(
     stable_stamp_mappings: &[(String, String)],
     volatile_stamp_mappings: &[(String, String)],
     subst_mappings: &[(String, String)],
+    subst_multipwd: bool,
+    current_dir: &str,
 ) -> HashMap<String, String> {
     // Taking all environment variables from the current process
     // and sending them down to the child process
@@ -270,6 +316,11 @@ fn environment_block(
             let from = format!("${{{}}}", f);
             let new = value.replace(from.as_str(), replace_with);
             *value = new;
+        }
+    }
+    if subst_multipwd {
+        for value in environment_variables.values_mut() {
+            *value = do_subst_multipwd(value, current_dir);
         }
     }
     environment_variables
