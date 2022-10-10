@@ -1268,6 +1268,9 @@ def rustc_compile_action(
         files = getattr(ctx.files, "data", []) + coverage_runfiles,
         collect_data = True,
     )
+    if getattr(ctx.attr, "crate", None):
+        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].default_runfiles)
+        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].data_runfiles)
 
     # TODO: Remove after some resolution to
     # https://github.com/bazelbuild/rules_rust/issues/771

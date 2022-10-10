@@ -13,6 +13,31 @@ load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", "name_to_crate_name")
 
+def strip_target(elems):
+    """Remove '-target xxx' from C(XX)FLAGS.
+
+    The cpp toolchain adds '-target xxx' and '-isysroot xxx' to CFLAGS. If it is not stripped out before
+    the CFLAGS are provided to build scripts, it can cause the build to take on the host architecture
+    instead of the target architecture.
+
+    Args:
+        elems (list): A list of args
+
+    Returns:
+        list: the modified args
+    """
+    skip_next = False
+    out_elems = []
+    for elem in elems:
+        if skip_next:
+            skip_next = False
+            continue
+        if elem == "-target" or elem == "-isysroot":
+            skip_next = True
+            continue
+        out_elems.append(elem)
+    return out_elems
+
 def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
 
@@ -30,16 +55,16 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
     )
-    cc_c_args = cc_common.get_memory_inefficient_command_line(
+    cc_c_args = strip_target(cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = C_COMPILE_ACTION_NAME,
         variables = compile_variables,
-    )
-    cc_cxx_args = cc_common.get_memory_inefficient_command_line(
+    ))
+    cc_cxx_args = strip_target(cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = CPP_COMPILE_ACTION_NAME,
         variables = compile_variables,
-    )
+    ))
     cc_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
         action_name = C_COMPILE_ACTION_NAME,

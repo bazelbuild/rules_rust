@@ -2,3 +2,4 @@ android
 cargo_manifest_dir/external_crate
 crate_universe
 ios
+ios_build
