@@ -609,21 +609,3 @@ def rust_repository_set(
     if register_toolchain:
         native.register_toolchains(*all_toolchain_names)
         native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
-
-    # Inform users that they should be using the canonical name if it's not detected
-    if "rules_rust" not in native.existing_rules():
-        message = "\n" + ("=" * 79) + "\n"
-        message += (
-            "It appears that you are trying to import rules_rust without using its\n" +
-            "canonical name, \"@rules_rust\" Please change your WORKSPACE file to\n" +
-            "import this repo with `name = \"rules_rust\"` instead."
-        )
-
-        if "io_bazel_rules_rust" in native.existing_rules():
-            message += "\n\n" + (
-                "Note that the previous name of \"@io_bazel_rules_rust\" is deprecated.\n" +
-                "See https://github.com/bazelbuild/rules_rust/issues/499 for context."
-            )
-
-        message += "\n" + ("=" * 79)
-        fail(message)

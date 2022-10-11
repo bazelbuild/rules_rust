@@ -75,10 +75,10 @@ fn edition_query(bazel_bin: &Path, edition: &str, scope: &str, current_dir: &Pat
         //     Get all source files.
         //         Get direct dependencies.
         //             Get all targets with the specified `edition` attribute.
-        //             Except for targets tagged with `norustfmt`.
+        //             Except for targets tagged with `norustfmt`, `no-rustfmt`, or `no-format`.
         //             And except for targets with a populated `crate` attribute since `crate` defines edition for this target
         format!(
-            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )(no-format|no-rustfmt|norustfmt)(, |\]$)", $scope) + attr(crate, ".*", $scope), 1)))"#,
+            r#"let scope = set({scope}) in filter("^//.*\.rs$", kind("source file", deps(attr(edition, "{edition}", $scope) except attr(tags, "(^\[|, )(no-format|no-rustfmt|norustfmt)(, |\]$)", $scope) except attr(crate, ".*", $scope), 1)))"#,
             edition = edition,
             scope = scope,
         ),
