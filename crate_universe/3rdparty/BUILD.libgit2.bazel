@@ -157,19 +157,24 @@ write_file(
         "//conditions:default": [],
     }) + select({
         ":https_apple": [
+            "#define GIT_SHA256_COMMON_CRYPTO 1",
             "#define GIT_HTTPS 1",
             "#define GIT_SECURE_TRANSPORT 1",
         ],
         ":https_setting": [
+            "#define GIT_SHA256_OPENSSL 1",
             "#define GIT_HTTPS 1",
             "#define GIT_OPENSSL 1",
         ],
         # target.contains("windows")
         ":https_windows": [
+            "#define GIT_SHA256_WIN32 1",
             "#define GIT_HTTPS 1",
             "#define GIT_WINHTTP 1",
         ],
-        "//conditions:default": [],
+        "//conditions:default": [
+            "#define GIT_SHA256_BUILTIN 1",
+        ],
     }) + select({
         ":apple": ["#define GIT_USE_ICONV 1"],
         "//conditions:default": [],
@@ -187,52 +192,59 @@ cc_library(
 cc_library(
     name = "git2",
     srcs = [
-        "src/allocators/failalloc.c",
-        "src/allocators/stdalloc.c",
-        "src/allocators/win32_leakcheck.c",
+        "src/util/allocators/failalloc.c",
+        "src/util/allocators/stdalloc.c",
+        "src/util/allocators/win32_leakcheck.c",
         # Use the CollisionDetection SHA1 implementation.
-        "src/hash/sha1/collisiondetect.c",
-        "src/hash/sha1/sha1dc/sha1.c",
-        "src/hash/sha1/sha1dc/ubc_check.c",
+        "src/util/hash/collisiondetect.c",
+        "src/util/hash/sha1dc/sha1.c",
+        "src/util/hash/sha1dc/ubc_check.c",
     ] + glob(
         include = [
-            "src/*.c",
-            "src/xdiff/*.c",
-            "src/transports/*.c",
-            "src/streams/*.c",
-            "src/hash/*.c",
+            "src/libgit2/*.c",
+            "src/util/*.c",
+            "src/libgit2/xdiff/*.c",
+            "src/libgit2/transports/*.c",
+            "src/libgit2/streams/*.c",
         ],
         exclude = [
-            "src/win32/**",
-            "src/unix/**",
+            "src/util/win32/**",
+            "src/util/unix/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob(["src/win32/**/*.c"]),
-        "//conditions:default": glob(["src/unix/**/*.c"]),
+        "@platforms//os:windows": glob(["src/util/win32/**/*.c"]),
+        "//conditions:default": glob(["src/util/unix/**/*.c"]),
+    }) + select({
+        ":https_setting": [],
+        "//conditions:default": [
+            "src/util/hash/builtin.c",
+            "src/util/hash/rfc6234/sha224-256.c",
+        ],
     }),
     hdrs = [
-        "src/allocators/failalloc.h",
-        "src/allocators/stdalloc.h",
-        "src/allocators/win32_leakcheck.h",
+        "src/util/allocators/failalloc.h",
+        "src/util/allocators/stdalloc.h",
+        "src/util/allocators/win32_leakcheck.h",
         # Use the CollisionDetection SHA1 implementation.
-        "src/hash/sha1/collisiondetect.h",
-        "src/hash/sha1/sha1dc/sha1.h",
-        "src/hash/sha1/sha1dc/ubc_check.h",
+        "src/util/hash/sha1dc/sha1.h",
+        "src/util/hash/sha1dc/ubc_check.h",
     ] + glob(
         include = [
-            "src/*.h",
-            "src/xdiff/*.h",
-            "src/transports/*.h",
-            "src/streams/*.h",
-            "src/hash/*.h",
+            "src/libgit2/*.h",
+            "src/libgit2/streams/*.h",
+            "src/libgit2/transports/*.h",
+            "src/libgit2/xdiff/*.h",
+            "src/util/*.h",
+            "src/util/hash/*.h",
+            "src/util/hash/rfc6234/*.h",
         ],
         exclude = [
-            "src/win32/**",
-            "src/unix/**",
+            "src/util/win32/**",
+            "src/util/unix/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob(["src/win32/**/*.h"]),
-        "//conditions:default": glob(["src/unix/**/*.h"]),
+        "@platforms//os:windows": glob(["src/util/win32/**/*.h"]),
+        "//conditions:default": glob(["src/util/unix/**/*.h"]),
     }),
     copts = select({
         "@platforms//os:linux": [
@@ -266,6 +278,10 @@ cc_library(
         ":windows": ["STRSAFE_NO_DEPRECATE"],
         "//conditions:default": [],
     }),
+    includes = [
+        "src/libgit2",
+        "src/util",
+    ],
     linkstatic = True,
     strip_include_prefix = "src",
     visibility = ["//visibility:public"],
