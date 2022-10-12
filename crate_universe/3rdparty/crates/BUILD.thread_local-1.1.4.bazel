@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__once_cell-1.13.0//:once_cell",
+            "@cui__once_cell-1.15.0//:once_cell",
         ],
     }),
 )

@@ -90,8 +90,8 @@ rust_proc_macro(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__proc-macro-error-attr-1.0.4//:build_script_build",
-            "@cui__proc-macro2-1.0.40//:proc_macro2",
-            "@cui__quote-1.0.20//:quote",
+            "@cui__proc-macro2-1.0.46//:proc_macro2",
+            "@cui__quote-1.0.21//:quote",
         ],
     }),
 )
