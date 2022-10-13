@@ -8,7 +8,9 @@ rust_library(
         "src/greeter.rs",
         "src/lib.rs",
     ],
+    data = ["greeting.txt"],
     edition = "2018",
+    deps = ["//tools/runfiles"],
 )
 
 rust_binary(

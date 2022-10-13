@@ -93,7 +93,7 @@ rust_library(
             "@cui__winapi-util-0.1.5//:winapi_util",
 
             # Common Deps
-            "@cui__crossbeam-utils-0.8.10//:crossbeam_utils",
+            "@cui__crossbeam-utils-0.8.12//:crossbeam_utils",
             "@cui__globset-0.4.9//:globset",
             "@cui__lazy_static-1.4.0//:lazy_static",
             "@cui__log-0.4.17//:log",
@@ -104,7 +104,7 @@ rust_library(
             "@cui__walkdir-2.3.2//:walkdir",
         ],
         "//conditions:default": [
-            "@cui__crossbeam-utils-0.8.10//:crossbeam_utils",
+            "@cui__crossbeam-utils-0.8.12//:crossbeam_utils",
             "@cui__globset-0.4.9//:globset",
             "@cui__lazy_static-1.4.0//:lazy_static",
             "@cui__log-0.4.17//:log",

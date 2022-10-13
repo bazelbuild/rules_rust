@@ -165,9 +165,7 @@ mod test {
         assert_eq!(configurations, BTreeMap::new(),)
     }
 
-    #[test]
-    fn resolve_targeted() {
-        let configuration = r#"cfg(target = "x86_64-unknown-linux-gnu")"#.to_owned();
+    fn mock_resolve_context(configuration: String) -> CrateContext {
         let mut deps = SelectList::default();
         deps.insert(
             CrateDependency {
@@ -175,10 +173,10 @@ mod test {
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
-            Some(configuration.clone()),
+            Some(configuration),
         );
 
-        let context = CrateContext {
+        CrateContext {
             name: "mock_crate_a".to_owned(),
             version: "0.1.0".to_owned(),
             common_attrs: CommonAttributes {
@@ -186,18 +184,39 @@ mod test {
                 ..CommonAttributes::default()
             },
             ..CrateContext::default()
-        };
+        }
+    }
 
-        let configurations =
-            resolve_cfg_platforms(vec![&context], &supported_platform_triples()).unwrap();
+    #[test]
+    fn resolve_targeted() {
+        let data = HashMap::from([
+            (
+                r#"cfg(target = "x86_64-unknown-linux-gnu")"#.to_owned(),
+                BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),
+            ),
+            (
+                r#"cfg(any(target_os = "macos", target_os = "ios"))"#.to_owned(),
+                BTreeSet::from([
+                    "aarch64-apple-darwin".to_owned(),
+                    "aarch64-apple-ios".to_owned(),
+                    "i686-apple-darwin".to_owned(),
+                    "x86_64-apple-darwin".to_owned(),
+                    "x86_64-apple-ios".to_owned(),
+                ]),
+            ),
+        ]);
 
-        assert_eq!(
-            configurations,
-            BTreeMap::from([(
-                configuration,
-                BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()])
-            )])
-        );
+        data.into_iter().for_each(|(configuration, expectation)| {
+            let context = mock_resolve_context(configuration.clone());
+
+            let configurations =
+                resolve_cfg_platforms(vec![&context], &supported_platform_triples()).unwrap();
+
+            assert_eq!(
+                configurations,
+                BTreeMap::from([(configuration, expectation,)])
+            );
+        })
     }
 
     #[test]

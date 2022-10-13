@@ -1,0 +1,72 @@
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+crates_vendor(
+    name = "crates_vendor_pkgs",
+    annotations = {
+        "axum": [crate.annotation(
+            compile_data_glob = ["**/*.md"],
+        )],
+    },
+    mode = "remote",
+    packages = {
+        "axum": crate.spec(
+            version = "0.4.0",
+        ),
+        "hyper": crate.spec(
+            features = ["full"],
+            version = "0.14",
+        ),
+        "mime": crate.spec(
+            version = "0.3",
+        ),
+        "serde_json": crate.spec(
+            version = "1.0",
+        ),
+        # TODO: This is pinned due to a build failure introduced by 1.17
+        # bringing in windows-sys and introduces linker errors.
+        # https://github.com/abrisco/cargo-bazel/issues/173
+        "tokio": crate.spec(
+            features = ["full"],
+            version = "=1.16.1",
+        ),
+        "tower": crate.spec(
+            features = ["util"],
+            version = "0.4",
+        ),
+        "tower-http": crate.spec(
+            features = ["trace"],
+            version = "0.2.1",
+        ),
+        "tracing": crate.spec(
+            version = "0.1",
+        ),
+        "tracing-subscriber": crate.spec(
+            version = "0.3",
+        ),
+    },
+)
+
+rust_binary(
+    name = "vendor_remote",
+    srcs = glob(["**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@crates_vendor_pkgs//:axum",
+        "@crates_vendor_pkgs//:hyper",
+        "@crates_vendor_pkgs//:mime",
+        "@crates_vendor_pkgs//:serde_json",
+        "@crates_vendor_pkgs//:tokio",
+        "@crates_vendor_pkgs//:tower",
+        "@crates_vendor_pkgs//:tower-http",
+        "@crates_vendor_pkgs//:tracing",
+        "@crates_vendor_pkgs//:tracing-subscriber",
+    ],
+)
+
+rust_test(
+    name = "unit_test",
+    srcs = glob(["**/*.rs"]),
+    crate = ":vendor_remote",
+    edition = "2018",
+)

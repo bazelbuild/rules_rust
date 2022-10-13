@@ -485,7 +485,7 @@ mod test {
         assert_eq!(
             package,
             &cargo_toml::DependencyDetail {
-                default_features: Some(false),
+                default_features: false,
                 features: vec!["small_rng".to_owned()],
                 version: Some("0.8.5".to_owned()),
                 ..Default::default()

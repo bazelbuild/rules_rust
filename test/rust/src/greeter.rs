@@ -34,6 +34,23 @@ impl Greeter {
         }
     }
 
+    /// Constructs a new `Greeter` with greeting defined in txt file
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hello_lib::greeter::Greeter;
+    ///
+    /// let greeter = Greeter::from_txt_file()?;
+    /// ```
+    pub fn from_txt_file() -> std::io::Result<Greeter> {
+        Ok(Greeter {
+            greeting: std::fs::read_to_string(
+                runfiles::Runfiles::create()?.rlocation("rules_rust/test/rust/greeting.txt"),
+            )?,
+        })
+    }
+
     /// Returns the greeting as a string.
     ///
     /// # Examples
@@ -71,5 +88,11 @@ mod test {
     fn test_greeting() {
         let hello = Greeter::new("Hi");
         assert_eq!("Hi Rust", hello.greeting("Rust"));
+    }
+
+    #[test]
+    fn test_greeting_from_txt_file() {
+        let welcome = Greeter::from_txt_file().unwrap();
+        assert_eq!("Welcome Rust", welcome.greeting("Rust"));
     }
 }

@@ -76,7 +76,7 @@ impl MetadataGenerator for Generator {
 }
 
 /// A configuration desrcibing how to invoke [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CargoUpdateRequest {
     /// Translates to an unrestricted `cargo update` command
     Eager,
