@@ -92,7 +92,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "4.0.13",
+    version = "4.0.14",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -173,7 +173,7 @@ rust_binary(
         "noclippy",
         "norustfmt",
     ],
-    version = "4.0.13",
+    version = "4.0.14",
     deps = [
         ":clap",
     ] + select_with_or({

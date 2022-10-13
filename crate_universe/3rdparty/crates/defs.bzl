@@ -298,7 +298,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo_metadata": "@cui__cargo_metadata-0.15.0//:cargo_metadata",
             "cargo_toml": "@cui__cargo_toml-0.12.4//:cargo_toml",
             "cfg-expr": "@cui__cfg-expr-0.11.0//:cfg_expr",
-            "clap": "@cui__clap-4.0.13//:clap",
+            "clap": "@cui__clap-4.0.14//:clap",
             "crates-index": "@cui__crates-index-0.18.10//:crates_index",
             "hex": "@cui__hex-0.4.3//:hex",
             "normpath": "@cui__normpath-0.3.2//:normpath",
@@ -316,12 +316,12 @@ _NORMAL_DEPENDENCIES = {
     },
     "crate_universe/tools/cross_installer": {
         _COMMON_CONDITION: {
-            "clap": "@cui__clap-4.0.13//:clap",
+            "clap": "@cui__clap-4.0.14//:clap",
         },
     },
     "crate_universe/tools/urls_generator": {
         _COMMON_CONDITION: {
-            "clap": "@cui__clap-4.0.13//:clap",
+            "clap": "@cui__clap-4.0.14//:clap",
             "hex": "@cui__hex-0.4.3//:hex",
             "serde_json": "@cui__serde_json-1.0.86//:serde_json",
             "sha2": "@cui__sha2-0.10.6//:sha2",
@@ -685,12 +685,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__clap-4.0.13",
-        sha256 = "69d64e88428747154bd8bc378d178377ef4dace7a5735ca1f3855be72f2c2cb5",
+        name = "cui__clap-4.0.14",
+        sha256 = "6ea54a38e4bce14ff6931c72e5b3c43da7051df056913d4e7e1fcdb1c03df69d",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/clap/4.0.13/download"],
-        strip_prefix = "clap-4.0.13",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.clap-4.0.13.bazel"),
+        urls = ["https://crates.io/api/v1/crates/clap/4.0.14/download"],
+        strip_prefix = "clap-4.0.14",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.clap-4.0.14.bazel"),
     )
 
     maybe(

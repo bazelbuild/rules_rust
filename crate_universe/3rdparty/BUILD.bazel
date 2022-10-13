@@ -23,7 +23,7 @@ crates_vendor(
             deps = ["@zlib"],
         )],
     },
-    cargo_lockfile = "@rules_rust//crate_universe/3rdparty:Cargo.Bazel.lock",
+    cargo_lockfile = "@rules_rust//crate_universe:Cargo.lock",
     manifests = [
         "@rules_rust//crate_universe:Cargo.toml",
         "@rules_rust//crate_universe/tools/cross_installer:Cargo.toml",

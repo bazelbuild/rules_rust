@@ -65,7 +65,7 @@ alias(
 
 alias(
     name = "clap",
-    actual = "@cui__clap-4.0.13//:clap",
+    actual = "@cui__clap-4.0.14//:clap",
     tags = ["manual"],
 )
 
@@ -174,7 +174,7 @@ alias(
 
 alias(
     name = "clap__stdio-fixture",
-    actual = "@cui__clap-4.0.13//:stdio-fixture__bin",
+    actual = "@cui__clap-4.0.14//:stdio-fixture__bin",
     tags = ["manual"],
 )
 
