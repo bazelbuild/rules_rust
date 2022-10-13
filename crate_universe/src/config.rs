@@ -481,17 +481,17 @@ mod test {
         let mut package = mock_cargo_metadata_package();
         let id = CrateId::new("mock-pkg".to_owned(), "0.1.0".to_owned());
 
-        package.version = cargo_metadata::Version::new(0, 1, 0);
+        package.version = cargo_metadata::semver::Version::new(0, 1, 0);
         assert!(id.matches(&package));
 
-        package.version = cargo_metadata::Version::new(1, 0, 0);
+        package.version = cargo_metadata::semver::Version::new(1, 0, 0);
         assert!(!id.matches(&package));
     }
 
     #[test]
     fn test_crate_id_semver_matches() {
         let mut package = mock_cargo_metadata_package();
-        package.version = cargo_metadata::Version::new(1, 0, 0);
+        package.version = cargo_metadata::semver::Version::new(1, 0, 0);
         let mut id = CrateId::new("mock-pkg".to_owned(), "0.1.0".to_owned());
 
         id.version = "*".to_owned();

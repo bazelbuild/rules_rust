@@ -48,7 +48,7 @@ The rules are released, and releases can be found on [the GitHub Releases page](
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
-- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate depednencies.
+- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate dependencies.
 
 You can also browse the [full API in one page](flatten.md).
 

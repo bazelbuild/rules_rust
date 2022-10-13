@@ -284,7 +284,7 @@ impl CrateContext {
             crate_features: annotation.node.features.iter().cloned().collect(),
             deps,
             deps_dev,
-            edition: package.edition.clone(),
+            edition: package.edition.as_str().to_string(),
             proc_macro_deps,
             proc_macro_deps_dev,
             version: package.version.to_string(),

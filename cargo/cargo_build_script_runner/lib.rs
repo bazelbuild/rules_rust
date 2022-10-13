@@ -103,12 +103,19 @@ impl BuildScriptOutput {
     /// Converts a [BufReader] into a vector of [BuildScriptOutput] enums.
     fn outputs_from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
         let mut result = Vec::<BuildScriptOutput>::new();
-        let mut line = String::new();
-        while reader.read_line(&mut line).expect("Cannot read line") != 0 {
-            if let Some(bso) = BuildScriptOutput::new(&line) {
-                result.push(bso);
+        let mut buf = Vec::new();
+        while reader
+            .read_until(b'\n', &mut buf)
+            .expect("Cannot read line")
+            != 0
+        {
+            // like cargo, ignore any lines that are not valid utf8
+            if let Ok(line) = String::from_utf8(buf.clone()) {
+                if let Some(bso) = BuildScriptOutput::new(&line) {
+                    result.push(bso);
+                }
             }
-            line.clear();
+            buf.clear();
         }
         result
     }
@@ -232,11 +239,11 @@ cargo:include_path=/some/absolute/path/include
 cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
 cargo:rustc-link-arg=-weak_framework
 cargo:rustc-link-arg=Metal
-",
+cargo:rustc-env=no_trailing_newline=true",
         );
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::outputs_from_reader(reader);
-        assert_eq!(result.len(), 12);
+        assert_eq!(result.len(), 13);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
         assert_eq!(
@@ -266,14 +273,17 @@ cargo:rustc-link-arg=Metal
             BuildScriptOutput::LinkArg("-weak_framework".to_owned())
         );
         assert_eq!(result[11], BuildScriptOutput::LinkArg("Metal".to_owned()));
-
+        assert_eq!(
+            result[12],
+            BuildScriptOutput::Env("no_trailing_newline=true".to_owned())
+        );
         assert_eq!(
             BuildScriptOutput::outputs_to_dep_env(&result, "ssh2", "/some/absolute/path"),
             "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
-            "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep".to_owned()
+            "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path"),
@@ -286,6 +296,24 @@ cargo:rustc-link-arg=Metal
                 link_flags: "-lsdfsdf".to_owned(),
                 link_search_paths: "-L${pwd}/bleh".to_owned(),
             }
+        );
+    }
+
+    #[test]
+    fn invalid_utf8() {
+        let buff = Cursor::new(
+            b"
+cargo:rustc-env=valid1=1
+cargo:rustc-env=invalid=\xc3\x28
+cargo:rustc-env=valid2=2
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader);
+        assert_eq!(result.len(), 2);
+        assert_eq!(
+            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            "valid1=1\nvalid2=2"
         );
     }
 }

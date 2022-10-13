@@ -11,6 +11,9 @@ exports_files([
 crates_vendor(
     name = "crates_vendor",
     annotations = {
+        "cargo_metadata": [crate.annotation(
+            shallow_since = "1663068201 +0200",
+        )],
         "libgit2-sys": [crate.annotation(
             gen_build_script = False,
             deps = ["@libgit2"],

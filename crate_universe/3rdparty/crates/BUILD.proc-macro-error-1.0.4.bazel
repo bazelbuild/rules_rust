@@ -94,9 +94,9 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__proc-macro-error-1.0.4//:build_script_build",
-            "@cui__proc-macro2-1.0.40//:proc_macro2",
-            "@cui__quote-1.0.20//:quote",
-            "@cui__syn-1.0.98//:syn",
+            "@cui__proc-macro2-1.0.46//:proc_macro2",
+            "@cui__quote-1.0.21//:quote",
+            "@cui__syn-1.0.102//:syn",
         ],
     }),
 )

@@ -129,6 +129,10 @@ def _write_config_file(ctx):
 
     output_pkg = _get_output_package(ctx)
 
+    workspace_name = ctx.workspace_name
+    if ctx.workspace_name == "__main__":
+        workspace_name = ""
+
     if ctx.attr.mode == "local":
         build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel"
         crate_label_template = "//{}/{{name}}-{{version}}:{{target}}".format(
@@ -140,12 +144,12 @@ def _write_config_file(ctx):
 
     rendering_config.update({
         "build_file_template": build_file_base_template.format(
-            ctx.workspace_name,
+            workspace_name,
             output_pkg,
         ),
         "crate_label_template": crate_label_template,
         "crates_module_template": "@{}//{}:{{file}}".format(
-            ctx.workspace_name,
+            workspace_name,
             output_pkg,
         ),
         "vendor_mode": ctx.attr.mode,

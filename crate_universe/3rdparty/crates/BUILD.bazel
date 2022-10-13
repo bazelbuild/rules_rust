@@ -29,7 +29,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@cui__anyhow-1.0.58//:anyhow",
+    actual = "@cui__anyhow-1.0.65//:anyhow",
     tags = ["manual"],
 )
 
@@ -47,31 +47,31 @@ alias(
 
 alias(
     name = "cargo_metadata",
-    actual = "@cui__cargo_metadata-0.14.2//:cargo_metadata",
+    actual = "@cui__cargo_metadata-0.15.0//:cargo_metadata",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml",
-    actual = "@cui__cargo_toml-0.11.5//:cargo_toml",
+    actual = "@cui__cargo_toml-0.12.4//:cargo_toml",
     tags = ["manual"],
 )
 
 alias(
     name = "cfg-expr",
-    actual = "@cui__cfg-expr-0.10.3//:cfg_expr",
+    actual = "@cui__cfg-expr-0.11.0//:cfg_expr",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
-    actual = "@cui__clap-3.2.8//:clap",
+    actual = "@cui__clap-4.0.13//:clap",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index",
-    actual = "@cui__crates-index-0.18.8//:crates_index",
+    actual = "@cui__crates-index-0.18.10//:crates_index",
     tags = ["manual"],
 )
 
@@ -107,25 +107,25 @@ alias(
 
 alias(
     name = "semver",
-    actual = "@cui__semver-1.0.12//:semver",
+    actual = "@cui__semver-1.0.14//:semver",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
-    actual = "@cui__serde-1.0.138//:serde",
+    actual = "@cui__serde-1.0.145//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@cui__serde_json-1.0.82//:serde_json",
+    actual = "@cui__serde_json-1.0.86//:serde_json",
     tags = ["manual"],
 )
 
 alias(
     name = "sha2",
-    actual = "@cui__sha2-0.10.2//:sha2",
+    actual = "@cui__sha2-0.10.6//:sha2",
     tags = ["manual"],
 )
 
@@ -143,13 +143,13 @@ alias(
 
 alias(
     name = "tera",
-    actual = "@cui__tera-1.16.0//:tera",
+    actual = "@cui__tera-1.17.1//:tera",
     tags = ["manual"],
 )
 
 alias(
     name = "textwrap",
-    actual = "@cui__textwrap-0.15.0//:textwrap",
+    actual = "@cui__textwrap-0.15.1//:textwrap",
     tags = ["manual"],
 )
 
@@ -174,12 +174,12 @@ alias(
 
 alias(
     name = "clap__stdio-fixture",
-    actual = "@cui__clap-3.2.8//:stdio-fixture__bin",
+    actual = "@cui__clap-4.0.13//:stdio-fixture__bin",
     tags = ["manual"],
 )
 
 alias(
     name = "phf_generator__gen_hash_test",
-    actual = "@cui__phf_generator-0.10.0//:gen_hash_test__bin",
+    actual = "@cui__phf_generator-0.11.1//:gen_hash_test__bin",
     tags = ["manual"],
 )

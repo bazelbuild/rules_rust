@@ -108,17 +108,17 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@cui__libc-0.2.126//:libc",
+            "@cui__libc-0.2.135//:libc",
 
             # Common Deps
             "@cui__cfg-if-1.0.0//:cfg_if",
-            "@cui__fastrand-1.7.0//:fastrand",
+            "@cui__fastrand-1.8.0//:fastrand",
             "@cui__remove_dir_all-0.5.3//:remove_dir_all",
         ],
         # cfg(target_os = "redox")
         #
         # No supported platform triples for cfg: 'cfg(target_os = "redox")'
-        # Skipped dependencies: [{"id":"redox_syscall 0.2.13","target":"syscall"}]
+        # Skipped dependencies: [{"id":"redox_syscall 0.2.16","target":"syscall"}]
         #
         # cfg(windows)
         (
@@ -130,12 +130,12 @@ rust_library(
 
             # Common Deps
             "@cui__cfg-if-1.0.0//:cfg_if",
-            "@cui__fastrand-1.7.0//:fastrand",
+            "@cui__fastrand-1.8.0//:fastrand",
             "@cui__remove_dir_all-0.5.3//:remove_dir_all",
         ],
         "//conditions:default": [
             "@cui__cfg-if-1.0.0//:cfg_if",
-            "@cui__fastrand-1.7.0//:fastrand",
+            "@cui__fastrand-1.8.0//:fastrand",
             "@cui__remove_dir_all-0.5.3//:remove_dir_all",
         ],
     }),

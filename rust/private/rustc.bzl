@@ -708,7 +708,7 @@ def construct_arguments(
         force_all_deps_direct = False,
         force_link = False,
         stamp = False,
-        remap_path_prefix = ".",
+        remap_path_prefix = "",
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False):
@@ -737,7 +737,7 @@ def construct_arguments(
         force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
-        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to a falsey value, no prefix will be set.
+        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to None, no prefix will be set.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
@@ -874,7 +874,7 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    if remap_path_prefix:
+    if remap_path_prefix != None:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
     if emit:
@@ -1268,6 +1268,9 @@ def rustc_compile_action(
         files = getattr(ctx.files, "data", []) + coverage_runfiles,
         collect_data = True,
     )
+    if getattr(ctx.attr, "crate", None):
+        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].default_runfiles)
+        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].data_runfiles)
 
     # TODO: Remove after some resolution to
     # https://github.com/bazelbuild/rules_rust/issues/771
@@ -1303,6 +1306,8 @@ def rustc_compile_action(
         providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
     if dsym_folder:
         providers.append(OutputGroupInfo(dsym_folder = depset([dsym_folder])))
+    if build_metadata:
+        providers.append(OutputGroupInfo(build_metadata = depset([build_metadata])))
 
     return providers
 
