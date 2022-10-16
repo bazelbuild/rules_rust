@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "idna",
+    name = "rand_core",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,6 +50,9 @@ rust_library(
         ],
     }),
     crate_features = [
+        "alloc",
+        "getrandom",
+        "std",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,13 +84,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.3",
+    version = "0.6.4",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__matches-0.1.9//:matches",
-            "@crates_vendor__unicode-bidi-0.3.8//:unicode_bidi",
-            "@crates_vendor__unicode-normalization-0.1.21//:unicode_normalization",
+            "@crates_vendor__getrandom-0.2.7//:getrandom",
         ],
     }),
 )

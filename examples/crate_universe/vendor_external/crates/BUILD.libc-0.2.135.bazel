@@ -10,12 +10,15 @@ load(
     "@bazel_skylib//lib:selects.bzl",
     "selects",
 )
+load(
+    "@rules_rust//cargo:defs.bzl",
+    "cargo_build_script",
+)
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
     "@rules_rust//rust:defs.bzl",
-    "rust_binary",
     "rust_library",
 )
 
@@ -26,7 +29,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "clap",
+    name = "libc",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -51,27 +54,16 @@ rust_library(
         ],
     }),
     crate_features = [
-        "atty",
-        "clap_derive",
-        "color",
-        "default",
-        "derive",
-        "once_cell",
-        "std",
-        "strsim",
-        "suggestions",
-        "termcolor",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2021",
+    edition = "2015",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__clap_derive-3.2.7//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -93,24 +85,18 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "3.2.14",
+    version = "0.2.135",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__atty-0.2.14//:atty",
-            "@crates_vendor__bitflags-1.3.2//:bitflags",
-            "@crates_vendor__clap_lex-0.2.4//:clap_lex",
-            "@crates_vendor__indexmap-1.9.1//:indexmap",
-            "@crates_vendor__once_cell-1.13.0//:once_cell",
-            "@crates_vendor__strsim-0.10.0//:strsim",
-            "@crates_vendor__termcolor-1.1.3//:termcolor",
-            "@crates_vendor__textwrap-0.15.0//:textwrap",
+            "@crates_vendor__libc-0.2.135//:build_script_build",
         ],
     }),
 )
 
-rust_binary(
-    name = "stdio-fixture__bin",
+cargo_build_script(
+    # See comment associated with alias. Do not change this name
+    name = "libc_build_script",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -122,40 +108,24 @@ rust_binary(
         "//conditions:default": {
         },
     }),
-    compile_data = glob(
-        include = ["**"],
-        exclude = [
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ) + select_with_or({
+    build_script_env = {
+    },
+    compile_data = select_with_or({
         "//conditions:default": [
         ],
     }),
     crate_features = [
-        "atty",
-        "clap_derive",
-        "color",
-        "default",
-        "derive",
-        "once_cell",
-        "std",
-        "strsim",
-        "suggestions",
-        "termcolor",
     ],
-    crate_root = "src/bin/stdio-fixture.rs",
-    data = select_with_or({
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(["**"]) + select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2021",
+    edition = "2015",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__clap_derive-3.2.7//:clap_derive",
         ],
     }),
     rustc_env = {
@@ -177,19 +147,28 @@ rust_binary(
         "noclippy",
         "norustfmt",
     ],
-    version = "3.2.14",
-    deps = [
-        ":clap",
-    ] + select_with_or({
+    tools = select_with_or({
         "//conditions:default": [
-            "@crates_vendor__atty-0.2.14//:atty",
-            "@crates_vendor__bitflags-1.3.2//:bitflags",
-            "@crates_vendor__clap_lex-0.2.4//:clap_lex",
-            "@crates_vendor__indexmap-1.9.1//:indexmap",
-            "@crates_vendor__once_cell-1.13.0//:once_cell",
-            "@crates_vendor__strsim-0.10.0//:strsim",
-            "@crates_vendor__termcolor-1.1.3//:termcolor",
-            "@crates_vendor__textwrap-0.15.0//:textwrap",
         ],
     }),
+    version = "0.2.135",
+    visibility = ["//visibility:private"],
+    deps = [
+    ] + select_with_or({
+        "//conditions:default": [
+        ],
+    }),
+)
+
+alias(
+    # Because `cargo_build_script` does some invisible target name mutating to
+    # determine the package and crate name for a build script, the Bazel
+    # target namename of any build script cannot be the Cargo canonical name
+    # of `build_script_build` without losing out on having certain Cargo
+    # environment variables set.
+    name = "build_script_build",
+    actual = "libc_build_script",
+    tags = [
+        "manual",
+    ],
 )

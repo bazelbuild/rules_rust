@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # (MIT OR Apache-2.0) AND Unicode-DFS-2016
 # ])
 
 rust_library(
-    name = "form_urlencoded",
+    name = "unicode_ident",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -81,12 +81,10 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.1",
+    version = "1.0.5",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__matches-0.1.9//:matches",
-            "@crates_vendor__percent-encoding-2.1.0//:percent_encoding",
         ],
     }),
 )

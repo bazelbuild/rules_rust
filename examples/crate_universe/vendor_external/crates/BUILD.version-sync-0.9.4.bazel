@@ -96,13 +96,13 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__proc-macro2-1.0.40//:proc_macro2",
+            "@crates_vendor__proc-macro2-1.0.47//:proc_macro2",
             "@crates_vendor__pulldown-cmark-0.8.0//:pulldown_cmark",
             "@crates_vendor__regex-1.6.0//:regex",
-            "@crates_vendor__semver-1.0.12//:semver",
-            "@crates_vendor__syn-1.0.98//:syn",
+            "@crates_vendor__semver-1.0.14//:semver",
+            "@crates_vendor__syn-1.0.102//:syn",
             "@crates_vendor__toml-0.5.9//:toml",
-            "@crates_vendor__url-2.2.2//:url",
+            "@crates_vendor__url-2.3.1//:url",
         ],
     }),
 )

@@ -7,6 +7,7 @@ exports_files([
 
 crates_vendor(
     name = "crates_vendor",
+    cargo_lockfile = "@names_external//:Cargo.lock",
     manifests = ["@names_external//:Cargo.toml"],
     mode = "remote",
 )

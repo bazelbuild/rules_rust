@@ -25,7 +25,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "os_str_bytes",
+    name = "idna",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,14 +50,13 @@ rust_library(
         ],
     }),
     crate_features = [
-        "raw_os_str",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
     }),
-    edition = "2021",
+    edition = "2018",
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
@@ -82,10 +81,12 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "6.2.0",
+    version = "0.3.0",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
+            "@crates_vendor__unicode-bidi-0.3.8//:unicode_bidi",
+            "@crates_vendor__unicode-normalization-0.1.22//:unicode_normalization",
         ],
     }),
 )

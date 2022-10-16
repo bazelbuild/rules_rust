@@ -21,11 +21,11 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # MIT/Apache-2.0
 # ])
 
 rust_library(
-    name = "rand_core",
+    name = "unicode_normalization",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -50,8 +50,7 @@ rust_library(
         ],
     }),
     crate_features = [
-        "alloc",
-        "getrandom",
+        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -84,11 +83,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.6.3",
+    version = "0.1.22",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__getrandom-0.2.7//:getrandom",
+            "@crates_vendor__tinyvec-1.6.0//:tinyvec",
         ],
     }),
 )

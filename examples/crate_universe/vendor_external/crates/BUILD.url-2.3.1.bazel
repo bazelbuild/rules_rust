@@ -21,7 +21,7 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
@@ -50,6 +50,7 @@ rust_library(
         ],
     }),
     crate_features = [
+        "default",
     ],
     crate_root = "src/lib.rs",
     data = select_with_or({
@@ -81,14 +82,13 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "2.2.2",
+    version = "2.3.1",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__form_urlencoded-1.0.1//:form_urlencoded",
-            "@crates_vendor__idna-0.2.3//:idna",
-            "@crates_vendor__matches-0.1.9//:matches",
-            "@crates_vendor__percent-encoding-2.1.0//:percent_encoding",
+            "@crates_vendor__form_urlencoded-1.1.0//:form_urlencoded",
+            "@crates_vendor__idna-0.3.0//:idna",
+            "@crates_vendor__percent-encoding-2.2.0//:percent_encoding",
         ],
     }),
 )

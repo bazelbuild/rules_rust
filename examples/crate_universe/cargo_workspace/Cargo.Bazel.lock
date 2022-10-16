@@ -50,10 +50,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "direct-cargo-bazel-deps"
-version = "0.0.1"
-
-[[package]]
 name = "ferris-says"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

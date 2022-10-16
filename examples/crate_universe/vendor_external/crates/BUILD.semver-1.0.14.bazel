@@ -87,11 +87,11 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.12",
+    version = "1.0.14",
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__semver-1.0.12//:build_script_build",
+            "@crates_vendor__semver-1.0.14//:build_script_build",
         ],
     }),
 )
@@ -155,7 +155,7 @@ cargo_build_script(
         "//conditions:default": [
         ],
     }),
-    version = "1.0.12",
+    version = "1.0.14",
     visibility = ["//visibility:private"],
     deps = [
     ] + select_with_or({
