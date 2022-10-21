@@ -15,6 +15,7 @@
 """Rust rule implementations"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
@@ -358,6 +359,26 @@ def _rust_binary_impl(ctx):
         ),
     )
 
+def _rust_test_output_name(ctx, toolchain, crate_root):
+    """Generate the output name for a rust_test target.
+
+    Args:
+        ctx (ctx): The ctx object for the current target.
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        crate_root (File): The test's crate root source file.
+
+    Returns:
+        str: The output name for a rust_test binary.
+    """
+    prefix_output_files = ctx.attr._prefix_output_files[BuildSettingInfo].value
+
+    output_name = "{}{}".format(ctx.label.name, toolchain.binary_ext)
+    if not prefix_output_files:
+        return output_name
+
+    output_hash = determine_output_hash(crate_root, ctx.label)
+    return "test-{}/{}".format(output_hash, output_name)
+
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule.
 
@@ -382,14 +403,8 @@ def _rust_test_impl(ctx):
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
 
-        output_hash = determine_output_hash(crate.root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        output_name = _rust_test_output_name(ctx, toolchain, crate.root)
+        output = ctx.actions.declare_file(output_name)
 
         # Optionally join compile data
         if crate.compile_data:
@@ -428,14 +443,8 @@ def _rust_test_impl(ctx):
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
 
-        output_hash = determine_output_hash(crate_root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        output_name = _rust_test_output_name(ctx, toolchain, crate_root)
+        output = ctx.actions.declare_file(output_name)
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
@@ -764,6 +773,9 @@ _rust_test_attrs = dict({
         cfg = "exec",
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
+    ),
+    "_prefix_output_files": attr.label(
+        default = Label("//rust/settings:rust_test_prefix_output_files"),
     ),
 }.items() + _experimental_use_cc_common_link_attrs.items())
 
