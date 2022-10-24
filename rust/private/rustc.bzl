@@ -33,6 +33,7 @@ load(
     "is_exec_configuration",
     "make_static_lib_symlink",
     "relativize",
+    "transform_deps",
 )
 
 BuildInfo = _BuildInfo
@@ -1030,7 +1031,7 @@ def rustc_compile_action(
             experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
 
     dep_info, build_info, linkstamps = collect_deps(
-        deps = crate_info.deps,
+        deps = depset(transform_deps(toolchain.stdlib_deps.to_list()), transitive = [crate_info.deps]),
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
         are_linkstamps_supported = _are_linkstamps_supported(

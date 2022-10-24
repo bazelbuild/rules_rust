@@ -531,6 +531,7 @@ def _rust_toolchain_impl(ctx):
         rustfmt = sysroot.rustfmt,
         staticlib_ext = ctx.attr.staticlib_ext,
         stdlib_linkflags = stdlib_linkflags_cc_info,
+        stdlib_deps = depset(ctx.attr.stdlib_deps),
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
         target_arch = ctx.attr.target_triple.split("-")[0],
@@ -669,6 +670,9 @@ rust_toolchain = rule(
                 "to the srcs of the `rust_std` attribute."
             ),
             mandatory = True,
+        ),
+        "stdlib_deps": attr.label_list(
+            doc = "Extra deps needed for any targets that link to the standard library",
         ),
         "target_json": attr.label(
             doc = ("Override the target_triple with a custom target specification. " +
