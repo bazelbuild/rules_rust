@@ -91,7 +91,7 @@ rust_library(
         # cfg(target_os = "redox")
         #
         # No supported platform triples for cfg: 'cfg(target_os = "redox")'
-        # Skipped dependencies: [{"id":"redox_syscall 0.2.13","target":"syscall"}]
+        # Skipped dependencies: [{"id":"redox_syscall 0.2.16","target":"syscall"}]
         #
         # cfg(unix)
         (
@@ -116,13 +116,13 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "//vendor_local_pkgs/crates/libc-0.2.126:libc",
+            "//vendor_local_pkgs/crates/libc-0.2.136:libc",
 
             # Common Deps
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
             "//vendor_local_pkgs/crates/instant-0.1.12:instant",
             "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",
-            "//vendor_local_pkgs/crates/smallvec-1.9.0:smallvec",
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",
         ],
         # cfg(windows)
         (
@@ -136,13 +136,13 @@ rust_library(
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
             "//vendor_local_pkgs/crates/instant-0.1.12:instant",
             "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",
-            "//vendor_local_pkgs/crates/smallvec-1.9.0:smallvec",
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",
         ],
         "//conditions:default": [
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
             "//vendor_local_pkgs/crates/instant-0.1.12:instant",
             "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",
-            "//vendor_local_pkgs/crates/smallvec-1.9.0:smallvec",
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",
         ],
     }),
 )

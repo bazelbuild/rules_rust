@@ -85,10 +85,10 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_pkgs__form_urlencoded-1.0.1//:form_urlencoded",
-            "@crates_vendor_pkgs__itoa-1.0.2//:itoa",
-            "@crates_vendor_pkgs__ryu-1.0.10//:ryu",
-            "@crates_vendor_pkgs__serde-1.0.140//:serde",
+            "@crates_vendor_pkgs__form_urlencoded-1.1.0//:form_urlencoded",
+            "@crates_vendor_pkgs__itoa-1.0.4//:itoa",
+            "@crates_vendor_pkgs__ryu-1.0.11//:ryu",
+            "@crates_vendor_pkgs__serde-1.0.147//:serde",
         ],
     }),
 )

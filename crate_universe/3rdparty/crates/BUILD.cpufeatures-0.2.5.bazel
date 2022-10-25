@@ -89,7 +89,7 @@ rust_library(
             "@rules_rust//rust/platform:aarch64-apple-darwin",
         ): [
             # Target Deps
-            "@cui__libc-0.2.135//:libc",
+            "@cui__libc-0.2.136//:libc",
 
             # Common Deps
         ],
@@ -98,7 +98,7 @@ rust_library(
             "@rules_rust//rust/platform:aarch64-linux-android",
         ): [
             # Target Deps
-            "@cui__libc-0.2.135//:libc",
+            "@cui__libc-0.2.136//:libc",
 
             # Common Deps
         ],
@@ -107,7 +107,7 @@ rust_library(
             "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@cui__libc-0.2.135//:libc",
+            "@cui__libc-0.2.136//:libc",
 
             # Common Deps
         ],

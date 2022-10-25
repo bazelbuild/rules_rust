@@ -86,9 +86,9 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__proc-macro2-1.0.46//:proc_macro2",
+            "@cui__proc-macro2-1.0.47//:proc_macro2",
             "@cui__quote-1.0.21//:quote",
-            "@cui__syn-1.0.102//:syn",
+            "@cui__syn-1.0.103//:syn",
             "@cui__wasm-bindgen-backend-0.2.83//:wasm_bindgen_backend",
             "@cui__wasm-bindgen-shared-0.2.83//:wasm_bindgen_shared",
         ],

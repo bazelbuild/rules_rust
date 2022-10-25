@@ -87,7 +87,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@crates_vendor_pkgs__instant-0.1.12//:instant",
-            "@crates_vendor_pkgs__lock_api-0.4.7//:lock_api",
+            "@crates_vendor_pkgs__lock_api-0.4.9//:lock_api",
             "@crates_vendor_pkgs__parking_lot_core-0.8.5//:parking_lot_core",
         ],
     }),

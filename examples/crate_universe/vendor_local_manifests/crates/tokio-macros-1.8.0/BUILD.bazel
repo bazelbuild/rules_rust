@@ -85,9 +85,9 @@ rust_proc_macro(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/proc-macro2-1.0.40:proc_macro2",
-            "//vendor_local_manifests/crates/quote-1.0.20:quote",
-            "//vendor_local_manifests/crates/syn-1.0.98:syn",
+            "//vendor_local_manifests/crates/proc-macro2-1.0.47:proc_macro2",
+            "//vendor_local_manifests/crates/quote-1.0.21:quote",
+            "//vendor_local_manifests/crates/syn-1.0.103:syn",
         ],
     }),
 )

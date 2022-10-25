@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__libc-0.2.135//:libc",
+            "@cui__libc-0.2.136//:libc",
         ],
     }),
 )

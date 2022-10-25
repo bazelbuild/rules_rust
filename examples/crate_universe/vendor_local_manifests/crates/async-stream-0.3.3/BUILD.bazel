@@ -86,7 +86,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/futures-core-0.3.21:futures_core",
+            "//vendor_local_manifests/crates/futures-core-0.3.25:futures_core",
         ],
     }),
 )

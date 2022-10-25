@@ -92,7 +92,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__camino-1.1.1//:build_script_build",
-            "@cui__serde-1.0.145//:serde",
+            "@cui__serde-1.0.147//:serde",
         ],
     }),
 )

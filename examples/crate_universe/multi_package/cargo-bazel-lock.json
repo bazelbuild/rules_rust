@@ -1,5 +1,5 @@
 {
-  "checksum": "b5d325978638941d3a9ecc56f85eadf261ad36258dcfa340e543b96144a19a2d",
+  "checksum": "9d7dd4b397d1018bb9003fb9f24126f6e08795c8ca358d2a7bf8fb1db7ec6cff",
   "crates": {
     "aho-corasick 0.7.18": {
       "name": "aho-corasick",
@@ -2143,34 +2143,6 @@
         "version": "0.9.0"
       },
       "license": "MIT OR Apache-2.0"
-    },
-    "direct-cargo-bazel-deps 0.0.1": {
-      "name": "direct-cargo-bazel-deps",
-      "version": "0.0.1",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "direct_cargo_bazel_deps",
-            "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "direct_cargo_bazel_deps",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2018",
-        "version": "0.0.1"
-      },
-      "license": null
     },
     "dirs-next 2.0.0": {
       "name": "dirs-next",
@@ -11090,7 +11062,6 @@
     "lalrpop 0.19.8"
   ],
   "workspace_members": {
-    "direct-cargo-bazel-deps 0.0.1": "",
     "pkg_a 0.1.0": "multi_package/pkg_a",
     "pkg_b 0.1.0": "multi_package/sub_pkgs/pkg_b",
     "pkg_c 0.1.0": "multi_package/sub_pkgs/pkg_c"

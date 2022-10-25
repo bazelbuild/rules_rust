@@ -92,17 +92,17 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "//vendor_local_pkgs/crates/bitflags-1.3.2:bitflags",
-            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
-            "//vendor_local_pkgs/crates/futures-core-0.3.21:futures_core",
-            "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",
+            "//vendor_local_pkgs/crates/bytes-1.2.1:bytes",
+            "//vendor_local_pkgs/crates/futures-core-0.3.25:futures_core",
+            "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.8:http",
             "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
             "//vendor_local_pkgs/crates/http-range-header-0.3.0:http_range_header",
             "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
             "//vendor_local_pkgs/crates/tower-0.4.13:tower",
-            "//vendor_local_pkgs/crates/tower-layer-0.3.1:tower_layer",
+            "//vendor_local_pkgs/crates/tower-layer-0.3.2:tower_layer",
             "//vendor_local_pkgs/crates/tower-service-0.3.2:tower_service",
-            "//vendor_local_pkgs/crates/tracing-0.1.35:tracing",
+            "//vendor_local_pkgs/crates/tracing-0.1.37:tracing",
         ],
     }),
 )
