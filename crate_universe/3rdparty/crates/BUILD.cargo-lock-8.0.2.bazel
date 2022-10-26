@@ -87,7 +87,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__semver-1.0.14//:semver",
-            "@cui__serde-1.0.145//:serde",
+            "@cui__serde-1.0.147//:serde",
             "@cui__toml-0.5.9//:toml",
             "@cui__url-2.3.1//:url",
         ],
@@ -157,7 +157,7 @@ rust_binary(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__semver-1.0.14//:semver",
-            "@cui__serde-1.0.145//:serde",
+            "@cui__serde-1.0.147//:serde",
             "@cui__toml-0.5.9//:toml",
             "@cui__url-2.3.1//:url",
         ],

@@ -88,7 +88,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__getrandom-0.2.7//:getrandom",
+            "@cui__getrandom-0.2.8//:getrandom",
         ],
     }),
 )

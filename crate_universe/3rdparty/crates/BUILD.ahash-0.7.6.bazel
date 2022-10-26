@@ -114,7 +114,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@cui__getrandom-0.2.7//:getrandom",
+            "@cui__getrandom-0.2.8//:getrandom",
 
             # Common Deps
             "@cui__ahash-0.7.6//:build_script_build",

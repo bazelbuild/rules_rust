@@ -86,7 +86,7 @@ rust_library(
         "@libgit2",
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__libc-0.2.135//:libc",
+            "@cui__libc-0.2.136//:libc",
             "@cui__libz-sys-1.1.8//:libz_sys",
         ],
     }),

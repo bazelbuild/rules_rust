@@ -125,7 +125,7 @@ rust_library(
         # cfg(target_os = "haiku")
         #
         # No supported platform triples for cfg: 'cfg(target_os = "haiku")'
-        # Skipped dependencies: [{"id":"iana-time-zone-haiku 0.1.0","target":"iana_time_zone_haiku"}]
+        # Skipped dependencies: [{"id":"iana-time-zone-haiku 0.1.1","target":"iana_time_zone_haiku"}]
         #
         # cfg(target_os = "windows")
         (
