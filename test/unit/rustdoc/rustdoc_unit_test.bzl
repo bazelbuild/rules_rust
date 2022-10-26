@@ -90,6 +90,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     rust_doc(
         name = "{}_doc".format(name),
         crate = ":{}".format(name),
+        crate_features = kwargs.get("crate_features", []),
     )
 
     rust_doc_test(
