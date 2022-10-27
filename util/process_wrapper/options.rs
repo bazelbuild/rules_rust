@@ -44,8 +44,7 @@ pub(crate) struct Options {
     // If set, it configures rustc to emit an rmeta file and then
     // quit.
     pub(crate) rustc_quit_on_rmeta: bool,
-    // If rustc_quit_on_rmeta is set to true, this controls the
-    // output format of rustc messages.
+    // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
 }
 
