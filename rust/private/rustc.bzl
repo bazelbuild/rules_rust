@@ -599,12 +599,7 @@ def collect_inputs(
     # flattened on each transitive rust_library dependency.
     additional_transitive_inputs = []
     ambiguous_libs = {}
-    if crate_info.type in ("staticlib", "proc-macro"):
-        additional_transitive_inputs = _collect_libs_from_linker_inputs(
-            dep_info.transitive_noncrates.to_list(),
-            use_pic,
-        )
-    elif crate_info.type in ("bin", "dylib", "cdylib"):
+    if crate_info.type not in ("lib", "rlib"):
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
