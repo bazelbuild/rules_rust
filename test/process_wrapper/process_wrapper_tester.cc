@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 void basic_part1_test(std::string current_dir_arg) {
@@ -42,9 +43,28 @@ void basic_part2_test(std::string current_dir, const char* envp[]) {
   }
 }
 
-void subst_pwd_test(std::string current_dir, const char* envp[]) {
+void subst_pwd_test(int argc, const char* argv[], const char* envp[]) {
+  std::string current_dir = argv[3];
   if (current_dir.find("${pwd}") != std::string::npos) {
     std::cerr << "error: argument ${pwd} substitution failed.\n";
+    std::exit(1);
+  }
+  // find the param file using its "@" prefix
+  std::string param_file;
+  for (int i = 1; i < argc; ++i) {
+    if (argv[i][0] == '@') {
+      param_file = std::string(argv[i]+1);
+      break;
+    }
+  }
+  if (param_file.empty()) {
+    std::cerr << "error: no param file.\n";
+    std::exit(1);
+  }
+  std::string param_file_line;
+  getline(std::ifstream(param_file), param_file_line);
+  if (param_file_line != current_dir) {
+    std::cerr << "error: param file " << param_file << " should contain " << current_dir << ", found " << param_file_line << ".\n";
     std::exit(1);
   }
   bool found = false;
@@ -147,7 +167,7 @@ int main(int argc, const char* argv[], const char* envp[]) {
   }
 
   if (combined || test_config == "subst-pwd") {
-    subst_pwd_test(argv[3], envp);
+    subst_pwd_test(argc, argv, envp);
   } else if (test_config == "basic") {
     basic_part2_test(argv[3], envp);
   }

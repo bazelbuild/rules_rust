@@ -87,7 +87,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "//vendor_local_manifests/crates/instant-0.1.12:instant",
-            "//vendor_local_manifests/crates/lock_api-0.4.7:lock_api",
+            "//vendor_local_manifests/crates/lock_api-0.4.9:lock_api",
             "//vendor_local_manifests/crates/parking_lot_core-0.8.5:parking_lot_core",
         ],
     }),

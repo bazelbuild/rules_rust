@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
+use std::fs::File;
+use std::io::{self, Write};
 use std::process::exit;
 
 use crate::flags::{FlagParseError, Flags, ParseOutcome};
@@ -185,7 +187,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     );
     // Append all the arguments fetched from files to those provided via command line.
     child_args.append(&mut file_arguments);
-    let child_args = prepare_args(child_args, &subst_mappings);
+    let child_args = prepare_args(child_args, &subst_mappings)?;
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
@@ -234,15 +236,66 @@ fn env_from_files(paths: Vec<String>) -> Result<HashMap<String, String>, OptionE
     Ok(env_vars)
 }
 
-fn prepare_args(mut args: Vec<String>, subst_mappings: &[(String, String)]) -> Vec<String> {
+fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     for (f, replace_with) in subst_mappings {
-        for arg in args.iter_mut() {
-            let from = format!("${{{}}}", f);
-            let new = arg.replace(from.as_str(), replace_with);
-            *arg = new;
-        }
+        let from = format!("${{{}}}", f);
+        arg = arg.replace(&from, replace_with);
     }
-    args
+    arg
+}
+
+/// Apply substitutions to the given param file. Returns the new filename.
+fn prepare_param_file(
+    filename: &str,
+    subst_mappings: &[(String, String)],
+) -> Result<String, OptionError> {
+    let expanded_file = format!("{}.expanded", filename);
+    let format_err = |err: io::Error| {
+        OptionError::Generic(format!(
+            "{} writing path: {:?}, current directory: {:?}",
+            err,
+            expanded_file,
+            std::env::current_dir()
+        ))
+    };
+    let mut out = io::BufWriter::new(File::create(&expanded_file).map_err(&format_err)?);
+    fn process_file(
+        filename: &str,
+        out: &mut io::BufWriter<File>,
+        subst_mappings: &[(String, String)],
+        format_err: &impl Fn(io::Error) -> OptionError,
+    ) -> Result<(), OptionError> {
+        for arg in read_file_to_array(filename).map_err(OptionError::Generic)? {
+            let arg = prepare_arg(arg, subst_mappings);
+            if let Some(arg_file) = arg.strip_prefix('@') {
+                process_file(arg_file, out, subst_mappings, format_err)?;
+            } else {
+                writeln!(out, "{}", arg).map_err(format_err)?;
+            }
+        }
+        Ok(())
+    }
+    process_file(filename, &mut out, subst_mappings, &format_err)?;
+    Ok(expanded_file)
+}
+
+/// Apply substitutions to the provided arguments, recursing into param files.
+fn prepare_args(
+    args: Vec<String>,
+    subst_mappings: &[(String, String)],
+) -> Result<Vec<String>, OptionError> {
+    args.into_iter()
+        .map(|arg| {
+            let arg = prepare_arg(arg, subst_mappings);
+            if let Some(param_file) = arg.strip_prefix('@') {
+                // Note that substitutions may also apply to the param file path!
+                prepare_param_file(param_file, subst_mappings)
+                    .map(|filename| format!("@{}", filename))
+            } else {
+                Ok(arg)
+            }
+        })
+        .collect()
 }
 
 fn environment_block(

@@ -60,7 +60,7 @@ rust_library(
     proc_macro_deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/async-trait-0.1.56:async_trait",
+            "//vendor_local_pkgs/crates/async-trait-0.1.58:async_trait",
         ],
     }),
     rustc_env = {
@@ -86,8 +86,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.2.0:bytes",
-            "//vendor_local_pkgs/crates/futures-util-0.3.21:futures_util",
+            "//vendor_local_pkgs/crates/bytes-1.2.1:bytes",
+            "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.8:http",
             "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
             "//vendor_local_pkgs/crates/mime-0.3.16:mime",

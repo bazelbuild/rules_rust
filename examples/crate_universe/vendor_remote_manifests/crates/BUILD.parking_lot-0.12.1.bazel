@@ -86,8 +86,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor_manifests__lock_api-0.4.7//:lock_api",
-            "@crates_vendor_manifests__parking_lot_core-0.9.3//:parking_lot_core",
+            "@crates_vendor_manifests__lock_api-0.4.9//:lock_api",
+            "@crates_vendor_manifests__parking_lot_core-0.9.4//:parking_lot_core",
         ],
     }),
 )

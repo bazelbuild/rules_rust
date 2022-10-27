@@ -88,7 +88,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__jobserver-0.1.24//:jobserver",
+            "@cui__jobserver-0.1.25//:jobserver",
         ],
     }),
 )
@@ -157,7 +157,7 @@ rust_binary(
         ":cc",
     ] + select_with_or({
         "//conditions:default": [
-            "@cui__jobserver-0.1.24//:jobserver",
+            "@cui__jobserver-0.1.25//:jobserver",
         ],
     }),
 )

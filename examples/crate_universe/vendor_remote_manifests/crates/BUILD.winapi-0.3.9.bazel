@@ -54,6 +54,8 @@ rust_library(
         ],
     }),
     crate_features = [
+        "accctrl",
+        "aclapi",
         "consoleapi",
         "errhandlingapi",
         "fileapi",
@@ -140,6 +142,8 @@ cargo_build_script(
         ],
     }),
     crate_features = [
+        "accctrl",
+        "aclapi",
         "consoleapi",
         "errhandlingapi",
         "fileapi",

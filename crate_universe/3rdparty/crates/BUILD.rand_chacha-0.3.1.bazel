@@ -87,7 +87,7 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@cui__ppv-lite86-0.2.16//:ppv_lite86",
-            "@cui__rand_core-0.6.3//:rand_core",
+            "@cui__rand_core-0.6.4//:rand_core",
         ],
     }),
 )

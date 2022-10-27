@@ -1,9 +1,9 @@
 selects.with_or({
     {%- for cfg, values in selectable.selects %}
-    {%- if cfg in context.conditions and context.conditions[cfg] | length %}
+    {%- if context.conditions | get(key=cfg, default="") | length%}
         # {{ cfg }}
         (
-            {%- for triple in context.conditions[cfg] %}
+            {%- for triple in context.conditions | get(key=cfg) %}
             "{{ platform_label(triple = triple) }}",
             {%- endfor %}
         ): {

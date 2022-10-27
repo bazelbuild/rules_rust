@@ -1,5 +1,5 @@
 {
-  "checksum": "7aa6db97ba4739f5f2fdcc9282e2a63c2358057bc32228e2d71508340ff6a3cc",
+  "checksum": "17539f544860052ad2fe7ed2f503080673db107f6ffecb00d9a3189ae8958e86",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -247,34 +247,6 @@
         "version": "2.34.0"
       },
       "license": "MIT"
-    },
-    "direct-cargo-bazel-deps 0.0.1": {
-      "name": "direct-cargo-bazel-deps",
-      "version": "0.0.1",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "direct_cargo_bazel_deps",
-            "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "direct_cargo_bazel_deps",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2018",
-        "version": "0.0.1"
-      },
-      "license": null
     },
     "ferris-says 0.2.1": {
       "name": "ferris-says",
@@ -1374,7 +1346,6 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "direct-cargo-bazel-deps 0.0.1": "cargo_workspace",
     "num_printer 0.1.0": "cargo_workspace/num_printer",
     "printer 0.1.0": "cargo_workspace/printer",
     "rng 0.1.0": "cargo_workspace/rng"

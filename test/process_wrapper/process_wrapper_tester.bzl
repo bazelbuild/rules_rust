@@ -57,13 +57,20 @@ def _impl(ctx):
     args.add(ctx.attr.test_config)
     args.add("--current-dir", "${pwd}")
     args.add("--test-subst", "subst key to ${key}")
+
+    extra_args = ctx.actions.args()
+    if combined or ctx.attr.test_config == "subst-pwd":
+        extra_args.set_param_file_format("multiline")
+        extra_args.use_param_file("@%s", use_always = True)
+        extra_args.add("${pwd}")
+
     env = {"CURRENT_DIR": "${pwd}/test_path"}
 
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = ctx.files.env_files + ctx.files.arg_files,
         outputs = outputs,
-        arguments = [args],
+        arguments = [args, extra_args],
         env = env,
         tools = [ctx.executable._process_wrapper_tester],
     )
@@ -76,6 +83,7 @@ process_wrapper_tester = rule(
         "arg_files": attr.label_list(),
         "env_files": attr.label_list(),
         "test_config": attr.string(mandatory = True),
+        "use_param_file": attr.bool(default = False),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,

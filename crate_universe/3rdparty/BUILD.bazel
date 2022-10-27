@@ -11,6 +11,9 @@ exports_files([
 crates_vendor(
     name = "crates_vendor",
     annotations = {
+        "cargo_metadata": [crate.annotation(
+            shallow_since = "1663068201 +0200",
+        )],
         "libgit2-sys": [crate.annotation(
             gen_build_script = False,
             deps = ["@libgit2"],
@@ -20,7 +23,7 @@ crates_vendor(
             deps = ["@zlib"],
         )],
     },
-    cargo_lockfile = "@rules_rust//crate_universe/3rdparty:Cargo.Bazel.lock",
+    cargo_lockfile = "@rules_rust//crate_universe:Cargo.lock",
     manifests = [
         "@rules_rust//crate_universe:Cargo.toml",
         "@rules_rust//crate_universe/tools/cross_installer:Cargo.toml",
