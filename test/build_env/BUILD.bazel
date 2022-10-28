@@ -1,5 +1,5 @@
 load(
-    "//cargo:cargo_build_script.bzl",
+    "//cargo:defs.bzl",
     "cargo_build_script",
 )
 load("//rust:defs.bzl", "rust_library", "rust_test")
