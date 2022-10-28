@@ -291,6 +291,7 @@ cargo_build_script = rule(
         "deps": attr.label_list(
             doc = "The Rust dependencies of the crate",
             providers = [rust_common.dep_info],
+            cfg = "exec",
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
