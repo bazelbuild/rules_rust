@@ -717,10 +717,6 @@ _rust_test_attrs = dict({
             Specifies additional environment variables to set when the test is executed by bazel test.
             Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
-
-            Execpath returns absolute path, and in order to be able to construct the absolute path we
-            need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
-            more complicated debugger attachment.
         """),
     ),
     "use_libtest_harness": attr.bool(
