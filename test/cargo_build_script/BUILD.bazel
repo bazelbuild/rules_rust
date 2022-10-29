@@ -1,7 +1,7 @@
 """Tests for the cargo_build_script rule"""
 
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_test")
 
 # Test that tools are built in the exec configuration.

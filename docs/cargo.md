@@ -3,6 +3,7 @@
 
 * [cargo_bootstrap_repository](#cargo_bootstrap_repository)
 * [cargo_build_script](#cargo_build_script)
+* [cargo_dep_env](#cargo_dep_env)
 * [cargo_env](#cargo_env)
 
 <a id="cargo_bootstrap_repository"></a>
@@ -40,6 +41,26 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | "1.64.0" |
 
 
+<a id="cargo_dep_env"></a>
+
+## cargo_dep_env
+
+<pre>
+cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>, <a href="#cargo_dep_env-src">src</a>)
+</pre>
+
+A rule for generating variables for dependent `cargo_build_script`s without a build script. This is useful for using Bazel rules instead of a build script, while also generating configuration information for build scripts which depend on this crate.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="cargo_dep_env-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="cargo_dep_env-out_dir"></a>out_dir |  Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints puts files into <code>$OUT_DIR</code>, but without requiring a build script.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="cargo_dep_env-src"></a>src |  File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints <code>cargo:VAR=VALUE</code> lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
+
+
 <a id="cargo_build_script"></a>
 
 ## cargo_build_script
@@ -73,7 +94,7 @@ Then you want to use the build script in the following:
 package(default_visibility = ["//visibility:public"])
 
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 
 # This will run the build script from the root of the workspace, and
 # collect the outputs.
@@ -112,7 +133,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of _build_script.   |  none |
+| <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of <code>_build_script</code>.   |  none |
 | <a id="cargo_build_script-crate_features"></a>crate_features |  A list of features to enable for the build script.   |  <code>[]</code> |
 | <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  <code>None</code> |
 | <a id="cargo_build_script-deps"></a>deps |  The dependencies of the crate.   |  <code>[]</code> |
