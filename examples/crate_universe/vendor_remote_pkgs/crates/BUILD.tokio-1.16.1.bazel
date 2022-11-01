@@ -131,7 +131,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_pkgs__libc-0.2.136//:libc",
+            "@crates_vendor_pkgs__libc-0.2.137//:libc",
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",
 
             # Common Deps
@@ -139,7 +139,7 @@ rust_library(
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mio-0.7.14//:mio",
             "@crates_vendor_pkgs__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_pkgs__once_cell-1.15.0//:once_cell",
+            "@crates_vendor_pkgs__once_cell-1.16.0//:once_cell",
             "@crates_vendor_pkgs__parking_lot-0.11.2//:parking_lot",
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
         ],
@@ -156,7 +156,7 @@ rust_library(
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mio-0.7.14//:mio",
             "@crates_vendor_pkgs__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_pkgs__once_cell-1.15.0//:once_cell",
+            "@crates_vendor_pkgs__once_cell-1.16.0//:once_cell",
             "@crates_vendor_pkgs__parking_lot-0.11.2//:parking_lot",
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
         ],
@@ -165,7 +165,7 @@ rust_library(
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mio-0.7.14//:mio",
             "@crates_vendor_pkgs__num_cpus-1.13.1//:num_cpus",
-            "@crates_vendor_pkgs__once_cell-1.15.0//:once_cell",
+            "@crates_vendor_pkgs__once_cell-1.16.0//:once_cell",
             "@crates_vendor_pkgs__parking_lot-0.11.2//:parking_lot",
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
         ],

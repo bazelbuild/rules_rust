@@ -100,7 +100,7 @@ rust_library(
             "@crates_vendor__pulldown-cmark-0.8.0//:pulldown_cmark",
             "@crates_vendor__regex-1.6.0//:regex",
             "@crates_vendor__semver-1.0.14//:semver",
-            "@crates_vendor__syn-1.0.102//:syn",
+            "@crates_vendor__syn-1.0.103//:syn",
             "@crates_vendor__toml-0.5.9//:toml",
             "@crates_vendor__url-2.3.1//:url",
         ],

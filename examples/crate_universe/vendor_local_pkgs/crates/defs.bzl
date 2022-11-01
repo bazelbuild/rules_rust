@@ -290,9 +290,10 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "axum": "//vendor_local_pkgs/crates/axum-0.4.8:axum",
-            "hyper": "//vendor_local_pkgs/crates/hyper-0.14.20:hyper",
+            "hyper": "//vendor_local_pkgs/crates/hyper-0.14.22:hyper",
             "mime": "//vendor_local_pkgs/crates/mime-0.3.16:mime",
             "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.87:serde_json",
+            "socket2": "//vendor_local_pkgs/crates/socket2-0.4.7:socket2",
             "tokio": "//vendor_local_pkgs/crates/tokio-1.16.1:tokio",
             "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
             "tower-http": "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",

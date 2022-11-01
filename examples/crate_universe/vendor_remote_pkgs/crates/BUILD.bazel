@@ -35,7 +35,7 @@ alias(
 
 alias(
     name = "hyper",
-    actual = "@crates_vendor_pkgs__hyper-0.14.20//:hyper",
+    actual = "@crates_vendor_pkgs__hyper-0.14.22//:hyper",
     tags = ["manual"],
 )
 
@@ -48,6 +48,12 @@ alias(
 alias(
     name = "serde_json",
     actual = "@crates_vendor_pkgs__serde_json-1.0.87//:serde_json",
+    tags = ["manual"],
+)
+
+alias(
+    name = "socket2",
+    actual = "@crates_vendor_pkgs__socket2-0.4.7//:socket2",
     tags = ["manual"],
 )
 

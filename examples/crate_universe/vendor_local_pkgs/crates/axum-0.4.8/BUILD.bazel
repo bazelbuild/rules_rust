@@ -100,7 +100,7 @@ rust_library(
             "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.8:http",
             "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
-            "//vendor_local_pkgs/crates/hyper-0.14.20:hyper",
+            "//vendor_local_pkgs/crates/hyper-0.14.22:hyper",
             "//vendor_local_pkgs/crates/matchit-0.4.6:matchit",
             "//vendor_local_pkgs/crates/memchr-2.5.0:memchr",
             "//vendor_local_pkgs/crates/mime-0.3.16:mime",
