@@ -87,9 +87,9 @@ rust_library(
         "//conditions:default": [
             "@crates_vendor_manifests__async-stream-0.3.3//:async_stream",
             "@crates_vendor_manifests__bytes-1.2.1//:bytes",
-            "@crates_vendor_manifests__futures-core-0.3.24//:futures_core",
+            "@crates_vendor_manifests__futures-core-0.3.25//:futures_core",
             "@crates_vendor_manifests__tokio-1.21.2//:tokio",
-            "@crates_vendor_manifests__tokio-stream-0.1.10//:tokio_stream",
+            "@crates_vendor_manifests__tokio-stream-0.1.11//:tokio_stream",
         ],
     }),
 )

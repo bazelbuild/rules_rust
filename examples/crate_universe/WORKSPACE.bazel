@@ -237,13 +237,19 @@ crates_repository(
         ),
         "hyper": crate.spec(
             features = ["full"],
-            version = "0.14",
+            version = "0.14.22",
         ),
         "mime": crate.spec(
             version = "0.3",
         ),
         "serde_json": crate.spec(
             version = "1.0",
+        ),
+        # TODO: This dependency is added and pinned forward due to the
+        # following issue: https://github.com/hyperium/hyper/issues/3038
+        "socket2": crate.spec(
+            features = ["all"],
+            version = "0.4.7",
         ),
         "tokio": crate.spec(
             features = ["full"],

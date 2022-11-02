@@ -108,7 +108,7 @@ rust_library(
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
             # Target Deps
-            "@crates_vendor_manifests__libc-0.2.136//:libc",
+            "@crates_vendor_manifests__libc-0.2.137//:libc",
 
             # Common Deps
             "@crates_vendor_manifests__cfg-if-1.0.0//:cfg_if",
