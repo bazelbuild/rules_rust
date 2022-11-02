@@ -491,12 +491,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__libc-0.2.136",
-        sha256 = "55edcf6c0bb319052dea84732cf99db461780fd5e8d3eb46ab6ff312ab31f197",
+        name = "crates_vendor_manifests__libc-0.2.137",
+        sha256 = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libc/0.2.136/download"],
-        strip_prefix = "libc-0.2.136",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.136.bazel"),
+        urls = ["https://crates.io/api/v1/crates/libc/0.2.137/download"],
+        strip_prefix = "libc-0.2.137",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.137.bazel"),
     )
 
     maybe(

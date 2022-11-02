@@ -86,7 +86,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@crates_vendor__serde-1.0.145//:serde",
+            "@crates_vendor__serde-1.0.147//:serde",
         ],
     }),
 )
