@@ -52,21 +52,21 @@ tasks:
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   ubuntu2004_opt:
-    name: "Opt Mode"
+    name: Opt Mode
     platform: ubuntu2004
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags:
       - "-c opt"
   macos_opt:
-    name: "Opt Mode"
+    name: Opt Mode
     platform: macos
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     build_flags:
       - "-c opt"
   windows_opt:
-    name: "Opt Mode"
+    name: Opt Mode
     platform: windows
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
