@@ -1609,7 +1609,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows=False, for_macos=False):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
@@ -1647,7 +1647,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
             artifact.basename.startswith("libtest-") or artifact.basename.startswith("libstd-") or
             artifact.basename.startswith("test-") or artifact.basename.startswith("std-")
         ):
-            return ["-lstatic=%s" % get_lib_name(artifact)]
+            return [] if for_macos else ["-lstatic=%s" % get_lib_name(artifact)]
         return [
             "-lstatic=%s" % get_lib_name(artifact),
             "-Clink-arg=-l%s" % (get_lib_name(artifact) if not for_windows else artifact.basename),
@@ -1679,7 +1679,7 @@ def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
                 ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_windows = False))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_macos = True))
     return ret
 
 def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
@@ -1696,7 +1696,7 @@ def _make_link_flags_default(linker_input_and_use_pic_and_ambiguous_libs):
                 "link-arg=-Wl,--no-whole-archive",
             ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_windows = False))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
     return ret
 
 def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
