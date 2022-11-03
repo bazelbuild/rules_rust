@@ -31,7 +31,7 @@ def _ambiguous_deps_test_impl(ctx):
     if ctx.target_platform_has_constraint(
         ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
     ):
-        extension = ".lib"
+        extension = ""
     else:
         extension = pic_suffix
 
