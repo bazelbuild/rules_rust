@@ -168,6 +168,10 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
         bool: Whether or not [PIC][pic] should be enabled.
     """
 
+    # We use the same logic to select between `pic` and `nopic` outputs as the C++ rules:
+    # - For shared libraries - we use `pic`. This covers `dylib`, `cdylib` and `proc-macro` crate types.
+    # - In `fastbuild` and `dbg` mode we use `pic` by default.
+    # - In `opt` mode we use `nopic` outputs to build binaries.
     if crate_type in ("cdylib", "dylib", "proc-macro"):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     elif compilation_mode in ("fastbuild", "dbg"):
@@ -1723,6 +1727,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
+        compilation_mode (bool): The compilation mode for this build.
     """
     if crate_type in ["lib", "rlib"]:
         return
