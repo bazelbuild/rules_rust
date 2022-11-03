@@ -10,7 +10,7 @@ def _ambiguous_deps_test_impl(ctx):
 
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
     # in the form of "-lstatic=native-dep-{hash}. The hash should differ.
-    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep-")]
+    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep")]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
 
