@@ -9,7 +9,8 @@ def _ambiguous_deps_test_impl(ctx):
     rustc_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
 
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
-    # in the form of "-lstatic=native-dep-{hash}. The hash should differ.
+    # in the form of "-lstatic=native-dep-{hash}.a or "-lstatic=native-dep.pic-{hash}.a.
+    # Note that the second form should actually be "-lstatic=native-dep-{hash}.pic.a instead.
     link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep")]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
