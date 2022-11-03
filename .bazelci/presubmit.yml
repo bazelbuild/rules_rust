@@ -58,6 +58,8 @@ tasks:
     test_targets: *default_linux_targets
     build_flags:
       - "--compilation_mode=opt"
+    test_flags:
+      - "--compilation_mode=opt"
   macos_opt:
     name: Opt Mode
     platform: macos
@@ -65,13 +67,16 @@ tasks:
     test_targets: *default_macos_targets
     build_flags:
       - "--compilation_mode=opt"
+    test_flags:
+      - "--compilation_mode=opt"
   windows_opt:
     name: Opt Mode
     platform: windows
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-      - "--config=rustfmt"
-      - "--config=clippy"
+      - "--compilation_mode=opt"
+    test_flags:
+      - "--enable_runfiles"
       - "--compilation_mode=opt"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
