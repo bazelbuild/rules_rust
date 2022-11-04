@@ -1609,7 +1609,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows=False, for_macos=False):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_macos = False):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
