@@ -90,7 +90,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let (cargo_metadata, _) = Generator::new()
         .with_cargo(opt.cargo)
         .with_rustc(opt.rustc)
-        .generate(&manifest_path.as_path_buf())?;
+        .generate(manifest_path.as_path_buf())?;
 
     let cargo_lockfile_path = manifest_path
         .as_path_buf()

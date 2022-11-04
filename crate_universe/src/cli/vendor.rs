@@ -146,7 +146,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     let (cargo_metadata, cargo_lockfile) = Generator::new()
         .with_cargo(opt.cargo.clone())
         .with_rustc(opt.rustc.clone())
-        .generate(&manifest_path.as_path_buf())?;
+        .generate(manifest_path.as_path_buf())?;
 
     // Load the config from disk
     let config = Config::try_from_path(&opt.config)?;
