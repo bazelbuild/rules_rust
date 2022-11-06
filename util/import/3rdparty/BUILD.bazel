@@ -32,9 +32,9 @@ crates_vendor(
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]) + [
-        "//util/import/3rdparty/crates:defs.bzl",
+    srcs = [
         "//util/import/3rdparty/crates:crates.bzl",
+        "//util/import/3rdparty/crates:defs.bzl",
     ],
     visibility = ["//util/import:__pkg__"],
 )
