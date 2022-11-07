@@ -84,7 +84,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 ## rust_analyzer_toolchain
 
 <pre>
-rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>)
+rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-proc_macro_srv">proc_macro_srv</a>, <a href="#rust_analyzer_toolchain-rustc">rustc</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>)
 </pre>
 
 A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).
@@ -95,6 +95,8 @@ A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_analyzer_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
+| <a id="rust_analyzer_toolchain-proc_macro_srv"></a>proc_macro_srv |  The path to a <code>rust_analyzer_proc_macro_srv</code> binary.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_analyzer_toolchain-rustc"></a>rustc |  THe path to a <code>rustc</code> binary.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 | <a id="rust_analyzer_toolchain-rustc_srcs"></a>rustc_srcs |  The source code of rustc.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 
 
