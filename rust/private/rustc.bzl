@@ -973,6 +973,11 @@ def construct_arguments(
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
+    if is_exec_configuration(ctx):
+        rustc_flags.add_all(toolchain.extra_exec_rustc_flags)
+    else:
+        rustc_flags.add_all(toolchain.extra_rustc_flags)
+
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)

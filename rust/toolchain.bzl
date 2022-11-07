@@ -536,6 +536,8 @@ def _rust_toolchain_impl(ctx):
         rustfmt = sysroot.rustfmt,
         staticlib_ext = ctx.attr.staticlib_ext,
         stdlib_linkflags = stdlib_linkflags_cc_info,
+        extra_rustc_flags = ctx.attr.extra_rustc_flags,
+        extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
         target_arch = ctx.attr.target_triple.split("-")[0],
@@ -606,6 +608,12 @@ rust_toolchain = rule(
         "experimental_use_cc_common_link": attr.label(
             default = Label("//rust/settings:experimental_use_cc_common_link"),
             doc = "Label to a boolean build setting that controls whether cc_common.link is used to link rust binaries.",
+        ),
+        "extra_exec_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        "extra_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
         "llvm_cov": attr.label(
             doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item. If None, rust code is not instrumented for coverage.",
