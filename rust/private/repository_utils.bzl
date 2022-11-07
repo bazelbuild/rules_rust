@@ -116,6 +116,27 @@ filegroup(
 )
 """
 
+_build_file_for_rust_analyzer_proc_macro_srv = """\
+filegroup(
+   name = "rust_analyzer_proc_macro_srv",
+   srcs = ["libexec/rust-analyzer-proc-macro-srv{binary_ext}"],
+   visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
+    """Emits a BUILD file the rust_analyzer_proc_macro_srv archive.
+
+    Args:
+        exec_triple (str): The triple of the exec platform
+    Returns:
+        str: The contents of a BUILD file
+    """
+    system = triple_to_system(exec_triple)
+    return _build_file_for_rust_analyzer_proc_macro_srv.format(
+        binary_ext = system_to_binary_ext(system),
+    )
+
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
 
@@ -342,24 +363,26 @@ def load_rustfmt(ctx):
 
     return BUILD_for_rustfmt(target_triple)
 
-def load_rust_compiler(ctx):
+def load_rust_compiler(ctx, iso_date, target_triple, version):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+        target_triple (str): The Rust-style target that this compiler runs on.
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
         str: The BUILD file contents for this compiler and compiler library
     """
 
-    target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustc",
         tool_subdirectories = ["rustc"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_compiler(target_triple)
@@ -407,6 +430,26 @@ def load_cargo(ctx):
     )
 
     return BUILD_for_cargo(target_triple)
+
+def includes_rust_analyzer_proc_macro_srv(version, iso_date):
+    """Determing whether or not the rust_analyzer_proc_macro_srv binary in available in the given version of Rust.
+
+    Args:
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+
+    Returns:
+        bool: Whether or not the binary is expected to be included
+    """
+
+    if version == "nightly":
+        return iso_date >= "2022-09-21"
+    elif version == "beta":
+        return False
+    elif version >= "1.64.0":
+        return True
+
+    return False
 
 def should_include_rustc_srcs(repository_ctx):
     """Determing whether or not to include rustc sources in the toolchain.
@@ -460,14 +503,18 @@ load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
 
 rust_analyzer_toolchain(
     name = "{name}",
+    proc_macro_srv = {proc_macro_srv},
+    rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name):
+def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
+        rustc = rustc,
+        proc_macro_srv = repr(proc_macro_srv),
     )
 
 def load_rust_stdlib(ctx, target_triple):

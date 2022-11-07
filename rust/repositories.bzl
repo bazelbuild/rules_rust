@@ -1,6 +1,7 @@
 # buildifier: disable=module-docstring
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//rust/platform:triple.bzl", "get_host_triple")
 load(
     "//rust/platform:triple_mappings.bzl",
     "triple_to_constraint_set",
@@ -8,11 +9,13 @@ load(
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
+    "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
     "BUILD_for_toolchain",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
     "check_version_valid",
+    "includes_rust_analyzer_proc_macro_srv",
     "load_cargo",
     "load_clippy",
     "load_llvm_tools",
@@ -199,7 +202,12 @@ def _rust_toolchain_tools_repository_impl(ctx):
         load_rust_src(ctx)
 
     build_components = [
-        load_rust_compiler(ctx),
+        load_rust_compiler(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            target_triple = ctx.attr.exec_triple,
+            version = ctx.attr.version,
+        ),
         load_clippy(ctx),
         load_cargo(ctx),
     ]
@@ -291,7 +299,7 @@ rust_toolchain_tools_repository = repository_rule(
             doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
         ),
         "target_triple": attr.string(
-            doc = "The Rust-style target that this compiler builds for",
+            doc = "The Rust-style target that this compiler builds for.",
             mandatory = True,
         ),
         "urls": attr.string_list(
@@ -428,18 +436,41 @@ def rust_toolchain_repository(
         name = name,
     )
 
-def _rust_analyzer_toolchain_srcs_repository_impl(repository_ctx):
+def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
     load_rust_src(repository_ctx)
 
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
 
-    repository_ctx.file("BUILD.bazel", BUILD_for_rust_analyzer_toolchain(
+    host_triple = get_host_triple(repository_ctx)
+    build_contents = [
+        load_rust_compiler(
+            ctx = repository_ctx,
+            iso_date = repository_ctx.attr.iso_date,
+            target_triple = host_triple.str,
+            version = repository_ctx.attr.version,
+        ),
+    ]
+    rustc = "//:rustc"
+
+    proc_macro_srv = None
+    if includes_rust_analyzer_proc_macro_srv(repository_ctx.attr.version, repository_ctx.attr.iso_date):
+        build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple.str))
+        proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
+
+    build_contents.append(BUILD_for_rust_analyzer_toolchain(
         name = "rust_analyzer_toolchain",
+        rustc = rustc,
+        proc_macro_srv = proc_macro_srv,
     ))
 
-rust_analyzer_toolchain_srcs_repository = repository_rule(
+    repository_ctx.file("BUILD.bazel", "\n".join(build_contents))
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        repository_ctx.name,
+    ))
+
+rust_analyzer_toolchain_tools_repository = repository_rule(
     doc = "A repository rule for defining a rust_analyzer_toolchain with a `rust-src` artifact.",
     attrs = {
         "auth": attr.string_dict(
@@ -463,7 +494,7 @@ rust_analyzer_toolchain_srcs_repository = repository_rule(
             mandatory = True,
         ),
     },
-    implementation = _rust_analyzer_toolchain_srcs_repository_impl,
+    implementation = _rust_analyzer_toolchain_tools_repository_impl,
 )
 
 def rust_analyzer_toolchain_repository(
@@ -492,8 +523,8 @@ def rust_analyzer_toolchain_repository(
     Returns:
         str: The name of a registerable rust_analyzer_toolchain.
     """
-    rust_analyzer_toolchain_srcs_repository(
-        name = name + "_srcs",
+    rust_analyzer_toolchain_tools_repository(
+        name = name + "_tools",
         version = version,
         iso_date = iso_date,
         sha256s = sha256s,
@@ -503,7 +534,7 @@ def rust_analyzer_toolchain_repository(
 
     toolchain_repository_proxy(
         name = name,
-        toolchain = "@{}//:{}".format(name + "_srcs", "rust_analyzer_toolchain"),
+        toolchain = "@{}//:{}".format(name + "_tools", "rust_analyzer_toolchain"),
         toolchain_type = "@rules_rust//rust/rust_analyzer:toolchain_type",
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,

@@ -206,6 +206,8 @@ def _create_single_crate(ctx, info):
 
 def _rust_analyzer_toolchain_impl(ctx):
     toolchain = platform_common.ToolchainInfo(
+        proc_macro_srv = ctx.executable.proc_macro_srv,
+        rustc = ctx.executable.rustc,
         rustc_srcs = ctx.attr.rustc_srcs,
     )
 
@@ -215,6 +217,19 @@ rust_analyzer_toolchain = rule(
     implementation = _rust_analyzer_toolchain_impl,
     doc = "A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).",
     attrs = {
+        "proc_macro_srv": attr.label(
+            doc = "The path to a `rust_analyzer_proc_macro_srv` binary.",
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+        ),
+        "rustc": attr.label(
+            doc = "THe path to a `rustc` binary.",
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+            mandatory = True,
+        ),
         "rustc_srcs": attr.label(
             doc = "The source code of rustc.",
             mandatory = True,
@@ -238,13 +253,30 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
 
-    sysroot_src_file = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_sysroot_src")
-    ctx.actions.write(
-        output = sysroot_src_file,
-        content = sysroot_src,
+    rustc = rust_analyzer_toolchain.rustc
+    sysroot_dir, _, bin_dir = rustc.dirname.rpartition("/")
+    if bin_dir != "bin":
+        fail("The rustc path is expected to be relative to the sysroot as `bin/rustc`. Instead got: {}".format(
+            rustc.path,
+        ))
+
+    sysroot = "{}/{}".format(
+        _OUTPUT_BASE_TEMPLATE,
+        sysroot_dir,
     )
 
-    return [DefaultInfo(files = depset([sysroot_src_file]))]
+    toolchain_info = {
+        "sysroot": sysroot,
+        "sysroot_src": sysroot_src,
+    }
+
+    output = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_toolchain.json")
+    ctx.actions.write(
+        output = output,
+        content = json.encode_indent(toolchain_info, indent = " " * 4),
+    )
+
+    return [DefaultInfo(files = depset([output]))]
 
 rust_analyzer_detect_sysroot = rule(
     implementation = _rust_analyzer_detect_sysroot_impl,
