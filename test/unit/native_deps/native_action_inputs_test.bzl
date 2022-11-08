@@ -21,7 +21,7 @@ def _native_action_inputs_present_test_impl(ctx):
     action = tut.actions[0]
     assert_action_mnemonic(env, action, "Rustc")
     inputs = action.inputs.to_list()
-    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib")
+    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
     lib_name = _native_dep_lib_name(ctx, for_shared_library)
 
     asserts.true(
@@ -39,7 +39,7 @@ def _native_action_inputs_not_present_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
-    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib")
+    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
     assert_action_mnemonic(env, action, "Rustc")
     inputs = action.inputs.to_list()
     lib_name = _native_dep_lib_name(ctx, for_shared_library)

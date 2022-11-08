@@ -39,9 +39,9 @@ crates_vendor(
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]) + [
-        "//tools/rust_analyzer/3rdparty/crates:defs.bzl",
+    srcs = [
         "//tools/rust_analyzer/3rdparty/crates:crates.bzl",
+        "//tools/rust_analyzer/3rdparty/crates:defs.bzl",
     ],
     visibility = ["//tools/rust_analyzer:__pkg__"],
 )

@@ -153,7 +153,7 @@ def _are_linkstamps_supported(feature_configuration, has_grep_includes):
             # attribute is required for compiling linkstamps.
             has_grep_includes)
 
-def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
+def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode):
     """Whether or not [PIC][pic] should be enabled
 
     [pic]: https://en.wikipedia.org/wiki/Position-independent_code
@@ -162,12 +162,20 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type):
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         crate_type (str): A Rust target's crate type.
+        compilation_mode: The compilation mode.
 
     Returns:
         bool: Whether or not [PIC][pic] should be enabled.
     """
-    if crate_type in ("cdylib", "dylib"):
+
+    # We use the same logic to select between `pic` and `nopic` outputs as the C++ rules:
+    # - For shared libraries - we use `pic`. This covers `dylib`, `cdylib` and `proc-macro` crate types.
+    # - In `fastbuild` and `dbg` mode we use `pic` by default.
+    # - In `opt` mode we use `nopic` outputs to build binaries.
+    if crate_type in ("cdylib", "dylib", "proc-macro"):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
+    elif compilation_mode in ("fastbuild", "dbg"):
+        return True
     return False
 
 def _is_proc_macro(crate_info):
@@ -591,8 +599,9 @@ def collect_inputs(
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
     linker_depset = cc_toolchain.all_files
+    compilation_mode = ctx.var["COMPILATION_MODE"]
 
-    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
+    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
 
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
@@ -906,9 +915,10 @@ def construct_arguments(
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or force_link:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
+        compilation_mode = ctx.var["COMPILATION_MODE"]
         if toolchain.target_arch != "wasm32":
             if output_dir:
-                use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type)
+                use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
                 rpaths = depset([])
@@ -917,7 +927,7 @@ def construct_arguments(
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration)
+        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
@@ -1705,7 +1715,7 @@ def _libraries_dirnames(linker_input_and_use_pic_and_ambiguous_libs):
     # De-duplicate names.
     return depset([get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]).to_list()
 
-def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration):
+def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration, compilation_mode):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
@@ -1717,11 +1727,12 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         toolchain (rust_toolchain): The current `rust_toolchain`
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
+        compilation_mode (bool): The compilation mode for this build.
     """
     if crate_type in ["lib", "rlib"]:
         return
 
-    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type)
+    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
 
     if toolchain.os == "windows":
         make_link_flags = _make_link_flags_windows
