@@ -59,7 +59,7 @@ alias(
 
 alias(
     name = "cfg-expr",
-    actual = "@cui__cfg-expr-0.11.0//:cfg_expr",
+    actual = "@cui__cfg-expr-0.12.0//:cfg_expr",
     tags = ["manual"],
 )
 
