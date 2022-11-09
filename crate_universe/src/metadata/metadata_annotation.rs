@@ -162,6 +162,7 @@ pub(crate) enum SourceAnnotation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         patches: Option<BTreeSet<String>>,
     },
+    Path,
 }
 
 /// Additional information related to [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
@@ -238,11 +239,7 @@ impl LockfileAnnotation {
                         patches: None,
                     })
                 }
-                None => bail!(
-                    "The package '{:?} {:?}' has no source info so no annotation can be made",
-                    lock_pkg.name,
-                    lock_pkg.version
-                ),
+                None => return Ok(SourceAnnotation::Path),
             },
         };
 
