@@ -3,7 +3,13 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "make_static_lib_symlink")
+load(
+    "//rust/private:utils.bzl",
+    "dedent",
+    "dedup_expand_location",
+    "find_cc_toolchain",
+    "make_static_lib_symlink",
+)
 
 rust_analyzer_toolchain = _rust_analyzer_toolchain
 
@@ -456,7 +462,8 @@ def _rust_toolchain_impl(ctx):
     expanded_stdlib_linkflags = []
     for flag in ctx.attr.stdlib_linkflags:
         expanded_stdlib_linkflags.append(
-            ctx.expand_location(
+            dedup_expand_location(
+                ctx,
                 flag,
                 targets = rust_std[rust_common.stdlib_info].srcs,
             ),

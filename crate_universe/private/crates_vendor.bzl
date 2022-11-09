@@ -48,7 +48,7 @@ def _get_output_package(ctx):
             ctx.label.package,
             ctx.attr.vendor_path,
         )
-    return output
+    return output.lstrip("/")
 
 def _write_data_file(ctx, name, data):
     file = ctx.actions.declare_file("{}.{}".format(ctx.label.name, name))
