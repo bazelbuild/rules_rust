@@ -224,7 +224,7 @@ rust_analyzer_toolchain = rule(
             allow_single_file = True,
         ),
         "rustc": attr.label(
-            doc = "THe path to a `rustc` binary.",
+            doc = "The path to a `rustc` binary.",
             cfg = "exec",
             executable = True,
             allow_single_file = True,

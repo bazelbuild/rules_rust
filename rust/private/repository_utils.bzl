@@ -432,7 +432,7 @@ def load_cargo(ctx):
     return BUILD_for_cargo(target_triple)
 
 def includes_rust_analyzer_proc_macro_srv(version, iso_date):
-    """Determing whether or not the rust_analyzer_proc_macro_srv binary in available in the given version of Rust.
+    """Determine whether or not the rust_analyzer_proc_macro_srv binary in available in the given version of Rust.
 
     Args:
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
@@ -452,7 +452,7 @@ def includes_rust_analyzer_proc_macro_srv(version, iso_date):
     return False
 
 def should_include_rustc_srcs(repository_ctx):
-    """Determing whether or not to include rustc sources in the toolchain.
+    """Determine whether or not to include rustc sources in the toolchain.
 
     Args:
         repository_ctx (repository_ctx): The repository rule's context object
