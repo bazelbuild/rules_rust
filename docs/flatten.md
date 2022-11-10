@@ -16,6 +16,7 @@
 * [rules_rust_dependencies](#rules_rust_dependencies)
 * [rust_analyzer_aspect](#rust_analyzer_aspect)
 * [rust_analyzer_toolchain](#rust_analyzer_toolchain)
+* [rust_analyzer_toolchain_repository](#rust_analyzer_toolchain_repository)
 * [rust_binary](#rust_binary)
 * [rust_bindgen](#rust_bindgen)
 * [rust_bindgen_dependencies](#rust_bindgen_dependencies)
@@ -1201,7 +1202,7 @@ See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX r
 | <a id="rust_toolchain-rust_std"></a>rust_std |  The Rust standard library.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_toolchain-rustc"></a>rustc |  The location of the <code>rustc</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | required |  |
 | <a id="rust_toolchain-rustc_lib"></a>rustc_lib |  The libraries used by rustc during compilation.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_toolchain-rustc_srcs"></a>rustc_srcs |  The source code of rustc.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_toolchain-rustc_srcs"></a>rustc_srcs |  **Deprecated**: Instead see [rust_analyzer_toolchain](#rust_analyzer_toolchain)   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_toolchain-rustfmt"></a>rustfmt |  The location of the <code>rustfmt</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
 | <a id="rust_toolchain-staticlib_ext"></a>staticlib_ext |  The extension for static libraries created from rustc.   | String | required |  |
 | <a id="rust_toolchain-stdlib_linkflags"></a>stdlib_linkflags |  Additional linker flags to use when Rust standard library is linked by a C++ linker (rustc will deal with these automatically). Subject to location expansion with respect to the srcs of the <code>rust_std</code> attribute.   | List of strings | required |  |
@@ -1775,9 +1776,6 @@ rust_repository_set(<a href="#rust_repository_set-name">name</a>, <a href="#rust
 
 Assembles a remote repository for the given toolchain params, produces a proxy repository     to contain the toolchain declaration, and registers the toolchains.
 
-N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)     without actually downloading the toolchain.
-
-
 **PARAMETERS**
 
 
@@ -1786,15 +1784,15 @@ N.B. A "proxy repository" is needed to allow for registering the toolchain (with
 | <a id="rust_repository_set-name"></a>name |  The name of the generated repository   |  none |
 | <a id="rust_repository_set-version"></a>version |  The version of the tool among "nightly", "beta', or an exact version.   |  none |
 | <a id="rust_repository_set-exec_triple"></a>exec_triple |  The Rust-style target that this compiler runs on   |  none |
-| <a id="rust_repository_set-include_rustc_srcs"></a>include_rustc_srcs |  Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.   |  <code>False</code> |
+| <a id="rust_repository_set-include_rustc_srcs"></a>include_rustc_srcs |  **Deprecated** - instead see [rust_analyzer_toolchain_repository](#rust_analyzer_toolchain_repository).   |  <code>False</code> |
 | <a id="rust_repository_set-allocator_library"></a>allocator_library |  Target that provides allocator functions when rust_library targets are embedded in a cc_binary.   |  <code>None</code> |
-| <a id="rust_repository_set-extra_target_triples"></a>extra_target_triples |  Additional rust-style targets that this set of toolchains should support. Defaults to [].   |  <code>[]</code> |
-| <a id="rust_repository_set-iso_date"></a>iso_date |  The date of the tool. Defaults to None.   |  <code>None</code> |
-| <a id="rust_repository_set-rustfmt_version"></a>rustfmt_version |  The version of rustfmt to be associated with the toolchain. Defaults to None.   |  <code>None</code> |
+| <a id="rust_repository_set-extra_target_triples"></a>extra_target_triples |  Additional rust-style targets that this set of toolchains should support.   |  <code>[]</code> |
+| <a id="rust_repository_set-iso_date"></a>iso_date |  The date of the tool.   |  <code>None</code> |
+| <a id="rust_repository_set-rustfmt_version"></a>rustfmt_version |  The version of rustfmt to be associated with the toolchain.   |  <code>None</code> |
 | <a id="rust_repository_set-edition"></a>edition |  The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.   |  <code>None</code> |
-| <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components. Requires version to be "nightly". Defaults to False.   |  <code>False</code> |
+| <a id="rust_repository_set-dev_components"></a>dev_components |  Whether to download the rustc-dev components. Requires version to be "nightly".   |  <code>False</code> |
 | <a id="rust_repository_set-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.   |  <code>None</code> |
-| <a id="rust_repository_set-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']   |  <code>["https://static.rust-lang.org/dist/{}.tar.gz"]</code> |
+| <a id="rust_repository_set-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).   |  <code>["https://static.rust-lang.org/dist/{}.tar.gz"]</code> |
 | <a id="rust_repository_set-auth"></a>auth |  Auth object compatible with repository_ctx.download to use when downloading files. See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.   |  <code>None</code> |
 | <a id="rust_repository_set-register_toolchain"></a>register_toolchain |  If True, the generated <code>rust_toolchain</code> target will become a registered toolchain.   |  <code>True</code> |
 
