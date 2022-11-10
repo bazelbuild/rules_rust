@@ -6,6 +6,7 @@ def _resolve_repository_template(
         template,
         abi = None,
         arch = None,
+        channel = None,
         system = None,
         tool = None,
         triple = None,
@@ -17,6 +18,7 @@ def _resolve_repository_template(
         template (str): The template to use for rendering
         abi (str, optional): The host ABI
         arch (str, optional): The host CPU architecture
+        channel (str, optional): The toolchain channel. Eg. `stable`, `nightly`.
         system (str, optional): The host system name
         tool (str, optional): The tool to expect in the particular repository.
             Eg. `cargo`, `rustc`, `stdlib`.
@@ -47,16 +49,20 @@ def _resolve_repository_template(
     if version:
         template = template.replace("{version}", version)
 
+    if channel:
+        template = template.replace("{channel}", channel)
+
     return template
 
-def get_rust_tools(cargo_template, rustc_template, host_triple, version):
+def get_rust_tools(cargo_template, rustc_template, host_triple, channel, version):
     """Retrieve `cargo` and `rustc` labels based on the host triple.
 
     Args:
         cargo_template (str): A template used to identify the label of the host `cargo` binary.
         rustc_template (str): A template used to identify the label of the host `rustc` binary.
         host_triple (struct): The host's triple. See `@rules_rust//rust/platform:triple.bzl`.
-        version (str): The version of Cargo+Rustc to use.
+        channel (str): The Rust toolchain channel.
+        version (str): The version (or iso date in case of beta or nightly channels) of Cargo+Rustc to use.
 
     Returns:
         struct: A struct containing the labels of expected tools
@@ -66,6 +72,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, version):
     cargo_label = Label(_resolve_repository_template(
         template = cargo_template,
         version = version,
+        channel = channel,
         triple = host_triple.str,
         arch = host_triple.arch,
         vendor = host_triple.vendor,
@@ -77,6 +84,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, version):
     rustc_label = Label(_resolve_repository_template(
         template = rustc_template,
         version = version,
+        channel = channel,
         triple = host_triple.str,
         arch = host_triple.arch,
         vendor = host_triple.vendor,

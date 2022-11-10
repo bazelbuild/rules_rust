@@ -324,6 +324,7 @@ toolchain(
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
+    {target_settings}
 )
 """
 
@@ -331,14 +332,18 @@ def BUILD_for_toolchain(
         name,
         toolchain,
         toolchain_type,
+        target_settings,
         target_compatible_with,
         exec_compatible_with):
+    target_settings_value = "target_settings = {},".format(json.encode(target_settings)) if target_settings else "# target_settings = []"
+
     return _build_file_for_toolchain_template.format(
         name = name,
-        exec_constraint_sets_serialized = exec_compatible_with,
-        target_constraint_sets_serialized = target_compatible_with,
+        exec_constraint_sets_serialized = json.encode(exec_compatible_with),
+        target_constraint_sets_serialized = json.encode(target_compatible_with),
         toolchain = toolchain,
         toolchain_type = toolchain_type,
+        target_settings = target_settings_value,
     )
 
 def load_rustfmt(ctx):
