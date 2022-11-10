@@ -505,6 +505,12 @@ def _rust_toolchain_impl(ctx):
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
+    if ctx.attr.rustc_srcs:
+        # buildifier: disable=print
+        print("rustc_srcs is deprecated. {} should be updated to remove this. For a replacement, see https://bazelbuild.github.io/rules_rust/rust_analyzer.html#rust_analyzer_toolchain".format(
+            ctx.label,
+        ))
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
@@ -647,7 +653,7 @@ rust_toolchain = rule(
             cfg = "exec",
         ),
         "rustc_srcs": attr.label(
-            doc = "The source code of rustc.",
+            doc = "**Deprecated**: Instead see [rust_analyzer_toolchain](#rust_analyzer_toolchain)",
         ),
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
