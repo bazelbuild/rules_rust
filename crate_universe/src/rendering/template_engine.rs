@@ -1,12 +1,14 @@
 //! A template engine backed by [Tera] for rendering Files.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use anyhow::{Context as AnyhowContext, Result};
+use serde::{Deserialize, Serialize};
 use serde_json::{from_value, to_value, Value};
 use tera::{self, Tera};
 
 use crate::config::{CrateId, RenderConfig};
+use crate::context::crate_context::CrateDependency;
 use crate::context::Context;
 use crate::rendering::{
     render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
@@ -14,7 +16,7 @@ use crate::rendering::{
 };
 use crate::utils::sanitize_module_name;
 use crate::utils::sanitize_repository_name;
-use crate::utils::starlark::{SelectStringDict, SelectStringList};
+use crate::utils::starlark::{SelectList, SelectStringDict, SelectStringList};
 
 pub struct TemplateEngine {
     engine: Tera,
@@ -187,6 +189,10 @@ impl TemplateEngine {
         tera.register_function(
             "crates_module_label",
             module_label_fn_generator(render_config.crates_module_template.clone()),
+        );
+        tera.register_filter(
+            "remap_deps_configurations",
+            remap_select_list_configurations::<CrateDependency>,
         );
 
         let mut context = tera::Context::new();
@@ -397,4 +403,21 @@ fn crate_repository_fn_generator(template: String, repository_name: String) -> i
             }
         },
     )
+}
+
+/// Tera filter which re-keys a [`SelectList`]. See [`SelectList::remap_configurations`]
+/// for more details. The mapping must be provided as a Tera argument named `mapping`.
+fn remap_select_list_configurations<T: Ord + Clone + for<'a> Deserialize<'a> + Serialize>(
+    input: &Value,
+    args: &HashMap<String, Value>,
+) -> tera::Result<Value> {
+    let mapping = parse_tera_param!("mapping", BTreeMap<String, BTreeSet<String>>, args);
+
+    match from_value::<SelectList<T>>(input.clone()) {
+        Ok(v) => match to_value(v.remap_configurations(&mapping)) {
+            Ok(v) => Ok(v),
+            Err(_) => Err(tera::Error::msg("Failed to remap conditions.")),
+        },
+        Err(_) => Err(tera::Error::msg("The filter input could not be parsed.")),
+    }
 }

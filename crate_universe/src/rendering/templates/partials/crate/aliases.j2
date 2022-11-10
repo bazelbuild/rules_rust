@@ -1,32 +1,23 @@
-selects.with_or({
-    {%- for cfg, values in selectable.selects %}
-    {%- if context.conditions | get(key=cfg, default="") | length%}
-        # {{ cfg }}
-        (
-            {%- for triple in context.conditions | get(key=cfg) %}
-            "{{ platform_label(triple = triple) }}",
-            {%- endfor %}
-        ): {
-            {%- for dep in values %}
-            {%- set dep_crate = context.crates | get(key=dep.id) %}
-            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.target) }}": "{{ dep.alias }}",
-            {%- endfor %}
-            {%- for dep in selectable.common %}
-            {%- set dep_crate = context.crates | get(key=dep.id) %}
-            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.target) }}": "{{ dep.alias }}",
+select({
+    {%- set selectable_and_unmapped = selectable | remap_deps_configurations(mapping=context.conditions) %}
+    {%- set selectable = selectable_and_unmapped.0 %}
+    {%- set unmapped = selectable_and_unmapped.1 %}
+    {%- for triple, deps in selectable.selects %}
+        "{{ platform_label(triple = triple) }}": {
+            {%- for dep in deps %}
+            {%- set_global orig_confg_list = [] %}
+            {%- for orig_config in dep.original_configurations %}
+            {%- set_global orig_confg_list = orig_confg_list | concat(with=orig_config | default(value="common dependency")) %}
+            {%- endfor -%}
+            {%- set dep_crate = context.crates | get(key=dep.value.id) %}
+            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.value.target) }}": "{{ dep.value.alias }}",  # {{ orig_confg_list | join(sep=", ") }}
             {%- endfor %}
         },
-    {%- else %}
-        # {
-        # No supported platform triples for cfg: '{{ cfg }}'
-        # Skipped dependencies: {{ values | json_encode | safe }}
-        # }
-    {%- endif %}
     {%- endfor %}
         "//conditions:default": {
             {%- for dep in selectable.common %}
-            {%- set dep_crate = context.crates | get(key=dep.id) %}
-            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.target) }}": "{{ dep.alias }}",
+            {%- set dep_crate = context.crates | get(key=dep.value.id) %}
+            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.value.target) }}": "{{ dep.value.alias }}",
             {%- endfor %}
         },
     })
