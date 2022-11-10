@@ -67,7 +67,7 @@ def declare_config_settings():
     native.platform(
         name = "wasm",
         constraint_values = [
-            str(Label("//rust/platform/cpu:wasm32")),
+            "@platforms//cpu:wasm32",
             str(Label("//rust/platform/os:unknown")),
         ],
     )
@@ -75,8 +75,8 @@ def declare_config_settings():
     native.platform(
         name = "wasi",
         constraint_values = [
-            str(Label("//rust/platform/cpu:wasm32")),
-            str(Label("//rust/platform/os:wasi")),
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
         ],
     )
 
