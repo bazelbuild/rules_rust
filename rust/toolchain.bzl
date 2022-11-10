@@ -438,14 +438,7 @@ def _rust_toolchain_impl(ctx):
     if experimental_use_cc_common_link and not ctx.attr.allocator_library:
         fail("rust_toolchain.experimental_use_cc_common_link requires rust_toolchain.allocator_library to be set")
 
-    if ctx.attr.rust_lib:
-        # buildifier: disable=print
-        print("`rust_toolchain.rust_lib` is deprecated. Please update {} to use `rust_toolchain.rust_std`".format(
-            ctx.label,
-        ))
-        rust_std = ctx.attr.rust_lib
-    else:
-        rust_std = ctx.attr.rust_std
+    rust_std = ctx.attr.rust_std
 
     sysroot = _generate_sysroot(
         ctx = ctx,
@@ -529,7 +522,6 @@ def _rust_toolchain_impl(ctx):
         make_variables = make_variable_info,
         os = ctx.attr.os,
         rust_doc = sysroot.rustdoc,
-        rust_lib = sysroot.rust_std,  # `rust_lib` is deprecated and only exists for legacy support.
         rust_std = sysroot.rust_std,
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
         rustc = sysroot.rustc,
@@ -640,9 +632,6 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
             mandatory = True,
-        ),
-        "rust_lib": attr.label(
-            doc = "**Deprecated**: Use `rust_std`",
         ),
         "rust_std": attr.label(
             doc = "The Rust standard library.",
