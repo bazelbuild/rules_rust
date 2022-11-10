@@ -183,15 +183,8 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         version_str = repository_ctx.attr.version
 
     host_triple = get_host_triple(repository_ctx)
-
-    if repository_ctx.attr.rust_toolchain_repository_template:
-        # buildifier: disable=print
-        print("Warning: `rust_toolchain_repository_template` is deprecated. Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`")
-        cargo_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
-        rustc_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
-    else:
-        cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
-        rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
+    cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
+    rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
 
     tools = get_rust_tools(
         cargo_template = cargo_template,
@@ -274,9 +267,6 @@ cargo_bootstrap_repository = repository_rule(
                 "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
             ),
             default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
-        ),
-        "rust_toolchain_repository_template": attr.string(
-            doc = "**Deprecated**: Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
