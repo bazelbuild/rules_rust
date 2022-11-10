@@ -586,30 +586,34 @@ def rust_repository_set(
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
-    N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints) \
-    without actually downloading the toolchain.
-
     Args:
         name (str): The name of the generated repository
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         exec_triple (str): The Rust-style target that this compiler runs on
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
-        allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
+        include_rustc_srcs (bool, optional): **Deprecated** - instead see [rust_analyzer_toolchain_repository](#rust_analyzer_toolchain_repository).
+        allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
+            embedded in a cc_binary.
         extra_target_triples (list, optional): Additional rust-style targets that this set of
-            toolchains should support. Defaults to [].
-        iso_date (str, optional): The date of the tool. Defaults to None.
+            toolchains should support.
+        iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
-            toolchain. Defaults to None.
-        edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
+            toolchain.
+        edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is
+            required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
-            Requires version to be "nightly". Defaults to False.
+            Requires version to be "nightly".
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These
+            must contain the '{}' used to substitute the tool being fetched (using .format).
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
     """
+
+    if include_rustc_srcs:
+        # buildifier: disable=print
+        print("include_rustc_srcs is deprecated. Instead see https://bazelbuild.github.io/rules_rust/flatten.html#rust_analyzer_toolchain_repository")
 
     all_toolchain_names = []
     for target_triple in [exec_triple] + extra_target_triples:

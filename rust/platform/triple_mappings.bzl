@@ -286,12 +286,12 @@ def triple_to_constraint_set(target_triple):
     """
     if target_triple == "wasm32-wasi":
         return [
-            "@rules_rust//rust/platform/cpu:wasm32",
-            "@rules_rust//rust/platform/os:wasi",
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
         ]
     if target_triple == "wasm32-unknown-unknown":
         return [
-            "@rules_rust//rust/platform/cpu:wasm32",
+            "@platforms//cpu:wasm32",
             "@rules_rust//rust/platform/os:unknown",
         ]
 
