@@ -148,6 +148,7 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
             || c == '('
             || c == ')'
             || c == '_'
+            || c == '+'
     }) {
         return Err(LabelError(err(
             label,
@@ -419,6 +420,12 @@ mod tests {
         assert_eq!(
             analyze("@repo//foo/bar:baz")?.packages(),
             vec!["foo", "bar"]
+        );
+
+        // Plus (+) is valid in packages
+        assert_eq!(
+            analyze("@repo//foo/bar+baz:qaz")?.packages(),
+            vec!["foo", "bar+baz"]
         );
 
         Ok(())
