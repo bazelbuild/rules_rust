@@ -283,6 +283,12 @@ def _rust_test_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
+    if toolchain._incompatible_test_attr_crate_and_srcs_mutually_exclusive:
+        if ctx.attr.crate and ctx.attr.srcs:
+            fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
+                ctx.label,
+            ))
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
