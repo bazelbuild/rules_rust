@@ -260,10 +260,14 @@ mod test {
 
     #[test]
     fn label_contains_plus() {
-        let label = Label::from_str("@//third_party/rust_crates/vendor/wasi-0.11.0+wasi-snapshot-preview1:BUILD.bazel").unwrap();
-        assert_eq!(label.repository, Some(""));
-        assert_eq!(label.package.unwrap(), "third_party/rust_crates/vendor/wasi-0.11.0+wasi-snapshot-preview1");
-        assert_eq!(label.repository.unwrap(), "BUILD.bazel");
+        let label = Label::from_str("@repo//vendor/wasi-0.11.0+wasi-snapshot-preview1:BUILD.bazel")
+            .unwrap();
+        assert_eq!(label.repository.unwrap(), "repo");
+        assert_eq!(
+            label.package.unwrap(),
+            "vendor/wasi-0.11.0+wasi-snapshot-preview1"
+        );
+        assert_eq!(label.target, "BUILD.bazel");
     }
 
     #[test]
