@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,7 +33,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -65,7 +61,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@cui__cxxbridge-macro-1.0.80//:cxxbridge_macro",
         ],
@@ -91,7 +87,7 @@ rust_library(
     ],
     version = "1.0.80",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@cui__cxx-1.0.80//:build_script_build",
             "@cui__link-cplusplus-1.0.7//:link_cplusplus",
@@ -109,7 +105,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -133,7 +129,7 @@ cargo_build_script(
     edition = "2018",
     links = "cxxbridge1",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -163,7 +159,7 @@ cargo_build_script(
     version = "1.0.80",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@cui__cc-1.0.73//:cc",
             "@cui__cxxbridge-flags-1.0.80//:cxxbridge_flags",

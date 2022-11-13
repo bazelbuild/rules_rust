@@ -6,11 +6,6 @@
 #     bazel run //crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,7 +28,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -58,7 +53,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,7 +78,7 @@ rust_library(
     ],
     version = "2.4.0",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@cui__once_cell-1.15.0//:once_cell",
             "@cui__pest-2.4.0//:pest",
