@@ -44,9 +44,9 @@ alias(
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]) + [
-        "//bindgen/3rdparty/crates:defs.bzl",
+    srcs = [
         "//bindgen/3rdparty/crates:crates.bzl",
+        "//bindgen/3rdparty/crates:defs.bzl",
     ],
     visibility = ["//bindgen:__pkg__"],
 )

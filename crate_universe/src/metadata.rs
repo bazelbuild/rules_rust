@@ -149,7 +149,7 @@ impl CargoUpdateRequest {
             .arg("--manifest-path")
             .arg(manifest)
             .args(self.get_update_args())
-            .env("RUSTC", &rustc_bin)
+            .env("RUSTC", rustc_bin)
             .output()
             .with_context(|| {
                 format!(
@@ -205,7 +205,7 @@ impl LockGenerator {
             if generated_lockfile_path.exists() {
                 fs::remove_file(&generated_lockfile_path)?;
             }
-            fs::copy(&lock, &generated_lockfile_path)?;
+            fs::copy(lock, &generated_lockfile_path)?;
 
             if let Some(request) = update_request {
                 request.update(manifest_path, &self.cargo_bin, &self.rustc_bin)?;

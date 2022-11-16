@@ -1,11 +1,5 @@
-constraint_value(
+alias(
     name = "unknown",
-    constraint_setting = "@platforms//os",
-    visibility = ["//visibility:public"],
-)
-
-constraint_value(
-    name = "wasi",
-    constraint_setting = "@platforms//os",
+    actual = "@platforms//os:none",
     visibility = ["//visibility:public"],
 )

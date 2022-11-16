@@ -20,7 +20,7 @@ impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./]+)?:?([\+\w\d\-_\./]+)$")?;
+        let re = Regex::new(r"^(@[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
         let cap = re
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {}", s))?;
@@ -28,8 +28,9 @@ impl FromStr for Label {
         let repository = cap
             .get(1)
             .map(|m| m.as_str().trim_start_matches('@').to_owned());
+
         let package = cap.get(2).map(|m| m.as_str().to_owned());
-        let mut target = cap.get(3).map(|m| m.as_str().to_owned());
+        let mut target = cap.get(4).map(|m| m.as_str().to_owned());
 
         if target.is_none() {
             if let Some(pkg) = &package {
@@ -255,6 +256,18 @@ mod test {
         assert_eq!(label.repository.unwrap(), "repo");
         assert_eq!(label.package.unwrap(), "package/sub_package");
         assert_eq!(label.target, "subdir/target");
+    }
+
+    #[test]
+    fn label_contains_plus() {
+        let label = Label::from_str("@repo//vendor/wasi-0.11.0+wasi-snapshot-preview1:BUILD.bazel")
+            .unwrap();
+        assert_eq!(label.repository.unwrap(), "repo");
+        assert_eq!(
+            label.package.unwrap(),
+            "vendor/wasi-0.11.0+wasi-snapshot-preview1"
+        );
+        assert_eq!(label.target, "BUILD.bazel");
     }
 
     #[test]
