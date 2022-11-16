@@ -47,8 +47,8 @@ tasks:
   windows:
     build_flags:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-      - "--config=rustfmt"
-      - "--config=clippy"
+    test_flags:
+      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   ubuntu2004_opt:
@@ -65,17 +65,17 @@ tasks:
     test_targets: *default_macos_targets
     build_flags:
       - "--compilation_mode=opt"
-  # # TODO: https://github.com/bazelbuild/rules_rust/issues/1629
-  # windows_opt:
-  #   name: Opt Mode
-  #   platform: windows
-  #   build_flags:
-  #     - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-  #     - "--config=rustfmt"
-  #     - "--config=clippy"
-  #     - "--compilation_mode=opt"
-  #   build_targets: *default_windows_targets
-  #   test_targets: *default_windows_targets
+   windows_opt:
+     name: Opt Mode
+     platform: windows
+     build_flags:
+       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
+       - "--compilation_mode=opt"
+     test_flags:
+       - "--enable_runfiles"
+       - "--compilation_mode=opt"
+     build_targets: *default_windows_targets
+     test_targets: *default_windows_targets
   ubuntu2004_with_aspects:
     name: With Aspects
     platform: ubuntu2004
@@ -144,6 +144,8 @@ tasks:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
+    test_flags:
+      - "--compilation_mode=opt"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
     soft_fail: yes
@@ -307,6 +309,8 @@ tasks:
       - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
+    test_flags:
+      - "--enable_runfiles"
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
