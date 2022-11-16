@@ -894,7 +894,7 @@ mod test {
         }
         let root_pkg = workspace_root.join("root_pkg");
         let manifest_path = root_pkg.join("Cargo.toml");
-        fs::create_dir_all(&manifest_path.parent().unwrap()).unwrap();
+        fs::create_dir_all(manifest_path.parent().unwrap()).unwrap();
         fs::write(&manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
         {
             File::create(root_pkg.join("BUILD.bazel")).unwrap();
@@ -951,7 +951,7 @@ mod test {
             File::create(workspace_root.join("WORKSPACE.bazel")).unwrap();
         }
         let manifest_path = workspace_root.join("Cargo.toml");
-        fs::create_dir_all(&manifest_path.parent().unwrap()).unwrap();
+        fs::create_dir_all(manifest_path.parent().unwrap()).unwrap();
         fs::write(&manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
 
         splicing_manifest
@@ -1683,6 +1683,6 @@ mod test {
 
     fn touch(path: &Path) {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(path, &[]).unwrap();
+        std::fs::write(path, []).unwrap();
     }
 }

@@ -148,11 +148,12 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
             || c == '('
             || c == ')'
             || c == '_'
+            || c == '+'
     }) {
         return Err(LabelError(err(
             label,
             "package names may contain only A-Z, \
-        a-z, 0-9, '/', '-', '.', ' ', '$', '(', ')' and '_'.",
+        a-z, 0-9, '/', '-', '.', ' ', '$', '(', ')', '_', and '+'.",
         )));
     }
     if package_name.ends_with('/') {
@@ -338,7 +339,7 @@ mod tests {
             analyze("//bar#:baz"),
             Err(LabelError(
                 "//bar#:baz must be a legal label; package names may contain only A-Z, \
-                a-z, 0-9, '/', '-', '.', ' ', '$', '(', ')' and '_'."
+                a-z, 0-9, '/', '-', '.', ' ', '$', '(', ')', '_', and '+'."
                     .to_string()
             ))
         );
@@ -419,6 +420,12 @@ mod tests {
         assert_eq!(
             analyze("@repo//foo/bar:baz")?.packages(),
             vec!["foo", "bar"]
+        );
+
+        // Plus (+) is valid in packages
+        assert_eq!(
+            analyze("@repo//foo/bar+baz:qaz")?.packages(),
+            vec!["foo", "bar+baz"]
         );
 
         Ok(())

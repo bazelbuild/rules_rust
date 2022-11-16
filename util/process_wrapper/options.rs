@@ -258,7 +258,7 @@ fn prepare_param_file(
             std::env::current_dir()
         ))
     };
-    let mut out = io::BufWriter::new(File::create(&expanded_file).map_err(&format_err)?);
+    let mut out = io::BufWriter::new(File::create(&expanded_file).map_err(format_err)?);
     fn process_file(
         filename: &str,
         out: &mut io::BufWriter<File>,
