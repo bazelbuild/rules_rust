@@ -21,28 +21,33 @@ def _ambiguous_deps_test_impl(ctx):
 
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
     # in the form of "-lstatic=native-dep-{hash} "-lstatic=native-dep-{hash}.pic.
-    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep")]
+    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep-")]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
 
     for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
-    compilation_mode = ctx.var["COMPILATION_MODE"]
-    pic_suffix = ".pic" if compilation_mode == "opt" and for_shared_library else ""
-    if ctx.target_platform_has_constraint(
-        ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
-    ):
-        extension = ""
-    else:
-        extension = pic_suffix
+    extension = _get_pic_suffix(ctx, for_shared_library)
 
     asserts.true(env, link_args[0].endswith(extension))
     asserts.true(env, link_args[1].endswith(extension))
 
     return analysistest.end(env)
 
+def _get_pic_suffix(ctx, for_shared_library):
+    if ctx.target_platform_has_constraint(
+        ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
+    ) or ctx.target_platform_has_constraint(
+        ctx.attr._macos_constraint[platform_common.ConstraintValueInfo],
+    ):
+        return ""
+    else:
+        compilation_mode = ctx.var["COMPILATION_MODE"]
+        return ".pic" if compilation_mode == "opt" and for_shared_library else ""
+
 ambiguous_deps_test = analysistest.make(
     _ambiguous_deps_test_impl,
     attrs = {
+        "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
         "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
     },
 )
