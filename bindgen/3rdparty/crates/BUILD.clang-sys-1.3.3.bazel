@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,7 +33,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -72,7 +68,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -97,7 +93,7 @@ rust_library(
     ],
     version = "1.3.3",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_bindgen__clang-sys-1.3.3//:build_script_build",
             "@rules_rust_bindgen__glob-0.3.0//:glob",
@@ -117,7 +113,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -148,7 +144,7 @@ cargo_build_script(
     edition = "2015",
     links = "clang",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -178,7 +174,7 @@ cargo_build_script(
     version = "1.3.3",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_bindgen__glob-0.3.0//:glob",
         ],

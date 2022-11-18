@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -38,7 +34,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -71,7 +67,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -96,7 +92,7 @@ rust_library(
     ],
     version = "0.60.1",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_bindgen__bindgen-0.60.1//:build_script_build",
             "@rules_rust_bindgen__bitflags-1.3.2//:bitflags",
@@ -127,7 +123,7 @@ rust_binary(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -160,7 +156,7 @@ rust_binary(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -186,7 +182,7 @@ rust_binary(
     version = "0.60.1",
     deps = [
         ":bindgen",
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_bindgen__bindgen-0.60.1//:build_script_build",
             "@rules_rust_bindgen__bitflags-1.3.2//:bitflags",
@@ -218,7 +214,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -246,7 +242,7 @@ cargo_build_script(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -276,7 +272,7 @@ cargo_build_script(
     version = "0.60.1",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),

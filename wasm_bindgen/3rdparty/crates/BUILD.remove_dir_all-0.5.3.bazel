@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,7 +28,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -58,7 +53,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,16 +78,12 @@ rust_library(
     ],
     version = "0.5.3",
     deps = [
-    ] + select_with_or({
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",
-
-            # Common Deps
+    ] + select({
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "//conditions:default": [
         ],

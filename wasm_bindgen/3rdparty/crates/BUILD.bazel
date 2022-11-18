@@ -203,14 +203,14 @@ alias(
 )
 
 alias(
-    name = "wait-timeout__sleep",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
+    name = "wait-timeout__exit",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wait-timeout__exit",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
+    name = "wait-timeout__sleep",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
     tags = ["manual"],
 )
 

@@ -6,11 +6,6 @@
 #     bazel run //bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,7 +28,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -58,7 +53,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,18 +78,16 @@ rust_library(
     ],
     version = "4.2.5",
     deps = [
-    ] + select_with_or({
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",
-
-            # Common Deps
-            "@rules_rust_bindgen__either-1.7.0//:either",
-            "@rules_rust_bindgen__libc-0.2.126//:libc",
+    ] + select({
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_bindgen__either-1.7.0//:either",  # common dependency
+            "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",  # cfg(windows)
+            "@rules_rust_bindgen__libc-0.2.126//:libc",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_bindgen__either-1.7.0//:either",  # common dependency
+            "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",  # cfg(windows)
+            "@rules_rust_bindgen__libc-0.2.126//:libc",  # common dependency
         ],
         "//conditions:default": [
             "@rules_rust_bindgen__either-1.7.0//:either",
