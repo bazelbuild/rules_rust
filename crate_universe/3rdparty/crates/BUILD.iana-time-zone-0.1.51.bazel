@@ -92,6 +92,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@cui__android_system_properties-0.1.5//:android_system_properties",  # cfg(target_os = "android")
         ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@cui__winapi-0.3.9//:winapi",  # cfg(target_os = "windows")
+        ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@cui__android_system_properties-0.1.5//:android_system_properties",  # cfg(target_os = "android")
         ],

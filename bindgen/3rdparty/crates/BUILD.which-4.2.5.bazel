@@ -79,6 +79,11 @@ rust_library(
     version = "4.2.5",
     deps = [
     ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_bindgen__either-1.7.0//:either",  # common dependency
+            "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",  # cfg(windows)
+            "@rules_rust_bindgen__libc-0.2.126//:libc",  # common dependency
+        ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@rules_rust_bindgen__either-1.7.0//:either",  # common dependency
             "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",  # cfg(windows)

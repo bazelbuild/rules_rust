@@ -103,6 +103,12 @@ rust_library(
             "@cui__libc-0.2.136//:libc",  # cfg(any(unix, target_os = "wasi"))
             "@cui__remove_dir_all-0.5.3//:remove_dir_all",  # common dependency
         ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
+            "@cui__fastrand-1.8.0//:fastrand",  # common dependency
+            "@cui__remove_dir_all-0.5.3//:remove_dir_all",  # common dependency
+            "@cui__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__fastrand-1.8.0//:fastrand",  # common dependency

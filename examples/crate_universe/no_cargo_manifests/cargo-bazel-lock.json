@@ -1,5 +1,5 @@
 {
-  "checksum": "59597ef206dc77bfd543e655d7ba2a5555203fb124e5a5f684787e2597548fad",
+  "checksum": "6c2b03b0b4568e3abd95163a81f017e45a1b96623289cca2cc62b05f3f31e626",
   "crates": {
     "async-trait 0.1.58": {
       "name": "async-trait",
@@ -5054,7 +5054,9 @@
   },
   "conditions": {
     "aarch64-pc-windows-gnullvm": [],
-    "aarch64-pc-windows-msvc": [],
+    "aarch64-pc-windows-msvc": [
+      "aarch64-pc-windows-msvc"
+    ],
     "aarch64-uwp-windows-msvc": [],
     "cfg(all(any(target_arch = \"x86_64\", target_arch = \"aarch64\"), target_os = \"hermit\"))": [],
     "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))": [
@@ -5062,6 +5064,7 @@
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
       "aarch64-linux-android",
+      "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
@@ -5110,6 +5113,7 @@
       "wasm32-wasi"
     ],
     "cfg(target_os = \"windows\")": [
+      "aarch64-pc-windows-msvc",
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],
@@ -5136,6 +5140,7 @@
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(windows)": [
+      "aarch64-pc-windows-msvc",
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],

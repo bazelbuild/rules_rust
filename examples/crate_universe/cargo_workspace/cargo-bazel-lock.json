@@ -1,5 +1,5 @@
 {
-  "checksum": "05945379c6097650927fd9aadfb1be0cb4b179a836bd4afd29a9bd5fb48bcb57",
+  "checksum": "3762cea04eb877877a083b0178bf2ae62f3cbd968eef00c1053ff1a8a6a19db8",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1356,6 +1356,7 @@
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
       "aarch64-linux-android",
+      "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
@@ -1407,6 +1408,7 @@
       "wasm32-wasi"
     ],
     "cfg(target_os = \"windows\")": [
+      "aarch64-pc-windows-msvc",
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],
@@ -1432,6 +1434,7 @@
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(windows)": [
+      "aarch64-pc-windows-msvc",
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],

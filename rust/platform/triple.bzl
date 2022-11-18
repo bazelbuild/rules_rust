@@ -97,7 +97,9 @@ def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
 
         # Translate 64-bit to a compatible rust platform
         # https://doc.rust-lang.org/nightly/rustc/platform-support.html
-        if arch == "64-bit":
+        if arch.startswith("ARM 64-bit"):
+            arch = "aarch64"
+        elif arch == "64-bit":
             arch = "x86_64"
     else:
         arch = result.stdout.strip("\n")
@@ -151,7 +153,7 @@ def get_host_triple(repository_ctx, abi = None):
     supported_architectures = {
         "linux": ["aarch64", "x86_64"],
         "macos": ["aarch64", "x86_64"],
-        "windows": ["x86_64"],
+        "windows": ["aarch64", "x86_64"],
     }
 
     if "linux" in repository_ctx.os.name:

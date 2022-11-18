@@ -116,6 +116,7 @@ mod test {
             "aarch64-apple-darwin".to_owned(),
             "aarch64-apple-ios".to_owned(),
             "aarch64-linux-android".to_owned(),
+            "aarch64-pc-windows-msvc".to_owned(),
             "aarch64-unknown-linux-gnu".to_owned(),
             "arm-unknown-linux-gnueabi".to_owned(),
             "armv7-unknown-linux-gnueabi".to_owned(),

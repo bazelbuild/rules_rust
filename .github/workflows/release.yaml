@@ -50,6 +50,9 @@ jobs:
           - os: ubuntu-20.04
             env:
               TARGET: "aarch64-unknown-linux-gnu"
+          - os: windows-2019
+            env:
+              TARGET: "aarch64-pc-windows-msvc"
           - os: macos-11
             env:
               TARGET: "x86_64-apple-darwin"
@@ -72,7 +75,10 @@ jobs:
           # Detect the current version of rust
           version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
           rustup override set "${version}"
+          rustup target add ${TARGET}
           rustup update stable && rustup default stable
+        env:
+          TARGET: "${{ matrix.env.TARGET }}"
       - name: Setup macos build tooling
         run: |
           sudo xcode-select -s /Applications/Xcode_12.4.app/Contents/Developer/
@@ -168,6 +174,15 @@ jobs:
           upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: cargo-bazel-aarch64-apple-darwin
           asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-apple-darwin/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload aarch64-pc-windows-msvc"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-aarch64-pc-windows-msvc.exe
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-pc-windows-msvc/cargo-bazel.exe
           asset_content_type: application/octet-stream
       - name: "Upload aarch64-unknown-linux-gnu"
         uses: actions/upload-release-asset@v1

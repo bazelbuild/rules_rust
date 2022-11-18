@@ -97,6 +97,10 @@ rust_library(
             "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
             "@rules_rust_proto__libc-0.2.126//:libc",  # cfg(any(target_os = "redox", unix, target_os = "wasi"))
         ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
             "@rules_rust_proto__libc-0.2.126//:libc",  # cfg(any(target_os = "redox", unix, target_os = "wasi"))

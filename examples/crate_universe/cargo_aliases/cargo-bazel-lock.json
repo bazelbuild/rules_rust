@@ -1,5 +1,5 @@
 {
-  "checksum": "73f699f83b7c6dd2b83a7bbe5cf28653b13f1584f4ebee2e24c81e25d568beff",
+  "checksum": "657eb42e7a063a0c160ced09e38869d7700007650766dad11c7ad071d764c363",
   "crates": {
     "aho-corasick 0.7.19": {
       "name": "aho-corasick",
@@ -2596,6 +2596,7 @@
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(windows)": [
+      "aarch64-pc-windows-msvc",
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],
