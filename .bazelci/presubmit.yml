@@ -457,6 +457,12 @@ tasks:
       - "--platforms=//:ios_x86_64"
     test_targets:
       - "//..."
+  zig_cross_compiling:
+    name: Zig cross compiling test
+    platform: ubuntu2004
+    working_directory: examples/zig_cross_compiling
+    build_targets:
+      - "//..."
 
 buildifier:
   version: latest
