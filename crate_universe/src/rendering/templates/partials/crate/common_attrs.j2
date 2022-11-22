@@ -5,7 +5,7 @@
         "{{ feature }}",
         {%- endfor %}
     ],
-    data = {% if crate.common_attrs | get(key="data_glob") %}glob(include = {{ crate.common_attrs.data_glob | json_encode | safe }}, exclude = ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel"]) + {% endif %}{% set selectable = crate.common_attrs | get(key="data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
+    data = {% if crate.common_attrs | get(key="data_glob") %}glob(include = {{ crate.common_attrs.data_glob | json_encode | safe }}, exclude = ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel", "**/* *"]) + {% endif %}{% set selectable = crate.common_attrs | get(key="data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
     edition = "{{ crate.common_attrs.edition }}",
     {%- if crate.common_attrs | get(key="linker_script", default=Null) %}
     linker_script = "{{ crate.common_attrs.linker_script }}",
