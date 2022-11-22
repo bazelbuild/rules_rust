@@ -175,7 +175,7 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
-    env.update(expand_dict_value_locations(
+    _merge_env_dict(env, expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
         getattr(ctx.attr, "data", []) +
@@ -315,6 +315,13 @@ cargo_build_script = rule(
     ],
     incompatible_use_toolchain_transition = True,
 )
+
+def _merge_env_dict(prefix_dict, suffix_dict):
+    """Merges suffix_dict into prefix_dict, appending rather than replacing certain env vars."""
+    for key in ["CFLAGS", "CXXFLAGS", "LDFLAGS"]:
+        if key in prefix_dict and key in suffix_dict and prefix_dict[key]:
+            prefix_dict[key] += " " + suffix_dict.pop(key)
+    prefix_dict.update(suffix_dict)
 
 def name_to_pkg_name(name):
     """Sanitize the name of cargo_build_script targets.
