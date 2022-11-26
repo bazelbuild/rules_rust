@@ -23,7 +23,7 @@ pub struct TemplateEngine {
     context: tera::Context,
 }
 
-const COMMON_GLOB_EXCLUDES: &'static [&str] = &[
+const COMMON_GLOB_EXCLUDES: &[&str] = &[
     "**/* *",
     "BUILD.bazel",
     "BUILD",
