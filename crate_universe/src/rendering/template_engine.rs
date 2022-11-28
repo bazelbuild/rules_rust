@@ -23,6 +23,14 @@ pub struct TemplateEngine {
     context: tera::Context,
 }
 
+const COMMON_GLOB_EXCLUDES: &[&str] = &[
+    "**/* *",
+    "BUILD.bazel",
+    "BUILD",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
+];
+
 impl TemplateEngine {
     pub fn new(render_config: &RenderConfig) -> Self {
         let mut tera = Tera::default();
@@ -202,6 +210,7 @@ impl TemplateEngine {
         context.insert("vendor_mode", &render_config.vendor_mode);
         context.insert("regen_command", &render_config.regen_command);
         context.insert("Null", &tera::Value::Null);
+        context.insert("common_glob_excludes", &COMMON_GLOB_EXCLUDES);
         context.insert(
             "default_package_name",
             &match render_config.default_package_name.as_ref() {
