@@ -46,6 +46,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
 )
@@ -99,10 +100,11 @@ about missing targets or environment variables defined only in Bazel. In workspa
 to have a "Cargo free" setup. `crates_repository` supports this through the `packages` attribute.
 
 ```python
-load("@cargo_bazel//:defs.bzl", "crate", "crates_repository", "render_config")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "render_config")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     packages = {
         "async-trait": crate.spec(

@@ -48,6 +48,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
 )
@@ -101,10 +102,11 @@ about missing targets or environment variables defined only in Bazel. In workspa
 to have a "Cargo free" setup. `crates_repository` supports this through the `packages` attribute.
 
 ```python
-load("@cargo_bazel//:defs.bzl", "crate", "crates_repository", "render_config")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "render_config")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     packages = {
         "async-trait": crate.spec(
@@ -236,7 +238,7 @@ crates_repository(
 The above will create an external repository which contains aliases and macros for accessing
 Rust targets found in the dependency graph defined by the given manifests.
 
-**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+**NOTE**: The `cargo_lockfile` and `lockfile` must be manually created. The rule unfortunately does not yet create
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
