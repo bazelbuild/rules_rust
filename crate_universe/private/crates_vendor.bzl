@@ -226,7 +226,7 @@ def _crates_vendor_impl(ctx):
         args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier.short_path, is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.buildifier)
 
-    # Dtermine platform specific settings
+    # Determine platform specific settings
     if is_windows:
         extension = ".bat"
         template = _WINDOWS_WRAPPER
