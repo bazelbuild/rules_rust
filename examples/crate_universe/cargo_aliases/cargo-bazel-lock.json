@@ -1,5 +1,5 @@
 {
-  "checksum": "657eb42e7a063a0c160ced09e38869d7700007650766dad11c7ad071d764c363",
+  "checksum": "cf763fb5125c4935052709e6cd338a071860493e893858c619c24aae9f1102d2",
   "crates": {
     "aho-corasick 0.7.19": {
       "name": "aho-corasick",
@@ -100,7 +100,7 @@
         "deps_dev": {
           "common": [
             {
-              "id": "env_logger 0.9.1",
+              "id": "env_logger 0.9.3",
               "target": "env_logger"
             }
           ],
@@ -336,7 +336,7 @@
               "target": "clap_lex"
             },
             {
-              "id": "indexmap 1.9.1",
+              "id": "indexmap 1.9.2",
               "target": "indexmap"
             },
             {
@@ -464,7 +464,7 @@
         "deps": {
           "common": [
             {
-              "id": "os_str_bytes 6.3.1",
+              "id": "os_str_bytes 6.4.1",
               "target": "os_str_bytes"
             }
           ],
@@ -521,13 +521,13 @@
       },
       "license": "Apache-2.0 OR MIT"
     },
-    "env_logger 0.9.1": {
+    "env_logger 0.9.3": {
       "name": "env_logger",
-      "version": "0.9.1",
+      "version": "0.9.3",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/env_logger/0.9.1/download",
-          "sha256": "c90bf5f19754d10198ccb95b70664fc925bd1fc090a0fd9a6ebc54acc8cd6272"
+          "url": "https://crates.io/api/v1/crates/env_logger/0.9.3/download",
+          "sha256": "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
         }
       },
       "targets": [
@@ -571,7 +571,7 @@
               "target": "log"
             },
             {
-              "id": "regex 1.6.0",
+              "id": "regex 1.7.0",
               "target": "regex"
             },
             {
@@ -582,7 +582,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.9.1"
+        "version": "0.9.3"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -794,13 +794,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "indexmap 1.9.1": {
+    "indexmap 1.9.2": {
       "name": "indexmap",
-      "version": "1.9.1",
+      "version": "1.9.2",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/indexmap/1.9.1/download",
-          "sha256": "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
+          "url": "https://crates.io/api/v1/crates/indexmap/1.9.2/download",
+          "sha256": "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
         }
       },
       "targets": [
@@ -844,14 +844,14 @@
               "target": "hashbrown"
             },
             {
-              "id": "indexmap 1.9.1",
+              "id": "indexmap 1.9.2",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.9.1"
+        "version": "1.9.2"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1313,13 +1313,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "os_str_bytes 6.3.1": {
+    "os_str_bytes 6.4.1": {
       "name": "os_str_bytes",
-      "version": "6.3.1",
+      "version": "6.4.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/os_str_bytes/6.3.1/download",
-          "sha256": "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
+          "url": "https://crates.io/api/v1/crates/os_str_bytes/6.4.1/download",
+          "sha256": "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
         }
       },
       "targets": [
@@ -1345,17 +1345,17 @@
           "raw_os_str"
         ],
         "edition": "2021",
-        "version": "6.3.1"
+        "version": "6.4.1"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "ppv-lite86 0.2.16": {
+    "ppv-lite86 0.2.17": {
       "name": "ppv-lite86",
-      "version": "0.2.16",
+      "version": "0.2.17",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/ppv-lite86/0.2.16/download",
-          "sha256": "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+          "url": "https://crates.io/api/v1/crates/ppv-lite86/0.2.17/download",
+          "sha256": "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
         }
       },
       "targets": [
@@ -1382,7 +1382,7 @@
           "std"
         ],
         "edition": "2018",
-        "version": "0.2.16"
+        "version": "0.2.17"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -1786,7 +1786,7 @@
         "deps": {
           "common": [
             {
-              "id": "ppv-lite86 0.2.16",
+              "id": "ppv-lite86 0.2.17",
               "target": "ppv_lite86"
             },
             {
@@ -1848,13 +1848,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex 1.6.0": {
+    "regex 1.7.0": {
       "name": "regex",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex/1.6.0/download",
-          "sha256": "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b"
+          "url": "https://crates.io/api/v1/crates/regex/1.7.0/download",
+          "sha256": "e076559ef8e241f2ae3479e36f97bd5741c0330689e217ad51ce2c76808b868a"
         }
       },
       "targets": [
@@ -1897,24 +1897,24 @@
               "target": "memchr"
             },
             {
-              "id": "regex-syntax 0.6.27",
+              "id": "regex-syntax 0.6.28",
               "target": "regex_syntax"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.6.0"
+        "version": "1.7.0"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex-syntax 0.6.27": {
+    "regex-syntax 0.6.28": {
       "name": "regex-syntax",
-      "version": "0.6.27",
+      "version": "0.6.28",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex-syntax/0.6.27/download",
-          "sha256": "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
+          "url": "https://crates.io/api/v1/crates/regex-syntax/0.6.28/download",
+          "sha256": "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
         }
       },
       "targets": [
@@ -1937,7 +1937,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "0.6.27"
+        "version": "0.6.28"
       },
       "license": "MIT OR Apache-2.0"
     },

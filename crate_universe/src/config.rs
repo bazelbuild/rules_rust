@@ -150,6 +150,10 @@ pub struct CrateAnnotations {
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
     pub deps: Option<BTreeSet<String>>,
 
+    /// A dictionary of of crate names that should be replaced with a Bazel dependency in the
+    /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
+    pub dep_overrides: Option<BTreeMap<String, String>>,
+
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
     pub proc_macro_deps: Option<BTreeSet<String>>,
@@ -293,6 +297,7 @@ impl Add for CrateAnnotations {
         let output = CrateAnnotations {
             gen_build_script,
             deps: joined_extra_member!(self.deps, rhs.deps, BTreeSet::new, BTreeSet::extend),
+            dep_overrides: joined_extra_member!(self.dep_overrides, rhs.dep_overrides, BTreeMap::new, BTreeMap::extend),
             proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, BTreeSet::new, BTreeSet::extend),
             crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, BTreeSet::new, BTreeSet::extend),
             data: joined_extra_member!(self.data, rhs.data, BTreeSet::new, BTreeSet::extend),

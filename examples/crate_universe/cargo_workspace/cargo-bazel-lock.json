@@ -1,5 +1,5 @@
 {
-  "checksum": "3762cea04eb877877a083b0178bf2ae62f3cbd968eef00c1053ff1a8a6a19db8",
+  "checksum": "3d1db84e0973ba3fc4a684221efcddd9614821769be791928a815c03b0efc319",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -518,13 +518,13 @@
       },
       "license": null
     },
-    "ppv-lite86 0.2.16": {
+    "ppv-lite86 0.2.17": {
       "name": "ppv-lite86",
-      "version": "0.2.16",
+      "version": "0.2.17",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/ppv-lite86/0.2.16/download",
-          "sha256": "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+          "url": "https://crates.io/api/v1/crates/ppv-lite86/0.2.17/download",
+          "sha256": "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
         }
       },
       "targets": [
@@ -551,7 +551,7 @@
           "std"
         ],
         "edition": "2018",
-        "version": "0.2.16"
+        "version": "0.2.17"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -700,7 +700,7 @@
         "deps": {
           "common": [
             {
-              "id": "ppv-lite86 0.2.16",
+              "id": "ppv-lite86 0.2.17",
               "target": "ppv_lite86"
             },
             {

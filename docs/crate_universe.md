@@ -504,8 +504,8 @@ crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crat
                  <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
                  <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
                  <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>,
-                 <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
-                 <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
+                 <a href="#crate.annotation-dep_overrides">dep_overrides</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>,
+                 <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -532,6 +532,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-data"></a>data |  A list of labels to add to a crate's <code>rust_library::data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-data_glob"></a>data_glob |  A list of glob patterns to add to a crate's <code>rust_library::data</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-deps"></a>deps |  A list of labels to add to a crate's <code>rust_library::deps</code> attribute.   |  <code>None</code> |
+| <a id="crate.annotation-dep_overrides"></a>dep_overrides |  A dictionary of of crate names that should be replaced with a Bazel dependency in the <code>rust_library::deps</code> attribute.   |  <code>None</code> |
 | <a id="crate.annotation-gen_build_script"></a>gen_build_script |  An authorative flag to determine whether or not to produce <code>cargo_build_script</code> targets for the current crate.   |  <code>None</code> |
 | <a id="crate.annotation-patch_args"></a>patch_args |  The <code>patch_args</code> attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)   |  <code>None</code> |
 | <a id="crate.annotation-patch_tool"></a>patch_tool |  The <code>patch_tool</code> attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)   |  <code>None</code> |

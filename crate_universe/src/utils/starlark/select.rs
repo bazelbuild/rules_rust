@@ -54,6 +54,31 @@ impl<T: Ord> SelectList<T> {
         };
     }
 
+    pub fn any_matches<F>(&mut self, mut match_fn: F) -> bool
+    where
+        F: FnMut(&T) -> bool,
+    {
+        self.common.iter().any(&mut match_fn)
+            || self
+                .selects
+                .iter()
+                .any(|(_, set)| set.iter().any(&mut match_fn))
+    }
+
+    pub fn remove_if<F>(&mut self, mut filter: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        for (_cfg, set) in self.selects.iter_mut() {
+            if set.iter().any(&mut filter) {
+                set.retain(|item| !filter(item));
+            }
+        }
+        if self.common.iter().any(&mut filter) {
+            self.common.retain(|item| !filter(item));
+        }
+    }
+
     // TODO: This should probably be added to the [Select] trait
     pub fn get_iter<'a>(&'a self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
         match config {

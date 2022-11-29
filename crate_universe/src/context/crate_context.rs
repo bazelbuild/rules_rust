@@ -396,6 +396,17 @@ impl CrateContext {
                 }
             }
 
+            // Dependency overrides
+            if let Some(dep_overrides) = &crate_extra.dep_overrides {
+                for (crate_name, new_dep) in dep_overrides {
+                    let dep_filter = |dep: &CrateDependency| &dep.id.name == crate_name;
+                    if self.common_attrs.deps.any_matches(dep_filter) {
+                        self.common_attrs.deps.remove_if(dep_filter);
+                        self.common_attrs.extra_deps.insert(new_dep.clone());
+                    }
+                }
+            }
+
             // Compile data glob
             if let Some(extra) = &crate_extra.compile_data_glob {
                 self.common_attrs.compile_data_glob.extend(extra.clone());
