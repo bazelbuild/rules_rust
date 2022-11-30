@@ -26,14 +26,13 @@ call {bin} {args} %@%
 
 CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
 
-def _runfiles_path(path, is_windows):
+def _runfiles_path(file, is_windows):
     if is_windows:
         runtime_pwd_var = "%RUNTIME_PWD%"
     else:
         runtime_pwd_var = "${RUNTIME_PWD}"
-    if path.startswith("../"):
-        return "{}/external/{}".format(runtime_pwd_var, path[len("../"):])
-    return "{}/{}".format(runtime_pwd_var, path)
+
+    return "{}/{}".format(runtime_pwd_var, file.short_path)
 
 def _is_windows(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
@@ -116,7 +115,7 @@ def _write_splicing_manifest(ctx):
 
     is_windows = _is_windows(ctx)
 
-    args = ["--splicing-manifest", _runfiles_path(manifest.short_path, is_windows)]
+    args = ["--splicing-manifest", _runfiles_path(manifest, is_windows)]
     runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, runfiles
 
@@ -174,7 +173,7 @@ def _write_config_file(ctx):
     )
 
     is_windows = _is_windows(ctx)
-    args = ["--config", _runfiles_path(config.short_path, is_windows)]
+    args = ["--config", _runfiles_path(config, is_windows)]
     runfiles = [config] + ctx.files.manifests
     return args, runfiles
 
@@ -183,8 +182,8 @@ def _crates_vendor_impl(ctx):
     is_windows = _is_windows(ctx)
 
     environ = {
-        "CARGO": _runfiles_path(toolchain.cargo.short_path, is_windows),
-        "RUSTC": _runfiles_path(toolchain.rustc.short_path, is_windows),
+        "CARGO": _runfiles_path(toolchain.cargo, is_windows),
+        "RUSTC": _runfiles_path(toolchain.rustc, is_windows),
     }
 
     args = ["vendor"]
@@ -195,7 +194,7 @@ def _crates_vendor_impl(ctx):
     if CARGO_BAZEL_GENERATOR_PATH in ctx.var:
         bin_path = ctx.var[CARGO_BAZEL_GENERATOR_PATH]
     elif ctx.executable.cargo_bazel:
-        bin_path = _runfiles_path(ctx.executable.cargo_bazel.short_path, is_windows)
+        bin_path = _runfiles_path(ctx.executable.cargo_bazel, is_windows)
         cargo_bazel_runfiles.append(ctx.executable.cargo_bazel)
     else:
         fail("{} is missing either the `cargo_bazel` attribute or the '{}' action env".format(
@@ -217,13 +216,13 @@ def _crates_vendor_impl(ctx):
     if ctx.attr.cargo_lockfile:
         args.extend([
             "--cargo-lockfile",
-            _runfiles_path(ctx.file.cargo_lockfile.short_path, is_windows),
+            _runfiles_path(ctx.file.cargo_lockfile, is_windows),
         ])
         cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
 
     # Optionally include buildifier
     if ctx.attr.buildifier:
-        args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier.short_path, is_windows)])
+        args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier, is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.buildifier)
 
     # Dtermine platform specific settings
