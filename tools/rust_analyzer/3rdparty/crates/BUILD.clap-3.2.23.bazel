@@ -6,10 +6,7 @@
 #     bazel run @//tools/rust_analyzer/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -51,6 +48,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=clap",
         "manual",
         "noclippy",
         "norustfmt",
