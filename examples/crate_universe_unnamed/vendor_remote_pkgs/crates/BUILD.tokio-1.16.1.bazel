@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -78,7 +79,7 @@ rust_library(
     proc_macro_deps = [
     ] + select({
         "//conditions:default": [
-            "@crates_vendor_pkgs__tokio-macros-1.8.0//:tokio_macros",
+            "@crates_vendor_pkgs__tokio-macros-1.8.2//:tokio_macros",
         ],
     }),
     rustc_env = {
@@ -104,7 +105,7 @@ rust_library(
     deps = [
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -115,7 +116,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -126,7 +127,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -137,7 +138,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -147,8 +148,18 @@ rust_library(
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",  # common dependency
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
+            "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
+            "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
+            "@crates_vendor_pkgs__num_cpus-1.14.0//:num_cpus",  # common dependency
+            "@crates_vendor_pkgs__once_cell-1.16.0//:once_cell",  # common dependency
+            "@crates_vendor_pkgs__parking_lot-0.11.2//:parking_lot",  # common dependency
+            "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",  # common dependency
+            "@crates_vendor_pkgs__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -159,7 +170,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -170,7 +181,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -181,7 +192,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -192,7 +203,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -203,7 +214,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -214,7 +225,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
             "@crates_vendor_pkgs__num_cpus-1.14.0//:num_cpus",  # common dependency
@@ -224,7 +235,7 @@ rust_library(
             "@crates_vendor_pkgs__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -235,7 +246,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -246,7 +257,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -257,7 +268,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -268,7 +279,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -279,7 +290,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -290,7 +301,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -301,7 +312,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
             "@crates_vendor_pkgs__num_cpus-1.14.0//:num_cpus",  # common dependency
@@ -311,7 +322,7 @@ rust_library(
             "@crates_vendor_pkgs__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -322,7 +333,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",  # common dependency
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",  # common dependency
             "@crates_vendor_pkgs__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",  # common dependency
             "@crates_vendor_pkgs__mio-0.7.14//:mio",  # common dependency
@@ -333,7 +344,7 @@ rust_library(
             "@crates_vendor_pkgs__signal-hook-registry-1.4.0//:signal_hook_registry",  # cfg(unix)
         ],
         "//conditions:default": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mio-0.7.14//:mio",
             "@crates_vendor_pkgs__num_cpus-1.14.0//:num_cpus",

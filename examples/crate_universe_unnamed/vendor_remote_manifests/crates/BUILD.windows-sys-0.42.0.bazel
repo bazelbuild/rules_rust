@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -93,6 +94,9 @@ rust_library(
     version = "0.42.0",
     deps = [
     ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@crates_vendor_manifests__windows_aarch64_msvc-0.42.0//:windows_aarch64_msvc",  # aarch64-pc-windows-msvc
+        ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@crates_vendor_manifests__windows_i686_msvc-0.42.0//:windows_i686_msvc",  # i686-pc-windows-msvc
         ],

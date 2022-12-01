@@ -36,6 +36,6 @@ alias(
 # Binaries
 alias(
     name = "cc__gcc-shim",
-    actual = "@complex_sys__cc-1.0.73//:gcc-shim__bin",
+    actual = "@complex_sys__cc-1.0.77//:gcc-shim__bin",
     tags = ["manual"],
 )

@@ -29,7 +29,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "clap",
-    actual = "@crates_vendor__clap-3.1.5//:clap",
+    actual = "@crates_vendor__clap-3.2.23//:clap",
     tags = ["manual"],
 )
 
@@ -52,6 +52,12 @@ alias(
 )
 
 # Binaries
+alias(
+    name = "clap__stdio-fixture",
+    actual = "@crates_vendor__clap-3.2.23//:stdio-fixture__bin",
+    tags = ["manual"],
+)
+
 alias(
     name = "pulldown-cmark__pulldown-cmark",
     actual = "@crates_vendor__pulldown-cmark-0.8.0//:pulldown-cmark__bin",

@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -98,6 +99,10 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@crates_vendor_manifests__libc-0.2.137//:libc",  # cfg(unix)
             "@crates_vendor_manifests__log-0.4.17//:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@crates_vendor_manifests__log-0.4.17//:log",  # common dependency
+            "@crates_vendor_manifests__windows-sys-0.42.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@crates_vendor_manifests__libc-0.2.137//:libc",  # cfg(unix)
