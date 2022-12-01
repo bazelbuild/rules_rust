@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -55,7 +56,7 @@ rust_library(
     proc_macro_deps = [
     ] + select({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/async-trait-0.1.58:async_trait",
+            "//vendor_local_pkgs/crates/async-trait-0.1.59:async_trait",
         ],
     }),
     rustc_env = {
@@ -81,7 +82,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.2.1:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.3.0:bytes",
             "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
             "//vendor_local_pkgs/crates/http-0.2.8:http",
             "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",

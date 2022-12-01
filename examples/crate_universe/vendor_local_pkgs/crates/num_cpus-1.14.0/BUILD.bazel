@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -119,6 +120,9 @@ rust_library(
             "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
             "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [

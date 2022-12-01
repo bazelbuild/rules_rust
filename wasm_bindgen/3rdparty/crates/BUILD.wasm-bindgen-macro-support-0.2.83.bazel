@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -81,9 +82,9 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.44//:proc_macro2",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.47//:proc_macro2",
             "@rules_rust_wasm_bindgen__quote-1.0.21//:quote",
-            "@rules_rust_wasm_bindgen__syn-1.0.101//:syn",
+            "@rules_rust_wasm_bindgen__syn-1.0.105//:syn",
             "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.83//:wasm_bindgen_backend",
             "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.83//:wasm_bindgen_shared",
         ],

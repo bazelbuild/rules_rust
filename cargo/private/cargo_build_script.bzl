@@ -17,31 +17,6 @@ load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_
 # Reexport for cargo_build_script_wrapper.bzl
 name_to_crate_name = _name_to_crate_name
 
-def strip_target(elems):
-    """Remove '-target xxx' from C(XX)FLAGS.
-
-    The cpp toolchain adds '-target xxx' and '-isysroot xxx' to CFLAGS. If it is not stripped out before
-    the CFLAGS are provided to build scripts, it can cause the build to take on the host architecture
-    instead of the target architecture.
-
-    Args:
-        elems (list): A list of args
-
-    Returns:
-        list: the modified args
-    """
-    skip_next = False
-    out_elems = []
-    for elem in elems:
-        if skip_next:
-            skip_next = False
-            continue
-        if elem == "-target" or elem == "-isysroot":
-            skip_next = True
-            continue
-        out_elems.append(elem)
-    return out_elems
-
 def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
 
@@ -59,16 +34,16 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
     )
-    cc_c_args = strip_target(cc_common.get_memory_inefficient_command_line(
+    cc_c_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = C_COMPILE_ACTION_NAME,
         variables = compile_variables,
-    ))
-    cc_cxx_args = strip_target(cc_common.get_memory_inefficient_command_line(
+    )
+    cc_cxx_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = CPP_COMPILE_ACTION_NAME,
         variables = compile_variables,
-    ))
+    )
     cc_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
         action_name = C_COMPILE_ACTION_NAME,
@@ -200,7 +175,7 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
-    env.update(expand_dict_value_locations(
+    _merge_env_dict(env, expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
         getattr(ctx.attr, "data", []) +
@@ -340,6 +315,13 @@ cargo_build_script = rule(
     ],
     incompatible_use_toolchain_transition = True,
 )
+
+def _merge_env_dict(prefix_dict, suffix_dict):
+    """Merges suffix_dict into prefix_dict, appending rather than replacing certain env vars."""
+    for key in ["CFLAGS", "CXXFLAGS", "LDFLAGS"]:
+        if key in prefix_dict and key in suffix_dict and prefix_dict[key]:
+            prefix_dict[key] += " " + suffix_dict.pop(key)
+    prefix_dict.update(suffix_dict)
 
 def name_to_pkg_name(name):
     """Sanitize the name of cargo_build_script targets.

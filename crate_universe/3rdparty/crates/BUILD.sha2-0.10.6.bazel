@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -84,91 +85,91 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@cui__cfg-if-1.0.0//:cfg_if",  # common dependency
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
-            "@cui__digest-0.10.5//:digest",  # common dependency
+            "@cui__digest-0.10.6//:digest",  # common dependency
         ],
         "//conditions:default": [
             "@cui__cfg-if-1.0.0//:cfg_if",
-            "@cui__digest-0.10.5//:digest",
+            "@cui__digest-0.10.6//:digest",
         ],
     }),
 )

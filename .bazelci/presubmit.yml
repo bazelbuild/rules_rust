@@ -454,8 +454,15 @@ tasks:
     platform: macos
     working_directory: examples/ios_build
     test_flags:
-      - "--platforms=//:ios_x86_64"
+      - "--cpu=ios_x86_64"
+      - "--apple_platform_type=ios"
     test_targets:
+      - "//..."
+  zig_cross_compiling:
+    name: Zig cross compiling test
+    platform: ubuntu2004
+    working_directory: examples/zig_cross_compiling
+    build_targets:
       - "//..."
 
 buildifier:

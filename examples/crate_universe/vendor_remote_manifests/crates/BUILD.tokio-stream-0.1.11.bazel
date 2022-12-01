@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -84,7 +85,7 @@ rust_library(
         "//conditions:default": [
             "@crates_vendor_manifests__futures-core-0.3.25//:futures_core",
             "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
-            "@crates_vendor_manifests__tokio-1.21.2//:tokio",
+            "@crates_vendor_manifests__tokio-1.22.0//:tokio",
         ],
     }),
 )

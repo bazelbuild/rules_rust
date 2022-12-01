@@ -41,10 +41,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -97,19 +98,19 @@ rust_library(
             "@rules_rust_bindgen__bindgen-0.60.1//:build_script_build",
             "@rules_rust_bindgen__bitflags-1.3.2//:bitflags",
             "@rules_rust_bindgen__cexpr-0.6.0//:cexpr",
-            "@rules_rust_bindgen__clang-sys-1.3.3//:clang_sys",
-            "@rules_rust_bindgen__clap-3.2.12//:clap",
-            "@rules_rust_bindgen__env_logger-0.9.0//:env_logger",
+            "@rules_rust_bindgen__clang-sys-1.4.0//:clang_sys",
+            "@rules_rust_bindgen__clap-3.2.23//:clap",
+            "@rules_rust_bindgen__env_logger-0.9.3//:env_logger",
             "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",
             "@rules_rust_bindgen__lazycell-1.3.0//:lazycell",
             "@rules_rust_bindgen__log-0.4.17//:log",
             "@rules_rust_bindgen__peeking_take_while-0.1.2//:peeking_take_while",
-            "@rules_rust_bindgen__proc-macro2-1.0.40//:proc_macro2",
-            "@rules_rust_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_bindgen__regex-1.6.0//:regex",
+            "@rules_rust_bindgen__proc-macro2-1.0.47//:proc_macro2",
+            "@rules_rust_bindgen__quote-1.0.21//:quote",
+            "@rules_rust_bindgen__regex-1.7.0//:regex",
             "@rules_rust_bindgen__rustc-hash-1.1.0//:rustc_hash",
             "@rules_rust_bindgen__shlex-1.1.0//:shlex",
-            "@rules_rust_bindgen__which-4.2.5//:which",
+            "@rules_rust_bindgen__which-4.3.0//:which",
         ],
     }),
 )
@@ -130,10 +131,11 @@ rust_binary(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -187,19 +189,19 @@ rust_binary(
             "@rules_rust_bindgen__bindgen-0.60.1//:build_script_build",
             "@rules_rust_bindgen__bitflags-1.3.2//:bitflags",
             "@rules_rust_bindgen__cexpr-0.6.0//:cexpr",
-            "@rules_rust_bindgen__clang-sys-1.3.3//:clang_sys",
-            "@rules_rust_bindgen__clap-3.2.12//:clap",
-            "@rules_rust_bindgen__env_logger-0.9.0//:env_logger",
+            "@rules_rust_bindgen__clang-sys-1.4.0//:clang_sys",
+            "@rules_rust_bindgen__clap-3.2.23//:clap",
+            "@rules_rust_bindgen__env_logger-0.9.3//:env_logger",
             "@rules_rust_bindgen__lazy_static-1.4.0//:lazy_static",
             "@rules_rust_bindgen__lazycell-1.3.0//:lazycell",
             "@rules_rust_bindgen__log-0.4.17//:log",
             "@rules_rust_bindgen__peeking_take_while-0.1.2//:peeking_take_while",
-            "@rules_rust_bindgen__proc-macro2-1.0.40//:proc_macro2",
-            "@rules_rust_bindgen__quote-1.0.20//:quote",
-            "@rules_rust_bindgen__regex-1.6.0//:regex",
+            "@rules_rust_bindgen__proc-macro2-1.0.47//:proc_macro2",
+            "@rules_rust_bindgen__quote-1.0.21//:quote",
+            "@rules_rust_bindgen__regex-1.7.0//:regex",
             "@rules_rust_bindgen__rustc-hash-1.1.0//:rustc_hash",
             "@rules_rust_bindgen__shlex-1.1.0//:shlex",
-            "@rules_rust_bindgen__which-4.2.5//:which",
+            "@rules_rust_bindgen__which-4.3.0//:which",
         ],
     }),
 )
@@ -236,7 +238,16 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),

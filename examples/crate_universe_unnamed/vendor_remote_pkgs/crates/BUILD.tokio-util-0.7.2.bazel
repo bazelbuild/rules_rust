@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -83,7 +84,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",
             "@crates_vendor_pkgs__futures-core-0.3.25//:futures_core",
             "@crates_vendor_pkgs__futures-sink-0.3.25//:futures_sink",
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",

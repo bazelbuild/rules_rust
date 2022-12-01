@@ -1,0 +1,3 @@
+# Git ignore patterns
+
+/bazel-*

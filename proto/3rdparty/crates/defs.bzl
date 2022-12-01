@@ -361,8 +361,8 @@ _BUILD_PROC_MACRO_ALIASES = {
 
 _CONDITIONS = {
     "cfg(all(any(target_arch = \"x86_64\", target_arch = \"aarch64\"), target_os = \"hermit\"))": [],
-    "cfg(any(target_os = \"redox\", unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(any(unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(target_os = \"cloudabi\")": [],
     "cfg(target_os = \"fuchsia\")": [],
     "cfg(target_os = \"redox\")": [],
@@ -618,12 +618,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__libc-0.2.126",
-        sha256 = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836",
+        name = "rules_rust_proto__libc-0.2.137",
+        sha256 = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libc/0.2.126/download"],
-        strip_prefix = "libc-0.2.126",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.libc-0.2.126.bazel"),
+        urls = ["https://crates.io/api/v1/crates/libc/0.2.137/download"],
+        strip_prefix = "libc-0.2.137",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.libc-0.2.137.bazel"),
     )
 
     maybe(
@@ -708,22 +708,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__net2-0.2.37",
-        sha256 = "391630d12b68002ae1e25e8f974306474966550ad82dac6886fb8910c19568ae",
+        name = "rules_rust_proto__net2-0.2.38",
+        sha256 = "74d0df99cfcd2530b2e694f6e17e7f37b8e26bb23983ac530c0c97408837c631",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/net2/0.2.37/download"],
-        strip_prefix = "net2-0.2.37",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.net2-0.2.37.bazel"),
+        urls = ["https://crates.io/api/v1/crates/net2/0.2.38/download"],
+        strip_prefix = "net2-0.2.38",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.net2-0.2.38.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__num_cpus-1.13.1",
-        sha256 = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1",
+        name = "rules_rust_proto__num_cpus-1.14.0",
+        sha256 = "f6058e64324c71e02bc2b150e4f3bc8286db6c83092132ffa3f6b1eab0f9def5",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/num_cpus/1.13.1/download"],
-        strip_prefix = "num_cpus-1.13.1",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.num_cpus-1.13.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/num_cpus/1.14.0/download"],
+        strip_prefix = "num_cpus-1.14.0",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.num_cpus-1.14.0.bazel"),
     )
 
     maybe(

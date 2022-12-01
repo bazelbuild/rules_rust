@@ -1,0 +1,21 @@
+# https://github.com/bazelbuild/rules_apple/issues/1658
+flags:
+  --cpu=darwin_x86_64
+  --apple_platform_type=macos
+    //:macos_x86_64
+
+  --cpu=darwin_arm64
+  --apple_platform_type=macos
+    //:macos_arm64
+
+  --cpu=ios_x86_64
+  --apple_platform_type=ios
+    //:ios_x86_64
+
+  --cpu=ios_sim_arm64
+  --apple_platform_type=ios
+    //:ios_sim_arm64
+
+  --cpu=ios_arm64
+  --apple_platform_type=ios
+    //:ios_arm64

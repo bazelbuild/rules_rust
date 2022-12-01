@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -79,6 +80,10 @@ rust_library(
     version = "0.46.0",
     deps = [
     ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/overload-0.1.1:overload",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(target_os = "windows")
+        ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "//vendor_local_pkgs/crates/overload-0.1.1:overload",  # common dependency
             "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(target_os = "windows")
