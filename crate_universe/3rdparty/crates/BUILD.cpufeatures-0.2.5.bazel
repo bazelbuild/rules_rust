@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -80,13 +81,13 @@ rust_library(
     deps = [
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cui__libc-0.2.136//:libc",  # aarch64-apple-darwin
+            "@cui__libc-0.2.137//:libc",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cui__libc-0.2.136//:libc",  # aarch64-linux-android
+            "@cui__libc-0.2.137//:libc",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cui__libc-0.2.136//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))
+            "@cui__libc-0.2.137//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))
         ],
         "//conditions:default": [
         ],

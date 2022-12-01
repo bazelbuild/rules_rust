@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -81,7 +82,7 @@ rust_library(
     ] + select({
         "//conditions:default": [
             "@cui__bitflags-1.3.2//:bitflags",
-            "@cui__libc-0.2.136//:libc",
+            "@cui__libc-0.2.137//:libc",
             "@cui__libgit2-sys-0.14.0-1.5.0//:libgit2_sys",
             "@cui__log-0.4.17//:log",
             "@cui__url-2.3.1//:url",
