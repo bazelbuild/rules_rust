@@ -36,10 +36,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -82,8 +83,8 @@ rust_library(
     ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-            "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+            "@rules_rust_wasm_bindgen__regex-1.7.0//:regex",
+            "@rules_rust_wasm_bindgen__serde-1.0.148//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),
@@ -105,10 +106,11 @@ rust_binary(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -152,8 +154,8 @@ rust_binary(
     ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-            "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+            "@rules_rust_wasm_bindgen__regex-1.7.0//:regex",
+            "@rules_rust_wasm_bindgen__serde-1.0.148//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),

@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -81,7 +82,7 @@ rust_library(
     ] + select({
         "//conditions:default": [
             "//vendor_local_manifests/crates/async-stream-0.3.3:async_stream",
-            "//vendor_local_manifests/crates/bytes-1.2.1:bytes",
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",
             "//vendor_local_manifests/crates/futures-core-0.3.25:futures_core",
             "//vendor_local_manifests/crates/tokio-1.16.1:tokio",
             "//vendor_local_manifests/crates/tokio-stream-0.1.11:tokio_stream",

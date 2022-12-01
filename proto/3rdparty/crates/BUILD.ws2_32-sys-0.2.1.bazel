@@ -40,10 +40,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -115,7 +116,16 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),

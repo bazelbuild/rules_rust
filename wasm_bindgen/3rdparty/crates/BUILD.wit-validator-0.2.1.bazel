@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -80,7 +81,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__anyhow-1.0.65//:anyhow",
+            "@rules_rust_wasm_bindgen__anyhow-1.0.66//:anyhow",
             "@rules_rust_wasm_bindgen__wasmparser-0.59.0//:wasmparser",
             "@rules_rust_wasm_bindgen__wit-parser-0.2.0//:wit_parser",
             "@rules_rust_wasm_bindgen__wit-schema-version-0.1.0//:wit_schema_version",

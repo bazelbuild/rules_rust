@@ -35,10 +35,11 @@ rust_proc_macro(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -82,7 +83,7 @@ rust_proc_macro(
         "//conditions:default": [
             "//vendor_local_manifests/crates/proc-macro2-1.0.47:proc_macro2",
             "//vendor_local_manifests/crates/quote-1.0.21:quote",
-            "//vendor_local_manifests/crates/syn-1.0.103:syn",
+            "//vendor_local_manifests/crates/syn-1.0.105:syn",
         ],
     }),
 )

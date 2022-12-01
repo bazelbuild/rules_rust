@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -81,7 +82,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__ppv-lite86-0.2.16//:ppv_lite86",
+            "@rules_rust_wasm_bindgen__ppv-lite86-0.2.17//:ppv_lite86",
             "@rules_rust_wasm_bindgen__rand_core-0.6.4//:rand_core",
         ],
     }),
