@@ -40,10 +40,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -90,7 +91,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -107,7 +108,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -124,7 +125,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -141,7 +142,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -158,7 +159,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -175,7 +176,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -192,7 +193,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -209,7 +210,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -226,7 +227,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -243,7 +244,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -260,7 +261,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -277,7 +278,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -294,7 +295,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -311,7 +312,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -328,7 +329,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -345,7 +346,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -362,7 +363,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -379,7 +380,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -396,7 +397,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
             "@rules_rust_proto__log-0.4.17//:log",  # common dependency
-            "@rules_rust_proto__net2-0.2.37//:net2",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
@@ -413,7 +414,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",
             "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
+            "@rules_rust_proto__net2-0.2.38//:net2",
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",
@@ -449,7 +450,16 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),

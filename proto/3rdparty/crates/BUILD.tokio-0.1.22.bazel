@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -109,7 +110,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -127,7 +128,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -145,7 +146,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -163,7 +164,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -181,7 +182,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -199,7 +200,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -217,7 +218,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -235,7 +236,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -253,7 +254,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -271,7 +272,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -289,7 +290,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -307,7 +308,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -325,7 +326,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -343,7 +344,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -361,7 +362,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -379,7 +380,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -397,7 +398,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -415,7 +416,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -433,7 +434,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
             "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
             "@rules_rust_proto__mio-0.6.23//:mio",  # common dependency
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",  # common dependency
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",  # common dependency
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",  # common dependency
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",  # common dependency
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",  # common dependency
@@ -451,7 +452,7 @@ rust_library(
             "@rules_rust_proto__bytes-0.4.12//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__mio-0.6.23//:mio",
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",
             "@rules_rust_proto__tokio-codec-0.1.2//:tokio_codec",
             "@rules_rust_proto__tokio-current-thread-0.1.7//:tokio_current_thread",
             "@rules_rust_proto__tokio-executor-0.1.10//:tokio_executor",

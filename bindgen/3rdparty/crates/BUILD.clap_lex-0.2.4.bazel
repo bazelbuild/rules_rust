@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -80,7 +81,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@rules_rust_bindgen__os_str_bytes-6.2.0//:os_str_bytes",
+            "@rules_rust_bindgen__os_str_bytes-6.4.1//:os_str_bytes",
         ],
     }),
 )

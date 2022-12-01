@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -81,7 +82,7 @@ rust_library(
     ] + select({
         "//conditions:default": [
             "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",
-            "@rules_rust_proto__net2-0.2.37//:net2",
+            "@rules_rust_proto__net2-0.2.38//:net2",
             "@rules_rust_proto__winapi-0.2.8//:winapi",
             "@rules_rust_proto__ws2_32-sys-0.2.1//:ws2_32",
         ],

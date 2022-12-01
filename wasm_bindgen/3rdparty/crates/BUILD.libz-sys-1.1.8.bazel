@@ -40,10 +40,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -86,7 +87,7 @@ rust_library(
     deps = [
     ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",
             "@rules_rust_wasm_bindgen__libz-sys-1.1.8//:build_script_build",
         ],
     }),
@@ -117,7 +118,16 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
@@ -155,19 +165,24 @@ cargo_build_script(
     visibility = ["//visibility:private"],
     deps = [
     ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__cc-1.0.77//:cc",  # common dependency
+            "@rules_rust_wasm_bindgen__pkg-config-0.3.26//:pkg_config",  # common dependency
+            "@rules_rust_wasm_bindgen__vcpkg-0.2.15//:vcpkg",  # cfg(target_env = "msvc")
+        ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen__cc-1.0.73//:cc",  # common dependency
-            "@rules_rust_wasm_bindgen__pkg-config-0.3.25//:pkg_config",  # common dependency
+            "@rules_rust_wasm_bindgen__cc-1.0.77//:cc",  # common dependency
+            "@rules_rust_wasm_bindgen__pkg-config-0.3.26//:pkg_config",  # common dependency
             "@rules_rust_wasm_bindgen__vcpkg-0.2.15//:vcpkg",  # cfg(target_env = "msvc")
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen__cc-1.0.73//:cc",  # common dependency
-            "@rules_rust_wasm_bindgen__pkg-config-0.3.25//:pkg_config",  # common dependency
+            "@rules_rust_wasm_bindgen__cc-1.0.77//:cc",  # common dependency
+            "@rules_rust_wasm_bindgen__pkg-config-0.3.26//:pkg_config",  # common dependency
             "@rules_rust_wasm_bindgen__vcpkg-0.2.15//:vcpkg",  # cfg(target_env = "msvc")
         ],
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__cc-1.0.73//:cc",
-            "@rules_rust_wasm_bindgen__pkg-config-0.3.25//:pkg_config",
+            "@rules_rust_wasm_bindgen__cc-1.0.77//:cc",
+            "@rules_rust_wasm_bindgen__pkg-config-0.3.26//:pkg_config",
         ],
     }),
 )

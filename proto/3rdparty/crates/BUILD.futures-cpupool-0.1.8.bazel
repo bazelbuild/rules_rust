@@ -35,10 +35,11 @@ rust_library(
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -83,7 +84,7 @@ rust_library(
     ] + select({
         "//conditions:default": [
             "@rules_rust_proto__futures-0.1.31//:futures",
-            "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",
+            "@rules_rust_proto__num_cpus-1.14.0//:num_cpus",
         ],
     }),
 )
