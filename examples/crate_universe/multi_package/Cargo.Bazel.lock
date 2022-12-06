@@ -93,7 +93,7 @@ dependencies = [
  "slab",
  "socket2",
  "waker-fn",
- "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -130,7 +130,7 @@ dependencies = [
  "futures-lite",
  "libc",
  "signal-hook",
- "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -949,7 +949,7 @@ dependencies = [
  "libc",
  "log",
  "wasi",
- "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1069,7 +1069,7 @@ dependencies = [
  "libc",
  "redox_syscall",
  "smallvec",
- "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1176,7 +1176,7 @@ dependencies = [
  "libc",
  "log",
  "wepoll-ffi",
- "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1305,7 +1305,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88d6731146462ea25d9244b2ed5fd1d716d25c52e4d54aa4fb0f3c4e9854dbe2"
 dependencies = [
  "lazy_static",
- "windows-sys 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows-sys 0.36.1",
 ]
 
 [[package]]
@@ -1860,11 +1860,11 @@ version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea04155a16a59f9eab786fe12a4a450e75cdb175f9e0d80da1e17db09f55b8d2"
 dependencies = [
- "windows_aarch64_msvc 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_i686_gnu 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_i686_msvc 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_x86_64_gnu 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_x86_64_msvc 0.36.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows_aarch64_msvc 0.36.1",
+ "windows_i686_gnu 0.36.1",
+ "windows_i686_msvc 0.36.1",
+ "windows_x86_64_gnu 0.36.1",
+ "windows_x86_64_msvc 0.36.1",
 ]
 
 [[package]]
@@ -1874,12 +1874,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
 dependencies = [
  "windows_aarch64_gnullvm",
- "windows_aarch64_msvc 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_i686_gnu 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_i686_msvc 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "windows_x86_64_gnu 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows_aarch64_msvc 0.42.0",
+ "windows_i686_gnu 0.42.0",
+ "windows_i686_msvc 0.42.0",
+ "windows_x86_64_gnu 0.42.0",
  "windows_x86_64_gnullvm",
- "windows_x86_64_msvc 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "windows_x86_64_msvc 0.42.0",
 ]
 
 [[package]]
