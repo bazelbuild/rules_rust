@@ -412,7 +412,7 @@ def rust_toolchain_repository(
 
     Args:
         name (str): The name of the generated repository
-        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        version (str): The version of the tool among "nightly", "beta", or an exact version.
         exec_triple (str): The Rust-style target that this compiler runs on.
         target_triple (str): The Rust-style target to build for.
         channel (str, optional): The channel of the Rust toolchain.
@@ -670,13 +670,27 @@ def rust_repository_set(
 
     all_toolchain_names = []
     for target_triple in [exec_triple] + extra_target_triples:
+        # Parse all provided versions while checking for duplicates
+        channels = {}
         for version in versions:
             if version.startswith(("beta", "nightly")):
-                channel, _, iso_date = version.partition("/")
-                version = channel
+                channel, _, date = version.partition("/")
+                ver = channel
             else:
                 channel = "stable"
+                date = iso_date
+                ver = version
 
+            if channel in channels:
+                fail("Duplicate {} channels provided for {}: {}".format(channel, name, versions))
+
+            channels.update({channel: struct(
+                iso_date = date,
+                version = ver,
+            )})
+
+        # Define toolchains for each requested version
+        for channel, info in channels.items():
             toolchain_name = "{}__{}__{}".format(name, target_triple, channel)
 
             all_toolchain_names.append(rust_toolchain_repository(
@@ -688,12 +702,12 @@ def rust_repository_set(
                 edition = edition,
                 exec_triple = exec_triple,
                 include_rustc_srcs = include_rustc_srcs,
-                iso_date = iso_date,
+                iso_date = info.iso_date,
                 rustfmt_version = rustfmt_version,
                 sha256s = sha256s,
                 target_triple = target_triple,
                 urls = urls,
-                version = version,
+                version = info.version,
             ))
 
     # This repository exists to allow `rust_repository_set` to work with the `maybe` wrapper.
