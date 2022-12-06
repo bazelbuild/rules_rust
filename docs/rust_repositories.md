@@ -307,7 +307,7 @@ Assembles a remote repository for the given toolchain params, produces a proxy r
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="rust_toolchain_repository-name"></a>name |  The name of the generated repository   |  none |
-| <a id="rust_toolchain_repository-version"></a>version |  The version of the tool among "nightly", "beta', or an exact version.   |  none |
+| <a id="rust_toolchain_repository-version"></a>version |  The version of the tool among "nightly", "beta", or an exact version.   |  none |
 | <a id="rust_toolchain_repository-exec_triple"></a>exec_triple |  The Rust-style target that this compiler runs on.   |  none |
 | <a id="rust_toolchain_repository-target_triple"></a>target_triple |  The Rust-style target to build for.   |  none |
 | <a id="rust_toolchain_repository-exec_compatible_with"></a>exec_compatible_with |  A list of constraints for the execution platform for this toolchain.   |  `None` |
