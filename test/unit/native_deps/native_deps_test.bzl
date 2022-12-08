@@ -112,7 +112,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
         for arg in _extract_linker_args(action.argv)
         if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
     ]
-    asserts.equals(env, want, individual_link_args)
+    assert_list_contains_adjacent_elements(env, individual_link_args, want)
     return analysistest.end(env)
 
 def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
@@ -120,8 +120,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    # skipping first link-arg since it contains unrelated linker flags
-    linker_args = _extract_linker_args(action.argv)[1:]
+    linker_args = _extract_linker_args(action.argv)
 
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
@@ -143,7 +142,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
             "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, linker_args)
+    assert_list_contains_adjacent_elements(env, linker_args, want)
     return analysistest.end(env)
 
 def _get_pic_suffix(ctx, compilation_mode):
@@ -282,12 +281,12 @@ def _linkopts_propagate_test_impl(ctx):
     linkopt_args = [
         arg
         for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-args")
-    ][0].split(" ")
+        if arg.startswith("link-arg=")
+    ]
     assert_list_contains_adjacent_elements(
         env,
         linkopt_args,
-        ["-Llinkoptdep1", "-Llinkoptdep2"],
+        ["link-arg=-Llinkoptdep1", "link-arg=-Llinkoptdep2"],
     )
     return analysistest.end(env)
 

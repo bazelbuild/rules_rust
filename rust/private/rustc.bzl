@@ -931,7 +931,7 @@ def construct_arguments(
             ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
-            rustc_flags.add_all(link_args, format_each="--codegen=link_arg=%s")
+            rustc_flags.add_all(link_args, before_each = "--codegen", format_each = "link-arg=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
@@ -1219,7 +1219,7 @@ def rustc_compile_action(
             inputs = depset([toolchain.rustc], transitive = [compile_inputs]),
             outputs = action_outputs,
             env = env,
-            arguments =  [args.rustc_flags],
+            arguments = [args.rustc_flags],
             command = "{} --remap-path-prefix=$PWD= $@".format(toolchain.rustc.path),
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
