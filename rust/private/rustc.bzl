@@ -884,7 +884,7 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    if remap_path_prefix != None:
+    if remap_path_prefix != None and ctx.executable._process_wrapper:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
     if emit:
@@ -931,7 +931,7 @@ def construct_arguments(
             ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
-            rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+            rustc_flags.add_all(link_args, format_each="--codegen=link_arg=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
@@ -1215,12 +1215,12 @@ def rustc_compile_action(
         # Run without process_wrapper
         if build_env_files or build_flags_files or stamp or build_metadata:
             fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
-        ctx.actions.run(
-            executable = toolchain.rustc,
-            inputs = compile_inputs,
+        ctx.actions.run_shell(
+            inputs = depset([toolchain.rustc], transitive = [compile_inputs]),
             outputs = action_outputs,
             env = env,
-            arguments = [args.rustc_flags],
+            arguments =  [args.rustc_flags],
+            command = "{} --remap-path-prefix=$PWD= $@".format(toolchain.rustc.path),
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
                 crate_info.type,
