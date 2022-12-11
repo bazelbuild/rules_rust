@@ -149,7 +149,7 @@ def _crate_id(crate_info):
     Returns:
         (string): This crate's unique stable id.
     """
-    return "ID-" + crate_info.root.path
+    return "ID-" + crate_info.name + "-" + crate_info.root.path
 
 def _create_single_crate(ctx, info):
     """Creates a crate in the rust-project.json format.
