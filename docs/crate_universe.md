@@ -421,7 +421,7 @@ Setting any one flag will otherwise determine the contents of the returned dict.
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="aliases-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  `False` |
-| <a id="aliases-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  `False` |
+| <a id="aliases-normal_dev"></a>normal_dev |  If True, normal dev dependencies will be included in the output list..   |  `False` |
 | <a id="aliases-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  `False` |
 | <a id="aliases-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  `False` |
 | <a id="aliases-build"></a>build |  If True, build dependencies are included in the output list.   |  `False` |
@@ -454,7 +454,7 @@ otherwise impact the contents of the returned list.
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="all_crate_deps-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-normal_dev"></a>normal_dev |  If True, normla dev dependencies will be included in the output list..   |  `False` |
+| <a id="all_crate_deps-normal_dev"></a>normal_dev |  If True, normal dev dependencies will be included in the output list..   |  `False` |
 | <a id="all_crate_deps-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  `False` |
 | <a id="all_crate_deps-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  `False` |
 | <a id="all_crate_deps-build"></a>build |  If True, build dependencies are included in the output list.   |  `False` |
