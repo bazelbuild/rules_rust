@@ -630,6 +630,30 @@ def produce_tool_path(tool_name, target_triple, version):
         fail("No tool version was provided")
     return "-".join([e for e in [tool_name, version, target_triple] if e])
 
+def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256):
+    """Looks up the sha256 hash of a specific tool archive.
+
+    The lookup order is:
+
+    1. The sha256s dict in the context attributes;
+    2. The list of sha256 hashes populated in //rust:known_shas.bzl;
+    3. The sha256 argument to the function
+
+    Args:
+        ctx (repository_ctx): A repository_ctx (no attrs required).
+        tool_name (str): The name of the given tool per the archive naming.
+        target_triple (str): The rust-style target triple of the tool
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        iso_date (str): The date of the tool (ignored if the version is a specific version).
+        sha256 (str): The expected hash of hash of the Rust tool.
+
+    Returns:
+        str: The sha256 of the tool archive, or an empty string if the hash could not be found.
+    """
+    tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
+    archive_path = tool_suburl + _get_tool_extension(ctx)
+    return getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
@@ -671,8 +695,8 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             urls.append(new_url)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
-    archive_path = tool_path + _get_tool_extension(ctx)
-    sha256 = getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
+    sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent accross calls here the
