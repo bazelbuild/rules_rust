@@ -6,11 +6,6 @@
 #     bazel run //vendor_external:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -69,7 +65,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -94,13 +90,13 @@ rust_library(
     ],
     version = "0.9.4",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor__proc-macro2-1.0.47//:proc_macro2",
             "@crates_vendor__pulldown-cmark-0.8.0//:pulldown_cmark",
-            "@crates_vendor__regex-1.6.0//:regex",
+            "@crates_vendor__regex-1.7.0//:regex",
             "@crates_vendor__semver-1.0.14//:semver",
-            "@crates_vendor__syn-1.0.103//:syn",
+            "@crates_vendor__syn-1.0.105//:syn",
             "@crates_vendor__toml-0.5.9//:toml",
             "@crates_vendor__url-2.3.1//:url",
         ],

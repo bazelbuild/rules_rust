@@ -1,0 +1,37 @@
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "uses_ring",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    # We don't care about building this for our own platform, this just exists for the transition
+    tags = ["manual"],
+    deps = all_crate_deps(normal = True) + [":check_merged_flags"],
+)
+
+cargo_build_script(
+    name = "check_merged_flags",
+    srcs = ["src/check_merged_flags.rs"],
+    build_script_env = {
+        "CFLAGS": "cbeep",
+        "CXXFLAGS": "cxxbeep",
+        "LDFLAGS": "ldbeep",
+    },
+)
+
+platform(
+    name = "aarch64_linux",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform_transition_filegroup(
+    name = "uses_ring_arm",
+    srcs = [":uses_ring"],
+    target_platform = "aarch64_linux",
+)

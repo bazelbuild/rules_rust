@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -59,7 +55,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -84,14 +80,14 @@ rust_library(
     ],
     version = "0.2.83",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__bumpalo-3.11.0//:bumpalo",
+            "@rules_rust_wasm_bindgen__bumpalo-3.11.1//:bumpalo",
             "@rules_rust_wasm_bindgen__log-0.4.17//:log",
-            "@rules_rust_wasm_bindgen__once_cell-1.15.0//:once_cell",
-            "@rules_rust_wasm_bindgen__proc-macro2-1.0.44//:proc_macro2",
+            "@rules_rust_wasm_bindgen__once_cell-1.16.0//:once_cell",
+            "@rules_rust_wasm_bindgen__proc-macro2-1.0.47//:proc_macro2",
             "@rules_rust_wasm_bindgen__quote-1.0.21//:quote",
-            "@rules_rust_wasm_bindgen__syn-1.0.101//:syn",
+            "@rules_rust_wasm_bindgen__syn-1.0.105//:syn",
             "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.83//:wasm_bindgen_shared",
         ],
     }),

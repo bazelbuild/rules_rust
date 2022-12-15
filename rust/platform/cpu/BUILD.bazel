@@ -1,5 +1,6 @@
-constraint_value(
+alias(
     name = "wasm32",
-    constraint_setting = "@platforms//cpu",
+    actual = "@platforms//cpu:wasm32",
+    deprecation = "Use @platforms//cpu:wasm32 directly instead.",
     visibility = ["//visibility:public"],
 )

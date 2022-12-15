@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 
@@ -60,15 +61,19 @@ pub fn write_rust_project(
         "" => SYSROOT_SRC_FILE_RUNFILES_PREFIX,
         s => s,
     };
-    let sysroot_path = format!(
-        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_sysroot_src",
+    let toolchain_info_path = format!(
+        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json",
         workspace_name
     );
     let r = Runfiles::create()?;
-    let path = r.rlocation(sysroot_path);
-    let sysroot_src = std::fs::read_to_string(&path)?;
+    let path = r.rlocation(toolchain_info_path);
+    let toolchain_info: HashMap<String, String> =
+        serde_json::from_str(&std::fs::read_to_string(&path)?)?;
 
-    let rust_project = rust_project::generate_rust_project(&sysroot_src, &crate_specs)?;
+    let sysroot_src = &toolchain_info["sysroot_src"];
+    let sysroot = &toolchain_info["sysroot"];
+
+    let rust_project = rust_project::generate_rust_project(sysroot, sysroot_src, &crate_specs)?;
 
     rust_project::write_rust_project(
         rust_project_path.as_ref(),

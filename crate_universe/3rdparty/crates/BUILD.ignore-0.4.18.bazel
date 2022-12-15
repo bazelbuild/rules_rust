@@ -6,11 +6,6 @@
 #     bazel run //crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -58,7 +54,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,33 +79,50 @@ rust_library(
     ],
     version = "0.4.18",
     deps = [
-    ] + select_with_or({
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@cui__winapi-util-0.1.5//:winapi_util",
-
-            # Common Deps
-            "@cui__crossbeam-utils-0.8.12//:crossbeam_utils",
-            "@cui__globset-0.4.9//:globset",
-            "@cui__lazy_static-1.4.0//:lazy_static",
-            "@cui__log-0.4.17//:log",
-            "@cui__memchr-2.5.0//:memchr",
-            "@cui__regex-1.6.0//:regex",
-            "@cui__same-file-1.0.6//:same_file",
-            "@cui__thread_local-1.1.4//:thread_local",
-            "@cui__walkdir-2.3.2//:walkdir",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@cui__crossbeam-utils-0.8.14//:crossbeam_utils",  # common dependency
+            "@cui__globset-0.4.9//:globset",  # common dependency
+            "@cui__lazy_static-1.4.0//:lazy_static",  # common dependency
+            "@cui__log-0.4.17//:log",  # common dependency
+            "@cui__memchr-2.5.0//:memchr",  # common dependency
+            "@cui__regex-1.7.0//:regex",  # common dependency
+            "@cui__same-file-1.0.6//:same_file",  # common dependency
+            "@cui__thread_local-1.1.4//:thread_local",  # common dependency
+            "@cui__walkdir-2.3.2//:walkdir",  # common dependency
+            "@cui__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@cui__crossbeam-utils-0.8.14//:crossbeam_utils",  # common dependency
+            "@cui__globset-0.4.9//:globset",  # common dependency
+            "@cui__lazy_static-1.4.0//:lazy_static",  # common dependency
+            "@cui__log-0.4.17//:log",  # common dependency
+            "@cui__memchr-2.5.0//:memchr",  # common dependency
+            "@cui__regex-1.7.0//:regex",  # common dependency
+            "@cui__same-file-1.0.6//:same_file",  # common dependency
+            "@cui__thread_local-1.1.4//:thread_local",  # common dependency
+            "@cui__walkdir-2.3.2//:walkdir",  # common dependency
+            "@cui__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@cui__crossbeam-utils-0.8.14//:crossbeam_utils",  # common dependency
+            "@cui__globset-0.4.9//:globset",  # common dependency
+            "@cui__lazy_static-1.4.0//:lazy_static",  # common dependency
+            "@cui__log-0.4.17//:log",  # common dependency
+            "@cui__memchr-2.5.0//:memchr",  # common dependency
+            "@cui__regex-1.7.0//:regex",  # common dependency
+            "@cui__same-file-1.0.6//:same_file",  # common dependency
+            "@cui__thread_local-1.1.4//:thread_local",  # common dependency
+            "@cui__walkdir-2.3.2//:walkdir",  # common dependency
+            "@cui__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
         ],
         "//conditions:default": [
-            "@cui__crossbeam-utils-0.8.12//:crossbeam_utils",
+            "@cui__crossbeam-utils-0.8.14//:crossbeam_utils",
             "@cui__globset-0.4.9//:globset",
             "@cui__lazy_static-1.4.0//:lazy_static",
             "@cui__log-0.4.17//:log",
             "@cui__memchr-2.5.0//:memchr",
-            "@cui__regex-1.6.0//:regex",
+            "@cui__regex-1.7.0//:regex",
             "@cui__same-file-1.0.6//:same_file",
             "@cui__thread_local-1.1.4//:thread_local",
             "@cui__walkdir-2.3.2//:walkdir",

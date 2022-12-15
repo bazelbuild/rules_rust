@@ -6,11 +6,6 @@
 #     bazel run //vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -58,7 +54,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,9 +79,9 @@ rust_library(
     ],
     version = "0.2.8",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "//vendor_local_pkgs/crates/bytes-1.2.1:bytes",
+            "//vendor_local_pkgs/crates/bytes-1.3.0:bytes",
             "//vendor_local_pkgs/crates/fnv-1.0.7:fnv",
             "//vendor_local_pkgs/crates/itoa-1.0.4:itoa",
         ],

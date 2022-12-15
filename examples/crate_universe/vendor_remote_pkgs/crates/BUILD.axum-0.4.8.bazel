@@ -6,11 +6,6 @@
 #     bazel run //vendor_remote_pkgs:crates_vendor_pkgs
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,7 +28,7 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -43,10 +38,11 @@ rust_library(
             "**/*.md",
         ],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -66,9 +62,9 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@crates_vendor_pkgs__async-trait-0.1.58//:async_trait",
+            "@crates_vendor_pkgs__async-trait-0.1.59//:async_trait",
         ],
     }),
     rustc_env = {
@@ -92,22 +88,22 @@ rust_library(
     ],
     version = "0.4.8",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor_pkgs__axum-core-0.1.2//:axum_core",
             "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",
             "@crates_vendor_pkgs__futures-util-0.3.25//:futures_util",
             "@crates_vendor_pkgs__http-0.2.8//:http",
             "@crates_vendor_pkgs__http-body-0.4.5//:http_body",
-            "@crates_vendor_pkgs__hyper-0.14.22//:hyper",
+            "@crates_vendor_pkgs__hyper-0.14.23//:hyper",
             "@crates_vendor_pkgs__matchit-0.4.6//:matchit",
             "@crates_vendor_pkgs__memchr-2.5.0//:memchr",
             "@crates_vendor_pkgs__mime-0.3.16//:mime",
             "@crates_vendor_pkgs__percent-encoding-2.2.0//:percent_encoding",
             "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
-            "@crates_vendor_pkgs__serde-1.0.147//:serde",
-            "@crates_vendor_pkgs__serde_json-1.0.87//:serde_json",
+            "@crates_vendor_pkgs__serde-1.0.148//:serde",
+            "@crates_vendor_pkgs__serde_json-1.0.89//:serde_json",
             "@crates_vendor_pkgs__serde_urlencoded-0.7.1//:serde_urlencoded",
             "@crates_vendor_pkgs__sync_wrapper-0.1.1//:sync_wrapper",
             "@crates_vendor_pkgs__tokio-1.16.1//:tokio",

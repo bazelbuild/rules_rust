@@ -6,11 +6,6 @@
 #     bazel run //vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -58,7 +54,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,17 +79,18 @@ rust_library(
     ],
     version = "0.46.0",
     deps = [
-    ] + select_with_or({
-        # cfg(target_os = "windows")
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",
-
-            # Common Deps
-            "//vendor_local_pkgs/crates/overload-0.1.1:overload",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/overload-0.1.1:overload",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(target_os = "windows")
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/overload-0.1.1:overload",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(target_os = "windows")
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/overload-0.1.1:overload",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(target_os = "windows")
         ],
         "//conditions:default": [
             "//vendor_local_pkgs/crates/overload-0.1.1:overload",

@@ -54,13 +54,17 @@ def _native_action_inputs_not_present_test_impl(ctx):
 
 def _native_dep_lib_name(ctx, for_shared_library):
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    pic_suffix = ".pic" if compilation_mode == "opt" and for_shared_library else ""
     if ctx.target_platform_has_constraint(
         ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
     ):
         return "bar.lib"
+    if ctx.target_platform_has_constraint(
+        ctx.attr._macos_constraint[platform_common.ConstraintValueInfo],
+    ):
+        pic_suffix = ""
     else:
-        return "libbar{}.a".format(pic_suffix)
+        pic_suffix = ".pic" if compilation_mode == "opt" and for_shared_library else ""
+    return "libbar{}.a".format(pic_suffix)
 
 def _has_action_input(name, inputs):
     for file in inputs:
@@ -71,12 +75,14 @@ def _has_action_input(name, inputs):
 native_action_inputs_present_test = analysistest.make(
     _native_action_inputs_present_test_impl,
     attrs = {
+        "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
         "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
     },
 )
 native_action_inputs_not_present_test = analysistest.make(
     _native_action_inputs_not_present_test_impl,
     attrs = {
+        "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
         "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
     },
 )

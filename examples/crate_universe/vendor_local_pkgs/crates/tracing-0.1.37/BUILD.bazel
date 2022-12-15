@@ -6,11 +6,6 @@
 #     bazel run //vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -63,7 +59,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "//vendor_local_pkgs/crates/tracing-attributes-0.1.23:tracing_attributes",
         ],
@@ -89,7 +85,7 @@ rust_library(
     ],
     version = "0.1.37",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
             "//vendor_local_pkgs/crates/log-0.4.17:log",

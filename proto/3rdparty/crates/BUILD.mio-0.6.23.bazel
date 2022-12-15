@@ -6,11 +6,6 @@
 #     bazel run //proto/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -60,7 +56,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -85,66 +81,194 @@ rust_library(
     ],
     version = "0.6.23",
     deps = [
-    ] + select_with_or({
-        # cfg(target_os = "fuchsia")
-        #
-        # No supported platform triples for cfg: 'cfg(target_os = "fuchsia")'
-        # Skipped dependencies: [{"id":"fuchsia-zircon 0.3.3","target":"fuchsia_zircon"},{"id":"fuchsia-zircon-sys 0.3.3","target":"fuchsia_zircon_sys"}]
-        #
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_proto__libc-0.2.126//:libc",
-
-            # Common Deps
-            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
-            "@rules_rust_proto__iovec-0.1.4//:iovec",
-            "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
-            "@rules_rust_proto__slab-0.4.7//:slab",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
         ],
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",
-            "@rules_rust_proto__miow-0.2.2//:miow",
-            "@rules_rust_proto__winapi-0.2.8//:winapi",
-
-            # Common Deps
-            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
-            "@rules_rust_proto__iovec-0.1.4//:iovec",
-            "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
-            "@rules_rust_proto__slab-0.4.7//:slab",
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",  # cfg(windows)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__miow-0.2.2//:miow",  # cfg(windows)
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+            "@rules_rust_proto__winapi-0.2.8//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",  # cfg(windows)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__miow-0.2.2//:miow",  # cfg(windows)
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+            "@rules_rust_proto__winapi-0.2.8//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",  # cfg(windows)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__miow-0.2.2//:miow",  # cfg(windows)
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+            "@rules_rust_proto__winapi-0.2.8//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__iovec-0.1.4//:iovec",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__slab-0.4.7//:slab",  # common dependency
         ],
         "//conditions:default": [
             "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
             "@rules_rust_proto__iovec-0.1.4//:iovec",
             "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
+            "@rules_rust_proto__net2-0.2.38//:net2",
             "@rules_rust_proto__slab-0.4.7//:slab",
         ],
     }),

@@ -28,7 +28,7 @@ local_repository(
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories(include_rustc_srcs = True)
+rust_repositories()
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 rust_analyzer_dependencies()
 EOF

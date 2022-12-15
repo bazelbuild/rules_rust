@@ -6,11 +6,6 @@
 #     bazel run //vendor_local_manifests:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -82,9 +78,9 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "//vendor_local_manifests/crates/tokio-macros-1.8.0:tokio_macros",
+            "//vendor_local_manifests/crates/tokio-macros-1.8.2:tokio_macros",
         ],
     }),
     rustc_env = {
@@ -108,64 +104,251 @@ rust_library(
     ],
     version = "1.16.1",
     deps = [
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "//vendor_local_manifests/crates/libc-0.2.137:libc",
-            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",
-
-            # Common Deps
-            "//vendor_local_manifests/crates/bytes-1.2.1:bytes",
-            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
-            "//vendor_local_manifests/crates/mio-0.7.14:mio",
-            "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
-            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",
-            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
-            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
         ],
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "//vendor_local_manifests/crates/winapi-0.3.9:winapi",
-
-            # Common Deps
-            "//vendor_local_manifests/crates/bytes-1.2.1:bytes",
-            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
-            "//vendor_local_manifests/crates/mio-0.7.14:mio",
-            "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
-            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",
-            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
-            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",  # common dependency
+            "//vendor_local_manifests/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_manifests/crates/memchr-2.5.0:memchr",  # common dependency
+            "//vendor_local_manifests/crates/mio-0.7.14:mio",  # common dependency
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",  # common dependency
+            "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",  # common dependency
+            "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",  # common dependency
+            "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",  # common dependency
+            "//vendor_local_manifests/crates/signal-hook-registry-1.4.0:signal_hook_registry",  # cfg(unix)
         ],
         "//conditions:default": [
-            "//vendor_local_manifests/crates/bytes-1.2.1:bytes",
+            "//vendor_local_manifests/crates/bytes-1.3.0:bytes",
             "//vendor_local_manifests/crates/memchr-2.5.0:memchr",
             "//vendor_local_manifests/crates/mio-0.7.14:mio",
-            "//vendor_local_manifests/crates/num_cpus-1.13.1:num_cpus",
+            "//vendor_local_manifests/crates/num_cpus-1.14.0:num_cpus",
             "//vendor_local_manifests/crates/once_cell-1.16.0:once_cell",
             "//vendor_local_manifests/crates/parking_lot-0.11.2:parking_lot",
             "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",

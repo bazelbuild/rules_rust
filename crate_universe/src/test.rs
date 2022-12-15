@@ -127,6 +127,14 @@ pub mod lockfile {
         .unwrap()
     }
 
+    pub fn multi_cfg_dep() -> cargo_lock::Lockfile {
+        cargo_lock::Lockfile::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/multi_cfg_dep/Cargo.lock"
+        )))
+        .unwrap()
+    }
+
     pub fn no_deps() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

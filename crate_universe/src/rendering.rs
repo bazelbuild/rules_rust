@@ -518,4 +518,51 @@ mod test {
                 .join("\n")
         ));
     }
+
+    #[test]
+    fn test_render_build_file_deps() {
+        let config: Config = serde_json::from_value(serde_json::json!({
+            "generate_build_scripts": false,
+            "rendering": {
+                "repository_name": "multi_cfg_dep",
+                "regen_command": "bazel test //crate_universe:unit_test",
+            },
+            "supported_platform_triples": [
+                "x86_64-apple-darwin",
+                "x86_64-unknown-linux-gnu",
+                "aarch64-apple-darwin",
+                "aarch64-unknown-linux-gnu",
+            ],
+        }))
+        .unwrap();
+        let metadata = test::metadata::multi_cfg_dep();
+        let lockfile = test::lockfile::multi_cfg_dep();
+
+        let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
+        let context = Context::new(annotations).unwrap();
+
+        let renderer = Renderer::new(config.rendering);
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.cpufeatures-0.2.1.bazel"))
+            .unwrap();
+
+        // This is unfortunately somewhat brittle. Alas. Ultimately we wish to demonstrate that the
+        // original cfg(...) strings are preserved in the `deps` list for ease of debugging.
+        assert!(
+            build_file_content.replace(' ', "")
+            .contains(&
+r#"deps = [
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@multi_cfg_dep__libc-0.2.117//:libc",  # aarch64-apple-darwin
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@multi_cfg_dep__libc-0.2.117//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))
+        ],
+        "//conditions:default": [
+        ],
+    }),"#.replace(' ', "")));
+    }
 }

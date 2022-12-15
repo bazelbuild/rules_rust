@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -62,7 +59,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -87,7 +84,7 @@ rust_library(
     ],
     version = "0.2.137",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor__libc-0.2.137//:build_script_build",
         ],
@@ -104,7 +101,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -118,13 +115,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -154,7 +160,7 @@ cargo_build_script(
     version = "0.2.137",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),

@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -62,7 +59,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -87,59 +84,138 @@ rust_library(
     ],
     version = "0.6.2",
     deps = [
-    ] + select_with_or({
-        # cfg(target_os = "cloudabi")
-        #
-        # No supported platform triples for cfg: 'cfg(target_os = "cloudabi")'
-        # Skipped dependencies: [{"id":"cloudabi 0.0.3","target":"cloudabi"}]
-        #
-        # cfg(target_os = "redox")
-        #
-        # No supported platform triples for cfg: 'cfg(target_os = "redox")'
-        # Skipped dependencies: [{"id":"redox_syscall 0.1.57","target":"syscall"}]
-        #
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_proto__libc-0.2.126//:libc",
-
-            # Common Deps
-            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
-            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",
-            "@rules_rust_proto__smallvec-0.6.14//:smallvec",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
         ],
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@rules_rust_proto__winapi-0.3.9//:winapi",
-
-            # Common Deps
-            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
-            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",
-            "@rules_rust_proto__smallvec-0.6.14//:smallvec",
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+            "@rules_rust_proto__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+            "@rules_rust_proto__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+            "@rules_rust_proto__winapi-0.3.9//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",  # common dependency
+            "@rules_rust_proto__libc-0.2.137//:libc",  # cfg(unix)
+            "@rules_rust_proto__parking_lot_core-0.6.2//:build_script_build",  # common dependency
+            "@rules_rust_proto__smallvec-0.6.14//:smallvec",  # common dependency
         ],
         "//conditions:default": [
             "@rules_rust_proto__cfg-if-0.1.10//:cfg_if",
@@ -159,7 +235,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -173,13 +249,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -209,7 +294,7 @@ cargo_build_script(
     version = "0.6.2",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_proto__rustc_version-0.2.3//:rustc_version",
         ],

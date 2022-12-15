@@ -6,11 +6,6 @@
 #     bazel run //proto/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -58,7 +54,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,10 +79,10 @@ rust_library(
     ],
     version = "0.2.2",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",
-            "@rules_rust_proto__net2-0.2.37//:net2",
+            "@rules_rust_proto__net2-0.2.38//:net2",
             "@rules_rust_proto__winapi-0.2.8//:winapi",
             "@rules_rust_proto__ws2_32-sys-0.2.1//:ws2_32",
         ],

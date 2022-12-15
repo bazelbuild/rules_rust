@@ -29,7 +29,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@rules_rust_wasm_bindgen__anyhow-1.0.65//:anyhow",
+    actual = "@rules_rust_wasm_bindgen__anyhow-1.0.66//:anyhow",
     tags = ["manual"],
 )
 
@@ -77,31 +77,31 @@ alias(
 
 alias(
     name = "rayon",
-    actual = "@rules_rust_wasm_bindgen__rayon-1.5.3//:rayon",
+    actual = "@rules_rust_wasm_bindgen__rayon-1.6.0//:rayon",
     tags = ["manual"],
 )
 
 alias(
     name = "rouille",
-    actual = "@rules_rust_wasm_bindgen__rouille-3.5.0//:rouille",
+    actual = "@rules_rust_wasm_bindgen__rouille-3.6.1//:rouille",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
-    actual = "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+    actual = "@rules_rust_wasm_bindgen__serde-1.0.148//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_derive",
-    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.145//:serde_derive",
+    actual = "@rules_rust_wasm_bindgen__serde_derive-1.0.148//:serde_derive",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@rules_rust_wasm_bindgen__serde_json-1.0.85//:serde_json",
+    actual = "@rules_rust_wasm_bindgen__serde_json-1.0.89//:serde_json",
     tags = ["manual"],
 )
 
@@ -174,7 +174,7 @@ alias(
 
 alias(
     name = "cc__gcc-shim",
-    actual = "@rules_rust_wasm_bindgen__cc-1.0.73//:gcc-shim__bin",
+    actual = "@rules_rust_wasm_bindgen__cc-1.0.77//:gcc-shim__bin",
     tags = ["manual"],
 )
 
@@ -203,14 +203,14 @@ alias(
 )
 
 alias(
-    name = "wait-timeout__sleep",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
+    name = "wait-timeout__exit",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wait-timeout__exit",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
+    name = "wait-timeout__sleep",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
     tags = ["manual"],
 )
 

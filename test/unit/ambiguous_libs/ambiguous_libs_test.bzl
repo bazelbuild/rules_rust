@@ -1,7 +1,18 @@
 """Unittests for ambiguous native dependencies."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
+load(
+    "//rust:defs.bzl",
+    "rust_binary",
+    "rust_common",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_shared_library",
+    "rust_static_library",
+)
+
+def _get_crate_info(target):
+    return target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.test_crate_info].crate
 
 def _ambiguous_deps_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -9,15 +20,37 @@ def _ambiguous_deps_test_impl(ctx):
     rustc_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
 
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
-    # in the form of "-lstatic=native-dep-{hash}.a or "-lstatic=native-dep.pic-{hash}.a.
-    # Note that the second form should actually be "-lstatic=native-dep-{hash}.pic.a instead.
-    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep")]
+    # in the form of "-lstatic=native-dep-{hash} "-lstatic=native-dep-{hash}.pic.
+    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep-")]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
 
+    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
+    extension = _get_pic_suffix(ctx, for_shared_library)
+
+    asserts.true(env, link_args[0].endswith(extension))
+    asserts.true(env, link_args[1].endswith(extension))
+
     return analysistest.end(env)
 
-ambiguous_deps_test = analysistest.make(_ambiguous_deps_test_impl)
+def _get_pic_suffix(ctx, for_shared_library):
+    if ctx.target_platform_has_constraint(
+        ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
+    ) or ctx.target_platform_has_constraint(
+        ctx.attr._macos_constraint[platform_common.ConstraintValueInfo],
+    ):
+        return ""
+    else:
+        compilation_mode = ctx.var["COMPILATION_MODE"]
+        return ".pic" if compilation_mode == "opt" and for_shared_library else ""
+
+ambiguous_deps_test = analysistest.make(
+    _ambiguous_deps_test_impl,
+    attrs = {
+        "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
+        "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
 
 def _create_test_targets():
     rust_library(

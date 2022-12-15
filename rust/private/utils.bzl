@@ -223,7 +223,19 @@ def get_preferred_artifact(library_to_link, use_pic):
             library_to_link.dynamic_library
         )
 
-def _expand_location(ctx, env, data):
+# The normal ctx.expand_location, but with an additional deduplication step.
+# We do this to work around a potential crash, see
+# https://github.com/bazelbuild/bazel/issues/16664
+def dedup_expand_location(ctx, input, targets = []):
+    return ctx.expand_location(input, _deduplicate(targets))
+
+def _deduplicate(xs):
+    return {x: True for x in xs}.keys()
+
+def concat(xss):
+    return [x for xs in xss for x in xs]
+
+def _expand_location_for_build_script_runner(ctx, env, data):
     """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
@@ -240,7 +252,7 @@ def _expand_location(ctx, env, data):
             env = env.replace(directive, "$${pwd}/" + directive)
     return ctx.expand_make_variables(
         env,
-        ctx.expand_location(env, data),
+        dedup_expand_location(ctx, env, data),
         {},
     )
 
@@ -273,7 +285,7 @@ def expand_dict_value_locations(ctx, env, data):
     Returns:
         dict: A dict of environment variables with expanded location macros
     """
-    return dict([(k, _expand_location(ctx, v, data)) for (k, v) in env.items()])
+    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data)) for (k, v) in env.items()])
 
 def expand_list_element_locations(ctx, args, data):
     """Performs location-macro expansion on a list of string values.
@@ -296,7 +308,7 @@ def expand_list_element_locations(ctx, args, data):
     Returns:
         list: A list of arguments with expanded location macros
     """
-    return [_expand_location(ctx, arg, data) for arg in args]
+    return [_expand_location_for_build_script_runner(ctx, arg, data) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.

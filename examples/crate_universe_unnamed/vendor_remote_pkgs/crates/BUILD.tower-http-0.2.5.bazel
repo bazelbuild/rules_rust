@@ -6,11 +6,6 @@
 #     bazel run //vendor_remote_pkgs:crates_vendor_pkgs
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -64,7 +60,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -89,10 +85,10 @@ rust_library(
     ],
     version = "0.2.5",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
-            "@crates_vendor_pkgs__bytes-1.2.1//:bytes",
+            "@crates_vendor_pkgs__bytes-1.3.0//:bytes",
             "@crates_vendor_pkgs__futures-core-0.3.25//:futures_core",
             "@crates_vendor_pkgs__futures-util-0.3.25//:futures_util",
             "@crates_vendor_pkgs__http-0.2.8//:http",

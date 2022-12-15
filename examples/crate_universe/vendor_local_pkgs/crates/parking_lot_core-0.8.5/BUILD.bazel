@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -62,7 +59,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -87,56 +84,160 @@ rust_library(
     ],
     version = "0.8.5",
     deps = [
-    ] + select_with_or({
-        # cfg(target_os = "redox")
-        #
-        # No supported platform triples for cfg: 'cfg(target_os = "redox")'
-        # Skipped dependencies: [{"id":"redox_syscall 0.2.16","target":"syscall"}]
-        #
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "//vendor_local_pkgs/crates/libc-0.2.137:libc",
-
-            # Common Deps
-            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
-            "//vendor_local_pkgs/crates/instant-0.1.12:instant",
-            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",
-            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
         ],
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",
-
-            # Common Deps
-            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
-            "//vendor_local_pkgs/crates/instant-0.1.12:instant",
-            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",
-            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",  # common dependency
+            "//vendor_local_pkgs/crates/instant-0.1.12:instant",  # common dependency
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/parking_lot_core-0.8.5:build_script_build",  # common dependency
+            "//vendor_local_pkgs/crates/smallvec-1.10.0:smallvec",  # common dependency
         ],
         "//conditions:default": [
             "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
@@ -157,7 +258,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -171,13 +272,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -207,7 +317,7 @@ cargo_build_script(
     version = "0.8.5",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),

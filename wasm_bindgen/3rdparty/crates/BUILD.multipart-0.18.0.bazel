@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -34,17 +29,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -65,7 +61,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -90,7 +86,7 @@ rust_library(
     ],
     version = "0.18.0",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__buf_redux-0.8.4//:buf_redux",
             "@rules_rust_wasm_bindgen__httparse-1.8.0//:httparse",
@@ -115,17 +111,18 @@ rust_binary(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -146,7 +143,7 @@ rust_binary(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -172,7 +169,7 @@ rust_binary(
     version = "0.18.0",
     deps = [
         ":multipart",
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__buf_redux-0.8.4//:buf_redux",
             "@rules_rust_wasm_bindgen__httparse-1.8.0//:httparse",

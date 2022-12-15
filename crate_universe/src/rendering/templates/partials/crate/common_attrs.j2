@@ -1,11 +1,11 @@
-    compile_data = {% if crate.common_attrs | get(key="compile_data_glob") %}glob(include = {{ crate.common_attrs.compile_data_glob | json_encode | safe }}, exclude = ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel"]) + {% endif %}{% set selectable = crate.common_attrs | get(key="compile_data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
+    compile_data = {% if crate.common_attrs | get(key="compile_data_glob") %}glob(include = {{ crate.common_attrs.compile_data_glob | json_encode | safe }}, exclude = {{ common_glob_excludes | json_encode() | safe }}) + {% endif %}{% set selectable = crate.common_attrs | get(key="compile_data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
     crate_root = "{{ target.crate_root }}",
     crate_features = [
         {%- for feature in crate.common_attrs | get(key="crate_features", default=[]) %}
         "{{ feature }}",
         {%- endfor %}
     ],
-    data = {% if crate.common_attrs | get(key="data_glob") %}glob(include = {{ crate.common_attrs.data_glob | json_encode | safe }}, exclude = ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel"]) + {% endif %}{% set selectable = crate.common_attrs | get(key="data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
+    data = {% if crate.common_attrs | get(key="data_glob") %}glob(include = {{ crate.common_attrs.data_glob | json_encode | safe }}, exclude = {{ common_glob_excludes | json_encode() | safe }}) + {% endif %}{% set selectable = crate.common_attrs | get(key="data", default=default_select_list) %}{% include "partials/starlark/selectable_list.j2" -%},
     edition = "{{ crate.common_attrs.edition }}",
     {%- if crate.common_attrs | get(key="linker_script", default=Null) %}
     linker_script = "{{ crate.common_attrs.linker_script }}",

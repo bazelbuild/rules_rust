@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -58,7 +54,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -83,22 +79,30 @@ rust_library(
     ],
     version = "0.1.6",
     deps = [
-    ] + select_with_or({
-        # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-
-            # Common Deps
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "//conditions:default": [
         ],

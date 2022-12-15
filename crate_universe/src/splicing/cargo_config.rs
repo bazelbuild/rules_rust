@@ -114,13 +114,13 @@ impl FromStr for CargoConfig {
 }
 
 impl CargoConfig {
-    /// Load a Cargo conig from a path to a file on disk.
+    /// Load a Cargo config from a path to a file on disk.
     pub fn try_from_path(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)?;
         Self::from_str(&content)
     }
 
-    /// Look up a reigstry [Source] by it's url.
+    /// Look up a registry [Source] by its url.
     pub fn get_source_from_url(&self, url: &str) -> Option<&Source> {
         self.source.values().find(|v| v.registry == url)
     }

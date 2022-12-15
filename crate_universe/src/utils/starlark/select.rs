@@ -68,6 +68,94 @@ impl<T: Ord> SelectList<T> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+pub struct WithOriginalConfigurations<T> {
+    value: T,
+    original_configurations: BTreeSet<Option<String>>,
+}
+
+impl<T: Ord + Clone> SelectList<T> {
+    /// Generates a new SelectList re-keyed by the given configuration mapping.
+    /// This mapping maps from configurations in the current SelectList to sets of
+    /// configurations in the new SelectList.
+    ///
+    /// This returns the new SelectList as well as a BTreeMap of unmapped select configurations.
+    pub fn remap_configurations<'a, I, S>(
+        &self,
+        mapping: &'a BTreeMap<String, I>,
+    ) -> (
+        SelectList<WithOriginalConfigurations<T>>,
+        BTreeMap<String, BTreeSet<T>>,
+    )
+    where
+        &'a I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        // Map new configuraiton -> value -> old configurations.
+        let mut remapped: BTreeMap<String, BTreeMap<T, BTreeSet<Option<String>>>> = BTreeMap::new();
+        let mut unmapped: BTreeMap<String, BTreeSet<T>> = BTreeMap::new();
+
+        for (original_configuration, values) in &self.selects {
+            match mapping.get(original_configuration) {
+                Some(configurations) => {
+                    for configuration in configurations {
+                        for value in values {
+                            remapped
+                                .entry(configuration.as_ref().to_owned())
+                                .or_default()
+                                .entry(value.clone())
+                                .or_default()
+                                .insert(Some(original_configuration.to_owned()));
+                        }
+                    }
+                }
+                None => unmapped
+                    .entry(original_configuration.clone())
+                    .or_default()
+                    .append(&mut values.clone()),
+            }
+        }
+        for value in &self.common {
+            for (_, value_to_configs) in remapped.iter_mut() {
+                value_to_configs
+                    .entry(value.clone())
+                    .or_default()
+                    .insert(None);
+            }
+        }
+        (
+            SelectList {
+                common: self
+                    .common
+                    .iter()
+                    .map(|value| WithOriginalConfigurations {
+                        value: value.clone(),
+                        original_configurations: BTreeSet::from([None]),
+                    })
+                    .collect(),
+                selects: remapped
+                    .into_iter()
+                    .map(|(new_configuration, value_to_original_configuration)| {
+                        (
+                            new_configuration,
+                            value_to_original_configuration
+                                .into_iter()
+                                .map(|(value, original_configurations)| {
+                                    WithOriginalConfigurations {
+                                        value,
+                                        original_configurations,
+                                    }
+                                })
+                                .collect(),
+                        )
+                    })
+                    .collect(),
+            },
+            unmapped,
+        )
+    }
+}
+
 impl<T: Ord> Select<T> for SelectList<T> {
     fn configurations(&self) -> BTreeSet<Option<&String>> {
         let configs = self.selects.keys().map(Some);
@@ -162,5 +250,128 @@ impl<T: Ord, U: Ord> SelectMap<T, U> for SelectDict<T> {
                 .map(|(key, map)| (key, map.into_iter().map(|(k, v)| (k, func(v))).collect()))
                 .collect(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn remap_select_list_configurations() {
+        let mut select_list = SelectList::default();
+        select_list.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
+        select_list.insert("dep-b".to_owned(), Some("cfg(macos)".to_owned()));
+        select_list.insert("dep-d".to_owned(), Some("cfg(macos)".to_owned()));
+        select_list.insert("dep-a".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select_list.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select_list.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
+        select_list.insert("dep-d".to_owned(), None);
+
+        let mapping = BTreeMap::from([
+            (
+                "cfg(macos)".to_owned(),
+                BTreeSet::from(["x86_64-macos".to_owned(), "aarch64-macos".to_owned()]),
+            ),
+            (
+                "cfg(x86_64)".to_owned(),
+                BTreeSet::from(["x86_64-linux".to_owned(), "x86_64-macos".to_owned()]),
+            ),
+        ]);
+
+        let mut expected = SelectList::default();
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-a".to_owned(),
+                original_configurations: BTreeSet::from([
+                    Some("cfg(macos)".to_owned()),
+                    Some("cfg(x86_64)".to_owned()),
+                ]),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-b".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-c".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-d".to_owned(),
+                original_configurations: BTreeSet::from([None, Some("cfg(macos)".to_owned())]),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-a".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+            },
+            Some("aarch64-macos".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-b".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+            },
+            Some("aarch64-macos".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-d".to_owned(),
+                original_configurations: BTreeSet::from([None, Some("cfg(macos)".to_owned())]),
+            },
+            Some("aarch64-macos".to_owned()),
+        );
+
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-a".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+            },
+            Some("x86_64-linux".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-c".to_owned(),
+                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+            },
+            Some("x86_64-linux".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-d".to_owned(),
+                original_configurations: BTreeSet::from([None]),
+            },
+            Some("x86_64-linux".to_owned()),
+        );
+
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-d".to_owned(),
+                original_configurations: BTreeSet::from([None]),
+            },
+            None,
+        );
+
+        let expected_unmapped = BTreeMap::from([(
+            "cfg(pdp11)".to_owned(),
+            BTreeSet::from(["dep-e".to_owned()]),
+        )]);
+
+        assert_eq!(
+            &select_list.remap_configurations(&mapping),
+            &(expected, expected_unmapped)
+        );
     }
 }

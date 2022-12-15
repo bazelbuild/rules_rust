@@ -6,11 +6,6 @@
 #     bazel run //vendor_external:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_proc_macro(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -59,7 +55,7 @@ rust_proc_macro(
     }),
     edition = "2021",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -84,13 +80,13 @@ rust_proc_macro(
     ],
     version = "3.2.18",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor__heck-0.4.0//:heck",
             "@crates_vendor__proc-macro-error-1.0.4//:proc_macro_error",
             "@crates_vendor__proc-macro2-1.0.47//:proc_macro2",
             "@crates_vendor__quote-1.0.21//:quote",
-            "@crates_vendor__syn-1.0.103//:syn",
+            "@crates_vendor__syn-1.0.105//:syn",
         ],
     }),
 )

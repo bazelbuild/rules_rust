@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -66,7 +63,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -91,55 +88,163 @@ rust_library(
     ],
     version = "0.4.44",
     deps = [
-    ] + select_with_or({
-        # cfg(all(unix, not(target_os = "macos")))
-        (
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.76//:openssl_sys",
-
-            # Common Deps
-            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
-            "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
         ],
-        # cfg(target_env = "msvc")
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__schannel-0.1.20//:schannel",
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",
-
-            # Common Deps
-            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
-            "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__schannel-0.1.20//:schannel",  # cfg(target_env = "msvc")
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(target_env = "msvc")
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__schannel-0.1.20//:schannel",  # cfg(target_env = "msvc")
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(target_env = "msvc")
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__schannel-0.1.20//:schannel",  # cfg(target_env = "msvc")
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(target_env = "msvc")
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",  # common dependency
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",  # common dependency
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # common dependency
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.78//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",  # common dependency
         ],
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__curl-0.4.44//:build_script_build",
-            "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",
             "@rules_rust_wasm_bindgen__socket2-0.4.7//:socket2",
         ],
     }),
@@ -155,7 +260,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -173,13 +278,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -209,9 +323,9 @@ cargo_build_script(
     version = "0.4.44",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@rules_rust_wasm_bindgen__curl-sys-0.4.56-curl-7.83.1//:curl_sys",
+            "@rules_rust_wasm_bindgen__curl-sys-0.4.59-curl-7.86.0//:curl_sys",
         ],
     }),
 )

@@ -6,11 +6,6 @@
 #     bazel run //crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -67,9 +63,9 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@cui__pest_derive-2.4.0//:pest_derive",
+            "@cui__pest_derive-2.5.0//:pest_derive",
         ],
     }),
     rustc_env = {
@@ -93,19 +89,19 @@ rust_library(
     ],
     version = "1.17.1",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@cui__chrono-0.4.22//:chrono",
+            "@cui__chrono-0.4.23//:chrono",
             "@cui__chrono-tz-0.6.3//:chrono_tz",
             "@cui__globwalk-0.8.1//:globwalk",
             "@cui__humansize-1.1.1//:humansize",
             "@cui__lazy_static-1.4.0//:lazy_static",
             "@cui__percent-encoding-2.2.0//:percent_encoding",
-            "@cui__pest-2.4.0//:pest",
+            "@cui__pest-2.5.0//:pest",
             "@cui__rand-0.8.5//:rand",
-            "@cui__regex-1.6.0//:regex",
-            "@cui__serde-1.0.147//:serde",
-            "@cui__serde_json-1.0.87//:serde_json",
+            "@cui__regex-1.7.0//:regex",
+            "@cui__serde-1.0.148//:serde",
+            "@cui__serde_json-1.0.89//:serde_json",
             "@cui__slug-0.1.4//:slug",
             "@cui__unic-segment-0.9.0//:unic_segment",
         ],

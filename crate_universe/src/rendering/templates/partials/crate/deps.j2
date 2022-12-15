@@ -1,36 +1,29 @@
-select_with_or({
-    {%- set selectable = deps | default(value=default_select_list) %}
-    {%- for cfg, values in selectable.selects %}
-        # {{ cfg }}
-    {%- if context.conditions | get(key=cfg, default="") | length %}
-        (
-            {%- for triple in context.conditions | get(key=cfg) %}
-            "{{ platform_label(triple = triple) }}",
-            {%- endfor %}
-        ): [
-            # Target Deps
-            {%- for dep in values %}
-            {%- set dep_crate = context.crates | get(key=dep.id) %}
-            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.target) }}",
-            {%- endfor %}
-
-            # Common Deps
-            {%- for common_dep in selectable.common %}
-            {%- set common_dep_crate = context.crates | get(key=common_dep.id) %}
-            "{{ crate_label(name = common_dep_crate.name, version = common_dep_crate.version, target = common_dep.target) }}",
+select({
+    {%- set selectable_and_unmapped = deps | default(value=default_select_list) | remap_deps_configurations(mapping=context.conditions) %}
+    {%- set selectable = selectable_and_unmapped.0 %}
+    {%- set unmapped = selectable_and_unmapped.1 %}
+    {%- for triple, deps in selectable.selects %}
+        "{{ platform_label(triple = triple) }}": [
+            {%- for dep in deps %}
+            {%- set_global orig_confg_list = [] %}
+            {%- for orig_config in dep.original_configurations %}
+            {%- set_global orig_confg_list = orig_confg_list | concat(with=orig_config | default(value="common dependency")) %}
+            {%- endfor -%}
+            {%- set dep_crate = context.crates | get(key=dep.value.id) %}
+            "{{ crate_label(name = dep_crate.name, version = dep_crate.version, target = dep.value.target) }}",  # {{ orig_confg_list | join(sep=", ") }}
             {%- endfor %}
         ],
-    {%- else %}
-            #
-            # No supported platform triples for cfg: '{{ cfg }}'
-            # Skipped dependencies: {{ values | json_encode | safe }}
-            #
-    {%- endif %}
     {%- endfor %}
         "//conditions:default": [
             {%- for common_dep in selectable.common %}
-            {%- set common_dep_crate = context.crates | get(key=common_dep.id) %}
-            "{{ crate_label(name = common_dep_crate.name, version = common_dep_crate.version, target = common_dep.target) }}",
+            {%- set common_dep_crate = context.crates | get(key=common_dep.value.id) %}
+            "{{ crate_label(name = common_dep_crate.name, version = common_dep_crate.version, target = common_dep.value.target) }}",
             {%- endfor %}
         ],
+    {%- for cfg, deps in unmapped %}
+        #
+        # No supported platform triples for cfg: '{{ cfg }}'
+        # Skipped dependencies: {{ deps | json_encode | safe }}
+        #
+    {%- endfor %}
     })

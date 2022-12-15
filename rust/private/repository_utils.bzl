@@ -116,6 +116,27 @@ filegroup(
 )
 """
 
+_build_file_for_rust_analyzer_proc_macro_srv = """\
+filegroup(
+   name = "rust_analyzer_proc_macro_srv",
+   srcs = ["libexec/rust-analyzer-proc-macro-srv{binary_ext}"],
+   visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
+    """Emits a BUILD file the rust_analyzer_proc_macro_srv archive.
+
+    Args:
+        exec_triple (str): The triple of the exec platform
+    Returns:
+        str: The contents of a BUILD file
+    """
+    system = triple_to_system(exec_triple)
+    return _build_file_for_rust_analyzer_proc_macro_srv.format(
+        binary_ext = system_to_binary_ext(system),
+    )
+
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
 
@@ -303,6 +324,7 @@ toolchain(
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
+    {target_settings}
 )
 """
 
@@ -310,14 +332,18 @@ def BUILD_for_toolchain(
         name,
         toolchain,
         toolchain_type,
+        target_settings,
         target_compatible_with,
         exec_compatible_with):
+    target_settings_value = "target_settings = {},".format(json.encode(target_settings)) if target_settings else "# target_settings = []"
+
     return _build_file_for_toolchain_template.format(
         name = name,
-        exec_constraint_sets_serialized = exec_compatible_with,
-        target_constraint_sets_serialized = target_compatible_with,
+        exec_constraint_sets_serialized = json.encode(exec_compatible_with),
+        target_constraint_sets_serialized = json.encode(target_compatible_with),
         toolchain = toolchain,
         toolchain_type = toolchain_type,
+        target_settings = target_settings_value,
     )
 
 def load_rustfmt(ctx):
@@ -342,24 +368,26 @@ def load_rustfmt(ctx):
 
     return BUILD_for_rustfmt(target_triple)
 
-def load_rust_compiler(ctx):
+def load_rust_compiler(ctx, iso_date, target_triple, version):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+        target_triple (str): The Rust-style target that this compiler runs on.
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
         str: The BUILD file contents for this compiler and compiler library
     """
 
-    target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustc",
         tool_subdirectories = ["rustc"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_compiler(target_triple)
@@ -408,8 +436,28 @@ def load_cargo(ctx):
 
     return BUILD_for_cargo(target_triple)
 
+def includes_rust_analyzer_proc_macro_srv(version, iso_date):
+    """Determine whether or not the rust_analyzer_proc_macro_srv binary in available in the given version of Rust.
+
+    Args:
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+
+    Returns:
+        bool: Whether or not the binary is expected to be included
+    """
+
+    if version == "nightly":
+        return iso_date >= "2022-09-21"
+    elif version == "beta":
+        return False
+    elif version >= "1.64.0":
+        return True
+
+    return False
+
 def should_include_rustc_srcs(repository_ctx):
-    """Determing whether or not to include rustc sources in the toolchain.
+    """Determine whether or not to include rustc sources in the toolchain.
 
     Args:
         repository_ctx (repository_ctx): The repository rule's context object
@@ -460,14 +508,18 @@ load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
 
 rust_analyzer_toolchain(
     name = "{name}",
+    proc_macro_srv = {proc_macro_srv},
+    rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name):
+def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
+        rustc = rustc,
+        proc_macro_srv = repr(proc_macro_srv),
     )
 
 def load_rust_stdlib(ctx, target_triple):
@@ -578,6 +630,30 @@ def produce_tool_path(tool_name, target_triple, version):
         fail("No tool version was provided")
     return "-".join([e for e in [tool_name, version, target_triple] if e])
 
+def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256):
+    """Looks up the sha256 hash of a specific tool archive.
+
+    The lookup order is:
+
+    1. The sha256s dict in the context attributes;
+    2. The list of sha256 hashes populated in //rust:known_shas.bzl;
+    3. The sha256 argument to the function
+
+    Args:
+        ctx (repository_ctx): A repository_ctx (no attrs required).
+        tool_name (str): The name of the given tool per the archive naming.
+        target_triple (str): The rust-style target triple of the tool
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        iso_date (str): The date of the tool (ignored if the version is a specific version).
+        sha256 (str): The expected hash of hash of the Rust tool.
+
+    Returns:
+        str: The sha256 of the tool archive, or an empty string if the hash could not be found.
+    """
+    tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
+    archive_path = tool_suburl + _get_tool_extension(ctx)
+    return getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
@@ -619,8 +695,8 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             urls.append(new_url)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
-    archive_path = tool_path + _get_tool_extension(ctx)
-    sha256 = getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
+    sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent accross calls here the

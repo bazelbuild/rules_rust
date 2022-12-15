@@ -6,11 +6,6 @@
 #     bazel run //vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -66,7 +62,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -91,47 +87,100 @@ rust_library(
     ],
     version = "0.7.14",
     deps = [
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "//vendor_local_pkgs/crates/libc-0.2.137:libc",
-
-            # Common Deps
-            "//vendor_local_pkgs/crates/log-0.4.17:log",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
         ],
-        # cfg(windows)
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "//vendor_local_pkgs/crates/miow-0.3.7:miow",
-            "//vendor_local_pkgs/crates/ntapi-0.3.7:ntapi",
-            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",
-
-            # Common Deps
-            "//vendor_local_pkgs/crates/log-0.4.17:log",
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+            "//vendor_local_pkgs/crates/miow-0.3.7:miow",  # cfg(windows)
+            "//vendor_local_pkgs/crates/ntapi-0.3.7:ntapi",  # cfg(windows)
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+            "//vendor_local_pkgs/crates/miow-0.3.7:miow",  # cfg(windows)
+            "//vendor_local_pkgs/crates/ntapi-0.3.7:ntapi",  # cfg(windows)
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+            "//vendor_local_pkgs/crates/miow-0.3.7:miow",  # cfg(windows)
+            "//vendor_local_pkgs/crates/ntapi-0.3.7:ntapi",  # cfg(windows)
+            "//vendor_local_pkgs/crates/winapi-0.3.9:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "//vendor_local_pkgs/crates/libc-0.2.137:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/log-0.4.17:log",  # common dependency
         ],
         "//conditions:default": [
             "//vendor_local_pkgs/crates/log-0.4.17:log",

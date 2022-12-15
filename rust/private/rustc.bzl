@@ -436,11 +436,17 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     path_hash = abs(hash(lib.path))
     lib_name = get_lib_name_for_windows(lib) if toolchain.os.startswith("windows") else get_lib_name_default(lib)
 
-    prefix = "lib"
-    extension = ".a"
     if toolchain.os.startswith("windows"):
         prefix = ""
         extension = ".lib"
+    elif lib_name.endswith(".pic"):
+        # Strip the .pic suffix
+        lib_name = lib_name[:-4]
+        prefix = "lib"
+        extension = ".pic.a"
+    else:
+        prefix = "lib"
+        extension = ".a"
 
     # Ensure the symlink follows the lib<name>.a pattern on Unix-like platforms
     # or <name>.lib on Windows.
@@ -966,6 +972,11 @@ def construct_arguments(
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
+
+    if is_exec_configuration(ctx):
+        rustc_flags.add_all(toolchain.extra_exec_rustc_flags)
+    else:
+        rustc_flags.add_all(toolchain.extra_rustc_flags)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):

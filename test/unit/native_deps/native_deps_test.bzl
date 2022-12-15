@@ -28,7 +28,7 @@ def _cdylib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    pic_suffix = ".pic" if compilation_mode == "opt" and not ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else ""
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
@@ -54,7 +54,7 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    pic_suffix = ".pic" if compilation_mode == "opt" and not ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else ""
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
@@ -125,7 +125,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
 
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
-    pic_suffix = ".pic" if compilation_mode == "opt" else ""
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
@@ -146,17 +146,27 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     asserts.equals(env, want, linker_args)
     return analysistest.end(env)
 
+def _get_pic_suffix(ctx, compilation_mode):
+    if (ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]) or
+        ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo])):
+        return ""
+    return ".pic" if compilation_mode == "opt" else ""
+
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, attrs = {
+    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
     "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
 })
 bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {

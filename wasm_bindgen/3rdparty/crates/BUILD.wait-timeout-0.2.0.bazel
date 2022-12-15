@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -34,17 +29,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -59,7 +55,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -84,126 +80,63 @@ rust_library(
     ],
     version = "0.2.0",
     deps = [
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-
-            # Common Deps
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-        "//conditions:default": [
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    }),
-)
-
-rust_binary(
-    name = "sleep__bin",
-    srcs = glob(
-        include = [
-            "**/*.rs",
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-        exclude = [
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    ),
-    aliases = selects.with_or({
-        "//conditions:default": {
-        },
-    }),
-    compile_data = glob(
-        include = ["**"],
-        exclude = [
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    ) + select_with_or({
-        "//conditions:default": [
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    }),
-    crate_features = [
-    ],
-    crate_root = "src/bin/sleep.rs",
-    data = select_with_or({
-        "//conditions:default": [
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    }),
-    edition = "2015",
-    proc_macro_deps = [
-    ] + select_with_or({
-        "//conditions:default": [
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    }),
-    rustc_env = {
-    },
-    rustc_env_files = select_with_or({
-        "//conditions:default": [
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
-    }),
-    rustc_flags = [
-        # In most cases, warnings in 3rd party crates are not interesting as
-        # they're out of the control of consumers. The flag here silences
-        # warnings. For more details see:
-        # https://doc.rust-lang.org/rustc/lints/levels.html
-        "--cap-lints=allow",
-    ],
-    tags = [
-        "cargo-bazel",
-        "manual",
-        "noclippy",
-        "norustfmt",
-    ],
-    version = "0.2.0",
-    deps = [
-        ":wait_timeout",
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-
-            # Common Deps
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
         "//conditions:default": [
         ],
@@ -219,17 +152,18 @@ rust_binary(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -244,7 +178,7 @@ rust_binary(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -270,33 +204,187 @@ rust_binary(
     version = "0.2.0",
     deps = [
         ":wait_timeout",
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "//conditions:default": [
+        ],
+    }),
+)
 
-            # Common Deps
+rust_binary(
+    name = "sleep__bin",
+    srcs = glob(
+        include = [
+            "**/*.rs",
+        ],
+        exclude = [
+        ],
+    ),
+    aliases = select({
+        "//conditions:default": {
+        },
+    }),
+    compile_data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
+        "//conditions:default": [
+        ],
+    }),
+    crate_features = [
+    ],
+    crate_root = "src/bin/sleep.rs",
+    data = select_with_or({
+        "//conditions:default": [
+        ],
+    }),
+    edition = "2015",
+    proc_macro_deps = [
+    ] + select({
+        "//conditions:default": [
+        ],
+    }),
+    rustc_env = {
+    },
+    rustc_env_files = select_with_or({
+        "//conditions:default": [
+        ],
+    }),
+    rustc_flags = [
+        # In most cases, warnings in 3rd party crates are not interesting as
+        # they're out of the control of consumers. The flag here silences
+        # warnings. For more details see:
+        # https://doc.rust-lang.org/rustc/lints/levels.html
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-bazel",
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "0.2.0",
+    deps = [
+        ":wait_timeout",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
         "//conditions:default": [
         ],
@@ -312,17 +400,18 @@ rust_binary(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -337,7 +426,7 @@ rust_binary(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -363,33 +452,63 @@ rust_binary(
     version = "0.2.0",
     deps = [
         ":wait_timeout",
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_wasm_bindgen__libc-0.2.133//:libc",
-
-            # Common Deps
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.137//:libc",  # cfg(unix)
         ],
         "//conditions:default": [
         ],

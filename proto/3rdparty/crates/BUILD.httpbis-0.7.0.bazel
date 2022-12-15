@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -62,7 +59,7 @@ rust_library(
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -87,47 +84,329 @@ rust_library(
     ],
     version = "0.7.0",
     deps = [
-    ] + select_with_or({
-        # cfg(unix)
-        (
-            "@rules_rust//rust/platform:aarch64-apple-darwin",
-            "@rules_rust//rust/platform:aarch64-apple-ios",
-            "@rules_rust//rust/platform:aarch64-apple-ios-sim",
-            "@rules_rust//rust/platform:aarch64-linux-android",
-            "@rules_rust//rust/platform:aarch64-unknown-linux-gnu",
-            "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:armv7-linux-androideabi",
-            "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi",
-            "@rules_rust//rust/platform:i686-apple-darwin",
-            "@rules_rust//rust/platform:i686-linux-android",
-            "@rules_rust//rust/platform:i686-unknown-freebsd",
-            "@rules_rust//rust/platform:i686-unknown-linux-gnu",
-            "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
-            "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
-            "@rules_rust//rust/platform:x86_64-apple-darwin",
-            "@rules_rust//rust/platform:x86_64-apple-ios",
-            "@rules_rust//rust/platform:x86_64-linux-android",
-            "@rules_rust//rust/platform:x86_64-unknown-freebsd",
-            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
-        ): [
-            # Target Deps
-            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",
-            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",
-
-            # Common Deps
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
-            "@rules_rust_proto__futures-0.1.31//:futures",
-            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
-            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",
-            "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
-            "@rules_rust_proto__tls-api-0.1.22//:tls_api",
-            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
-            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",
-            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",
-            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",
-            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",
-            "@rules_rust_proto__void-1.0.2//:void",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_proto__bytes-0.4.12//:bytes",  # common dependency
+            "@rules_rust_proto__futures-0.1.31//:futures",  # common dependency
+            "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",  # common dependency
+            "@rules_rust_proto__httpbis-0.7.0//:build_script_build",  # common dependency
+            "@rules_rust_proto__log-0.4.17//:log",  # common dependency
+            "@rules_rust_proto__net2-0.2.38//:net2",  # common dependency
+            "@rules_rust_proto__tls-api-0.1.22//:tls_api",  # common dependency
+            "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",  # common dependency
+            "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",  # common dependency
+            "@rules_rust_proto__tokio-io-0.1.13//:tokio_io",  # common dependency
+            "@rules_rust_proto__tokio-timer-0.1.2//:tokio_timer",  # common dependency
+            "@rules_rust_proto__tokio-tls-api-0.1.22//:tokio_tls_api",  # common dependency
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+            "@rules_rust_proto__void-1.0.2//:void",  # common dependency
         ],
         "//conditions:default": [
             "@rules_rust_proto__bytes-0.4.12//:bytes",
@@ -135,7 +414,7 @@ rust_library(
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",
             "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__net2-0.2.37//:net2",
+            "@rules_rust_proto__net2-0.2.38//:net2",
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",
@@ -157,7 +436,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -171,13 +450,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2015",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -207,7 +495,7 @@ cargo_build_script(
     version = "0.7.0",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),

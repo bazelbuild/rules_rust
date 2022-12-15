@@ -35,7 +35,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "@crates_vendor_manifests__tokio-1.21.2//:tokio",
+    actual = "@crates_vendor_manifests__tokio-1.22.0//:tokio",
     tags = ["manual"],
 )
 

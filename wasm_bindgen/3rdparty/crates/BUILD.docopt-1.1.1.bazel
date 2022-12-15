@@ -6,11 +6,6 @@
 #     bazel run //wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -34,17 +29,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -59,7 +55,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -84,11 +80,11 @@ rust_library(
     ],
     version = "1.1.1",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-            "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+            "@rules_rust_wasm_bindgen__regex-1.7.0//:regex",
+            "@rules_rust_wasm_bindgen__serde-1.0.148//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),
@@ -103,17 +99,18 @@ rust_binary(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -128,7 +125,7 @@ rust_binary(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -154,11 +151,11 @@ rust_binary(
     version = "1.1.1",
     deps = [
         ":docopt",
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-            "@rules_rust_wasm_bindgen__regex-1.6.0//:regex",
-            "@rules_rust_wasm_bindgen__serde-1.0.145//:serde",
+            "@rules_rust_wasm_bindgen__regex-1.7.0//:regex",
+            "@rules_rust_wasm_bindgen__serde-1.0.148//:serde",
             "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
         ],
     }),

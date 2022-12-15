@@ -7,10 +7,6 @@
 ###############################################################################
 
 load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-load(
     "@rules_rust//cargo:defs.bzl",
     "cargo_build_script",
 )
@@ -37,17 +33,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -65,7 +62,7 @@ rust_library(
     }),
     edition = "2021",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -90,9 +87,9 @@ rust_library(
     ],
     version = "1.0.1",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
-            "@cui__serde-1.0.147//:serde",
+            "@cui__serde-1.0.148//:serde",
             "@cui__smartstring-1.0.1//:build_script_build",
             "@cui__static_assertions-1.1.0//:static_assertions",
         ],
@@ -109,7 +106,7 @@ cargo_build_script(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
@@ -126,13 +123,22 @@ cargo_build_script(
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
-    data = glob(["**"]) + select_with_or({
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD.bazel",
+            "BUILD",
+            "WORKSPACE.bazel",
+            "WORKSPACE",
+        ],
+    ) + select_with_or({
         "//conditions:default": [
         ],
     }),
     edition = "2021",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -162,7 +168,7 @@ cargo_build_script(
     version = "1.0.1",
     visibility = ["//visibility:private"],
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@cui__autocfg-1.1.0//:autocfg",
             "@cui__version_check-0.9.4//:version_check",
@@ -173,9 +179,9 @@ cargo_build_script(
 alias(
     # Because `cargo_build_script` does some invisible target name mutating to
     # determine the package and crate name for a build script, the Bazel
-    # target namename of any build script cannot be the Cargo canonical name
-    # of `build_script_build` without losing out on having certain Cargo
-    # environment variables set.
+    # target name of any build script cannot be the Cargo canonical name
+    # of `cargo_build_script` (rule) without losing out on having certain
+    # Cargo environment variables set.
     name = "build_script_build",
     actual = "smartstring_build_script",
     tags = [

@@ -1,6 +1,9 @@
 aarch64-apple-darwin
+aarch64-pc-windows-msvc
 aarch64-unknown-linux-gnu
 aarch64-unknown-linux-musl
+riscv32imc-unknown-none-elf
+riscv64gc-unknown-none-elf
 wasm32-unknown-unknown
 wasm32-wasi
 x86_64-apple-darwin

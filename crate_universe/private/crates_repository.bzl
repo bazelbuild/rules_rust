@@ -155,7 +155,7 @@ crates_repository(
 The above will create an external repository which contains aliases and macros for accessing
 Rust targets found in the dependency graph defined by the given manifests.
 
-**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+**NOTE**: The `cargo_lockfile` and `lockfile` must be manually created. The rule unfortunately does not yet create
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
@@ -264,22 +264,22 @@ that is called behind the scenes to update dependencies.
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'rustc.exe') will be replaced in " +
-                "the string if present."
+                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+                "'rustc.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
                 "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'cargo.exe') will be replaced in " +
-                "the string if present."
+                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+                "'cargo.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "rust_version": attr.string(
-            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly-2021-09-08`",
+            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
             default = rust_common.default_version,
         ),
         "splicing_config": attr.string(

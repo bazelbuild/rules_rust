@@ -15,6 +15,9 @@ use crate::aquery::CrateSpec;
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Debug, Serialize)]
 pub struct RustProject {
+    /// The path to a Rust sysroot.
+    sysroot: Option<String>,
+
     /// Path to the directory with *source code* of
     /// sysroot crates.
     sysroot_src: Option<String>,
@@ -89,10 +92,12 @@ pub struct Dependency {
 }
 
 pub fn generate_rust_project(
+    sysroot: &str,
     sysroot_src: &str,
     crates: &BTreeSet<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
     let mut project = RustProject {
+        sysroot: Some(sysroot.into()),
         sysroot_src: Some(sysroot_src.into()),
         crates: Vec::new(),
     };
@@ -225,6 +230,7 @@ mod tests {
     fn generate_rust_project_single() {
         let project = generate_rust_project(
             "sysroot",
+            "sysroot_src",
             &BTreeSet::from([CrateSpec {
                 crate_id: "ID-example".into(),
                 display_name: "example".into(),
@@ -254,6 +260,7 @@ mod tests {
     fn generate_rust_project_with_deps() {
         let project = generate_rust_project(
             "sysroot",
+            "sysroot_src",
             &BTreeSet::from([
                 CrateSpec {
                     crate_id: "ID-example".into(),

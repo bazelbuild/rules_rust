@@ -35,7 +35,7 @@ alias(
 
 alias(
     name = "libloading",
-    actual = "@rules_rust_bindgen__libloading-0.7.3//:libloading",
+    actual = "@rules_rust_bindgen__libloading-0.7.4//:libloading",
     tags = ["manual"],
 )
 
@@ -48,6 +48,6 @@ alias(
 
 alias(
     name = "clap__stdio-fixture",
-    actual = "@rules_rust_bindgen__clap-3.2.12//:stdio-fixture__bin",
+    actual = "@rules_rust_bindgen__clap-3.2.23//:stdio-fixture__bin",
     tags = ["manual"],
 )

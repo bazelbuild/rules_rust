@@ -6,11 +6,6 @@
 #     bazel run //vendor_remote_manifests:crates_vendor_manifests
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -72,7 +68,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -97,75 +93,16 @@ rust_library(
     ],
     version = "0.42.0",
     deps = [
-    ] + select_with_or({
-        # aarch64-pc-windows-gnullvm
-        #
-        # No supported platform triples for cfg: 'aarch64-pc-windows-gnullvm'
-        # Skipped dependencies: [{"id":"windows_aarch64_gnullvm 0.42.0","target":"windows_aarch64_gnullvm"}]
-        #
-        # aarch64-pc-windows-msvc
-        #
-        # No supported platform triples for cfg: 'aarch64-pc-windows-msvc'
-        # Skipped dependencies: [{"id":"windows_aarch64_msvc 0.42.0","target":"windows_aarch64_msvc"}]
-        #
-        # aarch64-uwp-windows-msvc
-        #
-        # No supported platform triples for cfg: 'aarch64-uwp-windows-msvc'
-        # Skipped dependencies: [{"id":"windows_aarch64_msvc 0.42.0","target":"windows_aarch64_msvc"}]
-        #
-        # i686-pc-windows-gnu
-        #
-        # No supported platform triples for cfg: 'i686-pc-windows-gnu'
-        # Skipped dependencies: [{"id":"windows_i686_gnu 0.42.0","target":"windows_i686_gnu"}]
-        #
-        # i686-pc-windows-msvc
-        (
-            "@rules_rust//rust/platform:i686-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@crates_vendor_manifests__windows_i686_msvc-0.42.0//:windows_i686_msvc",
-
-            # Common Deps
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@crates_vendor_manifests__windows_aarch64_msvc-0.42.0//:windows_aarch64_msvc",  # aarch64-pc-windows-msvc
         ],
-        # i686-uwp-windows-gnu
-        #
-        # No supported platform triples for cfg: 'i686-uwp-windows-gnu'
-        # Skipped dependencies: [{"id":"windows_i686_gnu 0.42.0","target":"windows_i686_gnu"}]
-        #
-        # i686-uwp-windows-msvc
-        #
-        # No supported platform triples for cfg: 'i686-uwp-windows-msvc'
-        # Skipped dependencies: [{"id":"windows_i686_msvc 0.42.0","target":"windows_i686_msvc"}]
-        #
-        # x86_64-pc-windows-gnu
-        #
-        # No supported platform triples for cfg: 'x86_64-pc-windows-gnu'
-        # Skipped dependencies: [{"id":"windows_x86_64_gnu 0.42.0","target":"windows_x86_64_gnu"}]
-        #
-        # x86_64-pc-windows-gnullvm
-        #
-        # No supported platform triples for cfg: 'x86_64-pc-windows-gnullvm'
-        # Skipped dependencies: [{"id":"windows_x86_64_gnullvm 0.42.0","target":"windows_x86_64_gnullvm"}]
-        #
-        # x86_64-pc-windows-msvc
-        (
-            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            # Target Deps
-            "@crates_vendor_manifests__windows_x86_64_msvc-0.42.0//:windows_x86_64_msvc",
-
-            # Common Deps
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@crates_vendor_manifests__windows_i686_msvc-0.42.0//:windows_i686_msvc",  # i686-pc-windows-msvc
         ],
-        # x86_64-uwp-windows-gnu
-        #
-        # No supported platform triples for cfg: 'x86_64-uwp-windows-gnu'
-        # Skipped dependencies: [{"id":"windows_x86_64_gnu 0.42.0","target":"windows_x86_64_gnu"}]
-        #
-        # x86_64-uwp-windows-msvc
-        #
-        # No supported platform triples for cfg: 'x86_64-uwp-windows-msvc'
-        # Skipped dependencies: [{"id":"windows_x86_64_msvc 0.42.0","target":"windows_x86_64_msvc"}]
-        #
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@crates_vendor_manifests__windows_x86_64_msvc-0.42.0//:windows_x86_64_msvc",  # x86_64-pc-windows-msvc
+        ],
         "//conditions:default": [
         ],
     }),

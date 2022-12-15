@@ -178,26 +178,22 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
     _detect_changes(repository_ctx)
 
     if repository_ctx.attr.version in ("beta", "nightly"):
-        version_str = "{}-{}".format(repository_ctx.attr.version, repository_ctx.attr.iso_date)
+        channel = repository_ctx.attr.version
+        version = repository_ctx.attr.iso_date
     else:
-        version_str = repository_ctx.attr.version
+        channel = "stable"
+        version = repository_ctx.attr.version
 
     host_triple = get_host_triple(repository_ctx)
-
-    if repository_ctx.attr.rust_toolchain_repository_template:
-        # buildifier: disable=print
-        print("Warning: `rust_toolchain_repository_template` is deprecated. Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`")
-        cargo_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
-        rustc_template = "@{}{}".format(repository_ctx.attr.rust_toolchain_repository_template, "//:bin/{tool}")
-    else:
-        cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
-        rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
+    cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
+    rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
 
     tools = get_rust_tools(
         cargo_template = cargo_template,
         rustc_template = rustc_template,
         host_triple = host_triple,
-        version = version_str,
+        channel = channel,
+        version = version,
     )
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
@@ -271,20 +267,19 @@ cargo_bootstrap_repository = repository_rule(
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
+                "`{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be " +
+                "replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
-        ),
-        "rust_toolchain_repository_template": attr.string(
-            doc = "**Deprecated**: Please use `rust_toolchain_cargo_template` and `rust_toolchain_rustc_template`",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
                 "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present."
+                "`{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be " +
+                "replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "srcs": attr.label_list(
             doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",

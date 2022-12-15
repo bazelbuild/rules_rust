@@ -29,25 +29,25 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@rules_rust_rust_analyzer__anyhow-1.0.58//:anyhow",
+    actual = "@rules_rust_rust_analyzer__anyhow-1.0.66//:anyhow",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
-    actual = "@rules_rust_rust_analyzer__clap-3.2.12//:clap",
+    actual = "@rules_rust_rust_analyzer__clap-3.2.23//:clap",
     tags = ["manual"],
 )
 
 alias(
     name = "env_logger",
-    actual = "@rules_rust_rust_analyzer__env_logger-0.9.0//:env_logger",
+    actual = "@rules_rust_rust_analyzer__env_logger-0.9.3//:env_logger",
     tags = ["manual"],
 )
 
 alias(
     name = "itertools",
-    actual = "@rules_rust_rust_analyzer__itertools-0.10.3//:itertools",
+    actual = "@rules_rust_rust_analyzer__itertools-0.10.5//:itertools",
     tags = ["manual"],
 )
 
@@ -59,19 +59,19 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@rules_rust_rust_analyzer__serde-1.0.139//:serde",
+    actual = "@rules_rust_rust_analyzer__serde-1.0.148//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@rules_rust_rust_analyzer__serde_json-1.0.82//:serde_json",
+    actual = "@rules_rust_rust_analyzer__serde_json-1.0.89//:serde_json",
     tags = ["manual"],
 )
 
 # Binaries
 alias(
     name = "clap__stdio-fixture",
-    actual = "@rules_rust_rust_analyzer__clap-3.2.12//:stdio-fixture__bin",
+    actual = "@rules_rust_rust_analyzer__clap-3.2.23//:stdio-fixture__bin",
     tags = ["manual"],
 )

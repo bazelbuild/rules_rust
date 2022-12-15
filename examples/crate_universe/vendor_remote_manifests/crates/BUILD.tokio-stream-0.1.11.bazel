@@ -6,11 +6,6 @@
 #     bazel run //vendor_remote_manifests:crates_vendor_manifests
 ###############################################################################
 
-load(
-    "@bazel_skylib//lib:selects.bzl",
-    "selects",
-)
-
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:selects.bzl", "select_with_or")
 load(
@@ -33,17 +28,18 @@ rust_library(
         exclude = [
         ],
     ),
-    aliases = selects.with_or({
+    aliases = select({
         "//conditions:default": {
         },
     }),
     compile_data = glob(
         include = ["**"],
         exclude = [
-            "BUILD",
+            "**/* *",
             "BUILD.bazel",
-            "WORKSPACE",
+            "BUILD",
             "WORKSPACE.bazel",
+            "WORKSPACE",
         ],
     ) + select_with_or({
         "//conditions:default": [
@@ -60,7 +56,7 @@ rust_library(
     }),
     edition = "2018",
     proc_macro_deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
         ],
     }),
@@ -85,11 +81,11 @@ rust_library(
     ],
     version = "0.1.11",
     deps = [
-    ] + select_with_or({
+    ] + select({
         "//conditions:default": [
             "@crates_vendor_manifests__futures-core-0.3.25//:futures_core",
             "@crates_vendor_manifests__pin-project-lite-0.2.9//:pin_project_lite",
-            "@crates_vendor_manifests__tokio-1.21.2//:tokio",
+            "@crates_vendor_manifests__tokio-1.22.0//:tokio",
         ],
     }),
 )
