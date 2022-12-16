@@ -304,8 +304,8 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
-            File::create(&build_file).unwrap();
+            File::create(workspace).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let label = Label::from_absolute_path(&actual_file).unwrap();
@@ -322,7 +322,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&build_file).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)
@@ -340,7 +340,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
+            File::create(workspace).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)

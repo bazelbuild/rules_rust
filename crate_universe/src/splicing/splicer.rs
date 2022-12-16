@@ -396,7 +396,7 @@ impl<'a> SplicerKind<'a> {
                 fs::create_dir_all(&dot_cargo_dir)?;
             }
 
-            fs::copy(cargo_config_path, &dot_cargo_dir.join("config.toml"))?;
+            fs::copy(cargo_config_path, dot_cargo_dir.join("config.toml"))?;
         }
 
         Ok(())
@@ -488,8 +488,8 @@ impl Splicer {
         // Load all manifests
         let manifests = splicing_manifest
             .manifests
-            .iter()
-            .map(|(path, _)| {
+            .keys()
+            .map(|path| {
                 let m = read_manifest(path)
                     .with_context(|| format!("Failed to read manifest at {}", path.display()))?;
                 Ok((path.clone(), m))
@@ -615,7 +615,7 @@ pub fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -> Resul
     }
 
     // TODO(https://gitlab.com/crates.rs/cargo_toml/-/issues/3)
-    let value = toml::Value::try_from(&manifest)?;
+    let value = toml::Value::try_from(manifest)?;
     fs::write(path, toml::to_string(&value)?)
         .context(format!("Failed to write manifest to {}", path.display()))
 }
@@ -1165,7 +1165,7 @@ mod test {
         fs::create_dir_all(external_manifest.parent().unwrap()).unwrap();
         fs::write(
             &external_manifest,
-            &textwrap::dedent(
+            textwrap::dedent(
                 r#"
                 [package]
                 name = "external_workspace_member"
@@ -1211,8 +1211,8 @@ mod test {
 
         // Modify the root manifest to remove the rendered package
         fs::write(
-            &cache_dir.as_ref().join("Cargo.toml"),
-            &textwrap::dedent(
+            cache_dir.as_ref().join("Cargo.toml"),
+            textwrap::dedent(
                 r#"
                 [workspace]
                 members = [

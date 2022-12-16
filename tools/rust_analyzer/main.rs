@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
         &config.targets,
         execution_root,
         output_base,
-        &workspace_root.join("rust-project.json"),
+        workspace_root.join("rust-project.json"),
     )?;
 
     Ok(())

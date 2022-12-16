@@ -11,7 +11,7 @@ mod test {
     fn fake_rustc(process_wrapper_args: &[&'static str]) -> String {
         let r = Runfiles::create().unwrap();
         let fake_rustc = r.rlocation(
-            &[
+            [
                 "rules_rust",
                 "test",
                 "process_wrapper",
@@ -26,7 +26,7 @@ mod test {
         );
 
         let process_wrapper = r.rlocation(
-            &[
+            [
                 "rules_rust",
                 "util",
                 "process_wrapper",

@@ -136,7 +136,7 @@ pub fn generate_rust_project(
                             let crate_index = *merged_crates_index
                                 .get(dep)
                                 .expect("failed to find dependency on second lookup");
-                            let dep_crate = &project.crates[crate_index as usize];
+                            let dep_crate = &project.crates[crate_index];
                             Dependency {
                                 crate_index,
                                 name: dep_crate
