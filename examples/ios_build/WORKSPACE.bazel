@@ -29,6 +29,7 @@ crates_repository(
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    isolated = False,
     lockfile = "//:cargo-bazel-lock.json",
     manifests = ["//:Cargo.toml"],
     splicing_config = splicing_config(

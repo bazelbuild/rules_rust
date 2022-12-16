@@ -239,8 +239,8 @@ impl TemplateEngine {
         context.insert("context", ctx);
 
         ctx.crates
-            .iter()
-            .map(|(id, _)| {
+            .keys()
+            .map(|id| {
                 let aliases = ctx.crate_aliases(id, false, false);
                 let build_aliases = ctx.crate_aliases(id, true, false);
 

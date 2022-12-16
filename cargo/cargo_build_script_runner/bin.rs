@@ -32,7 +32,7 @@ fn run_buildrs() -> Result<(), String> {
     let exec_root = env::current_dir().expect("Failed to get current directory");
     let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
     let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
-    let manifest_dir = exec_root.join(&manifest_dir_env);
+    let manifest_dir = exec_root.join(manifest_dir_env);
     let rustc = exec_root.join(&rustc_env);
     let Options {
         progname,
@@ -48,7 +48,7 @@ fn run_buildrs() -> Result<(), String> {
         input_dep_env_paths,
     } = parse_args()?;
 
-    let out_dir_abs = exec_root.join(&out_dir);
+    let out_dir_abs = exec_root.join(out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
@@ -56,7 +56,7 @@ fn run_buildrs() -> Result<(), String> {
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
-    let mut command = Command::new(exec_root.join(&progname));
+    let mut command = Command::new(exec_root.join(progname));
     command
         .current_dir(&manifest_dir)
         .envs(target_env_vars)
