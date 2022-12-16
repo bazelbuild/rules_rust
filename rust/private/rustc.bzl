@@ -1172,7 +1172,7 @@ def rustc_compile_action(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
-    if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+    if crate_info.type in ("cdylib", "bin"):
         if toolchain.os == "windows":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
