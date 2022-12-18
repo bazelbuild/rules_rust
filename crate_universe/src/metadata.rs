@@ -3,15 +3,20 @@
 mod dependency;
 mod metadata_annotation;
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
+use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
+
+use crate::config::CrateId;
+use crate::utils::starlark::SelectList;
 
 pub use self::dependency::*;
 pub use self::metadata_annotation::*;
@@ -319,6 +324,153 @@ impl VendorGenerator {
     }
 }
 
+/// A generate which computes per-platform feature sets.
+pub struct FeatureGenerator {
+    /// The path to a `cargo` binary
+    cargo_bin: PathBuf,
+
+    /// The path to a `rustc` binary
+    rustc_bin: PathBuf,
+}
+
+impl FeatureGenerator {
+    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+        Self {
+            cargo_bin,
+            rustc_bin,
+        }
+    }
+
+    /// Computes the set of enabled features for each target triplet for each crate.
+    pub fn generate(
+        &self,
+        manifest_path: &Path,
+        platform_triples: &BTreeSet<String>,
+    ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
+        let manifest_dir = manifest_path.parent().unwrap();
+        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
+        for target in platform_triples {
+            // We use `cargo tree` here because `cargo metadata` doesn't report
+            // back target-specific features (enabled with `resolver = "2"`).
+            // This is unfortunately a bit of a hack. See:
+            // - https://github.com/rust-lang/cargo/issues/9863
+            // - https://github.com/bazelbuild/rules_rust/issues/1662
+            let output = Command::new(&self.cargo_bin)
+                .current_dir(manifest_dir)
+                .arg("tree")
+                .arg("--locked")
+                .arg("--manifest-path")
+                .arg(manifest_path)
+                .arg("--prefix=none")
+                // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
+                .arg("--format=|{p}|{f}|")
+                .arg("--color=never")
+                .arg("--target")
+                .arg(target)
+                .env("RUSTC", &self.rustc_bin)
+                .output()
+                .context(format!(
+                    "Error running cargo to compute features for target '{}', manifest path '{}'",
+                    target,
+                    manifest_path.display()
+                ))?;
+            if !output.status.success() {
+                eprintln!("{}", String::from_utf8_lossy(&output.stdout));
+                eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                bail!(format!("Failed to run cargo tree: {}", output.status))
+            }
+            for (crate_id, features) in
+                parse_features_from_cargo_tree_output(output.stdout.lines())?
+            {
+                crate_features
+                    .entry(crate_id)
+                    .or_default()
+                    .insert(target.to_owned(), features);
+            }
+        }
+        let mut result = BTreeMap::<CrateId, SelectList<String>>::new();
+        for (crate_id, features) in crate_features.into_iter() {
+            let common = features
+                .iter()
+                .fold(
+                    None,
+                    |common: Option<BTreeSet<String>>, (_, features)| match common {
+                        Some(common) => Some(common.intersection(features).cloned().collect()),
+                        None => Some(features.clone()),
+                    },
+                )
+                .unwrap_or_default();
+            let mut select_list = SelectList::default();
+            for (target, fs) in features {
+                if fs != common {
+                    for f in fs {
+                        select_list.insert(f, Some(target.clone()));
+                    }
+                }
+            }
+            for f in common {
+                select_list.insert(f, None);
+            }
+            result.insert(crate_id, select_list);
+        }
+        Ok(result)
+    }
+}
+
+/// Parses the output of `cargo tree --format=|{p}|{f}|`. Other flags may be
+/// passed to `cargo tree` as well, but this format is critical.
+fn parse_features_from_cargo_tree_output<I, S, E>(
+    lines: I,
+) -> Result<BTreeMap<CrateId, BTreeSet<String>>>
+where
+    I: Iterator<Item = std::result::Result<S, E>>,
+    S: AsRef<str>,
+    E: std::error::Error + Sync + Send + 'static,
+{
+    let mut crate_features = BTreeMap::<CrateId, BTreeSet<String>>::new();
+    for line in lines {
+        let line = line?;
+        let line = line.as_ref();
+        if line.is_empty() {
+            continue;
+        }
+        let parts = line.split('|').collect::<Vec<_>>();
+        if parts.len() != 4 {
+            bail!("Unexpected line '{}'", line);
+        }
+        // We expect the crate id (parts[1]) to be either
+        // "<crate name> v<crate version>" or
+        // "<crate name> v<crate version> (<path>)"
+        // https://github.com/rust-lang/cargo/blob/7fb01c68c190c28a43581ae7c719dcf057ecc002/src/cargo/core/package_id.rs#L210-L220
+        let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
+        if crate_id_parts.len() != 2 && crate_id_parts.len() != 3 {
+            bail!(
+                "Unexpected crate id format '{}' when parsing 'cargo tree' output.",
+                parts[1]
+            );
+        }
+        let crate_id = CrateId::new(
+            crate_id_parts[0].to_owned(),
+            crate_id_parts[1]
+                .strip_prefix('v')
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Unexpected crate version '{}' when parsing 'cargo tree' output.",
+                        crate_id_parts[1]
+                    )
+                })?
+                .to_owned(),
+        );
+        let features = if parts[2].is_empty() {
+            BTreeSet::new()
+        } else {
+            parts[2].split(',').map(str::to_owned).collect()
+        };
+        crate_features.insert(crate_id, features);
+    }
+    Ok(crate_features)
+}
+
 /// A helper function for writing Cargo metadata to a file.
 pub fn write_metadata(path: &Path, metadata: &cargo_metadata::Metadata) -> Result<()> {
     let content =
@@ -400,6 +552,45 @@ mod test {
                 name: "cargo-bazel".to_owned(),
                 version: Some("1.2.3".to_owned())
             }
+        );
+    }
+
+    #[test]
+    fn parse_features_from_cargo_tree_output_prefix_none() {
+        assert_eq!(
+            parse_features_from_cargo_tree_output(
+                vec![
+                    Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
+                    Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
+                    Ok("|cpufeatures v0.2.1||"),
+                    Ok("|libc v0.2.117|default,std|"),
+                ]
+                .into_iter()
+            )
+            .unwrap(),
+            BTreeMap::from([
+                (
+                    CrateId {
+                        name: "multi_cfg_dep".to_owned(),
+                        version: "0.1.0".to_owned()
+                    },
+                    BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "cpufeatures".to_owned(),
+                        version: "0.2.1".to_owned()
+                    },
+                    BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "libc".to_owned(),
+                        version: "0.2.117".to_owned()
+                    },
+                    BTreeSet::from(["default".to_owned(), "std".to_owned()])
+                ),
+            ])
         );
     }
 }
