@@ -51,9 +51,8 @@ impl Context {
         let crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
             .crates
-            .iter()
-            // Convert the crate annotations into more renderable contexts
-            .map(|(_, annotation)| {
+            .values()
+            .map(|annotation| {
                 let context = CrateContext::new(
                     annotation,
                     &annotations.metadata.packages,
@@ -281,8 +280,8 @@ impl Context {
     pub fn flat_workspace_member_deps(&self) -> BTreeMap<CrateId, Option<String>> {
         let workspace_member_dependencies: BTreeSet<CrateDependency> = self
             .workspace_members
-            .iter()
-            .map(|(id, _)| &self.crates[id])
+            .keys()
+            .map(|id| &self.crates[id])
             .flat_map(|ctx| {
                 // Build an interator of all dependency CrateIds.
                 // TODO: This expansion is horribly verbose and should be refactored but closures

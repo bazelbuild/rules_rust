@@ -20,7 +20,7 @@ impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
+        let re = Regex::new(r"^(@@?[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
         let cap = re
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {}", s))?;
@@ -193,6 +193,15 @@ mod test {
     use tempfile::tempdir;
 
     #[test]
+    fn full_label_bzlmod() {
+        let label = Label::from_str("@@repo//package/sub_package:target").unwrap();
+        assert_eq!(label.to_string(), "@repo//package/sub_package:target");
+        assert_eq!(label.repository.unwrap(), "repo");
+        assert_eq!(label.package.unwrap(), "package/sub_package");
+        assert_eq!(label.target, "target");
+    }
+
+    #[test]
     fn full_label() {
         let label = Label::from_str("@repo//package/sub_package:target").unwrap();
         assert_eq!(label.to_string(), "@repo//package/sub_package:target");
@@ -276,8 +285,8 @@ mod test {
     }
 
     #[test]
-    fn invalid_double_at() {
-        assert!(Label::from_str("@@repo//pkg:target").is_err());
+    fn invalid_triple_at() {
+        assert!(Label::from_str("@@@repo//pkg:target").is_err());
     }
 
     #[test]
@@ -295,8 +304,8 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
-            File::create(&build_file).unwrap();
+            File::create(workspace).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let label = Label::from_absolute_path(&actual_file).unwrap();
@@ -313,7 +322,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&build_file).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)
@@ -331,7 +340,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
+            File::create(workspace).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)
