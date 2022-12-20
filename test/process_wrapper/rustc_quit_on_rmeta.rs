@@ -68,8 +68,7 @@ mod test {
         ]);
         assert!(
             !out_content.contains("should not be in output"),
-            "output should not contain 'should not be in output' but did: {}",
-            out_content
+            "output should not contain 'should not be in output' but did",
         );
     }
 
