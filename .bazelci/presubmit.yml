@@ -4,6 +4,12 @@ aspects_flags: &aspects_flags
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
   - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.59.0"],\n|' WORKSPACE.bazel
+nightly_flags: &nightly_flags
+  - "--//rust/toolchain/channel=nightly"
+nightly_aspects_flags: &nightly_aspects_flags
+  - "--//rust/toolchain/channel=nightly"
+  - "--config=rustfmt"
+  - "--config=clippy"
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -219,9 +225,48 @@ tasks:
     name: "Min Rust Version With Aspects"
     platform: ubuntu2004
     shell_commands: *min_rust_version_shell_commands
+    build_flags: *aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_stable_toolchain:
+    name: "Only Stable Toolchain"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
     build_targets: *single_rust_channel_targets
     test_targets: *single_rust_channel_targets
+  ubuntu2004_stable_with_aspects:
+    name: "Only Stable Toolchain With Aspects"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
     build_flags: *aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_nightly_toolchain:
+    name: "Only Nightly Toolchain"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+    build_flags: *nightly_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_nightly_with_aspects:
+    name: "Only Nightly Toolchain With Aspects"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+    build_flags: *nightly_aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_aspects_flags
+    test_targets: *single_rust_channel_targets
   ubuntu2004_rolling_with_aspects:
     name: "Rolling Bazel Version With Aspects"
     bazel: "rolling"
