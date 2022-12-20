@@ -1,7 +1,6 @@
 """A module defining rustfmt rules"""
 
 load(":common.bzl", "rust_common")
-load(":utils.bzl", "find_toolchain")
 
 def _find_rustfmtable_srcs(target, aspect_ctx = None):
     """Parse a target for rustfmt formattable sources.
@@ -55,7 +54,8 @@ def _generate_manifest(edition, srcs, ctx):
     return manifest
 
 def _perform_check(edition, srcs, ctx):
-    toolchain = find_toolchain(ctx)
+    rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
+
     config = ctx.file._config
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
@@ -63,7 +63,7 @@ def _perform_check(edition, srcs, ctx):
     args.add("--touch-file")
     args.add(marker)
     args.add("--")
-    args.add(toolchain.rustfmt)
+    args.add(rustfmt_toolchain.rustfmt)
     args.add("--config-path")
     args.add(config)
     args.add("--edition")
@@ -75,7 +75,7 @@ def _perform_check(edition, srcs, ctx):
         executable = ctx.executable._process_wrapper,
         inputs = srcs + [config],
         outputs = [marker],
-        tools = [toolchain.rustfmt],
+        tools = [rustfmt_toolchain.rustfmt],
         arguments = [args],
         mnemonic = "Rustfmt",
     )
@@ -138,7 +138,7 @@ generated source files are also ignored by this aspect.
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain_type")),
+        str(Label("//rust/rustfmt:toolchain_type")),
     ],
 )
 
@@ -203,4 +203,57 @@ rustfmt_test = rule(
         ),
     },
     test = True,
+)
+
+def _rustfmt_toolchain_impl(ctx):
+    make_variable_info = platform_common.TemplateVariableInfo({
+        "RUSTFMT": ctx.file.rustfmt.path,
+    })
+
+    toolchain = platform_common.ToolchainInfo(
+        rustfmt = ctx.file.rustfmt,
+        make_variables = make_variable_info,
+    )
+
+    return [
+        toolchain,
+        make_variable_info,
+    ]
+
+rustfmt_toolchain = rule(
+    doc = "A toolchain for [rustfmt](https://rust-lang.github.io/rustfmt/)",
+    implementation = _rustfmt_toolchain_impl,
+    incompatible_use_toolchain_transition = True,
+    attrs = {
+        "rustfmt": attr.label(
+            doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+    },
+    toolchains = [
+        str(Label("@rules_rust//rust:toolchain_type")),
+    ],
+)
+
+def _current_rustfmt_toolchain_impl(ctx):
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust/rustfmt:toolchain_type"))]
+
+    return [
+        toolchain,
+        toolchain.make_variables,
+        DefaultInfo(
+            files = depset([
+                toolchain.rustfmt,
+            ]),
+        ),
+    ]
+
+current_rustfmt_toolchain = rule(
+    doc = "A rule for exposing the current registered `rustfmt_toolchain`.",
+    implementation = _current_rustfmt_toolchain_impl,
+    toolchains = [
+        str(Label("@rules_rust//rust/rustfmt:toolchain_type")),
+    ],
+    incompatible_use_toolchain_transition = True,
 )

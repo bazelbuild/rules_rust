@@ -1,3 +1,4 @@
+load("//rust/private:rustfmt.bzl", "current_rustfmt_toolchain")
 load("//rust/private:toolchain_utils.bzl", "current_rust_toolchain", "toolchain_files")
 
 package(default_visibility = ["//visibility:public"])
@@ -23,11 +24,6 @@ toolchain_files(
 )
 
 toolchain_files(
-    name = "current_rustfmt_files",
-    tool = "rustfmt",
-)
-
-toolchain_files(
     name = "current_rustc_lib_files",
     tool = "rustc_lib",
 )
@@ -39,4 +35,14 @@ toolchain_files(
 
 current_rust_toolchain(
     name = "current_rust_toolchain",
+)
+
+current_rustfmt_toolchain(
+    name = "current_rustfmt_toolchain",
+)
+
+alias(
+    name = "current_rustfmt_files",
+    actual = "current_rustfmt_toolchain",
+    deprecation = "Instead use `@rules_rust//rust/toolchain:current_rustfmt_toolchain",
 )
