@@ -1,3 +1,6 @@
+// TODO: Remove this exception after https://github.com/rust-lang/rust-clippy/pull/10055 is released
+#![allow(clippy::uninlined_format_args)]
+
 #[cfg(test)]
 mod test {
     use std::path::PathBuf;
@@ -8,6 +11,7 @@ mod test {
 
     /// fake_rustc runs the fake_rustc binary under process_wrapper with the specified
     /// process wrapper arguments. No arguments are passed to fake_rustc itself.
+    ///
     fn fake_rustc(process_wrapper_args: &[&'static str]) -> String {
         let r = Runfiles::create().unwrap();
         let fake_rustc = r.rlocation(

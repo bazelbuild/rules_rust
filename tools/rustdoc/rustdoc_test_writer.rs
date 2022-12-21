@@ -177,7 +177,7 @@ fn write_test_runner_unix(
         "exec env - \\".to_owned(),
     ];
 
-    content.extend(env.iter().map(|(key, val)| format!("{}='{}' \\", key, val)));
+    content.extend(env.iter().map(|(key, val)| format!("{key}='{val}' \\")));
 
     let argv_str = argv
         .iter()
@@ -189,7 +189,7 @@ fn write_test_runner_unix(
                 .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
             stripped_arg
         })
-        .map(|arg| format!("'{}'", arg))
+        .map(|arg| format!("'{arg}'"))
         .collect::<Vec<String>>()
         .join(" ");
 
@@ -207,7 +207,7 @@ fn write_test_runner_windows(
 ) {
     let env_str = env
         .iter()
-        .map(|(key, val)| format!("$env:{}='{}'", key, val))
+        .map(|(key, val)| format!("$env:{key}='{val}'"))
         .collect::<Vec<String>>()
         .join(" ; ");
 
@@ -221,14 +221,14 @@ fn write_test_runner_windows(
                 .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
             stripped_arg
         })
-        .map(|arg| format!("'{}'", arg))
+        .map(|arg| format!("'{arg}'"))
         .collect::<Vec<String>>()
         .join(" ");
 
     let content = vec![
         "@ECHO OFF".to_owned(),
         "".to_owned(),
-        format!("powershell.exe -c \"{} ; & {}\"", env_str, argv_str),
+        format!("powershell.exe -c \"{env_str} ; & {argv_str}\""),
         "".to_owned(),
     ];
 

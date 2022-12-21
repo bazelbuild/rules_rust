@@ -78,7 +78,7 @@ fn locate_artifacts(artifacts_dir: &Path, url_prefix: &str) -> Vec<Artifact> {
                         .map(|ext| format!(".{}", ext.to_string_lossy()))
                         .unwrap_or_default();
                     Artifact {
-                        url: format!("{}/{}-{}{}", url_prefix, stem, triple, extension),
+                        url: format!("{url_prefix}/{stem}-{triple}{extension}"),
                         triple: triple.to_string(),
                         sha256: calculate_sha256(&f_entry.path()),
                     }

@@ -40,7 +40,7 @@ pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<(
     let content = serde_json::to_string_pretty(&lockfile)?;
 
     if dry_run {
-        println!("{:#?}", content);
+        println!("{content:#?}");
     } else {
         // Ensure the parent directory exists
         if let Some(parent) = path.parent() {

@@ -50,7 +50,7 @@ fn main() {
         Err(e) => {
             println!("Usage: [optional_output1...optional_outputN] -- program [arg1...argn]");
             println!("{:?}", args());
-            println!("{:?}", e);
+            println!("{e:?}");
             -1
         }
     });

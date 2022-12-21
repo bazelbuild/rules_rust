@@ -310,11 +310,11 @@ impl WorkspaceMetadata {
 
                     // Load the index for the current url
                     let index = crates_index::Index::from_url(index_url)
-                        .with_context(|| format!("Failed to load index for url: {}", index_url))?;
+                        .with_context(|| format!("Failed to load index for url: {index_url}"))?;
 
                     // Ensure each index has a valid index config
                     index.index_config().with_context(|| {
-                        format!("`config.json` not found in index: {}", index_url)
+                        format!("`config.json` not found in index: {index_url}")
                     })?;
 
                     index

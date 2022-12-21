@@ -127,7 +127,7 @@ fn run_buildrs() -> Result<(), String> {
         format!(
             "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
             if let Some(exit_code) = process_output.status.code() {
-                format!(" with exit code {}", exit_code)
+                format!(" with exit code {exit_code}")
             } else {
                 String::new()
             },
@@ -236,15 +236,14 @@ fn get_target_env_vars<P: AsRef<Path>>(rustc: &P) -> Result<BTreeMap<String, Str
             env::var("TARGET").expect("missing TARGET")
         ))
         .output()
-        .map_err(|err| format!("Error running rustc to get target information: {}", err))?;
+        .map_err(|err| format!("Error running rustc to get target information: {err}"))?;
     if !output.status.success() {
         return Err(format!(
-            "Error running rustc to get target information: {:?}",
-            output
+            "Error running rustc to get target information: {output:?}",
         ));
     }
     let stdout = std::str::from_utf8(&output.stdout)
-        .map_err(|err| format!("Non-UTF8 stdout from rustc: {:?}", err))?;
+        .map_err(|err| format!("Non-UTF8 stdout from rustc: {err:?}"))?;
 
     Ok(parse_rustc_cfg_output(stdout))
 }
@@ -280,7 +279,7 @@ fn main() {
         Ok(_) => 0,
         Err(err) => {
             // Neatly print errors
-            eprintln!("{}", err);
+            eprintln!("{err}");
             1
         }
     });

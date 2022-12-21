@@ -118,7 +118,7 @@ impl<'a> SplicerKind<'a> {
                     .keys()
                     .map(|p| {
                         p.normalize()
-                            .with_context(|| format!("Failed to normalize path {:?}", p))
+                            .with_context(|| format!("Failed to normalize path {p:?}"))
                     })
                     .collect::<Result<_, _>>()?,
             )
@@ -165,7 +165,7 @@ impl<'a> SplicerKind<'a> {
             .map(|member| {
                 let path = root_manifest_dir.join(member).join("Cargo.toml");
                 path.normalize()
-                    .with_context(|| format!("Failed to normalize path {:?}", path))
+                    .with_context(|| format!("Failed to normalize path {path:?}"))
             })
             .collect::<Result<BTreeSet<normpath::BasePathBuf>, _>>()?;
 
@@ -178,10 +178,7 @@ impl<'a> SplicerKind<'a> {
             .map(|workspace_manifest_path| {
                 let label = Label::from_absolute_path(workspace_manifest_path.as_path())
                     .with_context(|| {
-                        format!(
-                            "Failed to identify label for path {:?}",
-                            workspace_manifest_path
-                        )
+                        format!("Failed to identify label for path {workspace_manifest_path:?}")
                     })?;
                 Ok(label.to_string())
             })
@@ -548,9 +545,8 @@ pub fn default_cargo_workspace_manifest(
     let mut manifest = cargo_toml::Manifest::from_str(&textwrap::dedent(&format!(
         r#"
             [workspace]
-            resolver = "{}"
+            resolver = "{resolver_version}"
         "#,
-        resolver_version,
     )))
     .unwrap();
 
@@ -867,7 +863,7 @@ mod test {
 
             splicing_manifest.manifests.insert(
                 manifest_path,
-                Label::from_str(&format!("//{}:Cargo.toml", pkg)).unwrap(),
+                Label::from_str(&format!("//{pkg}:Cargo.toml")).unwrap(),
             );
         }
 
@@ -925,7 +921,7 @@ mod test {
 
             splicing_manifest.manifests.insert(
                 manifest_path,
-                Label::from_str(&format!("//{}:Cargo.toml", pkg)).unwrap(),
+                Label::from_str(&format!("//{pkg}:Cargo.toml")).unwrap(),
             );
         }
 
@@ -1008,11 +1004,11 @@ mod test {
 
         if is_root {
             PackageId {
-                repr: format!("{} 0.0.1 (path+file://{})", name, workspace_root),
+                repr: format!("{name} 0.0.1 (path+file://{workspace_root})"),
             }
         } else {
             PackageId {
-                repr: format!("{} 0.0.1 (path+file://{}/{})", name, workspace_root, name,),
+                repr: format!("{name} 0.0.1 (path+file://{workspace_root}/{name})"),
             }
         }
     }

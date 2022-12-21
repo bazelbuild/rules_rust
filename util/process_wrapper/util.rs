@@ -72,7 +72,7 @@ fn stamp_status_to_array(reader: impl Read) -> Result<Vec<(String, String)>, Str
         .map(|l| {
             let (s1, s2) = l
                 .split_once(' ')
-                .ok_or_else(|| format!("wrong workspace status file format for \"{}\"", l))?;
+                .ok_or_else(|| format!("wrong workspace status file format for \"{l}\""))?;
             Ok((s1.to_owned(), s2.to_owned()))
         })
         .collect()

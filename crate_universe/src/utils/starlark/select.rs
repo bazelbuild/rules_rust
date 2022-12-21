@@ -55,7 +55,7 @@ impl<T: Ord> SelectList<T> {
     }
 
     // TODO: This should probably be added to the [Select] trait
-    pub fn get_iter<'a>(&'a self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
+    pub fn get_iter(&self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
         match config {
             Some(conf) => self.selects.get(conf).map(|set| set.iter()),
             None => Some(self.common.iter()),

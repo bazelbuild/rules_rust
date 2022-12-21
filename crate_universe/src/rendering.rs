@@ -134,7 +134,7 @@ pub fn write_outputs(
             println!(
                 "==============================================================================="
             );
-            println!("{}\n", content);
+            println!("{content}\n");
         }
     } else {
         for (path, content) in outputs {
@@ -513,7 +513,7 @@ mod test {
         assert!(build_file_content.replace(' ', "").contains(
             &rustc_flags
                 .iter()
-                .map(|s| format!("\"{}\",", s))
+                .map(|s| format!("\"{s}\","))
                 .collect::<Vec<String>>()
                 .join("\n")
         ));

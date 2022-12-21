@@ -62,8 +62,7 @@ pub fn write_rust_project(
         s => s,
     };
     let toolchain_info_path = format!(
-        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json",
-        workspace_name
+        "{workspace_name}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
     );
     let r = Runfiles::create()?;
     let path = r.rlocation(toolchain_info_path);

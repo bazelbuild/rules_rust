@@ -286,7 +286,7 @@ impl Add for CrateAnnotations {
         };
 
         let concat_string = |lhs: &mut String, rhs: String| {
-            *lhs = format!("{}{}", lhs, rhs);
+            *lhs = format!("{lhs}{rhs}");
         };
 
         #[rustfmt::skip]
@@ -405,8 +405,7 @@ impl<'de> Visitor<'de> for CrateIdVisitor {
             })
             .ok_or_else(|| {
                 E::custom(format!(
-                    "Expected string value of `{{name}} {{version}}`. Got '{}'",
-                    v
+                    "Expected string value of `{{name}} {{version}}`. Got '{v}'"
                 ))
             })
     }

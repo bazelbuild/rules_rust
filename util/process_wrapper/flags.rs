@@ -30,10 +30,10 @@ pub(crate) enum FlagParseError {
 impl fmt::Display for FlagParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::UnknownFlag(ref flag) => write!(f, "unknown flag \"{}\"", flag),
-            Self::ValueMissing(ref flag) => write!(f, "flag \"{}\" missing parameter(s)", flag),
+            Self::UnknownFlag(ref flag) => write!(f, "unknown flag \"{flag}\""),
+            Self::ValueMissing(ref flag) => write!(f, "flag \"{flag}\" missing parameter(s)"),
             Self::ProvidedMultipleTimes(ref flag) => {
-                write!(f, "flag \"{}\" can only appear once", flag)
+                write!(f, "flag \"{flag}\" can only appear once")
             }
             Self::ProgramNameMissing => {
                 write!(f, "program name (argv[0]) missing")
@@ -133,12 +133,11 @@ impl<'a> Flags<'a> {
         let mut help_text = String::new();
         writeln!(
             &mut help_text,
-            "Help for {}: [options] -- [extra arguments]",
-            program_name
+            "Help for {program_name}: [options] -- [extra arguments]"
         )
         .unwrap();
         for line in all {
-            writeln!(&mut help_text, "\t{}", line).unwrap();
+            writeln!(&mut help_text, "\t{line}").unwrap();
         }
         help_text
     }

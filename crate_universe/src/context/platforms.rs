@@ -56,7 +56,7 @@ pub fn resolve_cfg_platforms(
     // (`x86_64-unknown-linux-gun` vs `cfg(target = "x86_64-unkonwn-linux-gnu")`). So
     // in order to parse configurations, the text is renamed for the check but the
     // original is retained for comaptibility with the manifest.
-    let rename = |cfg: &str| -> String { format!("cfg(target = \"{}\")", cfg) };
+    let rename = |cfg: &str| -> String { format!("cfg(target = \"{cfg}\")") };
     let original_cfgs: HashMap<String, String> = configurations
         .iter()
         .filter(|cfg| !cfg.starts_with("cfg("))
@@ -73,8 +73,8 @@ pub fn resolve_cfg_platforms(
         })
         // Check the current configuration with against each supported triple
         .map(|cfg| {
-            let expression = Expression::parse(&cfg)
-                .context(format!("Failed to parse expression: '{}'", cfg))?;
+            let expression =
+                Expression::parse(&cfg).context(format!("Failed to parse expression: '{cfg}'"))?;
 
             let triples = target_infos
                 .iter()

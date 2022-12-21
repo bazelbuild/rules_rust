@@ -549,7 +549,7 @@ mod test {
         let result = Annotations::new(test::metadata::no_deps(), test::lockfile::no_deps(), config);
         assert!(result.is_err());
 
-        let result_str = format!("{:?}", result);
+        let result_str = format!("{result:?}");
         assert!(result_str.contains("Unused annotations were provided. Please remove them"));
         assert!(result_str.contains("mock-crate"));
     }

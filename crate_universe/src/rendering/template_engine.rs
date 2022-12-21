@@ -214,7 +214,7 @@ impl TemplateEngine {
         context.insert(
             "default_package_name",
             &match render_config.default_package_name.as_ref() {
-                Some(pkg_name) => format!("\"{}\"", pkg_name),
+                Some(pkg_name) => format!("\"{pkg_name}\""),
                 None => "None".to_owned(),
             },
         );
