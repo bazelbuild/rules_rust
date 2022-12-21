@@ -307,7 +307,7 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
 mod test {
     use super::*;
 
-    use crate::config::{Config, CrateId, VendorMode};
+    use crate::config::{Config, CrateAnnotations, CrateId, GenBinaries, VendorMode};
     use crate::context::crate_context::{CrateContext, Rule};
     use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
     use crate::metadata::Annotations;
@@ -467,12 +467,24 @@ mod test {
 
     #[test]
     fn render_aliases() {
-        let annotations = Annotations::new(
-            test::metadata::alias(),
-            test::lockfile::alias(),
-            Config::default(),
-        )
-        .unwrap();
+        let mut config = Config::default();
+        config.annotations.insert(
+            CrateId::new("names".to_owned(), "0.12.1-dev".to_owned()),
+            CrateAnnotations {
+                gen_binaries: GenBinaries::All,
+                ..CrateAnnotations::default()
+            },
+        );
+        config.annotations.insert(
+            CrateId::new("names".to_owned(), "0.13.0".to_owned()),
+            CrateAnnotations {
+                gen_binaries: GenBinaries::All,
+                ..CrateAnnotations::default()
+            },
+        );
+
+        let annotations =
+            Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
         let context = Context::new(annotations).unwrap();
 
         let renderer = Renderer::new(mock_render_config());

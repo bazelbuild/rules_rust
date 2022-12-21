@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::CrateId;
+use crate::config::{CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -297,11 +297,26 @@ impl CrateContext {
             ..Default::default()
         };
 
+        // Locate extra settings for the current package.
+        let package_extra = extras
+            .iter()
+            .find(|(_, settings)| settings.package_id == package.id);
+
         let include_build_scripts =
-            Self::crate_includes_build_script(package, extras, include_build_scripts);
+            Self::crate_includes_build_script(package_extra, include_build_scripts);
+
+        let gen_none = GenBinaries::Some(BTreeSet::new());
+        let gen_binaries = package_extra.map_or(&gen_none, |(_, settings)| {
+            &settings.crate_extra.gen_binaries
+        });
 
         // Iterate over each target and produce a Bazel target for all supported "kinds"
-        let targets = Self::collect_targets(&annotation.node, packages, include_build_scripts);
+        let targets = Self::collect_targets(
+            &annotation.node,
+            packages,
+            gen_binaries,
+            include_build_scripts,
+        );
 
         // Parse the library crate name from the set of included targets
         let library_target_name = {
@@ -539,18 +554,12 @@ impl CrateContext {
     /// Determine whether or not a crate __should__ include a build script
     /// (build.rs) if it happens to have one.
     fn crate_includes_build_script(
-        package: &Package,
-        overrides: &BTreeMap<CrateId, PairredExtras>,
+        package_extra: Option<(&CrateId, &PairredExtras)>,
         default_generate_build_script: bool,
     ) -> bool {
-        // Locate extra settings for the current package.
-        let settings = overrides
-            .iter()
-            .find(|(_, settings)| settings.package_id == package.id);
-
         // If the crate has extra settings, which explicitly set `gen_build_script`, always use
         // this value, otherwise, fallback to the provided default.
-        settings
+        package_extra
             .and_then(|(_, settings)| settings.crate_extra.gen_build_script)
             .unwrap_or(default_generate_build_script)
     }
@@ -559,6 +568,7 @@ impl CrateContext {
     fn collect_targets(
         node: &Node,
         packages: &BTreeMap<PackageId, Package>,
+        gen_binaries: &GenBinaries,
         include_build_scripts: bool,
     ) -> BTreeSet<Rule> {
         let package = &packages[&node.id];
@@ -612,8 +622,13 @@ impl CrateContext {
                         }));
                     }
 
-                    // Check to see if the dependencies is a library target
-                    if kind == "bin" {
+                    // Check if the target kind is binary and is one of the ones included in gen_binaries
+                    if kind == "bin"
+                        && match gen_binaries {
+                            GenBinaries::All => true,
+                            GenBinaries::Some(set) => set.contains(&target.name),
+                        }
+                    {
                         return Some(Rule::Binary(TargetAttributes {
                             crate_name: target.name.clone(),
                             crate_root,
@@ -663,18 +678,11 @@ mod test {
         assert_eq!(context.name, "common");
         assert_eq!(
             context.targets,
-            BTreeSet::from([
-                Rule::Library(TargetAttributes {
-                    crate_name: "common".to_owned(),
-                    crate_root: Some("lib.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
-                }),
-                Rule::Binary(TargetAttributes {
-                    crate_name: "common-bin".to_owned(),
-                    crate_root: Some("main.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
-                }),
-            ]),
+            BTreeSet::from([Rule::Library(TargetAttributes {
+                crate_name: "common".to_owned(),
+                crate_root: Some("lib.rs".to_owned()),
+                srcs: Glob::new_rust_srcs(),
+            })]),
         );
     }
 
@@ -694,6 +702,7 @@ mod test {
             PairredExtras {
                 package_id,
                 crate_extra: CrateAnnotations {
+                    gen_binaries: GenBinaries::All,
                     data_glob: Some(BTreeSet::from(["**/data_glob/**".to_owned()])),
                     ..CrateAnnotations::default()
                 },
