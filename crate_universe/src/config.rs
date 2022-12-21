@@ -363,7 +363,7 @@ impl CrateId {
         // context of declaring which versions of preselected packages an
         // annotation applies to.
         if self.version == "*" {
-            return true
+            return true;
         }
 
         // Next, check to see if the version provided is a semver req and
