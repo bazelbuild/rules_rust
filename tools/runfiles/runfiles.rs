@@ -105,6 +105,13 @@ impl Runfiles {
                 .clone(),
         }
     }
+
+    /// Returns the canonical name of the caller's Bazel repository.
+    pub fn current_repository(&self) -> &str {
+        // This value must match the value of `_RULES_RUST_RUNFILES_WORKSPACE_NAME`
+        // which can be found in `@rules_rust//tools/runfiles/private:workspace_name.bzl`
+        env!("RULES_RUST_RUNFILES_WORKSPACE_NAME")
+    }
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
@@ -246,5 +253,14 @@ mod test {
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
+    }
+
+    #[test]
+    fn test_current_repository() {
+        let r = Runfiles::create().unwrap();
+
+        // This check is unique to the rules_rust repository. The name
+        // here is expected to be different in consumers of this library
+        assert_eq!(r.current_repository(), "rules_rust")
     }
 }

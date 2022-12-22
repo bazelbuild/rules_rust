@@ -1,0 +1,10 @@
+package(default_visibility = ["//tools/runfiles:__pkg__"])
+
+filegroup(
+    name = "distro",
+    srcs = glob([
+        "**/*.bzl",
+    ]) + [
+        "BUILD.bazel",
+    ],
+)

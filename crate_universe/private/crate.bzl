@@ -90,7 +90,8 @@ def _annotation(
     """A collection of extra attributes and settings for a particular crate
 
     Args:
-        version (str, optional): The version or semver-conditions to match with a crate.
+        version (str, optional): The version or semver-conditions to match with a crate. The wildcard `*`
+            matches any version, including prerelease versions.
         additive_build_file_content (str, optional): Extra contents to write to the bottom of generated BUILD files.
         additive_build_file (str, optional): A file containing extra contents to write to the bottom of
             generated BUILD files.

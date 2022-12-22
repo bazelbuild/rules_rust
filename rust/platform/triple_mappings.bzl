@@ -66,7 +66,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "riscv64gc": "riscv64",
     "s390": None,
     "s390x": "s390x",
-    "thumbv7m": "armv7",
+    "thumbv6m": "armv6-m",
+    "thumbv7m": "armv7-m",
     "wasm32": None,
     "x86_64": "x86_64",
 }
