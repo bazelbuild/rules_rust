@@ -2,14 +2,14 @@
 
 set -euo pipefail
 
-TARGET="$1"
-OPTION="$2"
+TARGET="${CURRENT_TOOLCHAIN_FILES_TEST_INPUT}"
+OPTION="${CURRENT_TOOLCHAIN_FILES_TEST_KIND}"
 
 # To parse this argument on windows it must be wrapped in quotes but
 # these quotes should not be passed to grep. Remove them here.
-PATTERN="$(echo -n "$3" | sed "s/'//g")"
+PATTERN="$(echo -n "${CURRENT_TOOLCHAIN_FILES_TEST_PATTERN}" | sed "s/'//g")"
 
-if [[ "${OPTION}" == "--executable" ]]; then
+if [[ "${OPTION}" == "executable" ]]; then
     # Clippy requires this environment variable is set
     export SYSROOT=""
 
@@ -18,7 +18,7 @@ if [[ "${OPTION}" == "--executable" ]]; then
     exit 0
 fi
 
-if [[ "${OPTION}" == "--files" ]]; then
+if [[ "${OPTION}" == "files" ]]; then
     cat "${TARGET}"
     grep "${PATTERN}" "${TARGET}"
     exit 0
