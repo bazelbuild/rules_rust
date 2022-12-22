@@ -153,7 +153,7 @@ def all_crate_deps(
     Args:
         normal (bool, optional): If True, normal dependencies are included in the
             output list.
-        normal_dev (bool, optional): If True, normla dev dependencies will be
+        normal_dev (bool, optional): If True, normal dev dependencies will be
             included in the output list..
         proc_macro (bool, optional): If True, proc_macro dependencies are included
             in the output list.
@@ -222,7 +222,7 @@ def aliases(
     Args:
         normal (bool, optional): If True, normal dependencies are included in the
             output list.
-        normal_dev (bool, optional): If True, normla dev dependencies will be
+        normal_dev (bool, optional): If True, normal dev dependencies will be
             included in the output list..
         proc_macro (bool, optional): If True, proc_macro dependencies are included
             in the output list.

@@ -6,7 +6,7 @@ load(
     "//rust/platform:triple_mappings.bzl",
     "triple_to_constraint_set",
 )
-load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_rust_analyzer_proc_macro_srv",
@@ -41,8 +41,6 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
     "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
 }
-
-DEFAULT_NIGHTLY_ISO_DATE = "2022-11-02"
 
 def rules_rust_dependencies():
     """Dependencies used in the implementation of `rules_rust`."""
