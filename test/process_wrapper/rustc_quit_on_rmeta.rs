@@ -1,6 +1,3 @@
-// TODO: Remove this exception after https://github.com/rust-lang/rust-clippy/pull/10055 is released
-#![allow(clippy::uninlined_format_args)]
-
 #[cfg(test)]
 mod test {
     use std::path::PathBuf;
