@@ -518,7 +518,7 @@ A collection of extra attributes and settings for a particular crate
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate.annotation-version"></a>version |  The version or semver-conditions to match with a crate.   |  `"*"` |
+| <a id="crate.annotation-version"></a>version |  The version or semver-conditions to match with a crate. The wildcard <code>*</code> matches any version, including prerelease versions.   |  `"*"` |
 | <a id="crate.annotation-additive_build_file"></a>additive_build_file |  A file containing extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-additive_build_file_content"></a>additive_build_file_content |  Extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-build_script_data"></a>build_script_data |  A list of labels to add to a crate's <code>cargo_build_script::data</code> attribute.   |  `None` |

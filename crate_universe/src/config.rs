@@ -356,6 +356,16 @@ impl CrateId {
             return true;
         }
 
+        // If the version provided is the wildcard "*", it matches. Do not
+        // delegate to the semver crate in this case because semver does not
+        // consider "*" to match prerelease packages. That's expected behavior
+        // in the context of declaring package dependencies, but not in the
+        // context of declaring which versions of preselected packages an
+        // annotation applies to.
+        if self.version == "*" {
+            return true;
+        }
+
         // Next, check to see if the version provided is a semver req and
         // check if the package matches the condition
         if let Ok(semver) = VersionReq::parse(&self.version) {
@@ -496,6 +506,10 @@ mod test {
 
         id.version = "*".to_owned();
         assert!(id.matches(&package));
+
+        let mut prerelease = mock_cargo_metadata_package();
+        prerelease.version = cargo_metadata::semver::Version::parse("1.0.0-pre.0").unwrap();
+        assert!(id.matches(&prerelease));
 
         id.version = "<1".to_owned();
         assert!(!id.matches(&package));
