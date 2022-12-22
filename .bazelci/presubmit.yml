@@ -2,6 +2,13 @@
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
+min_rust_version_shell_commands: &min_rust_version_shell_commands
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.59.0"],\n|' WORKSPACE.bazel
+single_rust_channel_targets: &single_rust_channel_targets
+  - "--"
+  - "//..."
+  # These tests are expected to fail as they require both a nightly and stable toolchain.
+  - "-//test/unit/channel_transitions/..."
 default_linux_targets: &default_linux_targets
   - "//..."
 default_macos_targets: &default_macos_targets
@@ -201,6 +208,19 @@ tasks:
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    build_flags: *aspects_flags
+  ubuntu2004_min_rust_version:
+    name: "Min Rust Version"
+    platform: ubuntu2004
+    shell_commands: *min_rust_version_shell_commands
+    build_targets: *single_rust_channel_targets
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_min_rust_version_with_aspects:
+    name: "Min Rust Version With Aspects"
+    platform: ubuntu2004
+    shell_commands: *min_rust_version_shell_commands
+    build_targets: *single_rust_channel_targets
+    test_targets: *single_rust_channel_targets
     build_flags: *aspects_flags
   ubuntu2004_rolling_with_aspects:
     name: "Rolling Bazel Version With Aspects"
