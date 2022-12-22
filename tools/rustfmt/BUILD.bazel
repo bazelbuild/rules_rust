@@ -26,9 +26,6 @@ rust_library(
         "RUSTFMT": "$(rootpath //rust/toolchain:current_rustfmt_files)",
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
-    rustc_env_files = [
-        "@rules_rust//rust/private:rustfmt_workspace_name",
-    ],
     deps = [
         "//tools/runfiles",
     ],
