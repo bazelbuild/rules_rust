@@ -1220,7 +1220,7 @@ def rustc_compile_action(
             outputs = action_outputs,
             env = env,
             arguments = [args.rustc_flags],
-            command = "{} --remap-path-prefix=$PWD= $@".format(toolchain.rustc.path),
+            command = "{rustc} --remap-path-prefix={pwd}= $@".format(rustc = toolchain.rustc.path, pwd = "%cd%" if toolchain.os == "windows" else "$PWD"),
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
                 crate_info.type,
