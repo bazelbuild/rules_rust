@@ -255,6 +255,7 @@ impl CrateContext {
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
         extras: &BTreeMap<CrateId, PairredExtras>,
+        include_binaries: bool,
         include_build_scripts: bool,
     ) -> Self {
         let package: &Package = &packages[&annotation.node.id];
@@ -306,9 +307,13 @@ impl CrateContext {
             Self::crate_includes_build_script(package_extra, include_build_scripts);
 
         let gen_none = GenBinaries::Some(BTreeSet::new());
-        let gen_binaries = package_extra.map_or(&gen_none, |(_, settings)| {
-            &settings.crate_extra.gen_binaries
-        });
+        let gen_binaries = package_extra
+            .and_then(|(_, settings)| settings.crate_extra.gen_binaries.as_ref())
+            .unwrap_or(if include_binaries {
+                &GenBinaries::All
+            } else {
+                &gen_none
+            });
 
         // Iterate over each target and produce a Bazel target for all supported "kinds"
         let targets = Self::collect_targets(
@@ -667,12 +672,15 @@ mod test {
             repr: "common 0.1.0 (path+file://{TEMP_DIR}/common)".to_owned(),
         }];
 
+        let include_binaries = false;
+        let include_build_scripts = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            false,
+            include_binaries,
+            include_build_scripts,
         );
 
         assert_eq!(context.name, "common");
@@ -702,19 +710,22 @@ mod test {
             PairredExtras {
                 package_id,
                 crate_extra: CrateAnnotations {
-                    gen_binaries: GenBinaries::All,
+                    gen_binaries: Some(GenBinaries::All),
                     data_glob: Some(BTreeSet::from(["**/data_glob/**".to_owned()])),
                     ..CrateAnnotations::default()
                 },
             },
         );
 
+        let include_binaries = false;
+        let include_build_scripts = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &pairred_extras,
-            false,
+            include_binaries,
+            include_build_scripts,
         );
 
         assert_eq!(context.name, "common");
@@ -768,12 +779,15 @@ mod test {
 
         let crate_annotation = &annotations.metadata.crates[&package_id];
 
+        let include_binaries = false;
+        let include_build_scripts = true;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            true,
+            include_binaries,
+            include_build_scripts,
         );
 
         assert_eq!(context.name, "openssl-sys");
@@ -809,12 +823,15 @@ mod test {
 
         let crate_annotation = &annotations.metadata.crates[&package_id];
 
+        let include_binaries = false;
+        let include_build_scripts = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            false,
+            include_binaries,
+            include_build_scripts,
         );
 
         assert_eq!(context.name, "openssl-sys");
@@ -840,12 +857,15 @@ mod test {
 
         let crate_annotation = &annotations.metadata.crates[&package_id];
 
+        let include_binaries = false;
+        let include_build_scripts = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            false,
+            include_binaries,
+            include_build_scripts,
         );
 
         assert_eq!(context.name, "sysinfo");

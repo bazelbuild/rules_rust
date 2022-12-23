@@ -204,6 +204,13 @@ that is called behind the scenes to update dependencies.
             ),
             mandatory = True,
         ),
+        "generate_binaries": attr.bool(
+            doc = (
+                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+                "By default only the `rust_library` targets are generated."
+            ),
+            default = False,
+        ),
         "generate_build_scripts": attr.bool(
             doc = (
                 "Whether or not to generate " +

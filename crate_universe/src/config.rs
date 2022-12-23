@@ -145,8 +145,7 @@ pub enum Checksumish {
 #[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
-    #[serde(default)]
-    pub gen_binaries: GenBinaries,
+    pub gen_binaries: Option<GenBinaries>,
 
     /// Determins whether or not Cargo build scripts should be generated for the current package
     pub gen_build_script: Option<bool>,
@@ -282,13 +281,16 @@ impl Add for CrateAnnotations {
             None
         };
 
-        let gen_binaries = match (self.gen_binaries, rhs.gen_binaries) {
-            (GenBinaries::All, _) | (_, GenBinaries::All) => GenBinaries::All,
-            (GenBinaries::Some(mut lhs), GenBinaries::Some(rhs)) => {
-                lhs.extend(rhs);
-                GenBinaries::Some(lhs)
-            }
-        };
+        let gen_binaries =
+            self.gen_binaries
+                .zip(rhs.gen_binaries)
+                .map(|(lhs, rhs)| match (lhs, rhs) {
+                    (GenBinaries::All, _) | (_, GenBinaries::All) => GenBinaries::All,
+                    (GenBinaries::Some(mut lhs), GenBinaries::Some(rhs)) => {
+                        lhs.extend(rhs);
+                        GenBinaries::Some(lhs)
+                    }
+                });
 
         let gen_build_script = if self.gen_build_script.is_some() {
             self.gen_build_script
@@ -512,6 +514,9 @@ impl<'de> Visitor<'de> for GenBinariesVisitor {
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    /// Whether to generate `rust_binary` targets for all bins by default
+    pub generate_binaries: bool,
+
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
@@ -608,6 +613,7 @@ mod test {
 
         // Global settings
         assert!(config.cargo_config.is_none());
+        assert!(!config.generate_binaries);
         assert!(!config.generate_build_scripts);
 
         // Render Config

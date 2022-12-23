@@ -58,6 +58,7 @@ impl Context {
                     &annotations.metadata.packages,
                     &annotations.lockfile.crates,
                     &annotations.pairred_extras,
+                    annotations.config.generate_binaries,
                     annotations.config.generate_build_scripts,
                 );
                 let id = CrateId::new(context.name.clone(), context.version.clone());
