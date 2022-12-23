@@ -29,7 +29,7 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
   for (int i = 2; i < argc; ++i) {
     arguments.push_back(argv[i]);
   }
-  auto pwd_prefix =
+  System::StrType pwd_prefix =
       "--remap-path-prefix=" + System::GetWorkingDirectory() + "=";
   arguments.push_back(pwd_prefix);
 
