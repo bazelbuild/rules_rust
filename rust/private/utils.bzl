@@ -680,7 +680,7 @@ def can_build_metadata(toolchain, ctx, crate_type):
     # 4) the crate_type is rlib or lib.
     return toolchain._pipelined_compilation and \
            toolchain.os != "windows" and \
-           ctx.attr._process_wrapper and \
+           uses_process_wrapper(ctx) and \
            crate_type in ("rlib", "lib")
 
 def crate_root_src(name, srcs, crate_type):
@@ -707,6 +707,18 @@ def crate_root_src(name, srcs, crate_type):
         file_names = [default_crate_root_filename, name + ".rs"]
         fail("No {} source file found.".format(" or ".join(file_names)), "srcs")
     return crate_root
+
+def uses_process_wrapper(ctx):
+    """Returns true if this action uses the full fledged process wrapper.
+
+    Args:
+        ctx (list): The rule's context object
+
+    Returns:
+        bool: True if the full flaged process wrapper is used, false otherwise.
+    """
+
+    return "basic_process_wrapper" not in ctx.executable._process_wrapper.path
 
 def _shortest_src_with_basename(srcs, basename):
     """Finds the shortest among the paths in srcs that match the desired basename.

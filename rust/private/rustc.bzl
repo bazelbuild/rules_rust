@@ -33,6 +33,7 @@ load(
     "is_exec_configuration",
     "make_static_lib_symlink",
     "relativize",
+    "uses_process_wrapper",
 )
 
 BuildInfo = _BuildInfo
@@ -1180,7 +1181,7 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
-    if ctx.executable._process_wrapper:
+    if uses_process_wrapper(ctx):
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
@@ -1212,17 +1213,17 @@ def rustc_compile_action(
                 ),
             )
     else:
-        # Run without process_wrapper
+        # Run with the basic process_wrapper
         if build_env_files or build_flags_files or stamp or build_metadata:
-            fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
+            fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building with the basic process wrapper")
         ctx.actions.run(
-            executable = toolchain.rustc,
+            executable = ctx.executable._process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = [args.rustc_flags],
+            arguments = [toolchain.rustc.path, args.rustc_flags],
             mnemonic = "Rustc",
-            progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
+            progress_message = "Compiling Rust (for process wrapper) {} {}{} ({} files)".format(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
