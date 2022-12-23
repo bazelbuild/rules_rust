@@ -30,7 +30,7 @@ int PW_MAIN(int argc, const CharType* argv[], const CharType* envp[]) {
     arguments.push_back(argv[i]);
   }
   System::StrType pwd_prefix =
-      "--remap-path-prefix=" + System::GetWorkingDirectory() + "=";
+      PW_SYS_STR("--remap-path-prefix=") + System::GetWorkingDirectory() + PW_SYS_STR("=");
   arguments.push_back(pwd_prefix);
 
   return System::Exec(exec_path, arguments, environment_block);
