@@ -148,13 +148,6 @@ impl TemplateEngine {
                 )),
             ),
             (
-                "module_build_file.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/module_build_file.j2"
-                )),
-            ),
-            (
                 "module_bzl.j2",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -229,6 +222,16 @@ impl TemplateEngine {
         self.context.clone()
     }
 
+    pub fn render_header(&self) -> Result<String> {
+        let context = self.new_tera_ctx();
+        let mut header = self
+            .engine
+            .render("partials/header.j2", &context)
+            .context("Failed to render header comment")?;
+        header.push('\n');
+        Ok(header)
+    }
+
     pub fn render_crate_build_files<'a>(
         &self,
         ctx: &'a Context,
@@ -256,21 +259,6 @@ impl TemplateEngine {
                 Ok((id, content))
             })
             .collect()
-    }
-
-    pub fn render_module_build_file(&self, data: &Context) -> Result<String> {
-        let mut context = self.new_tera_ctx();
-        context.insert("context", data);
-
-        let workspace_member_deps = data.flat_workspace_member_deps();
-        context.insert("workspace_member_dependencies", &workspace_member_deps);
-
-        let binary_crates_map = data.flat_binary_deps();
-        context.insert("binary_crates_map", &binary_crates_map);
-
-        self.engine
-            .render("module_build_file.j2", &context)
-            .context("Failed to render crates module")
     }
 
     pub fn render_module_bzl(&self, data: &Context) -> Result<String> {

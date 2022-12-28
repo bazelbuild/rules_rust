@@ -306,6 +306,7 @@ _NORMAL_DEPENDENCIES = {
             "semver": "@cui__semver-1.0.14//:semver",
             "serde": "@cui__serde-1.0.148//:serde",
             "serde_json": "@cui__serde_json-1.0.89//:serde_json",
+            "serde_starlark": "@cui__serde_starlark-0.1.6//:serde_starlark",
             "sha2": "@cui__sha2-0.10.6//:sha2",
             "tempfile": "@cui__tempfile-3.3.0//:tempfile",
             "tera": "@cui__tera-1.17.1//:tera",
@@ -1695,6 +1696,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/serde_json/1.0.89/download"],
         strip_prefix = "serde_json-1.0.89",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde_json-1.0.89.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__serde_starlark-0.1.6",
+        sha256 = "5171e36019e86ec83030a4e07b6ed1161b1b85675cbfd1be2c2b6824846756fd",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/serde_starlark/0.1.6/download"],
+        strip_prefix = "serde_starlark-0.1.6",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde_starlark-0.1.6.bazel"),
     )
 
     maybe(
