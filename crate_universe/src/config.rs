@@ -178,6 +178,9 @@ pub struct CrateAnnotations {
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
     pub compile_data_glob: Option<BTreeSet<String>>,
 
+    /// If true, disables pipelining for library targets generated for this crate.
+    pub disable_pipelining: bool,
+
     /// Additional data to pass to  the target's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env) attribute.
     pub rustc_env: Option<BTreeMap<String, String>>,
@@ -278,6 +281,7 @@ impl Add for CrateAnnotations {
             crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, BTreeSet::new, BTreeSet::extend),
             data: joined_extra_member!(self.data, rhs.data, BTreeSet::new, BTreeSet::extend),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
+            disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
             compile_data: joined_extra_member!(self.compile_data, rhs.compile_data, BTreeSet::new, BTreeSet::extend),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
             rustc_env: joined_extra_member!(self.rustc_env, rhs.rustc_env, BTreeMap::new, BTreeMap::extend),

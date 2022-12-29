@@ -436,6 +436,7 @@ impl Renderer {
                 .make_aliases(krate, false, false)
                 .remap_configurations(platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
+            disable_pipelining: krate.disable_pipelining,
         })
     }
 
