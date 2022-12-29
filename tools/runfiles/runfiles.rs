@@ -221,8 +221,10 @@ mod test {
         // concurrently. Rust runs tests in parallel and does not provide an easy way to synchronise
         // them, so we run all test cases in the same #[test] function.
 
-        let test_srcdir = env::var_os(TEST_SRCDIR_ENV_VAR).expect("bazel did not provide TEST_SRCDIR");
-        let runfiles_dir = env::var_os(RUNFILES_DIR_ENV_VAR).expect("bazel did not provide RUNFILES_DIR");
+        let test_srcdir =
+            env::var_os(TEST_SRCDIR_ENV_VAR).expect("bazel did not provide TEST_SRCDIR");
+        let runfiles_dir =
+            env::var_os(RUNFILES_DIR_ENV_VAR).expect("bazel did not provide RUNFILES_DIR");
 
         // Test case 1: Only $RUNFILES_DIR is set.
         {
