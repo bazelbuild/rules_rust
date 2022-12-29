@@ -80,17 +80,6 @@ def rules_rust_dependencies():
         url = "https://github.com/bazelbuild/apple_support/releases/download/1.3.0/apple_support.1.3.0.tar.gz",
     )
 
-    # process_wrapper needs a low-dependency way to process json.
-    maybe(
-        http_archive,
-        name = "rules_rust_tinyjson",
-        sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
-        url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
-        strip_prefix = "tinyjson-2.3.0",
-        type = "tar.gz",
-        build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
-    )
-
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
     "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE),

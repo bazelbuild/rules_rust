@@ -14,7 +14,7 @@
 
 use std::convert::{TryFrom, TryInto};
 
-use tinyjson::JsonValue;
+use crate::tinyjson::JsonValue;
 
 use crate::output::LineOutput;
 
