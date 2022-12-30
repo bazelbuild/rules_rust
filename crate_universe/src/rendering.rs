@@ -1,6 +1,5 @@
 //! Tools for rendering and writing BUILD and other Starlark files
 
-mod calls;
 mod template_engine;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,11 +12,11 @@ use anyhow::{bail, Context as AnyhowContext, Result};
 use crate::config::{RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, Rule};
 use crate::context::Context;
-use crate::rendering::calls::{Alias, ExportsFiles, Filegroup, Glob, Package, Starlark};
 use crate::rendering::template_engine::TemplateEngine;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::sanitize_repository_name;
 use crate::utils::starlark::Label;
+use crate::utils::starlark::{self, Alias, ExportsFiles, Filegroup, Glob, Package, Starlark};
 
 pub struct Renderer {
     config: RenderConfig,
@@ -83,7 +82,10 @@ impl Renderer {
 
         let mut exports_files = ExportsFiles {
             paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
-            globs: Glob(BTreeSet::from(["*.bazel".to_owned()])),
+            globs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
         };
         if let Some(VendorMode::Remote) = self.config.vendor_mode {
             exports_files.paths.insert("crates.bzl".to_owned());
@@ -92,7 +94,10 @@ impl Renderer {
 
         let filegroup = Filegroup {
             name: "srcs".to_owned(),
-            srcs: Glob(BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()])),
+            srcs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
         };
         starlark.push(Starlark::Filegroup(filegroup));
 
@@ -145,7 +150,7 @@ impl Renderer {
             starlark.extend(binaries.into_iter().map(Starlark::Alias));
         }
 
-        let starlark = calls::serialize(&starlark)?;
+        let starlark = starlark::serialize(&starlark)?;
         Ok(starlark)
     }
 
