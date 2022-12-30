@@ -19,7 +19,9 @@ impl Glob {
 }
 
 impl Serialize for Glob {
-    #[allow(clippy::overly_complex_bool_expr)]
+    #[allow(unknown_lints, renamed_and_removed_lints)]
+    #[allow(clippy::overly_complex_bool_expr)] // clippy 1.65+
+    #[allow(clippy::logic_bug)] // clippy 1.64 and older
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
