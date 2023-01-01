@@ -1,6 +1,6 @@
 //! Utility module for interracting with different kinds of lock files
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
@@ -152,7 +152,7 @@ impl Digest {
         // computed consistently. If a new binary is released then this
         // condition should be removed
         // https://github.com/rust-lang/cargo/issues/10547
-        let corrections = HashMap::from([
+        let corrections = BTreeMap::from([
             (
                 "cargo 1.60.0 (d1fd9fe 2022-03-01)",
                 "cargo 1.60.0 (d1fd9fe2c 2022-03-01)",

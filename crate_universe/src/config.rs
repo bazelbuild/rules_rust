@@ -15,7 +15,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Hash, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -37,7 +37,7 @@ impl std::fmt::Display for VendorMode {
     }
 }
 
-#[derive(Debug, Default, Hash, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RenderConfig {
     /// The name of the repository being rendered
@@ -141,7 +141,7 @@ pub enum Checksumish {
     },
 }
 
-#[derive(Debug, Default, Hash, Deserialize, Serialize, Clone)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct CrateAnnotations {
     /// Determins whether or not Cargo build scripts should be generated for the current package
     pub gen_build_script: Option<bool>,
@@ -328,7 +328,7 @@ impl Sum for CrateAnnotations {
 }
 
 /// A unique identifier for Crates
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CrateId {
     /// The name of the crate
     pub name: String,

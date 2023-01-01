@@ -1,6 +1,6 @@
 //! A helper tool for generating urls and sha256 checksums of cargo-bazel binaries and writing them to a module.
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -120,12 +120,12 @@ CARGO_BAZEL_LABEL = Label("@cargo_bazel_bootstrap//:binary")
 "#;
 
 fn render_module(artifacts: &[Artifact]) -> String {
-    let urls: HashMap<&String, &String> = artifacts
+    let urls: BTreeMap<&String, &String> = artifacts
         .iter()
         .map(|artifact| (&artifact.triple, &artifact.url))
         .collect();
 
-    let sha256s: HashMap<&String, &String> = artifacts
+    let sha256s: BTreeMap<&String, &String> = artifacts
         .iter()
         .map(|artifact| (&artifact.triple, &artifact.sha256))
         .collect();

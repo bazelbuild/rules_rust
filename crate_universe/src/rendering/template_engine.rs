@@ -235,7 +235,7 @@ impl TemplateEngine {
     pub fn render_crate_build_files<'a>(
         &self,
         ctx: &'a Context,
-    ) -> Result<HashMap<&'a CrateId, String>> {
+    ) -> Result<BTreeMap<&'a CrateId, String>> {
         // Create the render context with the global planned context to be
         // reused when rendering crates.
         let mut context = self.new_tera_ctx();
