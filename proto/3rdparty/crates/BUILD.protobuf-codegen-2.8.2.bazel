@@ -88,7 +88,7 @@ rust_library(
 )
 
 rust_binary(
-    name = "protoc-gen-rust__bin",
+    name = "protobuf-bin-gen-rust-do-not-use__bin",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -115,7 +115,7 @@ rust_binary(
     }),
     crate_features = [
     ],
-    crate_root = "src/bin/protoc-gen-rust.rs",
+    crate_root = "src/bin/protobuf-bin-gen-rust-do-not-use.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
@@ -156,7 +156,7 @@ rust_binary(
 )
 
 rust_binary(
-    name = "protobuf-bin-gen-rust-do-not-use__bin",
+    name = "protoc-gen-rust__bin",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -183,7 +183,7 @@ rust_binary(
     }),
     crate_features = [
     ],
-    crate_root = "src/bin/protobuf-bin-gen-rust-do-not-use.rs",
+    crate_root = "src/bin/protoc-gen-rust.rs",
     data = select_with_or({
         "//conditions:default": [
         ],

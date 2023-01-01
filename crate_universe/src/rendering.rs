@@ -338,7 +338,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -363,11 +363,11 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::BuildScript(TargetAttributes {
+                targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_build".to_owned(),
                     crate_root: Some("build.rs".to_owned()),
                     ..TargetAttributes::default()
-                })],
+                })]),
                 // Build script attributes are required.
                 build_script_attrs: Some(BuildScriptAttributes::default()),
                 ..CrateContext::default()
@@ -397,7 +397,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::ProcMacro(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::ProcMacro(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -422,7 +422,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -447,7 +447,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 additive_build_file_content: Some(
                     "# Hello World from additive section!".to_owned(),
                 ),
@@ -493,7 +493,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -515,7 +515,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -545,7 +545,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -584,7 +584,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
                     rustc_flags: rustc_flags.clone(),
                     ..CommonAttributes::default()
