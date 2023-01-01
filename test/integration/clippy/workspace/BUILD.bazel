@@ -1,7 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
 
-package(default_visibility = ["//test:__subpackages__"])
-
 # Declaration of passing targets.
 
 rust_binary(
@@ -46,45 +44,34 @@ rust_binary(
     name = "bad_binary",
     srcs = ["bad_src/main.rs"],
     edition = "2018",
-    tags = ["noclippy"],
 )
 
 rust_library(
     name = "bad_library",
     srcs = ["bad_src/lib.rs"],
     edition = "2018",
-    tags = ["noclippy"],
 )
 
 rust_test(
     name = "bad_test",
     srcs = ["bad_src/lib.rs"],
     edition = "2018",
-    tags = ["noclippy"],
 )
 
 # Clippy analysis of failing targets.
 
 rust_clippy(
     name = "bad_binary_clippy",
-    tags = ["manual"],
     deps = [":bad_binary"],
 )
 
 rust_clippy(
     name = "bad_library_clippy",
-    tags = ["manual"],
     deps = [":bad_library"],
 )
 
 rust_clippy(
     name = "bad_test_clippy",
     testonly = True,
-    tags = ["manual"],
     deps = [":bad_test"],
-)
-
-sh_binary(
-    name = "clippy_failure_test",
-    srcs = ["clippy_failure_test.sh"],
 )

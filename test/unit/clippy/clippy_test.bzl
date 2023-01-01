@@ -95,27 +95,27 @@ def clippy_test_suite(name):
 
     binary_clippy_aspect_action_has_warnings_flag_test(
         name = "binary_clippy_aspect_action_has_warnings_flag_test",
-        target_under_test = Label("//test/clippy:ok_binary"),
+        target_under_test = Label("//test/unit/clippy:ok_binary"),
     )
     library_clippy_aspect_action_has_warnings_flag_test(
         name = "library_clippy_aspect_action_has_warnings_flag_test",
-        target_under_test = Label("//test/clippy:ok_library"),
+        target_under_test = Label("//test/unit/clippy:ok_library"),
     )
     test_clippy_aspect_action_has_warnings_flag_test(
         name = "test_clippy_aspect_action_has_warnings_flag_test",
-        target_under_test = Label("//test/clippy:ok_test"),
+        target_under_test = Label("//test/unit/clippy:ok_test"),
     )
     clippy_aspect_with_explicit_flags_test(
         name = "binary_clippy_aspect_with_explicit_flags_test",
-        target_under_test = Label("//test/clippy:ok_binary"),
+        target_under_test = Label("//test/unit/clippy:ok_binary"),
     )
     clippy_aspect_with_explicit_flags_test(
         name = "library_clippy_aspect_with_explicit_flags_test",
-        target_under_test = Label("//test/clippy:ok_library"),
+        target_under_test = Label("//test/unit/clippy:ok_library"),
     )
     clippy_aspect_with_explicit_flags_test(
         name = "test_clippy_aspect_with_explicit_flags_test",
-        target_under_test = Label("//test/clippy:ok_test"),
+        target_under_test = Label("//test/unit/clippy:ok_test"),
     )
 
     native.test_suite(

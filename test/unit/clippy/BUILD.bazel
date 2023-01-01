@@ -1,4 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":clippy_test.bzl", "clippy_test_suite")
+
+rust_binary(
+    name = "ok_binary",
+    srcs = ["main.rs"],
+    edition = "2018",
+)
+
+rust_library(
+    name = "ok_library",
+    srcs = ["lib.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "ok_test",
+    srcs = ["lib.rs"],
+    edition = "2018",
+)
 
 clippy_test_suite(
     name = "clippy_test_suite",

@@ -11,6 +11,12 @@ bzl_library(
     visibility = ["//visibility:public"],
 )
 
+bzl_library(
+    name = "bazel_versions",
+    srcs = ["bazel_versions.bzl"],
+    visibility = ["//:__subpackages__"],
+)
+
 # This setting may be changed from the command line to generate machine readable errors.
 error_format(
     name = "error_format",
@@ -100,4 +106,32 @@ capture_clippy_output(
     name = "capture_clippy_output",
     build_setting_default = False,
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE.bazel",
+        "//rust:all_files",
+        "//rust/platform:all_files",
+        "//rust/platform/channel:all_files",
+        "//rust/platform/cpu:all_files",
+        "//rust/platform/os:all_files",
+        "//rust/private:all_files",
+        "//rust/private/dummy_cc_toolchain:all_files",
+        "//rust/rust_analyzer:all_files",
+        "//rust/settings:all_files",
+        "//rust/toolchain:all_files",
+        "//rust/toolchain/channel:all_files",
+        "//tools:all_files",
+        "//tools/clippy:all_files",
+        "//util:all_files",
+        "//util/dir_zipper:all_files",
+        "//util/import:all_files",
+        "//util/import/3rdparty:all_files",
+        "//util/label:all_files",
+        "//util/process_wrapper:all_files",
+    ],
+    visibility = ["//:__subpackages__"],
 )

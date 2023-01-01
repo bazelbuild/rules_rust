@@ -1,0 +1,28 @@
+From a572d63b174ddfb5e9081b03d2f7a294c3ac13a8 Mon Sep 17 00:00:00 2001
+From: John Firebaugh <john.firebaugh@gmail.com>
+Date: Tue, 27 Dec 2022 16:57:52 -0800
+Subject: [PATCH] Windows support
+
+---
+ bazel_integration_test/private/bazel_integration_test.bzl | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/bazel_integration_test/private/bazel_integration_test.bzl b/bazel_integration_test/private/bazel_integration_test.bzl
+index 5207bd7..037dc13 100644
+--- a/bazel_integration_test/private/bazel_integration_test.bzl
++++ b/bazel_integration_test/private/bazel_integration_test.bzl
+@@ -102,7 +102,10 @@ def bazel_integration_test(
+     select_file(
+         name = bazel_bin_name,
+         srcs = bazel_binary,
+-        subpath = "bazel",
++        subpath = select({
++            "@platforms//os:windows": "bazel.exe",
++            "//conditions:default": "bazel",
++        }),
+     )
+ 
+     args = [
+-- 
+2.39.0
+

@@ -48,3 +48,9 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

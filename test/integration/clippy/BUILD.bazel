@@ -1,0 +1,6 @@
+load("//test/integration:integration_test.bzl", "rules_rust_bazel_integration_test")
+
+rules_rust_bazel_integration_test(
+    name = "test",
+    srcs = ["test.rs"],
+)

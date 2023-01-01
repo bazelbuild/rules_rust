@@ -44,6 +44,19 @@ load("//test:deps.bzl", "rules_rust_test_deps")
 
 rules_rust_test_deps()
 
+load("@contrib_rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
+
+bazel_integration_test_rules_dependencies()
+
+load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
+
+bazel_starlib_dependencies()
+
+load("//:bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
+load("@contrib_rules_bazel_integration_test//bazel_integration_test:defs.bzl", "bazel_binaries")
+
+bazel_binaries(versions = SUPPORTED_BAZEL_VERSIONS)
+
 # --- end stardoc
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

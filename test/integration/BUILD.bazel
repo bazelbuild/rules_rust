@@ -1,0 +1,9 @@
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "integration",
+    srcs = ["integration_test.rs"],
+    edition = "2018",
+    visibility = ["//test/integration:__subpackages__"],
+)
