@@ -122,6 +122,7 @@ def _rust_doc_test_impl(ctx):
         rustc_env_files = crate.rustc_env_files,
         is_test = True,
         compile_data = crate.compile_data,
+        compile_data_targets = crate.compile_data_targets,
         wrapped_crate_type = crate.type,
         owner = ctx.label,
     )
