@@ -16,22 +16,21 @@ impl Glob {
             exclude: BTreeSet::new(),
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.include.is_empty()
+        // Note: self.exclude intentionally not considered. A glob is empty if
+        // there are no included globs. A glob cannot have only excludes.
+    }
 }
 
 impl Serialize for Glob {
-    #[allow(unknown_lints, renamed_and_removed_lints)]
-    #[allow(clippy::overly_complex_bool_expr)] // clippy 1.65+
-    #[allow(clippy::logic_bug)] // clippy 1.64 and older
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        if false && self.exclude.is_empty() {
+        if self.exclude.is_empty() {
             // Serialize as glob([...]).
-            // FIXME(dtolnay): this is disabled for now because the tera
-            // template glob.j2 counts on the serialization to have separate
-            // "include" and "exclude" fields. This can be enabled when the tera
-            // use of globs is replaced with serde_starlark.
             let mut call = serializer.serialize_tuple_struct("glob", 1)?;
             call.serialize_field(&self.include)?;
             call.end()

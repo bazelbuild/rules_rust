@@ -15,7 +15,7 @@ use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::Annotations;
-use crate::utils::starlark::{Select, SelectList};
+use crate::utils::starlark::Select;
 
 pub use self::crate_context::*;
 
@@ -157,120 +157,6 @@ impl Context {
             .to_owned();
 
         Ok(package_path_id)
-    }
-
-    /// Filter a crate's dependencies to only ones with aliases
-    pub fn crate_aliases(
-        &self,
-        crate_id: &CrateId,
-        build: bool,
-        include_dev: bool,
-    ) -> SelectList<&CrateDependency> {
-        let ctx = &self.crates[crate_id];
-        let mut set = SelectList::default();
-
-        // Return a set of aliases for build dependencies
-        // vs normal dependencies when requested.
-        if build {
-            // Note that there may not be build dependencies so no dependencies
-            // will be gathered in this case
-            if let Some(attrs) = &ctx.build_script_attrs {
-                let collection: Vec<(Option<String>, &CrateDependency)> = attrs
-                    .deps
-                    .configurations()
-                    .into_iter()
-                    .flat_map(move |conf| {
-                        attrs
-                            .deps
-                            .get_iter(conf)
-                            .expect("Iterating over known keys should never panic")
-                            .filter(|dep| dep.alias.is_some())
-                            .map(move |dep| (conf.cloned(), dep))
-                    })
-                    .chain(attrs.proc_macro_deps.configurations().into_iter().flat_map(
-                        move |conf| {
-                            attrs
-                                .proc_macro_deps
-                                .get_iter(conf)
-                                .expect("Iterating over known keys should never panic")
-                                .filter(|dep| dep.alias.is_some())
-                                .map(move |dep| (conf.cloned(), dep))
-                        },
-                    ))
-                    .collect();
-
-                for (config, dep) in collection {
-                    set.insert(dep, config);
-                }
-            }
-        } else {
-            let attrs = &ctx.common_attrs;
-            let mut collection: Vec<(Option<String>, &CrateDependency)> =
-                attrs
-                    .deps
-                    .configurations()
-                    .into_iter()
-                    .flat_map(move |conf| {
-                        attrs
-                            .deps
-                            .get_iter(conf)
-                            .expect("Iterating over known keys should never panic")
-                            .filter(|dep| dep.alias.is_some())
-                            .map(move |dep| (conf.cloned(), dep))
-                    })
-                    .chain(attrs.proc_macro_deps.configurations().into_iter().flat_map(
-                        move |conf| {
-                            attrs
-                                .proc_macro_deps
-                                .get_iter(conf)
-                                .expect("Iterating over known keys should never panic")
-                                .filter(|dep| dep.alias.is_some())
-                                .map(move |dep| (conf.cloned(), dep))
-                        },
-                    ))
-                    .collect();
-
-            // Optionally include dev dependencies
-            if include_dev {
-                collection = collection
-                    .into_iter()
-                    .chain(
-                        attrs
-                            .deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                attrs
-                                    .deps_dev
-                                    .get_iter(conf)
-                                    .expect("Iterating over known keys should never panic")
-                                    .filter(|dep| dep.alias.is_some())
-                                    .map(move |dep| (conf.cloned(), dep))
-                            }),
-                    )
-                    .chain(
-                        attrs
-                            .proc_macro_deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                attrs
-                                    .proc_macro_deps_dev
-                                    .get_iter(conf)
-                                    .expect("Iterating over known keys should never panic")
-                                    .filter(|dep| dep.alias.is_some())
-                                    .map(move |dep| (conf.cloned(), dep))
-                            }),
-                    )
-                    .collect();
-            }
-
-            for (config, dep) in collection {
-                set.insert(dep, config);
-            }
-        }
-
-        set
     }
 
     /// Create a set of all direct dependencies of workspace member crates.

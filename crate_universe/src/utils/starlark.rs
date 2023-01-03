@@ -20,13 +20,26 @@ pub type SelectStringDict = SelectDict<String>;
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum Starlark {
+    Load(Load),
     Package(Package),
     ExportsFiles(ExportsFiles),
     Filegroup(Filegroup),
     Alias(Alias),
+    CargoBuildScript(CargoBuildScript),
+    #[serde(serialize_with = "serialize::rust_proc_macro")]
+    RustProcMacro(RustProcMacro),
+    #[serde(serialize_with = "serialize::rust_library")]
+    RustLibrary(RustLibrary),
+    #[serde(serialize_with = "serialize::rust_binary")]
+    RustBinary(RustBinary),
 
     #[serde(skip_serializing)]
-    Comment(String),
+    Verbatim(String),
+}
+
+pub struct Load {
+    pub bzl: String,
+    pub items: Set<String>,
 }
 
 pub struct Package {
@@ -53,6 +66,175 @@ pub struct Alias {
     pub tags: Set<String>,
 }
 
+#[derive(Serialize)]
+#[serde(rename = "cargo_build_script")]
+pub struct CargoBuildScript {
+    pub name: String,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub aliases: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub build_script_env: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Data::is_empty")]
+    pub compile_data: Data,
+    #[serde(skip_serializing_if = "Set::is_empty")]
+    pub crate_features: Set<String>,
+    pub crate_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crate_root: Option<String>,
+    #[serde(skip_serializing_if = "Data::is_empty")]
+    pub data: Data,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    pub edition: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub linker_script: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub links: Option<String>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub rustc_env: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
+    pub srcs: Glob,
+    #[serde(skip_serializing_if = "Set::is_empty")]
+    pub tags: Set<String>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub tools: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Set::is_empty")]
+    pub toolchains: Set<String>,
+    pub version: String,
+    pub visibility: Set<String>,
+}
+
+#[derive(Serialize)]
+pub struct RustProcMacro {
+    pub name: String,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub aliases: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(flatten)]
+    pub common: CommonAttrs,
+}
+
+#[derive(Serialize)]
+pub struct RustLibrary {
+    pub name: String,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub aliases: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(flatten)]
+    pub common: CommonAttrs,
+}
+
+#[derive(Serialize)]
+pub struct RustBinary {
+    pub name: String,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub aliases: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(flatten)]
+    pub common: CommonAttrs,
+}
+
+#[derive(Serialize)]
+pub struct CommonAttrs {
+    #[serde(skip_serializing_if = "Data::is_empty")]
+    pub compile_data: Data,
+    #[serde(skip_serializing_if = "Set::is_empty")]
+    pub crate_features: Set<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crate_root: Option<String>,
+    #[serde(skip_serializing_if = "Data::is_empty")]
+    pub data: Data,
+    pub edition: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub linker_script: Option<String>,
+    #[serde(
+        skip_serializing_if = "SelectDict::is_empty",
+        serialize_with = "SelectDict::serialize_starlark"
+    )]
+    pub rustc_env: SelectDict<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
+    pub srcs: Glob,
+    #[serde(skip_serializing_if = "Set::is_empty")]
+    pub tags: Set<String>,
+    pub version: String,
+}
+
+pub struct Data {
+    pub glob: Glob,
+    pub select: SelectList<WithOriginalConfigurations<String>>,
+}
+
 impl Package {
     pub fn default_visibility_public() -> Self {
         let mut default_visibility = Set::new();
@@ -67,7 +249,7 @@ pub fn serialize(starlark: &[Starlark]) -> Result<String, StarlarkError> {
         if !content.is_empty() {
             content.push('\n');
         }
-        if let Starlark::Comment(comment) = call {
+        if let Starlark::Verbatim(comment) = call {
             content.push_str(comment);
         } else {
             content.push_str(&serde_starlark::to_string(call)?);

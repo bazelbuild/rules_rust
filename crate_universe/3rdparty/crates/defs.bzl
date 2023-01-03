@@ -370,6 +370,9 @@ _NORMAL_DEV_ALIASES = {
 
 _PROC_MACRO_DEPENDENCIES = {
     "crate_universe": {
+        _COMMON_CONDITION: {
+            "indoc": "@cui__indoc-1.0.8//:indoc",
+        },
     },
     "crate_universe/tools/cross_installer": {
     },
@@ -1046,6 +1049,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/ignore/0.4.18/download"],
         strip_prefix = "ignore-0.4.18",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.ignore-0.4.18.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__indoc-1.0.8",
+        sha256 = "da2d6f23ffea9d7e76c53eee25dfb67bcd8fde7f1198b0855350698c9f07c780",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/indoc/1.0.8/download"],
+        strip_prefix = "indoc-1.0.8",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indoc-1.0.8.bazel"),
     )
 
     maybe(

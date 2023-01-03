@@ -63,7 +63,7 @@ pub enum Rule {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct CommonAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub compile_data: SelectStringList,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
@@ -72,19 +72,19 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub crate_features: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub data: SelectStringList,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps: SelectList<CrateDependency>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_deps: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps_dev: SelectList<CrateDependency>,
 
     pub edition: String,
@@ -92,19 +92,19 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps: SelectList<CrateDependency>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_proc_macro_deps: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps_dev: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub rustc_env: SelectStringDict,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub rustc_env_files: SelectStringList,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -147,40 +147,40 @@ impl Default for CommonAttributes {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct BuildScriptAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub compile_data: SelectStringList,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub data: SelectStringList,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps: SelectList<CrateDependency>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_deps: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_proc_macro_deps: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub rustc_env: SelectStringDict,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub rustc_flags: SelectStringList,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub rustc_env_files: SelectStringList,
 
-    #[serde(skip_serializing_if = "SelectStringList::should_skip_serializing")]
+    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
     pub tools: SelectStringList,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -453,7 +453,7 @@ impl CrateContext {
 
             // Rustc env
             if let Some(extra) = &crate_extra.rustc_env {
-                self.common_attrs.rustc_env.insert(extra.clone(), None);
+                self.common_attrs.rustc_env.extend(extra.clone(), None);
             }
 
             // Rustc env files
@@ -503,12 +503,12 @@ impl CrateContext {
 
                 // Rustc env
                 if let Some(extra) = &crate_extra.build_script_rustc_env {
-                    attrs.rustc_env.insert(extra.clone(), None);
+                    attrs.rustc_env.extend(extra.clone(), None);
                 }
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs.build_script_env.insert(extra.clone(), None);
+                    attrs.build_script_env.extend(extra.clone(), None);
                 }
             }
 

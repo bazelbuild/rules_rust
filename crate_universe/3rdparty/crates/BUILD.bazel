@@ -86,6 +86,12 @@ alias(
 )
 
 alias(
+    name = "indoc",
+    actual = "@cui__indoc-1.0.8//:indoc",
+    tags = ["manual"],
+)
+
+alias(
     name = "maplit",
     actual = "@cui__maplit-1.0.2//:maplit",
     tags = ["manual"],
