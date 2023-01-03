@@ -11,7 +11,8 @@ use anyhow::Result;
 use cargo_lock::package::GitReference;
 use cargo_metadata::Package;
 use semver::VersionReq;
-use serde::de::Visitor;
+use serde::de::value::SeqAccessDeserializer;
+use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -143,6 +144,9 @@ pub enum Checksumish {
 
 #[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct CrateAnnotations {
+    /// Which subset of the crate's bins should get produced as `rust_binary` targets.
+    pub gen_binaries: Option<GenBinaries>,
+
     /// Determins whether or not Cargo build scripts should be generated for the current package
     pub gen_build_script: Option<bool>,
 
@@ -277,6 +281,17 @@ impl Add for CrateAnnotations {
             None
         };
 
+        let gen_binaries =
+            self.gen_binaries
+                .zip(rhs.gen_binaries)
+                .map(|(lhs, rhs)| match (lhs, rhs) {
+                    (GenBinaries::All, _) | (_, GenBinaries::All) => GenBinaries::All,
+                    (GenBinaries::Some(mut lhs), GenBinaries::Some(rhs)) => {
+                        lhs.extend(rhs);
+                        GenBinaries::Some(lhs)
+                    }
+                });
+
         let gen_build_script = if self.gen_build_script.is_some() {
             self.gen_build_script
         } else if rhs.gen_build_script.is_some() {
@@ -291,6 +306,7 @@ impl Add for CrateAnnotations {
 
         #[rustfmt::skip]
         let output = CrateAnnotations {
+            gen_binaries,
             gen_build_script,
             deps: joined_extra_member!(self.deps, rhs.deps, BTreeSet::new, BTreeSet::extend),
             proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, BTreeSet::new, BTreeSet::extend),
@@ -436,10 +452,71 @@ impl std::fmt::Display for CrateId {
     }
 }
 
+#[derive(Debug, Hash, Clone)]
+pub enum GenBinaries {
+    All,
+    Some(BTreeSet<String>),
+}
+
+impl Default for GenBinaries {
+    fn default() -> Self {
+        GenBinaries::Some(BTreeSet::new())
+    }
+}
+
+impl Serialize for GenBinaries {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            GenBinaries::All => serializer.serialize_bool(true),
+            GenBinaries::Some(set) if set.is_empty() => serializer.serialize_bool(false),
+            GenBinaries::Some(set) => serializer.collect_seq(set),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for GenBinaries {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(GenBinariesVisitor)
+    }
+}
+
+struct GenBinariesVisitor;
+impl<'de> Visitor<'de> for GenBinariesVisitor {
+    type Value = GenBinaries;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("boolean, or array of bin names")
+    }
+
+    fn visit_bool<E>(self, gen_binaries: bool) -> Result<Self::Value, E> {
+        if gen_binaries {
+            Ok(GenBinaries::All)
+        } else {
+            Ok(GenBinaries::Some(BTreeSet::new()))
+        }
+    }
+
+    fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        BTreeSet::deserialize(SeqAccessDeserializer::new(seq)).map(GenBinaries::Some)
+    }
+}
+
 /// Workspace specific settings to control how targets are generated
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    /// Whether to generate `rust_binary` targets for all bins by default
+    pub generate_binaries: bool,
+
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
@@ -536,6 +613,7 @@ mod test {
 
         // Global settings
         assert!(config.cargo_config.is_none());
+        assert!(!config.generate_binaries);
         assert!(!config.generate_build_scripts);
 
         // Render Config

@@ -207,7 +207,15 @@ def _get_render_config(repository_ctx):
 
     return config
 
-def compile_config(crate_annotations, generate_build_scripts, cargo_config, render_config, supported_platform_triples, repository_name, repository_ctx = None):
+def compile_config(
+        crate_annotations,
+        generate_binaries,
+        generate_build_scripts,
+        cargo_config,
+        render_config,
+        supported_platform_triples,
+        repository_name,
+        repository_ctx = None):
     """Create a config file for generating crate targets
 
     [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
@@ -215,6 +223,7 @@ def compile_config(crate_annotations, generate_build_scripts, cargo_config, rend
     Args:
         crate_annotations (dict): Extra settings to apply to crates. See
             `crates_repository.annotations` or `crates_vendor.annotations`.
+        generate_binaries (bool): Whether to generate `rust_binary` targets for all bins.
         generate_build_scripts (bool): Whether or not to globally disable build scripts.
         cargo_config (str): The optional contents of a [Cargo config][cargo_config].
         render_config (dict): The deserialized dict of the `render_config` function.
@@ -246,6 +255,7 @@ def compile_config(crate_annotations, generate_build_scripts, cargo_config, rend
         fail("The following annotations use `additive_build_file` which is not supported for {}: {}".format(repository_name, unexpected))
 
     config = struct(
+        generate_binaries = generate_binaries,
         generate_build_scripts = generate_build_scripts,
         annotations = annotations,
         cargo_config = cargo_config,
@@ -270,6 +280,7 @@ def generate_config(repository_ctx):
 
     config = compile_config(
         crate_annotations = repository_ctx.attr.annotations,
+        generate_binaries = repository_ctx.attr.generate_binaries,
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,
         cargo_config = _read_cargo_config(repository_ctx),
         render_config = _get_render_config(repository_ctx),

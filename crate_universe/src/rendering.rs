@@ -467,12 +467,12 @@ mod test {
 
     #[test]
     fn render_aliases() {
-        let annotations = Annotations::new(
-            test::metadata::alias(),
-            test::lockfile::alias(),
-            Config::default(),
-        )
-        .unwrap();
+        let config = Config {
+            generate_binaries: true,
+            ..Config::default()
+        };
+        let annotations =
+            Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
         let context = Context::new(annotations).unwrap();
 
         let renderer = Renderer::new(mock_render_config());
@@ -620,6 +620,7 @@ mod test {
     #[test]
     fn test_render_build_file_deps() {
         let config: Config = serde_json::from_value(serde_json::json!({
+            "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
                 "repository_name": "multi_cfg_dep",
