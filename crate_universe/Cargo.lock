@@ -102,6 +102,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "serde_starlark",
  "sha2",
  "spectral",
  "tempfile",
@@ -1179,6 +1180,15 @@ checksum = "020ff22c755c2ed3f8cf162dbb41a7268d934702f3ed3631656ea597e08fc3db"
 dependencies = [
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_starlark"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5171e36019e86ec83030a4e07b6ed1161b1b85675cbfd1be2c2b6824846756fd"
+dependencies = [
  "serde",
 ]
 

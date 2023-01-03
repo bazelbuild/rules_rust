@@ -21,7 +21,6 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/rendering.rs"),
     Label("//crate_universe:src/rendering/template_engine.rs"),
     Label("//crate_universe:src/rendering/templates/crate_build_file.j2"),
-    Label("//crate_universe:src/rendering/templates/module_build_file.j2"),
     Label("//crate_universe:src/rendering/templates/module_bzl.j2"),
     Label("//crate_universe:src/rendering/templates/partials/crate/aliases.j2"),
     Label("//crate_universe:src/rendering/templates/partials/crate/binary.j2"),
@@ -48,4 +47,5 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/utils/starlark/glob.rs"),
     Label("//crate_universe:src/utils/starlark/label.rs"),
     Label("//crate_universe:src/utils/starlark/select.rs"),
+    Label("//crate_universe:src/utils/starlark/serialize.rs"),
 ]

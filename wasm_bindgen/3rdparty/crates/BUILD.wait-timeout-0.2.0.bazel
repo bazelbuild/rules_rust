@@ -268,7 +268,7 @@ rust_binary(
 )
 
 rust_binary(
-    name = "sleep__bin",
+    name = "reader__bin",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -295,7 +295,7 @@ rust_binary(
     }),
     crate_features = [
     ],
-    crate_root = "src/bin/sleep.rs",
+    crate_root = "src/bin/reader.rs",
     data = select_with_or({
         "//conditions:default": [
         ],
@@ -392,7 +392,7 @@ rust_binary(
 )
 
 rust_binary(
-    name = "reader__bin",
+    name = "sleep__bin",
     srcs = glob(
         include = [
             "**/*.rs",
@@ -419,7 +419,7 @@ rust_binary(
     }),
     crate_features = [
     ],
-    crate_root = "src/bin/reader.rs",
+    crate_root = "src/bin/sleep.rs",
     data = select_with_or({
         "//conditions:default": [
         ],

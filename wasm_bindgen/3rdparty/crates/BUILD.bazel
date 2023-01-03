@@ -209,14 +209,14 @@ alias(
 )
 
 alias(
-    name = "wait-timeout__sleep",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
+    name = "wait-timeout__reader",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:reader__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wait-timeout__reader",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:reader__bin",
+    name = "wait-timeout__sleep",
+    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
     tags = ["manual"],
 )
 

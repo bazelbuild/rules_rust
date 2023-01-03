@@ -2,18 +2,21 @@
 
 mod template_engine;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
 
-use crate::config::RenderConfig;
+use crate::config::{RenderConfig, VendorMode};
+use crate::context::crate_context::{CrateContext, Rule};
 use crate::context::Context;
 use crate::rendering::template_engine::TemplateEngine;
 use crate::splicing::default_splicing_package_crate_id;
+use crate::utils::sanitize_repository_name;
 use crate::utils::starlark::Label;
+use crate::utils::starlark::{self, Alias, ExportsFiles, Filegroup, Glob, Package, Starlark};
 
 pub struct Renderer {
     config: RenderConfig,
@@ -60,10 +63,95 @@ impl Renderer {
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
-            self.engine.render_module_build_file(context)?,
+            self.render_module_build_file(context)?,
         );
 
         Ok(map)
+    }
+
+    fn render_module_build_file(&self, context: &Context) -> Result<String> {
+        let mut starlark = Vec::new();
+
+        // Banner comment for top of the file.
+        let header = self.engine.render_header()?;
+        starlark.push(Starlark::Comment(header));
+
+        // Package visibility, exported bzl files.
+        let package = Package::default_visibility_public();
+        starlark.push(Starlark::Package(package));
+
+        let mut exports_files = ExportsFiles {
+            paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
+            globs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
+        };
+        if let Some(VendorMode::Remote) = self.config.vendor_mode {
+            exports_files.paths.insert("crates.bzl".to_owned());
+        }
+        starlark.push(Starlark::ExportsFiles(exports_files));
+
+        let filegroup = Filegroup {
+            name: "srcs".to_owned(),
+            srcs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
+        };
+        starlark.push(Starlark::Filegroup(filegroup));
+
+        // An `alias` for each direct dependency of a workspace member crate.
+        let mut dependencies = Vec::new();
+        for dep in context.workspace_member_deps() {
+            let krate = &context.crates[&dep.id];
+            if let Some(library_target_name) = &krate.library_target_name {
+                let rename = dep.alias.as_ref().unwrap_or(&krate.name);
+                dependencies.push(Alias {
+                    // If duplicates exist, include version to disambiguate them.
+                    name: if context.has_duplicate_workspace_member_dep(dep) {
+                        format!("{}-{}", rename, krate.version)
+                    } else {
+                        rename.clone()
+                    },
+                    actual: self.crate_label(krate, library_target_name),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                });
+            }
+        }
+        if !dependencies.is_empty() {
+            let comment = "# Workspace Member Dependencies".to_owned();
+            starlark.push(Starlark::Comment(comment));
+            starlark.extend(dependencies.into_iter().map(Starlark::Alias));
+        }
+
+        // An `alias` for each binary dependency.
+        let mut binaries = Vec::new();
+        for crate_id in &context.binary_crates {
+            let krate = &context.crates[crate_id];
+            for rule in &krate.targets {
+                if let Rule::Binary(bin) = rule {
+                    binaries.push(Alias {
+                        // If duplicates exist, include version to disambiguate them.
+                        name: if context.has_duplicate_binary_crate(crate_id) {
+                            format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
+                        } else {
+                            format!("{}__{}", krate.name, bin.crate_name)
+                        },
+                        actual: self.crate_label(krate, &format!("{}__bin", bin.crate_name)),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                }
+            }
+        }
+        if !binaries.is_empty() {
+            let comment = "# Binaries".to_owned();
+            starlark.push(Starlark::Comment(comment));
+            starlark.extend(binaries.into_iter().map(Starlark::Alias));
+        }
+
+        let starlark = starlark::serialize(&starlark)?;
+        Ok(starlark)
     }
 
     fn render_build_files(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
@@ -111,6 +199,16 @@ impl Renderer {
             Some(package) => PathBuf::from(format!("{}/{}", package, label.target)),
             None => PathBuf::from(&label.target),
         }
+    }
+
+    fn crate_label(&self, krate: &CrateContext, target: &str) -> String {
+        sanitize_repository_name(&render_crate_bazel_label(
+            &self.config.crate_label_template,
+            &self.config.repository_name,
+            &krate.name,
+            &krate.version,
+            target,
+        ))
     }
 }
 
@@ -240,7 +338,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -265,11 +363,11 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::BuildScript(TargetAttributes {
+                targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_build".to_owned(),
                     crate_root: Some("build.rs".to_owned()),
                     ..TargetAttributes::default()
-                })],
+                })]),
                 // Build script attributes are required.
                 build_script_attrs: Some(BuildScriptAttributes::default()),
                 ..CrateContext::default()
@@ -299,7 +397,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::ProcMacro(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::ProcMacro(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -324,7 +422,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -349,7 +447,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 additive_build_file_content: Some(
                     "# Hello World from additive section!".to_owned(),
                 ),
@@ -395,7 +493,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -417,7 +515,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -447,7 +545,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -486,7 +584,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
                     rustc_flags: rustc_flags.clone(),
                     ..CommonAttributes::default()

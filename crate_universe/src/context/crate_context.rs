@@ -28,6 +28,12 @@ pub struct CrateDependency {
 #[serde(default)]
 pub struct TargetAttributes {
     /// The module name of the crate (notably, not the package name).
+    //
+    // This must be the first field of `TargetAttributes` to make it the
+    // lexicographically first thing the derived `Ord` implementation will sort
+    // by. The `Ord` impl controls the order of multiple rules of the same type
+    // in the same BUILD file. In particular, this makes packages with multiple
+    // bin crates generate those `rust_binary` targets in alphanumeric order.
     pub crate_name: String,
 
     /// The path to the crate's root source file, relative to the manifest.
@@ -39,17 +45,17 @@ pub struct TargetAttributes {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub enum Rule {
-    /// `cargo_build_script`
-    BuildScript(TargetAttributes),
+    /// `rust_library`
+    Library(TargetAttributes),
 
     /// `rust_proc_macro`
     ProcMacro(TargetAttributes),
 
-    /// `rust_library`
-    Library(TargetAttributes),
-
     /// `rust_binary`
     Binary(TargetAttributes),
+
+    /// `cargo_build_script`
+    BuildScript(TargetAttributes),
 }
 
 /// A set of attributes common to most `rust_library`, `rust_proc_macro`, and other
@@ -221,7 +227,7 @@ pub struct CrateContext {
     pub repository: Option<SourceAnnotation>,
 
     /// A list of all targets (lib, proc-macro, bin) associated with this package
-    pub targets: Vec<Rule>,
+    pub targets: BTreeSet<Rule>,
 
     /// The name of the crate's root library target. This is the target that a dependent
     /// would get if they were to depend on `{crate_name}`.
@@ -554,7 +560,7 @@ impl CrateContext {
         node: &Node,
         packages: &BTreeMap<PackageId, Package>,
         include_build_scripts: bool,
-    ) -> Vec<Rule> {
+    ) -> BTreeSet<Rule> {
         let package = &packages[&node.id];
 
         let package_root = package
@@ -567,60 +573,56 @@ impl CrateContext {
             .targets
             .iter()
             .flat_map(|target| {
-                target
-                    .kind
-                    .iter()
-                    .filter_map(|kind| {
-                        // Unfortunately, The package graph and resolve graph of cargo metadata have different representations
-                        // for the crate names (resolve graph sanitizes names to match module names) so to get the rest of this
-                        // content to align when rendering, the package target names are always sanitized.
-                        let crate_name = sanitize_module_name(&target.name);
+                target.kind.iter().filter_map(move |kind| {
+                    // Unfortunately, The package graph and resolve graph of cargo metadata have different representations
+                    // for the crate names (resolve graph sanitizes names to match module names) so to get the rest of this
+                    // content to align when rendering, the package target names are always sanitized.
+                    let crate_name = sanitize_module_name(&target.name);
 
-                        // Locate the crate's root source file relative to the package root normalized for unix
-                        let crate_root = pathdiff::diff_paths(&target.src_path, package_root).map(
-                            // Normalize the path so that it always renders the same regardless of platform
-                            |root| root.to_string_lossy().replace('\\', "/"),
-                        );
+                    // Locate the crate's root source file relative to the package root normalized for unix
+                    let crate_root = pathdiff::diff_paths(&target.src_path, package_root).map(
+                        // Normalize the path so that it always renders the same regardless of platform
+                        |root| root.to_string_lossy().replace('\\', "/"),
+                    );
 
-                        // Conditionally check to see if the dependencies is a build-script target
-                        if include_build_scripts && kind == "custom-build" {
-                            return Some(Rule::BuildScript(TargetAttributes {
-                                crate_name,
-                                crate_root,
-                                srcs: Glob::new_rust_srcs(),
-                            }));
-                        }
+                    // Conditionally check to see if the dependencies is a build-script target
+                    if include_build_scripts && kind == "custom-build" {
+                        return Some(Rule::BuildScript(TargetAttributes {
+                            crate_name,
+                            crate_root,
+                            srcs: Glob::new_rust_srcs(),
+                        }));
+                    }
 
-                        // Check to see if the dependencies is a proc-macro target
-                        if kind == "proc-macro" {
-                            return Some(Rule::ProcMacro(TargetAttributes {
-                                crate_name,
-                                crate_root,
-                                srcs: Glob::new_rust_srcs(),
-                            }));
-                        }
+                    // Check to see if the dependencies is a proc-macro target
+                    if kind == "proc-macro" {
+                        return Some(Rule::ProcMacro(TargetAttributes {
+                            crate_name,
+                            crate_root,
+                            srcs: Glob::new_rust_srcs(),
+                        }));
+                    }
 
-                        // Check to see if the dependencies is a library target
-                        if ["lib", "rlib"].contains(&kind.as_str()) {
-                            return Some(Rule::Library(TargetAttributes {
-                                crate_name,
-                                crate_root,
-                                srcs: Glob::new_rust_srcs(),
-                            }));
-                        }
+                    // Check to see if the dependencies is a library target
+                    if ["lib", "rlib"].contains(&kind.as_str()) {
+                        return Some(Rule::Library(TargetAttributes {
+                            crate_name,
+                            crate_root,
+                            srcs: Glob::new_rust_srcs(),
+                        }));
+                    }
 
-                        // Check to see if the dependencies is a library target
-                        if kind == "bin" {
-                            return Some(Rule::Binary(TargetAttributes {
-                                crate_name: target.name.clone(),
-                                crate_root,
-                                srcs: Glob::new_rust_srcs(),
-                            }));
-                        }
+                    // Check to see if the dependencies is a library target
+                    if kind == "bin" {
+                        return Some(Rule::Binary(TargetAttributes {
+                            crate_name: target.name.clone(),
+                            crate_root,
+                            srcs: Glob::new_rust_srcs(),
+                        }));
+                    }
 
-                        None
-                    })
-                    .collect::<Vec<Rule>>()
+                    None
+                })
             })
             .collect()
     }
@@ -661,7 +663,7 @@ mod test {
         assert_eq!(context.name, "common");
         assert_eq!(
             context.targets,
-            vec![
+            BTreeSet::from([
                 Rule::Library(TargetAttributes {
                     crate_name: "common".to_owned(),
                     crate_root: Some("lib.rs".to_owned()),
@@ -672,7 +674,7 @@ mod test {
                     crate_root: Some("main.rs".to_owned()),
                     srcs: Glob::new_rust_srcs(),
                 }),
-            ]
+            ]),
         );
     }
 
@@ -709,7 +711,7 @@ mod test {
         assert_eq!(context.name, "common");
         assert_eq!(
             context.targets,
-            vec![
+            BTreeSet::from([
                 Rule::Library(TargetAttributes {
                     crate_name: "common".to_owned(),
                     crate_root: Some("lib.rs".to_owned()),
@@ -720,7 +722,7 @@ mod test {
                     crate_root: Some("main.rs".to_owned()),
                     srcs: Glob::new_rust_srcs(),
                 }),
-            ]
+            ]),
         );
         assert_eq!(
             context.common_attrs.data_glob,
@@ -769,7 +771,7 @@ mod test {
         assert!(context.build_script_attrs.is_some());
         assert_eq!(
             context.targets,
-            vec![
+            BTreeSet::from([
                 Rule::Library(TargetAttributes {
                     crate_name: "openssl_sys".to_owned(),
                     crate_root: Some("src/lib.rs".to_owned()),
@@ -780,7 +782,7 @@ mod test {
                     crate_root: Some("build/main.rs".to_owned()),
                     srcs: Glob::new_rust_srcs(),
                 })
-            ]
+            ]),
         );
 
         // Cargo build scripts should include all sources
@@ -810,11 +812,11 @@ mod test {
         assert!(context.build_script_attrs.is_none());
         assert_eq!(
             context.targets,
-            vec![Rule::Library(TargetAttributes {
+            BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "openssl_sys".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
                 srcs: Glob::new_rust_srcs(),
-            })],
+            })]),
         );
     }
 
@@ -841,11 +843,11 @@ mod test {
         assert!(context.build_script_attrs.is_none());
         assert_eq!(
             context.targets,
-            vec![Rule::Library(TargetAttributes {
+            BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "sysinfo".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
                 srcs: Glob::new_rust_srcs(),
-            })],
+            })]),
         );
     }
 }
