@@ -156,6 +156,7 @@ def _write_config_file(ctx):
 
     config_data = compile_config(
         crate_annotations = ctx.attr.annotations,
+        generate_binaries = ctx.attr.generate_binaries,
         generate_build_scripts = ctx.attr.generate_build_scripts,
         cargo_config = None,
         render_config = rendering_config,
@@ -329,8 +330,8 @@ call against the generated workspace. The following table describes how to contr
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
@@ -369,6 +370,13 @@ call against the generated workspace. The following table describes how to contr
         "cargo_lockfile": attr.label(
             doc = "The path to an existing `Cargo.lock` file",
             allow_single_file = True,
+        ),
+        "generate_binaries": attr.bool(
+            doc = (
+                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+                "By default only the `rust_library` targets are generated."
+            ),
+            default = False,
         ),
         "generate_build_scripts": attr.bool(
             doc = (

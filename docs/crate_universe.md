@@ -156,6 +156,89 @@ rust_test(
 )
 ```
 
+### Binary dependencies
+
+Neither of the above approaches supports depending on binary-only packages.
+
+In order to depend on a Cargo package that contains binaries and no library, you
+will need to do one of the following:
+
+- Fork the package to add an empty lib.rs, which makes the package visible to
+  Cargo metadata and compatible with the above approaches;
+
+- Or handwrite your own build target for the binary, use `http_archive` to
+  import its source code, and use `crates_repository` to make build targets for
+  its dependencies. This is demonstrated below using the `rustfilt` crate as an
+  example.
+
+```python
+# in WORKSPACE.bazel
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rustfilt",
+    build_file = "//rustfilt:BUILD.rustfilt.bazel",
+    sha256 = "c8d748b182c8f95224336d20dcc5609598af612581ce60cfb29da4dc8d0091f2",
+    strip_prefix = "rustfilt-0.2.1",
+    type = "tar.gz",
+    urls = ["https://crates.io/api/v1/crates/rustfilt/0.2.1/download"],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "rustfilt_deps",
+    cargo_lockfile = "//rustfilt:Cargo.lock",
+    manifests = ["@rustfilt//:Cargo.toml"],
+)
+
+load("@rustfilt_deps//:defs.bzl", rustfilt_deps = "crate_repositories")
+
+rustfilt_deps()
+```
+
+```python
+# in rustfilt/BUILD.rustfilt.bazel
+
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "rustfilt",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@rustfilt_deps//:clap",
+        "@rustfilt_deps//:lazy_static",
+        "@rustfilt_deps//:regex",
+        "@rustfilt_deps//:rustc-demangle",
+    ],
+)
+```
+
+If you use either `crates_repository` or `crates_vendor` to depend on a Cargo
+package that contains _both_ a library crate _and_ binaries, by default only the
+library gets made available to Bazel. To generate Bazel targets for the binary
+crates as well, you must opt in to it with an annotation on the package:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
+
+crates_repository(
+    name = "crate_index",
+    annotations = {
+        "thepackage": [crate.annotation(
+            gen_binaries = True,
+            # Or, to expose just a subset of the package's binaries by name:
+            gen_binaries = ["rustfilt"],
+        )],
+    },
+    # Or, to expose every binary of every package:
+    generate_binaries = True,
+    ...
+)
+```
+
 ## Dependencies API
 
 After rendering dependencies, convenience macros may also be generated to provide
@@ -181,11 +264,11 @@ convenient accessors to larger sections of the dependency graph.
 ## crates_repository
 
 <pre>
-crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>,
-                  <a href="#crates_repository-generator">generator</a>, <a href="#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="#crates_repository-generator_urls">generator_urls</a>, <a href="#crates_repository-isolated">isolated</a>, <a href="#crates_repository-lockfile">lockfile</a>, <a href="#crates_repository-manifests">manifests</a>,
-                  <a href="#crates_repository-packages">packages</a>, <a href="#crates_repository-quiet">quiet</a>, <a href="#crates_repository-render_config">render_config</a>, <a href="#crates_repository-repo_mapping">repo_mapping</a>, <a href="#crates_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>,
-                  <a href="#crates_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#crates_repository-rust_version">rust_version</a>, <a href="#crates_repository-splicing_config">splicing_config</a>,
-                  <a href="#crates_repository-supported_platform_triples">supported_platform_triples</a>)
+crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#crates_repository-generate_binaries">generate_binaries</a>,
+                  <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_repository-generator">generator</a>, <a href="#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="#crates_repository-generator_urls">generator_urls</a>, <a href="#crates_repository-isolated">isolated</a>,
+                  <a href="#crates_repository-lockfile">lockfile</a>, <a href="#crates_repository-manifests">manifests</a>, <a href="#crates_repository-packages">packages</a>, <a href="#crates_repository-quiet">quiet</a>, <a href="#crates_repository-render_config">render_config</a>, <a href="#crates_repository-repo_mapping">repo_mapping</a>,
+                  <a href="#crates_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#crates_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#crates_repository-rust_version">rust_version</a>,
+                  <a href="#crates_repository-splicing_config">splicing_config</a>, <a href="#crates_repository-supported_platform_triples">supported_platform_triples</a>)
 </pre>
 
 A rule for defining and downloading Rust dependencies (crates). This rule
@@ -263,8 +346,8 @@ that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
@@ -279,6 +362,7 @@ that is called behind the scenes to update dependencies.
 | <a id="crates_repository-annotations"></a>annotations |  Extra settings to apply to crates. See [crate.annotation](#crateannotation).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> List of strings</a> | optional | <code>{}</code> |
 | <a id="crates_repository-cargo_config"></a>cargo_config |  A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="crates_repository-cargo_lockfile"></a>cargo_lockfile |  The path used to store the <code>crates_repository</code> specific [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. In the case that your <code>crates_repository</code> corresponds directly with an existing <code>Cargo.toml</code> file which has a paired <code>Cargo.lock</code> file, that <code>Cargo.lock</code> file should be used here, which will keep the versions used by cargo and bazel in sync.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="crates_repository-generate_binaries"></a>generate_binaries |  Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.   | Boolean | optional | <code>False</code> |
 | <a id="crates_repository-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | <code>True</code> |
 | <a id="crates_repository-generator"></a>generator |  The absolute label of a generator. Eg. <code>@cargo_bazel_bootstrap//:cargo-bazel</code>. This is typically used when bootstrapping   | String | optional | <code>""</code> |
 | <a id="crates_repository-generator_sha256s"></a>generator_sha256s |  Dictionary of <code>host_triple</code> -&gt; <code>sha256</code> for a <code>cargo-bazel</code> binary.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
@@ -303,8 +387,8 @@ that is called behind the scenes to update dependencies.
 
 <pre>
 crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-bazel">bazel</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-cargo_lockfile">cargo_lockfile</a>,
-              <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>,
-              <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
+              <a href="#crates_vendor-generate_binaries">generate_binaries</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-manifests">manifests</a>, <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-repository_name">repository_name</a>,
+              <a href="#crates_vendor-splicing_config">splicing_config</a>, <a href="#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="#crates_vendor-vendor_path">vendor_path</a>)
 </pre>
 
 A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
@@ -372,8 +456,8 @@ call against the generated workspace. The following table describes how to contr
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
@@ -391,6 +475,7 @@ call against the generated workspace. The following table describes how to contr
 | <a id="crates_vendor-cargo_bazel"></a>cargo_bazel |  The cargo-bazel binary to use for vendoring. If this attribute is not set, then a <code>CARGO_BAZEL_GENERATOR_PATH</code> action env will be used.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>@cargo_bazel_bootstrap//:binary</code> |
 | <a id="crates_vendor-cargo_config"></a>cargo_config |  A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="crates_vendor-cargo_lockfile"></a>cargo_lockfile |  The path to an existing <code>Cargo.lock</code> file   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="crates_vendor-generate_binaries"></a>generate_binaries |  Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.   | Boolean | optional | <code>False</code> |
 | <a id="crates_vendor-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | <code>True</code> |
 | <a id="crates_vendor-manifests"></a>manifests |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="crates_vendor-mode"></a>mode |  Flags determining how crates should be vendored. <code>local</code> is where crate source and BUILD files are written to the repository. <code>remote</code> is where only BUILD files are written and repository rules used to fetch source code.   | String | optional | <code>"remote"</code> |
@@ -506,7 +591,7 @@ string: A json encoded string of all inputs
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>,
                  <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
                  <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
-                 <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>,
+                 <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>,
                  <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
                  <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
@@ -535,6 +620,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-data"></a>data |  A list of labels to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-data_glob"></a>data_glob |  A list of glob patterns to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-deps"></a>deps |  A list of labels to add to a crate's <code>rust_library::deps</code> attribute.   |  `None` |
+| <a id="crate.annotation-gen_binaries"></a>gen_binaries |  As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.   |  `[]` |
 | <a id="crate.annotation-gen_build_script"></a>gen_build_script |  An authorative flag to determine whether or not to produce <code>cargo_build_script</code> targets for the current crate.   |  `None` |
 | <a id="crate.annotation-patch_args"></a>patch_args |  The <code>patch_args</code> attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)   |  `None` |
 | <a id="crate.annotation-patch_tool"></a>patch_tool |  The <code>patch_tool</code> attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)   |  `None` |
