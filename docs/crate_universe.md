@@ -263,8 +263,8 @@ that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
@@ -372,8 +372,8 @@ call against the generated workspace. The following table describes how to contr
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
