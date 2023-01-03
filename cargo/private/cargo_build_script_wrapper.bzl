@@ -110,6 +110,9 @@ def cargo_build_script(
     binary_tags = [tag for tag in tags or []]
     if "manual" not in binary_tags:
         binary_tags.append("manual")
+    build_script_kwargs = {}
+    if "compatible_with" in kwargs:
+        build_script_kwargs["compatible_with"] = kwargs["compatible_with"]
 
     rust_binary(
         name = name + "_",
@@ -135,4 +138,5 @@ def cargo_build_script(
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
+        **build_script_kwargs
     )
