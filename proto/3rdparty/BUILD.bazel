@@ -15,6 +15,7 @@ crates_vendor(
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
+    generate_binaries = True,
     mode = "remote",
     packages = {
         "grpc": crate.spec(
