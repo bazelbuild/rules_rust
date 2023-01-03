@@ -137,7 +137,8 @@ impl Digest {
             .arg("--version")
             .env_clear()
             .envs(env)
-            .output()?;
+            .output()
+            .with_context(|| format!("Failed to run {} to get its version", binary.display()))?;
 
         if !output.status.success() {
             bail!("Failed to query cargo version")
