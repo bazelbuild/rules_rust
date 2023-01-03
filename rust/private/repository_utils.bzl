@@ -346,24 +346,26 @@ def BUILD_for_toolchain(
         target_settings = target_settings_value,
     )
 
-def load_rustfmt(ctx):
+def load_rustfmt(ctx, target_triple, version, iso_date):
     """Loads a rustfmt binary and yields corresponding BUILD for it
 
     Args:
-        ctx (repository_ctx): The repository rule's context object
+        ctx (repository_ctx): The repository rule's context object.
+        target_triple (str): The platform triple to download rustfmt for.
+        version (str): The version or channel of rustfmt.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
 
     Returns:
         str: The BUILD file contents for this rustfmt binary
     """
-    target_triple = ctx.attr.exec_triple
 
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustfmt",
         tool_subdirectories = ["rustfmt-preview"],
-        version = ctx.attr.rustfmt_version,
+        version = version,
     )
 
     return BUILD_for_rustfmt(target_triple)
@@ -520,6 +522,22 @@ def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv):
         name = name,
         rustc = rustc,
         proc_macro_srv = repr(proc_macro_srv),
+    )
+
+_build_file_for_rustfmt_toolchain_template = """\
+load("@rules_rust//rust:toolchain.bzl", "rustfmt_toolchain")
+
+rustfmt_toolchain(
+    name = "{name}",
+    rustfmt = "{rustfmt}",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rustfmt_toolchain(name, rustfmt):
+    return _build_file_for_rustfmt_toolchain_template.format(
+        name = name,
+        rustfmt = rustfmt,
     )
 
 def load_rust_stdlib(ctx, target_triple):
@@ -730,3 +748,44 @@ def _get_tool_extension(ctx):
         return ".tar.xz"
     else:
         return ""
+
+def select_rust_version(versions):
+    """Select the highest priorty version for a list of Rust versions
+
+    Priority order: `stable > nightly > beta`
+
+    Note that duplicate channels are unexpected in `versions`.
+
+    Args:
+        versions (list): A list of Rust versions. E.g. [`1.66.0`, `nightly/2022-12-15`]
+
+    Returns:
+        str: The highest ranking value from `versions`
+    """
+    if not versions:
+        fail("No versions were provided")
+
+    current = versions[0]
+
+    for ver in versions:
+        if ver.startswith("beta"):
+            if current[0].isdigit() or current.startswith("nightly"):
+                continue
+            if current.startswith("beta") and ver > current:
+                current = ver
+                continue
+
+            current = ver
+        elif ver.startswith("nightly"):
+            if current[0].isdigit():
+                continue
+            if current.startswith("nightly") and ver > current:
+                current = ver
+                continue
+
+            current = ver
+
+        else:
+            current = ver
+
+    return current

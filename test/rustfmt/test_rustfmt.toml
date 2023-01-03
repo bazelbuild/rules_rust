@@ -1,1 +1,1 @@
-control_brace_style = "AlwaysNextLine"
+reorder_imports = false

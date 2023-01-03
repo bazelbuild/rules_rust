@@ -4,6 +4,11 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
 load(
+    "//rust/private:rustfmt.bzl",
+    _current_rustfmt_toolchain = "current_rustfmt_toolchain",
+    _rustfmt_toolchain = "rustfmt_toolchain",
+)
+load(
     "//rust/private:utils.bzl",
     "dedent",
     "dedup_expand_location",
@@ -12,6 +17,8 @@ load(
 )
 
 rust_analyzer_toolchain = _rust_analyzer_toolchain
+rustfmt_toolchain = _rustfmt_toolchain
+current_rustfmt_toolchain = _current_rustfmt_toolchain
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
@@ -664,7 +671,7 @@ rust_toolchain = rule(
             doc = "**Deprecated**: Instead see [rust_analyzer_toolchain](#rust_analyzer_toolchain)",
         ),
         "rustfmt": attr.label(
-            doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
+            doc = "**Deprecated**: Instead see [rustfmt_toolchain](#rustfmt_toolchain)",
             allow_single_file = True,
             cfg = "exec",
         ),
