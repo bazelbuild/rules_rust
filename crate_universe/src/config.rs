@@ -265,49 +265,14 @@ impl Add for CrateAnnotations {
     type Output = CrateAnnotations;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let shallow_since = if self.shallow_since.is_some() {
-            self.shallow_since
-        } else if rhs.shallow_since.is_some() {
-            rhs.shallow_since
-        } else {
-            None
-        };
-
-        let patch_tool = if self.patch_tool.is_some() {
-            self.patch_tool
-        } else if rhs.patch_tool.is_some() {
-            rhs.patch_tool
-        } else {
-            None
-        };
-
-        let gen_binaries =
-            self.gen_binaries
-                .zip(rhs.gen_binaries)
-                .map(|(lhs, rhs)| match (lhs, rhs) {
-                    (GenBinaries::All, _) | (_, GenBinaries::All) => GenBinaries::All,
-                    (GenBinaries::Some(mut lhs), GenBinaries::Some(rhs)) => {
-                        lhs.extend(rhs);
-                        GenBinaries::Some(lhs)
-                    }
-                });
-
-        let gen_build_script = if self.gen_build_script.is_some() {
-            self.gen_build_script
-        } else if rhs.gen_build_script.is_some() {
-            rhs.gen_build_script
-        } else {
-            None
-        };
-
         let concat_string = |lhs: &mut String, rhs: String| {
             *lhs = format!("{lhs}{rhs}");
         };
 
         #[rustfmt::skip]
         let output = CrateAnnotations {
-            gen_binaries,
-            gen_build_script,
+            gen_binaries: self.gen_binaries.or(rhs.gen_binaries),
+            gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
             deps: joined_extra_member!(self.deps, rhs.deps, BTreeSet::new, BTreeSet::extend),
             proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, BTreeSet::new, BTreeSet::extend),
             crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, BTreeSet::new, BTreeSet::extend),
@@ -327,9 +292,9 @@ impl Add for CrateAnnotations {
             build_script_rustc_env: joined_extra_member!(self.build_script_rustc_env, rhs.build_script_rustc_env, BTreeMap::new, BTreeMap::extend),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
-            shallow_since,
+            shallow_since: self.shallow_since.or(rhs.shallow_since),
             patch_args: joined_extra_member!(self.patch_args, rhs.patch_args, Vec::new, Vec::extend),
-            patch_tool,
+            patch_tool: self.patch_tool.or(rhs.patch_tool),
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
         };
 
