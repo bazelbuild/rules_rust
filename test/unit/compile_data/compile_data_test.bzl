@@ -1,7 +1,7 @@
 """Unittest to verify compile_data (attribute) propagation"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_common", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_common", "rust_library", "rust_test", "rust_doc")
 
 def _target_has_compile_data(ctx, expected):
     env = analysistest.begin(ctx)
@@ -41,9 +41,16 @@ def _wrapper_rule_propagates_and_joins_compile_data_test_impl(ctx):
         ],
     )
 
+def _compile_data_propagates_to_rust_doc_test_impl(ctx):
+    return _target_has_compile_data(
+        ctx,
+        ["test/unit/compile_data/compile_data.txt"],
+    )
+
 compile_data_propagates_to_crate_info_test = analysistest.make(_compile_data_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_to_crate_info_test = analysistest.make(_wrapper_rule_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_and_joins_compile_data_test = analysistest.make(_wrapper_rule_propagates_and_joins_compile_data_test_impl)
+compile_data_propagates_to_rust_doc_test = analysistest.make(_compile_data_propagates_to_rust_doc_test_impl)
 
 def _define_test_targets():
     rust_library(
@@ -63,6 +70,11 @@ def _define_test_targets():
         compile_data = ["test_compile_data.txt"],
         crate = ":compile_data",
         rustc_flags = ["--cfg=test_compile_data"],
+    )
+
+    rust_doc(
+        name = "compile_data_rust_doc",
+        crate = ":compile_data",
     )
 
 def compile_data_test_suite(name):
@@ -89,11 +101,18 @@ def compile_data_test_suite(name):
         target_under_test = ":test_compile_data_unit_test",
     )
 
+    compile_data_propagates_to_rust_doc_test(
+        name = "compile_data_propagates_to_rust_doc_test",
+        target_under_test = ":compile_data",
+    )
+
+
     native.test_suite(
         name = name,
         tests = [
             ":compile_data_propagates_to_crate_info_test",
             ":wrapper_rule_propagates_to_crate_info_test",
             ":wrapper_rule_propagates_and_joins_compile_data_test",
+            ":compile_data_propagates_to_rust_doc_test",
         ],
     )
