@@ -13,21 +13,15 @@ exports_files(
         "cargo-bazel.json",
         "crates.bzl",
         "defs.bzl",
-    ] + glob(
-        include = ["*.bazel"],
-        exclude = [],
-    ),
+    ] + glob(["*.bazel"]),
 )
 
 filegroup(
     name = "srcs",
-    srcs = glob(
-        include = [
-            "*.bazel",
-            "*.bzl",
-        ],
-        exclude = [],
-    ),
+    srcs = glob([
+        "*.bazel",
+        "*.bzl",
+    ]),
 )
 
 # Workspace Member Dependencies
@@ -166,66 +160,5 @@ alias(
 alias(
     name = "wit-walrus",
     actual = "@rules_rust_wasm_bindgen__wit-walrus-0.6.0//:wit_walrus",
-    tags = ["manual"],
-)
-
-# Binaries
-alias(
-    name = "assert_cmd__bin_fixture",
-    actual = "@rules_rust_wasm_bindgen__assert_cmd-1.0.8//:bin_fixture__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "cc__gcc-shim",
-    actual = "@rules_rust_wasm_bindgen__cc-1.0.78//:gcc-shim__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "difference__difference",
-    actual = "@rules_rust_wasm_bindgen__difference-2.0.0//:difference__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "docopt__docopt-wordlist",
-    actual = "@rules_rust_wasm_bindgen__docopt-1.1.1//:docopt-wordlist__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "leb128__leb128-repl",
-    actual = "@rules_rust_wasm_bindgen__leb128-0.2.5//:leb128-repl__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "multipart__form_test",
-    actual = "@rules_rust_wasm_bindgen__multipart-0.18.0//:form_test__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wait-timeout__exit",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:exit__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wait-timeout__reader",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:reader__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wait-timeout__sleep",
-    actual = "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:sleep__bin",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wit-schema-version__wit-schema-version",
-    actual = "@rules_rust_wasm_bindgen__wit-schema-version-0.1.0//:wit-schema-version__bin",
     tags = ["manual"],
 )

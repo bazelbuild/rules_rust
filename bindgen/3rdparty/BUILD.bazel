@@ -21,6 +21,7 @@ crates_vendor(
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
+    generate_binaries = True,
     generate_build_scripts = False,
     mode = "remote",
     packages = {

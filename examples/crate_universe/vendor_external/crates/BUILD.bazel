@@ -13,21 +13,15 @@ exports_files(
         "cargo-bazel.json",
         "crates.bzl",
         "defs.bzl",
-    ] + glob(
-        include = ["*.bazel"],
-        exclude = [],
-    ),
+    ] + glob(["*.bazel"]),
 )
 
 filegroup(
     name = "srcs",
-    srcs = glob(
-        include = [
-            "*.bazel",
-            "*.bzl",
-        ],
-        exclude = [],
-    ),
+    srcs = glob([
+        "*.bazel",
+        "*.bzl",
+    ]),
 )
 
 # Workspace Member Dependencies
@@ -52,12 +46,5 @@ alias(
 alias(
     name = "version-sync",
     actual = "@crates_vendor__version-sync-0.9.4//:version_sync",
-    tags = ["manual"],
-)
-
-# Binaries
-alias(
-    name = "pulldown-cmark__pulldown-cmark",
-    actual = "@crates_vendor__pulldown-cmark-0.8.0//:pulldown-cmark__bin",
     tags = ["manual"],
 )
