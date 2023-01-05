@@ -5,6 +5,7 @@ crates_vendor(
     name = "crates_vendor",
     annotations = {
         "bindgen": [crate.annotation(
+            gen_binaries = ["bindgen"],
             gen_build_script = True,
         )],
         "clang-sys": [crate.annotation(
@@ -21,7 +22,6 @@ crates_vendor(
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
-    generate_binaries = True,
     generate_build_scripts = False,
     mode = "remote",
     packages = {

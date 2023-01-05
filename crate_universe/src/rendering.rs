@@ -226,23 +226,16 @@ impl Renderer {
         let header = self.engine.render_header()?;
         starlark.push(Starlark::Verbatim(header));
 
-        // Loads.
-        starlark.push(Starlark::Load(Load {
-            bzl: "@bazel_skylib//lib:dicts.bzl".to_owned(),
-            items: BTreeSet::from(["dicts".to_owned()]),
-        }));
-        starlark.push(Starlark::Load(Load {
-            bzl: "@rules_rust//cargo:defs.bzl".to_owned(),
-            items: BTreeSet::from(["cargo_build_script".to_owned()]),
-        }));
-        starlark.push(Starlark::Load(Load {
-            bzl: "@rules_rust//rust:defs.bzl".to_owned(),
-            items: BTreeSet::from([
-                "rust_binary".to_owned(),
-                "rust_library".to_owned(),
-                "rust_proc_macro".to_owned(),
-            ]),
-        }));
+        // Loads: map of bzl file to set of items imported from that file. These
+        // get inserted into `starlark` at the bottom of this function.
+        let mut loads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        let mut load = |bzl: &str, item: &str| {
+            loads
+                .entry(bzl.to_owned())
+                .or_default()
+                .insert(item.to_owned())
+        };
+
         let disable_visibility = "# buildifier: disable=bzl-visibility".to_owned();
         starlark.push(Starlark::Verbatim(disable_visibility));
         starlark.push(Starlark::Load(Load {
@@ -265,6 +258,7 @@ impl Renderer {
         for rule in &krate.targets {
             match rule {
                 Rule::BuildScript(target) => {
+                    load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
                     let cargo_build_script =
                         self.make_cargo_build_script(platforms, krate, target)?;
                     starlark.push(Starlark::CargoBuildScript(cargo_build_script));
@@ -275,14 +269,17 @@ impl Renderer {
                     }));
                 }
                 Rule::ProcMacro(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
                     let rust_proc_macro = self.make_rust_proc_macro(platforms, krate, target)?;
                     starlark.push(Starlark::RustProcMacro(rust_proc_macro));
                 }
                 Rule::Library(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_library");
                     let rust_library = self.make_rust_library(platforms, krate, target)?;
                     starlark.push(Starlark::RustLibrary(rust_library));
                 }
                 Rule::Binary(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_binary");
                     let rust_binary = self.make_rust_binary(platforms, krate, target)?;
                     starlark.push(Starlark::RustBinary(rust_binary));
                 }
@@ -294,6 +291,12 @@ impl Renderer {
             starlark.push(Starlark::Verbatim(comment));
             starlark.push(Starlark::Verbatim(additive_build_file_content.clone()));
         }
+
+        // Insert all the loads immediately after the header banner comment.
+        let loads = loads
+            .into_iter()
+            .map(|(bzl, items)| Starlark::Load(Load { bzl, items }));
+        starlark.splice(1..1, loads);
 
         let starlark = starlark::serialize(&starlark)?;
         Ok(starlark)
