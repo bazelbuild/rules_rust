@@ -1570,7 +1570,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.   |  `[]` |
 | <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  `None` |
 | <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  `None` |
-| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule.   |  none |
+| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule. An exception is the <code>compatible_with</code> attribute, which shouldn't be forwarded to the <code>rust_binary</code>, as the <code>rust_binary</code> is only built and used in <code>exec</code> mode. We propagate the <code>compatible_with</code> attribute to the <code>_build_scirpt_run</code> target.   |  none |
 
 
 <a id="cargo_env"></a>
