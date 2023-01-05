@@ -112,7 +112,7 @@ def cargo_build_script(
         binary_tags.append("manual")
     build_script_kwargs = {}
     if "compatible_with" in kwargs:
-        build_script_kwargs["compatible_with"] = kwargs["compatible_with"]
+        build_script_kwargs["compatible_with"] = kwargs.pop("compatible_with")
 
     rust_binary(
         name = name + "_",
