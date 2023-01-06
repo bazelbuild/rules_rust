@@ -1,7 +1,7 @@
 """Unittest to verify compile_data (attribute) propagation"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_common", "rust_library", "rust_test", "rust_doc")
+load("//rust:defs.bzl", "rust_common", "rust_doc", "rust_library", "rust_test")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -123,7 +123,6 @@ def compile_data_test_suite(name):
         name = "compile_data_propagates_to_rust_doc_test",
         target_under_test = ":compile_data_env_rust_doc",
     )
-
 
     native.test_suite(
         name = name,
