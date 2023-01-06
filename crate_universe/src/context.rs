@@ -261,4 +261,16 @@ mod test {
             ],
         }
     }
+
+    #[test]
+    fn seralization() {
+        let context = mock_context_aliases();
+
+        // Seralize and deseralize the context object
+        let json_text = serde_json::to_string(&context).unwrap();
+        let deserialized_context: Context = serde_json::from_str(&json_text).unwrap();
+
+        // The data should be identical
+        assert_eq!(context, deserialized_context);
+    }
 }
