@@ -371,13 +371,14 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # flag indicating repinning was requested, an error is raised
     # since repinning should be an explicit action
     if result.stdout.strip().lower() == "repin":
-        # buildifier: disable=print
-        print(result.stderr)
-        fail((
-            "The current `lockfile` is out of date for '{}'. Please re-run " +
-            "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
-            "and the lockfile should be updated."
-        ).format(repository_ctx.name))
+        fail(("\n".join([
+            result.stderr,
+            (
+                "The current `lockfile` is out of date for '{}'. Please re-run " +
+                "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
+                "and the lockfile should be updated."
+            ).format(repository_ctx.name),
+        ])))
 
     return False
 
