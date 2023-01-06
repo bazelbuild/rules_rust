@@ -85,7 +85,7 @@ def _define_test_targets():
         srcs = ["compile_data_env.rs"],
         compile_data = ["compile_data.txt"],
         rustc_env = {
-            "COMPILE_DATA_PATH": "$(location :compile_data.txt)",
+            "COMPILE_DATA_PATH": "$(execpath :compile_data.txt)",
         },
         edition = "2018",
     )
