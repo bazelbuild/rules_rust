@@ -907,13 +907,13 @@ def construct_arguments(
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
-    data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets])
+    data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     rustc_flags.add_all(
         expand_list_element_locations(
             ctx,
             getattr(attr, "rustc_flags", []),
-            data_paths.to_list(),
+            data_paths,
         ),
     )
     add_edition_flags(rustc_flags, crate_info)
