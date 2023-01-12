@@ -641,8 +641,16 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
     ))
 
     rustfmt = "//:rustfmt_bin"
+    rustc = "//:rustc"
+    rustc_lib = "//:rustc_lib"
 
     build_contents = [
+        load_rust_compiler(
+            ctx = repository_ctx,
+            iso_date = repository_ctx.attr.iso_date,
+            target_triple = repository_ctx.attr.exec_triple,
+            version = repository_ctx.attr.version,
+        ),
         load_rustfmt(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
@@ -652,6 +660,8 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         BUILD_for_rustfmt_toolchain(
             name = "rustfmt_toolchain",
             rustfmt = rustfmt,
+            rustc = rustc,
+            rustc_lib = rustc_lib,
         ),
     ]
 
