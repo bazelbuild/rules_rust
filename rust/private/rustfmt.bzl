@@ -135,6 +135,7 @@ generated source files are also ignored by this aspect.
         ),
     },
     incompatible_use_toolchain_transition = True,
+    required_providers = [rust_common.crate_info],
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [

@@ -225,6 +225,7 @@ rust_clippy_aspect = aspect(
         ),
     },
     provides = [ClippyInfo],
+    required_providers = [rust_common.crate_info],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
