@@ -16,7 +16,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "windows_aarch64_msvc",
+    name = "camino",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,6 +28,10 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "serde",
+        "serde1",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
@@ -37,15 +41,20 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.42.0",
+    version = "1.1.2",
     deps = [
-        "@cui__windows_aarch64_msvc-0.42.0//:build_script_build",
+        "@cui__camino-1.1.2//:build_script_build",
+        "@cui__serde-1.0.152//:serde",
     ],
 )
 
 cargo_build_script(
-    name = "windows_aarch64_msvc_build_script",
+    name = "camino_build_script",
     srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "serde",
+        "serde1",
+    ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
@@ -68,12 +77,12 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.42.0",
+    version = "1.1.2",
     visibility = ["//visibility:private"],
 )
 
 alias(
     name = "build_script_build",
-    actual = "windows_aarch64_msvc_build_script",
+    actual = "camino_build_script",
     tags = ["manual"],
 )

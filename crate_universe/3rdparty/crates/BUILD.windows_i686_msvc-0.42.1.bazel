@@ -6,6 +6,7 @@
 #     bazel run @//crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -15,7 +16,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "regex",
+    name = "windows_i686_msvc",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -27,25 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "aho-corasick",
-        "default",
-        "memchr",
-        "perf",
-        "perf-cache",
-        "perf-dfa",
-        "perf-inline",
-        "perf-literal",
-        "std",
-        "unicode",
-        "unicode-age",
-        "unicode-bool",
-        "unicode-case",
-        "unicode-gencat",
-        "unicode-perl",
-        "unicode-script",
-        "unicode-segment",
-    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
@@ -55,10 +37,43 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.7.0",
+    version = "0.42.1",
     deps = [
-        "@cui__aho-corasick-0.7.20//:aho_corasick",
-        "@cui__memchr-2.5.0//:memchr",
-        "@cui__regex-syntax-0.6.28//:regex_syntax",
+        "@cui__windows_i686_msvc-0.42.1//:build_script_build",
     ],
+)
+
+cargo_build_script(
+    name = "windows_i686_msvc_build_script",
+    srcs = glob(["**/*.rs"]),
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-bazel",
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "0.42.1",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "build_script_build",
+    actual = "windows_i686_msvc_build_script",
+    tags = ["manual"],
 )

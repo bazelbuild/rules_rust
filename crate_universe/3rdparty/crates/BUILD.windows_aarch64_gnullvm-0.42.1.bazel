@@ -16,7 +16,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "windows_x86_64_gnu",
+    name = "windows_aarch64_gnullvm",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -37,14 +37,14 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.42.0",
+    version = "0.42.1",
     deps = [
-        "@cui__windows_x86_64_gnu-0.42.0//:build_script_build",
+        "@cui__windows_aarch64_gnullvm-0.42.1//:build_script_build",
     ],
 )
 
 cargo_build_script(
-    name = "windows_x86_64_gnu_build_script",
+    name = "windows_aarch64_gnullvm_build_script",
     srcs = glob(["**/*.rs"]),
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -68,12 +68,12 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.42.0",
+    version = "0.42.1",
     visibility = ["//visibility:private"],
 )
 
 alias(
     name = "build_script_build",
-    actual = "windows_x86_64_gnu_build_script",
+    actual = "windows_aarch64_gnullvm_build_script",
     tags = ["manual"],
 )

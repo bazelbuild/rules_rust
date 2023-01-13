@@ -36,7 +36,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@cui__cxxbridge-macro-1.0.85//:cxxbridge_macro",
+        "@cui__cxxbridge-macro-1.0.86//:cxxbridge_macro",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
@@ -45,9 +45,9 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.85",
+    version = "1.0.86",
     deps = [
-        "@cui__cxx-1.0.85//:build_script_build",
+        "@cui__cxx-1.0.86//:build_script_build",
         "@cui__link-cplusplus-1.0.8//:link_cplusplus",
     ],
 )
@@ -83,11 +83,11 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.85",
+    version = "1.0.86",
     visibility = ["//visibility:private"],
     deps = [
         "@cui__cc-1.0.78//:cc",
-        "@cui__cxxbridge-flags-1.0.85//:cxxbridge_flags",
+        "@cui__cxxbridge-flags-1.0.86//:cxxbridge_flags",
     ],
 )
 

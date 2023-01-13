@@ -6,16 +6,16 @@
 #     bazel run @//crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
-rust_proc_macro(
-    name = "pest_derive",
+rust_library(
+    name = "serde_starlark",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -27,10 +27,6 @@ rust_proc_macro(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "default",
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = ["--cap-lints=allow"],
@@ -40,9 +36,8 @@ rust_proc_macro(
         "noclippy",
         "norustfmt",
     ],
-    version = "2.5.2",
+    version = "0.1.10",
     deps = [
-        "@cui__pest-2.5.2//:pest",
-        "@cui__pest_generator-2.5.2//:pest_generator",
+        "@cui__serde-1.0.152//:serde",
     ],
 )

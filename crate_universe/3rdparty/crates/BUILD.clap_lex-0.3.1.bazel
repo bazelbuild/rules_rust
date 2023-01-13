@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "serde_starlark",
+    name = "clap_lex",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -36,8 +36,8 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.8",
+    version = "0.3.1",
     deps = [
-        "@cui__serde-1.0.152//:serde",
+        "@cui__os_str_bytes-6.4.1//:os_str_bytes",
     ],
 )
