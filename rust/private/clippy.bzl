@@ -45,7 +45,7 @@ clippy_flags = rule(
     build_setting = config.string_list(flag = True),
 )
 
-def _get_clippy_ready_crate_info(target, aspect_ctx):
+def _get_clippy_ready_crate_info(target, aspect_ctx = None):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
 
     Args:
@@ -72,10 +72,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
                 return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
-    if rust_common.crate_info not in target:
+    if rust_common.crate_info in target:
+        return target[rust_common.crate_info]
+    elif rust_common.test_crate_info in target:
+        return target[rust_common.test_crate_info].crate
+    else:
         return None
-
-    return target[rust_common.crate_info]
 
 def _clippy_aspect_impl(target, ctx):
     crate_info = _get_clippy_ready_crate_info(target, ctx)
@@ -225,7 +227,10 @@ rust_clippy_aspect = aspect(
         ),
     },
     provides = [ClippyInfo],
-    required_providers = [rust_common.crate_info],
+    required_providers = [
+        [rust_common.crate_info],
+        [rust_common.test_crate_info],
+    ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
