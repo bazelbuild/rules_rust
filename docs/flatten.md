@@ -2082,7 +2082,6 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
 - `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
