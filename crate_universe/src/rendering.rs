@@ -773,6 +773,31 @@ mod test {
     }
 
     #[test]
+    fn test_disable_pipelining() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                disable_pipelining: true,
+                ..CrateContext::default()
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(build_file_content.contains("disable_pipelining = True"));
+    }
+
+    #[test]
     fn render_cargo_build_script() {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
