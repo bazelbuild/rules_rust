@@ -1,6 +1,6 @@
 //! Utility for creating valid Cargo workspaces
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -33,7 +33,7 @@ pub enum SplicerKind<'a> {
     },
     /// Splice a manifest from multiple disjoint Cargo manifests.
     MultiPackage {
-        manifests: &'a HashMap<PathBuf, Manifest>,
+        manifests: &'a BTreeMap<PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
     },
 }
@@ -43,12 +43,12 @@ const IGNORE_LIST: &[&str] = &[".git", "bazel-*", ".svn"];
 
 impl<'a> SplicerKind<'a> {
     pub fn new(
-        manifests: &'a HashMap<PathBuf, Manifest>,
+        manifests: &'a BTreeMap<PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
         cargo: &Path,
     ) -> Result<Self> {
         // First check for any workspaces in the provided manifests
-        let workspace_owned: HashMap<&PathBuf, &Manifest> = manifests
+        let workspace_owned: BTreeMap<&PathBuf, &Manifest> = manifests
             .iter()
             .filter(|(_, manifest)| is_workspace_owned(manifest))
             .collect();
@@ -57,11 +57,10 @@ impl<'a> SplicerKind<'a> {
 
         if !workspace_owned.is_empty() {
             // Filter for the root workspace manifest info
-            let (mut workspace_roots, workspace_packages): (
-                HashMap<&PathBuf, &Manifest>,
-                HashMap<&PathBuf, &Manifest>,
+            let (workspace_roots, workspace_packages): (
+                BTreeMap<&PathBuf, &Manifest>,
+                BTreeMap<&PathBuf, &Manifest>,
             ) = workspace_owned
-                .clone()
                 .into_iter()
                 .partition(|(_, manifest)| is_workspace_root(manifest));
 
@@ -96,7 +95,7 @@ impl<'a> SplicerKind<'a> {
 
             // Ensure all workspace owned manifests are members of the one workspace root
             // UNWRAP: Safe because we've checked workspace_roots isn't empty.
-            let (root_manifest_path, root_manifest) = workspace_roots.drain().last().unwrap();
+            let (root_manifest_path, root_manifest) = workspace_roots.into_iter().next().unwrap();
             let external_workspace_members: BTreeSet<String> = workspace_packages
                 .into_iter()
                 .filter(|(manifest_path, _)| {
@@ -118,7 +117,7 @@ impl<'a> SplicerKind<'a> {
                     .keys()
                     .map(|p| {
                         p.normalize()
-                            .with_context(|| format!("Failed to normalize path {:?}", p))
+                            .with_context(|| format!("Failed to normalize path {p:?}"))
                     })
                     .collect::<Result<_, _>>()?,
             )
@@ -165,7 +164,7 @@ impl<'a> SplicerKind<'a> {
             .map(|member| {
                 let path = root_manifest_dir.join(member).join("Cargo.toml");
                 path.normalize()
-                    .with_context(|| format!("Failed to normalize path {:?}", path))
+                    .with_context(|| format!("Failed to normalize path {path:?}"))
             })
             .collect::<Result<BTreeSet<normpath::BasePathBuf>, _>>()?;
 
@@ -178,10 +177,7 @@ impl<'a> SplicerKind<'a> {
             .map(|workspace_manifest_path| {
                 let label = Label::from_absolute_path(workspace_manifest_path.as_path())
                     .with_context(|| {
-                        format!(
-                            "Failed to identify label for path {:?}",
-                            workspace_manifest_path
-                        )
+                        format!("Failed to identify label for path {workspace_manifest_path:?}")
                     })?;
                 Ok(label.to_string())
             })
@@ -232,7 +228,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
-        let member_manifests = HashMap::from([(*path, String::new())]);
+        let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, member_manifests)?;
@@ -274,7 +270,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
-        let member_manifests = HashMap::from([(*path, String::new())]);
+        let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, member_manifests)?;
@@ -289,7 +285,7 @@ impl<'a> SplicerKind<'a> {
     /// Implementation for splicing together multiple Cargo packages/workspaces
     fn splice_multi_package(
         workspace_dir: &Path,
-        manifests: &&HashMap<PathBuf, Manifest>,
+        manifests: &&BTreeMap<PathBuf, Manifest>,
         splicing_manifest: &&SplicingManifest,
     ) -> Result<SplicedManifest> {
         let mut manifest = default_cargo_workspace_manifest(&splicing_manifest.resolver_version);
@@ -406,9 +402,9 @@ impl<'a> SplicerKind<'a> {
     /// Cargo workspace members.
     fn inject_workspace_members<'b>(
         root_manifest: &mut Manifest,
-        manifests: &'b HashMap<PathBuf, Manifest>,
+        manifests: &'b BTreeMap<PathBuf, Manifest>,
         workspace_dir: &Path,
-    ) -> Result<HashMap<&'b PathBuf, String>> {
+    ) -> Result<BTreeMap<&'b PathBuf, String>> {
         manifests
             .iter()
             .map(|(path, manifest)| {
@@ -479,7 +475,7 @@ impl<'a> SplicerKind<'a> {
 
 pub struct Splicer {
     workspace_dir: PathBuf,
-    manifests: HashMap<PathBuf, Manifest>,
+    manifests: BTreeMap<PathBuf, Manifest>,
     splicing_manifest: SplicingManifest,
 }
 
@@ -494,7 +490,7 @@ impl Splicer {
                     .with_context(|| format!("Failed to read manifest at {}", path.display()))?;
                 Ok((path.clone(), m))
             })
-            .collect::<Result<HashMap<PathBuf, Manifest>>>()?;
+            .collect::<Result<BTreeMap<PathBuf, Manifest>>>()?;
 
         Ok(Self {
             workspace_dir,
@@ -548,9 +544,8 @@ pub fn default_cargo_workspace_manifest(
     let mut manifest = cargo_toml::Manifest::from_str(&textwrap::dedent(&format!(
         r#"
             [workspace]
-            resolver = "{}"
+            resolver = "{resolver_version}"
         "#,
-        resolver_version,
     )))
     .unwrap();
 
@@ -867,7 +862,7 @@ mod test {
 
             splicing_manifest.manifests.insert(
                 manifest_path,
-                Label::from_str(&format!("//{}:Cargo.toml", pkg)).unwrap(),
+                Label::from_str(&format!("//{pkg}:Cargo.toml")).unwrap(),
             );
         }
 
@@ -925,7 +920,7 @@ mod test {
 
             splicing_manifest.manifests.insert(
                 manifest_path,
-                Label::from_str(&format!("//{}:Cargo.toml", pkg)).unwrap(),
+                Label::from_str(&format!("//{pkg}:Cargo.toml")).unwrap(),
             );
         }
 
@@ -1008,11 +1003,11 @@ mod test {
 
         if is_root {
             PackageId {
-                repr: format!("{} 0.0.1 (path+file://{})", name, workspace_root),
+                repr: format!("{name} 0.0.1 (path+file://{workspace_root})"),
             }
         } else {
             PackageId {
-                repr: format!("{} 0.0.1 (path+file://{}/{})", name, workspace_root, name,),
+                repr: format!("{name} 0.0.1 (path+file://{workspace_root}/{name})"),
             }
         }
     }

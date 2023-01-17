@@ -64,6 +64,9 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     # Collect and dedupe all of the file roots in a list before appending
     # them to args to prevent generating a large amount of identical args
     roots = []
+    root = crate_info.output.root.path
+    if not root in roots:
+        roots.append(root)
     for dep in crate_info.deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
@@ -122,6 +125,7 @@ def _rust_doc_test_impl(ctx):
         rustc_env_files = crate.rustc_env_files,
         is_test = True,
         compile_data = crate.compile_data,
+        compile_data_targets = crate.compile_data_targets,
         wrapped_crate_type = crate.type,
         owner = ctx.label,
     )

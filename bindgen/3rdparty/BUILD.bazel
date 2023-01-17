@@ -5,6 +5,7 @@ crates_vendor(
     name = "crates_vendor",
     annotations = {
         "bindgen": [crate.annotation(
+            gen_binaries = ["bindgen"],
             gen_build_script = True,
         )],
         "clang-sys": [crate.annotation(

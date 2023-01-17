@@ -81,16 +81,20 @@ toolchain_files = rule(
 def _current_rust_toolchain_impl(ctx):
     toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain_type"))]
 
+    files = [
+        toolchain.rustc,
+        toolchain.rust_doc,
+        toolchain.cargo,
+    ]
+
+    if toolchain.rustfmt:
+        files.append(toolchain.rustfmt)
+
     return [
         toolchain,
         toolchain.make_variables,
         DefaultInfo(
-            files = depset([
-                toolchain.rustc,
-                toolchain.rust_doc,
-                toolchain.rustfmt,
-                toolchain.cargo,
-            ]),
+            files = depset(files),
         ),
     ]
 

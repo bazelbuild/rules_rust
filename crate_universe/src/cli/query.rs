@@ -70,10 +70,7 @@ pub fn query(opt: QueryOptions) -> Result<()> {
         &opt.rustc,
     )?;
     if digest != expected {
-        return announce_repin(&format!(
-            "Digests do not match: {:?} != {:?}",
-            digest, expected
-        ));
+        return announce_repin(&format!("Digests do not match: {digest:?} != {expected:?}",));
     }
 
     // There is no need to repin
@@ -81,7 +78,7 @@ pub fn query(opt: QueryOptions) -> Result<()> {
 }
 
 fn announce_repin(reason: &str) -> Result<()> {
-    eprintln!("{}", reason);
+    eprintln!("{reason}");
     println!("repin");
     Ok(())
 }

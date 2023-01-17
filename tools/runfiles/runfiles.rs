@@ -39,6 +39,11 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
+const RUNFILES_DIR_ENV_VAR: &str = "RUNFILES_DIR";
+const MANIFEST_FILE_ENV_VAR: &str = "RUNFILES_MANIFEST_FILE";
+const MANIFEST_ONLY_ENV_VAR: &str = "RUNFILES_MANIFEST_ONLY";
+const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
+
 #[derive(Debug)]
 enum Mode {
     DirectoryBased(PathBuf),
@@ -105,17 +110,29 @@ impl Runfiles {
                 .clone(),
         }
     }
+
+    /// Returns the canonical name of the caller's Bazel repository.
+    pub fn current_repository(&self) -> &str {
+        // This value must match the value of `_RULES_RUST_RUNFILES_WORKSPACE_NAME`
+        // which can be found in `@rules_rust//tools/runfiles/private:workspace_name.bzl`
+        env!("RULES_RUST_RUNFILES_WORKSPACE_NAME")
+    }
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> io::Result<PathBuf> {
     assert_ne!(
-        std::env::var_os("RUNFILES_MANIFEST_ONLY").unwrap_or_else(|| OsString::from("0")),
+        std::env::var_os(MANIFEST_ONLY_ENV_VAR).unwrap_or_else(|| OsString::from("0")),
         "1"
     );
 
     // If bazel told us about the runfiles dir, use that without looking further.
-    if let Some(test_srcdir) = std::env::var_os("TEST_SRCDIR").map(PathBuf::from) {
+    if let Some(runfiles_dir) = std::env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
+        if runfiles_dir.is_dir() {
+            return Ok(runfiles_dir);
+        }
+    }
+    if let Some(test_srcdir) = std::env::var_os(TEST_SRCDIR_ENV_VAR).map(PathBuf::from) {
         if test_srcdir.is_dir() {
             return Ok(test_srcdir);
         }
@@ -171,7 +188,7 @@ fn make_io_error(msg: &str) -> io::Error {
 }
 
 fn is_manifest_only() -> bool {
-    match std::env::var("RUNFILES_MANIFEST_ONLY") {
+    match std::env::var(MANIFEST_ONLY_ENV_VAR) {
         Ok(val) => val == "1",
         Err(_) => false,
     }
@@ -179,10 +196,10 @@ fn is_manifest_only() -> bool {
 
 fn find_manifest_path() -> io::Result<PathBuf> {
     assert_eq!(
-        std::env::var_os("RUNFILES_MANIFEST_ONLY").expect("RUNFILES_MANIFEST_ONLY was not set"),
+        std::env::var_os(MANIFEST_ONLY_ENV_VAR).expect("RUNFILES_MANIFEST_ONLY was not set"),
         OsString::from("1")
     );
-    match std::env::var_os("RUNFILES_MANIFEST_FILE") {
+    match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
         Some(path) => Ok(path.into()),
         None => Err(
             make_io_error(
@@ -199,15 +216,19 @@ mod test {
 
     #[test]
     fn test_can_read_data_from_runfiles() {
-        // We want to run two test cases: one with the $TEST_SRCDIR environment variable set and one
-        // with it not set. Since environment variables are global state, we need to ensure the two
-        // test cases do not run concurrently. Rust runs tests in parallel and does not provide an
-        // easy way to synchronise them, so we run both test cases in the same #[test] function.
+        // We want to run multiple test cases with different environment variables set. Since
+        // environment variables are global state, we need to ensure the two test cases do not run
+        // concurrently. Rust runs tests in parallel and does not provide an easy way to synchronise
+        // them, so we run all test cases in the same #[test] function.
 
-        let test_srcdir = env::var_os("TEST_SRCDIR").expect("bazel did not provide TEST_SRCDIR");
+        let test_srcdir =
+            env::var_os(TEST_SRCDIR_ENV_VAR).expect("bazel did not provide TEST_SRCDIR");
+        let runfiles_dir =
+            env::var_os(RUNFILES_DIR_ENV_VAR).expect("bazel did not provide RUNFILES_DIR");
 
-        // Test case 1: $TEST_SRCDIR is set.
+        // Test case 1: Only $RUNFILES_DIR is set.
         {
+            env::remove_var(TEST_SRCDIR_ENV_VAR);
             let r = Runfiles::create().unwrap();
 
             let mut f =
@@ -217,11 +238,27 @@ mod test {
             f.read_to_string(&mut buffer).unwrap();
 
             assert_eq!("Example Text!", buffer);
+            env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir)
+        }
+        // Test case 2: Only $TEST_SRCDIR is set.
+        {
+            env::remove_var(RUNFILES_DIR_ENV_VAR);
+            let r = Runfiles::create().unwrap();
+
+            let mut f =
+                File::open(r.rlocation("rules_rust/tools/runfiles/data/sample.txt")).unwrap();
+
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer).unwrap();
+
+            assert_eq!("Example Text!", buffer);
+            env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir)
         }
 
-        // Test case 2: $TEST_SRCDIR is *not* set.
+        // Test case 3: Neither are set
         {
-            env::remove_var("TEST_SRCDIR");
+            env::remove_var(RUNFILES_DIR_ENV_VAR);
+            env::remove_var(TEST_SRCDIR_ENV_VAR);
 
             let r = Runfiles::create().unwrap();
 
@@ -233,7 +270,8 @@ mod test {
 
             assert_eq!("Example Text!", buffer);
 
-            env::set_var("TEST_SRCDIR", test_srcdir);
+            env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir);
+            env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir);
         }
     }
 
@@ -246,5 +284,14 @@ mod test {
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
+    }
+
+    #[test]
+    fn test_current_repository() {
+        let r = Runfiles::create().unwrap();
+
+        // This check is unique to the rules_rust repository. The name
+        // here is expected to be different in consumers of this library
+        assert_eq!(r.current_repository(), "rules_rust")
     }
 }

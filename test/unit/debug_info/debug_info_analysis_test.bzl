@@ -1,7 +1,7 @@
 """Analysis tests for debug info in cdylib and bin targets."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_binary", "rust_shared_library")
+load("//rust:defs.bzl", "rust_binary", "rust_shared_library", "rust_test")
 
 def _pdb_file_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -95,6 +95,38 @@ def debug_info_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:macos"],
     )
 
+    rust_test(
+        name = "myrusttest",
+        srcs = ["test.rs"],
+        edition = "2018",
+    )
+
+    native.filegroup(
+        name = "mytest.pdb",
+        srcs = [":myrusttest"],
+        output_group = "pdb_file",
+        testonly = True,
+    )
+
+    pdb_file_test(
+        name = "test_pdb_test",
+        target_under_test = ":mytest.pdb",
+        target_compatible_with = ["@platforms//os:windows"],
+    )
+
+    native.filegroup(
+        name = "mytest.dSYM",
+        srcs = [":myrusttest"],
+        output_group = "dsym_folder",
+        testonly = True,
+    )
+
+    dsym_folder_test(
+        name = "test_dsym_test",
+        target_under_test = ":mytest.dSYM",
+        target_compatible_with = ["@platforms//os:macos"],
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -102,5 +134,7 @@ def debug_info_analysis_test_suite(name):
             ":lib_dsym_test",
             ":bin_pdb_test",
             ":bin_dsym_test",
+            ":test_pdb_test",
+            ":test_dsym_test",
         ],
     )

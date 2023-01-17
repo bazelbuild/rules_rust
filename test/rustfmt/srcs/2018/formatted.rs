@@ -35,6 +35,6 @@ async fn edition() -> i32 {
     2018
 }
 
-fn main() {
+pub fn main() {
     println!("{}", block_on(edition()));
 }

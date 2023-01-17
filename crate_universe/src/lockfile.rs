@@ -1,6 +1,6 @@
 //! Utility module for interracting with different kinds of lock files
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
@@ -40,7 +40,7 @@ pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<(
     let content = serde_json::to_string_pretty(&lockfile)?;
 
     if dry_run {
-        println!("{:#?}", content);
+        println!("{content:#?}");
     } else {
         // Ensure the parent directory exists
         if let Some(parent) = path.parent() {
@@ -137,7 +137,8 @@ impl Digest {
             .arg("--version")
             .env_clear()
             .envs(env)
-            .output()?;
+            .output()
+            .with_context(|| format!("Failed to run {} to get its version", binary.display()))?;
 
         if !output.status.success() {
             bail!("Failed to query cargo version")
@@ -152,7 +153,7 @@ impl Digest {
         // computed consistently. If a new binary is released then this
         // condition should be removed
         // https://github.com/rust-lang/cargo/issues/10547
-        let corrections = HashMap::from([
+        let corrections = BTreeMap::from([
             (
                 "cargo 1.60.0 (d1fd9fe 2022-03-01)",
                 "cargo 1.60.0 (d1fd9fe2c 2022-03-01)",
@@ -209,7 +210,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("9711073103bd532b7d9c2e32e805280d29fc8591c3e76f9fe489fc372e2866db".to_owned())
+            Digest("7be4f323ac6a4d0a45d9d430a8056967eb248ca7c86bdba44af33ad90392cb4a".to_owned())
         );
     }
 
@@ -217,6 +218,7 @@ mod test {
     fn digest_with_config() {
         let context = Context::default();
         let config = Config {
+            generate_binaries: false,
             generate_build_scripts: false,
             annotations: BTreeMap::from([(
                 CrateId::new("rustonomicon".to_owned(), "1.0.0".to_owned()),
@@ -253,7 +255,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("33dbf61e3b2aabacadaf7ff0c9862af25703cb851436efcbdf8552735be844ba".to_owned())
+            Digest("712442b3d89756257cf2739fa4ab58c2154d1bda3fb2c4c3647c613403351694".to_owned())
         );
     }
 
@@ -284,7 +286,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("3e31f3bc115309aadcb8817149d8a5bd125012220bd3caaea1a17f6c5b0fade4".to_owned())
+            Digest("c343bd2a351184bec7abad0016d45e1f4a89ec2fdf3f63d86e414206814ae483".to_owned())
         );
     }
 
@@ -333,7 +335,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("a9f7ea66f1b04331f8e09c64cd0b972e4c2a136907d7ef90e81ae2654e3c002c".to_owned())
+            Digest("16dc7c9c8d2e1f50e070ae10b7a06a42c962c2afa9a60a73043eb74c5fb6cd82".to_owned())
         );
     }
 }

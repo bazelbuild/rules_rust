@@ -1,14 +1,22 @@
 load(
     "//rust:defs.bzl",
-    "rust_doc_test",
+    "rust_doc",
     "rust_library",
     "rust_test",
+)
+load("//tools/runfiles/private:runfiles_utils.bzl", "workspace_name")
+
+workspace_name(
+    name = "workspace_name.env",
 )
 
 rust_library(
     name = "runfiles",
     srcs = ["runfiles.rs"],
     edition = "2018",
+    rustc_env_files = [
+        ":workspace_name.env",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -18,7 +26,7 @@ rust_test(
     data = ["data/sample.txt"],
 )
 
-rust_doc_test(
-    name = "runfiles_doc_test",
+rust_doc(
+    name = "runfiles_doc",
     crate = ":runfiles",
 )

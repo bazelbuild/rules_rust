@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{anyhow, Context, Result};
 use cfg_expr::targets::{get_builtin_target_by_triple, TargetInfo};
@@ -56,8 +56,8 @@ pub fn resolve_cfg_platforms(
     // (`x86_64-unknown-linux-gun` vs `cfg(target = "x86_64-unkonwn-linux-gnu")`). So
     // in order to parse configurations, the text is renamed for the check but the
     // original is retained for comaptibility with the manifest.
-    let rename = |cfg: &str| -> String { format!("cfg(target = \"{}\")", cfg) };
-    let original_cfgs: HashMap<String, String> = configurations
+    let rename = |cfg: &str| -> String { format!("cfg(target = \"{cfg}\")") };
+    let original_cfgs: BTreeMap<String, String> = configurations
         .iter()
         .filter(|cfg| !cfg.starts_with("cfg("))
         .map(|cfg| (rename(cfg), cfg.clone()))
@@ -73,8 +73,8 @@ pub fn resolve_cfg_platforms(
         })
         // Check the current configuration with against each supported triple
         .map(|cfg| {
-            let expression = Expression::parse(&cfg)
-                .context(format!("Failed to parse expression: '{}'", cfg))?;
+            let expression =
+                Expression::parse(&cfg).context(format!("Failed to parse expression: '{cfg}'"))?;
 
             let triples = target_infos
                 .iter()
@@ -190,7 +190,7 @@ mod test {
 
     #[test]
     fn resolve_targeted() {
-        let data = HashMap::from([
+        let data = BTreeMap::from([
             (
                 r#"cfg(target = "x86_64-unknown-linux-gnu")"#.to_owned(),
                 BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),

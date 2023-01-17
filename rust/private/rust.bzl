@@ -306,6 +306,7 @@ def _rust_library_common(ctx, crate_type):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
         output_hash = output_hash,
@@ -351,6 +352,7 @@ def _rust_binary_impl(ctx):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             compile_data = depset(ctx.files.compile_data),
+            compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
     )
@@ -393,6 +395,10 @@ def _rust_test_impl(ctx):
             compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data])
         else:
             compile_data = depset(ctx.files.compile_data)
+        if crate.compile_data_targets:
+            compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
+        else:
+            compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
         rustc_env = dict(crate.rustc_env)
         rustc_env.update(**ctx.attr.rustc_env)
@@ -412,6 +418,7 @@ def _rust_test_impl(ctx):
             rustc_env_files = rustc_env_files,
             is_test = True,
             compile_data = compile_data,
+            compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
         )
@@ -444,6 +451,7 @@ def _rust_test_impl(ctx):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),
+            compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         )
 

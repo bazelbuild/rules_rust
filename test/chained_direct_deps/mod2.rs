@@ -1,7 +1,7 @@
 extern crate mod1;
 
 pub fn greeter(name: &str) -> String {
-    format!("Hello, {}!", name)
+    format!("Hello, {name}!")
 }
 
 pub fn default_greeter() -> String {

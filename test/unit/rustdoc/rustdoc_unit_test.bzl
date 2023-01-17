@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_proc_macro", "rust_test")
 load(
     "//test/unit:common.bzl",
@@ -119,6 +120,12 @@ def _define_targets():
     )
 
     _target_maker(
+        rust_library,
+        name = "nodep_lib",
+        srcs = ["rustdoc_nodep_lib.rs"],
+    )
+
+    _target_maker(
         rust_proc_macro,
         name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
@@ -129,6 +136,14 @@ def _define_targets():
         name = "lib_with_proc_macro",
         srcs = ["rustdoc_lib.rs"],
         rustdoc_deps = [":adder"],
+        proc_macro_deps = [":rustdoc_proc_macro"],
+        crate_features = ["with_proc_macro"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_nodep_with_proc_macro",
+        srcs = ["rustdoc_nodep_lib.rs"],
         proc_macro_deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
     )
@@ -155,6 +170,37 @@ def _define_targets():
         rustdoc_deps = [":adder"],
         crate_features = ["with_cc"],
         deps = [":cc_lib"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_nodep_with_cc",
+        srcs = ["rustdoc_nodep_lib.rs"],
+        crate_features = ["with_cc"],
+        deps = [":cc_lib"],
+    )
+
+    cargo_build_script(
+        name = "lib_build_script",
+        srcs = ["rustdoc_build.rs"],
+        edition = "2018",
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_build_script",
+        srcs = ["rustdoc_lib.rs"],
+        rustdoc_deps = [":adder"],
+        crate_features = ["with_build_script"],
+        deps = [":lib_build_script"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_nodep_with_build_script",
+        srcs = ["rustdoc_nodep_lib.rs"],
+        crate_features = ["with_build_script"],
+        deps = [":lib_build_script"],
     )
 
 def rustdoc_test_suite(name):

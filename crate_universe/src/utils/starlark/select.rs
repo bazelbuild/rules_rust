@@ -1,6 +1,11 @@
-use serde::{Deserialize, Serialize};
 use std::collections::{btree_set, BTreeMap, BTreeSet};
-use std::iter::once;
+use std::iter::{once, FromIterator};
+
+use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
+use serde::{Deserialize, Serialize};
+use serde_starlark::{FunctionCall, LineComment, MULTILINE};
+
+use crate::utils::starlark::serialize::MultilineArray;
 
 pub trait SelectMap<T, U> {
     // A selectable should also implement a `map` function allowing one type of selectable
@@ -19,8 +24,16 @@ pub trait Select<T> {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
 pub struct SelectList<T: Ord> {
+    // Invariant: any T in `common` is not anywhere in `selects`.
     common: BTreeSet<T>,
+    // Invariant: none of the sets are empty.
     selects: BTreeMap<String, BTreeSet<T>>,
+    // Elements that used to be in `selects` before the most recent
+    // `remap_configurations` operation, but whose old configuration did not get
+    // mapped to any new configuration. They could be ignored, but are preserved
+    // here to generate comments that help the user understand what happened.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty", default = "BTreeSet::new")]
+    unmapped: BTreeSet<T>,
 }
 
 impl<T: Ord> Default for SelectList<T> {
@@ -28,6 +41,7 @@ impl<T: Ord> Default for SelectList<T> {
         Self {
             common: BTreeSet::new(),
             selects: BTreeMap::new(),
+            unmapped: BTreeSet::new(),
         }
     }
 }
@@ -37,25 +51,22 @@ impl<T: Ord> SelectList<T> {
     pub fn insert(&mut self, value: T, configuration: Option<String>) {
         match configuration {
             None => {
+                self.selects.retain(|_, set| {
+                    set.remove(&value);
+                    !set.is_empty()
+                });
                 self.common.insert(value);
             }
             Some(cfg) => {
-                match self.selects.get_mut(&cfg) {
-                    None => {
-                        let mut set = BTreeSet::new();
-                        set.insert(value);
-                        self.selects.insert(cfg, set);
-                    }
-                    Some(set) => {
-                        set.insert(value);
-                    }
-                };
+                if !self.common.contains(&value) {
+                    self.selects.entry(cfg).or_default().insert(value);
+                }
             }
-        };
+        }
     }
 
     // TODO: This should probably be added to the [Select] trait
-    pub fn get_iter<'a>(&'a self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
+    pub fn get_iter(&self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
         match config {
             Some(conf) => self.selects.get(conf).map(|set| set.iter()),
             None => Some(self.common.iter()),
@@ -63,96 +74,195 @@ impl<T: Ord> SelectList<T> {
     }
 
     /// Determine whether or not the select should be serialized
-    pub fn should_skip_serializing(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
+    pub fn is_empty(&self) -> bool {
+        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct WithOriginalConfigurations<T> {
     value: T,
-    original_configurations: BTreeSet<Option<String>>,
+    original_configurations: Option<BTreeSet<String>>,
 }
 
 impl<T: Ord + Clone> SelectList<T> {
     /// Generates a new SelectList re-keyed by the given configuration mapping.
     /// This mapping maps from configurations in the current SelectList to sets of
     /// configurations in the new SelectList.
-    ///
-    /// This returns the new SelectList as well as a BTreeMap of unmapped select configurations.
-    pub fn remap_configurations<'a, I, S>(
-        &self,
-        mapping: &'a BTreeMap<String, I>,
-    ) -> (
-        SelectList<WithOriginalConfigurations<T>>,
-        BTreeMap<String, BTreeSet<T>>,
-    )
-    where
-        &'a I: IntoIterator<Item = S>,
-        S: AsRef<str>,
-    {
-        // Map new configuraiton -> value -> old configurations.
-        let mut remapped: BTreeMap<String, BTreeMap<T, BTreeSet<Option<String>>>> = BTreeMap::new();
-        let mut unmapped: BTreeMap<String, BTreeSet<T>> = BTreeMap::new();
+    pub fn remap_configurations(
+        self,
+        mapping: &BTreeMap<String, BTreeSet<String>>,
+    ) -> SelectList<WithOriginalConfigurations<T>> {
+        // Map new configuration -> value -> old configurations.
+        let mut remapped: BTreeMap<String, BTreeMap<T, BTreeSet<String>>> = BTreeMap::new();
+        // Map value -> old configurations.
+        let mut unmapped: BTreeMap<T, BTreeSet<String>> = BTreeMap::new();
 
-        for (original_configuration, values) in &self.selects {
-            match mapping.get(original_configuration) {
+        for (original_configuration, values) in self.selects {
+            match mapping.get(&original_configuration) {
                 Some(configurations) => {
                     for configuration in configurations {
-                        for value in values {
+                        for value in &values {
                             remapped
-                                .entry(configuration.as_ref().to_owned())
+                                .entry(configuration.clone())
                                 .or_default()
                                 .entry(value.clone())
                                 .or_default()
-                                .insert(Some(original_configuration.to_owned()));
+                                .insert(original_configuration.clone());
                         }
                     }
                 }
-                None => unmapped
-                    .entry(original_configuration.clone())
-                    .or_default()
-                    .append(&mut values.clone()),
+                None => {
+                    for value in values {
+                        unmapped
+                            .entry(value)
+                            .or_default()
+                            .insert(original_configuration.clone());
+                    }
+                }
             }
         }
-        for value in &self.common {
-            for (_, value_to_configs) in remapped.iter_mut() {
-                value_to_configs
-                    .entry(value.clone())
-                    .or_default()
-                    .insert(None);
-            }
+
+        SelectList {
+            common: self
+                .common
+                .into_iter()
+                .map(|value| WithOriginalConfigurations {
+                    value,
+                    original_configurations: None,
+                })
+                .collect(),
+            selects: remapped
+                .into_iter()
+                .map(|(new_configuration, value_to_original_configuration)| {
+                    (
+                        new_configuration,
+                        value_to_original_configuration
+                            .into_iter()
+                            .map(
+                                |(value, original_configurations)| WithOriginalConfigurations {
+                                    value,
+                                    original_configurations: Some(original_configurations),
+                                },
+                            )
+                            .collect(),
+                    )
+                })
+                .collect(),
+            unmapped: unmapped
+                .into_iter()
+                .map(
+                    |(value, original_configurations)| WithOriginalConfigurations {
+                        value,
+                        original_configurations: Some(original_configurations),
+                    },
+                )
+                .collect(),
         }
-        (
-            SelectList {
-                common: self
-                    .common
-                    .iter()
-                    .map(|value| WithOriginalConfigurations {
-                        value: value.clone(),
-                        original_configurations: BTreeSet::from([None]),
-                    })
-                    .collect(),
-                selects: remapped
-                    .into_iter()
-                    .map(|(new_configuration, value_to_original_configuration)| {
-                        (
-                            new_configuration,
-                            value_to_original_configuration
-                                .into_iter()
-                                .map(|(value, original_configurations)| {
-                                    WithOriginalConfigurations {
-                                        value,
-                                        original_configurations,
-                                    }
-                                })
-                                .collect(),
-                        )
-                    })
-                    .collect(),
-            },
-            unmapped,
-        )
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename = "selects.NO_MATCHING_PLATFORM_TRIPLES")]
+struct NoMatchingPlatformTriples;
+
+// TODO: after removing the remaining tera template usages of SelectList, this
+// inherent method should become the Serialize impl.
+impl<T: Ord> SelectList<T> {
+    pub fn serialize_starlark<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Serialize,
+        S: Serializer,
+    {
+        // Output looks like:
+        //
+        //     [
+        //         "common...",
+        //     ] + select({
+        //         "configuration": [
+        //             "value...",  # cfg(whatever)
+        //         ],
+        //         "//conditions:default": [],
+        //     })
+        //
+        // The common part and select are each omitted if they are empty (except
+        // if the entire thing is empty, in which case we serialize the common
+        // part to get an empty array).
+        //
+        // If there are unmapped entries, we include them like this:
+        //
+        //     [
+        //         "common...",
+        //     ] + selects.with_unmapped({
+        //         "configuration": [
+        //             "value...",  # cfg(whatever)
+        //         ],
+        //         "//conditions:default": [],
+        //         selects.NO_MATCHING_PLATFORM_TRIPLES: [
+        //             "value...",  # cfg(obscure)
+        //         ],
+        //     })
+
+        let mut plus = serializer.serialize_tuple_struct("+", MULTILINE)?;
+
+        if !self.common.is_empty() || self.selects.is_empty() && self.unmapped.is_empty() {
+            plus.serialize_field(&MultilineArray(&self.common))?;
+        }
+
+        if !self.selects.is_empty() || !self.unmapped.is_empty() {
+            struct SelectInner<'a, T: Ord>(&'a SelectList<T>);
+
+            impl<'a, T> Serialize for SelectInner<'a, T>
+            where
+                T: Ord + Serialize,
+            {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    let mut map = serializer.serialize_map(Some(MULTILINE))?;
+                    for (cfg, value) in &self.0.selects {
+                        map.serialize_entry(cfg, &MultilineArray(value))?;
+                    }
+                    map.serialize_entry("//conditions:default", &[] as &[T])?;
+                    if !self.0.unmapped.is_empty() {
+                        map.serialize_entry(
+                            &NoMatchingPlatformTriples,
+                            &MultilineArray(&self.0.unmapped),
+                        )?;
+                    }
+                    map.end()
+                }
+            }
+
+            let function = if self.unmapped.is_empty() {
+                "select"
+            } else {
+                "selects.with_unmapped"
+            };
+
+            plus.serialize_field(&FunctionCall::new(function, [SelectInner(self)]))?;
+        }
+
+        plus.end()
+    }
+}
+
+impl<T> Serialize for WithOriginalConfigurations<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if let Some(original_configurations) = &self.original_configurations {
+            let comment =
+                Vec::from_iter(original_configurations.iter().map(String::as_str)).join(", ");
+            LineComment::new(&self.value, &comment).serialize(serializer)
+        } else {
+            self.value.serialize(serializer)
+        }
     }
 }
 
@@ -170,21 +280,43 @@ impl<T: Ord, U: Ord> SelectMap<T, U> for SelectList<T> {
     type Mapped = SelectList<U>;
 
     fn map<F: Copy + Fn(T) -> U>(self, func: F) -> Self::Mapped {
+        let common: BTreeSet<U> = self.common.into_iter().map(func).collect();
+        let selects: BTreeMap<String, BTreeSet<U>> = self
+            .selects
+            .into_iter()
+            .filter_map(|(key, set)| {
+                let set: BTreeSet<U> = set
+                    .into_iter()
+                    .map(func)
+                    .filter(|value| !common.contains(value))
+                    .collect();
+                if set.is_empty() {
+                    None
+                } else {
+                    Some((key, set))
+                }
+            })
+            .collect();
         SelectList {
-            common: self.common.into_iter().map(func).collect(),
-            selects: self
-                .selects
-                .into_iter()
-                .map(|(key, map)| (key, map.into_iter().map(func).collect()))
-                .collect(),
+            common,
+            selects,
+            unmapped: self.unmapped.into_iter().map(func).collect(),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
 pub struct SelectDict<T: Ord> {
+    // Invariant: keys in this map are not in any of the inner maps of `selects`.
     common: BTreeMap<String, T>,
+    // Invariant: none of the inner maps are empty.
     selects: BTreeMap<String, BTreeMap<String, T>>,
+    // Elements that used to be in `selects` before the most recent
+    // `remap_configurations` operation, but whose old configuration did not get
+    // mapped to any new configuration. They could be ignored, but are preserved
+    // here to generate comments that help the user understand what happened.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "BTreeMap::new")]
+    unmapped: BTreeMap<String, T>,
 }
 
 impl<T: Ord> Default for SelectDict<T> {
@@ -192,35 +324,200 @@ impl<T: Ord> Default for SelectDict<T> {
         Self {
             common: BTreeMap::new(),
             selects: BTreeMap::new(),
+            unmapped: BTreeMap::new(),
         }
     }
 }
 
 impl<T: Ord> SelectDict<T> {
-    // TODO: This should probably be added to the [Select] trait
-    pub fn insert(&mut self, value: BTreeMap<String, T>, configuration: Option<String>) {
+    pub fn insert(&mut self, key: String, value: T, configuration: Option<String>) {
         match configuration {
             None => {
-                self.common.extend(value);
+                self.selects.retain(|_, map| {
+                    map.remove(&key);
+                    !map.is_empty()
+                });
+                self.common.insert(key, value);
             }
             Some(cfg) => {
-                match self.selects.get_mut(&cfg) {
-                    None => {
-                        let mut set = BTreeMap::new();
-                        set.extend(value);
-                        self.selects.insert(cfg, set);
-                    }
-                    Some(set) => {
-                        set.extend(value);
-                    }
-                };
+                if !self.common.contains_key(&key) {
+                    self.selects.entry(cfg).or_default().insert(key, value);
+                }
             }
-        };
+        }
     }
 
-    /// Determine whether or not the select should be serialized
-    pub fn should_skip_serializing(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
+    pub fn extend(&mut self, entries: BTreeMap<String, T>, configuration: Option<String>) {
+        for (key, value) in entries {
+            self.insert(key, value, configuration.clone());
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
+    }
+}
+
+impl<T: Ord + Clone> SelectDict<T> {
+    /// Generates a new SelectDict re-keyed by the given configuration mapping.
+    /// This mapping maps from configurations in the current SelectDict to sets
+    /// of configurations in the new SelectDict.
+    pub fn remap_configurations(
+        self,
+        mapping: &BTreeMap<String, BTreeSet<String>>,
+    ) -> SelectDict<WithOriginalConfigurations<T>> {
+        // Map new configuration -> entry -> old configurations.
+        let mut remapped: BTreeMap<String, BTreeMap<(String, T), BTreeSet<String>>> =
+            BTreeMap::new();
+        // Map entry -> old configurations.
+        let mut unmapped: BTreeMap<(String, T), BTreeSet<String>> = BTreeMap::new();
+
+        for (original_configuration, entries) in self.selects {
+            match mapping.get(&original_configuration) {
+                Some(configurations) => {
+                    for configuration in configurations {
+                        for (key, value) in &entries {
+                            remapped
+                                .entry(configuration.clone())
+                                .or_default()
+                                .entry((key.clone(), value.clone()))
+                                .or_default()
+                                .insert(original_configuration.clone());
+                        }
+                    }
+                }
+                None => {
+                    for (key, value) in entries {
+                        unmapped
+                            .entry((key, value))
+                            .or_default()
+                            .insert(original_configuration.clone());
+                    }
+                }
+            }
+        }
+
+        SelectDict {
+            common: self
+                .common
+                .into_iter()
+                .map(|(key, value)| {
+                    (
+                        key,
+                        WithOriginalConfigurations {
+                            value,
+                            original_configurations: None,
+                        },
+                    )
+                })
+                .collect(),
+            selects: remapped
+                .into_iter()
+                .map(|(new_configuration, entry_to_original_configuration)| {
+                    (
+                        new_configuration,
+                        entry_to_original_configuration
+                            .into_iter()
+                            .map(|((key, value), original_configurations)| {
+                                (
+                                    key,
+                                    WithOriginalConfigurations {
+                                        value,
+                                        original_configurations: Some(original_configurations),
+                                    },
+                                )
+                            })
+                            .collect(),
+                    )
+                })
+                .collect(),
+            unmapped: unmapped
+                .into_iter()
+                .map(|((key, value), original_configurations)| {
+                    (
+                        key,
+                        WithOriginalConfigurations {
+                            value,
+                            original_configurations: Some(original_configurations),
+                        },
+                    )
+                })
+                .collect(),
+        }
+    }
+}
+
+// TODO: after removing the remaining tera template usages of SelectDict, this
+// inherent method should become the Serialize impl.
+impl<T: Ord + Serialize> SelectDict<T> {
+    pub fn serialize_starlark<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // If there are no platform-specific entries, we output just an ordinary
+        // dict.
+        //
+        // If there are platform-specific ones, we use the following. Ideally it
+        // could be done as `dicts.add({...}, select({...}))` but bazel_skylib's
+        // dicts.add does not support selects.
+        //
+        //     select({
+        //         "configuration": {
+        //             "common-key": "common-value",
+        //             "plat-key": "plat-value",  # cfg(whatever)
+        //         },
+        //         "//conditions:default": {},
+        //     })
+        //
+        // If there are unmapped entries, we include them like this:
+        //
+        //     selects.with_unmapped({
+        //         "configuration": {
+        //             "common-key": "common-value",
+        //             "plat-key": "plat-value",  # cfg(whatever)
+        //         },
+        //         "//conditions:default": [],
+        //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
+        //             "unmapped-key": "unmapped-value",  # cfg(obscure)
+        //         },
+        //     })
+
+        if self.selects.is_empty() && self.unmapped.is_empty() {
+            return self.common.serialize(serializer);
+        }
+
+        struct SelectInner<'a, T: Ord>(&'a SelectDict<T>);
+
+        impl<'a, T> Serialize for SelectInner<'a, T>
+        where
+            T: Ord + Serialize,
+        {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut map = serializer.serialize_map(Some(MULTILINE))?;
+                for (cfg, value) in &self.0.selects {
+                    let mut combined = BTreeMap::new();
+                    combined.extend(&self.0.common);
+                    combined.extend(value);
+                    map.serialize_entry(cfg, &combined)?;
+                }
+                map.serialize_entry("//conditions:default", &self.0.common)?;
+                if !self.0.unmapped.is_empty() {
+                    map.serialize_entry(&NoMatchingPlatformTriples, &self.0.unmapped)?;
+                }
+                map.end()
+            }
+        }
+
+        let function = if self.unmapped.is_empty() {
+            "select"
+        } else {
+            "selects.with_unmapped"
+        };
+
+        FunctionCall::new(function, [SelectInner(self)]).serialize(serializer)
     }
 }
 
@@ -234,28 +531,11 @@ impl<T: Ord> Select<T> for SelectDict<T> {
     }
 }
 
-impl<T: Ord, U: Ord> SelectMap<T, U> for SelectDict<T> {
-    type Mapped = SelectDict<U>;
-
-    fn map<F: Copy + Fn(T) -> U>(self, func: F) -> Self::Mapped {
-        SelectDict {
-            common: self
-                .common
-                .into_iter()
-                .map(|(key, val)| (key, func(val)))
-                .collect(),
-            selects: self
-                .selects
-                .into_iter()
-                .map(|(key, map)| (key, map.into_iter().map(|(k, v)| (k, func(v))).collect()))
-                .collect(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use indoc::indoc;
 
     #[test]
     fn remap_select_list_configurations() {
@@ -283,95 +563,100 @@ mod test {
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-a".to_owned(),
-                original_configurations: BTreeSet::from([
-                    Some("cfg(macos)".to_owned()),
-                    Some("cfg(x86_64)".to_owned()),
-                ]),
+                original_configurations: Some(BTreeSet::from([
+                    "cfg(macos)".to_owned(),
+                    "cfg(x86_64)".to_owned(),
+                ])),
             },
             Some("x86_64-macos".to_owned()),
         );
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-b".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
             },
             Some("x86_64-macos".to_owned()),
         );
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-c".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
             },
             Some("x86_64-macos".to_owned()),
         );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: BTreeSet::from([None, Some("cfg(macos)".to_owned())]),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-a".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
             },
             Some("aarch64-macos".to_owned()),
         );
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-b".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(macos)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
             },
             Some("aarch64-macos".to_owned()),
         );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: BTreeSet::from([None, Some("cfg(macos)".to_owned())]),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-a".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
             },
             Some("x86_64-linux".to_owned()),
         );
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-c".to_owned(),
-                original_configurations: BTreeSet::from([Some("cfg(x86_64)".to_owned())]),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
             },
             Some("x86_64-linux".to_owned()),
         );
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-d".to_owned(),
-                original_configurations: BTreeSet::from([None]),
-            },
-            Some("x86_64-linux".to_owned()),
-        );
-
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: BTreeSet::from([None]),
+                original_configurations: None,
             },
             None,
         );
 
-        let expected_unmapped = BTreeMap::from([(
-            "cfg(pdp11)".to_owned(),
-            BTreeSet::from(["dep-e".to_owned()]),
-        )]);
+        expected.unmapped.insert(WithOriginalConfigurations {
+            value: "dep-e".to_owned(),
+            original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+        });
+
+        let select_list = select_list.remap_configurations(&mapping);
+        assert_eq!(select_list, expected);
+
+        let expected_starlark = indoc! {r#"
+            [
+                "dep-d",
+            ] + selects.with_unmapped({
+                "aarch64-macos": [
+                    "dep-a",  # cfg(macos)
+                    "dep-b",  # cfg(macos)
+                ],
+                "x86_64-linux": [
+                    "dep-a",  # cfg(x86_64)
+                    "dep-c",  # cfg(x86_64)
+                ],
+                "x86_64-macos": [
+                    "dep-a",  # cfg(macos), cfg(x86_64)
+                    "dep-b",  # cfg(macos)
+                    "dep-c",  # cfg(x86_64)
+                ],
+                "//conditions:default": [],
+                selects.NO_MATCHING_PLATFORM_TRIPLES: [
+                    "dep-e",  # cfg(pdp11)
+                ],
+            })
+        "#};
 
         assert_eq!(
-            &select_list.remap_configurations(&mapping),
-            &(expected, expected_unmapped)
+            select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
         );
     }
 }
