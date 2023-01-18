@@ -446,6 +446,7 @@ def rust_toolchain_repository(
         target_triple,
         exec_compatible_with = None,
         target_compatible_with = None,
+        target_settings = [],
         channel = None,
         include_rustc_srcs = False,
         allocator_library = None,
@@ -467,6 +468,7 @@ def rust_toolchain_repository(
         channel (str, optional): The channel of the Rust toolchain.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
+        target_settings (list, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         iso_date (str, optional): The date of the tool.
@@ -514,10 +516,12 @@ def rust_toolchain_repository(
         auth = auth,
     )
 
+    channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
+
     toolchain_repository_proxy(
         name = name,
         toolchain = "@{}//:rust_toolchain".format(tools_repo_name),
-        target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else None,
+        target_settings = channel_target_settings + target_settings,
         toolchain_type = "@rules_rust//rust:toolchain",
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
@@ -784,6 +788,7 @@ rust_toolchain_set_repository = repository_rule(
 def rust_repository_set(
         name,
         exec_triple,
+        target_settings = [],
         version = None,
         versions = [],
         include_rustc_srcs = False,
@@ -803,6 +808,7 @@ def rust_repository_set(
     Args:
         name (str): The name of the generated repository
         exec_triple (str): The Rust-style target that this compiler runs on
+        target_settings (list, optional): A list of config_settings that must be satisfied by the target configuration in order for this set of toolchains to be selected during toolchain resolution.
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
@@ -881,6 +887,7 @@ def rust_repository_set(
                 dev_components = dev_components,
                 edition = edition,
                 exec_triple = exec_triple,
+                target_settings = target_settings,
                 include_rustc_srcs = include_rustc_srcs,
                 iso_date = info.iso_date,
                 rustfmt_version = rustfmt_version,
