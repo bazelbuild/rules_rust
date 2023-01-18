@@ -1,0 +1,12 @@
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "splicing_config")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+    repository_name = "ios_build",
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+    tags = ["manual"],
+)
