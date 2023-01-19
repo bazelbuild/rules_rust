@@ -379,6 +379,7 @@ impl Renderer {
                 tags.insert("manual".to_owned());
                 tags.insert("noclippy".to_owned());
                 tags.insert("norustfmt".to_owned());
+                tags.insert(format!("crate-name={}", krate.name));
                 tags
             },
             tools: attrs
@@ -767,6 +768,7 @@ mod test {
 
         assert!(build_file_content.contains("rust_library("));
         assert!(build_file_content.contains("name = \"mock_crate\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
     }
 
     #[test]
@@ -798,6 +800,7 @@ mod test {
 
         assert!(build_file_content.contains("cargo_build_script("));
         assert!(build_file_content.contains("name = \"build_script_build\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"mock_crate_build_script\""));
@@ -826,6 +829,7 @@ mod test {
 
         assert!(build_file_content.contains("rust_proc_macro("));
         assert!(build_file_content.contains("name = \"mock_crate\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
     }
 
     #[test]
@@ -851,6 +855,7 @@ mod test {
 
         assert!(build_file_content.contains("rust_binary("));
         assert!(build_file_content.contains("name = \"mock_crate__bin\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
     }
 
     #[test]
