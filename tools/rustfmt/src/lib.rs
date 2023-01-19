@@ -99,8 +99,13 @@ pub fn find_manifests() -> Vec<PathBuf> {
     std::env::var("RUSTFMT_MANIFESTS")
         .map(|var| {
             var.split(PATH_ENV_SEP)
-                .map(|path| {
-                    runfiles.rlocation(format!("{}/{}", runfiles.current_repository(), path,))
+                .filter_map(|path| match path.is_empty() {
+                    true => None,
+                    false => Some(runfiles.rlocation(format!(
+                        "{}/{}",
+                        runfiles.current_repository(),
+                        path
+                    ))),
                 })
                 .collect()
         })

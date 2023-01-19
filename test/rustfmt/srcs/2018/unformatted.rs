@@ -16,4 +16,4 @@ Poll::Ready(res) => return res, Poll::Pending => thread::park(),
 }
 }
 async fn edition() -> i32 {2018}
-fn main(){println!("{}", block_on(edition()));}
+pub fn main(){println!("{}", block_on(edition()));}
