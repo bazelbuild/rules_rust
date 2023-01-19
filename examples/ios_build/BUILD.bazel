@@ -1,5 +1,10 @@
 load("@rules_rust//rust:defs.bzl", "rust_static_library")
 
+exports_files([
+    "Cargo.toml",
+    "Cargo.lock",
+])
+
 rust_static_library(
     name = "ios_build_lib",
     srcs = glob(["**/*.rs"]),

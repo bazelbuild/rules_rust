@@ -30,7 +30,7 @@ struct Options {
 
 /// Parse command line arguments
 fn parse_args() -> Options {
-    let args: Vec<String> = env::args().into_iter().collect();
+    let args: Vec<String> = env::args().collect();
     let (writer_args, action_args) = {
         let split = args
             .iter()
@@ -273,7 +273,6 @@ fn main() {
     let opt = expand_params_file(opt);
 
     let env: BTreeMap<String, String> = env::vars()
-        .into_iter()
         .filter(|(key, _)| opt.env_keys.iter().any(|k| k == key))
         .collect();
 

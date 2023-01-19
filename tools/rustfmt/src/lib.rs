@@ -62,7 +62,6 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
 
     let mut lines: Vec<String> = content
         .split('\n')
-        .into_iter()
         .filter(|s| !s.is_empty())
         .map(|s| s.to_owned())
         .collect();
