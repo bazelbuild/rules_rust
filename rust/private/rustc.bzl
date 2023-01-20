@@ -1262,16 +1262,26 @@ def rustc_compile_action(
         if not crate_info.output.path.startswith(package_dir):
             fail("The package dir path {} should be a prefix of the crate_info.output.path {}", package_dir, crate_info.output.path)
 
-        # cdylib compile actions create output of the form "libfoo.so" for linux and macos; cc_common.link expects
-        # us to pass "foo" to the name parameter. So we:
-        # 1. Strip the prefix that leads us to the package
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
-        # 2. Remove the basename (which contains the undesired 'lib' prefix and the file extension)
-        output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+        # Compile actions that produce shared libraries create output of the form "libfoo.so" for linux and macos;
+        # cc_common.link expects us to pass "foo" to the name parameter. We cannot simply use crate_info.name because
+        # the name of the crate does not always match the name of output file, e.g a crate named foo-bar will produce
+        # a foo_bar output file.
+        if crate_info.type == "cdylib":
+            output_lib = crate_info.output.basename
+            if toolchain.os != "windows":
+                # Strip the leading "lib" prefix
+                output_lib = output_lib[3:]
 
-        # 3. Append the crate_name
-        output_relative_to_package = output_relative_to_package + crate_info.name
+            # Strip the file extension
+            output_lib = output_lib[:-(1 + len(crate_info.output.extension))]
+
+            # Remove the basename (which contains the undesired 'lib' prefix and the file extension)
+            output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+
+            # Append the name of the library
+            output_relative_to_package = output_relative_to_package + output_lib
 
         cc_common.link(
             actions = ctx.actions,
