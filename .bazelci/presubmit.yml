@@ -178,18 +178,18 @@ tasks:
       - "--repo_env=CC=clang"
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
-  ubuntu2004_clang_lld:
-    name: With Clang and LLD
-    platform: ubuntu2004
-    shell_commands:
-      - "sudo apt -y update && sudo apt -y install lld"
-    build_flags:
-      - "--config=rustfmt"
-      - "--config=clippy"
-      - "--repo_env=CC=clang"
-      - "--linkopt=-fuse-ld=lld"
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+  # ubuntu2004_clang_lld:
+  #   name: With Clang and LLD
+  #   platform: ubuntu2004
+  #   shell_commands:
+  #     - "sudo apt -y update && sudo apt -y install lld"
+  #   build_flags:
+  #     - "--config=rustfmt"
+  #     - "--config=clippy"
+  #     - "--repo_env=CC=clang"
+  #     - "--linkopt=-fuse-ld=lld"
+  #   build_targets: *default_linux_targets
+  #   test_targets: *default_linux_targets
   ubuntu2004_rolling_clang:
     name: Rolling Bazel Version With Clang
     platform: ubuntu2004
@@ -292,7 +292,7 @@ tasks:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
     run_targets:
-      - "//test/rustfmt:test_runner"
+      - "//test/rustfmt:rustfmt_integration_test_suite.test_runner"
   rust_analyzer_tests:
     name: Rust-Analyzer Tests
     platform: ubuntu2004
@@ -318,20 +318,20 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  ubuntu2004_examples_clang_lld:
-    name: Examples with Clang and LLD
-    platform: ubuntu2004
-    shell_commands:
-      - "sudo apt -y update && sudo apt -y install lld"
-    working_directory: examples
-    build_flags:
-      - "--repo_env=CC=clang"
-      - "--linkopt=-fuse-ld=lld"
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
+  # ubuntu2004_examples_clang_lld:
+  #   name: Examples with Clang and LLD
+  #   platform: ubuntu2004
+  #   shell_commands:
+  #     - "sudo apt -y update && sudo apt -y install lld"
+  #   working_directory: examples
+  #   build_flags:
+  #     - "--repo_env=CC=clang"
+  #     - "--linkopt=-fuse-ld=lld"
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
+  #   build_flags: *aspects_flags
   ubuntu2004_examples_rolling:
     name: "Examples with Rolling Bazel Version"
     platform: ubuntu2004

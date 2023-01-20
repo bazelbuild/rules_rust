@@ -64,6 +64,9 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     # Collect and dedupe all of the file roots in a list before appending
     # them to args to prevent generating a large amount of identical args
     roots = []
+    root = crate_info.output.root.path
+    if not root in roots:
+        roots.append(root)
     for dep in crate_info.deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)

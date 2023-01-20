@@ -530,14 +530,18 @@ load("@rules_rust//rust:toolchain.bzl", "rustfmt_toolchain")
 rustfmt_toolchain(
     name = "{name}",
     rustfmt = "{rustfmt}",
+    rustc = "{rustc}",
+    rustc_lib = "{rustc_lib}",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rustfmt_toolchain(name, rustfmt):
+def BUILD_for_rustfmt_toolchain(name, rustfmt, rustc, rustc_lib):
     return _build_file_for_rustfmt_toolchain_template.format(
         name = name,
         rustfmt = rustfmt,
+        rustc = rustc,
+        rustc_lib = rustc_lib,
     )
 
 def load_rust_stdlib(ctx, target_triple):

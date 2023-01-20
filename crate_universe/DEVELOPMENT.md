@@ -14,7 +14,7 @@ It's then recommended to export the `CARGO_BAZEL_GENERATOR_URL` environment
 variable to be a `file://` url to the built binary on disk.
 
 ```shell
-export CARGO_BAZEL_GENERATOR_URL=$(pwd)/target/debug/cargo-bazel
+export CARGO_BAZEL_GENERATOR_URL=file://$(pwd)/target/debug/cargo-bazel
 ```
 
 From here on, the repository rule can be run
