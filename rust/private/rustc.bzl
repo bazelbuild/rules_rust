@@ -1271,7 +1271,7 @@ def rustc_compile_action(
         output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
 
         # 3. Append the crate_name
-        output_relative_to_package = output_relative_to_package + crate_info.crate_name
+        output_relative_to_package = output_relative_to_package + crate_info.name
 
         cc_common.link(
             actions = ctx.actions,
