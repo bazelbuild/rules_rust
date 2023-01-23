@@ -1267,7 +1267,7 @@ def rustc_compile_action(
         # Compile actions that produce shared libraries create output of the form "libfoo.so" for linux and macos;
         # cc_common.link expects us to pass "foo" to the name parameter. We cannot simply use crate_info.name because
         # the name of the crate does not always match the name of output file, e.g a crate named foo-bar will produce
-        # a foo_bar output file.
+        # a (lib)foo_bar output file.
         if crate_info.type == "cdylib":
             output_lib = crate_info.output.basename
             if toolchain.os != "windows":

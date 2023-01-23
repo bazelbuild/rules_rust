@@ -41,6 +41,20 @@ rust_test(
     deps = [":rdep"],
 )
 
+rust_test(
+    name = "subdirectory/test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":rdep"],
+)
+
+rust_test(
+    name = "test-with-dashes-in-the-name",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":rdep"],
+)
+
 rust_shared_library(
     name = "cdylib",
     srcs = ["lib.rs"],
