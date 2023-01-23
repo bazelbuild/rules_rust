@@ -1262,7 +1262,16 @@ def rustc_compile_action(
         if not crate_info.output.path.startswith(package_dir):
             fail("The package dir path {} should be a prefix of the crate_info.output.path {}", package_dir, crate_info.output.path)
 
+        # cdylib compile actions create output of the form "libfoo.so" for linux and macos; cc_common.link expects
+        # us to pass "foo" to the name parameter. So we:
+        # 1. Strip the prefix that leads us to the package
         output_relative_to_package = crate_info.output.path[len(package_dir):]
+
+        # 2. Remove the basename (which contains the undesired 'lib' prefix and the file extension)
+        output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+
+        # 3. Append the crate_name
+        output_relative_to_package = output_relative_to_package + crate_info.name
 
         cc_common.link(
             actions = ctx.actions,
@@ -1273,6 +1282,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             grep_includes = ctx.file._grep_includes,
             stamp = ctx.attr.stamp,
+            output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
 
         outputs = [crate_info.output]

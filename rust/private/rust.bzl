@@ -861,7 +861,16 @@ rust_static_library = rule(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = dict(_common_attrs.items()),
+    attrs = dict(
+        _common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
+            "_grep_includes": attr.label(
+                allow_single_file = True,
+                cfg = "exec",
+                default = Label("@bazel_tools//tools/cpp:grep-includes"),
+                executable = True,
+            ),
+        }.items(),
+    ),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
