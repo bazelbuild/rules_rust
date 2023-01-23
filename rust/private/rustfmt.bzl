@@ -282,11 +282,15 @@ def _rustfmt_toolchain_impl(ctx):
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
+    all_files = [ctx.file.rustfmt] + ctx.files.rustc_lib
+    if ctx.file.rustc:
+        all_files.append(ctx.file.rustc)
+
     toolchain = platform_common.ToolchainInfo(
         rustfmt = ctx.file.rustfmt,
         rustc = ctx.file.rustc,
         rustc_lib = depset(ctx.files.rustc_lib),
-        all_files = depset([ctx.file.rustfmt, ctx.file.rustc] + ctx.files.rustc_lib),
+        all_files = depset(all_files),
         make_variables = make_variable_info,
     )
 
