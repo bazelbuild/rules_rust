@@ -13,7 +13,7 @@ DepActionsInfo = provider(
     fields = {"actions": "List[Action]"},
 )
 
-def _collect_dep_actions_aspect_impl(target, ctx):
+def _collect_dep_actions_aspect_impl(target, _ctx):
     return [DepActionsInfo(actions = target.actions)]
 
 collect_dep_actions_aspect = aspect(
