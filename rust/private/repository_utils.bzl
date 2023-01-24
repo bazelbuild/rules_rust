@@ -282,7 +282,8 @@ def BUILD_for_rust_toolchain(
     """
     system = triple_to_system(target_triple)
     if stdlib_linkflags == None:
-        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
+        stdlib_linkflags = system_to_stdlib_linkflags(system)
+    stdlib_linkflags = ", ".join(['"%s"' % x for x in stdlib_linkflags])
 
     rustc_srcs = "None"
     if include_rustc_srcs:
