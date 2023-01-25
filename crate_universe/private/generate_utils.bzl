@@ -1,6 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "REPIN_ENV_VARS", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -11,6 +11,8 @@ GENERATOR_ENV_VARS = [
 ]
 
 CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
+    REPIN_ALLOWLIST_ENV_VAR,
+] + [
     CARGO_BAZEL_ISOLATED,
 ]
 
@@ -330,7 +332,13 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # If a repin environment variable is set, always repin
     for var in REPIN_ENV_VARS:
         if var in repository_ctx.os.environ and repository_ctx.os.environ[var].lower() not in ["false", "no", "0", "off"]:
-            return True
+            # If a repin allowlist is present only force repin if name is in list
+            if REPIN_ALLOWLIST_ENV_VAR in repository_ctx.os.environ:
+                indices_to_repin = repository_ctx.os.environ[REPIN_ALLOWLIST_ENV_VAR].split(",")
+                if repository_ctx.name in indices_to_repin:
+                    return True
+            else:
+                return True
 
     # If a deterministic lockfile was not added then always repin
     if not lockfile_path:
