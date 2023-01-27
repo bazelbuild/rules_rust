@@ -42,16 +42,8 @@ rust_library(
     ],
     version = "2.18.2",
     deps = [
-<<<<<<< HEAD:proto/3rdparty/crates/BUILD.protobuf-codegen-2.18.2.bazel
-    ] + select_with_or({
-        "//conditions:default": [
-            "@rules_rust_proto__protobuf-2.18.2//:protobuf",
-        ],
-    }),
-=======
         "@rules_rust_proto__protobuf-2.18.2//:protobuf",
     ],
->>>>>>> 88e83f2df165c0be723bcfa4ebd6e9dd3ddf6c11:proto/3rdparty/crates/BUILD.protobuf-codegen-2.8.2.bazel
 )
 
 rust_binary(
