@@ -86,8 +86,8 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_proto__protobuf-2.8.2//:protobuf",
-            "@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen",
+            "@rules_rust_proto__protobuf-2.18.2//:protobuf",
+            "@rules_rust_proto__protobuf-codegen-2.18.2//:protobuf_codegen",
         ],
     }),
 )
@@ -154,8 +154,8 @@ rust_binary(
         ":grpc_compiler",
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_proto__protobuf-2.8.2//:protobuf",
-            "@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen",
+            "@rules_rust_proto__protobuf-2.18.2//:protobuf",
+            "@rules_rust_proto__protobuf-codegen-2.18.2//:protobuf_codegen",
         ],
     }),
 )

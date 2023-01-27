@@ -115,7 +115,7 @@ rust_library(
             "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",
 
             # Common Deps
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",
@@ -130,7 +130,7 @@ rust_library(
             "@rules_rust_proto__void-1.0.2//:void",
         ],
         "//conditions:default": [
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
             "@rules_rust_proto__httpbis-0.7.0//:build_script_build",

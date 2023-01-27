@@ -294,8 +294,8 @@ _NORMAL_DEPENDENCIES = {
             "grpc": "@rules_rust_proto__grpc-0.6.2//:grpc",
             "grpc-compiler": "@rules_rust_proto__grpc-compiler-0.6.2//:grpc_compiler",
             "log": "@rules_rust_proto__log-0.4.17//:log",
-            "protobuf": "@rules_rust_proto__protobuf-2.8.2//:protobuf",
-            "protobuf-codegen": "@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen",
+            "protobuf": "@rules_rust_proto__protobuf-2.18.2//:protobuf",
+            "protobuf-codegen": "@rules_rust_proto__protobuf-codegen-2.18.2//:protobuf_codegen",
             "tls-api": "@rules_rust_proto__tls-api-0.1.22//:tls_api",
             "tls-api-stub": "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
         },
@@ -418,12 +418,11 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__bytes-0.4.12",
-        sha256 = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c",
+        name = "rules_rust_proto__bytes-0.5.3",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/bytes/0.4.12/download"],
-        strip_prefix = "bytes-0.4.12",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.bytes-0.4.12.bazel"),
+        urls = ["https://crates.io/api/v1/crates/bytes/0.5.3/download"],
+        strip_prefix = "bytes-0.5.3",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.bytes-0.5.3.bazel"),
     )
 
     maybe(
@@ -748,28 +747,27 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__protobuf-2.8.2",
+        name = "rules_rust_proto__protobuf-2.18.2",
         patch_args = [
             "-p1",
         ],
         patches = [
-            "@rules_rust//proto/3rdparty/patches:protobuf-2.8.2.patch",
+            "@rules_rust//proto/3rdparty/patches:protobuf-2.18.2.patch",
         ],
-        sha256 = "70731852eec72c56d11226c8a5f96ad5058a3dab73647ca5f7ee351e464f2571",
+        sha256 = "fe8e18df92889779cfe50ccf640173141ff73c5b2817e553d6d35230f798a036",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/protobuf/2.8.2/download"],
-        strip_prefix = "protobuf-2.8.2",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.protobuf-2.8.2.bazel"),
+        urls = ["https://crates.io/api/v1/crates/protobuf/2.18.2/download"],
+        strip_prefix = "protobuf-2.18.2",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.protobuf-2.18.2.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rules_rust_proto__protobuf-codegen-2.8.2",
-        sha256 = "3d74b9cbbf2ac9a7169c85a3714ec16c51ee9ec7cfd511549527e9a7df720795",
+        name = "rules_rust_proto__protobuf-codegen-2.18.2",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/protobuf-codegen/2.8.2/download"],
-        strip_prefix = "protobuf-codegen-2.8.2",
-        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.protobuf-codegen-2.8.2.bazel"),
+        urls = ["https://crates.io/api/v1/crates/protobuf-codegen/2.18.2/download"],
+        strip_prefix = "protobuf-codegen-2.18.2",
+        build_file = Label("@rules_rust//proto/3rdparty/crates:BUILD.protobuf-codegen-2.18.2.bazel"),
     )
 
     maybe(

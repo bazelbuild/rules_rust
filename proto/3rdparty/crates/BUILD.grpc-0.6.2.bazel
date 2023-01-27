@@ -86,12 +86,12 @@ rust_library(
     ] + select_with_or({
         "//conditions:default": [
             "@rules_rust_proto__base64-0.9.3//:base64",
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__futures-cpupool-0.1.8//:futures_cpupool",
             "@rules_rust_proto__httpbis-0.7.0//:httpbis",
             "@rules_rust_proto__log-0.4.17//:log",
-            "@rules_rust_proto__protobuf-2.8.2//:protobuf",
+            "@rules_rust_proto__protobuf-2.18.2//:protobuf",
             "@rules_rust_proto__tls-api-0.1.22//:tls_api",
             "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
             "@rules_rust_proto__tokio-core-0.1.18//:tokio_core",

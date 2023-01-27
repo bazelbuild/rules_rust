@@ -136,7 +136,7 @@ rust_library(
             "@rules_rust_proto__tokio-uds-0.2.7//:tokio_uds",
 
             # Common Deps
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__mio-0.6.23//:mio",
             "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",
@@ -153,7 +153,7 @@ rust_library(
             "@rules_rust_proto__tokio-udp-0.1.6//:tokio_udp",
         ],
         "//conditions:default": [
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__mio-0.6.23//:mio",
             "@rules_rust_proto__num_cpus-1.13.1//:num_cpus",

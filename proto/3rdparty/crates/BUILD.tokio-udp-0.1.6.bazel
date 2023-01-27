@@ -85,7 +85,7 @@ rust_library(
     deps = [
     ] + select_with_or({
         "//conditions:default": [
-            "@rules_rust_proto__bytes-0.4.12//:bytes",
+            "@rules_rust_proto__bytes-0.5.3//:bytes",
             "@rules_rust_proto__futures-0.1.31//:futures",
             "@rules_rust_proto__log-0.4.17//:log",
             "@rules_rust_proto__mio-0.6.23//:mio",
