@@ -12,7 +12,13 @@ export RUNTIME_PWD="$(pwd)"
 if [[ -z "${{BAZEL_REAL:-}}" ]]; then
     BAZEL_REAL="$(which bazel || echo 'bazel')"
 fi
-eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
+
+# The path needs to be preserved to prevent bazel from starting with different
+# startup options (requiring a restart of bazel).
+# If you provide an empty path, bazel starts itself with
+# --default_system_javabase set to the empty string, but if you provide a path,
+# it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
+eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
 "{bin}" {args} "$@"
 """
 

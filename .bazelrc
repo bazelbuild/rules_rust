@@ -1,5 +1,16 @@
-# `.bazelrc` is a Bazel configuration file.
-# https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+# https://bazel.build/docs/windows#symlink
+startup --windows_enable_symlinks
+
+###############################################################################
+## Unique configuration groups
+###############################################################################
 
 # Enable rustfmt for all targets in the workspace
 build:rustfmt --aspects=//rust:defs.bzl%rustfmt_aspect
@@ -9,9 +20,22 @@ build:rustfmt --output_groups=+rustfmt_checks
 build:clippy --aspects=//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
 
-# https://bazel.build/docs/windows#symlink
-startup --windows_enable_symlinks
+###############################################################################
+## Incompatibility flags
+###############################################################################
 
-# This import should always be last to allow users to override
-# settings for local development.
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
+build --nolegacy_external_runfiles
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
+
 try-import %workspace%/user.bazelrc

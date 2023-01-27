@@ -38,6 +38,6 @@ rust_library(
     ],
     version = "0.3.0",
     deps = [
-        "@cui__regex-1.7.0//:regex",
+        "@cui__regex-1.7.1//:regex",
     ],
 )

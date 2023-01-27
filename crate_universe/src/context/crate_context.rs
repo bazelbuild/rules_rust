@@ -247,6 +247,10 @@ pub struct CrateContext {
     /// Additional text to add to the generated BUILD file.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub additive_build_file_content: Option<String>,
+
+    /// If true, disables pipelining for library targets generated for this crate
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub disable_pipelining: bool,
 }
 
 impl CrateContext {
@@ -394,6 +398,7 @@ impl CrateContext {
             build_script_attrs,
             license,
             additive_build_file_content: None,
+            disable_pipelining: false,
         }
         .with_overrides(extras)
     }
@@ -444,6 +449,11 @@ impl CrateContext {
             // Data glob
             if let Some(extra) = &crate_extra.data_glob {
                 self.common_attrs.data_glob.extend(extra.clone());
+            }
+
+            // Disable pipelining
+            if crate_extra.disable_pipelining {
+                self.disable_pipelining = true;
             }
 
             // Rustc flags

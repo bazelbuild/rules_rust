@@ -1,5 +1,5 @@
 {
-  "checksum": "c2319ddfee528d18c051c3433df9b906e6410246a03890242db7d65816003b4b",
+  "checksum": "1c7265db8b2535e487587c7f42ea6006dd982ce16ac45014c9ea5679085e10f3",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -78,7 +78,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.139",
                 "target": "libc"
               }
             ],
@@ -337,7 +337,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.139",
                 "target": "libc"
               }
             ]
@@ -384,7 +384,7 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.137",
+              "id": "libc 0.2.139",
               "target": "libc"
             }
           ],
@@ -395,13 +395,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.137": {
+    "libc 0.2.139": {
       "name": "libc",
-      "version": "0.2.137",
+      "version": "0.2.139",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.137/download",
-          "sha256": "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.139/download",
+          "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
         }
       },
       "targets": [
@@ -432,14 +432,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.137",
+              "id": "libc 0.2.139",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.137"
+        "version": "0.2.139"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -600,7 +600,7 @@
             ],
             "cfg(unix)": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.139",
                 "target": "libc"
               }
             ]

@@ -89,7 +89,7 @@ def _perform_check(edition, srcs, ctx):
         executable = ctx.executable._process_wrapper,
         inputs = srcs + [config],
         outputs = [marker],
-        tools = [rustfmt_toolchain.rustfmt],
+        tools = [rustfmt_toolchain.all_files],
         arguments = [args],
         mnemonic = "Rustfmt",
     )
@@ -271,12 +271,26 @@ rustfmt_test = rule(
 )
 
 def _rustfmt_toolchain_impl(ctx):
-    make_variable_info = platform_common.TemplateVariableInfo({
+    make_variables = {
         "RUSTFMT": ctx.file.rustfmt.path,
-    })
+    }
+
+    if ctx.attr.rustc:
+        make_variables.update({
+            "RUSTC": ctx.file.rustc.path,
+        })
+
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
+    all_files = [ctx.file.rustfmt] + ctx.files.rustc_lib
+    if ctx.file.rustc:
+        all_files.append(ctx.file.rustc)
 
     toolchain = platform_common.ToolchainInfo(
         rustfmt = ctx.file.rustfmt,
+        rustc = ctx.file.rustc,
+        rustc_lib = depset(ctx.files.rustc_lib),
+        all_files = depset(all_files),
         make_variables = make_variable_info,
     )
 
@@ -290,10 +304,20 @@ rustfmt_toolchain = rule(
     implementation = _rustfmt_toolchain_impl,
     incompatible_use_toolchain_transition = True,
     attrs = {
+        "rustc": attr.label(
+            doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        "rustc_lib": attr.label(
+            doc = "The libraries used by rustc during compilation.",
+            cfg = "exec",
+        ),
         "rustfmt": attr.label(
             doc = "The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
             cfg = "exec",
+            mandatory = True,
         ),
     },
     toolchains = [
@@ -311,6 +335,7 @@ def _current_rustfmt_toolchain_impl(ctx):
             files = depset([
                 toolchain.rustfmt,
             ]),
+            runfiles = ctx.runfiles(transitive_files = toolchain.all_files),
         ),
     ]
 

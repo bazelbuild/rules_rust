@@ -38,7 +38,7 @@ rust_library(
     ],
     version = "0.4.2",
     deps = [
-        "@cui__io-lifetimes-1.0.3//:io_lifetimes",
+        "@cui__io-lifetimes-1.0.4//:io_lifetimes",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))

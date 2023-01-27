@@ -1264,6 +1264,25 @@ def rustc_compile_action(
 
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
+        # Compile actions that produce shared libraries create output of the form "libfoo.so" for linux and macos;
+        # cc_common.link expects us to pass "foo" to the name parameter. We cannot simply use crate_info.name because
+        # the name of the crate does not always match the name of output file, e.g a crate named foo-bar will produce
+        # a (lib)foo_bar output file.
+        if crate_info.type == "cdylib":
+            output_lib = crate_info.output.basename
+            if toolchain.os != "windows":
+                # Strip the leading "lib" prefix
+                output_lib = output_lib[3:]
+
+            # Strip the file extension
+            output_lib = output_lib[:-(1 + len(crate_info.output.extension))]
+
+            # Remove the basename (which contains the undesired 'lib' prefix and the file extension)
+            output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+
+            # Append the name of the library
+            output_relative_to_package = output_relative_to_package + output_lib
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1273,6 +1292,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             grep_includes = ctx.file._grep_includes,
             stamp = ctx.attr.stamp,
+            output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
 
         outputs = [crate_info.output]

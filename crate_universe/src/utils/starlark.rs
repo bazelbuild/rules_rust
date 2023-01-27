@@ -175,6 +175,8 @@ pub struct RustLibrary {
     pub aliases: SelectDict<WithOriginalConfigurations<String>>,
     #[serde(flatten)]
     pub common: CommonAttrs,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub disable_pipelining: bool,
 }
 
 #[derive(Serialize)]
