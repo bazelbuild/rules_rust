@@ -38,7 +38,7 @@ rust_library(
     ],
     version = "0.2.7",
     deps = [
-        "@rules_rust_proto__bytes-0.4.12//:bytes",
+        "@rules_rust_proto__bytes-0.5.3//:bytes",
         "@rules_rust_proto__futures-0.1.31//:futures",
         "@rules_rust_proto__iovec-0.1.4//:iovec",
         "@rules_rust_proto__libc-0.2.139//:libc",

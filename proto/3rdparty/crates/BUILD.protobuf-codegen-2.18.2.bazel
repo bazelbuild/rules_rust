@@ -6,8 +6,11 @@
 #     bazel run @//proto/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,7 +19,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "protobuf",
+    name = "protobuf_codegen",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,10 +31,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "bytes",
-        "with-bytes",
-    ],
     crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = ["--cap-lints=allow"],
@@ -41,23 +40,16 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "2.8.2",
+    version = "2.18.2",
     deps = [
-        "@rules_rust_proto__bytes-0.4.12//:bytes",
-        "@rules_rust_proto__protobuf-2.8.2//:build_script_build",
+        "@rules_rust_proto__protobuf-2.18.2//:protobuf",
     ],
 )
 
-cargo_build_script(
-    name = "protobuf_build_script",
+rust_binary(
+    name = "protoc-gen-rust__bin",
     srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "bytes",
-        "with-bytes",
-    ],
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(
+    compile_data = glob(
         include = ["**"],
         exclude = [
             "**/* *",
@@ -67,22 +59,18 @@ cargo_build_script(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_root = "src/bin/protoc-gen-rust.rs",
     edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
+    rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "2.8.2",
-    visibility = ["//visibility:private"],
-)
-
-alias(
-    name = "build_script_build",
-    actual = "protobuf_build_script",
-    tags = ["manual"],
+    version = "2.18.2",
+    deps = [
+        ":protobuf_codegen",
+        "@rules_rust_proto__protobuf-2.18.2//:protobuf",
+    ],
 )

@@ -36,7 +36,7 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.12",
+    version = "0.5.3",
     deps = [
         "@rules_rust_proto__byteorder-1.4.3//:byteorder",
         "@rules_rust_proto__iovec-0.1.4//:iovec",

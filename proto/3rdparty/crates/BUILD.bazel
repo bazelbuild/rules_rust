@@ -45,13 +45,13 @@ alias(
 
 alias(
     name = "protobuf",
-    actual = "@rules_rust_proto__protobuf-2.8.2//:protobuf",
+    actual = "@rules_rust_proto__protobuf-2.18.2//:protobuf",
     tags = ["manual"],
 )
 
 alias(
     name = "protobuf-codegen",
-    actual = "@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen",
+    actual = "@rules_rust_proto__protobuf-codegen-2.18.2//:protobuf_codegen",
     tags = ["manual"],
 )
 
@@ -76,6 +76,6 @@ alias(
 
 alias(
     name = "protobuf-codegen__protoc-gen-rust",
-    actual = "@rules_rust_proto__protobuf-codegen-2.8.2//:protoc-gen-rust__bin",
+    actual = "@rules_rust_proto__protobuf-codegen-2.18.2//:protoc-gen-rust__bin",
     tags = ["manual"],
 )

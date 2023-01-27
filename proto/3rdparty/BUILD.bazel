@@ -14,7 +14,7 @@ crates_vendor(
         )],
         "protobuf": [crate.annotation(
             patch_args = ["-p1"],
-            patches = ["@rules_rust//proto/3rdparty/patches:protobuf-2.8.2.patch"],
+            patches = ["@rules_rust//proto/3rdparty/patches:protobuf-2.18.2.patch"],
         )],
         "protobuf-codegen": [crate.annotation(
             gen_binaries = ["protoc-gen-rust"],
@@ -34,10 +34,10 @@ crates_vendor(
         ),
         "protobuf": crate.spec(
             features = ["with-bytes"],
-            version = "2.8.2",
+            version = "2.18.2",
         ),
         "protobuf-codegen": crate.spec(
-            version = "2.8.2",
+            version = "2.18.2",
         ),
         "tls-api": crate.spec(
             version = "0.1.22",

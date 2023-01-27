@@ -32,9 +32,8 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "bytes"
-version = "0.4.12"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c"
 dependencies = [
  "byteorder",
  "iovec",
@@ -385,7 +384,7 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.8.2"
+version = "2.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70731852eec72c56d11226c8a5f96ad5058a3dab73647ca5f7ee351e464f2571"
 dependencies = [
@@ -394,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "protobuf-codegen"
-version = "2.8.2"
+version = "2.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d74b9cbbf2ac9a7169c85a3714ec16c51ee9ec7cfd511549527e9a7df720795"
 dependencies = [
