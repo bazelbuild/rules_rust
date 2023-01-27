@@ -9,5 +9,5 @@ index b487e6e..38b7f7c 100644
 -include!(concat!(env!("OUT_DIR"), "/version.rs"));
 +pub const VERSION: &'static str = "2.18.2";
 +#[doc(hidden)]
-+pub const VERSION_IDENT: &'static str = "VERSION_2_8_2";
-+pub const VERSION_2_8_2: () = ();
++pub const VERSION_IDENT: &'static str = "VERSION_2_18_2";
++pub const VERSION_2_18_2: () = ();
