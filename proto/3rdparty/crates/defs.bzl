@@ -419,6 +419,7 @@ def crate_repositories():
     maybe(
         http_archive,
         name = "rules_rust_proto__bytes-0.5.3",
+        sha256 = "10004c15deb332055f7a4a208190aed362cf9a7c2f6ab70a305fba50e1105f38",
         type = "tar.gz",
         urls = ["https://crates.io/api/v1/crates/bytes/0.5.3/download"],
         strip_prefix = "bytes-0.5.3",
