@@ -43,6 +43,7 @@ def _strip_crate_info_output(crate_info):
         rustc_env_files = crate_info.rustc_env_files,
         is_test = crate_info.is_test,
         compile_data = crate_info.compile_data,
+        compile_data_targets = crate_info.compile_data_targets,
     )
 
 def rustdoc_compile_action(
@@ -131,6 +132,8 @@ def rustdoc_compile_action(
     if is_test:
         if "SYSROOT" in env:
             env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
+        if "OUT_DIR" in env:
+            env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
 
         # `rustdoc` does not support the SYSROOT environment variable. To account
         # for this, the flag must be explicitly passed to the `rustdoc` binary.

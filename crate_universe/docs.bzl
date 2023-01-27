@@ -46,6 +46,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     manifests = ["//:Cargo.toml"],
 )
@@ -99,10 +100,11 @@ about missing targets or environment variables defined only in Bazel. In workspa
 to have a "Cargo free" setup. `crates_repository` supports this through the `packages` attribute.
 
 ```python
-load("@cargo_bazel//:defs.bzl", "crate", "crates_repository", "render_config")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "render_config")
 
 crates_repository(
     name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
     packages = {
         "async-trait": crate.spec(
@@ -149,6 +151,89 @@ rust_test(
     deps = [
         "@crate_index//:mockall",
     ],
+)
+```
+
+### Binary dependencies
+
+Neither of the above approaches supports depending on binary-only packages.
+
+In order to depend on a Cargo package that contains binaries and no library, you
+will need to do one of the following:
+
+- Fork the package to add an empty lib.rs, which makes the package visible to
+  Cargo metadata and compatible with the above approaches;
+
+- Or handwrite your own build target for the binary, use `http_archive` to
+  import its source code, and use `crates_repository` to make build targets for
+  its dependencies. This is demonstrated below using the `rustfilt` crate as an
+  example.
+
+```python
+# in WORKSPACE.bazel
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rustfilt",
+    build_file = "//rustfilt:BUILD.rustfilt.bazel",
+    sha256 = "c8d748b182c8f95224336d20dcc5609598af612581ce60cfb29da4dc8d0091f2",
+    strip_prefix = "rustfilt-0.2.1",
+    type = "tar.gz",
+    urls = ["https://crates.io/api/v1/crates/rustfilt/0.2.1/download"],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "rustfilt_deps",
+    cargo_lockfile = "//rustfilt:Cargo.lock",
+    manifests = ["@rustfilt//:Cargo.toml"],
+)
+
+load("@rustfilt_deps//:defs.bzl", rustfilt_deps = "crate_repositories")
+
+rustfilt_deps()
+```
+
+```python
+# in rustfilt/BUILD.rustfilt.bazel
+
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "rustfilt",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@rustfilt_deps//:clap",
+        "@rustfilt_deps//:lazy_static",
+        "@rustfilt_deps//:regex",
+        "@rustfilt_deps//:rustc-demangle",
+    ],
+)
+```
+
+If you use either `crates_repository` or `crates_vendor` to depend on a Cargo
+package that contains _both_ a library crate _and_ binaries, by default only the
+library gets made available to Bazel. To generate Bazel targets for the binary
+crates as well, you must opt in to it with an annotation on the package:
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
+
+crates_repository(
+    name = "crate_index",
+    annotations = {
+        "thepackage": [crate.annotation(
+            gen_binaries = True,
+            # Or, to expose just a subset of the package's binaries by name:
+            gen_binaries = ["rustfilt"],
+        )],
+    },
+    # Or, to expose every binary of every package:
+    generate_binaries = True,
+    ...
 )
 ```
 

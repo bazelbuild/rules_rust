@@ -42,6 +42,8 @@ rust_test(
     name = "import_internal_test",
     crate = ":import_internal",
     edition = "2018",
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/1672
+    tags = ["manual"],
     deps = [
         "//util/import/3rdparty/crates:quickcheck",
     ],

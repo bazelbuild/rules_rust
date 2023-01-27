@@ -23,7 +23,7 @@ struct Options {
 fn prepare_workspace(workspace_root: &Path) {
     let src = PathBuf::from(env!("CROSS_CONFIG"));
     let dest = workspace_root.join("Cross.toml");
-    println!("{:?} -> {:?}", src, dest);
+    println!("{src:?} -> {dest:?}");
     fs::copy(src, dest).unwrap();
 
     // Unfortunately, cross runs into issues when cross compiling incramentally.
@@ -46,7 +46,7 @@ fn execute_cross(working_dir: &Path, target_triple: &str) {
         .arg("--locked")
         .arg("--bin")
         .arg("cargo-bazel")
-        .arg(format!("--target={}", target_triple))
+        .arg(format!("--target={target_triple}"))
         .status()
         .unwrap();
 

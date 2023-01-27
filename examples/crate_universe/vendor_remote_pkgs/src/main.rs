@@ -137,7 +137,7 @@ mod tests {
         let response = client
             .request(
                 Request::builder()
-                    .uri(format!("http://{}", addr))
+                    .uri(format!("http://{addr}"))
                     .body(Body::empty())
                     .unwrap(),
             )

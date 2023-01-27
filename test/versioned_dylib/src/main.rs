@@ -20,7 +20,7 @@ extern "C" {
 
 fn main() {
     let zero = unsafe { return_zero() };
-    println!("Got {} from our shared lib", zero);
+    println!("Got {zero} from our shared lib");
 }
 
 #[cfg(test)]

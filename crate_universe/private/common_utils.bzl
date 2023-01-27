@@ -10,10 +10,14 @@ CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
 CARGO_BAZEL_REPIN = "CARGO_BAZEL_REPIN"
 REPIN = "REPIN"
 
+CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
+
 REPIN_ENV_VARS = [
     CARGO_BAZEL_REPIN,
     REPIN,
 ]
+
+REPIN_ALLOWLIST_ENV_VAR = CARGO_BAZEL_REPIN_ONLY
 
 _EXECUTE_ERROR_MESSAGE = """\
 Command {args} failed with exit code {exit_code}.
@@ -71,11 +75,18 @@ def get_rust_tools(repository_ctx, host_triple):
         cargo_config = repository_ctx.path(repository_ctx.attr.cargo_config)
         repository_ctx.symlink(cargo_config, cargo_home_config)
 
+    if repository_ctx.attr.rust_version.startswith(("beta", "nightly")):
+        channel, _, version = repository_ctx.attr.rust_version.partition("/")
+    else:
+        channel = "stable"
+        version = repository_ctx.attr.rust_version
+
     return _rust_get_rust_tools(
         cargo_template = repository_ctx.attr.rust_toolchain_cargo_template,
         rustc_template = repository_ctx.attr.rust_toolchain_rustc_template,
         host_triple = host_triple,
-        version = repository_ctx.attr.rust_version,
+        channel = channel,
+        version = version,
     )
 
 def _cargo_home_path(repository_ctx):

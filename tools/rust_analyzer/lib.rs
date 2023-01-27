@@ -62,13 +62,12 @@ pub fn write_rust_project(
         s => s,
     };
     let toolchain_info_path = format!(
-        "{}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json",
-        workspace_name
+        "{workspace_name}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
     );
     let r = Runfiles::create()?;
     let path = r.rlocation(toolchain_info_path);
     let toolchain_info: HashMap<String, String> =
-        serde_json::from_str(&std::fs::read_to_string(&path)?)?;
+        serde_json::from_str(&std::fs::read_to_string(path)?)?;
 
     let sysroot_src = &toolchain_info["sysroot_src"];
     let sysroot = &toolchain_info["sysroot"];

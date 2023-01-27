@@ -436,11 +436,17 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     path_hash = abs(hash(lib.path))
     lib_name = get_lib_name_for_windows(lib) if toolchain.os.startswith("windows") else get_lib_name_default(lib)
 
-    prefix = "lib"
-    extension = ".a"
     if toolchain.os.startswith("windows"):
         prefix = ""
         extension = ".lib"
+    elif lib_name.endswith(".pic"):
+        # Strip the .pic suffix
+        lib_name = lib_name[:-4]
+        prefix = "lib"
+        extension = ".pic.a"
+    else:
+        prefix = "lib"
+        extension = ".a"
 
     # Ensure the symlink follows the lib<name>.a pattern on Unix-like platforms
     # or <name>.lib on Windows.
@@ -899,8 +905,9 @@ def construct_arguments(
     rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
+    # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
-    data_paths = depset(direct = getattr(attr, "data", []) + getattr(attr, "compile_data", [])).to_list()
+    data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     rustc_flags.add_all(
         expand_list_element_locations(
@@ -966,6 +973,11 @@ def construct_arguments(
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
+
+    if is_exec_configuration(ctx):
+        rustc_flags.add_all(toolchain.extra_exec_rustc_flags)
+    else:
+        rustc_flags.add_all(toolchain.extra_rustc_flags)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
@@ -1161,7 +1173,7 @@ def rustc_compile_action(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
-    if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+    if crate_info.type in ("cdylib", "bin"):
         if toolchain.os == "windows":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
@@ -1252,6 +1264,25 @@ def rustc_compile_action(
 
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
+        # Compile actions that produce shared libraries create output of the form "libfoo.so" for linux and macos;
+        # cc_common.link expects us to pass "foo" to the name parameter. We cannot simply use crate_info.name because
+        # the name of the crate does not always match the name of output file, e.g a crate named foo-bar will produce
+        # a (lib)foo_bar output file.
+        if crate_info.type == "cdylib":
+            output_lib = crate_info.output.basename
+            if toolchain.os != "windows":
+                # Strip the leading "lib" prefix
+                output_lib = output_lib[3:]
+
+            # Strip the file extension
+            output_lib = output_lib[:-(1 + len(crate_info.output.extension))]
+
+            # Remove the basename (which contains the undesired 'lib' prefix and the file extension)
+            output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+
+            # Append the name of the library
+            output_relative_to_package = output_relative_to_package + output_lib
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1261,6 +1292,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             grep_includes = ctx.file._grep_includes,
             stamp = ctx.attr.stamp,
+            output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
 
         outputs = [crate_info.output]

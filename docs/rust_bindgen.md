@@ -51,12 +51,12 @@ Generates a rust source file from a cc_library and a header.
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rust_bindgen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_bindgen-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   | List of strings | optional | [] |
-| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the <code>.h</code> file. This is used to find the transitive includes.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   | List of strings | optional | [] |
-| <a id="rust_bindgen-header"></a>header |  The <code>.h</code> file to generate bindings for.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | True |
+| <a id="rust_bindgen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_bindgen-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   | List of strings | optional | <code>[]</code> |
+| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the <code>.h</code> file. This is used to find the transitive includes.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   | List of strings | optional | <code>[]</code> |
+| <a id="rust_bindgen-header"></a>header |  The <code>.h</code> file to generate bindings for.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | <code>True</code> |
 
 
 <a id="rust_bindgen_toolchain"></a>
@@ -64,7 +64,7 @@ Generates a rust source file from a cc_library and a header.
 ## rust_bindgen_toolchain
 
 <pre>
-rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>, <a href="#rust_bindgen_toolchain-rustfmt">rustfmt</a>)
+rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-default_rustfmt">default_rustfmt</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>, <a href="#rust_bindgen_toolchain-rustfmt">rustfmt</a>)
 </pre>
 
 The tools required for the `rust_bindgen` rule.
@@ -100,12 +100,13 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rust_bindgen_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rust_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>bindgen</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen_toolchain-clang"></a>clang |  The label of a <code>clang</code> executable.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen_toolchain-libclang"></a>libclang |  A cc_library that provides bindgen's runtime dependency on libclang.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen_toolchain-libstdcxx"></a>libstdcxx |  A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
-| <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  The label of a <code>rustfmt</code> executable. If this is not provided, falls back to the rust_toolchain rustfmt.   | <a href="https://bazel.build/docs/build-ref.html#labels">Label</a> | optional | None |
+| <a id="rust_bindgen_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>bindgen</code> executable.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen_toolchain-clang"></a>clang |  The label of a <code>clang</code> executable.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen_toolchain-default_rustfmt"></a>default_rustfmt |  If set, <code>rust_bindgen</code> targets will always format generated sources with <code>rustfmt</code>.   | Boolean | optional | <code>False</code> |
+| <a id="rust_bindgen_toolchain-libclang"></a>libclang |  A cc_library that provides bindgen's runtime dependency on libclang.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen_toolchain-libstdcxx"></a>libstdcxx |  A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  **Deprecated**: Instead, register a <code>rustfmt_toolchain</code> and refer to the <code>rust_bindgen_toolchain.default_rustfmt</code> and <code>rust_bindgen.rustfmt</code> attributes.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 
 
 <a id="rust_bindgen_dependencies"></a>
@@ -141,9 +142,9 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-name"></a>name |  A unique name for this target.   |  none |
 | <a id="rust_bindgen_library-header"></a>header |  The label of the .h file to generate bindings for.   |  none |
 | <a id="rust_bindgen_library-cc_lib"></a>cc_lib |  The label of the cc_library that contains the .h file. This is used to find the transitive includes.   |  none |
-| <a id="rust_bindgen_library-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   |  <code>None</code> |
-| <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  <code>None</code> |
-| <a id="rust_bindgen_library-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   |  <code>True</code> |
+| <a id="rust_bindgen_library-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   |  `None` |
+| <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  `None` |
+| <a id="rust_bindgen_library-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   |  `True` |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
 
 
@@ -165,6 +166,6 @@ Registers the default toolchains for the `rules_rust` [bindgen][bg] rules.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  <code>True</code> |
+| <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  `True` |
 
 

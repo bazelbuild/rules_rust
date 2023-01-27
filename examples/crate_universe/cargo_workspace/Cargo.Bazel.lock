@@ -44,7 +44,7 @@ dependencies = [
  "atty",
  "bitflags",
  "strsim",
- "textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "textwrap 0.11.0",
  "unicode-width",
  "vec_map",
 ]
@@ -56,7 +56,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9515ec2dd9606ec230f6b2d1f25fd9e808a2f2af600143f7efe7e5865505b7aa"
 dependencies = [
  "smallvec",
- "textwrap 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "textwrap 0.13.4",
  "unicode-width",
 ]
 
@@ -82,9 +82,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.137"
+version = "0.2.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
 
 [[package]]
 name = "num_printer"
@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "ppv-lite86"
-version = "0.2.16"
+version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "printer"

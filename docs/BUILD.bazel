@@ -108,6 +108,7 @@ PAGES = dict([
         symbols = [
             "rustfmt_aspect",
             "rustfmt_test",
+            "rustfmt_toolchain",
         ],
     ),
     page(

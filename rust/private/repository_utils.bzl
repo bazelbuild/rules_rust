@@ -324,6 +324,7 @@ toolchain(
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
+    {target_settings}
 )
 """
 
@@ -331,34 +332,40 @@ def BUILD_for_toolchain(
         name,
         toolchain,
         toolchain_type,
+        target_settings,
         target_compatible_with,
         exec_compatible_with):
+    target_settings_value = "target_settings = {},".format(json.encode(target_settings)) if target_settings else "# target_settings = []"
+
     return _build_file_for_toolchain_template.format(
         name = name,
-        exec_constraint_sets_serialized = exec_compatible_with,
-        target_constraint_sets_serialized = target_compatible_with,
+        exec_constraint_sets_serialized = json.encode(exec_compatible_with),
+        target_constraint_sets_serialized = json.encode(target_compatible_with),
         toolchain = toolchain,
         toolchain_type = toolchain_type,
+        target_settings = target_settings_value,
     )
 
-def load_rustfmt(ctx):
+def load_rustfmt(ctx, target_triple, version, iso_date):
     """Loads a rustfmt binary and yields corresponding BUILD for it
 
     Args:
-        ctx (repository_ctx): The repository rule's context object
+        ctx (repository_ctx): The repository rule's context object.
+        target_triple (str): The platform triple to download rustfmt for.
+        version (str): The version or channel of rustfmt.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
 
     Returns:
         str: The BUILD file contents for this rustfmt binary
     """
-    target_triple = ctx.attr.exec_triple
 
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustfmt",
         tool_subdirectories = ["rustfmt-preview"],
-        version = ctx.attr.rustfmt_version,
+        version = version,
     )
 
     return BUILD_for_rustfmt(target_triple)
@@ -517,6 +524,26 @@ def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv):
         proc_macro_srv = repr(proc_macro_srv),
     )
 
+_build_file_for_rustfmt_toolchain_template = """\
+load("@rules_rust//rust:toolchain.bzl", "rustfmt_toolchain")
+
+rustfmt_toolchain(
+    name = "{name}",
+    rustfmt = "{rustfmt}",
+    rustc = "{rustc}",
+    rustc_lib = "{rustc_lib}",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rustfmt_toolchain(name, rustfmt, rustc, rustc_lib):
+    return _build_file_for_rustfmt_toolchain_template.format(
+        name = name,
+        rustfmt = rustfmt,
+        rustc = rustc,
+        rustc_lib = rustc_lib,
+    )
+
 def load_rust_stdlib(ctx, target_triple):
     """Loads a rust standard library and yields corresponding BUILD for it
 
@@ -625,6 +652,30 @@ def produce_tool_path(tool_name, target_triple, version):
         fail("No tool version was provided")
     return "-".join([e for e in [tool_name, version, target_triple] if e])
 
+def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256):
+    """Looks up the sha256 hash of a specific tool archive.
+
+    The lookup order is:
+
+    1. The sha256s dict in the context attributes;
+    2. The list of sha256 hashes populated in //rust:known_shas.bzl;
+    3. The sha256 argument to the function
+
+    Args:
+        ctx (repository_ctx): A repository_ctx (no attrs required).
+        tool_name (str): The name of the given tool per the archive naming.
+        target_triple (str): The rust-style target triple of the tool
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        iso_date (str): The date of the tool (ignored if the version is a specific version).
+        sha256 (str): The expected hash of hash of the Rust tool.
+
+    Returns:
+        str: The sha256 of the tool archive, or an empty string if the hash could not be found.
+    """
+    tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
+    archive_path = tool_suburl + _get_tool_extension(ctx)
+    return getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
@@ -666,8 +717,8 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             urls.append(new_url)
 
     tool_path = produce_tool_path(tool_name, target_triple, version)
-    archive_path = tool_path + _get_tool_extension(ctx)
-    sha256 = getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+
+    sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent accross calls here the
@@ -701,3 +752,44 @@ def _get_tool_extension(ctx):
         return ".tar.xz"
     else:
         return ""
+
+def select_rust_version(versions):
+    """Select the highest priorty version for a list of Rust versions
+
+    Priority order: `stable > nightly > beta`
+
+    Note that duplicate channels are unexpected in `versions`.
+
+    Args:
+        versions (list): A list of Rust versions. E.g. [`1.66.0`, `nightly/2022-12-15`]
+
+    Returns:
+        str: The highest ranking value from `versions`
+    """
+    if not versions:
+        fail("No versions were provided")
+
+    current = versions[0]
+
+    for ver in versions:
+        if ver.startswith("beta"):
+            if current[0].isdigit() or current.startswith("nightly"):
+                continue
+            if current.startswith("beta") and ver > current:
+                current = ver
+                continue
+
+            current = ver
+        elif ver.startswith("nightly"):
+            if current[0].isdigit():
+                continue
+            if current.startswith("nightly") and ver > current:
+                current = ver
+                continue
+
+            current = ver
+
+        else:
+            current = ver
+
+    return current

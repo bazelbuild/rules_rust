@@ -2,6 +2,11 @@
 name: Release
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - version.bzl
 
 defaults:
   run:
@@ -14,7 +19,7 @@ jobs:
   validation:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
       # so this step ensures releases are always done off of `main`.
       - name: Ensure branch is 'main'
@@ -50,6 +55,9 @@ jobs:
           - os: ubuntu-20.04
             env:
               TARGET: "aarch64-unknown-linux-gnu"
+          - os: windows-2019
+            env:
+              TARGET: "aarch64-pc-windows-msvc"
           - os: macos-11
             env:
               TARGET: "x86_64-apple-darwin"
@@ -66,13 +74,16 @@ jobs:
             env:
               TARGET: "x86_64-unknown-linux-musl"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install rust toolchains for host
         run: |
           # Detect the current version of rust
           version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
           rustup override set "${version}"
+          rustup target add ${TARGET}
           rustup update stable && rustup default stable
+        env:
+          TARGET: "${{ matrix.env.TARGET }}"
       - name: Setup macos build tooling
         run: |
           sudo xcode-select -s /Applications/Xcode_12.4.app/Contents/Developer/
@@ -95,7 +106,7 @@ jobs:
             bazel ${BAZEL_STARTUP_FLAGS[@]} run //crate_universe/tools/cross_installer -- --target=${TARGET} --output="${OUTPUT_PATH}"
         env:
           TARGET: "${{ matrix.env.TARGET }}"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ matrix.env.TARGET }}"
           path: ${{ github.workspace }}/crate_universe/target/artifacts/${{ matrix.env.TARGET }}
@@ -104,8 +115,8 @@ jobs:
     needs: builds
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
         with:
           path: ${{ github.workspace }}/crate_universe/target/artifacts
       - name: Detect the current version
@@ -127,7 +138,7 @@ jobs:
           ARTIFACTS_DIR: ${{ github.workspace }}/crate_universe/target/artifacts
           URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
       # Upload the artifact in case creating a release fails so all artifacts can then be manually recovered.
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "rules_rust.tar.gz"
           path: ${{ github.workspace }}/.github/rules_rust.tar.gz
@@ -168,6 +179,15 @@ jobs:
           upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: cargo-bazel-aarch64-apple-darwin
           asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-apple-darwin/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload aarch64-pc-windows-msvc"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-aarch64-pc-windows-msvc.exe
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-pc-windows-msvc/cargo-bazel.exe
           asset_content_type: application/octet-stream
       - name: "Upload aarch64-unknown-linux-gnu"
         uses: actions/upload-release-asset@v1

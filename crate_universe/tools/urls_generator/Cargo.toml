@@ -10,7 +10,7 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "4.0.13"
+clap = "4.0.32"
 hex = "0.4.3"
-serde_json = "1.0.86"
+serde_json = "1.0.91"
 sha2 = "0.10.6"

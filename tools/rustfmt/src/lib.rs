@@ -21,14 +21,18 @@ pub struct RustfmtConfig {
 pub fn parse_rustfmt_config() -> RustfmtConfig {
     let runfiles = runfiles::Runfiles::create().unwrap();
 
-    let rustfmt = runfiles.rlocation(concat!(env!("RUSTFMT_WORKSPACE"), "/", env!("RUSTFMT")));
+    let rustfmt = runfiles.rlocation(format!(
+        "{}/{}",
+        runfiles.current_repository(),
+        env!("RUSTFMT")
+    ));
     if !rustfmt.exists() {
         panic!("rustfmt does not exist at: {}", rustfmt.display());
     }
 
-    let config = runfiles.rlocation(concat!(
-        env!("RUSTFMT_WORKSPACE"),
-        "/",
+    let config = runfiles.rlocation(format!(
+        "{}/{}",
+        runfiles.current_repository(),
         env!("RUSTFMT_CONFIG")
     ));
     if !config.exists() {
@@ -58,7 +62,6 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
 
     let mut lines: Vec<String> = content
         .split('\n')
-        .into_iter()
         .filter(|s| !s.is_empty())
         .map(|s| s.to_owned())
         .collect();
@@ -76,7 +79,7 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
         edition,
         sources: lines
             .into_iter()
-            .map(|src| runfiles.rlocation(format!("{}/{}", env!("RUSTFMT_WORKSPACE"), src)))
+            .map(|src| runfiles.rlocation(format!("{}/{}", runfiles.current_repository(), src)))
             .collect(),
     }
 }
@@ -95,7 +98,14 @@ pub fn find_manifests() -> Vec<PathBuf> {
     std::env::var("RUSTFMT_MANIFESTS")
         .map(|var| {
             var.split(PATH_ENV_SEP)
-                .map(|path| runfiles.rlocation(format!("{}/{}", env!("RUSTFMT_WORKSPACE"), path)))
+                .filter_map(|path| match path.is_empty() {
+                    true => None,
+                    false => Some(runfiles.rlocation(format!(
+                        "{}/{}",
+                        runfiles.current_repository(),
+                        path
+                    ))),
+                })
                 .collect()
         })
         .unwrap_or_default()

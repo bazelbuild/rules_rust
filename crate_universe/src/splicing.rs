@@ -3,7 +3,7 @@
 pub(crate) mod cargo_config;
 mod splicer;
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -193,7 +193,7 @@ impl TryFrom<serde_json::Value> for WorkspaceMetadata {
 impl WorkspaceMetadata {
     fn new(
         splicing_manifest: &SplicingManifest,
-        member_manifests: HashMap<&PathBuf, String>,
+        member_manifests: BTreeMap<&PathBuf, String>,
     ) -> Result<Self> {
         let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
@@ -310,11 +310,11 @@ impl WorkspaceMetadata {
 
                     // Load the index for the current url
                     let index = crates_index::Index::from_url(index_url)
-                        .with_context(|| format!("Failed to load index for url: {}", index_url))?;
+                        .with_context(|| format!("Failed to load index for url: {index_url}"))?;
 
                     // Ensure each index has a valid index config
                     index.index_config().with_context(|| {
-                        format!("`config.json` not found in index: {}", index_url)
+                        format!("`config.json` not found in index: {index_url}")
                     })?;
 
                     index

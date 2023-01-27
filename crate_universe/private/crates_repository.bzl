@@ -116,6 +116,7 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#crates_repository_repinning_updating_dependencies) for more details. |
+| `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 
 Example:
 
@@ -155,7 +156,7 @@ crates_repository(
 The above will create an external repository which contains aliases and macros for accessing
 Rust targets found in the dependency graph defined by the given manifests.
 
-**NOTE**: The `lockfile` must be manually created. The rule unfortunately does not yet create
+**NOTE**: The `cargo_lockfile` and `lockfile` must be manually created. The rule unfortunately does not yet create
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
@@ -180,10 +181,19 @@ that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
+If the `crates_repository` is used multiple times in the same Bazel workspace (e.g. for multiple independent
+Rust workspaces), it may additionally be useful to use the `CARGO_BAZEL_REPIN_ONLY` environment variable, which
+limits execution of the repinning to one or multiple instances of the `crates_repository` rule via a comma-delimited
+allowlist:
+
+```shell
+CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index
+```
 
 """,
     implementation = _crates_repository_impl,
@@ -203,6 +213,13 @@ that is called behind the scenes to update dependencies.
                 "should be used here, which will keep the versions used by cargo and bazel in sync."
             ),
             mandatory = True,
+        ),
+        "generate_binaries": attr.bool(
+            doc = (
+                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+                "By default only the `rust_library` targets are generated."
+            ),
+            default = False,
         ),
         "generate_build_scripts": attr.bool(
             doc = (
@@ -264,22 +281,22 @@ that is called behind the scenes to update dependencies.
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'rustc.exe') will be replaced in " +
-                "the string if present."
+                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+                "'rustc.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
                 "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
                 "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), and `{tool}` (eg. 'cargo.exe') will be replaced in " +
-                "the string if present."
+                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+                "'cargo.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "rust_version": attr.string(
-            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly-2021-09-08`",
+            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
             default = rust_common.default_version,
         ),
         "splicing_config": attr.string(

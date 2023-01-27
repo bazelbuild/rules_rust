@@ -71,7 +71,7 @@ pub fn get_crate_specs(
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = targets
         .iter()
-        .map(|t| format!("deps({})", t))
+        .map(|t| format!("deps({t})"))
         .collect::<Vec<_>>()
         .join("+");
 
@@ -80,13 +80,11 @@ pub fn get_crate_specs(
         .arg("aquery")
         .arg("--include_aspects")
         .arg(format!(
-            "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
-            rules_rust_name
+            "--aspects={rules_rust_name}//rust:defs.bzl%rust_analyzer_aspect"
         ))
         .arg("--output_groups=rust_analyzer_crate_spec")
         .arg(format!(
-            r#"outputs(".*[.]rust_analyzer_crate_spec",{})"#,
-            target_pattern
+            r#"outputs(".*[.]rust_analyzer_crate_spec",{target_pattern})"#
         ))
         .arg("--output=jsonproto")
         .output()?;

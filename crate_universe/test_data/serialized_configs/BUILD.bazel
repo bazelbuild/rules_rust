@@ -19,6 +19,7 @@ write_file(
                     version = "0.8.5",
                 )],
             },
+            generate_binaries = False,
             generate_build_scripts = False,
             render_config = json.decode(render_config(
                 platforms_template = "//custom/platform:{triple}",

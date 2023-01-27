@@ -100,11 +100,11 @@ impl FromStr for CargoUpdateRequest {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lower = s.to_lowercase();
 
-        if ["1", "yes", "true", "on"].contains(&lower.as_str()) {
+        if ["eager", "full", "all"].contains(&lower.as_str()) {
             return Ok(Self::Eager);
         }
 
-        if ["workspace", "minimal"].contains(&lower.as_str()) {
+        if ["1", "yes", "true", "on", "workspace", "minimal"].contains(&lower.as_str()) {
             return Ok(Self::Workspace);
         }
 
@@ -361,7 +361,7 @@ mod test {
 
     #[test]
     fn deserialize_cargo_update_request_for_eager() {
-        for value in ["1", "yes", "true", "on"] {
+        for value in ["all", "full", "eager"] {
             let request = CargoUpdateRequest::from_str(value).unwrap();
 
             assert_eq!(request, CargoUpdateRequest::Eager);
@@ -370,7 +370,7 @@ mod test {
 
     #[test]
     fn deserialize_cargo_update_request_for_workspace() {
-        for value in ["workspace", "minimal"] {
+        for value in ["1", "true", "yes", "on", "workspace", "minimal"] {
             let request = CargoUpdateRequest::from_str(value).unwrap();
 
             assert_eq!(request, CargoUpdateRequest::Workspace);

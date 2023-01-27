@@ -78,6 +78,8 @@ def _annotation(
         data = None,
         data_glob = None,
         deps = None,
+        gen_binaries = [],
+        disable_pipelining = False,
         gen_build_script = None,
         patch_args = None,
         patch_tool = None,
@@ -90,7 +92,8 @@ def _annotation(
     """A collection of extra attributes and settings for a particular crate
 
     Args:
-        version (str, optional): The version or semver-conditions to match with a crate.
+        version (str, optional): The version or semver-conditions to match with a crate. The wildcard `*`
+            matches any version, including prerelease versions.
         additive_build_file_content (str, optional): Extra contents to write to the bottom of generated BUILD files.
         additive_build_file (str, optional): A file containing extra contents to write to the bottom of
             generated BUILD files.
@@ -114,6 +117,9 @@ def _annotation(
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
+        gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
+            targets produced. Or `True` to generate all, `False` to generate none.
+        disable_pipelining (bool, optional): If True, disables pipelining for library targets for this crate.
         gen_build_script (bool, optional): An authorative flag to determine whether or not to produce
             `cargo_build_script` targets for the current crate.
         patch_args (list, optional): The `patch_args` attribute of a Bazel repository rule. See
@@ -159,6 +165,8 @@ def _annotation(
             data = data,
             data_glob = data_glob,
             deps = deps,
+            gen_binaries = gen_binaries,
+            disable_pipelining = disable_pipelining,
             gen_build_script = gen_build_script,
             patch_args = patch_args,
             patch_tool = patch_tool,

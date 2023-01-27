@@ -3,6 +3,7 @@
 
 * [rustfmt_aspect](#rustfmt_aspect)
 * [rustfmt_test](#rustfmt_test)
+* [rustfmt_toolchain](#rustfmt_toolchain)
 
 
 ## Overview
@@ -61,8 +62,29 @@ A test rule for performing `rustfmt --check` on a set of targets
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rustfmt_test-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |  |
-| <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/docs/build-ref.html#labels">List of labels</a> | optional | [] |
+| <a id="rustfmt_test-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rustfmt_test-targets"></a>targets |  Rust targets to run <code>rustfmt --check</code> on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
+
+
+<a id="rustfmt_toolchain"></a>
+
+## rustfmt_toolchain
+
+<pre>
+rustfmt_toolchain(<a href="#rustfmt_toolchain-name">name</a>, <a href="#rustfmt_toolchain-rustc">rustc</a>, <a href="#rustfmt_toolchain-rustc_lib">rustc_lib</a>, <a href="#rustfmt_toolchain-rustfmt">rustfmt</a>)
+</pre>
+
+A toolchain for [rustfmt](https://rust-lang.github.io/rustfmt/)
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rustfmt_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rustfmt_toolchain-rustc"></a>rustc |  The location of the <code>rustc</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rustfmt_toolchain-rustc_lib"></a>rustc_lib |  The libraries used by rustc during compilation.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rustfmt_toolchain-rustfmt"></a>rustfmt |  The location of the <code>rustfmt</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 
 
 <a id="rustfmt_aspect"></a>
@@ -77,7 +99,6 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
 - `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
@@ -99,6 +120,6 @@ generated source files are also ignored by this aspect.
 
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rustfmt_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/docs/build-ref.html#name">Name</a> | required |   |
+| <a id="rustfmt_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |   |
 
 

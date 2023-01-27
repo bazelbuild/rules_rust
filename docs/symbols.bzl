@@ -69,18 +69,24 @@ load(
 load(
     "@rules_rust//rust:repositories.bzl",
     _rules_rust_dependencies = "rules_rust_dependencies",
+    _rust_analyzer_toolchain_repository = "rust_analyzer_toolchain_repository",
+    _rust_analyzer_toolchain_tools_repository = "rust_analyzer_toolchain_tools_repository",
     _rust_register_toolchains = "rust_register_toolchains",
     _rust_repositories = "rust_repositories",
     _rust_repository_set = "rust_repository_set",
     _rust_toolchain_repository = "rust_toolchain_repository",
     _rust_toolchain_repository_proxy = "rust_toolchain_repository_proxy",
     _rust_toolchain_tools_repository = "rust_toolchain_tools_repository",
+    _rustfmt_toolchain_repository = "rustfmt_toolchain_repository",
+    _rustfmt_toolchain_tools_repository = "rustfmt_toolchain_tools_repository",
+    _toolchain_repository_proxy = "toolchain_repository_proxy",
 )
 load(
     "@rules_rust//rust:toolchain.bzl",
     _rust_analyzer_toolchain = "rust_analyzer_toolchain",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
     _rust_toolchain = "rust_toolchain",
+    _rustfmt_toolchain = "rustfmt_toolchain",
 )
 
 # buildifier: disable=bzl-visibility
@@ -148,6 +154,11 @@ rust_repository_set = _rust_repository_set
 rust_toolchain_repository = _rust_toolchain_repository
 rust_toolchain_repository_proxy = _rust_toolchain_repository_proxy
 rust_toolchain_tools_repository = _rust_toolchain_tools_repository
+rustfmt_toolchain_tools_repository = _rustfmt_toolchain_tools_repository
+rustfmt_toolchain_repository = _rustfmt_toolchain_repository
+rust_analyzer_toolchain_repository = _rust_analyzer_toolchain_repository
+rust_analyzer_toolchain_tools_repository = _rust_analyzer_toolchain_tools_repository
+toolchain_repository_proxy = _toolchain_repository_proxy
 
 rust_clippy = _rust_clippy
 rust_clippy_aspect = _rust_clippy_aspect
@@ -161,6 +172,7 @@ crate_universe_dependencies = _crate_universe_dependencies
 
 rustfmt_aspect = _rustfmt_aspect
 rustfmt_test = _rustfmt_test
+rustfmt_toolchain = _rustfmt_toolchain
 
 error_format = _error_format
 extra_rustc_flag = _extra_rustc_flag

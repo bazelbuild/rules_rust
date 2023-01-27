@@ -23,6 +23,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios",
     "aarch64-apple-ios-sim",
+    "aarch64-pc-windows-msvc",
     "aarch64-linux-android",
     "aarch64-unknown-linux-gnu",
     "arm-unknown-linux-gnueabi",
@@ -38,6 +39,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
     "riscv32imc-unknown-none-elf",
+    "riscv64gc-unknown-none-elf",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
@@ -60,9 +62,12 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "powerpc64le": None,
     "riscv32": "riscv32",
     "riscv32imc": "riscv32",
+    "riscv64": "riscv64",
+    "riscv64gc": "riscv64",
     "s390": None,
     "s390x": "s390x",
-    "thumbv7m": "armv7",
+    "thumbv6m": "armv6-m",
+    "thumbv7m": "armv7-m",
     "wasm32": None,
     "x86_64": "x86_64",
 }

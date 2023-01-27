@@ -29,7 +29,7 @@ fn install() -> std::io::Result<u64> {
 
 fn main() {
     if let Err(err) = install() {
-        eprintln!("{:?}", err);
+        eprintln!("{err:?}");
         std::process::exit(1);
     };
 }
