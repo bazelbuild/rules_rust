@@ -204,13 +204,41 @@ def system_to_constraints(system):
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
-def abi_to_constraints(_abi):
-    # TODO(acmcarther): Implement when C++ toolchain is more mature and we
+def abi_to_constraints(abi, *, arch = None, system = None):
+    """Return a list of constraint values which represents a triple's ABI.
+
+    Note that some ABI values require additional info to accurately match a set of constraints.
+
+    Args:
+        abi (str): The abi value to match constraints for
+        arch (str, optional): The architecture for the associated ABI value.
+        system (str, optional): The system for the associated ABI value.
+
+    Returns:
+        List: A list of labels to constraint values
+    """
+
+    if abi == "sim":
+        if not system:
+            fail("The ABI value {} is ambiguous. Please specify a system to match the right constraints.")
+        if not arch:
+            fail("The ABI value {} is ambiguous. Please specify an architecture to match the right constraints.")
+        if system == "ios":
+            if abi == "sim":
+                return ["@build_bazel_apple_support//constraints:simulator"]
+        elif arch == "aarch64":  # Only add device for archs that have both
+            return ["@build_bazel_apple_support//constraints:device"]
+        else:
+            return []
+
+    # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
     return []
 
 def extra_ios_constraints(triple):
     """Add constraints specific to iOS targets.
+
+    Deprecated: Instead, use `abi_to_constraints`
 
     Args:
         triple: The full triple struct for the target
@@ -222,12 +250,8 @@ def extra_ios_constraints(triple):
     # TODO: Simplify if https://github.com/bazelbuild/bazel/issues/11454 is fixed
     if triple.system != "ios":
         return []
-    if triple.abi == "sim":
-        return ["@build_bazel_apple_support//constraints:simulator"]
-    elif triple.arch == "aarch64":  # Only add device for archs that have both
-        return ["@build_bazel_apple_support//constraints:device"]
-    else:
-        return []
+
+    return abi_to_constraints(triple.abi, arch = triple.arch, system = triple.system)
 
 def triple_to_system(target_triple):
     """Returns a system name for a given platform triple
@@ -306,7 +330,10 @@ def triple_to_constraint_set(target_triple):
     constraint_set += cpu_arch_to_constraints(triple_struct.arch)
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
-    constraint_set += abi_to_constraints(triple_struct.abi)
-    constraint_set += extra_ios_constraints(triple_struct)
+    constraint_set += abi_to_constraints(
+        triple_struct.abi,
+        arch = triple_struct.arch,
+        system = triple_struct.system,
+    )
 
     return constraint_set
