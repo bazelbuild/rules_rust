@@ -7,7 +7,6 @@ load(
     "system_to_dylib_ext",
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
-    "triple_to_system",
 )
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
@@ -51,12 +50,11 @@ def BUILD_for_compiler(target_triple):
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
     return _build_file_for_compiler_template.format(
-        binary_ext = system_to_binary_ext(system),
-        staticlib_ext = system_to_staticlib_ext(system),
-        dylib_ext = system_to_dylib_ext(system),
-        target_triple = target_triple,
+        binary_ext = system_to_binary_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        dylib_ext = system_to_dylib_ext(target_triple.system),
+        target_triple = target_triple.str,
     )
 
 _build_file_for_cargo_template = """\
@@ -75,9 +73,8 @@ def BUILD_for_cargo(target_triple):
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
     return _build_file_for_cargo_template.format(
-        binary_ext = system_to_binary_ext(system),
+        binary_ext = system_to_binary_ext(target_triple.system),
     )
 
 _build_file_for_rustfmt_template = """\
@@ -103,9 +100,8 @@ def BUILD_for_rustfmt(target_triple):
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
     return _build_file_for_rustfmt_template.format(
-        binary_ext = system_to_binary_ext(system),
+        binary_ext = system_to_binary_ext(target_triple.system),
     )
 
 _build_file_for_clippy_template = """\
@@ -132,9 +128,8 @@ def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(exec_triple)
     return _build_file_for_rust_analyzer_proc_macro_srv.format(
-        binary_ext = system_to_binary_ext(system),
+        binary_ext = system_to_binary_ext(exec_triple.system),
     )
 
 def BUILD_for_clippy(target_triple):
@@ -146,8 +141,9 @@ def BUILD_for_clippy(target_triple):
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
-    return _build_file_for_clippy_template.format(binary_ext = system_to_binary_ext(system))
+    return _build_file_for_clippy_template.format(
+        binary_ext = system_to_binary_ext(target_triple.system),
+    )
 
 _build_file_for_llvm_tools = """\
 filegroup(
@@ -167,15 +163,14 @@ def BUILD_for_llvm_tools(target_triple):
     """Emits a BUILD file the llvm-tools binaries.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
     return _build_file_for_llvm_tools.format(
-        binary_ext = system_to_binary_ext(system),
-        target_triple = target_triple,
+        binary_ext = system_to_binary_ext(target_triple.system),
+        target_triple = target_triple.str,
     )
 
 _build_file_for_stdlib_template = """\
@@ -208,17 +203,16 @@ def BUILD_for_stdlib(target_triple):
     """Emits a BUILD file the stdlib archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (triple): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
     """
-    system = triple_to_system(target_triple)
     return _build_file_for_stdlib_template.format(
-        binary_ext = system_to_binary_ext(system),
-        staticlib_ext = system_to_staticlib_ext(system),
-        dylib_ext = system_to_dylib_ext(system),
-        target_triple = target_triple,
+        binary_ext = system_to_binary_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        dylib_ext = system_to_dylib_ext(target_triple.system),
+        target_triple = target_triple.str,
     )
 
 _build_file_for_rust_toolchain_template = """\
@@ -265,8 +259,8 @@ def BUILD_for_rust_toolchain(
     Args:
         workspace_name (str): The name of the workspace that this toolchain resides in
         name (str): The name of the toolchain declaration
-        exec_triple (str): The rust-style target that this compiler runs on
-        target_triple (str): The rust-style target triple of the tool
+        exec_triple (triple): The rust-style target that this compiler runs on
+        target_triple (triple): The rust-style target triple of the tool
         include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         default_edition (str): Default Rust edition.
@@ -280,9 +274,8 @@ def BUILD_for_rust_toolchain(
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
     """
-    system = triple_to_system(target_triple)
     if stdlib_linkflags == None:
-        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(system)])
+        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(target_triple.system)])
 
     rustc_srcs = "None"
     if include_rustc_srcs:
@@ -302,16 +295,16 @@ def BUILD_for_rust_toolchain(
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         workspace_name = workspace_name,
-        binary_ext = system_to_binary_ext(system),
-        staticlib_ext = system_to_staticlib_ext(system),
-        dylib_ext = system_to_dylib_ext(system),
+        binary_ext = system_to_binary_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        dylib_ext = system_to_dylib_ext(target_triple.system),
         rustc_srcs = rustc_srcs,
         allocator_library = allocator_library_label,
         stdlib_linkflags = stdlib_linkflags,
-        system = system,
+        system = target_triple.system,
         default_edition = default_edition,
-        exec_triple = exec_triple,
-        target_triple = target_triple,
+        exec_triple = exec_triple.str,
+        target_triple = target_triple.str,
         rustfmt_label = rustfmt_label,
         llvm_cov_label = llvm_cov_label,
         llvm_profdata_label = llvm_profdata_label,
@@ -351,7 +344,7 @@ def load_rustfmt(ctx, target_triple, version, iso_date):
 
     Args:
         ctx (repository_ctx): The repository rule's context object.
-        target_triple (str): The platform triple to download rustfmt for.
+        target_triple (struct): The platform triple to download rustfmt for.
         version (str): The version or channel of rustfmt.
         iso_date (str): The date of the tool (or None, if the version is a specific version).
 
@@ -376,7 +369,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
     Args:
         ctx (repository_ctx): A repository_ctx.
         iso_date (str): The date of the tool (or None, if the version is a specific version).
-        target_triple (str): The Rust-style target that this compiler runs on.
+        target_triple (struct): The Rust-style target that this compiler runs on.
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
@@ -394,46 +387,49 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
 
     return BUILD_for_compiler(target_triple)
 
-def load_clippy(ctx):
+def load_clippy(ctx, iso_date, target_triple, version):
     """Loads Clippy and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+        target_triple (struct): The Rust-style target that this compiler runs on.
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
         str: The BUILD file contents for Clippy
     """
-
-    target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "clippy",
         tool_subdirectories = ["clippy-preview"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_clippy(target_triple)
 
-def load_cargo(ctx):
+def load_cargo(ctx, iso_date, target_triple, version):
     """Loads Cargo and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+        target_triple (struct): The Rust-style target that this compiler runs on.
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
         str: The BUILD file contents for Cargo
     """
 
-    target_triple = ctx.attr.exec_triple
     load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "cargo",
         tool_subdirectories = ["cargo"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_cargo(target_triple)
@@ -475,18 +471,20 @@ def should_include_rustc_srcs(repository_ctx):
 
     return getattr(repository_ctx.attr, "include_rustc_srcs", False)
 
-def load_rust_src(ctx, sha256 = ""):
+def load_rust_src(ctx, iso_date, version, sha256 = ""):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
     Args:
         ctx (ctx): A repository_ctx.
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
         sha256 (str): The sha256 value for the `rust-src` artifact
     """
-    tool_suburl = produce_tool_suburl("rust-src", None, ctx.attr.version, ctx.attr.iso_date)
+    tool_suburl = produce_tool_suburl("rust-src", None, version, iso_date)
     url = ctx.attr.urls[0].format(tool_suburl)
 
-    tool_path = produce_tool_path("rust-src", None, ctx.attr.version)
-    archive_path = tool_path + _get_tool_extension(ctx)
+    tool_path = produce_tool_path("rust-src", version, None)
+    archive_path = tool_path + _get_tool_extension(getattr(ctx.attr, "urls", None))
     sha256 = sha256 or getattr(ctx.attr, "sha256s", {}).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or ""
     ctx.download_and_extract(
         url,
@@ -549,7 +547,7 @@ def load_rust_stdlib(ctx, target_triple):
 
     Args:
         ctx (repository_ctx): A repository_ctx.
-        target_triple (str): The rust-style target triple of the tool
+        target_triple (struct): The rust-style target triple of the tool
 
     Returns:
         str: The BUILD file contents for this stdlib
@@ -560,7 +558,7 @@ def load_rust_stdlib(ctx, target_triple):
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
         tool_name = "rust-std",
-        tool_subdirectories = ["rust-std-{}".format(target_triple)],
+        tool_subdirectories = ["rust-std-{}".format(target_triple.str)],
         version = ctx.attr.version,
     )
 
@@ -624,24 +622,24 @@ def produce_tool_suburl(tool_name, target_triple, version, iso_date = None):
     """Produces a fully qualified Rust tool name for URL
 
     Args:
-        tool_name: The name of the tool per static.rust-lang.org
-        target_triple: The rust-style target triple of the tool
-        version: The version of the tool among "nightly", "beta', or an exact version.
-        iso_date: The date of the tool (or None, if the version is a specific version).
+        tool_name (str): The name of the tool per `static.rust-lang.org`.
+        target_triple (struct): The rust-style target triple of the tool.
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
 
     Returns:
         str: The fully qualified url path for the specified tool.
     """
-    path = produce_tool_path(tool_name, target_triple, version)
+    path = produce_tool_path(tool_name, version, target_triple)
     return iso_date + "/" + path if (iso_date and version in ("beta", "nightly")) else path
 
-def produce_tool_path(tool_name, target_triple, version):
+def produce_tool_path(tool_name, version, target_triple = None):
     """Produces a qualified Rust tool name
 
     Args:
-        tool_name: The name of the tool per static.rust-lang.org
-        target_triple: The rust-style target triple of the tool
-        version: The version of the tool among "nightly", "beta', or an exact version.
+        tool_name (str): The name of the tool per static.rust-lang.org
+        version (str): The version of the tool among "nightly", "beta', or an exact version.
+        target_triple (struct, optional): The rust-style target triple of the tool
 
     Returns:
         str: The qualified path for the specified tool.
@@ -650,7 +648,13 @@ def produce_tool_path(tool_name, target_triple, version):
         fail("No tool name was provided")
     if not version:
         fail("No tool version was provided")
-    return "-".join([e for e in [tool_name, version, target_triple] if e])
+
+    # Not all tools require a triple. E.g. `rustc_src` (Rust source files for rust-analyzer).
+    platform_triple = None
+    if target_triple:
+        platform_triple = target_triple.str
+
+    return "-".join([e for e in [tool_name, version, platform_triple] if e])
 
 def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256):
     """Looks up the sha256 hash of a specific tool archive.
@@ -664,7 +668,7 @@ def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
         tool_name (str): The name of the given tool per the archive naming.
-        target_triple (str): The rust-style target triple of the tool
+        target_triple (struct): The rust-style target triple of the tool.
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         iso_date (str): The date of the tool (ignored if the version is a specific version).
         sha256 (str): The expected hash of hash of the Rust tool.
@@ -673,7 +677,7 @@ def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
         str: The sha256 of the tool archive, or an empty string if the hash could not be found.
     """
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    archive_path = tool_suburl + _get_tool_extension(ctx)
+    archive_path = tool_suburl + _get_tool_extension(getattr(ctx.attr, "urls", None))
     return getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
 
 def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
@@ -701,7 +705,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
             tool_subdirectories = ["clippy-preview", "rustc"]
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         iso_date (str): The date of the tool (ignored if the version is a specific version).
-        target_triple (str): The rust-style target triple of the tool
+        target_triple (struct): The rust-style target triple of the tool.
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
     """
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
@@ -716,7 +720,7 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         if new_url not in urls:
             urls.append(new_url)
 
-    tool_path = produce_tool_path(tool_name, target_triple, version)
+    tool_path = produce_tool_path(tool_name, version, target_triple)
 
     sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
 
@@ -744,8 +748,9 @@ def _make_auth_dict(ctx, urls):
         ret[url] = auth
     return ret
 
-def _get_tool_extension(ctx):
-    urls = getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES)
+def _get_tool_extension(urls = None):
+    if urls == None:
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES
     if urls[0][-7:] == ".tar.gz":
         return ".tar.gz"
     elif urls[0][-7:] == ".tar.xz":

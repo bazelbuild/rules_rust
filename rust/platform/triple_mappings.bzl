@@ -264,7 +264,9 @@ def triple_to_system(target_triple):
     Returns:
         str: A system name
     """
-    return triple(target_triple).system
+    if type(target_triple) == "string":
+        target_triple = triple(target_triple)
+    return target_triple.system
 
 def triple_to_arch(target_triple):
     """Returns a system architecture name for a given platform triple
@@ -277,7 +279,9 @@ def triple_to_arch(target_triple):
     Returns:
         str: A cpu architecture
     """
-    return triple(target_triple).arch
+    if type(target_triple) == "string":
+        target_triple = triple(target_triple)
+    return target_triple.arch
 
 def triple_to_abi(target_triple):
     """Returns a system abi name for a given platform triple
@@ -290,7 +294,9 @@ def triple_to_abi(target_triple):
     Returns:
         str: The triple's abi
     """
-    return triple(target_triple).system
+    if type(target_triple) == "string":
+        target_triple = triple(target_triple)
+    return target_triple.system
 
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]

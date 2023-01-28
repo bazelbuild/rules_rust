@@ -2,11 +2,8 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//rust/platform:triple.bzl", "get_host_triple")
-load(
-    "//rust/platform:triple_mappings.bzl",
-    "triple_to_constraint_set",
-)
+load("//rust/platform:triple.bzl", "get_host_triple", "triple")
+load("//rust/platform:triple_mappings.bzl", "triple_to_constraint_set")
 load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
@@ -261,17 +258,33 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     # Conditionally download rustc sources. Generally used for `rust-analyzer`
     if should_include_rustc_srcs(ctx):
-        load_rust_src(ctx)
+        load_rust_src(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            version = ctx.attr.version,
+        )
+
+    exec_triple = triple(ctx.attr.exec_triple)
 
     build_components = [
         load_rust_compiler(
             ctx = ctx,
             iso_date = ctx.attr.iso_date,
-            target_triple = ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = ctx.attr.version,
         ),
-        load_clippy(ctx),
-        load_cargo(ctx),
+        load_clippy(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            target_triple = exec_triple,
+            version = ctx.attr.version,
+        ),
+        load_cargo(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            target_triple = exec_triple,
+            version = ctx.attr.version,
+        ),
     ]
 
     if ctx.attr.rustfmt_version:
@@ -288,7 +301,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
             rustfmt_version, _, rustfmt_iso_date = rustfmt_version.partition("/")
         build_components.append(load_rustfmt(
             ctx = ctx,
-            target_triple = ctx.attr.exec_triple,
+            target_triple = triple(ctx.attr.exec_triple),
             version = rustfmt_version,
             iso_date = rustfmt_iso_date,
         ))
@@ -296,9 +309,16 @@ def _rust_toolchain_tools_repository_impl(ctx):
     # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
     include_llvm_tools = ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22")
     if include_llvm_tools:
-        build_components.append(load_llvm_tools(ctx, ctx.attr.exec_triple))
+        build_components.append(load_llvm_tools(
+            ctx = ctx,
+            target_triple = exec_triple,
+        ))
 
-    build_components.append(load_rust_stdlib(ctx, ctx.attr.target_triple))
+    target_triple = triple(ctx.attr.target_triple)
+    build_components.append(load_rust_stdlib(
+        ctx = ctx,
+        target_triple = target_triple,
+    ))
 
     stdlib_linkflags = None
     if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
@@ -306,10 +326,10 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     build_components.append(BUILD_for_rust_toolchain(
         name = "rust_toolchain",
-        exec_triple = ctx.attr.exec_triple,
+        exec_triple = exec_triple,
         include_rustc_srcs = should_include_rustc_srcs(ctx),
         allocator_library = ctx.attr.allocator_library,
-        target_triple = ctx.attr.target_triple,
+        target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
@@ -532,7 +552,11 @@ def rust_toolchain_repository(
     )
 
 def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
-    load_rust_src(repository_ctx)
+    load_rust_src(
+        ctx = repository_ctx,
+        iso_date = repository_ctx.attr.iso_date,
+        version = repository_ctx.attr.version,
+    )
 
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
@@ -543,7 +567,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         load_rust_compiler(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = host_triple.str,
+            target_triple = host_triple,
             version = repository_ctx.attr.version,
         ),
     ]
@@ -551,7 +575,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
 
     proc_macro_srv = None
     if includes_rust_analyzer_proc_macro_srv(repository_ctx.attr.version, repository_ctx.attr.iso_date):
-        build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple.str))
+        build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple))
         proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
 
     build_contents.append(BUILD_for_rust_analyzer_toolchain(
@@ -648,17 +672,19 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
     rustc = "//:rustc"
     rustc_lib = "//:rustc_lib"
 
+    exec_triple = triple(repository_ctx.attr.exec_triple)
+
     build_contents = [
         load_rust_compiler(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = repository_ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = repository_ctx.attr.version,
         ),
         load_rustfmt(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = repository_ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = repository_ctx.attr.version,
         ),
         BUILD_for_rustfmt_toolchain(
