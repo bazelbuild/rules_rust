@@ -229,7 +229,6 @@ rust_toolchain(
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     rustc_lib = "@{workspace_name}//:rustc_lib",
-    rustc_srcs = {rustc_srcs},
     allocator_library = {allocator_library},
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
@@ -248,7 +247,6 @@ def BUILD_for_rust_toolchain(
         name,
         exec_triple,
         target_triple,
-        include_rustc_srcs,
         allocator_library,
         default_edition,
         include_rustfmt,
@@ -261,7 +259,6 @@ def BUILD_for_rust_toolchain(
         name (str): The name of the toolchain declaration
         exec_triple (triple): The rust-style target that this compiler runs on
         target_triple (triple): The rust-style target triple of the tool
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support. Defaults to False.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
@@ -277,9 +274,6 @@ def BUILD_for_rust_toolchain(
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(target_triple.system)])
 
-    rustc_srcs = "None"
-    if include_rustc_srcs:
-        rustc_srcs = "\"@{workspace_name}//lib/rustlib/src:rustc_srcs\"".format(workspace_name = workspace_name)
     rustfmt_label = "None"
     if include_rustfmt:
         rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
@@ -298,7 +292,6 @@ def BUILD_for_rust_toolchain(
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system),
         dylib_ext = system_to_dylib_ext(target_triple.system),
-        rustc_srcs = rustc_srcs,
         allocator_library = allocator_library_label,
         stdlib_linkflags = stdlib_linkflags,
         system = target_triple.system,
@@ -453,23 +446,6 @@ def includes_rust_analyzer_proc_macro_srv(version, iso_date):
         return True
 
     return False
-
-def should_include_rustc_srcs(repository_ctx):
-    """Determine whether or not to include rustc sources in the toolchain.
-
-    Args:
-        repository_ctx (repository_ctx): The repository rule's context object
-
-    Returns:
-        bool: Whether or not to include rustc source files in a `rustc_toolchain`
-    """
-
-    # The environment variable will always take precedence over the attribute.
-    include_rustc_srcs_env = repository_ctx.os.environ.get("RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS")
-    if include_rustc_srcs_env != None:
-        return include_rustc_srcs_env.lower() in ["true", "1"]
-
-    return getattr(repository_ctx.attr, "include_rustc_srcs", False)
 
 def load_rust_src(ctx, iso_date, version, sha256 = ""):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.

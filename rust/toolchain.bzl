@@ -513,12 +513,6 @@ def _rust_toolchain_impl(ctx):
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
-    if ctx.attr.rustc_srcs:
-        # buildifier: disable=print
-        print("rustc_srcs is deprecated. {} should be updated to remove this. For a replacement, see https://bazelbuild.github.io/rules_rust/rust_analyzer.html#rust_analyzer_toolchain".format(
-            ctx.label,
-        ))
-
     exec_triple = triple(ctx.attr.exec_triple)
 
     exec_os = ctx.attr.os
@@ -555,7 +549,6 @@ def _rust_toolchain_impl(ctx):
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
         rustc = sysroot.rustc,
         rustc_lib = sysroot.rustc_lib,
-        rustc_srcs = ctx.attr.rustc_srcs,
         rustfmt = sysroot.rustfmt,
         staticlib_ext = ctx.attr.staticlib_ext,
         stdlib_linkflags = stdlib_linkflags_cc_info,
@@ -681,9 +674,6 @@ rust_toolchain = rule(
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",
             cfg = "exec",
-        ),
-        "rustc_srcs": attr.label(
-            doc = "**Deprecated**: Instead see [rust_analyzer_toolchain](#rust_analyzer_toolchain)",
         ),
         "rustfmt": attr.label(
             doc = "**Deprecated**: Instead see [rustfmt_toolchain](#rustfmt_toolchain)",
