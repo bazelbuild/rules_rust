@@ -1,6 +1,7 @@
 """The rust_toolchain rule definition and implementation."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
 load(
@@ -518,6 +519,21 @@ def _rust_toolchain_impl(ctx):
             ctx.label,
         ))
 
+    exec_triple = triple(ctx.attr.exec_triple)
+
+    exec_os = ctx.attr.os
+    if not ctx.attr.os:
+        exec_os = exec_triple.system
+
+    if not exec_os:
+        fail("No system was provided for the execution platform. Please update {}".format(
+            ctx.label,
+        ))
+
+    target_triple = None
+    if ctx.attr.target_triple:
+        target_triple = triple(ctx.attr.target_triple)
+
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
         binary_ext = ctx.attr.binary_ext,
@@ -528,12 +544,12 @@ def _rust_toolchain_impl(ctx):
         default_edition = ctx.attr.default_edition,
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
-        exec_triple = ctx.attr.exec_triple,
+        exec_triple = exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         make_variables = make_variable_info,
-        os = ctx.attr.os,
+        os = exec_os,
         rust_doc = sysroot.rustdoc,
         rust_std = sysroot.rust_std,
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
@@ -547,10 +563,10 @@ def _rust_toolchain_impl(ctx):
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
-        target_arch = ctx.attr.target_triple.split("-")[0],
+        target_arch = target_triple.arch if target_triple else None,
         target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
         target_json = ctx.file.target_json,
-        target_triple = ctx.attr.target_triple,
+        target_triple = target_triple,
 
         # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
@@ -646,7 +662,6 @@ rust_toolchain = rule(
         ),
         "os": attr.string(
             doc = "The operating system for the current toolchain",
-            mandatory = True,
         ),
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
