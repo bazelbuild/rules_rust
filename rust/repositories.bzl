@@ -2,11 +2,8 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//rust/platform:triple.bzl", "get_host_triple")
-load(
-    "//rust/platform:triple_mappings.bzl",
-    "triple_to_constraint_set",
-)
+load("//rust/platform:triple.bzl", "get_host_triple", "triple")
+load("//rust/platform:triple_mappings.bzl", "triple_to_constraint_set")
 load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
@@ -27,7 +24,6 @@ load(
     "load_rustc_dev_nightly",
     "load_rustfmt",
     "select_rust_version",
-    "should_include_rustc_srcs",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
@@ -105,7 +101,6 @@ _RUST_TOOLCHAIN_VERSIONS = [
 def rust_register_toolchains(
         dev_components = False,
         edition = None,
-        include_rustc_srcs = False,
         allocator_library = None,
         iso_date = None,
         register_toolchains = True,
@@ -137,8 +132,6 @@ def rust_register_toolchains(
     Args:
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its `edition` attribute.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
-            See [rust_toolchain_repository.include_rustc_srcs](#rust_toolchain_repository-include_rustc_srcs). for more details
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         iso_date (str, optional):  **Deprecated**: Use `versions` instead.
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
@@ -214,7 +207,6 @@ def rust_register_toolchains(
             edition = edition,
             exec_triple = exec_triple,
             extra_target_triples = extra_target_triples,
-            include_rustc_srcs = include_rustc_srcs,
             allocator_library = allocator_library,
             iso_date = iso_date,
             register_toolchain = register_toolchains,
@@ -259,19 +251,27 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     check_version_valid(ctx.attr.version, ctx.attr.iso_date)
 
-    # Conditionally download rustc sources. Generally used for `rust-analyzer`
-    if should_include_rustc_srcs(ctx):
-        load_rust_src(ctx)
+    exec_triple = triple(ctx.attr.exec_triple)
 
     build_components = [
         load_rust_compiler(
             ctx = ctx,
             iso_date = ctx.attr.iso_date,
-            target_triple = ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = ctx.attr.version,
         ),
-        load_clippy(ctx),
-        load_cargo(ctx),
+        load_clippy(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            target_triple = exec_triple,
+            version = ctx.attr.version,
+        ),
+        load_cargo(
+            ctx = ctx,
+            iso_date = ctx.attr.iso_date,
+            target_triple = exec_triple,
+            version = ctx.attr.version,
+        ),
     ]
 
     if ctx.attr.rustfmt_version:
@@ -288,7 +288,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
             rustfmt_version, _, rustfmt_iso_date = rustfmt_version.partition("/")
         build_components.append(load_rustfmt(
             ctx = ctx,
-            target_triple = ctx.attr.exec_triple,
+            target_triple = triple(ctx.attr.exec_triple),
             version = rustfmt_version,
             iso_date = rustfmt_iso_date,
         ))
@@ -296,9 +296,16 @@ def _rust_toolchain_tools_repository_impl(ctx):
     # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
     include_llvm_tools = ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22")
     if include_llvm_tools:
-        build_components.append(load_llvm_tools(ctx, ctx.attr.exec_triple))
+        build_components.append(load_llvm_tools(
+            ctx = ctx,
+            target_triple = exec_triple,
+        ))
 
-    build_components.append(load_rust_stdlib(ctx, ctx.attr.target_triple))
+    target_triple = triple(ctx.attr.target_triple)
+    build_components.append(load_rust_stdlib(
+        ctx = ctx,
+        target_triple = target_triple,
+    ))
 
     stdlib_linkflags = None
     if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
@@ -306,10 +313,9 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     build_components.append(BUILD_for_rust_toolchain(
         name = "rust_toolchain",
-        exec_triple = ctx.attr.exec_triple,
-        include_rustc_srcs = should_include_rustc_srcs(ctx),
+        exec_triple = exec_triple,
         allocator_library = ctx.attr.allocator_library,
-        target_triple = ctx.attr.target_triple,
+        target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
@@ -357,16 +363,6 @@ rust_toolchain_tools_repository = repository_rule(
             doc = "The Rust-style target that this compiler runs on",
             mandatory = True,
         ),
-        "include_rustc_srcs": attr.bool(
-            doc = (
-                "Whether to download and unpack the rustc source files. These are very large, and " +
-                "slow to unpack, but are required to support rust analyzer. An environment variable " +
-                "`RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS` can also be used to control this attribute. " +
-                "This variable will take precedence over the hard coded attribute. Setting it to `true` to " +
-                "activates this attribute where all other values deactivate it."
-            ),
-            default = False,
-        ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
         ),
@@ -390,7 +386,6 @@ rust_toolchain_tools_repository = repository_rule(
         ),
     },
     implementation = _rust_toolchain_tools_repository_impl,
-    environ = ["RULES_RUST_TOOLCHAIN_INCLUDE_RUSTC_SRCS"],
 )
 
 def _toolchain_repository_proxy_impl(repository_ctx):
@@ -448,7 +443,6 @@ def rust_toolchain_repository(
         target_compatible_with = None,
         target_settings = [],
         channel = None,
-        include_rustc_srcs = False,
         allocator_library = None,
         iso_date = None,
         rustfmt_version = None,
@@ -469,7 +463,6 @@ def rust_toolchain_repository(
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
         target_settings (list, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
-        include_rustc_srcs (bool, optional): Whether to download rustc's src code. This is required in order to use rust-analyzer support.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
@@ -503,7 +496,6 @@ def rust_toolchain_repository(
     rust_toolchain_tools_repository(
         name = tools_repo_name,
         exec_triple = exec_triple,
-        include_rustc_srcs = include_rustc_srcs,
         allocator_library = allocator_library,
         target_triple = target_triple,
         iso_date = iso_date,
@@ -532,7 +524,11 @@ def rust_toolchain_repository(
     )
 
 def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
-    load_rust_src(repository_ctx)
+    load_rust_src(
+        ctx = repository_ctx,
+        iso_date = repository_ctx.attr.iso_date,
+        version = repository_ctx.attr.version,
+    )
 
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
@@ -543,7 +539,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         load_rust_compiler(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = host_triple.str,
+            target_triple = host_triple,
             version = repository_ctx.attr.version,
         ),
     ]
@@ -551,7 +547,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
 
     proc_macro_srv = None
     if includes_rust_analyzer_proc_macro_srv(repository_ctx.attr.version, repository_ctx.attr.iso_date):
-        build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple.str))
+        build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple))
         proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
 
     build_contents.append(BUILD_for_rust_analyzer_toolchain(
@@ -648,17 +644,19 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
     rustc = "//:rustc"
     rustc_lib = "//:rustc_lib"
 
+    exec_triple = triple(repository_ctx.attr.exec_triple)
+
     build_contents = [
         load_rust_compiler(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = repository_ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = repository_ctx.attr.version,
         ),
         load_rustfmt(
             ctx = repository_ctx,
             iso_date = repository_ctx.attr.iso_date,
-            target_triple = repository_ctx.attr.exec_triple,
+            target_triple = exec_triple,
             version = repository_ctx.attr.version,
         ),
         BUILD_for_rustfmt_toolchain(
@@ -791,7 +789,6 @@ def rust_repository_set(
         target_settings = [],
         version = None,
         versions = [],
-        include_rustc_srcs = False,
         allocator_library = None,
         extra_target_triples = [],
         iso_date = None,
@@ -812,7 +809,6 @@ def rust_repository_set(
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
-        include_rustc_srcs (bool, optional): **Deprecated** - instead see [rust_analyzer_toolchain_repository](#rust_analyzer_toolchain_repository).
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
         extra_target_triples (list, optional): Additional rust-style targets that this set of
@@ -832,10 +828,6 @@ def rust_repository_set(
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
     """
-
-    if include_rustc_srcs:
-        # buildifier: disable=print
-        print("include_rustc_srcs is deprecated. Instead see https://bazelbuild.github.io/rules_rust/flatten.html#rust_analyzer_toolchain_repository")
 
     if version and versions:
         fail("`version` and `versions` attributes are mutually exclusive. Update {} to use one".format(
@@ -888,7 +880,6 @@ def rust_repository_set(
                 edition = edition,
                 exec_triple = exec_triple,
                 target_settings = target_settings,
-                include_rustc_srcs = include_rustc_srcs,
                 iso_date = info.iso_date,
                 rustfmt_version = rustfmt_version,
                 sha256s = sha256s,

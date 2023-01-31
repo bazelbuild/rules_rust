@@ -14,7 +14,7 @@ def _load_arbitrary_tool_test_impl(repository_ctx):
         tool_subdirectories = ["cargo"],
         version = "1.53.0",
         iso_date = None,
-        target_triple = host_triple.str,
+        target_triple = host_triple,
     )
 
     repo_path = repository_ctx.path(".")

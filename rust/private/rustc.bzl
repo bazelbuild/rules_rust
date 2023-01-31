@@ -107,8 +107,13 @@ def _get_rustc_env(attr, toolchain, crate_name):
         patch, pre = patch.split("-", 1)
     else:
         pre = ""
+
+    target_arch = ""
+    if toolchain.target_triple:
+        target_arch = toolchain.target_triple.arch
+
     result = {
-        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
+        "CARGO_CFG_TARGET_ARCH": target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
         "CARGO_CRATE_NAME": crate_name,
         "CARGO_PKG_AUTHORS": "",
