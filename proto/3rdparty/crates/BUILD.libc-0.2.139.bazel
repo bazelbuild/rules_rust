@@ -37,6 +37,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=libc",
         "manual",
         "noclippy",
         "norustfmt",
@@ -72,6 +73,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=libc",
         "manual",
         "noclippy",
         "norustfmt",
