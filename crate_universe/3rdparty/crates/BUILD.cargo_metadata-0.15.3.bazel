@@ -33,11 +33,12 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=cargo_metadata",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.15.2",
+    version = "0.15.3",
     deps = [
         "@cui__camino-1.1.2//:camino",
         "@cui__cargo-platform-0.1.2//:cargo_platform",

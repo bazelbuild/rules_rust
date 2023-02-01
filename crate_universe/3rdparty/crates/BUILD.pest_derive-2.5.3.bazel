@@ -36,6 +36,7 @@ rust_proc_macro(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=pest_derive",
         "manual",
         "noclippy",
         "norustfmt",

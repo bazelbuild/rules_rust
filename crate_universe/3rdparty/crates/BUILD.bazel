@@ -45,7 +45,7 @@ alias(
 
 alias(
     name = "cargo_metadata",
-    actual = "@cui__cargo_metadata-0.15.2//:cargo_metadata",
+    actual = "@cui__cargo_metadata-0.15.3//:cargo_metadata",
     tags = ["manual"],
 )
 
