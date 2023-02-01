@@ -151,9 +151,11 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(
+        &cargo,
         &cargo_lockfile,
         feature_map,
-        &manifest_path,
+        manifest_path.as_path_buf(),
+        manifest_path.as_path_buf(),
     )?;
 
     // Write metadata to the workspace for future reuse

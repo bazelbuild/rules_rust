@@ -122,7 +122,13 @@ impl CargoConfig {
 
     /// Look up a registry [Source] by its url.
     pub fn get_source_from_url(&self, url: &str) -> Option<&Source> {
-        self.source.values().find(|v| v.registry == url)
+        if let Some(found) = self.source.values().find(|v| v.registry == url) {
+            Some(found)
+        } else if url == "https://github.com/rust-lang/crates.io-index" {
+            self.source.get("crates-io")
+        } else {
+            None
+        }
     }
 
     pub fn get_registry_index_url_by_name(&self, name: &str) -> Option<&str> {

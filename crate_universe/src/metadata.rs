@@ -16,6 +16,7 @@ use crate::lockfile::Digest;
 use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
+use semver::Version;
 
 use crate::config::CrateId;
 use crate::utils::starlark::SelectList;
@@ -75,7 +76,7 @@ impl MetadataGenerator for Generator {
 
         let metadata = self
             .cargo_bin
-            .metadata_command()
+            .metadata_command()?
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
             .other_options(["--locked".to_owned()])
@@ -103,15 +104,20 @@ impl Cargo {
     }
 
     /// Returns a new `Command` for running this cargo.
-    pub fn command(&self) -> Command {
-        Command::new(&self.path)
+    pub fn command(&self) -> Result<Command> {
+        let mut command = Command::new(&self.path);
+        command.envs(self.env()?);
+        Ok(command)
     }
 
     /// Returns a new `MetadataCommand` using this cargo.
-    pub fn metadata_command(&self) -> MetadataCommand {
+    pub fn metadata_command(&self) -> Result<MetadataCommand> {
         let mut command = MetadataCommand::new();
         command.cargo_path(&self.path);
-        command
+        for (k, v) in self.env()? {
+            command.env(k, v);
+        }
+        Ok(command)
     }
 
     /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
@@ -123,6 +129,29 @@ impl Cargo {
             *full_version = Some(observed_version);
         }
         Ok(full_version.clone().unwrap())
+    }
+
+    pub fn use_sparse_registries_for_crates_io(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version
+                >= Version::parse("1.68.0").expect("1.68.0 is a known-to-parse semver version"));
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
+    fn env(&self) -> Result<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        if self.use_sparse_registries_for_crates_io()? {
+            map.insert(
+                "CARGO_REGISTRIES_CRATES_IO_PROTOCOL".into(),
+                "sparse".into(),
+            );
+        }
+        Ok(map)
     }
 }
 
@@ -192,7 +221,7 @@ impl CargoUpdateRequest {
 
         // Simply invoke `cargo update`
         let output = cargo_bin
-            .command()
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -267,7 +296,7 @@ impl LockGenerator {
             // of having just generated a new one
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -295,7 +324,7 @@ impl LockGenerator {
             // Simply invoke `cargo generate-lockfile`
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -347,7 +376,7 @@ impl VendorGenerator {
         // Simply invoke `cargo generate-lockfile`
         let output = self
             .cargo_bin
-            .command()
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -410,7 +439,7 @@ impl FeatureGenerator {
             // - https://github.com/bazelbuild/rules_rust/issues/1662
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 .current_dir(manifest_dir)
                 .arg("tree")
                 .arg("--locked")
