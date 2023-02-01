@@ -10,7 +10,9 @@ use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
+use crate::lockfile::Digest;
 use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
@@ -30,7 +32,7 @@ pub trait MetadataGenerator {
 /// Generates Cargo metadata and a lockfile from a provided manifest.
 pub struct Generator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
@@ -39,12 +41,14 @@ pub struct Generator {
 impl Generator {
     pub fn new() -> Self {
         Generator {
-            cargo_bin: PathBuf::from(env::var("CARGO").unwrap_or_else(|_| "cargo".to_string())),
+            cargo_bin: Cargo::new(PathBuf::from(
+                env::var("CARGO").unwrap_or_else(|_| "cargo".to_string()),
+            )),
             rustc_bin: PathBuf::from(env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string())),
         }
     }
 
-    pub fn with_cargo(mut self, cargo_bin: PathBuf) -> Self {
+    pub fn with_cargo(mut self, cargo_bin: Cargo) -> Self {
         self.cargo_bin = cargo_bin;
         self
     }
@@ -69,14 +73,56 @@ impl MetadataGenerator for Generator {
             cargo_lock::Lockfile::load(lock_path)?
         };
 
-        let metadata = MetadataCommand::new()
-            .cargo_path(&self.cargo_bin)
+        let metadata = self
+            .cargo_bin
+            .metadata_command()
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
             .other_options(["--locked".to_owned()])
             .exec()?;
 
         Ok((metadata, lockfile))
+    }
+}
+
+/// Cargo encapsulates a path to a `cargo` binary.
+/// Any invocations of `cargo` (either as a `std::process::Command` or via `cargo_metadata`) should
+/// go via this wrapper to ensure that any environment variables needed are set appropriately.
+#[derive(Clone)]
+pub struct Cargo {
+    path: PathBuf,
+    full_version: Arc<Mutex<Option<String>>>,
+}
+
+impl Cargo {
+    pub fn new(path: PathBuf) -> Cargo {
+        Cargo {
+            path,
+            full_version: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// Returns a new `Command` for running this cargo.
+    pub fn command(&self) -> Command {
+        Command::new(&self.path)
+    }
+
+    /// Returns a new `MetadataCommand` using this cargo.
+    pub fn metadata_command(&self) -> MetadataCommand {
+        let mut command = MetadataCommand::new();
+        command.cargo_path(&self.path);
+        command
+    }
+
+    /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
+    /// Note: This function performs normalisation to work around https://github.com/rust-lang/cargo/issues/10547
+    pub fn full_version(&self) -> Result<String> {
+        let mut full_version = self.full_version.lock().unwrap();
+        if full_version.is_none() {
+            let observed_version = Digest::bin_version(&self.path)?;
+            *full_version = Some(observed_version);
+        }
+        Ok(full_version.clone().unwrap())
     }
 }
 
@@ -141,11 +187,12 @@ impl CargoUpdateRequest {
     }
 
     /// Calls `cargo update` with arguments specific to the state of the current variant.
-    pub fn update(&self, manifest: &Path, cargo_bin: &Path, rustc_bin: &Path) -> Result<()> {
+    pub fn update(&self, manifest: &Path, cargo_bin: &Cargo, rustc_bin: &Path) -> Result<()> {
         let manifest_dir = manifest.parent().unwrap();
 
         // Simply invoke `cargo update`
-        let output = Command::new(cargo_bin)
+        let output = cargo_bin
+            .command()
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -175,14 +222,14 @@ impl CargoUpdateRequest {
 
 pub struct LockGenerator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
 }
 
 impl LockGenerator {
-    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
             rustc_bin,
@@ -218,7 +265,9 @@ impl LockGenerator {
 
             // Ensure the Cargo cache is up to date to simulate the behavior
             // of having just generated a new one
-            let output = Command::new(&self.cargo_bin)
+            let output = self
+                .cargo_bin
+                .command()
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -244,7 +293,9 @@ impl LockGenerator {
             }
         } else {
             // Simply invoke `cargo generate-lockfile`
-            let output = Command::new(&self.cargo_bin)
+            let output = self
+                .cargo_bin
+                .command()
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -276,14 +327,14 @@ impl LockGenerator {
 /// A generator which runs `cargo vendor` on a given manifest
 pub struct VendorGenerator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
 }
 
 impl VendorGenerator {
-    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
             rustc_bin,
@@ -294,7 +345,9 @@ impl VendorGenerator {
         let manifest_dir = manifest_path.parent().unwrap();
 
         // Simply invoke `cargo generate-lockfile`
-        let output = Command::new(&self.cargo_bin)
+        let output = self
+            .cargo_bin
+            .command()
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -327,14 +380,14 @@ impl VendorGenerator {
 /// A generate which computes per-platform feature sets.
 pub struct FeatureGenerator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
 }
 
 impl FeatureGenerator {
-    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
             rustc_bin,
@@ -355,7 +408,9 @@ impl FeatureGenerator {
             // This is unfortunately a bit of a hack. See:
             // - https://github.com/rust-lang/cargo/issues/9863
             // - https://github.com/bazelbuild/rules_rust/issues/1662
-            let output = Command::new(&self.cargo_bin)
+            let output = self
+                .cargo_bin
+                .command()
                 .current_dir(manifest_dir)
                 .arg("tree")
                 .arg("--locked")

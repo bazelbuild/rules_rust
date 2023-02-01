@@ -14,13 +14,14 @@ use sha2::{Digest as Sha2Digest, Sha256};
 
 use crate::config::Config;
 use crate::context::Context;
+use crate::metadata::Cargo;
 use crate::splicing::{SplicingManifest, SplicingMetadata};
 
 pub fn lock_context(
     mut context: Context,
     config: &Config,
     splicing_manifest: &SplicingManifest,
-    cargo_bin: &Path,
+    cargo_bin: &Cargo,
     rustc_bin: &Path,
 ) -> Result<Context> {
     // Ensure there is no existing checksum which could impact the lockfile results
@@ -61,11 +62,11 @@ impl Digest {
         context: &Context,
         config: &Config,
         splicing_manifest: &SplicingManifest,
-        cargo_bin: &Path,
+        cargo_bin: &Cargo,
         rustc_bin: &Path,
     ) -> Result<Self> {
         let splicing_metadata = SplicingMetadata::try_from((*splicing_manifest).clone())?;
-        let cargo_version = Self::bin_version(cargo_bin)?;
+        let cargo_version = cargo_bin.full_version()?;
         let rustc_version = Self::bin_version(rustc_bin)?;
         let cargo_bazel_version = env!("CARGO_PKG_VERSION");
 
@@ -129,7 +130,7 @@ impl Digest {
         Self(hasher.finalize().encode_hex::<String>())
     }
 
-    fn bin_version(binary: &Path) -> Result<String> {
+    pub fn bin_version(binary: &Path) -> Result<String> {
         let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 

@@ -8,7 +8,7 @@ use clap::Parser;
 use crate::cli::Result;
 use crate::config::Config;
 use crate::metadata::{
-    write_metadata, CargoUpdateRequest, FeatureGenerator, Generator, MetadataGenerator,
+    write_metadata, Cargo, CargoUpdateRequest, FeatureGenerator, Generator, MetadataGenerator,
 };
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
@@ -79,18 +79,20 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Splice together the manifest
     let manifest_path = splicer.splice_workspace(&opt.cargo)?;
 
+    let cargo = Cargo::new(opt.cargo);
+
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
         &manifest_path,
         &opt.cargo_lockfile,
-        &opt.cargo,
+        cargo.clone(),
         &opt.rustc,
         &opt.repin,
     )?;
 
     let config = Config::try_from_path(&opt.config)?;
 
-    let feature_map = FeatureGenerator::new(opt.cargo.clone(), opt.rustc.clone()).generate(
+    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone()).generate(
         manifest_path.as_path_buf(),
         &config.supported_platform_triples,
     )?;
@@ -105,7 +107,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, _) = Generator::new()
-        .with_cargo(opt.cargo)
+        .with_cargo(cargo)
         .with_rustc(opt.rustc)
         .generate(manifest_path.as_path_buf())?;
 

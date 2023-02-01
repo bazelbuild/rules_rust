@@ -15,7 +15,7 @@ use hex::ToHex;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
-use crate::metadata::{CargoUpdateRequest, LockGenerator};
+use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator};
 use crate::utils::starlark::{Label, SelectList};
 
 use self::cargo_config::CargoConfig;
@@ -421,7 +421,7 @@ pub fn read_manifest(manifest: &Path) -> Result<Manifest> {
 pub fn generate_lockfile(
     manifest_path: &SplicedManifest,
     existing_lock: &Option<PathBuf>,
-    cargo_bin: &Path,
+    cargo_bin: Cargo,
     rustc_bin: &Path,
     update_request: &Option<CargoUpdateRequest>,
 ) -> Result<cargo_lock::Lockfile> {
@@ -438,8 +438,11 @@ pub fn generate_lockfile(
     }
 
     // Generate the new lockfile
-    let lockfile = LockGenerator::new(PathBuf::from(cargo_bin), PathBuf::from(rustc_bin))
-        .generate(manifest_path.as_path_buf(), existing_lock, update_request)?;
+    let lockfile = LockGenerator::new(cargo_bin, PathBuf::from(rustc_bin)).generate(
+        manifest_path.as_path_buf(),
+        existing_lock,
+        update_request,
+    )?;
 
     // Write the lockfile to disk
     if !root_lockfile_path.exists() {
