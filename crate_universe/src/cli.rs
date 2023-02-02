@@ -7,10 +7,10 @@ mod vendor;
 
 use clap::Parser;
 
-use self::generate::GenerateOptions;
-use self::query::QueryOptions;
-use self::splice::SpliceOptions;
-use self::vendor::VendorOptions;
+pub use self::generate::GenerateOptions;
+pub use self::query::QueryOptions;
+pub use self::splice::SpliceOptions;
+pub use self::vendor::VendorOptions;
 
 // Entrypoints
 pub use generate::generate;

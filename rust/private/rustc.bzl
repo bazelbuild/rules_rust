@@ -16,6 +16,7 @@
 
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
@@ -348,12 +349,13 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
+def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
         attr (struct): Attributes to use in gathering linker args
+        crate_type (str): The target crate's type (i.e. "bin", "proc-macro", etc.).
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
@@ -367,6 +369,14 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     """
     user_link_flags = get_cc_user_link_flags(ctx)
 
+    if crate_type == "proc-macro":
+        # Proc macros get compiled as shared libraries to be loaded by the compiler.
+        is_linking_dynamic_library = True
+        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
+    else:
+        is_linking_dynamic_library = False
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
+
     # Add linkopt's from dependencies. This includes linkopts from transitive
     # dependencies since they get merged up.
     for dep in getattr(attr, "deps", []):
@@ -377,23 +387,23 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
-        is_linking_dynamic_library = False,
+        is_linking_dynamic_library = is_linking_dynamic_library,
         runtime_library_search_directories = rpaths,
         user_link_flags = user_link_flags,
     )
     link_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
         variables = link_variables,
     )
     link_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
         variables = link_variables,
     )
     ld = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
     )
 
     return ld, link_args, link_env
@@ -934,7 +944,9 @@ def construct_arguments(
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
                 rpaths = depset([])
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
+
+            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths)
+
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")

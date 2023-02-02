@@ -118,7 +118,7 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, cargo, rustc):
+def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, config_path, cargo, rustc):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
@@ -126,6 +126,7 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         generator (path): The `cargo-bazel` binary.
         cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
+        config_path: The path to the config file (containing `cargo_bazel::config::Config`.)
         cargo (path): The path to a Cargo binary.
         rustc (path): The Path to a Rustc binary.
 
@@ -145,6 +146,8 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         splicing_output_dir,
         "--splicing-manifest",
         splicing_manifest,
+        "--config",
+        config_path,
         "--cargo",
         cargo,
         "--rustc",

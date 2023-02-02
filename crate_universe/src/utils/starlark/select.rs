@@ -77,6 +77,19 @@ impl<T: Ord> SelectList<T> {
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
+
+    /// Maps configuration names by `f`. This function must be injective
+    /// (that is `a != b --> f(a) != f(b)`).
+    pub fn map_configuration_names<F>(self, mut f: F) -> Self
+    where
+        F: FnMut(String) -> String,
+    {
+        Self {
+            common: self.common,
+            selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
+            unmapped: self.unmapped,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

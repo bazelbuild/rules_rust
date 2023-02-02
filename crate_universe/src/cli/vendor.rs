@@ -12,6 +12,7 @@ use clap::Parser;
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
 use crate::metadata::CargoUpdateRequest;
+use crate::metadata::FeatureGenerator;
 use crate::metadata::{Annotations, VendorGenerator};
 use crate::metadata::{Generator, MetadataGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
@@ -139,17 +140,26 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         &opt.repin,
     )?;
 
+    // Load the config from disk
+    let config = Config::try_from_path(&opt.config)?;
+
+    let feature_map = FeatureGenerator::new(opt.cargo.clone(), opt.rustc.clone()).generate(
+        manifest_path.as_path_buf(),
+        &config.supported_platform_triples,
+    )?;
+
     // Write the registry url info to the manifest now that a lockfile has been generated
-    WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;
+    WorkspaceMetadata::write_registry_urls_and_feature_map(
+        &cargo_lockfile,
+        feature_map,
+        &manifest_path,
+    )?;
 
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, cargo_lockfile) = Generator::new()
         .with_cargo(opt.cargo.clone())
         .with_rustc(opt.rustc.clone())
         .generate(manifest_path.as_path_buf())?;
-
-    // Load the config from disk
-    let config = Config::try_from_path(&opt.config)?;
 
     // Annotate metadata
     let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
