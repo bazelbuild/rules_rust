@@ -435,9 +435,6 @@ def _rust_toolchain_impl(ctx):
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
-    if ctx.attr.target_triple and ctx.file.target_json:
-        fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file.")
-
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
@@ -524,9 +521,35 @@ def _rust_toolchain_impl(ctx):
             ctx.label,
         ))
 
+    if ctx.attr.target_triple and ctx.attr.target_json:
+        fail("Do not specify both target_triple and target_json, either use a builtin triple or provide a custom specification file. Please update {}".format(
+            ctx.label,
+        ))
+
     target_triple = None
+    target_json = None
+    target_arch = None
+
     if ctx.attr.target_triple:
         target_triple = triple(ctx.attr.target_triple)
+        target_arch = target_triple.arch
+
+    elif ctx.attr.target_json:
+        # Ensure the data provided is valid json
+        target_json_content = json.decode(ctx.attr.target_json)
+        target_json = ctx.actions.declare_file("{}.target.json".format(ctx.label.name))
+
+        ctx.actions.write(
+            output = target_json,
+            content = json.encode_indent(target_json_content, indent = " " * 4),
+        )
+
+        if "arch" in target_json_content:
+            target_arch = target_json_content["arch"]
+    else:
+        fail("Either `target_triple` or `target_json` must be provided. Please update {}".format(
+            ctx.label,
+        ))
 
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
@@ -556,9 +579,9 @@ def _rust_toolchain_impl(ctx):
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
-        target_arch = target_triple.arch if target_triple else None,
-        target_flag_value = ctx.file.target_json.path if ctx.file.target_json else ctx.attr.target_triple,
-        target_json = ctx.file.target_json,
+        target_arch = target_arch,
+        target_flag_value = target_json.path if target_json else target_triple.str,
+        target_json = target_json,
         target_triple = target_triple,
 
         # Experimental and incompatible flags
@@ -692,10 +715,9 @@ rust_toolchain = rule(
             ),
             mandatory = True,
         ),
-        "target_json": attr.label(
+        "target_json": attr.string(
             doc = ("Override the target_triple with a custom target specification. " +
                    "For more details see: https://doc.rust-lang.org/rustc/targets/custom.html"),
-            allow_single_file = True,
         ),
         "target_triple": attr.string(
             doc = (

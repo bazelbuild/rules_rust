@@ -6,7 +6,10 @@ use anyhow::Context;
 use clap::Parser;
 
 use crate::cli::Result;
-use crate::metadata::{write_metadata, CargoUpdateRequest, Generator, MetadataGenerator};
+use crate::config::Config;
+use crate::metadata::{
+    write_metadata, CargoUpdateRequest, FeatureGenerator, Generator, MetadataGenerator,
+};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `splice` subcommand
@@ -41,6 +44,10 @@ pub struct SpliceOptions {
     /// The path to a Cargo configuration file.
     #[clap(long)]
     pub cargo_config: Option<PathBuf>,
+
+    /// The path to the config file (containing `cargo_bazel::config::Config`.)
+    #[clap(long)]
+    pub config: PathBuf,
 
     /// The path to a Cargo binary to use for gathering metadata
     #[clap(long, env = "CARGO")]
@@ -81,8 +88,18 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         &opt.repin,
     )?;
 
+    let config = Config::try_from_path(&opt.config)?;
+
+    let feature_map = FeatureGenerator::new(opt.cargo.clone(), opt.rustc.clone()).generate(
+        manifest_path.as_path_buf(),
+        &config.supported_platform_triples,
+    )?;
     // Write the registry url info to the manifest now that a lockfile has been generated
-    WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;
+    WorkspaceMetadata::write_registry_urls_and_feature_map(
+        &cargo_lockfile,
+        feature_map,
+        &manifest_path,
+    )?;
 
     let output_dir = opt.output_dir.clone();
 

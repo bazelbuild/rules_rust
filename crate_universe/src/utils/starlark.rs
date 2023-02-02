@@ -82,8 +82,11 @@ pub struct CargoBuildScript {
     pub build_script_env: SelectDict<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
-    #[serde(skip_serializing_if = "Set::is_empty")]
-    pub crate_features: Set<String>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub crate_features: SelectList<String>,
     pub crate_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
@@ -205,8 +208,11 @@ pub struct RustBinary {
 pub struct CommonAttrs {
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
-    #[serde(skip_serializing_if = "Set::is_empty")]
-    pub crate_features: Set<String>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub crate_features: SelectList<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
     #[serde(skip_serializing_if = "Data::is_empty")]

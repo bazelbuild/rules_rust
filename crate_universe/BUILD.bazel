@@ -100,6 +100,37 @@ rust_test(
     ),
 )
 
+# Integration tests which invoke cargo and/or rustc as subprocesses.
+rust_test(
+    name = "cargo_integration_test",
+    timeout = "long",
+    srcs = ["tests/cargo_integration_test.rs"],
+    aliases = aliases(),
+    data = glob(["test_data/**"]) + [
+        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//rust/toolchain:current_rustc_files",
+        "//crate_universe/test_data/serialized_configs",
+    ],
+    edition = "2018",
+    env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
+    },
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+    rustc_env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
+    },
+    deps = [
+        ":cargo_bazel",
+        "@rules_rust//tools/runfiles",
+    ] + all_crate_deps(
+        normal = True,
+    ),
+)
+
 rust_doc(
     name = "rustdoc",
     crate = ":cargo_bazel",

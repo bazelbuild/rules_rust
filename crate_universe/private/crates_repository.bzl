@@ -61,6 +61,7 @@ def _crates_repository_impl(repository_ctx):
             generator = generator,
             cargo_lockfile = lockfiles.cargo,
             splicing_manifest = splicing_manifest,
+            config_path = config_path,
             cargo = cargo_path,
             rustc = rustc_path,
         )
