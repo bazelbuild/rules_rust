@@ -365,6 +365,7 @@ impl FeatureGenerator {
                 // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
                 .arg("--format=|{p}|{f}|")
                 .arg("--color=never")
+                .arg("--workspace")
                 .arg("--target")
                 .arg(target)
                 .env("RUSTC", &self.rustc_bin)
@@ -441,9 +442,9 @@ where
         // We expect the crate id (parts[1]) to be either
         // "<crate name> v<crate version>" or
         // "<crate name> v<crate version> (<path>)"
-        // https://github.com/rust-lang/cargo/blob/7fb01c68c190c28a43581ae7c719dcf057ecc002/src/cargo/core/package_id.rs#L210-L220
+        // "<crate name> v<crate version> (proc-macro) (<path>)"
         let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
-        if crate_id_parts.len() != 2 && crate_id_parts.len() != 3 {
+        if crate_id_parts.len() < 2 && crate_id_parts.len() > 4 {
             bail!(
                 "Unexpected crate id format '{}' when parsing 'cargo tree' output.",
                 parts[1]
@@ -564,6 +565,7 @@ mod test {
                     Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
                     Ok("|cpufeatures v0.2.1||"),
                     Ok("|libc v0.2.117|default,std|"),
+                    Ok("|serde_derive v1.0.152 (proc-macro) (*)||"),
                 ]
                 .into_iter()
             )
@@ -589,6 +591,13 @@ mod test {
                         version: "0.2.117".to_owned()
                     },
                     BTreeSet::from(["default".to_owned(), "std".to_owned()])
+                ),
+                (
+                    CrateId {
+                        name: "serde_derive".to_owned(),
+                        version: "1.0.152".to_owned()
+                    },
+                    BTreeSet::from([])
                 ),
             ])
         );
