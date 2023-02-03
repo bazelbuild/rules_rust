@@ -1,0 +1,3 @@
+load(":prefix_setting_tests.bzl", "prefix_setting_tests")
+
+prefix_setting_tests(name = "prefix_setting_tests")
