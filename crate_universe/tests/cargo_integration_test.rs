@@ -259,8 +259,5 @@ fn feature_generator_workspace() {
         "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.lock",
     );
 
-    assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["features"]["wgpu 0.14.0"].is_null(),
-        false
-    );
+    assert!(!metadata["metadata"]["cargo-bazel"]["features"]["wgpu 0.14.0"].is_null());
 }
