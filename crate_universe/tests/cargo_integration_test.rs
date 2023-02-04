@@ -2,14 +2,13 @@ extern crate cargo_bazel;
 extern crate serde_json;
 extern crate tempfile;
 
+use anyhow::{ensure, Context, Result};
+use cargo_bazel::cli::{splice, SpliceOptions};
+use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-
-use anyhow::{ensure, Context, Result};
-use serde_json::{json, Value};
-
-use cargo_bazel::cli::{splice, SpliceOptions};
 
 fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
     let cargo = std::fs::canonicalize(PathBuf::from(
@@ -46,39 +45,32 @@ fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
     Ok((cargo, rustc))
 }
 
-// See crate_universe/test_data/metadata/target_features/Cargo.toml for input.
-#[test]
-fn feature_generator() {
-    // This test case requires network access to build pull crate metadata
-    // so that we can actually run `cargo tree`. However, RBE (and perhaps
-    // other environments) disallow or don't support this. In those cases,
-    // we just skip this test case.
-    use std::net::ToSocketAddrs;
-    if "github.com:443".to_socket_addrs().is_err() {
-        eprintln!("This test case requires network access. Skipping!");
-        return;
-    }
-
+fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str) -> Value {
     let (cargo, rustc) = setup_cargo_env().unwrap();
 
     let scratch = tempfile::tempdir().unwrap();
-    let manifest_path = scratch.path().join("Cargo.toml");
     let runfiles = runfiles::Runfiles::create().unwrap();
+
+    /*
+    let manifest_path = scratch.path().join("Cargo.toml");
     fs::copy(
-        runfiles
-            .rlocation("rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml"),
+        runfiles.rlocation(manifest),
         manifest_path,
     )
     .unwrap();
+    */
 
     let splicing_manifest = scratch.path().join("splicing_manifest.json");
-    fs::write(&splicing_manifest, serde_json::to_string(&json!({
-        "manifests": {
-            runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml").to_string_lossy(): "//:test_input"
-        },
-        "direct_packages": {},
-        "resolver_version": "2"
-    })).unwrap()).unwrap();
+    fs::write(
+        &splicing_manifest,
+        serde_json::to_string(&json!({
+            "manifests": manifests,
+            "direct_packages": {},
+            "resolver_version": "2"
+        }))
+        .unwrap(),
+    )
+    .unwrap();
 
     let config = scratch.path().join("config.json");
     fs::write(
@@ -87,7 +79,7 @@ fn feature_generator() {
             "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
-                "repository_name": "target_feature_test",
+                "repository_name": repository_name,
                 "regen_command": "//crate_universe:cargo_integration_test"
             },
             "supported_platform_triples": [
@@ -102,11 +94,7 @@ fn feature_generator() {
 
     splice(SpliceOptions {
         splicing_manifest,
-        cargo_lockfile: Some(
-            runfiles.rlocation(
-                "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.lock",
-            ),
-        ),
+        cargo_lockfile: Some(runfiles.rlocation(lockfile)),
         repin: None,
         workspace_dir: None,
         output_dir: scratch.path().join("out"),
@@ -122,6 +110,37 @@ fn feature_generator() {
         &fs::read_to_string(scratch.path().join("out").join("metadata.json")).unwrap(),
     )
     .unwrap();
+
+    metadata
+}
+
+// See crate_universe/test_data/metadata/target_features/Cargo.toml for input.
+#[test]
+fn feature_generator() {
+    // This test case requires network access to build pull crate metadata
+    // so that we can actually run `cargo tree`. However, RBE (and perhaps
+    // other environments) disallow or don't support this. In those cases,
+    // we just skip this test case.
+    use std::net::ToSocketAddrs;
+    if "github.com:443".to_socket_addrs().is_err() {
+        eprintln!("This test case requires network access. Skipping!");
+        return;
+    }
+
+    let runfiles = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "target_feature_test",
+        HashMap::from([(
+            runfiles
+                .rlocation(
+                    "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml",
+                )
+                .to_string_lossy()
+                .to_string(),
+            "//:test_input".to_string(),
+        )]),
+        "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.lock",
+    );
 
     assert_eq!(
         metadata["metadata"]["cargo-bazel"]["features"]["wgpu-hal 0.14.1"],
@@ -161,68 +180,20 @@ fn feature_generator_cfg_features() {
         return;
     }
 
-    let (cargo, rustc) = setup_cargo_env().unwrap();
-
-    let scratch = tempfile::tempdir().unwrap();
-    let manifest_path = scratch.path().join("Cargo.toml");
     let runfiles = runfiles::Runfiles::create().unwrap();
-    fs::copy(
-        runfiles.rlocation(
-            "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml",
-        ),
-        manifest_path,
-    )
-    .unwrap();
-
-    let splicing_manifest = scratch.path().join("splicing_manifest.json");
-    fs::write(&splicing_manifest, serde_json::to_string(&json!({
-            "manifests": {
-                runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml").to_string_lossy(): "//:test_input"
-            },
-            "direct_packages": {},
-            "resolver_version": "2"
-        })).unwrap()).unwrap();
-
-    let config = scratch.path().join("config.json");
-    fs::write(
-        &config,
-        serde_json::to_string(&json!({
-            "generate_binaries": false,
-            "generate_build_scripts": false,
-            "rendering": {
-                "repository_name": "target_cfg_features_test",
-                "regen_command": "//crate_universe:cargo_integration_test"
-            },
-            "supported_platform_triples": [
-                "x86_64-apple-darwin",
-                "x86_64-pc-windows-msvc",
-                "x86_64-unknown-linux-gnu",
-            ]
-        }))
-        .unwrap(),
-    )
-    .unwrap();
-
-    splice(SpliceOptions {
-        splicing_manifest,
-        cargo_lockfile: Some(runfiles.rlocation(
-            "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.lock",
-        )),
-        repin: None,
-        workspace_dir: None,
-        output_dir: scratch.path().join("out"),
-        dry_run: false,
-        cargo_config: None,
-        config,
-        cargo,
-        rustc,
-    })
-    .unwrap();
-
-    let metadata = serde_json::from_str::<Value>(
-        &fs::read_to_string(scratch.path().join("out").join("metadata.json")).unwrap(),
-    )
-    .unwrap();
+    let metadata = run(
+        "target_cfg_features_test",
+        HashMap::from([(
+            runfiles
+                .rlocation(
+                    "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml",
+                )
+                .to_string_lossy()
+                .to_string(),
+            "//:test_input".to_string(),
+        )]),
+        "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.lock",
+    );
 
     assert_eq!(
         metadata["metadata"]["cargo-bazel"]["features"],
@@ -249,5 +220,47 @@ fn feature_generator_cfg_features() {
                 }
             }
         })
+    );
+}
+
+#[test]
+fn feature_generator_workspace() {
+    // This test case requires network access to build pull crate metadata
+    // so that we can actually run `cargo tree`. However, RBE (and perhaps
+    // other environments) disallow or don't support this. In those cases,
+    // we just skip this test case.
+    use std::net::ToSocketAddrs;
+    if "github.com:443".to_socket_addrs().is_err() {
+        eprintln!("This test case requires network access. Skipping!");
+        return;
+    }
+
+    let runfiles = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "workspace_test",
+        HashMap::from([
+            (
+                runfiles
+                    .rlocation("rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml")
+                    .to_string_lossy()
+                    .to_string(),
+                "//:test_input".to_string(),
+            ),
+            (
+                runfiles
+                    .rlocation(
+                        "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml",
+                    )
+                    .to_string_lossy()
+                    .to_string(),
+                "//crate_universe:test_data/metadata/workspace/child/Cargo.toml".to_string(),
+            ),
+        ]),
+        "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.lock",
+    );
+
+    assert_eq!(
+        metadata["metadata"]["cargo-bazel"]["features"]["wgpu 0.14.0"].is_null(),
+        false
     );
 }

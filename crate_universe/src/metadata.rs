@@ -443,6 +443,7 @@ where
         // "<crate name> v<crate version>" or
         // "<crate name> v<crate version> (<path>)"
         // "<crate name> v<crate version> (proc-macro) (<path>)"
+        // https://github.com/rust-lang/cargo/blob/19f952f160d4f750d1e12fad2bf45e995719673d/src/cargo/ops/tree/mod.rs#L281
         let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
         if crate_id_parts.len() < 2 && crate_id_parts.len() > 4 {
             bail!(
