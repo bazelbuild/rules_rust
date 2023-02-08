@@ -729,7 +729,7 @@ rust_toolchain = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_pipelined_compilation": attr.label(
-            default = "@rules_rust//rust/settings:pipelined_compilation",
+            default = Label("//rust/settings:pipelined_compilation"),
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),

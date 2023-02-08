@@ -1,4 +1,5 @@
-# buildifier: disable=module-docstring
+"""Tests for `load_arbitrary_tool`"""
+
 load("//rust:repositories.bzl", "load_arbitrary_tool")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
