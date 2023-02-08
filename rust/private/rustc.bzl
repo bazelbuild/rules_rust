@@ -63,6 +63,11 @@ ExtraExecRustcFlagsInfo = provider(
     fields = {"extra_exec_rustc_flags": "List[string] Extra flags to pass to rustc in exec configuration"},
 )
 
+PerCrateRustcFlagsInfo = provider(
+    doc = "Pass each value as an additional flag to non-exec rustc invocations for crates matching the provided filter",
+    fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
+)
+
 IsProcMacroDepInfo = provider(
     doc = "Records if this is a transitive dependency of a proc-macro.",
     fields = {"is_proc_macro_dep": "Boolean"},
@@ -1003,6 +1008,10 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
 
+    if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec_configuration(ctx):
+        per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
+        _add_per_crate_rustc_flags(ctx, rustc_flags, crate_info, per_crate_rustc_flags)
+
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
@@ -1845,6 +1854,32 @@ def _get_dirname(file):
     """
     return file.dirname
 
+def _add_per_crate_rustc_flags(ctx, args, crate_info, per_crate_rustc_flags):
+    """Adds matching per-crate rustc flags to an arguments object reference
+
+    Args:
+        ctx (ctx): The source rule's context object
+        args (Args): A reference to an Args object
+        crate_info (CrateInfo): A CrateInfo provider
+        per_crate_rustc_flags (list): A list of per_crate_rustc_flag values
+    """
+    for per_crate_rustc_flag in per_crate_rustc_flags:
+        at_index = per_crate_rustc_flag.find("@")
+        if at_index == -1:
+            fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
+
+        prefix_filter = per_crate_rustc_flag[:at_index]
+        flag = per_crate_rustc_flag[at_index + 1:]
+        if not flag:
+            fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
+
+        label_string = str(ctx.label)
+        label = label_string[1:] if label_string.startswith("@//") else label_string
+        execution_path = crate_info.root.path
+
+        if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
+            args.add(flag)
+
 def _error_format_impl(ctx):
     """Implementation of the `error_format` rule
 
@@ -1921,5 +1956,21 @@ extra_exec_rustc_flag = rule(
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
+)
+
+def _per_crate_rustc_flag_impl(ctx):
+    return PerCrateRustcFlagsInfo(per_crate_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+per_crate_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//:experimental_per_crate_rustc_flag`. " +
+        "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
+        "The label matching uses the canonical form of the label (i.e //package:label_name)." +
+        "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
+        "This flag is only applied to the exec configuration (proc-macros, cargo_build_script, etc)." +
+        "Multiple uses are accumulated."
+    ),
+    implementation = _per_crate_rustc_flag_impl,
     build_setting = config.string(flag = True, allow_multiple = True),
 )

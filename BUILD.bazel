@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flag", "extra_exec_rustc_flags", "extra_rustc_flag", "extra_rustc_flags", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
+load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flag", "extra_exec_rustc_flags", "extra_rustc_flag", "extra_rustc_flags", "is_proc_macro_dep", "is_proc_macro_dep_enabled", "per_crate_rustc_flag")
 
 exports_files(["LICENSE"])
 
@@ -72,6 +72,12 @@ extra_exec_rustc_flags(
 
 extra_exec_rustc_flag(
     name = "extra_exec_rustc_flag",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+per_crate_rustc_flag(
+    name = "experimental_per_crate_rustc_flag",
     build_setting_default = "",
     visibility = ["//visibility:public"],
 )
