@@ -218,6 +218,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
         List: A list of labels to constraint values
     """
 
+    if not abi:
+        return []
+
     if abi == "sim":
         if not system:
             fail("The ABI value {} is ambiguous. Please specify a system to match the right constraints.")
