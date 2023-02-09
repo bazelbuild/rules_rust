@@ -4,6 +4,7 @@ load("//rust/platform:triple.bzl", "triple")
 
 # All T1 Platforms should be supported, but aren't, see inline notes.
 SUPPORTED_T1_PLATFORM_TRIPLES = [
+    "aarch64-unknown-linux-gnu",
     "i686-apple-darwin",
     "i686-pc-windows-msvc",
     "i686-unknown-linux-gnu",
@@ -21,25 +22,24 @@ SUPPORTED_T1_PLATFORM_TRIPLES = [
 # See @rules_rust//rust/platform:triple_mappings.bzl for the complete list.
 SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
-    "aarch64-apple-ios",
     "aarch64-apple-ios-sim",
-    "aarch64-pc-windows-msvc",
+    "aarch64-apple-ios",
     "aarch64-linux-android",
-    "aarch64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
     "arm-unknown-linux-gnueabi",
-    "armv7-unknown-linux-gnueabi",
     "armv7-linux-androideabi",
+    "armv7-unknown-linux-gnueabi",
     "i686-linux-android",
     "i686-unknown-freebsd",
     "powerpc-unknown-linux-gnu",
+    "riscv32imc-unknown-none-elf",
+    "riscv64gc-unknown-none-elf",
     "s390x-unknown-linux-gnu",
     "wasm32-unknown-unknown",
     "wasm32-wasi",
     "x86_64-apple-ios",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
-    "riscv32imc-unknown-none-elf",
-    "riscv64gc-unknown-none-elf",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
