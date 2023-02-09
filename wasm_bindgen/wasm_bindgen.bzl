@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
-load("//rust:defs.bzl", "rust_common")
+"""Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
-# buildifier: disable=bzl-visibility
-load("//rust/private:transitions.bzl", "wasm_bindgen_transition")
+load("//rust:defs.bzl", "rust_common")
 load(
     "//wasm_bindgen:providers.bzl",
     "DeclarationInfo",
     "JSModuleInfo",
 )
+load("//wasm_bindgen/private:transitions.bzl", "wasm_bindgen_transition")
 
 _WASM_BINDGEN_DOC = """\
 Generates javascript and typescript bindings for a webassembly module using [wasm-bindgen][ws].
