@@ -29,6 +29,14 @@ def triple(triple):
             abi = None,
             str = triple,
         )
+    elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
+        return struct(
+            arch = triple.split("-")[0],
+            system = "fuchsia",
+            vendor = "fuchsia",
+            abi = None,
+            str = triple,
+        )
 
     component_parts = triple.split("-")
     if len(component_parts) < 3:
