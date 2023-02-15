@@ -1202,6 +1202,7 @@ rust_test = rule(
             crate = ":hello_lib",
             # You may add other deps that are specific to the test configuration
             deps = ["//some/dev/dep"],
+        )
         ```
 
         Run the test with `bazel test //hello_lib:hello_lib_test`. The crate
