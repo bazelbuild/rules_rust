@@ -325,7 +325,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     # Not all target triples are expected to have dev components
     if ctx.attr.dev_components:
-        load_rustc_dev_nightly(ctx, ctx.attr.target_triple)
+        load_rustc_dev_nightly(ctx, target_triple)
 
     ctx.file("WORKSPACE.bazel", "")
     ctx.file("BUILD.bazel", "\n".join(build_components))
