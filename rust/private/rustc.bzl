@@ -1786,7 +1786,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     if toolchain.os == "windows":
         make_link_flags = _make_link_flags_windows
         get_lib_name = get_lib_name_for_windows
-    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
+    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin") or toolchain.os.startswith("ios"):
         make_link_flags = _make_link_flags_darwin
         get_lib_name = get_lib_name_default
     else:
