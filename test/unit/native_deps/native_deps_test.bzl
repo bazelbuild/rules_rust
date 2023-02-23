@@ -13,6 +13,13 @@ load(
     "assert_list_contains_adjacent_elements",
 )
 
+def _get_darwin_component(arg):
+    # path/to/darwin_x86_64-fastbuild-fastbuild/package -> darwin_x86_64-fastbuild
+    darwin_component = [x for x in arg.split("/") if x.startswith("darwin")][0]
+
+    # darwin_x86_64-fastbuild -> darwin
+    return darwin_component.split("-")[0]
+
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -90,10 +97,16 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
 
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
+    individual_link_args = [
+        arg
+        for arg in _extract_linker_args(action.argv)
+        if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
+    ]
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        darwin_component = _get_darwin_component(individual_link_args[-1])
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "link-arg=-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [
@@ -107,11 +120,6 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
             "link-arg=-Wl,--no-whole-archive",
         ]
-    individual_link_args = [
-        arg
-        for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
-    ]
     asserts.equals(env, want, individual_link_args)
     return analysistest.end(env)
 
@@ -127,9 +135,10 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        darwin_component = _get_darwin_component(linker_args[-1])
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "link-arg=-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
         ]
     elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
         want = [

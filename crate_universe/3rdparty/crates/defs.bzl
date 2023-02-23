@@ -294,7 +294,7 @@ _NORMAL_DEPENDENCIES = {
             "anyhow": "@cui__anyhow-1.0.68//:anyhow",
             "cargo-lock": "@cui__cargo-lock-8.0.3//:cargo_lock",
             "cargo-platform": "@cui__cargo-platform-0.1.2//:cargo_platform",
-            "cargo_metadata": "@cui__cargo_metadata-0.15.2//:cargo_metadata",
+            "cargo_metadata": "@cui__cargo_metadata-0.15.3//:cargo_metadata",
             "cargo_toml": "@cui__cargo_toml-0.14.0//:cargo_toml",
             "cfg-expr": "@cui__cfg-expr-0.13.0//:cfg_expr",
             "clap": "@cui__clap-4.0.32//:clap",
@@ -612,12 +612,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo_metadata-0.15.2",
-        sha256 = "982a0cf6a99c350d7246035613882e376d58cebe571785abc5da4f648d53ac0a",
+        name = "cui__cargo_metadata-0.15.3",
+        sha256 = "08a1ec454bc3eead8719cb56e15dbbfecdbc14e4b3a3ae4936cc6e31f5fc0d07",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cargo_metadata/0.15.2/download"],
-        strip_prefix = "cargo_metadata-0.15.2",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_metadata-0.15.2.bazel"),
+        urls = ["https://crates.io/api/v1/crates/cargo_metadata/0.15.3/download"],
+        strip_prefix = "cargo_metadata-0.15.3",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_metadata-0.15.3.bazel"),
     )
 
     maybe(

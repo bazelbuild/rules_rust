@@ -42,7 +42,7 @@ def _runfiles_path(file, is_windows):
 
 def _is_windows(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    return "windows" in toolchain.target_triple
+    return toolchain.target_triple.system == "windows"
 
 def _get_output_package(ctx):
     # Determine output directory
@@ -126,11 +126,12 @@ def _write_splicing_manifest(ctx):
     return args, runfiles
 
 def _write_config_file(ctx):
-    rendering_config = dict(json.decode(render_config(
-        regen_command = "bazel run {}".format(
-            ctx.label,
-        ),
-    )))
+    default_render_config = dict(json.decode(render_config()))
+
+    if ctx.attr.render_config:
+        rendering_config = dict(json.decode(ctx.attr.render_config))
+    else:
+        rendering_config = default_render_config
 
     output_pkg = _get_output_package(ctx)
 
@@ -147,7 +148,7 @@ def _write_config_file(ctx):
         build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
         crate_label_template = rendering_config["crate_label_template"]
 
-    rendering_config.update({
+    updates = {
         "build_file_template": build_file_base_template.format(
             workspace_name,
             output_pkg,
@@ -158,7 +159,20 @@ def _write_config_file(ctx):
             output_pkg,
         ),
         "vendor_mode": ctx.attr.mode,
-    })
+    }
+
+    for key in updates:
+        if rendering_config[key] != default_render_config[key]:
+            fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
+                key,
+                ctx.label,
+            ))
+
+    rendering_config.update(updates)
+
+    # Allow users to override the regen command.
+    if "regen_command" not in rendering_config or not rendering_config["regen_command"]:
+        rendering_config.update({"regen_command": "bazel run {}".format(ctx.label)})
 
     config_data = compile_config(
         crate_annotations = ctx.attr.annotations,
@@ -409,6 +423,12 @@ call against the generated workspace. The following table describes how to contr
         ),
         "packages": attr.string_dict(
             doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
+        ),
+        "render_config": attr.string(
+            doc = (
+                "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
+                "generate the value for this field. If unset, the defaults defined there will be used."
+            ),
         ),
         "repository_name": attr.string(
             doc = "The name of the repository to generate for `remote` vendor modes. If unset, the label name will be used",

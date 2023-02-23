@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::DependencySet;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
+use crate::utils::starlark::SelectList;
 
 pub type CargoMetadata = cargo_metadata::Metadata;
 pub type CargoLockfile = cargo_lock::Lockfile;
@@ -359,6 +360,9 @@ pub struct Annotations {
 
     /// Pairred crate annotations
     pub pairred_extras: BTreeMap<CrateId, PairredExtras>,
+
+    /// Feature set for each target triplet and crate.
+    pub features: BTreeMap<CrateId, SelectList<String>>,
 }
 
 impl Annotations {
@@ -415,12 +419,15 @@ impl Annotations {
             );
         }
 
+        let features = metadata_annotation.workspace_metadata.features.clone();
+
         // Annotate metadata
         Ok(Annotations {
             metadata: metadata_annotation,
             lockfile: lockfile_annotation,
             config,
             pairred_extras,
+            features,
         })
     }
 }

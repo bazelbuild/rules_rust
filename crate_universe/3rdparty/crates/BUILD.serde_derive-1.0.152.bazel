@@ -34,6 +34,7 @@ rust_proc_macro(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=serde_derive",
         "manual",
         "noclippy",
         "norustfmt",
@@ -69,6 +70,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=serde_derive",
         "manual",
         "noclippy",
         "norustfmt",

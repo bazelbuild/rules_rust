@@ -9,6 +9,7 @@ use clap::Parser;
 use crate::config::Config;
 use crate::context::Context;
 use crate::lockfile::Digest;
+use crate::metadata::Cargo;
 use crate::splicing::SplicingManifest;
 
 /// Command line options for the `query` subcommand
@@ -66,7 +67,7 @@ pub fn query(opt: QueryOptions) -> Result<()> {
         &lockfile,
         &config,
         &splicing_manifest,
-        &opt.cargo,
+        &Cargo::new(opt.cargo),
         &opt.rustc,
     )?;
     if digest != expected {

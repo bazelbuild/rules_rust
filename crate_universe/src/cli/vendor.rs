@@ -12,8 +12,8 @@ use clap::Parser;
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
 use crate::metadata::CargoUpdateRequest;
-use crate::metadata::{Annotations, VendorGenerator};
-use crate::metadata::{Generator, MetadataGenerator};
+use crate::metadata::FeatureGenerator;
+use crate::metadata::{Annotations, Cargo, Generator, MetadataGenerator, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
@@ -130,26 +130,37 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         .splice_workspace(&opt.cargo)
         .context("Failed to splice workspace")?;
 
+    let cargo = Cargo::new(opt.cargo);
+
     // Gather a cargo lockfile
     let cargo_lockfile = generate_lockfile(
         &manifest_path,
         &opt.cargo_lockfile,
-        &opt.cargo,
+        cargo.clone(),
         &opt.rustc,
         &opt.repin,
     )?;
 
+    // Load the config from disk
+    let config = Config::try_from_path(&opt.config)?;
+
+    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone()).generate(
+        manifest_path.as_path_buf(),
+        &config.supported_platform_triples,
+    )?;
+
     // Write the registry url info to the manifest now that a lockfile has been generated
-    WorkspaceMetadata::write_registry_urls(&cargo_lockfile, &manifest_path)?;
+    WorkspaceMetadata::write_registry_urls_and_feature_map(
+        &cargo_lockfile,
+        feature_map,
+        &manifest_path,
+    )?;
 
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, cargo_lockfile) = Generator::new()
-        .with_cargo(opt.cargo.clone())
+        .with_cargo(cargo.clone())
         .with_rustc(opt.rustc.clone())
         .generate(manifest_path.as_path_buf())?;
-
-    // Load the config from disk
-    let config = Config::try_from_path(&opt.config)?;
 
     // Annotate metadata
     let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
@@ -181,7 +192,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // Vendor the crates from the spliced workspace
     if matches!(config.rendering.vendor_mode, Some(VendorMode::Local)) {
-        VendorGenerator::new(opt.cargo.clone(), opt.rustc.clone())
+        VendorGenerator::new(cargo, opt.rustc.clone())
             .generate(manifest_path.as_path_buf(), &vendor_dir)
             .context("Failed to vendor dependencies")?;
     }

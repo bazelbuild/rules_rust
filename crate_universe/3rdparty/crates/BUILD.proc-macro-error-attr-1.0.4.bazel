@@ -33,6 +33,7 @@ rust_proc_macro(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=proc-macro-error-attr",
         "manual",
         "noclippy",
         "norustfmt",
@@ -66,6 +67,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=proc-macro-error-attr",
         "manual",
         "noclippy",
         "norustfmt",

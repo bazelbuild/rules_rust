@@ -9,8 +9,7 @@ use clap::Parser;
 use crate::config::Config;
 use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
-use crate::metadata::load_metadata;
-use crate::metadata::Annotations;
+use crate::metadata::{load_metadata, Annotations, Cargo};
 use crate::rendering::{write_outputs, Renderer};
 use crate::splicing::SplicingManifest;
 
@@ -84,10 +83,10 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     }
 
     // Ensure Cargo and Rustc are available for use during generation.
-    let cargo_bin = match &opt.cargo {
+    let cargo_bin = Cargo::new(match opt.cargo {
         Some(bin) => bin,
         None => bail!("The `--cargo` argument is required when generating unpinned content"),
-    };
+    });
     let rustc_bin = match &opt.rustc {
         Some(bin) => bin,
         None => bail!("The `--rustc` argument is required when generating unpinned content"),
@@ -108,7 +107,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     // Annotate metadata
     let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
 
-    // Generate renderable contexts for earch package
+    // Generate renderable contexts for each package
     let context = Context::new(annotations)?;
 
     // Render build files
@@ -117,12 +116,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     // Write outputs
     write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
 
-    // Ensure Bazel lockfiles are written to disk so future generations can be short-circuted.
+    // Ensure Bazel lockfiles are written to disk so future generations can be short-circuited.
     if let Some(lockfile) = opt.lockfile {
         let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
 
         let lock_content =
-            lock_context(context, &config, &splicing_manifest, cargo_bin, rustc_bin)?;
+            lock_context(context, &config, &splicing_manifest, &cargo_bin, rustc_bin)?;
 
         write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }

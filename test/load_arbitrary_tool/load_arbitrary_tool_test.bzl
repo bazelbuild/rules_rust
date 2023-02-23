@@ -1,4 +1,5 @@
-# buildifier: disable=module-docstring
+"""Tests for `load_arbitrary_tool`"""
+
 load("//rust:repositories.bzl", "load_arbitrary_tool")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
@@ -14,7 +15,7 @@ def _load_arbitrary_tool_test_impl(repository_ctx):
         tool_subdirectories = ["cargo"],
         version = "1.53.0",
         iso_date = None,
-        target_triple = host_triple.str,
+        target_triple = host_triple,
     )
 
     repo_path = repository_ctx.path(".")

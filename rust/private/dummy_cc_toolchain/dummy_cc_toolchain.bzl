@@ -1,4 +1,5 @@
-# buildifier: disable=module-docstring
+"""Cc toolchain definitions for use on wasm platforms"""
+
 def _dummy_cc_toolchain_impl(_ctx):
     # The `all_files` attribute is referenced by rustc_compile_action().
     return [platform_common.ToolchainInfo(all_files = depset([]))]

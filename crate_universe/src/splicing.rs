@@ -15,8 +15,8 @@ use hex::ToHex;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
-use crate::metadata::{CargoUpdateRequest, LockGenerator};
-use crate::utils::starlark::Label;
+use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator};
+use crate::utils::starlark::{Label, SelectList};
 
 use self::cargo_config::CargoConfig;
 pub use self::splicer::*;
@@ -161,6 +161,12 @@ pub struct WorkspaceMetadata {
     /// Paths from the root of a Bazel workspace to a Cargo package
     #[serde(serialize_with = "toml::ser::tables_last")]
     pub package_prefixes: BTreeMap<String, String>,
+
+    /// Feature set for each target triplet and crate.
+    ///
+    /// We store this here because it's computed during the splicing phase via
+    /// calls to "cargo tree" which need the full spliced workspace.
+    pub features: BTreeMap<CrateId, SelectList<String>>,
 }
 
 impl TryFrom<toml::Value> for WorkspaceMetadata {
@@ -233,11 +239,13 @@ impl WorkspaceMetadata {
             sources: BTreeMap::new(),
             workspace_prefix,
             package_prefixes,
+            features: BTreeMap::new(),
         })
     }
 
-    pub fn write_registry_urls(
+    pub fn write_registry_urls_and_feature_map(
         lockfile: &cargo_lock::Lockfile,
+        features: BTreeMap<CrateId, SelectList<String>>,
         manifest_path: &SplicedManifest,
     ) -> Result<()> {
         let mut manifest = read_manifest(manifest_path.as_path_buf())?;
@@ -358,6 +366,7 @@ impl WorkspaceMetadata {
             .flatten();
 
         workspace_metaata.sources.extend(additional_sources);
+        workspace_metaata.features = features;
         workspace_metaata.inject_into(&mut manifest)?;
 
         write_root_manifest(manifest_path.as_path_buf(), manifest)?;
@@ -412,7 +421,7 @@ pub fn read_manifest(manifest: &Path) -> Result<Manifest> {
 pub fn generate_lockfile(
     manifest_path: &SplicedManifest,
     existing_lock: &Option<PathBuf>,
-    cargo_bin: &Path,
+    cargo_bin: Cargo,
     rustc_bin: &Path,
     update_request: &Option<CargoUpdateRequest>,
 ) -> Result<cargo_lock::Lockfile> {
@@ -429,8 +438,11 @@ pub fn generate_lockfile(
     }
 
     // Generate the new lockfile
-    let lockfile = LockGenerator::new(PathBuf::from(cargo_bin), PathBuf::from(rustc_bin))
-        .generate(manifest_path.as_path_buf(), existing_lock, update_request)?;
+    let lockfile = LockGenerator::new(cargo_bin, PathBuf::from(rustc_bin)).generate(
+        manifest_path.as_path_buf(),
+        existing_lock,
+        update_request,
+    )?;
 
     // Write the lockfile to disk
     if !root_lockfile_path.exists() {
