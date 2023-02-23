@@ -123,6 +123,7 @@ rust_proc_macro(
     name = "bad_proc_macro",
     srcs = ["bad_src/proc_macro.rs"],
     edition = "2018",
+    tags = ["noclippy"],
 )
 
 # Clippy analysis of failing targets.
