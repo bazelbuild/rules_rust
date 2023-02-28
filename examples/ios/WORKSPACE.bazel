@@ -1,5 +1,25 @@
 workspace(name = "ios_examples")
 
+# Users of `rules_rust` will commonly be unable to load it
+# using a `local_repository`. Instead, to setup the rules,
+# please see https://bazelbuild.github.io/rules_rust/#setup
+local_repository(
+    name = "rules_rust",
+    path = "../..",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2018",
+    extra_target_triples = [
+        "aarch64-apple-ios-sim",
+        "x86_64-apple-ios",
+    ],
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -28,23 +48,3 @@ load(
 )
 
 apple_support_dependencies()
-
-# Users of `rules_rust` will commonly be unable to load it
-# using a `local_repository`. Instead, to setup the rules,
-# please see https://bazelbuild.github.io/rules_rust/#setup
-local_repository(
-    name = "rules_rust",
-    path = "../..",
-)
-
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
-
-rules_rust_dependencies()
-
-rust_register_toolchains(
-    edition = "2018",
-    extra_target_triples = [
-        "aarch64-apple-ios-sim",
-        "x86_64-apple-ios",
-    ],
-)

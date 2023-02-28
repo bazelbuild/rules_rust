@@ -75,8 +75,8 @@ def rules_rust_dependencies():
     maybe(
         http_archive,
         name = "build_bazel_apple_support",
-        sha256 = "d94b7a0f49d735f196e1f36d2e6ef79c4e8e8b82132848dd8cd93cd82d9b12a8",
-        url = "https://github.com/bazelbuild/apple_support/releases/download/1.3.0/apple_support.1.3.0.tar.gz",
+        sha256 = "77a121a0f5d4cd88824429464ad2bfb54bdc8a3bccdb4d31a6c846003a3f5e44",
+        url = "https://github.com/bazelbuild/apple_support/releases/download/1.4.1/apple_support.1.4.1.tar.gz",
     )
 
     # process_wrapper needs a low-dependency way to process json.

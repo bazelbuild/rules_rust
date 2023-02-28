@@ -282,7 +282,10 @@ rust_clippy = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "Rust targets to run clippy on.",
-            providers = [rust_common.crate_info],
+            providers = [
+                [rust_common.crate_info],
+                [rust_common.test_crate_info],
+            ],
             aspects = [rust_clippy_aspect],
         ),
     },

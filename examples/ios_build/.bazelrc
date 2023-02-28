@@ -1,0 +1,4 @@
+# Enable CC toolchain that supports iOS from https://github.com/bazelbuild/apple_support
+build --apple_crosstool_top=@local_config_apple_cc//:toolchain
+build --crosstool_top=@local_config_apple_cc//:toolchain
+build --host_crosstool_top=@local_config_apple_cc//:toolchain
