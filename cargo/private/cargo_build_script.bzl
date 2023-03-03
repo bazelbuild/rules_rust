@@ -175,6 +175,19 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
+    # Gather data from the `toolchains` attribute.
+    for target in ctx.attr.toolchains:
+        if DefaultInfo in target:
+            toolchain_tools.extend([
+                target[DefaultInfo].files,
+                target[DefaultInfo].default_runfiles.files,
+            ])
+        if platform_common.ToolchainInfo in target:
+            all_files = getattr(target[platform_common.ToolchainInfo], "all_files", depset([]))
+            if type(all_files) == "list":
+                all_files = depset(all_files)
+            toolchain_tools.append(all_files)
+
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
