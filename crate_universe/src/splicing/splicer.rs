@@ -296,6 +296,19 @@ impl<'a> SplicerKind<'a> {
         let installations =
             Self::inject_workspace_members(&mut manifest, manifests, workspace_dir)?;
 
+        // Collect all patches from the manifests provided
+        for (_, sub_manifest) in manifests.iter() {
+            Self::inject_patches(&mut manifest, &sub_manifest.patch).with_context(|| {
+                format!(
+                    "Duplicate `[patch]` entries detected in {:#?}",
+                    manifests
+                        .keys()
+                        .map(|p| p.display().to_string())
+                        .collect::<Vec<String>>()
+                )
+            })?;
+        }
+
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, installations)?;
         workspace_metadata.inject_into(&mut manifest)?;
@@ -467,6 +480,37 @@ impl<'a> SplicerKind<'a> {
                 name.clone(),
                 cargo_toml::Dependency::Detailed(details.clone()),
             );
+        }
+
+        Ok(())
+    }
+
+    fn inject_patches(manifest: &mut Manifest, patches: &cargo_toml::PatchSet) -> Result<()> {
+        for (registry, new_patches) in patches.iter() {
+            // If there is an existing patch entry it will need to be merged
+            if let Some(existing_patches) = manifest.patch.get_mut(registry) {
+                // Error out if there are duplicate patches
+                existing_patches.extend(
+                    new_patches
+                        .iter()
+                        .map(|(pkg, info)| {
+                            if let Some(existing_info) = existing_patches.get(pkg) {
+                                // Only error if the patches are not identical
+                                if existing_info != info {
+                                    bail!(
+                                        "Duplicate patches were found for `[patch.{}] {}`",
+                                        registry,
+                                        pkg
+                                    );
+                                }
+                            }
+                            Ok((pkg.clone(), info.clone()))
+                        })
+                        .collect::<Result<cargo_toml::DepsSet>>()?,
+                );
+            } else {
+                manifest.patch.insert(registry.clone(), new_patches.clone());
+            }
         }
 
         Ok(())
@@ -1375,6 +1419,223 @@ mod test {
 
         // Due to the addition of direct deps for splicing, this package should have been added to the root manfiest.
         assert!(cargo_manifest.package.unwrap().name == DEFAULT_SPLICING_PACKAGE_NAME);
+    }
+
+    #[test]
+    fn splice_multi_package_with_patch() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        // Generate a patch entry
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            BTreeMap::from([(
+                "foo".to_owned(),
+                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+            )]),
+        )]);
+
+        // Insert the patch entry to the manifests
+        let manifest_path = cache_dir.as_ref().join("pkg_a").join("Cargo.toml");
+        let mut manifest =
+            cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+        manifest.patch.extend(expected.clone());
+        fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_multiple_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let mut expected = cargo_toml::PatchSet::new();
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                format!("{pkg}_registry"),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+            expected.extend(new_patch.clone());
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_merged_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            cargo_toml::DepsSet::from([
+                (
+                    "foo-pkg_a".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                ),
+                (
+                    "foo-pkg_b".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                ),
+            ]),
+        )]);
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    format!("foo-{pkg}"),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_merged_identical_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            cargo_toml::DepsSet::from([(
+                "foo".to_owned(),
+                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+            )]),
+        )]);
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_conflicting_patch() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let mut patch = 3;
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple(format!("1.2.{patch}")),
+                )]),
+            )]);
+
+            // Increment the patch semver to make the patch info unique.
+            patch += 1;
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let result = Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+            .unwrap()
+            .splice_workspace(&cargo());
+
+        // Confirm conflicting patches have been detected
+        assert!(result.is_err());
+        let err_str = result.err().unwrap().to_string();
+        assert!(err_str.starts_with("Duplicate `[patch]` entries detected in"));
     }
 
     #[test]
