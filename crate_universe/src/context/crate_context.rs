@@ -1,6 +1,7 @@
 //! Crate specific information embedded into [crate::context::Context] objects.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::PathBuf;
 
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
@@ -10,6 +11,7 @@ use crate::metadata::{
     CrateAnnotation, Dependency, PairedExtras, SourceAnnotation, TreeResolverMetadata,
 };
 use crate::select::Select;
+use crate::splicing::WorkspaceMetadata;
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, Label};
 
@@ -345,7 +347,7 @@ impl CrateContext {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         annotation: &CrateAnnotation,
-        packages: &BTreeMap<PackageId, Package>,
+        metadata: &MetadataAnnotation,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
         extras: &BTreeMap<CrateId, PairedExtras>,
         resolver_data: &TreeResolverMetadata,
@@ -353,11 +355,11 @@ impl CrateContext {
         include_build_scripts: bool,
         sources_are_present: bool,
     ) -> Self {
-        let package: &Package = &packages[&annotation.node.id];
+        let package: &Package = &metadata.packages[&annotation.node.id];
         let current_crate_id = CrateId::new(package.name.clone(), package.version.clone());
 
         let new_crate_dep = |dep: Dependency| -> CrateDependency {
-            let pkg = &packages[&dep.package_id];
+            let pkg = &metadata.packages[&dep.package_id];
 
             // Unfortunately, The package graph and resolve graph of cargo metadata have different representations
             // for the crate names (resolve graph sanitizes names to match module names) so to get the rest of this
@@ -426,7 +428,8 @@ impl CrateContext {
         // Iterate over each target and produce a Bazel target for all supported "kinds"
         let targets = Self::collect_targets(
             &annotation.node,
-            packages,
+            &metadata.packages,
+            &metadata.workspace_metadata,
             gen_binaries,
             include_build_scripts,
             sources_are_present,
@@ -697,6 +700,7 @@ impl CrateContext {
                         patch_tool.clone_from(&crate_extra.patch_tool);
                         patches.clone_from(&crate_extra.patches);
                     }
+                    SourceAnnotation::Path => {}
                 }
             }
 
@@ -752,6 +756,7 @@ impl CrateContext {
     fn collect_targets(
         node: &Node,
         packages: &BTreeMap<PackageId, Package>,
+        workspace: &WorkspaceMetadata,
         gen_binaries: &GenBinaries,
         include_build_scripts: bool,
         sources_are_present: bool,
@@ -779,6 +784,35 @@ impl CrateContext {
                         // Normalize the path so that it always renders the same regardless of platform
                         |root| root.to_string_lossy().replace('\\', "/"),
                     );
+                    println!("{}", package.id);
+                    if package.id.repr.contains("(path+file://") {
+                        println!("");
+                        println!("{crate_name} {kind} {:?}", &crate_root);
+                        println!("src: {:?}", &target.src_path);
+                        println!("pkg: {:?}", package_root);
+                        println!("root: {:?}", &crate_root);
+                        println!("workspace: {:?}", workspace.workspace_prefix);
+                        let temp_components = std::env::temp_dir().components().count() + 1;
+                        println!("temp dir components to drop: {temp_components}");
+                        let real_root: PathBuf =
+                            package_root.components().skip(temp_components).collect();
+                        println!("ACTUAL FOR REAL ROOT: {}", real_root.to_string_lossy());
+                        println!("");
+                    }
+                    let crate_root = crate_root.map(|r| {
+                        if package.id.repr.contains("(path+file://") {
+                            let temp_components = std::env::temp_dir().components().count() + 1;
+                            package_root
+                                .components()
+                                .skip(temp_components)
+                                .collect::<PathBuf>()
+                                .join(r)
+                                .to_string_lossy()
+                                .to_string()
+                        } else {
+                            r
+                        }
+                    });
 
                     // Conditionally check to see if the dependencies is a build-script target
                     if include_build_scripts && kind == "custom-build" {
@@ -859,7 +893,7 @@ mod test {
         let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
