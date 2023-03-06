@@ -127,37 +127,28 @@ cargo_workspace_crate_repositories()
 # M U L T I   P A C K A G E
 ###############################################################################
 
+# The name here needs to be short to avoid long path issues on windows
+# when running the `libnghttp2-sys` build script.
+multi_pkg_example_name = "m_pkgs"
+
 crates_repository(
-    # The name here needs to be short to avoid long path issues on windows
-    # when running the `libnghttp2-sys` build script.
-    name = "m_pkgs",
+    name = multi_pkg_example_name,
     annotations = {
         "curl-sys": [crate.annotation(
             gen_build_script = False,
             deps = [
-                "@curl",
-                "@libssh2",
+                "@m_pkgs__curl//:curl",
             ],
         )],
-        "lalrpop": [crate.annotation(
-            data_glob = ["**/*.lalrpop"],
+        "httpmock": [crate.annotation(
+            shallow_since = "1673473097 +0100",
+        )],
+        "isahc": [crate.annotation(
+            shallow_since = "1667787880 -0600",
         )],
         "libnghttp2-sys": [crate.annotation(
             build_script_data_glob = ["nghttp2/**"],
             data_glob = ["nghttp2/**"],
-        )],
-        "openssl-sys": [crate.annotation(
-            build_script_data = [
-                "@openssl//:gen_dir",
-                "@openssl//:openssl",
-            ],
-            build_script_data_glob = ["build/**/*.c"],
-            build_script_env = {
-                "OPENSSL_DIR": "$(execpath @openssl//:gen_dir)",
-                "OPENSSL_STATIC": "1",
-            },
-            data = ["@openssl"],
-            deps = ["@openssl"],
         )],
         "wepoll-ffi": [crate.annotation(
             build_script_data_glob = ["vendor/**"],
@@ -175,45 +166,18 @@ crates_repository(
     ],
 )
 
+load("//multi_package/3rdparty:third_party_deps.bzl", "third_party_deps")
+
+third_party_deps(
+    prefix = multi_pkg_example_name,
+)
+
 load(
     "@m_pkgs//:defs.bzl",
     multi_pkg_crate_repositories = "crate_repositories",
 )
 
 multi_pkg_crate_repositories()
-
-# ForeignCc is used to build OpenSSL
-http_archive(
-    name = "rules_foreign_cc",
-    sha256 = "1df78c7d7eed2dc21b8b325a2853c31933a81e7b780f9a59a5d078be9008b13a",
-    strip_prefix = "rules_foreign_cc-0.7.0",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.7.0.tar.gz",
-)
-
-load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-
-rules_foreign_cc_dependencies()
-
-# Load OpenSSL and other 3rd party dependencies
-load("//multi_package/3rdparty:third_party_deps.bzl", "third_party_deps")
-
-third_party_deps()
-
-# perl is used to build openssl
-http_archive(
-    name = "rules_perl",
-    sha256 = "0c0cc01b158321c3c84af49409393c14b66070249d0affb78a88ca594b2aa9c2",
-    strip_prefix = "rules_perl-43d2db0aafe595fe0ac61b808c9c13ea9769ce03",
-    urls = [
-        "https://github.com/bazelbuild/rules_perl/archive/43d2db0aafe595fe0ac61b808c9c13ea9769ce03.tar.gz",
-    ],
-)
-
-load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
-
-perl_rules_dependencies()
-
-perl_register_toolchains()
 
 ###############################################################################
 # N O   C A R G O   M A N I F E S T S

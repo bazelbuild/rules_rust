@@ -1,5 +1,5 @@
 {
-  "checksum": "3bd1f5104b4e65b37b2626935a1ead94cc9b824459b8bb17a64c3baeb15674cf",
+  "checksum": "6d80db4ef990a31ce18a66156620728d237e7de453d84d7602c9f47e7d7f277b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -26,10 +26,13 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -213,9 +216,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default"
-        ],
+        "crate_features": {
+          "common": [
+            "default"
+          ],
+          "selects": {}
+        },
         "edition": "2018",
         "version": "1.3.2"
       },
@@ -276,18 +282,21 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "atty",
-          "clap_derive",
-          "color",
-          "default",
-          "derive",
-          "once_cell",
-          "std",
-          "strsim",
-          "suggestions",
-          "termcolor"
-        ],
+        "crate_features": {
+          "common": [
+            "atty",
+            "clap_derive",
+            "color",
+            "default",
+            "derive",
+            "once_cell",
+            "std",
+            "strsim",
+            "suggestions",
+            "termcolor"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -307,7 +316,7 @@
               "target": "indexmap"
             },
             {
-              "id": "once_cell 1.17.0",
+              "id": "once_cell 1.17.1",
               "target": "once_cell"
             },
             {
@@ -315,7 +324,7 @@
               "target": "strsim"
             },
             {
-              "id": "termcolor 1.1.3",
+              "id": "termcolor 1.2.0",
               "target": "termcolor"
             },
             {
@@ -364,13 +373,16 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default"
-        ],
+        "crate_features": {
+          "common": [
+            "default"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
-              "id": "heck 0.4.0",
+              "id": "heck 0.4.1",
               "target": "heck"
             },
             {
@@ -378,7 +390,7 @@
               "target": "proc_macro_error"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
             {
@@ -386,7 +398,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -468,7 +480,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -504,13 +516,16 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "atty",
-          "default",
-          "humantime",
-          "regex",
-          "termcolor"
-        ],
+        "crate_features": {
+          "common": [
+            "atty",
+            "default",
+            "humantime",
+            "regex",
+            "termcolor"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -526,11 +541,11 @@
               "target": "log"
             },
             {
-              "id": "regex 1.7.0",
+              "id": "regex 1.7.1",
               "target": "regex"
             },
             {
-              "id": "termcolor 1.1.3",
+              "id": "termcolor 1.2.0",
               "target": "termcolor"
             }
           ],
@@ -566,9 +581,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -621,21 +639,24 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "raw"
-        ],
+        "crate_features": {
+          "common": [
+            "raw"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
         "version": "0.12.3"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "heck 0.4.0": {
+    "heck 0.4.1": {
       "name": "heck",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/heck/0.4.0/download",
-          "sha256": "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
+          "url": "https://crates.io/api/v1/crates/heck/0.4.1/download",
+          "sha256": "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
         }
       },
       "targets": [
@@ -654,11 +675,14 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default"
-        ],
+        "crate_features": {
+          "common": [
+            "default"
+          ],
+          "selects": {}
+        },
         "edition": "2018",
-        "version": "0.4.0"
+        "version": "0.4.1"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -686,9 +710,6 @@
       "common_attrs": {
         "compile_data_glob": [
           "**"
-        ],
-        "crate_features": [
-          "default"
         ],
         "deps": {
           "common": [
@@ -768,9 +789,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -881,10 +905,13 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "use_std"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "use_std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -933,9 +960,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -993,10 +1023,13 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1053,11 +1086,14 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "application",
-          "clap",
-          "default"
-        ],
+        "crate_features": {
+          "common": [
+            "application",
+            "clap",
+            "default"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1119,11 +1155,14 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "application",
-          "clap",
-          "default"
-        ],
+        "crate_features": {
+          "common": [
+            "application",
+            "clap",
+            "default"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1151,13 +1190,13 @@
       },
       "license": "MIT"
     },
-    "once_cell 1.17.0": {
+    "once_cell 1.17.1": {
       "name": "once_cell",
-      "version": "1.17.0",
+      "version": "1.17.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/once_cell/1.17.0/download",
-          "sha256": "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
+          "url": "https://crates.io/api/v1/crates/once_cell/1.17.1/download",
+          "sha256": "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
         }
       },
       "targets": [
@@ -1176,14 +1215,17 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "alloc",
-          "default",
-          "race",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "alloc",
+            "default",
+            "race",
+            "std"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
-        "version": "1.17.0"
+        "version": "1.17.1"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1212,9 +1254,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "raw_os_str"
-        ],
+        "crate_features": {
+          "common": [
+            "raw_os_str"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
         "version": "6.4.1"
       },
@@ -1245,10 +1290,13 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "simd",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "simd",
+            "std"
+          ],
+          "selects": {}
+        },
         "edition": "2018",
         "version": "0.2.17"
       },
@@ -1288,11 +1336,14 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "syn",
-          "syn-error"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "syn",
+            "syn-error"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1300,7 +1351,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
             {
@@ -1308,7 +1359,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -1383,7 +1434,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
             {
@@ -1412,13 +1463,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "proc-macro2 1.0.49": {
+    "proc-macro2 1.0.51": {
       "name": "proc-macro2",
-      "version": "1.0.49",
+      "version": "1.0.51",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.49/download",
-          "sha256": "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.51/download",
+          "sha256": "5d727cae5b39d21da60fa540906919ad737832fe0b1c165da3a34d6548c849d6"
         }
       },
       "targets": [
@@ -1446,14 +1497,17 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "proc-macro"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "proc-macro"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "build_script_build"
             },
             {
@@ -1464,7 +1518,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.49"
+        "version": "1.0.51"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1507,14 +1561,17 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "proc-macro"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "proc-macro"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
             {
@@ -1559,15 +1616,18 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "alloc",
-          "default",
-          "getrandom",
-          "libc",
-          "rand_chacha",
-          "std",
-          "std_rng"
-        ],
+        "crate_features": {
+          "common": [
+            "alloc",
+            "default",
+            "getrandom",
+            "libc",
+            "rand_chacha",
+            "std",
+            "std_rng"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1618,9 +1678,12 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1664,11 +1727,14 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "alloc",
-          "getrandom",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "alloc",
+            "getrandom",
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1683,13 +1749,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex 1.7.0": {
+    "regex 1.7.1": {
       "name": "regex",
-      "version": "1.7.0",
+      "version": "1.7.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex/1.7.0/download",
-          "sha256": "e076559ef8e241f2ae3479e36f97bd5741c0330689e217ad51ce2c76808b868a"
+          "url": "https://crates.io/api/v1/crates/regex/1.7.1/download",
+          "sha256": "48aaa5748ba571fb95cd2c85c09f629215d3a6ece942baa100950af03a34f733"
         }
       },
       "targets": [
@@ -1708,16 +1774,19 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "aho-corasick",
-          "memchr",
-          "perf",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "aho-corasick",
+            "memchr",
+            "perf",
+            "perf-cache",
+            "perf-dfa",
+            "perf-inline",
+            "perf-literal",
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1736,7 +1805,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.7.0"
+        "version": "1.7.1"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1800,13 +1869,13 @@
       },
       "license": "MIT"
     },
-    "syn 1.0.107": {
+    "syn 1.0.109": {
       "name": "syn",
-      "version": "1.0.107",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.107/download",
-          "sha256": "1f4064b5b16e03ae50984a5a8ed5d4f8803e6bc1fd170a3cda91a1be4b18e3f5"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.109/download",
+          "sha256": "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
         }
       },
       "targets": [
@@ -1834,20 +1903,23 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "clone-impls",
-          "default",
-          "derive",
-          "full",
-          "parsing",
-          "printing",
-          "proc-macro",
-          "quote"
-        ],
+        "crate_features": {
+          "common": [
+            "clone-impls",
+            "default",
+            "derive",
+            "full",
+            "parsing",
+            "printing",
+            "proc-macro",
+            "quote"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
             {
@@ -1855,7 +1927,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "build_script_build"
             },
             {
@@ -1866,7 +1938,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.107"
+        "version": "1.0.109"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1875,13 +1947,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "termcolor 1.1.3": {
+    "termcolor 1.2.0": {
       "name": "termcolor",
-      "version": "1.1.3",
+      "version": "1.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/termcolor/1.1.3/download",
-          "sha256": "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
+          "url": "https://crates.io/api/v1/crates/termcolor/1.2.0/download",
+          "sha256": "be55cf8942feac5c765c2c993422806843c9a9a45d4d5c407ad6dd2ea95eb9b6"
         }
       },
       "targets": [
@@ -1912,7 +1984,7 @@
           }
         },
         "edition": "2018",
-        "version": "1.1.3"
+        "version": "1.2.0"
       },
       "license": "Unlicense OR MIT"
     },
@@ -2103,10 +2175,13 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "default",
-          "std"
-        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
         "edition": "2018",
         "version": "0.11.0+wasi-snapshot-preview1"
       },
@@ -2146,19 +2221,22 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": [
-          "consoleapi",
-          "errhandlingapi",
-          "fileapi",
-          "minwinbase",
-          "minwindef",
-          "processenv",
-          "std",
-          "winbase",
-          "wincon",
-          "winerror",
-          "winnt"
-        ],
+        "crate_features": {
+          "common": [
+            "consoleapi",
+            "errhandlingapi",
+            "fileapi",
+            "minwinbase",
+            "minwindef",
+            "processenv",
+            "std",
+            "winbase",
+            "wincon",
+            "winerror",
+            "winnt"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
