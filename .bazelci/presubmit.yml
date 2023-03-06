@@ -440,17 +440,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/1814
-  # crate_universe_examples_macos:
-  #   name: Crate Universe Examples
-  #   platform: macos
-  #   working_directory: examples/crate_universe
-  #   run_targets: *crate_universe_vendor_example_targets
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
-  #   build_flags: *aspects_flags
+  crate_universe_examples_macos:
+    name: Crate Universe Examples
+    platform: macos
+    working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
   crate_universe_unnamed_examples_macos:
     name: Crate Universe Unnamed Examples
     platform: macos
