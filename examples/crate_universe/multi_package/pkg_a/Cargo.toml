@@ -7,7 +7,13 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.44"
-reqwest = { version = "0.11.4", features = ["blocking", "json"] }
+reqwest = { default-features = false, version = "0.11.4", features = ["blocking", "json", "rustls-tls"] }
 
 [dev-dependencies]
-httpmock = "0.6.2"
+# Pin to a version of `httmock` that supports `rustls`.
+# See https://github.com/alexliesenfeld/httpmock/pull/72
+httpmock = { default-features = false, features = ["rustls"], git = "https://github.com/alexliesenfeld/httpmock.git", rev = "9ecf35255ee154986bc36d06473f1fa088586ad9" }
+
+[patch.crates-io]
+# See httmock comment.
+isahc = { git = "https://github.com/sagebind/isahc.git", rev = "096aff7b13f4ff5bb474fdc27bc30b297a2968f6" }
