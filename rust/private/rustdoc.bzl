@@ -213,7 +213,7 @@ def _rust_doc_impl(ctx):
 
     return [
         DefaultInfo(
-            files = depset([ctx.outputs.rust_doc_zip]),
+            files = depset([output_dir]),
         ),
         OutputGroupInfo(
             rustdoc_dir = depset([output_dir]),

@@ -1,6 +1,6 @@
 """Unittest to verify properties of rustdoc rules"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_proc_macro", "rust_test")
@@ -68,12 +68,38 @@ def _rustdoc_for_lib_with_cc_lib_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_zip_output_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    files = tut[DefaultInfo].files.to_list()
+    asserts.equals(
+        env,
+        len(files),
+        1,
+        "The target under this test should have 1 DefaultInfo file but has {}".format(
+            len(files),
+        ),
+    )
+
+    zip_file = files[0]
+    asserts.true(
+        env,
+        zip_file.basename.endswith(".zip"),
+        "{} did not end with `.zip`".format(
+            zip_file.path,
+        ),
+    )
+
+    return analysistest.end(env)
+
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
 rustdoc_for_proc_macro_test = analysistest.make(_rustdoc_for_proc_macro_test_impl)
 rustdoc_for_lib_with_proc_macro_test = analysistest.make(_rustdoc_for_lib_with_proc_macro_test_impl)
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
+rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     rule_fn(
@@ -242,6 +268,16 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_with_cc_doc",
     )
 
+    native.filegroup(
+        name = "lib_doc_zip",
+        srcs = [":lib_doc.zip"],
+    )
+
+    rustdoc_zip_output_test(
+        name = "rustdoc_zip_output_test",
+        target_under_test = ":lib_doc_zip",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -250,5 +286,6 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_proc_macro_test",
             ":rustdoc_for_lib_with_proc_macro_test",
             ":rustdoc_for_lib_with_cc_lib_test",
+            ":rustdoc_zip_output_test",
         ],
     )
