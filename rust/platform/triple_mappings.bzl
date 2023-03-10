@@ -188,10 +188,10 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
 }
 
 def cpu_arch_to_constraints(cpu_arch):
-    plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
-
-    if not plat_suffix:
+    if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
         fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+
+    plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
@@ -203,10 +203,10 @@ def vendor_to_constraints(_vendor):
     return []
 
 def system_to_constraints(system):
-    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
+    if system not in _SYSTEM_TO_BUILTIN_SYS_SUFFIX:
+        fail("System \"{}\" is not supported by rules_rust".format(system))
 
-    if not sys_suffix:
-        fail("System \"{}\" is not supported by rules_rust".format(sys_suffix))
+    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
