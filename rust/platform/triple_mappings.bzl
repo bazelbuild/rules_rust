@@ -193,6 +193,14 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
+def cpu_arch_to_constraints(cpu_arch):
+    if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
+        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+
+    plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
+
+    return ["@platforms//cpu:{}".format(plat_suffix)]
+
 def cpu_arch_constraints_from_triple(triple):
     cpu_arch = triple.arch
     if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
