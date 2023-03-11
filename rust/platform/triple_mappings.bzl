@@ -69,8 +69,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "s390": None,
     "s390x": "s390x",
     "thumbv6m": "armv6-m",
-    "thumbv7m": "armv7-m",
     "thumbv7em": "armv7e-m",
+    "thumbv7m": "armv7-m",
     "wasm32": None,
     "x86_64": "x86_64",
 }
@@ -202,6 +202,14 @@ def cpu_arch_to_constraints(cpu_arch):
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
 def cpu_arch_constraints_from_triple(triple):
+    """Returns a list of contraint values which represents a triple's CPU.
+
+    Args:
+        triple (triple): The triple struct
+    
+    Returns:
+        List: A list of labels to constraint values
+    """
     cpu_arch = triple.arch
     if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
         fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
