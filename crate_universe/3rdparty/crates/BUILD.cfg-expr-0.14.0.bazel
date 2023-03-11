@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "libz_sys",
+    name = "cfg_expr",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,21 +28,20 @@ rust_library(
         ],
     ),
     crate_features = [
-        "libc",
+        "default",
     ],
     crate_root = "src/lib.rs",
-    edition = "2018",
+    edition = "2021",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=libz-sys",
+        "crate-name=cfg-expr",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.1.8",
+    version = "0.14.0",
     deps = [
-        "@cui__libc-0.2.139//:libc",
-        "@zlib",
+        "@cui__smallvec-1.10.0//:smallvec",
     ],
 )

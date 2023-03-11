@@ -28,6 +28,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": {
             "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         },
+        "@rules_rust//rust/platform:aarch64-fuchsia": {
+            "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+        },
         "@rules_rust//rust/platform:aarch64-linux-android": {
             "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         },
@@ -71,6 +74,9 @@ rust_library(
             "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         },
         "@rules_rust//rust/platform:x86_64-apple-ios": {
+            "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+        },
+        "@rules_rust//rust/platform:x86_64-fuchsia": {
             "@cui__errno-0.2.8//:errno": "libc_errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         },
         "@rules_rust//rust/platform:x86_64-linux-android": {
@@ -127,6 +133,10 @@ rust_library(
             "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@cui__errno-0.2.8//:errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+            "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@cui__errno-0.2.8//:errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
             "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         ],
@@ -210,6 +220,10 @@ rust_library(
             "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@cui__errno-0.2.8//:errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+            "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@cui__errno-0.2.8//:errno",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
             "@cui__libc-0.2.139//:libc",  # cfg(any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))))
         ],
