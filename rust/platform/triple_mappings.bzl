@@ -206,7 +206,7 @@ def cpu_arch_constraints_from_triple(triple):
 
     Args:
         triple (triple): The triple struct
-    
+
     Returns:
         List: A list of labels to constraint values
     """
