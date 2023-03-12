@@ -3,7 +3,7 @@
 mod dependency;
 mod metadata_annotation;
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::io::BufRead;
@@ -411,7 +411,6 @@ impl FeatureGenerator {
             let output = self
                 .cargo_bin
                 .command()
-                // .output().with_context()
                 .current_dir(manifest_dir)
                 .arg("tree")
                 .arg("--locked")
@@ -427,18 +426,26 @@ impl FeatureGenerator {
                 .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
                 .spawn()
-                .expect("something went wrong with child");
+                .with_context(|| {
+                    format!(
+                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
             target_to_child.insert(target, output);
         }
         let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
         for (target, child) in target_to_child.into_iter() {
             let output = child
                 .wait_with_output()
-                .expect(&format!(
-                    "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
-                    target,
-                    manifest_path.display()
-                ));
+                .with_context(|| {
+                    format!(
+                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
             if !output.status.success() {
                 eprintln!("{}", String::from_utf8_lossy(&output.stdout));
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));
