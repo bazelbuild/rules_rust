@@ -425,6 +425,7 @@ impl FeatureGenerator {
                 .arg(target)
                 .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
                 .spawn()
                 .with_context(|| {
                     format!(
