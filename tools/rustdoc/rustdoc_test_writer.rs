@@ -164,6 +164,14 @@ fn expand_params_file(mut options: Options) -> Options {
     options
 }
 
+/// Escapes a string for a single-quoted string in a bash script.
+///
+/// This is pretty simple with single quotes, which escape everything except other single quotes.
+/// We handle those by switching to a double-quoted string for that character.
+fn escape_string_in_single_quoted_bash(s: &str) -> String {
+    s.replace('\'', "'\"'\"'")
+}
+
 /// Write a unix compatible test runner
 fn write_test_runner_unix(
     path: &Path,
@@ -182,7 +190,10 @@ fn write_test_runner_unix(
         "exec env - \\".to_owned(),
     ];
 
-    content.extend(env.iter().map(|(key, val)| format!("{key}='{val}' \\")));
+    content.extend(
+        env.iter()
+            .map(|(key, val)| format!("{key}='{}' \\", escape_string_in_single_quoted_bash(val))),
+    );
 
     let argv_str = argv
         .iter()
@@ -194,13 +205,44 @@ fn write_test_runner_unix(
                 .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
             stripped_arg
         })
-        .map(|arg| format!("'{arg}'"))
+        .map(|arg| format!("'{}'", escape_string_in_single_quoted_bash(&arg)))
         .collect::<Vec<String>>()
         .join(" ");
 
     content.extend(vec![argv_str, "".to_owned()]);
 
     fs::write(path, content.join("\n")).expect("Failed to write test runner");
+}
+
+/// Escapes a string for a batch script to pass as an argument to powershell.
+///
+/// This is amazingly hard. All the obvious approaches that work on Unix-ish shells with quoting
+/// are broken in various ways. Turns out that all Windows wants to do with the strings you pass is
+/// concatenate them with spaces, so the best approach is to escape every (!) special character and
+/// not qoute anything (because the different layers interpret quotes in incompatible ways that
+/// result in no universal cross-version-compatible solution).
+///
+/// I found https://stackoverflow.com/a/31413730 and
+/// https://learn.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+/// very helpful as references.
+fn escape_string_for_powershell_from_bash_windows(s: &str) -> String {
+    let mut s: String = s.into();
+    // Now escape various special characters so cmd.exe will pass them through.
+    // Note that `'^'` being first is very important or we'll over-escape.
+    for character in &['^', '(', ')', '%', '!', '<', '>', '&'] {
+        s = s.replace(*character, &format!("^{character}"));
+    }
+    s = s.replace('"', "\\`^\\\"");
+    s
+}
+
+/// Quotes a string for powershell.
+///
+/// This is harder than it sounds. The docs claim that `''` works to escape a single quote inside a
+/// single-quoted string, but that doesn't seem to work.
+fn quote_string_for_powershell_windows(s: &str) -> String {
+    // TODO(bazelbuild/rules_rust#1877): Figure out how to escape single quotes.
+    format!("'{s}'")
 }
 
 /// Write a windows compatible test runner
@@ -212,7 +254,9 @@ fn write_test_runner_windows(
 ) {
     let env_str = env
         .iter()
-        .map(|(key, val)| format!("$env:{key}='{val}'"))
+        // This probably has issues with some weird things in the key, but I'm not smart enough to
+        // make powershell behave for environment variable keys.
+        .map(|(key, val)| format!("$env:{key}={}", quote_string_for_powershell_windows(val)))
         .collect::<Vec<String>>()
         .join(" ; ");
 
@@ -226,7 +270,7 @@ fn write_test_runner_windows(
                 .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
             stripped_arg
         })
-        .map(|arg| format!("'{arg}'"))
+        .map(|arg| quote_string_for_powershell_windows(&arg))
         .collect::<Vec<String>>()
         .join(" ");
 
@@ -239,7 +283,7 @@ fn write_test_runner_windows(
         "powershell.exe -c \"if (!(Test-Path .\\external)) { New-Item -Path .\\external -ItemType SymbolicLink -Value ..\\ }\""
             .to_owned(),
         "".to_owned(),
-        format!("powershell.exe -c \"{env_str} ; & {argv_str}\""),
+        format!("powershell.exe -c {}", escape_string_for_powershell_from_bash_windows(&format!("\"{env_str} ; {argv_str}\""))),
         "".to_owned(),
     ];
 
