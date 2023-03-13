@@ -177,7 +177,13 @@ pub fn generate_rust_project(
             for unmerged_crate in &unmerged_crates {
                 let mut path = vec![];
                 if let Some(cycle) = detect_cycle(unmerged_crate, &crate_map, &mut path) {
-                    log::warn!("Cycle detected: {:?}", cycle.iter().map(|c| c.display_name.to_string()).collect::<Vec<String>>());
+                    log::warn!(
+                        "Cycle detected: {:?}",
+                        cycle
+                            .iter()
+                            .map(|c| c.display_name.to_string())
+                            .collect::<Vec<String>>()
+                    );
                 }
             }
 
