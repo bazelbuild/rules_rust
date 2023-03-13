@@ -295,10 +295,10 @@ _NORMAL_DEPENDENCIES = {
             "cargo-lock": "@cui__cargo-lock-8.0.3//:cargo_lock",
             "cargo-platform": "@cui__cargo-platform-0.1.2//:cargo_platform",
             "cargo_metadata": "@cui__cargo_metadata-0.15.3//:cargo_metadata",
-            "cargo_toml": "@cui__cargo_toml-0.14.0//:cargo_toml",
-            "cfg-expr": "@cui__cfg-expr-0.13.0//:cfg_expr",
+            "cargo_toml": "@cui__cargo_toml-0.15.2//:cargo_toml",
+            "cfg-expr": "@cui__cfg-expr-0.14.0//:cfg_expr",
             "clap": "@cui__clap-4.0.32//:clap",
-            "crates-index": "@cui__crates-index-0.18.11//:crates_index",
+            "crates-index": "@cui__crates-index-0.19.7//:crates_index",
             "hex": "@cui__hex-0.4.3//:hex",
             "normpath": "@cui__normpath-1.0.1//:normpath",
             "pathdiff": "@cui__pathdiff-0.2.1//:pathdiff",
@@ -311,7 +311,7 @@ _NORMAL_DEPENDENCIES = {
             "tempfile": "@cui__tempfile-3.3.0//:tempfile",
             "tera": "@cui__tera-1.17.1//:tera",
             "textwrap": "@cui__textwrap-0.16.0//:textwrap",
-            "toml": "@cui__toml-0.5.10//:toml",
+            "toml": "@cui__toml-0.7.2//:toml",
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -371,7 +371,7 @@ _NORMAL_DEV_ALIASES = {
 _PROC_MACRO_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "indoc": "@cui__indoc-1.0.8//:indoc",
+            "indoc": "@cui__indoc-2.0.1//:indoc",
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -455,25 +455,25 @@ _CONDITIONS = {
     "cfg(all(any(target_os = \"android\", target_os = \"linux\"), any(rustix_use_libc, miri, not(all(target_os = \"linux\", any(target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\"), all(target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"powerpc64\", target_arch = \"riscv64\", target_arch = \"mips\", target_arch = \"mips64\"))))))))": ["aarch64-linux-android", "armv7-linux-androideabi", "i686-linux-android", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "x86_64-linux-android"],
     "cfg(all(not(rustix_use_libc), not(miri), target_os = \"linux\", any(target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\"), all(target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"powerpc64\", target_arch = \"riscv64\", target_arch = \"mips\", target_arch = \"mips64\")))))": ["aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-unknown-linux-gnueabi", "i686-unknown-linux-gnu", "x86_64-unknown-linux-gnu"],
     "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))": ["aarch64-unknown-linux-gnu"],
-    "cfg(any(rustix_use_libc, miri, not(all(target_os = \"linux\", any(target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\"), all(target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"powerpc64\", target_arch = \"riscv64\", target_arch = \"mips\", target_arch = \"mips64\")))))))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-pc-windows-msvc", "armv7-linux-androideabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd"],
-    "cfg(any(target_arch = \"aarch64\", target_arch = \"x86_64\", target_arch = \"x86\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(any(target_os = \"linux\", target_os = \"android\", target_os = \"windows\", target_os = \"macos\", target_os = \"ios\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\", target_os = \"dragonfly\", target_os = \"solaris\", target_os = \"illumos\", target_os = \"fuchsia\", target_os = \"redox\", target_os = \"cloudabi\", target_os = \"haiku\", target_os = \"vxworks\", target_os = \"emscripten\", target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(any(rustix_use_libc, miri, not(all(target_os = \"linux\", any(target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\"), all(target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"powerpc64\", target_arch = \"riscv64\", target_arch = \"mips\", target_arch = \"mips64\")))))))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "armv7-linux-androideabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd"],
+    "cfg(any(target_arch = \"aarch64\", target_arch = \"x86_64\", target_arch = \"x86\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(any(target_os = \"linux\", target_os = \"android\", target_os = \"windows\", target_os = \"macos\", target_os = \"ios\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\", target_os = \"dragonfly\", target_os = \"solaris\", target_os = \"illumos\", target_os = \"fuchsia\", target_os = \"redox\", target_os = \"cloudabi\", target_os = \"haiku\", target_os = \"vxworks\", target_os = \"emscripten\", target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(any(target_os = \"macos\", target_os = \"ios\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "i686-apple-darwin", "x86_64-apple-darwin", "x86_64-apple-ios"],
-    "cfg(any(unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(not(any(windows, target_os = \"hermit\", target_os = \"unknown\")))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
-    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(any(unix, target_os = \"wasi\"))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(not(any(windows, target_os = \"hermit\", target_os = \"unknown\")))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(not(windows))": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(target_arch = \"wasm32\")": ["wasm32-unknown-unknown", "wasm32-wasi"],
     "cfg(target_env = \"sgx\")": [],
     "cfg(target_os = \"android\")": ["aarch64-linux-android", "armv7-linux-androideabi", "i686-linux-android", "x86_64-linux-android"],
     "cfg(target_os = \"dragonfly\")": [],
-    "cfg(target_os = \"fuchsia\")": [],
+    "cfg(target_os = \"fuchsia\")": ["aarch64-fuchsia", "x86_64-fuchsia"],
     "cfg(target_os = \"haiku\")": [],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": ["wasm32-wasi"],
     "cfg(target_os = \"windows\")": ["aarch64-pc-windows-msvc", "i686-pc-windows-msvc", "x86_64-pc-windows-msvc"],
-    "cfg(unix)": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
+    "cfg(unix)": ["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "s390x-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-linux-gnu"],
     "cfg(windows)": ["aarch64-pc-windows-msvc", "i686-pc-windows-msvc", "x86_64-pc-windows-msvc"],
     "i686-pc-windows-gnu": [],
     "i686-pc-windows-msvc": ["i686-pc-windows-msvc"],
@@ -622,12 +622,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo_toml-0.14.0",
-        sha256 = "0f1204fe51a1e56042b8ec31d6407547ecd18f596b66f470dadb9abd9be9c843",
+        name = "cui__cargo_toml-0.15.2",
+        sha256 = "7f83bc2e401ed041b7057345ebc488c005efa0341d5541ce7004d30458d0090b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.14.0/download"],
-        strip_prefix = "cargo_toml-0.14.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.14.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.15.2/download"],
+        strip_prefix = "cargo_toml-0.15.2",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.15.2.bazel"),
     )
 
     maybe(
@@ -642,12 +642,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cfg-expr-0.13.0",
-        sha256 = "a327683d7499ecc47369531a679fe38acdd300e09bf8c852d08b1e10558622bd",
+        name = "cui__cfg-expr-0.14.0",
+        sha256 = "a35b255461940a32985c627ce82900867c61db1659764d3675ea81963f72a4c6",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cfg-expr/0.13.0/download"],
-        strip_prefix = "cfg-expr-0.13.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cfg-expr-0.13.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/cfg-expr/0.14.0/download"],
+        strip_prefix = "cfg-expr-0.14.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cfg-expr-0.14.0.bazel"),
     )
 
     maybe(
@@ -752,12 +752,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__crates-index-0.18.11",
-        sha256 = "599f67b56f40863598cb30450427049935d05de2e36c61d33c050f04d7ec8cf2",
+        name = "cui__crates-index-0.19.7",
+        sha256 = "51ddd986d8b0405750d3da55a36cfa5ddad74a6dbf8826dec1cae40bf1218bd4",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/crates-index/0.18.11/download"],
-        strip_prefix = "crates-index-0.18.11",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.crates-index-0.18.11.bazel"),
+        urls = ["https://crates.io/api/v1/crates/crates-index/0.19.7/download"],
+        strip_prefix = "crates-index-0.19.7",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.crates-index-0.19.7.bazel"),
     )
 
     maybe(
@@ -922,12 +922,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__git2-0.15.0",
-        sha256 = "2994bee4a3a6a51eb90c218523be382fd7ea09b16380b9312e9dbe955ff7c7d1",
+        name = "cui__git2-0.16.1",
+        sha256 = "ccf7f68c2995f392c49fffb4f95ae2c873297830eb25c6bc4c114ce8f4562acc",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/git2/0.15.0/download"],
-        strip_prefix = "git2-0.15.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.git2-0.15.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/git2/0.16.1/download"],
+        strip_prefix = "git2-0.16.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.git2-0.16.1.bazel"),
     )
 
     maybe(
@@ -1052,12 +1052,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__indoc-1.0.8",
-        sha256 = "da2d6f23ffea9d7e76c53eee25dfb67bcd8fde7f1198b0855350698c9f07c780",
+        name = "cui__indexmap-1.9.2",
+        sha256 = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/indoc/1.0.8/download"],
-        strip_prefix = "indoc-1.0.8",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indoc-1.0.8.bazel"),
+        urls = ["https://crates.io/api/v1/crates/indexmap/1.9.2/download"],
+        strip_prefix = "indexmap-1.9.2",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indexmap-1.9.2.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__indoc-2.0.1",
+        sha256 = "9f2cb48b81b1dc9f39676bf99f5499babfec7cd8fe14307f7b3d747208fb5690",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/indoc/2.0.1/download"],
+        strip_prefix = "indoc-2.0.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indoc-2.0.1.bazel"),
     )
 
     maybe(
@@ -1142,12 +1152,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__libgit2-sys-0.14.1-1.5.0",
-        sha256 = "4a07fb2692bc3593bda59de45a502bb3071659f2c515e28c71e728306b038e17",
+        name = "cui__libgit2-sys-0.14.2-1.5.1",
+        sha256 = "7f3d95f6b51075fe9810a7ae22c7095f12b98005ab364d8544797a825ce946a4",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libgit2-sys/0.14.1+1.5.0/download"],
-        strip_prefix = "libgit2-sys-0.14.1+1.5.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.libgit2-sys-0.14.1+1.5.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/libgit2-sys/0.14.2+1.5.1/download"],
+        strip_prefix = "libgit2-sys-0.14.2+1.5.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.libgit2-sys-0.14.2+1.5.1.bazel"),
     )
 
     maybe(
@@ -1702,6 +1712,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__serde_spanned-0.6.1",
+        sha256 = "0efd8caf556a6cebd3b285caf480045fcc1ac04f6bd786b09a6f11af30c4fcf4",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/serde_spanned/0.6.1/download"],
+        strip_prefix = "serde_spanned-0.6.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.serde_spanned-0.6.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__serde_starlark-0.1.10",
         sha256 = "bd25c72b146e4248cfc7c45d1e12b9d1f01fc45ac698210b1be2e9cefad75452",
         type = "tar.gz",
@@ -1752,16 +1772,6 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__smartstring-1.0.1",
-        sha256 = "3fb72c633efbaa2dd666986505016c32c3044395ceaf881518399d2f4127ee29",
-        type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/smartstring/1.0.1/download"],
-        strip_prefix = "smartstring-1.0.1",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.smartstring-1.0.1.bazel"),
-    )
-
-    maybe(
-        http_archive,
         name = "cui__smawk-0.3.1",
         sha256 = "f67ad224767faa3c7d8b6d91985b78e70a1324408abcb1cfcc2be4c06bc06043",
         type = "tar.gz",
@@ -1772,22 +1782,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__smol_str-0.1.24",
+        sha256 = "fad6c857cbab2627dcf01ec85a623ca4e7dcb5691cbaa3d7fb7653671f0d09c9",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/smol_str/0.1.24/download"],
+        strip_prefix = "smol_str-0.1.24",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.smol_str-0.1.24.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__spectral-0.6.0",
         sha256 = "ae3c15181f4b14e52eeaac3efaeec4d2764716ce9c86da0c934c3e318649c5ba",
         type = "tar.gz",
         urls = ["https://crates.io/api/v1/crates/spectral/0.6.0/download"],
         strip_prefix = "spectral-0.6.0",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.spectral-0.6.0.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cui__static_assertions-1.1.0",
-        sha256 = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f",
-        type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/static_assertions/1.1.0/download"],
-        strip_prefix = "static_assertions-1.1.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.static_assertions-1.1.0.bazel"),
     )
 
     maybe(
@@ -1908,6 +1918,36 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/toml/0.5.10/download"],
         strip_prefix = "toml-0.5.10",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.toml-0.5.10.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__toml-0.7.2",
+        sha256 = "f7afcae9e3f0fe2c370fd4657108972cbb2fa9db1b9f84849cefd80741b01cb6",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/toml/0.7.2/download"],
+        strip_prefix = "toml-0.7.2",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.toml-0.7.2.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__toml_datetime-0.6.1",
+        sha256 = "3ab8ed2edee10b50132aed5f331333428b011c99402b5a534154ed15746f9622",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/toml_datetime/0.6.1/download"],
+        strip_prefix = "toml_datetime-0.6.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.toml_datetime-0.6.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__toml_edit-0.19.5",
+        sha256 = "7082a95d48029677a28f181e5f6422d0c8339ad8396a39d3f33d62a90c1f6c30",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/toml_edit/0.19.5/download"],
+        strip_prefix = "toml_edit-0.19.5",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.toml_edit-0.19.5.bazel"),
     )
 
     maybe(
@@ -2268,4 +2308,14 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/windows_x86_64_msvc/0.42.1/download"],
         strip_prefix = "windows_x86_64_msvc-0.42.1",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.windows_x86_64_msvc-0.42.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__winnow-0.3.5",
+        sha256 = "ee7b2c67f962bf5042bfd8b6a916178df33a26eec343ae064cb8e069f638fa6f",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/winnow/0.3.5/download"],
+        strip_prefix = "winnow-0.3.5",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.winnow-0.3.5.bazel"),
     )

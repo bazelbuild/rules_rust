@@ -52,6 +52,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
         ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
+        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
         ],
@@ -98,6 +101,9 @@ rust_library(
             "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@cui__libc-0.2.139//:libc",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

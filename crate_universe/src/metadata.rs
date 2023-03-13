@@ -401,7 +401,7 @@ impl FeatureGenerator {
         platform_triples: &BTreeSet<String>,
     ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
         let manifest_dir = manifest_path.parent().unwrap();
-        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
+        let mut target_to_child = BTreeMap::new();
         for target in platform_triples {
             // We use `cargo tree` here because `cargo metadata` doesn't report
             // back target-specific features (enabled with `resolver = "2"`).
@@ -424,12 +424,29 @@ impl FeatureGenerator {
                 .arg("--target")
                 .arg(target)
                 .env("RUSTC", &self.rustc_bin)
-                .output()
-                .context(format!(
-                    "Error running cargo to compute features for target '{}', manifest path '{}'",
-                    target,
-                    manifest_path.display()
-                ))?;
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .with_context(|| {
+                    format!(
+                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
+            target_to_child.insert(target, output);
+        }
+        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
+        for (target, child) in target_to_child.into_iter() {
+            let output = child
+                .wait_with_output()
+                .with_context(|| {
+                    format!(
+                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
             if !output.status.success() {
                 eprintln!("{}", String::from_utf8_lossy(&output.stdout));
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));

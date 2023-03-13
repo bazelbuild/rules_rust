@@ -27,7 +27,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = ["std"],
+    crate_features = [
+        "std",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
@@ -49,6 +51,9 @@ rust_library(
             "@cui__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@cui__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@cui__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
@@ -91,6 +96,9 @@ rust_library(
             "@cui__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@cui__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@cui__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
