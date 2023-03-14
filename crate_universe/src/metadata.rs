@@ -136,8 +136,7 @@ impl Cargo {
         let version_str = full_version.split(' ').nth(1);
         if let Some(version_str) = version_str {
             let version = Version::parse(version_str).context("Failed to parse cargo version")?;
-            return Ok(version
-                >= Version::parse("1.68.0").expect("1.68.0 is a known-to-parse semver version"));
+            return Ok(version.major >= 1 && version.minor >= 68);
         }
         bail!("Couldn't parse cargo version");
     }
