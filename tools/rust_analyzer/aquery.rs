@@ -4,6 +4,7 @@ use std::option::Option;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+use std::iter::FromIterator;
 
 use anyhow::Context;
 use serde::Deserialize;
@@ -160,40 +161,10 @@ fn path_from_fragments(
 
 /// Read all crate specs, deduplicating crates with the same ID. This happens when
 /// a rust_test depends on a rust_library, for example.
+/// GL: Currently this does nothing, because of situations in which cycles are encountered
+/// Upstream issue: https://github.com/bazelbuild/rules_rust/issues/1589
 fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeSet<CrateSpec>> {
-    let mut consolidated_specs: BTreeMap<String, CrateSpec> = BTreeMap::new();
-    for mut spec in crate_specs.into_iter() {
-        log::debug!("{:?}", spec);
-        if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
-            existing.deps.extend(spec.deps);
-
-            spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
-            existing.cfg.extend(spec.cfg);
-
-            // display_name should match the library's crate name because Rust Analyzer
-            // seems to use display_name for matching crate entries in rust-project.json
-            // against symbols in source files. For more details, see
-            // https://github.com/bazelbuild/rules_rust/issues/1032
-            if spec.crate_type == "rlib" {
-                existing.display_name = spec.display_name;
-                existing.crate_type = "rlib".into();
-            }
-
-            // For proc-macro crates that exist within the workspace, there will be a
-            // generated crate-spec in both the fastbuild and opt-exec configuration.
-            // Prefer proc macro paths with an opt-exec component in the path.
-            if let Some(dylib_path) = spec.proc_macro_dylib_path.as_ref() {
-                const OPT_PATH_COMPONENT: &str = "-opt-exec-";
-                if dylib_path.contains(OPT_PATH_COMPONENT) {
-                    existing.proc_macro_dylib_path.replace(dylib_path.clone());
-                }
-            }
-        } else {
-            consolidated_specs.insert(spec.crate_id.clone(), spec);
-        }
-    }
-
-    Ok(consolidated_specs.into_values().collect())
+    Ok(BTreeSet::from_iter(crate_specs))
 }
 
 #[cfg(test)]

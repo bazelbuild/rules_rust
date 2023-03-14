@@ -1,5 +1,17 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flag", "extra_exec_rustc_flags", "extra_rustc_flag", "extra_rustc_flags", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
+load(
+    "//rust:defs.bzl",
+    "capture_clippy_output",
+    "clippy_flags",
+    "error_format",
+    "extra_exec_rustc_flag",
+    "extra_exec_rustc_flags",
+    "extra_rustc_flag",
+    "extra_rustc_flags",
+    "is_proc_macro_dep",
+    "is_proc_macro_dep_enabled",
+    "output_diagnostics",
+)
 
 exports_files(["LICENSE"])
 
@@ -15,6 +27,13 @@ bzl_library(
 error_format(
     name = "error_format",
     build_setting_default = "human",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be changed from the command line to generate rustc diagnostics.
+output_diagnostics(
+    name = "output_diagnostics",
+    build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 
@@ -73,6 +92,15 @@ extra_exec_rustc_flags(
 extra_exec_rustc_flag(
     name = "extra_exec_rustc_flag",
     build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to override the prefix for source paths rustc embeds into build artifacts.
+# Setting this setting to a fixed value (e.g., "/source/") can help achieve reproducible builds and
+# improve cache utilization.
+source_path_prefix(
+    name = "source_path_prefix",
+    build_setting_default = ".",
     visibility = ["//visibility:public"],
 )
 

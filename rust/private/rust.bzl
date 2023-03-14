@@ -65,6 +65,9 @@ def _assert_correct_dep_mapping(ctx):
                 ),
             )
 
+def _rustc_output_name(name):
+    return name + ".rustc-output"
+
 def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
     """See https://github.com/bazelbuild/rules_rust/issues/405
 
@@ -276,14 +279,32 @@ def _rust_library_common(ctx, crate_type):
         toolchain,
         output_hash,
     )
-    rust_lib = ctx.actions.declare_file(rust_lib_name)
 
-    rust_metadata = None
-    if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
-        rust_metadata = ctx.actions.declare_file(
-            paths.replace_extension(rust_lib_name, ".rmeta"),
+    rust_lib = ctx.actions.declare_file(rust_lib_name)
+    rust_lib_build_output = None
+    output_diagnostics = ctx.attr._output_diagnostics
+    if ctx.attr._process_wrapper and output_diagnostics:
+        rust_lib_build_output = ctx.actions.declare_file(
+            _rustc_output_name(rust_lib_name),
             sibling = rust_lib,
         )
+
+
+    rust_metadata = None
+    rust_metadata_build_output = None
+    if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
+        rust_metadata_name = paths.replace_extension(rust_lib_name, ".rmeta")
+
+        rust_metadata = ctx.actions.declare_file(
+            rust_metadata_name,
+            sibling = rust_lib,
+        )
+        if output_diagnostics:
+            rust_metadata_build_output = ctx.actions.declare_file(
+                _rustc_output_name(rust_metadata_name),
+                sibling = rust_metadata,
+            )
+
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
@@ -301,7 +322,9 @@ def _rust_library_common(ctx, crate_type):
             proc_macro_deps = depset(proc_macro_deps),
             aliases = ctx.attr.aliases,
             output = rust_lib,
+            rust_lib_rustc_output = rust_lib_build_output,
             metadata = rust_metadata,
+            rust_metadata_rustc_output = rust_metadata_build_output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
@@ -607,7 +630,7 @@ _common_attrs = {
             The order that these files will be processed is unspecified, so
             multiple definitions of a particular variable are discouraged.
 
-            Note that the variables here are subject to 
+            Note that the variables here are subject to
             [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status)
             stamping should the `stamp` attribute be enabled. Stamp variables
             should be wrapped in brackets in order to be resolved. E.g.
@@ -620,7 +643,7 @@ _common_attrs = {
             List of compiler flags passed to `rustc`.
 
             These strings are subject to Make variable expansion for predefined
-            source/output path variables like `$location`, `$execpath`, and 
+            source/output path variables like `$location`, `$execpath`, and
             `$rootpath`. This expansion is useful if you wish to pass a generated
             file of arguments to rustc: `@$(location //package:target)`.
         """),
@@ -660,6 +683,9 @@ _common_attrs = {
     "_error_format": attr.label(
         default = Label("//:error_format"),
     ),
+    "_output_diagnostics": attr.label(
+        default = Label("//:output_diagnostics"),
+    ),
     "_extra_exec_rustc_flag": attr.label(
         default = Label("//:extra_exec_rustc_flag"),
     ),
@@ -672,6 +698,9 @@ _common_attrs = {
     "_extra_rustc_flags": attr.label(
         default = Label("//:extra_rustc_flags"),
     ),
+    "_source_path_prefix": attr.label(
+        default = Label("//:source_path_prefix"),
+    ),
     "_import_macro_dep": attr.label(
         default = Label("//util/import"),
         cfg = "exec",
@@ -681,6 +710,9 @@ _common_attrs = {
     ),
     "_is_proc_macro_dep_enabled": attr.label(
         default = Label("//:is_proc_macro_dep_enabled"),
+    ),
+    "_output_diagnostics": attr.label(
+        default = Label("//:output_diagnostics"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
@@ -732,7 +764,7 @@ _rust_test_attrs = dict({
         mandatory = False,
         default = True,
         doc = dedent("""\
-            Whether to use `libtest`. For targets using this flag, individual tests can be run by using the 
+            Whether to use `libtest`. For targets using this flag, individual tests can be run by using the
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),

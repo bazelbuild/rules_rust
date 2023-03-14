@@ -32,22 +32,29 @@ pub(crate) enum LineOutput {
 /// to write_end.
 pub(crate) fn process_output<F>(
     read_end: &mut dyn Read,
-    write_end: &mut dyn Write,
+    output_write_end: &mut dyn Write,
+    opt_file_write_end: &mut Option<std::fs::File>,
     mut process_line: F,
 ) -> io::Result<()>
 where
     F: FnMut(String) -> LineOutput,
 {
     let mut reader = io::BufReader::new(read_end);
-    let mut writer = io::LineWriter::new(write_end);
+    let mut output_writer = io::LineWriter::new(output_write_end);
+    let mut file_writer = opt_file_write_end.as_mut().map(io::LineWriter::new);
+
+
     loop {
         let mut line = String::new();
         let read_bytes = reader.read_line(&mut line)?;
         if read_bytes == 0 {
             break;
         }
+        if let Some(ref mut file) = file_writer {
+            file.write_all(line.as_bytes())?
+        }
         match process_line(line) {
-            LineOutput::Message(to_write) => writer.write_all(to_write.as_bytes())?,
+            LineOutput::Message(to_write) => output_writer.write_all(to_write.as_bytes())?,
             LineOutput::Skip => {}
             LineOutput::Terminate => return Ok(()),
         };

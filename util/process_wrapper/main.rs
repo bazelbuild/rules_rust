@@ -89,6 +89,16 @@ fn main() {
 
     let mut child_stderr = child.stderr.take().unwrap();
 
+    let mut output_file: Box<Option<std::fs::File>> =
+        Box::new(opts.output_file.clone().map(|output_file_name| {
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(output_file_name)
+                .expect("process wrapper error: unable to open output_file")
+        }));
+
     let mut was_killed = false;
     let result = if let Some(format) = opts.rustc_output_format {
         let quit_on_rmeta = opts.rustc_quit_on_rmeta;
@@ -96,13 +106,19 @@ fn main() {
         // that we emitted a metadata file.
         let mut me = false;
         let metadata_emitted = &mut me;
-        let result = process_output(&mut child_stderr, stderr.as_mut(), move |line| {
-            if quit_on_rmeta {
-                rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
-            } else {
-                rustc::process_json(line, format)
-            }
-        });
+        let result = process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| {
+                if quit_on_rmeta {
+                    rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+                } else {
+                    rustc::process_json(line, format)
+                }
+            },
+        );
+
         if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
             // We can safely ignore the Result from kill() as we don't care if the process already terminated.
@@ -112,7 +128,12 @@ fn main() {
         result
     } else {
         // Process output normally by forwarding stderr
-        process_output(&mut child_stderr, stderr.as_mut(), LineOutput::Message)
+        process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            LineOutput::Message,
+        )
     };
     result.expect("process wrapper error: failed to process stderr");
 

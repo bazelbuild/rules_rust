@@ -53,6 +53,11 @@ ErrorFormatInfo = provider(
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
 )
 
+OutputDiagnosticsInfo = provider(
+    doc = "Save json diagnostics form rustc",
+    fields = {"output_diagnostics": "(bool)"},
+)
+
 ExtraRustcFlagsInfo = provider(
     doc = "Pass each value as an additional flag to non-exec rustc invocations",
     fields = {"extra_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
@@ -89,6 +94,11 @@ is_proc_macro_dep_enabled = rule(
     doc = "Enables the feature to record if a library is a transitive dependency of a proc-macro.",
     implementation = _is_proc_macro_dep_enabled_impl,
     build_setting = config.bool(flag = True),
+)
+
+SourcePathPrefixInfo = provider(
+    doc = "Remap source path prefixes in all output, including compiler diagnostics, debug information, macro expansions to a path",
+    fields = {"source_path_prefix": "string The path to substitute ${pwd} for"},
 )
 
 def _get_rustc_env(attr, toolchain, crate_name):
@@ -733,7 +743,7 @@ def construct_arguments(
         force_all_deps_direct = False,
         force_link = False,
         stamp = False,
-        remap_path_prefix = "",
+        remap_path_prefix = True,
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False):
@@ -762,7 +772,6 @@ def construct_arguments(
         force_link (bool, optional): Whether to add link flags to the command regardless of `emit`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
-        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to None, no prefix will be set.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
@@ -876,6 +885,10 @@ def construct_arguments(
     if build_metadata:
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+        if crate_info.rust_metadata_rustc_output:
+            process_wrapper_flags.add("--output-file", crate_info.rust_metadata_rustc_output.path)
+    elif crate_info.rust_lib_rustc_output:
+        process_wrapper_flags.add("--output-file", crate_info.rust_lib_rustc_output.path)
 
     rustc_flags.add("--error-format=" + error_format)
 
@@ -899,8 +912,8 @@ def construct_arguments(
     rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
 
     # For determinism to help with build distribution and such
-    if remap_path_prefix != None:
-        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+    if remap_path_prefix and hasattr(ctx.attr, "_source_path_prefix"):
+        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(ctx.attr._source_path_prefix[SourcePathPrefixInfo].source_path_prefix))
 
     if emit:
         rustc_flags.add("--emit=" + ",".join(emit_with_paths))
@@ -1047,6 +1060,8 @@ def rustc_compile_action(
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
     build_metadata = getattr(crate_info, "metadata", None)
+    rust_lib_rustc_output = getattr(crate_info, "rust_lib_rustc_output", None)
+    rust_metadata_rustc_output = getattr(crate_info, "rust_metadata_rustc_output", None)
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -1125,7 +1140,7 @@ def rustc_compile_action(
         build_flags_files = build_flags_files,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
-        use_json_output = bool(build_metadata),
+        use_json_output = bool(build_metadata) or bool(rust_lib_rustc_output) or bool(rust_metadata_rustc_output),
     )
 
     args_metadata = None
@@ -1185,6 +1200,8 @@ def rustc_compile_action(
 
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
+    if rust_lib_rustc_output:
+        action_outputs.append(rust_lib_rustc_output)
 
     # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
     # types that benefit from having debug information in a separate file.
@@ -1218,7 +1235,8 @@ def rustc_compile_action(
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs,
-                outputs = [build_metadata],
+                outputs = [build_metadata] + [x for x in [rust_metadata_rustc_output] if x],
+
                 env = env,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
@@ -1356,12 +1374,25 @@ def rustc_compile_action(
 
     if toolchain.target_arch != "wasm32":
         providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+
+    output_group_info = {}
+
     if pdb_file:
-        providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
+        output_group_info["pdb_file"] = depset([pdb_file])
     if dsym_folder:
-        providers.append(OutputGroupInfo(dsym_folder = depset([dsym_folder])))
+        output_group_info["dsym_folder"] = depset([dsym_folder])
     if build_metadata:
-        providers.append(OutputGroupInfo(build_metadata = depset([build_metadata])))
+        output_group_info["build_metadata"] = depset([build_metadata])
+    if build_metadata:
+        output_group_info["build_metadata"] = depset([build_metadata])
+        if rust_metadata_rustc_output:
+            output_group_info["rust_metadata_rustc_output"] = depset([rust_metadata_rustc_output])
+
+    if rust_lib_rustc_output:
+        output_group_info["rust_lib_rustc_output"] = depset([rust_lib_rustc_output])
+
+    if output_group_info:
+        providers.append(OutputGroupInfo(**output_group_info))
 
     return providers
 
@@ -1872,6 +1903,30 @@ error_format = rule(
     build_setting = config.string(flag = True),
 )
 
+def _output_diagnostics_impl(ctx):
+    """Implementation of the `output_diagnostics` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the OutputDiagnosticsInfo provider
+    """
+    return [OutputDiagnosticsInfo(output_diagnostics = ctx.build_setting_value)]
+
+output_diagnostics = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//:output_diagnostics` " +
+        "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
+        "These are accessible via the " +
+        "`rust_metadata_rustc_output`(for pipelined compilation) and `rust_lib_rustc_output` output groups. " +
+        "You can find these either by using something like `find <dir> -name '*.rustc-output'` or by using " +
+        "`bazel cquery --output=files`."
+    ),
+    implementation = _output_diagnostics_impl,
+    build_setting = config.bool(flag = True),
+)
+
 def _extra_rustc_flags_impl(ctx):
     return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
 
@@ -1897,6 +1952,19 @@ extra_rustc_flag = rule(
     ),
     implementation = _extra_rustc_flag_impl,
     build_setting = config.string(flag = True, allow_multiple = True),
+)
+
+def _source_path_prefix_impl(ctx):
+    return SourcePathPrefixInfo(source_path_prefix = ctx.build_setting_value)
+
+source_path_prefix = rule(
+    doc = (
+        "Specify the path for the compiler to remap the source path prefix in all output, including compiler diagnostics," +
+        "debug information, and macro expansions with `--@rules_rust//:static_path_prefix`." +
+        "Setting the prefix a fixed value enables reproducible builds that do not depend on the location of the source directory."
+    ),
+    implementation = _source_path_prefix_impl,
+    build_setting = config.string(flag = True),
 )
 
 def _extra_exec_rustc_flags_impl(ctx):
