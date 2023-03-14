@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
 use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator};
+use crate::utils;
 use crate::utils::starlark::{Label, SelectList};
 
 use self::cargo_config::CargoConfig;
@@ -298,31 +299,25 @@ impl WorkspaceMetadata {
             .map(|url| {
                 // Ensure the correct registry is mapped based on the give Cargo config.
                 let index_url = if let Some(config) = &cargo_config {
-                    if let Some(source) = config.get_source_from_url(&url) {
-                        if let Some(replace_with) = &source.replace_with {
-                            if let Some(replacement) = config.get_registry_index_url_by_name(replace_with) {
-                                replacement
-                            } else {
-                                bail!("Tried to replace registry {} with registry named {} but didn't have metadata about the replacement", url, replace_with);
-                            }
-                        } else {
-                            &url
-                        }
-                    } else {
-                        &url
-                    }
+                    config.resolve_replacement_url(&url)?
                 } else {
                     &url
                 };
-                let index = if cargo.use_sparse_registries_for_crates_io()? && index_url == "https://github.com/rust-lang/crates.io-index" {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url("sparse+https://index.crates.io/")?)
+                let index = if cargo.use_sparse_registries_for_crates_io()?
+                    && index_url == utils::CRATES_IO_INDEX_URL
+                {
+                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
+                        "sparse+https://index.crates.io/",
+                    )?)
                 } else if index_url.starts_with("sparse+https://") {
                     CrateIndexLookup::Http(crates_index::SparseIndex::from_url(index_url)?)
                 } else {
                     let index = {
                         // Load the index for the current url
-                        let index = crates_index::Index::from_url(index_url)
-                            .with_context(|| format!("Failed to load index for url: {index_url}"))?;
+                        let index =
+                            crates_index::Index::from_url(index_url).with_context(|| {
+                                format!("Failed to load index for url: {index_url}")
+                            })?;
 
                         // Ensure each index has a valid index config
                         index.index_config().with_context(|| {

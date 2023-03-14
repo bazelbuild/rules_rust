@@ -49,3 +49,105 @@ impl CrateIndexLookup {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::splicing::crate_index_lookup::CrateIndexLookup;
+    use semver::Version;
+    use std::ffi::OsString;
+
+    // TODO: Avoid global state (env vars) in these tests.
+    // TODO: These should be separate tests methods but they have conflicting state.
+
+    #[test]
+    fn sparse_index() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        {
+            let _e = EnvVarResetter::set(
+                "CARGO_HOME",
+                runfiles.rlocation(
+                    "rules_rust/crate_universe/test_data/crate_indexes/lazy_static/cargo_home",
+                ),
+            );
+
+            let index = CrateIndexLookup::Http(
+                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap(),
+            );
+            let source_info = index
+                .get_source_info(&cargo_lock::Package {
+                    name: "lazy_static".parse().unwrap(),
+                    version: Version::parse("1.4.0").unwrap(),
+                    source: None,
+                    checksum: None,
+                    dependencies: Vec::new(),
+                    replace: None,
+                })
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                source_info.url,
+                "https://crates.io/api/v1/crates/lazy_static/1.4.0/download"
+            );
+            assert_eq!(
+                source_info.sha256,
+                "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+            );
+        }
+        {
+            let _e = EnvVarResetter::set("CARGO_HOME", runfiles.rlocation("rules_rust/crate_universe/test_data/crate_indexes/rewritten_lazy_static/cargo_home"));
+
+            let index = CrateIndexLookup::Http(
+                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap(),
+            );
+            let source_info = index
+                .get_source_info(&cargo_lock::Package {
+                    name: "lazy_static".parse().unwrap(),
+                    version: Version::parse("1.4.0").unwrap(),
+                    source: None,
+                    checksum: None,
+                    dependencies: Vec::new(),
+                    replace: None,
+                })
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                source_info.url,
+                "https://some-mirror.com/api/v1/crates/lazy_static/1.4.0/download"
+            );
+            assert_eq!(
+                source_info.sha256,
+                "fffffffffbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+            );
+        }
+    }
+
+    struct EnvVarResetter {
+        key: OsString,
+        value: Option<OsString>,
+    }
+
+    impl EnvVarResetter {
+        fn set<K: Into<OsString>, V: Into<OsString>>(key: K, value: V) -> EnvVarResetter {
+            let key = key.into();
+            let value = value.into();
+            let old_value = std::env::var_os(&key);
+
+            std::env::set_var(&key, value);
+
+            EnvVarResetter {
+                key,
+                value: old_value,
+            }
+        }
+    }
+
+    impl Drop for EnvVarResetter {
+        fn drop(&mut self) {
+            if let Some(old_value) = self.value.as_ref() {
+                std::env::set_var(&self.key, old_value);
+            } else {
+                std::env::remove_var(&self.key);
+            }
+        }
+    }
+}
