@@ -69,6 +69,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "s390": None,
     "s390x": "s390x",
     "thumbv6m": "armv6-m",
+    "thumbv7em": "armv7e-m",
     "thumbv7m": "armv7-m",
     "wasm32": None,
     "x86_64": "x86_64",
@@ -81,6 +82,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "darwin": "osx",
     "dragonfly": None,
     "eabi": "none",
+    "eabihf": "none",
     "emscripten": None,
     "freebsd": "freebsd",
     "fuchsia": "fuchsia",
@@ -100,6 +102,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
     "eabi": "",
+    "eabihf": "",
     "emscripten": ".js",
     "freebsd": "",
     "fuchsia": "",
@@ -118,6 +121,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
     "eabi": ".a",
+    "eabihf": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
     "fuchsia": ".a",
@@ -133,6 +137,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
     "eabi": ".so",
+    "eabihf": ".so",
     "emscripten": ".js",
     "freebsd": ".so",
     "fuchsia": ".so",
@@ -157,6 +162,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "darwin": ["-lSystem", "-lresolv"],
     "dragonfly": ["-lpthread"],
     "eabi": [],
+    "eabihf": [],
     "emscripten": [],
     # TODO(bazelbuild/rules_cc#75):
     #
@@ -187,11 +193,24 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch):
+def cpu_arch_to_constraints(cpu_arch, *, system = None):
+    """Returns a list of contraint values which represents a triple's CPU.
+
+    Args:
+        cpu_arch (str): The architecture to match constraints for
+        system (str, optional): The system for the associated ABI value.
+
+    Returns:
+        List: A list of labels to constraint values
+    """
+    if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
+        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
-    if not plat_suffix:
-        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+    # Patch armv7e-m to mf if hardfloat abi is selected
+    if plat_suffix == "armv7e-m" and system == "eabihf":
+        plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
@@ -203,10 +222,10 @@ def vendor_to_constraints(_vendor):
     return []
 
 def system_to_constraints(system):
-    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
+    if system not in _SYSTEM_TO_BUILTIN_SYS_SUFFIX:
+        fail("System \"{}\" is not supported by rules_rust".format(system))
 
-    if not sys_suffix:
-        fail("System \"{}\" is not supported by rules_rust".format(sys_suffix))
+    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
@@ -342,7 +361,10 @@ def triple_to_constraint_set(target_triple):
     triple_struct = triple(target_triple)
 
     constraint_set = []
-    constraint_set += cpu_arch_to_constraints(triple_struct.arch)
+    constraint_set += cpu_arch_to_constraints(
+        triple_struct.arch,
+        system = triple_struct.system,
+    )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(
