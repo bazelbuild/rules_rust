@@ -193,31 +193,23 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch):
-    if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
-        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
-
-    plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
-
-    return ["@platforms//cpu:{}".format(plat_suffix)]
-
-def cpu_arch_constraints_from_triple(triple):
+def cpu_arch_to_constraints(cpu_arch, *, system = None):
     """Returns a list of contraint values which represents a triple's CPU.
 
     Args:
-        triple (triple): The triple struct
+        cpu_arch (str): The architecture to match constraints for
+        system (str, optional): The system for the associated ABI value.
 
     Returns:
         List: A list of labels to constraint values
     """
-    cpu_arch = triple.arch
     if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
         fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
 
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     # Patch armv7e-m to mf if hardfloat abi is selected
-    if plat_suffix == "armv7e-m" and triple.system == "eabihf":
+    if plat_suffix == "armv7e-m" and system == "eabihf":
         plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
@@ -369,7 +361,10 @@ def triple_to_constraint_set(target_triple):
     triple_struct = triple(target_triple)
 
     constraint_set = []
-    constraint_set += cpu_arch_constraints_from_triple(triple_struct)
+    constraint_set += cpu_arch_to_constraints(
+        triple_struct.arch,
+        system = triple_struct.system,
+    )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(
