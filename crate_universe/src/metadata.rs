@@ -563,12 +563,15 @@ where
                 })?
                 .to_owned(),
         );
-        let features = if parts[2].is_empty() {
+        let mut features = if parts[2].is_empty() {
             BTreeSet::new()
         } else {
             parts[2].split(',').map(str::to_owned).collect()
         };
-        crate_features.insert(crate_id, features);
+        crate_features
+            .entry(crate_id)
+            .or_default()
+            .append(&mut features);
     }
     Ok(crate_features)
 }
