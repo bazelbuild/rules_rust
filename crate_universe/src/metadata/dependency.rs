@@ -37,6 +37,7 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
+                .filter(|dep| is_optional_crate_enabled(node, dep, metadata))
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
@@ -110,6 +111,32 @@ impl DependencySet {
             build_deps,
             build_proc_macro_deps,
         }
+    }
+}
+
+fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetadata) -> bool {
+    let pkg = &metadata[&parent.id];
+
+    let enabled_deps: Vec<_> = pkg
+        .features
+        .iter()
+        .filter(|(pkg_feature, _)| parent.features.contains(pkg_feature))
+        .map(|(_, features)| features)
+        .flatten()
+        .filter_map(|f| f.strip_prefix("dep:"))
+        .collect();
+
+    // if the crate is marked as optional dependency, we check whether
+    // a feature prefixed with dep: is enabled
+    if let Some(toml_dep) = pkg
+        .dependencies
+        .iter()
+        .filter(|&d| d.optional)
+        .find(|&d| sanitize_module_name(&d.name) == dep.name)
+    {
+        enabled_deps.contains(&toml_dep.name.as_str())
+    } else {
+        true
     }
 }
 
