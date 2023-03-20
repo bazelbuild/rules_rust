@@ -121,8 +121,7 @@ fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetad
         .features
         .iter()
         .filter(|(pkg_feature, _)| parent.features.contains(pkg_feature))
-        .map(|(_, features)| features)
-        .flatten()
+        .flat_map(|(_, features)| features)
         .filter_map(|f| f.strip_prefix("dep:"))
         .collect();
 
