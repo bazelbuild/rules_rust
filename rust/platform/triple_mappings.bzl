@@ -243,43 +243,16 @@ def abi_to_constraints(abi, *, arch = None, system = None):
         List: A list of labels to constraint values
     """
 
-    if not abi:
-        return []
-
-    if abi == "sim":
-        if not system:
-            fail("The ABI value {} is ambiguous. Please specify a system to match the right constraints.")
-        if not arch:
-            fail("The ABI value {} is ambiguous. Please specify an architecture to match the right constraints.")
-        if system == "ios":
-            if abi == "sim":
-                return ["@build_bazel_apple_support//constraints:simulator"]
-        elif arch == "aarch64":  # Only add device for archs that have both
-            return ["@build_bazel_apple_support//constraints:device"]
+    # add constraints for iOS + watchOS simulator and device triples
+    if system in ["ios", "watchos"]:
+        if arch == "x86_64" or abi == "sim":
+            return ["@build_bazel_apple_support//constraints:simulator"]
         else:
-            return []
+            return ["@build_bazel_apple_support//constraints:device"]
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
     return []
-
-def extra_ios_constraints(triple):
-    """Add constraints specific to iOS targets.
-
-    Deprecated: Instead, use `abi_to_constraints`
-
-    Args:
-        triple: The full triple struct for the target
-
-    Returns:
-        A list of constraints to add to the target
-    """
-
-    # TODO: Simplify if https://github.com/bazelbuild/bazel/issues/11454 is fixed
-    if triple.system != "ios":
-        return []
-
-    return abi_to_constraints(triple.abi, arch = triple.arch, system = triple.system)
 
 def triple_to_system(target_triple):
     """Returns a system name for a given platform triple
