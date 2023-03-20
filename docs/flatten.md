@@ -1328,7 +1328,7 @@ a unique toolchain can be created as in the example below:
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
-    bindgen = "//my/cargo_raze:cargo_bin_wasm_bindgen",
+    bindgen = "//3rdparty/crates:wasm_bindgen_cli__bin",
 )
 
 toolchain(
@@ -1742,7 +1742,7 @@ Declare dependencies needed for proto compilation.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  `True` |
+| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.   |  `True` |
 
 
 <a id="rust_proto_transitive_repositories"></a>
