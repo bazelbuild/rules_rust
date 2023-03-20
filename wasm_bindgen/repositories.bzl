@@ -68,7 +68,7 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
             (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
     """
 
     rust_wasm_bindgen_dependencies()
