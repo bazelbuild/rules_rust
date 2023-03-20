@@ -276,7 +276,7 @@ fn feature_generator_crate_combined_features() {
 
     let runfiles = runfiles::Runfiles::create().unwrap();
     let metadata = run(
-        "crate_combined_features(",
+        "crate_combined_features",
         HashMap::from([
             (
                 runfiles
