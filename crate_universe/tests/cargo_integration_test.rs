@@ -261,3 +261,36 @@ fn feature_generator_workspace() {
 
     assert!(!metadata["metadata"]["cargo-bazel"]["features"]["wgpu 0.14.0"].is_null());
 }
+
+#[test]
+fn feature_generator_crate_combined_features() {
+    // This test case requires network access to build pull crate metadata
+    // so that we can actually run `cargo tree`. However, RBE (and perhaps
+    // other environments) disallow or don't support this. In those cases,
+    // we just skip this test case.
+    use std::net::ToSocketAddrs;
+    if "github.com:443".to_socket_addrs().is_err() {
+        eprintln!("This test case requires network access. Skipping!");
+        return;
+    }
+
+    let runfiles = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "crate_combined_features(",
+        HashMap::from([
+            (
+                runfiles
+                    .rlocation("rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.toml")
+                    .to_string_lossy()
+                    .to_string(),
+                "//:test_input".to_string(),
+            )
+        ]),
+        "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.lock",
+    );
+
+    assert_eq!(
+        metadata["metadata"]["cargo-bazel"]["features"]["js_int 0.2.2"]["common"],
+        json!(["default", "serde", "std"])
+    );
+}

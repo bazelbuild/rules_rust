@@ -1,0 +1,14 @@
+[package]
+name = "crate-combined-features"
+version = "0.1.0"
+edition = "2021" # make sure resolver=2 is enabled for this test
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+# With this dependency tree and resolver v2, `js_int` appears twice in the tree
+# with a different feature set.
+[dependencies]
+matrix-sdk = "0.6.2"
