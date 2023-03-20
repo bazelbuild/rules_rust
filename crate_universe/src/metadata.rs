@@ -667,9 +667,11 @@ mod test {
                 vec![
                     Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
                     Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
+                    Ok("|chrono v0.4.24|default,std|"),
                     Ok("|cpufeatures v0.2.1||"),
                     Ok("|libc v0.2.117|default,std|"),
                     Ok("|serde_derive v1.0.152 (proc-macro) (*)||"),
+                    Ok("|chrono v0.4.24|default,std,serde|"),
                 ]
                 .into_iter()
             )
@@ -702,6 +704,13 @@ mod test {
                         version: "1.0.152".to_owned()
                     },
                     BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "chrono".to_owned(),
+                        version: "0.4.24".to_owned()
+                    },
+                    BTreeSet::from(["default".to_owned(), "std".to_owned(), "serde".to_owned()])
                 ),
             ])
         );
