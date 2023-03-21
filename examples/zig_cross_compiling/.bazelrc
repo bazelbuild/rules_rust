@@ -1,1 +1,11 @@
+# `.bazelrc` is a Bazel configuration file.
+# https://bazel.build/docs/best-practices#bazelrc-file
+
+# Enable the use of toolchain resolution for cc toolchains
 build --incompatible_enable_cc_toolchain_resolution
+
+# Explicitly prevent matching host toolchains
+build --action_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# Report the cc toolchains being selected
+build --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'

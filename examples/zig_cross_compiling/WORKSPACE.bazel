@@ -1,21 +1,4 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-BAZEL_ZIG_CC_VERSION = "v0.9.2"
-
-http_archive(
-    name = "bazel-zig-cc",
-    sha256 = "73afa7e1af49e3dbfa1bae9362438cdc51cb177c359a6041a7a403011179d0b5",
-    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
-    urls = ["https://git.sr.ht/~motiejus/bazel-zig-cc/archive/{}.tar.gz".format(BAZEL_ZIG_CC_VERSION)],
-)
-
-load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
-
-zig_toolchains()
-
-register_toolchains(
-    "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
-)
+workspace(name = "rules_rust_example_zig_cross")
 
 local_repository(
     name = "rules_rust",
@@ -26,6 +9,30 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_regi
 
 rules_rust_dependencies()
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+BAZEL_ZIG_CC_VERSION = "1.0.1"
+
+http_archive(
+    name = "bazel-zig-cc",
+    sha256 = "a1c27343c0c5f4a9a5c5ac573f4e5388481380f3f5b09c2a551645808ab2c365",
+    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
+    urls = ["https://github.com/uber/bazel-zig-cc/archive/refs/tags/v{}.tar.gz".format(BAZEL_ZIG_CC_VERSION)],
+)
+
+load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
+
+zig_toolchains()
+
+register_toolchains(
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.19",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
+    "@zig_sdk//toolchain:darwin_amd64",
+    "@zig_sdk//toolchain:darwin_arm64",
+    "@zig_sdk//toolchain:windows_amd64",
+    "@zig_sdk//toolchain:windows_arm64",
+)
+
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
 crate_universe_dependencies(bootstrap = True)
@@ -34,7 +41,7 @@ rust_version = "1.65.0"
 
 rust_register_toolchains(
     edition = "2021",
-    extra_target_triples = [],
+    register_toolchains = False,
     versions = [rust_version],
 )
 
@@ -42,6 +49,14 @@ rust_repository_set(
     name = "macos_x86_64",
     edition = "2021",
     exec_triple = "x86_64-apple-darwin",
+    extra_target_triples = ["aarch64-unknown-linux-gnu"],
+    versions = [rust_version],
+)
+
+rust_repository_set(
+    name = "macos_aarch64",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
     extra_target_triples = ["aarch64-unknown-linux-gnu"],
     versions = [rust_version],
 )
@@ -62,6 +77,7 @@ crates_repository(
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//:cargo-bazel-lock.json",
     packages = {
         "ring": crate.spec(version = "0.16.20"),
     },
