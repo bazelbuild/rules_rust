@@ -117,13 +117,12 @@ impl DependencySet {
 fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetadata) -> bool {
     let pkg = &metadata[&parent.id];
 
-    let enabled_deps: Vec<_> = pkg
+    let mut enabled_deps = pkg
         .features
         .iter()
         .filter(|(pkg_feature, _)| parent.features.contains(pkg_feature))
         .flat_map(|(_, features)| features)
-        .filter_map(|f| f.strip_prefix("dep:"))
-        .collect();
+        .filter_map(|f| f.strip_prefix("dep:"));
 
     // if the crate is marked as optional dependency, we check whether
     // a feature prefixed with dep: is enabled
@@ -133,7 +132,7 @@ fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetad
         .filter(|&d| d.optional)
         .find(|&d| sanitize_module_name(&d.name) == dep.name)
     {
-        enabled_deps.contains(&toml_dep.name.as_str())
+        enabled_deps.any(|d| d == toml_dep.name.as_str())
     } else {
         true
     }
