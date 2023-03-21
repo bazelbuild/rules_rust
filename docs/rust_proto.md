@@ -33,12 +33,10 @@ load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_re
 rust_proto_transitive_repositories()
 ```
 
-[raze]: https://github.com/google/cargo-raze
-
 This will load crate dependencies of protobuf that are generated using
-[cargo raze][raze] inside the rules_rust
+[crate_universe](./crate_universe.md) inside the rules_rust
 repository. However, using those dependencies might conflict with other uses
-of [cargo raze][raze]. If you need to change
+of [crate_universe](./crate_universe.md). If you need to change
 those dependencies, please see the [dedicated section below](#custom-deps).
 
 For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
@@ -49,17 +47,17 @@ These rules depends on the [`protobuf`](https://crates.io/crates/protobuf) and
 the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
 compiler](https://github.com/google/protobuf). To obtain these crates,
 `rust_proto_repositories` imports the given crates using BUILD files generated with
-[`cargo raze`][raze].
+[crate_universe](./crate_universe.md).
 
 If you want to either change the protobuf and gRPC rust compilers, or to
-simply use [`cargo raze`][raze] in a more
+simply use [crate_universe](./crate_universe.md) in a more
 complex scenario (with more dependencies), you must redefine those
 dependencies.
 
 To do this, once you've imported the needed dependencies (see our
-[Cargo.toml](raze/Cargo.toml) file to see the default dependencies), you
-need to create your own toolchain. To do so you can create a BUILD
-file with your toolchain definition, for example:
+[@rules_rust//proto/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/3rdparty/BUILD.bazel)
+file to see the default dependencies), you need to create your own toolchain. 
+To do so you can create a BUILD file with your toolchain definition, for example:
 
 ```python
 load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
@@ -69,9 +67,9 @@ rust_proto_toolchain(
     # Path to the protobuf compiler.
     protoc = "@com_google_protobuf//:protoc",
     # Protobuf compiler plugin to generate rust gRPC stubs.
-    grpc_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust_grpc",
+    grpc_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust_grpc",
     # Protobuf compiler plugin to generate rust protobuf stubs.
-    proto_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust",
+    proto_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust",
 )
 
 toolchain(
@@ -95,17 +93,17 @@ dependencies:
 ```python
 rust_proto_library(
     ...
-    rust_deps = ["//cargo_raze/remote:protobuf"],
+    rust_deps = ["//3rdparty/crates:protobuf"],
     ...
 )
 
 rust_grpc_library(
     ...
     rust_deps = [
-        "//cargo_raze/remote:protobuf",
-        "//cargo_raze/remote:grpc",
-        "//cargo_raze/remote:tls_api",
-        "//cargo_raze/remote:tls_api_stub",
+        "//3rdparty/crates:protobuf",
+        "//3rdparty/crates:grpc",
+        "//3rdparty/crates:tls_api",
+        "//3rdparty/crates:tls_api_stub",
     ],
     ...
 )
@@ -275,7 +273,7 @@ Declare dependencies needed for proto compilation.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  `True` |
+| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.   |  `True` |
 
 
 <a id="rust_proto_transitive_repositories"></a>
