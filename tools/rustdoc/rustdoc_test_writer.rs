@@ -164,6 +164,14 @@ fn expand_params_file(mut options: Options) -> Options {
     options
 }
 
+/// Escapes a string for a single-quoted string in a bash script.
+///
+/// This is pretty simple with single quotes, which escape everything except other single quotes.
+/// We handle those by switching to a double-quoted string for that character.
+fn escape_string_in_single_quoted_bash(s: &str) -> String {
+    s.replace('\'', "'\"'\"'")
+}
+
 /// Write a unix compatible test runner
 fn write_test_runner_unix(
     path: &Path,
@@ -182,7 +190,10 @@ fn write_test_runner_unix(
         "exec env - \\".to_owned(),
     ];
 
-    content.extend(env.iter().map(|(key, val)| format!("{key}='{val}' \\")));
+    content.extend(
+        env.iter()
+            .map(|(key, val)| format!("{key}='{}' \\", escape_string_in_single_quoted_bash(val))),
+    );
 
     let argv_str = argv
         .iter()
@@ -194,7 +205,7 @@ fn write_test_runner_unix(
                 .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
             stripped_arg
         })
-        .map(|arg| format!("'{arg}'"))
+        .map(|arg| format!("'{}'", escape_string_in_single_quoted_bash(&arg)))
         .collect::<Vec<String>>()
         .join(" ");
 

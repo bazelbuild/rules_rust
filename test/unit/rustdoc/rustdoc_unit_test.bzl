@@ -10,6 +10,10 @@ load(
     "assert_argv_contains_prefix_not",
 )
 
+# A value with all characters that might need special handling. Note that this
+# is duplicated in the Rust code, which verifies it comes through unchanged.
+SPECIAL_VALUE = ")(][ \"\\/'&^%><;:\t$$#@!*-_=+`~.,?x"
+
 def _common_rustdoc_checks(env, tut):
     actions = tut.actions
     action = actions[0]
@@ -75,16 +79,20 @@ rustdoc_for_lib_with_proc_macro_test = analysistest.make(_rustdoc_for_lib_with_p
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
 
-def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
+def _target_maker(rule_fn, name, rustdoc_deps = [], crate_features = [], crate_name = "test_crate", **kwargs):
     rule_fn(
         name = name,
         edition = "2018",
+        crate_features = crate_features,
+        crate_name = crate_name,
+        rustc_env = {"SPECIAL_VALUE": SPECIAL_VALUE},
         **kwargs
     )
 
     rust_test(
         name = "{}_test".format(name),
         crate = ":{}".format(name),
+        env = {"SPECIAL_VALUE": SPECIAL_VALUE},
         edition = "2018",
     )
 
@@ -97,6 +105,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
         name = "{}_doctest".format(name),
         crate = ":{}".format(name),
         deps = rustdoc_deps,
+        crate_features = crate_features,
     )
 
 def _define_targets():
@@ -128,6 +137,7 @@ def _define_targets():
     _target_maker(
         rust_proc_macro,
         name = "rustdoc_proc_macro",
+        crate_name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
     )
 

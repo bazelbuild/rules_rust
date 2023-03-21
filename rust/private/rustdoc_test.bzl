@@ -67,6 +67,10 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     root = crate_info.output.root.path
     if not root in roots:
         roots.append(root)
+    for proc_macro_dep in crate_info.proc_macro_deps.to_list():
+        root = proc_macro_dep.crate_info.output.root.path
+        if not root in roots:
+            roots.append(root)
     for dep in crate_info.deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
@@ -197,6 +201,15 @@ rust_doc_test = rule(
             ),
             providers = [rust_common.crate_info],
             mandatory = True,
+        ),
+        "crate_features": attr.string_list(
+            doc = dedent("""\
+                List of features to enable for this crate.
+
+                Features are defined in the code using the `#[cfg(feature = "foo")]`
+                configuration option. The features listed here will be passed to `rustc`
+                with `--cfg feature="${feature_name}"` flags.
+            """),
         ),
         "deps": attr.label_list(
             doc = dedent("""\
