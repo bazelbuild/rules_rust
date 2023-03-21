@@ -72,6 +72,7 @@ def _rust_stdlib_filegroup_impl(ctx):
     return [
         DefaultInfo(
             files = depset(ctx.files.srcs),
+            runfiles = ctx.runfiles(ctx.files.srcs),
         ),
         rust_common.stdlib_info(
             std_rlibs = std_rlibs,
