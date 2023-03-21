@@ -289,8 +289,9 @@ fn feature_generator_crate_combined_features() {
         "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.lock",
     );
 
+    // serde appears twice in the list of dependencies, with and without derive features
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["features"]["js_int 0.2.2"]["common"],
-        json!(["default", "serde", "std"])
+        metadata["metadata"]["cargo-bazel"]["features"]["serde 1.0.158"]["common"],
+        json!(["default", "derive", "serde_derive", "std"])
     );
 }

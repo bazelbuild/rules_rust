@@ -8,7 +8,5 @@ edition = "2021" # make sure resolver=2 is enabled for this test
 [lib]
 path = "lib.rs"
 
-# With this dependency tree and resolver v2, `js_int` appears twice in the tree
-# with a different feature set.
 [dependencies]
-ruma = "=0.7.4"
+ruma = "0.6"
