@@ -515,4 +515,54 @@ mod test {
             ])
         );
     }
+
+    #[test]
+    fn optional_deps_disabled() {
+        let metadata = metadata::optional_deps_disabled();
+
+        let node = find_metadata_node("clap", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert!(dependencies
+            .normal_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                dependencies
+                    .normal_deps
+                    .get_iter(conf)
+                    .expect("Iterating over known keys should never panic")
+                    .filter(|dep| {
+                        dep.target_name == "is-terminal" || dep.target_name == "termcolor"
+                    })
+                    .map(move |_| conf.cloned())
+            })
+            .next()
+            .is_none());
+    }
+
+    #[test]
+    fn optional_deps_enabled() {
+        let metadata = metadata::optional_deps_enabled();
+
+        let node = find_metadata_node("clap", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert!(dependencies
+            .normal_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                dependencies
+                    .normal_deps
+                    .get_iter(conf)
+                    .expect("Iterating over known keys should never panic")
+                    .filter(|dep| {
+                        dep.target_name == "is-terminal" || dep.target_name == "termcolor"
+                    })
+                    .map(move |_| conf.cloned())
+            })
+            .next()
+            .is_some());
+    }
 }

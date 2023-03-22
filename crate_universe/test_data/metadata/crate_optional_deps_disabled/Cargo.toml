@@ -10,4 +10,4 @@ path = "lib.rs"
 
 [dependencies]
 # enables the `termcolor` and `is-terminal` optional crates
-clap = { version = "=4.1.1", features = ["color"] }
+clap = { version = "=4.1.1", default-features = false }

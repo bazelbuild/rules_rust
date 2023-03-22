@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crate-types"
+name = "crate-with-optional-deps"
 version = "0.1.0"
 dependencies = [
  "clap",
