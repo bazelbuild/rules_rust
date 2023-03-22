@@ -9,6 +9,7 @@ use clap::Parser;
 use crate::config::Config;
 use crate::context::Context;
 use crate::lockfile::Digest;
+use crate::metadata::Cargo;
 use crate::splicing::SplicingManifest;
 
 /// Command line options for the `query` subcommand
@@ -66,14 +67,11 @@ pub fn query(opt: QueryOptions) -> Result<()> {
         &lockfile,
         &config,
         &splicing_manifest,
-        &opt.cargo,
+        &Cargo::new(opt.cargo),
         &opt.rustc,
     )?;
     if digest != expected {
-        return announce_repin(&format!(
-            "Digests do not match: {:?} != {:?}",
-            digest, expected
-        ));
+        return announce_repin(&format!("Digests do not match: {digest:?} != {expected:?}",));
     }
 
     // There is no need to repin
@@ -81,7 +79,7 @@ pub fn query(opt: QueryOptions) -> Result<()> {
 }
 
 fn announce_repin(reason: &str) -> Result<()> {
-    eprintln!("{}", reason);
+    eprintln!("{reason}");
     println!("repin");
     Ok(())
 }

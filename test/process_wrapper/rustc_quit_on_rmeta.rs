@@ -8,10 +8,11 @@ mod test {
 
     /// fake_rustc runs the fake_rustc binary under process_wrapper with the specified
     /// process wrapper arguments. No arguments are passed to fake_rustc itself.
+    ///
     fn fake_rustc(process_wrapper_args: &[&'static str]) -> String {
         let r = Runfiles::create().unwrap();
         let fake_rustc = r.rlocation(
-            &[
+            [
                 "rules_rust",
                 "test",
                 "process_wrapper",
@@ -26,7 +27,7 @@ mod test {
         );
 
         let process_wrapper = r.rlocation(
-            &[
+            [
                 "rules_rust",
                 "util",
                 "process_wrapper",
@@ -67,8 +68,7 @@ mod test {
         ]);
         assert!(
             !out_content.contains("should not be in output"),
-            "output should not contain 'should not be in output' but did: {}",
-            out_content
+            "output should not contain 'should not be in output' but did",
         );
     }
 

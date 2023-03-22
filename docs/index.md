@@ -22,8 +22,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    sha256 = "696b01deea96a5e549f1b5ae18589e1bbd5a1d71a36a243b5cf76a9433487cf2",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.11.0/rules_rust-v0.11.0.tar.gz"],
+    sha256 = "37f40490169dc94013c7566c75c861977a2c02ce5505b7e975da0f7d5f2231c8",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/rules_rust-v0.16.1.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -58,20 +58,34 @@ You can also browse the [full API in one page](flatten.md).
 To build with a particular version of the Rust compiler, pass that version to [`rust_register_toolchains`](flatten.md#rust_register_toolchains):
 
 ```python
-rust_register_toolchains(version = "1.62.1", edition="2018")
+rust_register_toolchains(
+    edition = "2021",
+    versions = [
+        "1.66.1"
+    ],
+)
 ```
 
-As well as an exact version, `version` can be set to `"nightly"` or `"beta"`. If set to these values, `iso_date` must also be set:
+As well as an exact version, `versions` can accept `nightly/{iso_date}` and `beta/{iso_date}` strings for toolchains from different release channels.
 
 ```python
-rust_register_toolchains(version = "nightly", iso_date = "2022-07-18", edition="2018")
+rust_register_toolchains(
+    edition = "2021"
+    versions = [
+        "nightly/2022-12-15",
+    ],
+)
 ```
 
-Similarly, `rustfmt_version` may also be configured:
+By default, a `stable` and `nightly` toolchain will be registered if no versions are passed to `rust_register_toolchains`. However,
+if only 1 version is passed and it is from the `nightly` or `beta` release channels (i.e. __not__ `stable`), then a build setting must
+also be set in the project's `.bazelrc` file.
 
-```python
-rust_register_toolchains(rustfmt_version = "1.62.1")
+```text
+build --@rules_rust//rust/toolchain/channel=nightly
 ```
+
+Failure to do so will result in rules attempting to match a `stable` toolchain when one was not registered.
 
 ## External Dependencies
 

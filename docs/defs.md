@@ -349,8 +349,8 @@ Builds a Rust proc-macro crate.
 
 <pre>
 rust_shared_library(<a href="#rust_shared_library-name">name</a>, <a href="#rust_shared_library-aliases">aliases</a>, <a href="#rust_shared_library-compile_data">compile_data</a>, <a href="#rust_shared_library-crate_features">crate_features</a>, <a href="#rust_shared_library-crate_name">crate_name</a>, <a href="#rust_shared_library-crate_root">crate_root</a>, <a href="#rust_shared_library-data">data</a>, <a href="#rust_shared_library-deps">deps</a>,
-                    <a href="#rust_shared_library-edition">edition</a>, <a href="#rust_shared_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_shared_library-rustc_env">rustc_env</a>, <a href="#rust_shared_library-rustc_env_files">rustc_env_files</a>, <a href="#rust_shared_library-rustc_flags">rustc_flags</a>, <a href="#rust_shared_library-srcs">srcs</a>, <a href="#rust_shared_library-stamp">stamp</a>,
-                    <a href="#rust_shared_library-version">version</a>)
+                    <a href="#rust_shared_library-edition">edition</a>, <a href="#rust_shared_library-experimental_use_cc_common_link">experimental_use_cc_common_link</a>, <a href="#rust_shared_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_shared_library-rustc_env">rustc_env</a>,
+                    <a href="#rust_shared_library-rustc_env_files">rustc_env_files</a>, <a href="#rust_shared_library-rustc_flags">rustc_flags</a>, <a href="#rust_shared_library-srcs">srcs</a>, <a href="#rust_shared_library-stamp">stamp</a>, <a href="#rust_shared_library-version">version</a>)
 </pre>
 
 Builds a Rust shared library.
@@ -378,6 +378,7 @@ When building the whole binary in Bazel, use `rust_library` instead.
 | <a id="rust_shared_library-data"></a>data |  List of files used by this rule at compile time and runtime.<br><br>If including data at compile time with include_str!() and similar, prefer <code>compile_data</code> over <code>data</code>, to prevent the data also being included in the runfiles.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="rust_shared_library-deps"></a>deps |  List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="rust_shared_library-edition"></a>edition |  The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.   | String | optional | <code>""</code> |
+| <a id="rust_shared_library-experimental_use_cc_common_link"></a>experimental_use_cc_common_link |  Whether to use cc_common.link to link rust binaries. Possible values: [-1, 0, 1]. -1 means use the value of the toolchain.experimental_use_cc_common_link boolean build setting to determine. 0 means do not use cc_common.link (use rustc instead). 1 means use cc_common.link.   | Integer | optional | <code>-1</code> |
 | <a id="rust_shared_library-proc_macro_deps"></a>proc_macro_deps |  List of <code>rust_library</code> targets with kind <code>proc-macro</code> used to help build this library target.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="rust_shared_library-rustc_env"></a>rustc_env |  Dictionary of additional <code>"key": "value"</code> environment variables to set for rustc.<br><br>rust_test()/rust_binary() rules can use $(rootpath //package:target) to pass in the location of a generated file or external tool. Cargo build scripts that wish to expand locations should use cargo_build_script()'s build_script_env argument instead, as build scripts are run in a different environment - see cargo_build_script()'s documentation for more.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
 | <a id="rust_shared_library-rustc_env_files"></a>rustc_env_files |  Files containing additional environment variables to set for rustc.<br><br>These files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).<br><br>The order that these files will be processed is unspecified, so multiple definitions of a particular variable are discouraged.<br><br>Note that the variables here are subject to [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status) stamping should the <code>stamp</code> attribute be enabled. Stamp variables should be wrapped in brackets in order to be resolved. E.g. <code>NAME={WORKSPACE_STATUS_VARIABLE}</code>.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
@@ -502,6 +503,7 @@ rust_test(
     crate = ":hello_lib",
     # You may add other deps that are specific to the test configuration
     deps = ["//some/dev/dep"],
+)
 ```
 
 Run the test with `bazel test //hello_lib:hello_lib_test`. The crate

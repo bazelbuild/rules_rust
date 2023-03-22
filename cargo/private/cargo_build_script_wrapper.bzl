@@ -94,7 +94,10 @@ def cargo_build_script(
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
-        **kwargs: Forwards to the underlying `rust_binary` rule.
+        **kwargs: Forwards to the underlying `rust_binary` rule. An exception is the `compatible_with`
+            attribute, which shouldn't be forwarded to the `rust_binary`, as the `rust_binary` is only
+            built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_scirpt_run`
+            target.
     """
 
     # This duplicates the code in _cargo_build_script_impl because we need to make these
@@ -110,6 +113,14 @@ def cargo_build_script(
     binary_tags = [tag for tag in tags or []]
     if "manual" not in binary_tags:
         binary_tags.append("manual")
+    build_script_kwargs = {}
+    binary_kwargs = kwargs
+    if "compatible_with" in kwargs:
+        build_script_kwargs["compatible_with"] = kwargs["compatible_with"]
+        binary_kwargs.pop("compatible_with")
+
+    if "toolchains" in kwargs:
+        build_script_kwargs["toolchains"] = kwargs["toolchains"]
 
     rust_binary(
         name = name + "_",
@@ -120,7 +131,7 @@ def cargo_build_script(
         rustc_env = rustc_env,
         rustc_flags = rustc_flags,
         tags = binary_tags,
-        **kwargs
+        **binary_kwargs
     )
     _build_script_run(
         name = name,
@@ -135,4 +146,5 @@ def cargo_build_script(
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
+        **build_script_kwargs
     )

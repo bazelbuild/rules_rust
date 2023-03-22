@@ -1,4 +1,4 @@
-workspace(name = "examples")
+workspace(name = "rules_rust_examples_ios_build")
 
 local_repository(
     name = "rules_rust",
@@ -21,23 +21,8 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
-
-crates_repository(
-    name = "ios_build",
-    cargo_lockfile = "//:Cargo.Bazel.lock",
-    # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
-    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//:cargo-bazel-lock.json",
-    manifests = ["//:Cargo.toml"],
-    splicing_config = splicing_config(
-        resolver_version = "2",
-    ),
-)
-
 load(
-    "@ios_build//:defs.bzl",
+    "//3rdparty/crates:crates.bzl",
     ios_build_crate_repositories = "crate_repositories",
 )
 
@@ -62,3 +47,10 @@ rbe_preconfig(
     name = "buildkite_config",
     toolchain = "ubuntu1804-bazel-java11",
 )
+
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()

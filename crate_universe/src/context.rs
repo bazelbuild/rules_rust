@@ -15,7 +15,7 @@ use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::Annotations;
-use crate::utils::starlark::{Select, SelectList};
+use crate::utils::starlark::Select;
 
 pub use self::crate_context::*;
 
@@ -51,14 +51,15 @@ impl Context {
         let crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
             .crates
-            .iter()
-            // Convert the crate annotations into more renderable contexts
-            .map(|(_, annotation)| {
+            .values()
+            .map(|annotation| {
                 let context = CrateContext::new(
                     annotation,
                     &annotations.metadata.packages,
                     &annotations.lockfile.crates,
                     &annotations.pairred_extras,
+                    &annotations.features,
+                    annotations.config.generate_binaries,
                     annotations.config.generate_build_scripts,
                 );
                 let id = CrateId::new(context.name.clone(), context.version.clone());
@@ -159,261 +160,41 @@ impl Context {
         Ok(package_path_id)
     }
 
-    /// Filter a crate's dependencies to only ones with aliases
-    pub fn crate_aliases(
-        &self,
-        crate_id: &CrateId,
-        build: bool,
-        include_dev: bool,
-    ) -> SelectList<&CrateDependency> {
-        let ctx = &self.crates[crate_id];
-        let mut set = SelectList::default();
-
-        // Return a set of aliases for build dependencies
-        // vs normal dependencies when requested.
-        if build {
-            // Note that there may not be build dependencies so no dependencies
-            // will be gathered in this case
-            if let Some(attrs) = &ctx.build_script_attrs {
-                let collection: Vec<(Option<String>, &CrateDependency)> = attrs
-                    .deps
-                    .configurations()
-                    .into_iter()
-                    .flat_map(move |conf| {
-                        attrs
-                            .deps
-                            .get_iter(conf)
-                            .expect("Iterating over known keys should never panic")
-                            .filter(|dep| dep.alias.is_some())
-                            .map(move |dep| (conf.cloned(), dep))
-                    })
-                    .chain(attrs.proc_macro_deps.configurations().into_iter().flat_map(
-                        move |conf| {
-                            attrs
-                                .proc_macro_deps
-                                .get_iter(conf)
-                                .expect("Iterating over known keys should never panic")
-                                .filter(|dep| dep.alias.is_some())
-                                .map(move |dep| (conf.cloned(), dep))
-                        },
-                    ))
-                    .collect();
-
-                for (config, dep) in collection {
-                    set.insert(dep, config);
-                }
-            }
-        } else {
-            let attrs = &ctx.common_attrs;
-            let mut collection: Vec<(Option<String>, &CrateDependency)> =
-                attrs
-                    .deps
-                    .configurations()
-                    .into_iter()
-                    .flat_map(move |conf| {
-                        attrs
-                            .deps
-                            .get_iter(conf)
-                            .expect("Iterating over known keys should never panic")
-                            .filter(|dep| dep.alias.is_some())
-                            .map(move |dep| (conf.cloned(), dep))
-                    })
-                    .chain(attrs.proc_macro_deps.configurations().into_iter().flat_map(
-                        move |conf| {
-                            attrs
-                                .proc_macro_deps
-                                .get_iter(conf)
-                                .expect("Iterating over known keys should never panic")
-                                .filter(|dep| dep.alias.is_some())
-                                .map(move |dep| (conf.cloned(), dep))
-                        },
-                    ))
-                    .collect();
-
-            // Optionally include dev dependencies
-            if include_dev {
-                collection = collection
-                    .into_iter()
-                    .chain(
-                        attrs
-                            .deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                attrs
-                                    .deps_dev
-                                    .get_iter(conf)
-                                    .expect("Iterating over known keys should never panic")
-                                    .filter(|dep| dep.alias.is_some())
-                                    .map(move |dep| (conf.cloned(), dep))
-                            }),
-                    )
-                    .chain(
-                        attrs
-                            .proc_macro_deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                attrs
-                                    .proc_macro_deps_dev
-                                    .get_iter(conf)
-                                    .expect("Iterating over known keys should never panic")
-                                    .filter(|dep| dep.alias.is_some())
-                                    .map(move |dep| (conf.cloned(), dep))
-                            }),
-                    )
-                    .collect();
-            }
-
-            for (config, dep) in collection {
-                set.insert(dep, config);
-            }
-        }
-
-        set
-    }
-
-    /// Create a set of all direct dependencies of workspace member crates and map them to
-    /// optional alternative names that allow them to be uniquely identified. This typically
-    /// results in a mapping of ([CrateId], [None]) where [None] defaults to using the crate
-    /// name. The next most common would be using ([CrateId], `Some(alias)`) as some projects
-    /// may use aliases in Cargo as a way to differentiate different versions of the same dep.
-    pub fn flat_workspace_member_deps(&self) -> BTreeMap<CrateId, Option<String>> {
-        let workspace_member_dependencies: BTreeSet<CrateDependency> = self
-            .workspace_members
-            .iter()
-            .map(|(id, _)| &self.crates[id])
+    /// Create a set of all direct dependencies of workspace member crates.
+    pub fn workspace_member_deps(&self) -> BTreeSet<&CrateDependency> {
+        self.workspace_members
+            .keys()
+            .map(move |id| &self.crates[id])
             .flat_map(|ctx| {
-                // Build an interator of all dependency CrateIds.
-                // TODO: This expansion is horribly verbose and should be refactored but closures
-                // were not playing nice when I tried it.
-                ctx.common_attrs
-                    .deps
-                    .configurations()
-                    .into_iter()
-                    .flat_map(move |conf| {
-                        ctx.common_attrs
-                            .deps
-                            .get_iter(conf)
-                            .expect("Lookup should be guaranteed")
+                IntoIterator::into_iter([
+                    &ctx.common_attrs.deps,
+                    &ctx.common_attrs.deps_dev,
+                    &ctx.common_attrs.proc_macro_deps,
+                    &ctx.common_attrs.proc_macro_deps_dev,
+                ])
+                .flat_map(|deps| {
+                    deps.configurations().into_iter().flat_map(move |conf| {
+                        deps.get_iter(conf).expect("Lookup should be guaranteed")
                     })
-                    .chain(
-                        ctx.common_attrs
-                            .deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                ctx.common_attrs
-                                    .deps_dev
-                                    .get_iter(conf)
-                                    .expect("Lookup should be guaranteed")
-                            }),
-                    )
-                    .chain(
-                        ctx.common_attrs
-                            .proc_macro_deps
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                ctx.common_attrs
-                                    .proc_macro_deps
-                                    .get_iter(conf)
-                                    .expect("Lookup should be guaranteed")
-                            }),
-                    )
-                    .chain(
-                        ctx.common_attrs
-                            .proc_macro_deps_dev
-                            .configurations()
-                            .into_iter()
-                            .flat_map(move |conf| {
-                                ctx.common_attrs
-                                    .proc_macro_deps_dev
-                                    .get_iter(conf)
-                                    .expect("Lookup should be guaranteed")
-                            }),
-                    )
-            })
-            .cloned()
-            .collect();
-
-        // Search for any duplicate workspace member definitions
-        let duplicate_deps: Vec<CrateDependency> = workspace_member_dependencies
-            .iter()
-            .filter(|dep| {
-                workspace_member_dependencies
-                    .iter()
-                    .filter(|check| dep.id.name == check.id.name)
-                    .count()
-                    > 1
-            })
-            .cloned()
-            .collect();
-
-        workspace_member_dependencies
-            .into_iter()
-            .map(|dep| {
-                if duplicate_deps.contains(&dep) {
-                    if let Some(alias) = &dep.alias {
-                        // Check for any duplicate aliases
-                        let aliases = duplicate_deps
-                            .iter()
-                            .filter(|dupe| dupe.id.name == dep.id.name)
-                            .filter(|dupe| dupe.alias.is_some())
-                            .filter(|dupe| dupe.alias == dep.alias);
-
-                        // If there are multiple aliased crates with the same name, the name is updated to
-                        // be `{alias}-{version}` to differentiate them.
-                        if aliases.count() >= 2 {
-                            let rename = format!("{}-{}", &alias, &dep.id.version);
-                            (dep.id, Some(rename))
-                        } else {
-                            (dep.id, Some(alias.clone()))
-                        }
-                    } else {
-                        // Check for all duplicates that match the current dependency and have no alias
-                        let unaliased = duplicate_deps
-                            .iter()
-                            .filter(|dupe| dupe.id.name == dep.id.name)
-                            .filter(|dupe| dupe.alias.is_none());
-
-                        // If there are multiple unaliased crates with the same name, the name is updated to
-                        // be `{name}-{version}` to differentiate them.
-                        if unaliased.count() >= 2 {
-                            let rename = format!("{}-{}", &dep.id.name, &dep.id.version);
-                            (dep.id, Some(rename))
-                        } else {
-                            (dep.id, None)
-                        }
-                    }
-                } else {
-                    (dep.id, dep.alias)
-                }
+                })
             })
             .collect()
     }
 
-    /// Produce a list of binary dependencies with optional aliases which prevent duplicate
-    /// targets from being generated.
-    pub fn flat_binary_deps(&self) -> BTreeMap<CrateId, Option<String>> {
-        // Check for any duplicate binary crate names. If one exists provide an alias to differentiate them
-        self.binary_crates
+    pub fn has_duplicate_workspace_member_dep(&self, dep: &CrateDependency) -> bool {
+        1 < self
+            .workspace_member_deps()
+            .into_iter()
+            .filter(|check| check.id.name == dep.id.name && check.alias == dep.alias)
+            .count()
+    }
+
+    pub fn has_duplicate_binary_crate(&self, bin: &CrateId) -> bool {
+        1 < self
+            .binary_crates
             .iter()
-            .map(|crate_id| {
-                let dupe_count = self
-                    .binary_crates
-                    .iter()
-                    .filter(|id| crate_id.name == id.name)
-                    .count();
-                // For targets that appear twice (which can happen if one crate aliases a binary dependency)
-                if dupe_count >= 2 {
-                    let rename = format!("{}-{}", crate_id.name, crate_id.version);
-                    (crate_id.clone(), Some(rename))
-                } else {
-                    (crate_id.clone(), None)
-                }
-            })
-            .collect()
+            .filter(|check| check.name == bin.name)
+            .count()
     }
 }
 
@@ -446,66 +227,51 @@ mod test {
     }
 
     #[test]
-    fn flat_workspace_member_deps() {
+    fn workspace_member_deps() {
         let context = mock_context_common();
-        let workspace_member_deps = context.flat_workspace_member_deps();
+        let workspace_member_deps = context.workspace_member_deps();
 
-        assert_eq!(
-            workspace_member_deps,
-            BTreeMap::from([
-                (
-                    CrateId::new("bitflags".to_owned(), "1.3.2".to_owned()),
-                    None
-                ),
-                (CrateId::new("cfg-if".to_owned(), "1.0.0".to_owned()), None),
-            ])
-        );
+        assert_eq! {
+            workspace_member_deps
+                .iter()
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .collect::<Vec<_>>(),
+            [
+                (&CrateId::new("bitflags".to_owned(), "1.3.2".to_owned()), false),
+                (&CrateId::new("cfg-if".to_owned(), "1.0.0".to_owned()), false),
+            ],
+        }
     }
 
     #[test]
-    fn flat_workspace_member_deps_with_alises() {
+    fn workspace_member_deps_with_aliases() {
         let context = mock_context_aliases();
-        let workspace_member_deps = context.flat_workspace_member_deps();
+        let workspace_member_deps = context.workspace_member_deps();
 
-        assert_eq!(
-            workspace_member_deps,
-            BTreeMap::from([
-                (
-                    CrateId {
-                        name: "log".to_owned(),
-                        version: "0.3.9".to_owned(),
-                    },
-                    Some("pinned_log".to_owned())
-                ),
-                (
-                    CrateId {
-                        name: "log".to_owned(),
-                        version: "0.4.14".to_owned(),
-                    },
-                    None
-                ),
-                (
-                    CrateId {
-                        name: "names".to_owned(),
-                        version: "0.12.1-dev".to_owned(),
-                    },
-                    Some("pinned_names".to_owned())
-                ),
-                (
-                    CrateId {
-                        name: "names".to_owned(),
-                        version: "0.13.0".to_owned(),
-                    },
-                    None
-                ),
-                (
-                    CrateId {
-                        name: "value-bag".to_owned(),
-                        version: "1.0.0-alpha.7".to_owned(),
-                    },
-                    None
-                ),
-            ])
-        );
+        assert_eq! {
+            workspace_member_deps
+                .iter()
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .collect::<Vec<_>>(),
+            [
+                (&CrateId::new("log".to_owned(), "0.3.9".to_owned()), false),
+                (&CrateId::new("log".to_owned(), "0.4.14".to_owned()), false),
+                (&CrateId::new("names".to_owned(), "0.12.1-dev".to_owned()), false),
+                (&CrateId::new("names".to_owned(), "0.13.0".to_owned()), false),
+                (&CrateId::new("value-bag".to_owned(), "1.0.0-alpha.7".to_owned()), false),
+            ],
+        }
+    }
+
+    #[test]
+    fn seralization() {
+        let context = mock_context_aliases();
+
+        // Seralize and deseralize the context object
+        let json_text = serde_json::to_string(&context).unwrap();
+        let deserialized_context: Context = serde_json::from_str(&json_text).unwrap();
+
+        // The data should be identical
+        assert_eq!(context, deserialized_context);
     }
 }

@@ -35,7 +35,7 @@ rust_version = "1.65.0"
 rust_register_toolchains(
     edition = "2021",
     extra_target_triples = [],
-    version = rust_version,
+    versions = [rust_version],
 )
 
 rust_repository_set(

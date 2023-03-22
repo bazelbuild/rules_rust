@@ -87,7 +87,7 @@ extra_toolchain_wrapper = rule(
     cfg = _extra_toolchain_transition,
 )
 
-def _toolchain_test():
+def _define_targets():
     rust_library(
         name = "lib",
         srcs = ["lib.rs"],
@@ -120,6 +120,7 @@ def _toolchain_test():
         binary_ext = "",
         dylib_ext = ".so",
         exec_triple = "x86_64-unknown-none",
+        target_triple = "x86_64-unknown-none",
         os = "linux",
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
@@ -141,17 +142,35 @@ def _toolchain_test():
         dep = ":lib",
     )
 
+def _rust_stdlib_filegroup_provides_runfiles_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    runfiles = target[DefaultInfo].default_runfiles
+    asserts.true(env, len(runfiles.files.to_list()) > 0)
+
+    return analysistest.end(env)
+
+rust_stdlib_filegroup_provides_runfiles_test = analysistest.make(
+    _rust_stdlib_filegroup_provides_runfiles_test_impl,
+)
+
+def toolchain_test_suite(name):
+    _define_targets()
+
     toolchain_adds_rustc_flags_test(
         name = "toolchain_adds_rustc_flags_test",
         target_under_test = ":lib_with_extra_toolchain",
     )
 
-def toolchain_test_suite(name):
-    _toolchain_test()
+    rust_stdlib_filegroup_provides_runfiles_test(
+        name = "rust_stdlib_filegroup_provides_runfiles_test",
+        target_under_test = ":std_libs",
+    )
 
     native.test_suite(
         name = name,
         tests = [
             ":toolchain_adds_rustc_flags_test",
+            ":rust_stdlib_filegroup_provides_runfiles_test",
         ],
     )

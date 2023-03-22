@@ -1,0 +1,9 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "transitions.bzl",
+    ],
+    visibility = ["//wasm_bindgen:__pkg__"],
+)

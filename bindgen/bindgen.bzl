@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Rust Bindgen rules"""
+
 load("//rust:defs.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_cc_toolchain", "find_toolchain", "get_preferred_artifact")
+load("//rust/private:utils.bzl", "find_cc_toolchain", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -83,7 +84,8 @@ def rust_bindgen_library(
     )
 
 def _rust_bindgen_impl(ctx):
-    rust_toolchain = find_toolchain(ctx)
+    toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
+    rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
 
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
@@ -94,7 +96,7 @@ def _rust_bindgen_impl(ctx):
 
     toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
     bindgen_bin = toolchain.bindgen
-    rustfmt_bin = toolchain.rustfmt or rust_toolchain.rustfmt
+    rustfmt_bin = rustfmt_toolchain.rustfmt
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
     libstdcxx = toolchain.libstdcxx
@@ -112,7 +114,8 @@ def _rust_bindgen_impl(ctx):
     system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
-    if ctx.attr.rustfmt and rustfmt_bin:
+    run_rustfmt = toolchain.default_rustfmt or ctx.attr.rustfmt
+    if run_rustfmt:
         unformatted_output = ctx.actions.declare_file(output.basename + ".unformatted")
     else:
         unformatted_output = output
@@ -120,7 +123,7 @@ def _rust_bindgen_impl(ctx):
     args = ctx.actions.args()
     args.add_all(bindgen_args)
     args.add(header.path)
-    args.add("--output", unformatted_output.path)
+    args.add("--output", unformatted_output)
     args.add("--")
     args.add_all(include_directories, before_each = "-I")
     args.add_all(quote_include_directories, before_each = "-iquote")
@@ -133,7 +136,7 @@ def _rust_bindgen_impl(ctx):
         "RUST_BACKTRACE": "1",
     }
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
+    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
@@ -161,22 +164,22 @@ def _rust_bindgen_impl(ctx):
         tools = [clang_bin],
     )
 
-    if ctx.attr.rustfmt and rustfmt_bin:
+    if run_rustfmt:
         rustfmt_args = ctx.actions.args()
-        rustfmt_args.add("--stdout-file", output.path)
+        rustfmt_args.add("--stdout-file", output)
         rustfmt_args.add("--")
-        rustfmt_args.add(rustfmt_bin.path)
+        rustfmt_args.add(rustfmt_bin)
         rustfmt_args.add("--emit", "stdout")
         rustfmt_args.add("--quiet")
-        rustfmt_args.add(unformatted_output.path)
+        rustfmt_args.add(unformatted_output)
 
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
             inputs = [unformatted_output],
             outputs = [output],
             arguments = [rustfmt_args],
-            tools = [rustfmt_bin],
-            mnemonic = "Rustfmt",
+            tools = [rustfmt_toolchain.all_files],
+            mnemonic = "RustfmtBindgen",
         )
 
 rust_bindgen = rule(
@@ -216,18 +219,25 @@ rust_bindgen = rule(
     toolchains = [
         str(Label("//bindgen:toolchain_type")),
         str(Label("//rust:toolchain_type")),
+        str(Label("//rust/rustfmt:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
 )
 
 def _rust_bindgen_toolchain_impl(ctx):
+    if ctx.attr.rustfmt:
+        # buildifier: disable=print
+        print("The `rustfmt` attribute is deprecated. Please remove it on {} and register a `rustfmt_toolchain` instead.".format(
+            ctx.label,
+        ))
+
     return platform_common.ToolchainInfo(
         bindgen = ctx.executable.bindgen,
         clang = ctx.executable.clang,
         libclang = ctx.attr.libclang,
         libstdcxx = ctx.attr.libstdcxx,
-        rustfmt = ctx.executable.rustfmt,
+        default_rustfmt = ctx.attr.default_rustfmt,
     )
 
 rust_bindgen_toolchain = rule(
@@ -271,6 +281,10 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             executable = True,
             cfg = "exec",
         ),
+        "default_rustfmt": attr.bool(
+            doc = "If set, `rust_bindgen` targets will always format generated sources with `rustfmt`.",
+            mandatory = False,
+        ),
         "libclang": attr.label(
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
             cfg = "exec",
@@ -283,7 +297,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             mandatory = False,
         ),
         "rustfmt": attr.label(
-            doc = "The label of a `rustfmt` executable. If this is not provided, falls back to the rust_toolchain rustfmt.",
+            doc = "**Deprecated**: Instead, register a `rustfmt_toolchain` and refer to the `rust_bindgen_toolchain.default_rustfmt` and `rust_bindgen.rustfmt` attributes.",
             executable = True,
             cfg = "exec",
             mandatory = False,

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Dependencies for Rust proto rules"""
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/3rdparty/crates:defs.bzl", "crate_repositories")
@@ -24,7 +25,7 @@ def rust_proto_repositories(register_default_toolchain = True):
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_proto_toolchain](#rust_proto_toolchain)
             (`@rules_rust//proto:default-proto-toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
     """
     maybe(
         http_archive,

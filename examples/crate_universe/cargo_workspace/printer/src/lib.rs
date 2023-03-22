@@ -2,7 +2,7 @@ use std::io::BufWriter;
 
 /// Have ferris say a number
 pub fn say_number(num: i32) -> String {
-    let number = format!("{}", num);
+    let number = format!("{num}");
     let buf = Vec::new();
     let mut writer = BufWriter::new(buf);
     ferris_says::say(number.as_bytes(), number.len(), &mut writer).unwrap();

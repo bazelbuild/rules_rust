@@ -16,6 +16,7 @@
 
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
@@ -107,8 +108,13 @@ def _get_rustc_env(attr, toolchain, crate_name):
         patch, pre = patch.split("-", 1)
     else:
         pre = ""
+
+    target_arch = ""
+    if toolchain.target_triple:
+        target_arch = toolchain.target_triple.arch
+
     result = {
-        "CARGO_CFG_TARGET_ARCH": toolchain.target_arch,
+        "CARGO_CFG_TARGET_ARCH": target_arch,
         "CARGO_CFG_TARGET_OS": toolchain.os,
         "CARGO_CRATE_NAME": crate_name,
         "CARGO_PKG_AUTHORS": "",
@@ -343,12 +349,13 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
+def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
         attr (struct): Attributes to use in gathering linker args
+        crate_type (str): The target crate's type (i.e. "bin", "proc-macro", etc.).
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
@@ -362,6 +369,14 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     """
     user_link_flags = get_cc_user_link_flags(ctx)
 
+    if crate_type == "proc-macro":
+        # Proc macros get compiled as shared libraries to be loaded by the compiler.
+        is_linking_dynamic_library = True
+        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
+    else:
+        is_linking_dynamic_library = False
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
+
     # Add linkopt's from dependencies. This includes linkopts from transitive
     # dependencies since they get merged up.
     for dep in getattr(attr, "deps", []):
@@ -372,23 +387,23 @@ def get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths):
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
-        is_linking_dynamic_library = False,
+        is_linking_dynamic_library = is_linking_dynamic_library,
         runtime_library_search_directories = rpaths,
         user_link_flags = user_link_flags,
     )
     link_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
         variables = link_variables,
     )
     link_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
         variables = link_variables,
     )
     ld = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        action_name = action_name,
     )
 
     return ld, link_args, link_env
@@ -905,8 +920,9 @@ def construct_arguments(
     rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
+    # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
-    data_paths = depset(direct = getattr(attr, "data", []) + getattr(attr, "compile_data", [])).to_list()
+    data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     rustc_flags.add_all(
         expand_list_element_locations(
@@ -928,7 +944,9 @@ def construct_arguments(
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
                 rpaths = depset([])
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, cc_toolchain, feature_configuration, rpaths)
+
+            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths)
+
             env.update(link_env)
             rustc_flags.add("--codegen=linker=" + ld)
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
@@ -1172,7 +1190,7 @@ def rustc_compile_action(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
-    if crate_info.type in ("cdylib", "bin") and not crate_info.is_test:
+    if crate_info.type in ("cdylib", "bin"):
         if toolchain.os == "windows":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
@@ -1263,6 +1281,25 @@ def rustc_compile_action(
 
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
+        # Compile actions that produce shared libraries create output of the form "libfoo.so" for linux and macos;
+        # cc_common.link expects us to pass "foo" to the name parameter. We cannot simply use crate_info.name because
+        # the name of the crate does not always match the name of output file, e.g a crate named foo-bar will produce
+        # a (lib)foo_bar output file.
+        if crate_info.type == "cdylib":
+            output_lib = crate_info.output.basename
+            if toolchain.os != "windows":
+                # Strip the leading "lib" prefix
+                output_lib = output_lib[3:]
+
+            # Strip the file extension
+            output_lib = output_lib[:-(1 + len(crate_info.output.extension))]
+
+            # Remove the basename (which contains the undesired 'lib' prefix and the file extension)
+            output_relative_to_package = output_relative_to_package[:-len(crate_info.output.basename)]
+
+            # Append the name of the library
+            output_relative_to_package = output_relative_to_package + output_lib
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1272,6 +1309,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             grep_includes = ctx.file._grep_includes,
             stamp = ctx.attr.stamp,
+            output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
 
         outputs = [crate_info.output]
@@ -1748,7 +1786,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     if toolchain.os == "windows":
         make_link_flags = _make_link_flags_windows
         get_lib_name = get_lib_name_for_windows
-    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin"):
+    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin") or toolchain.os.startswith("ios"):
         make_link_flags = _make_link_flags_darwin
         get_lib_name = get_lib_name_default
     else:

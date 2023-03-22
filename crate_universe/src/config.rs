@@ -11,11 +11,12 @@ use anyhow::Result;
 use cargo_lock::package::GitReference;
 use cargo_metadata::Package;
 use semver::VersionReq;
-use serde::de::Visitor;
+use serde::de::value::SeqAccessDeserializer;
+use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Hash, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -37,7 +38,7 @@ impl std::fmt::Display for VendorMode {
     }
 }
 
-#[derive(Debug, Default, Hash, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RenderConfig {
     /// The name of the repository being rendered
@@ -141,8 +142,11 @@ pub enum Checksumish {
     },
 }
 
-#[derive(Debug, Default, Hash, Deserialize, Serialize, Clone)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct CrateAnnotations {
+    /// Which subset of the crate's bins should get produced as `rust_binary` targets.
+    pub gen_binaries: Option<GenBinaries>,
+
     /// Determins whether or not Cargo build scripts should be generated for the current package
     pub gen_build_script: Option<bool>,
 
@@ -173,6 +177,9 @@ pub struct CrateAnnotations {
     /// An optional glob pattern to set on the
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
     pub compile_data_glob: Option<BTreeSet<String>>,
+
+    /// If true, disables pipelining for library targets generated for this crate.
+    pub disable_pipelining: bool,
 
     /// Additional data to pass to  the target's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env) attribute.
@@ -261,42 +268,20 @@ impl Add for CrateAnnotations {
     type Output = CrateAnnotations;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let shallow_since = if self.shallow_since.is_some() {
-            self.shallow_since
-        } else if rhs.shallow_since.is_some() {
-            rhs.shallow_since
-        } else {
-            None
-        };
-
-        let patch_tool = if self.patch_tool.is_some() {
-            self.patch_tool
-        } else if rhs.patch_tool.is_some() {
-            rhs.patch_tool
-        } else {
-            None
-        };
-
-        let gen_build_script = if self.gen_build_script.is_some() {
-            self.gen_build_script
-        } else if rhs.gen_build_script.is_some() {
-            rhs.gen_build_script
-        } else {
-            None
-        };
-
         let concat_string = |lhs: &mut String, rhs: String| {
-            *lhs = format!("{}{}", lhs, rhs);
+            *lhs = format!("{lhs}{rhs}");
         };
 
         #[rustfmt::skip]
         let output = CrateAnnotations {
-            gen_build_script,
+            gen_binaries: self.gen_binaries.or(rhs.gen_binaries),
+            gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
             deps: joined_extra_member!(self.deps, rhs.deps, BTreeSet::new, BTreeSet::extend),
             proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, BTreeSet::new, BTreeSet::extend),
             crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, BTreeSet::new, BTreeSet::extend),
             data: joined_extra_member!(self.data, rhs.data, BTreeSet::new, BTreeSet::extend),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
+            disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
             compile_data: joined_extra_member!(self.compile_data, rhs.compile_data, BTreeSet::new, BTreeSet::extend),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
             rustc_env: joined_extra_member!(self.rustc_env, rhs.rustc_env, BTreeMap::new, BTreeMap::extend),
@@ -311,9 +296,9 @@ impl Add for CrateAnnotations {
             build_script_rustc_env: joined_extra_member!(self.build_script_rustc_env, rhs.build_script_rustc_env, BTreeMap::new, BTreeMap::extend),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
-            shallow_since,
+            shallow_since: self.shallow_since.or(rhs.shallow_since),
             patch_args: joined_extra_member!(self.patch_args, rhs.patch_args, Vec::new, Vec::extend),
-            patch_tool,
+            patch_tool: self.patch_tool.or(rhs.patch_tool),
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
         };
 
@@ -328,7 +313,7 @@ impl Sum for CrateAnnotations {
 }
 
 /// A unique identifier for Crates
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CrateId {
     /// The name of the crate
     pub name: String,
@@ -353,6 +338,16 @@ impl CrateId {
 
         // First see if the package version matches exactly
         if package.version.to_string() == self.version {
+            return true;
+        }
+
+        // If the version provided is the wildcard "*", it matches. Do not
+        // delegate to the semver crate in this case because semver does not
+        // consider "*" to match prerelease packages. That's expected behavior
+        // in the context of declaring package dependencies, but not in the
+        // context of declaring which versions of preselected packages an
+        // annotation applies to.
+        if self.version == "*" {
             return true;
         }
 
@@ -405,8 +400,7 @@ impl<'de> Visitor<'de> for CrateIdVisitor {
             })
             .ok_or_else(|| {
                 E::custom(format!(
-                    "Expected string value of `{{name}} {{version}}`. Got '{}'",
-                    v
+                    "Expected string value of `{{name}} {{version}}`. Got '{v}'"
                 ))
             })
     }
@@ -427,10 +421,71 @@ impl std::fmt::Display for CrateId {
     }
 }
 
+#[derive(Debug, Hash, Clone)]
+pub enum GenBinaries {
+    All,
+    Some(BTreeSet<String>),
+}
+
+impl Default for GenBinaries {
+    fn default() -> Self {
+        GenBinaries::Some(BTreeSet::new())
+    }
+}
+
+impl Serialize for GenBinaries {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            GenBinaries::All => serializer.serialize_bool(true),
+            GenBinaries::Some(set) if set.is_empty() => serializer.serialize_bool(false),
+            GenBinaries::Some(set) => serializer.collect_seq(set),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for GenBinaries {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(GenBinariesVisitor)
+    }
+}
+
+struct GenBinariesVisitor;
+impl<'de> Visitor<'de> for GenBinariesVisitor {
+    type Value = GenBinaries;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("boolean, or array of bin names")
+    }
+
+    fn visit_bool<E>(self, gen_binaries: bool) -> Result<Self::Value, E> {
+        if gen_binaries {
+            Ok(GenBinaries::All)
+        } else {
+            Ok(GenBinaries::Some(BTreeSet::new()))
+        }
+    }
+
+    fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        BTreeSet::deserialize(SeqAccessDeserializer::new(seq)).map(GenBinaries::Some)
+    }
+}
+
 /// Workspace specific settings to control how targets are generated
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    /// Whether to generate `rust_binary` targets for all bins by default
+    pub generate_binaries: bool,
+
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
@@ -497,6 +552,10 @@ mod test {
         id.version = "*".to_owned();
         assert!(id.matches(&package));
 
+        let mut prerelease = mock_cargo_metadata_package();
+        prerelease.version = cargo_metadata::semver::Version::parse("1.0.0-pre.0").unwrap();
+        assert!(id.matches(&prerelease));
+
         id.version = "<1".to_owned();
         assert!(!id.matches(&package));
     }
@@ -523,6 +582,7 @@ mod test {
 
         // Global settings
         assert!(config.cargo_config.is_none());
+        assert!(!config.generate_binaries);
         assert!(!config.generate_build_scripts);
 
         // Render Config

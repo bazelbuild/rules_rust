@@ -15,8 +15,12 @@ configuration options can be found in the [Rustfmt GitHub Pages][rgp].
 Formatting your Rust targets' source code requires no setup outside of loading `rules_rust`
 in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source code.
 
-In addition to this formatter, a check can be added to your build phase using the [rustfmt_aspect](#rustfmt-aspect)
-aspect. Simply add the following to a `.bazelrc` file to enable this check.
+In addition to this formatter, a simple check can be performed using the [rustfmt_aspect](#rustfmt-aspect) aspect by running
+```text
+bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
+```
+
+Add the following to a `.bazelrc` file to enable this check during the build phase.
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect

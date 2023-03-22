@@ -1,12 +1,13 @@
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
 load("//tools:tool_utils.bzl", "aspect_repository")
 
-package(default_visibility = ["//visibility:public"])
-
-exports_files([
-    "rustfmt.toml",
-    "rustfmt_utils.bzl",
-])
+exports_files(
+    [
+        "rustfmt.toml",
+        "rustfmt_utils.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 rust_library(
     name = "rustfmt_lib",
@@ -19,16 +20,13 @@ rust_library(
     ),
     data = [
         "//:rustfmt.toml",
-        "//rust/toolchain:current_rustfmt_files",
+        "//rust/toolchain:current_rustfmt_toolchain",
     ],
     edition = "2018",
     rustc_env = {
-        "RUSTFMT": "$(rootpath //rust/toolchain:current_rustfmt_files)",
+        "RUSTFMT": "$(rootpath //rust/toolchain:current_rustfmt_toolchain)",
         "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
     },
-    rustc_env_files = [
-        "@rules_rust//rust/private:rustfmt_workspace_name",
-    ],
     deps = [
         "//tools/runfiles",
     ],
@@ -49,7 +47,9 @@ rust_binary(
     },
     toolchains = [
         "@rules_rust//rust/toolchain:current_rust_toolchain",
+        "@rules_rust//rust/toolchain:current_rustfmt_toolchain",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":rustfmt_lib",
         "//util/label",
@@ -62,6 +62,7 @@ rust_binary(
         "src/bin/test_main.rs",
     ],
     edition = "2018",
+    visibility = ["//visibility:public"],
     deps = [
         ":rustfmt_lib",
         "//tools/runfiles",

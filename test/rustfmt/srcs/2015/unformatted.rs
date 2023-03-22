@@ -1,1 +1,1 @@
-fn main(){println!("2015");}
+pub fn main(){println!("2015");}

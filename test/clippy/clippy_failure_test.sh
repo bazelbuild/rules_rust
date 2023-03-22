@@ -83,16 +83,25 @@ EOF
 
   check_build_result $BUILD_OK ok_binary_clippy
   check_build_result $BUILD_OK ok_library_clippy
+  check_build_result $BUILD_OK ok_shared_library_clippy
+  check_build_result $BUILD_OK ok_static_library_clippy
   check_build_result $BUILD_OK ok_test_clippy
+  check_build_result $BUILD_OK ok_proc_macro_clippy
   check_build_result $BUILD_FAILED bad_binary_clippy
   check_build_result $BUILD_FAILED bad_library_clippy
+  check_build_result $BUILD_FAILED bad_shared_library_clippy
+  check_build_result $BUILD_FAILED bad_static_library_clippy
   check_build_result $BUILD_FAILED bad_test_clippy
+  check_build_result $BUILD_FAILED bad_proc_macro_clippy
 
   # When capturing output, clippy errors are treated as warnings and the build
   # should succeed.
   check_build_result $BUILD_OK bad_binary_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_library_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_shared_library_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_static_library_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_test_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_proc_macro_clippy $CAPTURE_OUTPUT
 
   # Test that we can make the ok_library_clippy fail when using an extra config file.
   # Proves that the config file is used and overrides default settings.

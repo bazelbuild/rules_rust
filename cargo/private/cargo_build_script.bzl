@@ -108,7 +108,7 @@ def _cargo_build_script_impl(ctx):
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": pkg_name,
-        "HOST": toolchain.exec_triple,
+        "HOST": toolchain.exec_triple.str,
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
@@ -134,7 +134,7 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, cc_toolchain, feature_configuration, None)
+    linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
@@ -174,6 +174,19 @@ def _cargo_build_script_impl(ctx):
 
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
+
+    # Gather data from the `toolchains` attribute.
+    for target in ctx.attr.toolchains:
+        if DefaultInfo in target:
+            toolchain_tools.extend([
+                target[DefaultInfo].files,
+                target[DefaultInfo].default_runfiles.files,
+            ])
+        if platform_common.ToolchainInfo in target:
+            all_files = getattr(target[platform_common.ToolchainInfo], "all_files", depset([]))
+            if type(all_files) == "list":
+                all_files = depset(all_files)
+            toolchain_tools.append(all_files)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,

@@ -23,7 +23,7 @@ impl FromStr for Label {
         let re = Regex::new(r"^(@@?[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
         let cap = re
             .captures(s)
-            .with_context(|| format!("Failed to parse label from string: {}", s))?;
+            .with_context(|| format!("Failed to parse label from string: {s}"))?;
 
         let repository = cap
             .get(1)
@@ -57,14 +57,14 @@ impl Display for Label {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Add the repository
         if let Some(repo) = &self.repository {
-            write!(f, "@{}", repo)?;
+            write!(f, "@{repo}")?;
         }
 
         write!(f, "//")?;
 
         // Add the package
         if let Some(pkg) = &self.package {
-            write!(f, "{}", pkg)?;
+            write!(f, "{pkg}")?;
         }
 
         write!(f, ":{}", self.target)?;
@@ -304,8 +304,8 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
-            File::create(&build_file).unwrap();
+            File::create(workspace).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let label = Label::from_absolute_path(&actual_file).unwrap();
@@ -322,7 +322,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&build_file).unwrap();
+            File::create(build_file).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)
@@ -340,7 +340,7 @@ mod test {
         let actual_file = subdir.join("greatgrandchild");
         create_dir_all(subdir).unwrap();
         {
-            File::create(&workspace).unwrap();
+            File::create(workspace).unwrap();
             File::create(&actual_file).unwrap();
         }
         let err = Label::from_absolute_path(&actual_file)

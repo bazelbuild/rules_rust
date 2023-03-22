@@ -2,18 +2,30 @@
 
 mod template_engine;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::iter::FromIterator;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
+use indoc::formatdoc;
 
-use crate::config::RenderConfig;
-use crate::context::Context;
+use crate::config::{RenderConfig, VendorMode};
+use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
+use crate::context::{Context, TargetAttributes};
 use crate::rendering::template_engine::TemplateEngine;
 use crate::splicing::default_splicing_package_crate_id;
-use crate::utils::starlark::Label;
+use crate::utils::starlark::{
+    self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
+    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
+    Starlark,
+};
+use crate::utils::{self, sanitize_repository_name};
+
+// Configuration remapper used to convert from cfg expressions like "cfg(unix)"
+// to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
+type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub struct Renderer {
     config: RenderConfig,
@@ -29,7 +41,8 @@ impl Renderer {
     pub fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
         let mut output = BTreeMap::new();
 
-        output.extend(self.render_build_files(context)?);
+        let platforms = self.render_platform_labels(context);
+        output.extend(self.render_build_files(context, &platforms)?);
         output.extend(self.render_crates_module(context)?);
 
         if let Some(vendor_mode) = &self.config.vendor_mode {
@@ -46,6 +59,27 @@ impl Renderer {
         Ok(output)
     }
 
+    fn render_platform_labels(&self, context: &Context) -> BTreeMap<String, BTreeSet<String>> {
+        context
+            .conditions
+            .iter()
+            .map(|(cfg, triples)| {
+                (
+                    cfg.clone(),
+                    triples
+                        .iter()
+                        .map(|triple| {
+                            render_platform_constraint_label(
+                                &self.config.platforms_template,
+                                triple,
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .collect()
+    }
+
     fn render_crates_module(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
             .context("Failed to resolve string to module file label")?;
@@ -60,37 +94,491 @@ impl Renderer {
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
-            self.engine.render_module_build_file(context)?,
+            self.render_module_build_file(context)?,
         );
 
         Ok(map)
     }
 
-    fn render_build_files(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    fn render_module_build_file(&self, context: &Context) -> Result<String> {
+        let mut starlark = Vec::new();
+
+        // Banner comment for top of the file.
+        let header = self.engine.render_header()?;
+        starlark.push(Starlark::Verbatim(header));
+
+        // Package visibility, exported bzl files.
+        let package = Package::default_visibility_public();
+        starlark.push(Starlark::Package(package));
+
+        let mut exports_files = ExportsFiles {
+            paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
+            globs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
+        };
+        if let Some(VendorMode::Remote) = self.config.vendor_mode {
+            exports_files.paths.insert("crates.bzl".to_owned());
+        }
+        starlark.push(Starlark::ExportsFiles(exports_files));
+
+        let filegroup = Filegroup {
+            name: "srcs".to_owned(),
+            srcs: Glob {
+                include: BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()]),
+                exclude: BTreeSet::new(),
+            },
+        };
+        starlark.push(Starlark::Filegroup(filegroup));
+
+        // An `alias` for each direct dependency of a workspace member crate.
+        let mut dependencies = Vec::new();
+        for dep in context.workspace_member_deps() {
+            let krate = &context.crates[&dep.id];
+            if let Some(library_target_name) = &krate.library_target_name {
+                let rename = dep.alias.as_ref().unwrap_or(&krate.name);
+                dependencies.push(Alias {
+                    // If duplicates exist, include version to disambiguate them.
+                    name: if context.has_duplicate_workspace_member_dep(dep) {
+                        format!("{}-{}", rename, krate.version)
+                    } else {
+                        rename.clone()
+                    },
+                    actual: self.crate_label(&krate.name, &krate.version, library_target_name),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                });
+            }
+        }
+        if !dependencies.is_empty() {
+            let comment = "# Workspace Member Dependencies".to_owned();
+            starlark.push(Starlark::Verbatim(comment));
+            starlark.extend(dependencies.into_iter().map(Starlark::Alias));
+        }
+
+        // An `alias` for each binary dependency.
+        let mut binaries = Vec::new();
+        for crate_id in &context.binary_crates {
+            let krate = &context.crates[crate_id];
+            for rule in &krate.targets {
+                if let Rule::Binary(bin) = rule {
+                    binaries.push(Alias {
+                        // If duplicates exist, include version to disambiguate them.
+                        name: if context.has_duplicate_binary_crate(crate_id) {
+                            format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
+                        } else {
+                            format!("{}__{}", krate.name, bin.crate_name)
+                        },
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version,
+                            &format!("{}__bin", bin.crate_name),
+                        ),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                }
+            }
+        }
+        if !binaries.is_empty() {
+            let comment = "# Binaries".to_owned();
+            starlark.push(Starlark::Verbatim(comment));
+            starlark.extend(binaries.into_iter().map(Starlark::Alias));
+        }
+
+        let starlark = starlark::serialize(&starlark)?;
+        Ok(starlark)
+    }
+
+    fn render_build_files(
+        &self,
+        context: &Context,
+        platforms: &Platforms,
+    ) -> Result<BTreeMap<PathBuf, String>> {
         let default_splicing_package_id = default_splicing_package_crate_id();
-        self.engine
-            .render_crate_build_files(context)?
-            .into_iter()
+        context
+            .crates
+            .keys()
             // Do not render the default splicing package
-            .filter(|(id, _)| *id != &default_splicing_package_id)
+            .filter(|id| *id != &default_splicing_package_id)
             // Do not render local packages
-            .filter(|(id, _)| !context.workspace_members.contains_key(id))
-            .map(|(id, content)| {
-                let ctx = &context.crates[id];
+            .filter(|id| !context.workspace_members.contains_key(id))
+            .map(|id| {
                 let label = match render_build_file_template(
                     &self.config.build_file_template,
-                    &ctx.name,
-                    &ctx.version,
+                    &id.name,
+                    &id.version,
                 ) {
                     Ok(label) => label,
                     Err(e) => bail!(e),
                 };
 
                 let filename = Renderer::label_to_path(&label);
-
+                let content = self.render_one_build_file(platforms, &context.crates[id])?;
                 Ok((filename, content))
             })
             .collect()
+    }
+
+    fn render_one_build_file(&self, platforms: &Platforms, krate: &CrateContext) -> Result<String> {
+        let mut starlark = Vec::new();
+
+        // Banner comment for top of the file.
+        let header = self.engine.render_header()?;
+        starlark.push(Starlark::Verbatim(header));
+
+        // Loads: map of bzl file to set of items imported from that file. These
+        // get inserted into `starlark` at the bottom of this function.
+        let mut loads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        let mut load = |bzl: &str, item: &str| {
+            loads
+                .entry(bzl.to_owned())
+                .or_default()
+                .insert(item.to_owned())
+        };
+
+        let disable_visibility = "# buildifier: disable=bzl-visibility".to_owned();
+        starlark.push(Starlark::Verbatim(disable_visibility));
+        starlark.push(Starlark::Load(Load {
+            bzl: "@rules_rust//crate_universe/private:selects.bzl".to_owned(),
+            items: BTreeSet::from(["selects".to_owned()]),
+        }));
+
+        // Package visibility.
+        let package = Package::default_visibility_public();
+        starlark.push(Starlark::Package(package));
+
+        if let Some(license) = &krate.license {
+            starlark.push(Starlark::Verbatim(formatdoc! {r#"
+                # licenses([
+                #     "TODO",  # {license}
+                # ])
+            "#}));
+        }
+
+        for rule in &krate.targets {
+            match rule {
+                Rule::BuildScript(target) => {
+                    load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
+                    let cargo_build_script =
+                        self.make_cargo_build_script(platforms, krate, target)?;
+                    starlark.push(Starlark::CargoBuildScript(cargo_build_script));
+                    starlark.push(Starlark::Alias(Alias {
+                        name: target.crate_name.clone(),
+                        actual: format!("{}_build_script", krate.name),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    }));
+                }
+                Rule::ProcMacro(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
+                    let rust_proc_macro = self.make_rust_proc_macro(platforms, krate, target)?;
+                    starlark.push(Starlark::RustProcMacro(rust_proc_macro));
+                }
+                Rule::Library(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_library");
+                    let rust_library = self.make_rust_library(platforms, krate, target)?;
+                    starlark.push(Starlark::RustLibrary(rust_library));
+                }
+                Rule::Binary(target) => {
+                    load("@rules_rust//rust:defs.bzl", "rust_binary");
+                    let rust_binary = self.make_rust_binary(platforms, krate, target)?;
+                    starlark.push(Starlark::RustBinary(rust_binary));
+                }
+            }
+        }
+
+        if let Some(additive_build_file_content) = &krate.additive_build_file_content {
+            let comment = "# Additive BUILD file content".to_owned();
+            starlark.push(Starlark::Verbatim(comment));
+            starlark.push(Starlark::Verbatim(additive_build_file_content.clone()));
+        }
+
+        // Insert all the loads immediately after the header banner comment.
+        let loads = loads
+            .into_iter()
+            .map(|(bzl, items)| Starlark::Load(Load { bzl, items }));
+        starlark.splice(1..1, loads);
+
+        let starlark = starlark::serialize(&starlark)?;
+        Ok(starlark)
+    }
+
+    fn make_cargo_build_script(
+        &self,
+        platforms: &Platforms,
+        krate: &CrateContext,
+        target: &TargetAttributes,
+    ) -> Result<CargoBuildScript> {
+        let empty_set = BTreeSet::<String>::new();
+        let empty_list = SelectList::<String>::default();
+        let empty_deps = SelectList::<CrateDependency>::default();
+        let attrs = krate.build_script_attrs.as_ref();
+
+        Ok(CargoBuildScript {
+            // Because `cargo_build_script` does some invisible target name
+            // mutating to determine the package and crate name for a build
+            // script, the Bazel target name of any build script cannot be the
+            // Cargo canonical name of "cargo_build_script" without losing out
+            // on having certain Cargo environment variables set.
+            //
+            // Do not change this name to "cargo_build_script".
+            name: format!("{}_build_script", krate.name),
+            aliases: self
+                .make_aliases(krate, true, false)
+                .remap_configurations(platforms),
+            build_script_env: attrs
+                .map_or_else(SelectDict::default, |attrs| attrs.build_script_env.clone())
+                .remap_configurations(platforms),
+            compile_data: make_data(
+                platforms,
+                &empty_set,
+                attrs.map_or(&empty_list, |attrs| &attrs.compile_data),
+            ),
+            crate_features: SelectList::from(&krate.common_attrs.crate_features)
+                .map_configuration_names(|triple| {
+                    render_platform_constraint_label(&self.config.platforms_template, &triple)
+                }),
+            crate_name: utils::sanitize_module_name(&target.crate_name),
+            crate_root: target.crate_root.clone(),
+            data: make_data(
+                platforms,
+                attrs.map_or(&empty_set, |attrs| &attrs.data_glob),
+                attrs.map_or(&empty_list, |attrs| &attrs.data),
+            ),
+            deps: self
+                .make_deps(
+                    attrs.map_or(&empty_deps, |attrs| &attrs.deps),
+                    attrs.map_or(&empty_set, |attrs| &attrs.extra_deps),
+                )
+                .remap_configurations(platforms),
+            edition: krate.common_attrs.edition.clone(),
+            linker_script: krate.common_attrs.linker_script.clone(),
+            links: attrs.and_then(|attrs| attrs.links.clone()),
+            proc_macro_deps: self
+                .make_deps(
+                    attrs.map_or(&empty_deps, |attrs| &attrs.proc_macro_deps),
+                    attrs.map_or(&empty_set, |attrs| &attrs.extra_proc_macro_deps),
+                )
+                .remap_configurations(platforms),
+            rustc_env: attrs
+                .map_or_else(SelectDict::default, |attrs| attrs.rustc_env.clone())
+                .remap_configurations(platforms),
+            rustc_env_files: attrs
+                .map_or_else(SelectList::default, |attrs| attrs.rustc_env_files.clone())
+                .remap_configurations(platforms),
+            rustc_flags: {
+                let mut rustc_flags =
+                    attrs.map_or_else(SelectList::default, |attrs| attrs.rustc_flags.clone());
+                // In most cases, warnings in 3rd party crates are not
+                // interesting as they're out of the control of consumers. The
+                // flag here silences warnings. For more details see:
+                // https://doc.rust-lang.org/rustc/lints/levels.html
+                rustc_flags.insert("--cap-lints=allow".to_owned(), None);
+                rustc_flags.remap_configurations(platforms)
+            },
+            srcs: target.srcs.clone(),
+            tags: {
+                let mut tags = BTreeSet::from_iter(krate.common_attrs.tags.iter().cloned());
+                tags.insert("cargo-bazel".to_owned());
+                tags.insert("manual".to_owned());
+                tags.insert("noclippy".to_owned());
+                tags.insert("norustfmt".to_owned());
+                tags.insert(format!("crate-name={}", krate.name));
+                tags
+            },
+            tools: attrs
+                .map_or_else(SelectList::default, |attrs| attrs.tools.clone())
+                .remap_configurations(platforms),
+            toolchains: attrs.map_or_else(BTreeSet::new, |attrs| attrs.toolchains.clone()),
+            version: krate.common_attrs.version.clone(),
+            visibility: BTreeSet::from(["//visibility:private".to_owned()]),
+        })
+    }
+
+    fn make_rust_proc_macro(
+        &self,
+        platforms: &Platforms,
+        krate: &CrateContext,
+        target: &TargetAttributes,
+    ) -> Result<RustProcMacro> {
+        Ok(RustProcMacro {
+            name: target.crate_name.clone(),
+            deps: self
+                .make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps)
+                .remap_configurations(platforms),
+            proc_macro_deps: self
+                .make_deps(
+                    &krate.common_attrs.proc_macro_deps,
+                    &krate.common_attrs.extra_proc_macro_deps,
+                )
+                .remap_configurations(platforms),
+            aliases: self
+                .make_aliases(krate, false, false)
+                .remap_configurations(platforms),
+            common: self.make_common_attrs(platforms, krate, target)?,
+        })
+    }
+
+    fn make_rust_library(
+        &self,
+        platforms: &Platforms,
+        krate: &CrateContext,
+        target: &TargetAttributes,
+    ) -> Result<RustLibrary> {
+        Ok(RustLibrary {
+            name: target.crate_name.clone(),
+            deps: self
+                .make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps)
+                .remap_configurations(platforms),
+            proc_macro_deps: self
+                .make_deps(
+                    &krate.common_attrs.proc_macro_deps,
+                    &krate.common_attrs.extra_proc_macro_deps,
+                )
+                .remap_configurations(platforms),
+            aliases: self
+                .make_aliases(krate, false, false)
+                .remap_configurations(platforms),
+            common: self.make_common_attrs(platforms, krate, target)?,
+            disable_pipelining: krate.disable_pipelining,
+        })
+    }
+
+    fn make_rust_binary(
+        &self,
+        platforms: &Platforms,
+        krate: &CrateContext,
+        target: &TargetAttributes,
+    ) -> Result<RustBinary> {
+        Ok(RustBinary {
+            name: format!("{}__bin", target.crate_name),
+            deps: {
+                let mut deps =
+                    self.make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps);
+                if let Some(library_target_name) = &krate.library_target_name {
+                    deps.insert(format!(":{library_target_name}"), None);
+                }
+                deps.remap_configurations(platforms)
+            },
+            proc_macro_deps: self
+                .make_deps(
+                    &krate.common_attrs.proc_macro_deps,
+                    &krate.common_attrs.extra_proc_macro_deps,
+                )
+                .remap_configurations(platforms),
+            aliases: self
+                .make_aliases(krate, false, false)
+                .remap_configurations(platforms),
+            common: self.make_common_attrs(platforms, krate, target)?,
+        })
+    }
+
+    fn make_common_attrs(
+        &self,
+        platforms: &Platforms,
+        krate: &CrateContext,
+        target: &TargetAttributes,
+    ) -> Result<CommonAttrs> {
+        Ok(CommonAttrs {
+            compile_data: make_data(
+                platforms,
+                &krate.common_attrs.compile_data_glob,
+                &krate.common_attrs.compile_data,
+            ),
+            crate_features: SelectList::from(&krate.common_attrs.crate_features)
+                .map_configuration_names(|triple| {
+                    render_platform_constraint_label(&self.config.platforms_template, &triple)
+                }),
+            crate_root: target.crate_root.clone(),
+            data: make_data(
+                platforms,
+                &krate.common_attrs.data_glob,
+                &krate.common_attrs.data,
+            ),
+            edition: krate.common_attrs.edition.clone(),
+            linker_script: krate.common_attrs.linker_script.clone(),
+            rustc_env: krate
+                .common_attrs
+                .rustc_env
+                .clone()
+                .remap_configurations(platforms),
+            rustc_env_files: krate
+                .common_attrs
+                .rustc_env_files
+                .clone()
+                .remap_configurations(platforms),
+            rustc_flags: {
+                let mut rustc_flags = krate.common_attrs.rustc_flags.clone();
+                // In most cases, warnings in 3rd party crates are not
+                // interesting as they're out of the control of consumers. The
+                // flag here silences warnings. For more details see:
+                // https://doc.rust-lang.org/rustc/lints/levels.html
+                rustc_flags.insert(0, "--cap-lints=allow".to_owned());
+                rustc_flags
+            },
+            srcs: target.srcs.clone(),
+            tags: {
+                let mut tags = BTreeSet::from_iter(krate.common_attrs.tags.iter().cloned());
+                tags.insert("cargo-bazel".to_owned());
+                tags.insert("manual".to_owned());
+                tags.insert("noclippy".to_owned());
+                tags.insert("norustfmt".to_owned());
+                tags.insert(format!("crate-name={}", krate.name));
+                tags
+            },
+            version: krate.common_attrs.version.clone(),
+        })
+    }
+
+    /// Filter a crate's dependencies to only ones with aliases
+    fn make_aliases(
+        &self,
+        krate: &CrateContext,
+        build: bool,
+        include_dev: bool,
+    ) -> SelectDict<String> {
+        let mut dep_lists = Vec::new();
+        if build {
+            if let Some(build_script_attrs) = &krate.build_script_attrs {
+                dep_lists.push(&build_script_attrs.deps);
+                dep_lists.push(&build_script_attrs.proc_macro_deps);
+            }
+        } else {
+            dep_lists.push(&krate.common_attrs.deps);
+            dep_lists.push(&krate.common_attrs.proc_macro_deps);
+            if include_dev {
+                dep_lists.push(&krate.common_attrs.deps_dev);
+                dep_lists.push(&krate.common_attrs.proc_macro_deps_dev);
+            }
+        }
+
+        let mut aliases = SelectDict::default();
+        for (dep, conf) in dep_lists.into_iter().flat_map(|deps| {
+            deps.configurations().into_iter().flat_map(move |conf| {
+                deps.get_iter(conf)
+                    .expect("Iterating over known keys should never panic")
+                    .map(move |dep| (dep, conf))
+            })
+        }) {
+            if let Some(alias) = &dep.alias {
+                let label = self.crate_label(&dep.id.name, &dep.id.version, &dep.target);
+                aliases.insert(label, alias.clone(), conf.cloned());
+            }
+        }
+        aliases
+    }
+
+    fn make_deps(
+        &self,
+        deps: &SelectList<CrateDependency>,
+        extra_deps: &BTreeSet<String>,
+    ) -> SelectList<String> {
+        let mut deps = deps
+            .clone()
+            .map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target));
+        for extra_dep in extra_deps {
+            deps.insert(extra_dep.clone(), None);
+        }
+        deps
     }
 
     fn render_vendor_support_files(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
@@ -111,6 +599,16 @@ impl Renderer {
             Some(package) => PathBuf::from(format!("{}/{}", package, label.target)),
             None => PathBuf::from(&label.target),
         }
+    }
+
+    fn crate_label(&self, name: &str, version: &str, target: &str) -> String {
+        sanitize_repository_name(&render_crate_bazel_label(
+            &self.config.crate_label_template,
+            &self.config.repository_name,
+            name,
+            version,
+            target,
+        ))
     }
 }
 
@@ -134,7 +632,7 @@ pub fn write_outputs(
             println!(
                 "==============================================================================="
             );
-            println!("{}\n", content);
+            println!("{content}\n");
         }
     } else {
         for (path, content) in outputs {
@@ -193,7 +691,7 @@ pub fn render_module_label(template: &str, name: &str) -> Result<Label> {
 }
 
 /// Render the Bazel label of a platform triple
-pub fn render_platform_constraint_label(template: &str, triple: &str) -> String {
+fn render_platform_constraint_label(template: &str, triple: &str) -> String {
     template.replace("{triple}", triple)
 }
 
@@ -205,15 +703,42 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
     )
 }
 
+fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList<String>) -> Data {
+    const COMMON_GLOB_EXCLUDES: &[&str] = &[
+        "**/* *",
+        "BUILD.bazel",
+        "BUILD",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+    ];
+
+    Data {
+        glob: Glob {
+            include: glob.clone(),
+            exclude: COMMON_GLOB_EXCLUDES
+                .iter()
+                .map(|&glob| glob.to_owned())
+                .collect(),
+        },
+        select: select.clone().remap_configurations(platforms),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
+    use indoc::indoc;
+    use std::collections::BTreeSet;
+
     use crate::config::{Config, CrateId, VendorMode};
     use crate::context::crate_context::{CrateContext, Rule};
-    use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
+    use crate::context::{
+        BuildScriptAttributes, CommonAttributes, Context, CrateFeatures, TargetAttributes,
+    };
     use crate::metadata::Annotations;
     use crate::test;
+    use crate::utils::starlark::SelectList;
 
     fn mock_render_config() -> RenderConfig {
         serde_json::from_value(serde_json::json!({
@@ -240,7 +765,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -254,6 +779,32 @@ mod test {
 
         assert!(build_file_content.contains("rust_library("));
         assert!(build_file_content.contains("name = \"mock_crate\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
+    }
+
+    #[test]
+    fn test_disable_pipelining() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                disable_pipelining: true,
+                ..CrateContext::default()
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(build_file_content.contains("disable_pipelining = True"));
     }
 
     #[test]
@@ -265,11 +816,11 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::BuildScript(TargetAttributes {
+                targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_build".to_owned(),
                     crate_root: Some("build.rs".to_owned()),
                     ..TargetAttributes::default()
-                })],
+                })]),
                 // Build script attributes are required.
                 build_script_attrs: Some(BuildScriptAttributes::default()),
                 ..CrateContext::default()
@@ -285,6 +836,7 @@ mod test {
 
         assert!(build_file_content.contains("cargo_build_script("));
         assert!(build_file_content.contains("name = \"build_script_build\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"mock_crate_build_script\""));
@@ -299,7 +851,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::ProcMacro(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::ProcMacro(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -313,6 +865,7 @@ mod test {
 
         assert!(build_file_content.contains("rust_proc_macro("));
         assert!(build_file_content.contains("name = \"mock_crate\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
     }
 
     #[test]
@@ -324,7 +877,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -338,6 +891,7 @@ mod test {
 
         assert!(build_file_content.contains("rust_binary("));
         assert!(build_file_content.contains("name = \"mock_crate__bin\""));
+        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
     }
 
     #[test]
@@ -349,7 +903,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Binary(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
                 additive_build_file_content: Some(
                     "# Hello World from additive section!".to_owned(),
                 ),
@@ -369,12 +923,12 @@ mod test {
 
     #[test]
     fn render_aliases() {
-        let annotations = Annotations::new(
-            test::metadata::alias(),
-            test::lockfile::alias(),
-            Config::default(),
-        )
-        .unwrap();
+        let config = Config {
+            generate_binaries: true,
+            ..Config::default()
+        };
+        let annotations =
+            Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
         let context = Context::new(annotations).unwrap();
 
         let renderer = Renderer::new(mock_render_config());
@@ -395,7 +949,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -417,7 +971,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -447,7 +1001,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 ..CrateContext::default()
             },
         );
@@ -486,7 +1040,7 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
-                targets: vec![Rule::Library(mock_target_attributes())],
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
                     rustc_flags: rustc_flags.clone(),
                     ..CommonAttributes::default()
@@ -513,7 +1067,7 @@ mod test {
         assert!(build_file_content.replace(' ', "").contains(
             &rustc_flags
                 .iter()
-                .map(|s| format!("\"{}\",", s))
+                .map(|s| format!("\"{s}\","))
                 .collect::<Vec<String>>()
                 .join("\n")
         ));
@@ -522,6 +1076,7 @@ mod test {
     #[test]
     fn test_render_build_file_deps() {
         let config: Config = serde_json::from_value(serde_json::json!({
+            "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
                 "repository_name": "multi_cfg_dep",
@@ -550,19 +1105,97 @@ mod test {
 
         // This is unfortunately somewhat brittle. Alas. Ultimately we wish to demonstrate that the
         // original cfg(...) strings are preserved in the `deps` list for ease of debugging.
+        let expected = indoc! {r#"
+            deps = select({
+                "@rules_rust//rust/platform:aarch64-apple-darwin": [
+                    "@multi_cfg_dep__libc-0.2.117//:libc",  # aarch64-apple-darwin
+                ],
+                "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+                    "@multi_cfg_dep__libc-0.2.117//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))
+                ],
+                "//conditions:default": [],
+            }),
+        "#};
+
         assert!(
-            build_file_content.replace(' ', "")
-            .contains(&
-r#"deps = [
+            build_file_content.contains(&expected.replace('\n', "\n    ")),
+            "{}",
+            build_file_content,
+        );
+    }
+
+    #[test]
+    fn legacy_crate_features() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                common_attrs: CommonAttributes {
+                    crate_features: CrateFeatures::LegacySet(BTreeSet::from([
+                        "foo".to_owned(),
+                        "bar".to_owned(),
+                    ])),
+                    ..CommonAttributes::default()
+                },
+                ..CrateContext::default()
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+        assert!(build_file_content.replace(' ', "").contains(
+            &r#"crate_features = [
+    "bar",
+    "foo",
+],"#
+            .replace(' ', "")
+        ));
+    }
+    #[test]
+    fn crate_features_by_target() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let mut features = SelectList::default();
+        features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
+        features.insert("bar".to_owned(), None);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                common_attrs: CommonAttributes {
+                    crate_features: CrateFeatures::SelectList(features),
+                    ..CommonAttributes::default()
+                },
+                ..CrateContext::default()
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+        assert!(build_file_content.replace(' ', "").contains(
+            &r#"crate_features = [
+        "bar",
     ] + select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@multi_cfg_dep__libc-0.2.117//:libc",  # aarch64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@multi_cfg_dep__libc-0.2.117//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))
-        ],
-        "//conditions:default": [
-        ],
-    }),"#.replace(' ', "")));
+    "@rules_rust//rust/platform:aarch64-apple-darwin": [
+        "foo",
+    ],
+    "//conditions:default": [],
+}),"#
+                .replace(' ', "")
+        ));
     }
 }

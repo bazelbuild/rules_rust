@@ -19,6 +19,7 @@ CrateInfo = provider(
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "compile_data": "depset[File]: Compile data required by this crate.",
+        "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",

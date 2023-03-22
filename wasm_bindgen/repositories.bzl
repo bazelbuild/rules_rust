@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# buildifier: disable=module-docstring
+"""Dependency definitions for wasm-bindgen rules"""
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
@@ -67,7 +68,7 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
             (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
     """
 
     rust_wasm_bindgen_dependencies()
