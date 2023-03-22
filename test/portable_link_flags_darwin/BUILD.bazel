@@ -2,8 +2,8 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 
 rust_library(
     name = "rust-lib",
-    edition = "2021",
     srcs = ["lib.rs"],
+    edition = "2021",
 )
 
 cc_library(
@@ -14,17 +14,17 @@ cc_library(
 
 rust_binary(
     name = "app",
-    edition = "2021",
     srcs = ["main.rs"],
+    edition = "2021",
     deps = [":c-lib"],
 )
 
 sh_test(
     name = "test",
-    data = [":app"],
     srcs = ["test.sh"],
     args = ["$(location :app)"],
+    data = [":app"],
     target_compatible_with = [
         "@platforms//os:macos",
-    ]
+    ],
 )
