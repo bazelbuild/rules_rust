@@ -23,5 +23,8 @@ sh_test(
     name = "test",
     data = [":app"],
     srcs = ["test.sh"],
-    args = ["$(location :app)"]   
+    args = ["$(location :app)"],
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ]
 )
