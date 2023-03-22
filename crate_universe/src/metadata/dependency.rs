@@ -523,22 +523,11 @@ mod test {
         let node = find_metadata_node("clap", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        assert!(dependencies
+        assert!(!dependencies
             .normal_deps
-            .configurations()
-            .into_iter()
-            .flat_map(|conf| {
-                dependencies
-                    .normal_deps
-                    .get_iter(conf)
-                    .expect("Iterating over known keys should never panic")
-                    .filter(|dep| {
-                        dep.target_name == "is-terminal" || dep.target_name == "termcolor"
-                    })
-                    .map(move |_| conf.cloned())
-            })
-            .next()
-            .is_none());
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
     }
 
     #[test]
@@ -548,21 +537,16 @@ mod test {
         let node = find_metadata_node("clap", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        assert!(dependencies
-            .normal_deps
-            .configurations()
-            .into_iter()
-            .flat_map(|conf| {
-                dependencies
-                    .normal_deps
-                    .get_iter(conf)
-                    .expect("Iterating over known keys should never panic")
-                    .filter(|dep| {
-                        dep.target_name == "is-terminal" || dep.target_name == "termcolor"
-                    })
-                    .map(move |_| conf.cloned())
-            })
-            .next()
-            .is_some());
+        assert_eq!(
+            dependencies
+                .normal_deps
+                .get_iter(None)
+                .expect("Iterating over known keys should never panic")
+                .filter(|dep| {
+                    dep.target_name == "is-terminal" || dep.target_name == "termcolor"
+                })
+                .count(),
+            2
+        );
     }
 }
