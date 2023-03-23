@@ -37,6 +37,7 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
+                .filter(|dep| is_optional_crate_enabled(node, dep, metadata))
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
@@ -110,6 +111,31 @@ impl DependencySet {
             build_deps,
             build_proc_macro_deps,
         }
+    }
+}
+
+/// For details on optional dependencies see [the Rust docs](https://doc.rust-lang.org/cargo/reference/features.html#optional-dependencies).
+fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetadata) -> bool {
+    let pkg = &metadata[&parent.id];
+
+    let mut enabled_deps = pkg
+        .features
+        .iter()
+        .filter(|(pkg_feature, _)| parent.features.contains(pkg_feature))
+        .flat_map(|(_, features)| features)
+        .filter_map(|f| f.strip_prefix("dep:"));
+
+    // if the crate is marked as optional dependency, we check whether
+    // a feature prefixed with dep: is enabled
+    if let Some(toml_dep) = pkg
+        .dependencies
+        .iter()
+        .filter(|&d| d.optional)
+        .find(|&d| sanitize_module_name(&d.name) == dep.name)
+    {
+        enabled_deps.any(|d| d == toml_dep.name.as_str())
+    } else {
+        true
     }
 }
 
@@ -488,6 +514,40 @@ mod test {
                 "aarch64-apple-darwin".to_owned(),
                 "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))".to_owned(),
             ])
+        );
+    }
+
+    #[test]
+    fn optional_deps_disabled() {
+        let metadata = metadata::optional_deps_disabled();
+
+        let node = find_metadata_node("clap", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert!(!dependencies
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
+    }
+
+    #[test]
+    fn optional_deps_enabled() {
+        let metadata = metadata::optional_deps_enabled();
+
+        let node = find_metadata_node("clap", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert_eq!(
+            dependencies
+                .normal_deps
+                .get_iter(None)
+                .expect("Iterating over known keys should never panic")
+                .filter(|dep| {
+                    dep.target_name == "is-terminal" || dep.target_name == "termcolor"
+                })
+                .count(),
+            2
         );
     }
 }
