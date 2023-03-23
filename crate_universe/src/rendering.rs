@@ -612,7 +612,7 @@ impl Renderer {
     }
 }
 
-/// Write a set of [CrateContext][crate::context::CrateContext] to disk.
+/// Write a set of [crate::context::crate_context::CrateContext] to disk.
 pub fn write_outputs(
     outputs: BTreeMap<PathBuf, String>,
     out_dir: &Path,

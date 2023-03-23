@@ -121,7 +121,7 @@ impl Cargo {
     }
 
     /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
-    /// Note: This function performs normalisation to work around https://github.com/rust-lang/cargo/issues/10547
+    /// This function performs normalisation to work around `<https://github.com/rust-lang/cargo/issues/10547>`
     pub fn full_version(&self) -> Result<String> {
         let mut full_version = self.full_version.lock().unwrap();
         if full_version.is_none() {

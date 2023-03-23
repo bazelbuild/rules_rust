@@ -52,7 +52,7 @@ pub struct VendorOptions {
 
     /// The desired update/repin behavior. The arguments passed here are forward to
     /// [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html). See
-    /// [metadata::CargoUpdateRequest] for details on the values to pass here.
+    /// [crate::metadata::CargoUpdateRequest] for details on the values to pass here.
     #[clap(long, env = "CARGO_BAZEL_REPIN", num_args=0..=1, default_missing_value = "true")]
     pub repin: Option<CargoUpdateRequest>,
 
