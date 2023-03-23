@@ -114,6 +114,7 @@ impl DependencySet {
     }
 }
 
+/// For details on optional dependencies see [the Rust docs](https://doc.rust-lang.org/cargo/reference/features.html#optional-dependencies).
 fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetadata) -> bool {
     let pkg = &metadata[&parent.id];
 
