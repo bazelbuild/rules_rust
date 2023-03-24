@@ -682,6 +682,9 @@ _common_attrs = {
     "_is_proc_macro_dep_enabled": attr.label(
         default = Label("//:is_proc_macro_dep_enabled"),
     ),
+    "_per_crate_rustc_flag": attr.label(
+        default = Label("//:experimental_per_crate_rustc_flag"),
+    ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
         default = Label("//util/process_wrapper"),
