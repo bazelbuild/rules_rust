@@ -1,9 +1,9 @@
 //! Crate specific information embedded into [crate::context::Context] objects.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use cargo_metadata::{Node, Package, PackageId};
+use cargo_metadata::{Node, Package, PackageId, Target};
 use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
@@ -13,7 +13,7 @@ use crate::metadata::{
 use crate::select::Select;
 use crate::splicing::WorkspaceMetadata;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Glob, Label};
+use crate::utils::starlark::{ Glob, GlobOrLabels, Label, SelectList };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
@@ -44,8 +44,12 @@ pub(crate) struct TargetAttributes {
     /// The path to the crate's root source file, relative to the manifest.
     pub(crate) crate_root: Option<String>,
 
-    /// A glob pattern of all source files required by the target
-    pub(crate) srcs: Glob,
+    /// A glob pattern of all source files required by the target or a label
+    /// pointing to a filegroup containing said glob (used for patching)
+    pub(crate) srcs: GlobOrLabels,
+
+    /// A label for overriding compile_data, used for patching
+    pub compile_data: Option<GlobOrLabels>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -773,6 +777,7 @@ impl CrateContext {
             .targets
             .iter()
             .flat_map(|target| {
+                let attrs = get_attributes(target, package, workspace, package_root);
                 target.kind.iter().filter_map(move |kind| {
                     // Unfortunately, The package graph and resolve graph of cargo metadata have different representations
                     // for the crate names (resolve graph sanitizes names to match module names) so to get the rest of this
@@ -784,21 +789,6 @@ impl CrateContext {
                         // Normalize the path so that it always renders the same regardless of platform
                         |root| root.to_string_lossy().replace('\\', "/"),
                     );
-                    println!("{}", package.id);
-                    if package.id.repr.contains("(path+file://") {
-                        println!("");
-                        println!("{crate_name} {kind} {:?}", &crate_root);
-                        println!("src: {:?}", &target.src_path);
-                        println!("pkg: {:?}", package_root);
-                        println!("root: {:?}", &crate_root);
-                        println!("workspace: {:?}", workspace.workspace_prefix);
-                        let temp_components = std::env::temp_dir().components().count() + 1;
-                        println!("temp dir components to drop: {temp_components}");
-                        let real_root: PathBuf =
-                            package_root.components().skip(temp_components).collect();
-                        println!("ACTUAL FOR REAL ROOT: {}", real_root.to_string_lossy());
-                        println!("");
-                    }
                     let crate_root = crate_root.map(|r| {
                         if package.id.repr.contains("(path+file://") {
                             let temp_components = std::env::temp_dir().components().count() + 1;
@@ -814,51 +804,107 @@ impl CrateContext {
                         }
                     });
 
+                    let attrs = attrs.clone();
+
                     // Conditionally check to see if the dependencies is a build-script target
                     if include_build_scripts && kind == "custom-build" {
                         return Some(Rule::BuildScript(TargetAttributes {
                             crate_name,
                             crate_root,
-                            srcs: Glob::new_rust_srcs(!sources_are_present),
+                            srcs: Glob::new_rust_srcs(!sources_are_present).into(),
+                            compile_data: attrs.compile_data,
                         }));
                     }
 
                     // Check to see if the dependencies is a proc-macro target
                     if kind == "proc-macro" {
-                        return Some(Rule::ProcMacro(TargetAttributes {
-                            crate_name,
-                            crate_root,
-                            srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
-                    }
-
-                    // Check to see if the dependencies is a library target
-                    if ["lib", "rlib"].contains(&kind.as_str()) {
-                        return Some(Rule::Library(TargetAttributes {
-                            crate_name,
-                            crate_root,
-                            srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
-                    }
-
-                    // Check if the target kind is binary and is one of the ones included in gen_binaries
-                    if kind == "bin"
-                        && match gen_binaries {
+                        Some(Rule::ProcMacro(attrs))
+                    } else if ["lib", "rlib"].contains(&kind.as_str()) {
+                        Some(Rule::Library(attrs))
+                    } else if include_build_scripts && kind == "custom-build" {
+                        let build_script_crate_root = attrs
+                            .crate_root
+                            .map(|s| s.replace(":crate_root", ":build_script_crate_root"));
+                        Some(Rule::BuildScript(TargetAttributes {
+                            crate_root: build_script_crate_root,
+                            ..attrs
+                        }))
+                    } else if kind == "bin" {
+                        match gen_binaries {
                             GenBinaries::All => true,
                             GenBinaries::Some(set) => set.contains(&target.name),
                         }
-                    {
-                        return Some(Rule::Binary(TargetAttributes {
-                            crate_name: target.name.clone(),
-                            crate_root,
-                            srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
+                        .then(|| {
+                            Rule::Binary(TargetAttributes {
+                                crate_name: target.name.clone(),
+                                ..attrs
+                            })
+                        })
+                    } else {
+                        None
                     }
-
-                    None
                 })
             })
             .collect()
+    }
+}
+
+fn get_attributes(
+    target: &Target,
+    package: &Package,
+    workspace: &WorkspaceMetadata,
+    package_root: &Path,
+) -> TargetAttributes {
+    // Unfortunately, The package graph and resolve graph of cargo metadata have
+    // different representations for the crate names (resolve graph sanitizes
+    // names to match module names) so to get the rest of this content to align
+    // when rendering, the package target names are always sanitized.
+    let crate_name = sanitize_module_name(&target.name);
+
+    // Locate the crate's root source file relative to the package root normalized
+    // for unix
+    let crate_root = pathdiff::diff_paths(&target.src_path, package_root).map(
+        // Normalize the path so that it always renders the same regardless of platform
+        |root| root.to_string_lossy().replace('\\', "/"),
+    );
+    let local_patch = package.id.repr.contains("(path+file://");
+    let temp_components = std::env::temp_dir().components().count() + 1;
+    let real_root: PathBuf = package_root.components().skip(temp_components).collect();
+    if !local_patch || real_root.as_os_str().is_empty() {
+        TargetAttributes {
+            crate_name,
+            crate_root,
+            srcs: Glob::new_rust_srcs().into(),
+            compile_data: None,
+        }
+    } else {
+        let root = real_root.display();
+        let pkg = if let Some(workspace) = &workspace.workspace_prefix {
+            format!("{workspace}/{}", root)
+        } else {
+            root.to_string()
+        };
+        // TODO: remove once added to help-docs
+        println!("\nThere's a patch crate at '//{pkg}'.");
+        println!("Make sure that '//{pkg}/BUILD.bazel' exposes the following filegroups:");
+        println!("'crate_root', 'srcs', 'compile_data', and (if necessary) 'build_script'");
+        let srcs = GlobOrLabels::Labels(vec![Label {
+            repository: None,
+            package: Some(pkg.clone()),
+            target: "srcs".to_string(),
+        }]);
+        let compile_data = Some(GlobOrLabels::Labels(vec![Label {
+            repository: None,
+            package: Some(pkg.clone()),
+            target: "compile_data".to_string(),
+        }]));
+
+        TargetAttributes {
+            crate_name,
+            crate_root: Some(format!("//{pkg}:crate_root")),
+            srcs,
+            compile_data,
+        }
     }
 }
 
@@ -908,7 +954,8 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "common".to_owned(),
                 crate_root: Some("lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(!are_sources_present),
+                srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                compile_data: None,
             })]),
         );
     }
@@ -941,7 +988,7 @@ mod test {
         let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
@@ -957,12 +1004,14 @@ mod test {
                 Rule::Library(TargetAttributes {
                     crate_name: "common".to_owned(),
                     crate_root: Some("lib.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(!are_sources_present),
+                    srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                    compile_data: None,
                 }),
                 Rule::Binary(TargetAttributes {
                     crate_name: "common-bin".to_owned(),
                     crate_root: Some("main.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(!are_sources_present),
+                    srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                    compile_data: None,
                 }),
             ]),
         );
@@ -1006,7 +1055,7 @@ mod test {
         let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
@@ -1023,12 +1072,14 @@ mod test {
                 Rule::Library(TargetAttributes {
                     crate_name: "openssl_sys".to_owned(),
                     crate_root: Some("src/lib.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(!are_sources_present),
+                    srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                    compile_data: None,
                 }),
                 Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_main".to_owned(),
                     crate_root: Some("build/main.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(!are_sources_present),
+                    srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                    compile_data: None,
                 })
             ]),
         );
@@ -1053,7 +1104,7 @@ mod test {
         let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
@@ -1069,7 +1120,8 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "openssl_sys".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(!are_sources_present),
+                srcs: Glob::new_rust_srcs(!are_sources_present).into(),
+                compile_data: None,
             })]),
         );
     }
@@ -1089,7 +1141,7 @@ mod test {
         let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
@@ -1106,6 +1158,7 @@ mod test {
                 crate_name: "sysinfo".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
                 srcs: Glob::new_rust_srcs(!are_sources_present),
+                compile_data: None,
             })]),
         );
     }

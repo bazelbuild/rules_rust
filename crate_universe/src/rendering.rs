@@ -454,13 +454,19 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
-            compile_data: make_data(
-                platforms,
-                Default::default(),
-                attrs
-                    .map(|attrs| attrs.compile_data.clone())
-                    .unwrap_or_default(),
-            ),
+            compile_data: {
+                make_data(
+                    platforms,
+                    Default::default(),
+                    attrs
+                        .map(|attrs| attrs.compile_data.clone())
+                        .unwrap_or_default(),
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
@@ -650,11 +656,17 @@ impl Renderer {
         target: &TargetAttributes,
     ) -> Result<CommonAttrs> {
         Ok(CommonAttrs {
-            compile_data: make_data(
-                platforms,
-                krate.common_attrs.compile_data_glob.clone(),
-                krate.common_attrs.compile_data.clone(),
-            ),
+            compile_data: {
+                make_data(
+                    platforms,
+                    krate.common_attrs.compile_data_glob.clone(),
+                    krate.common_attrs.compile_data.clone(),
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_root: target.crate_root.clone(),
             data: make_data(
@@ -892,7 +904,8 @@ fn make_data(
                 .iter()
                 .map(|&glob| glob.to_owned())
                 .collect(),
-        },
+        }
+        .into(),
         select: SelectSet::new(select, platforms),
     }
 }
