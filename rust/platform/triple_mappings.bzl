@@ -24,6 +24,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-apple-ios-sim",
     "aarch64-apple-ios",
+    "aarch64-fuchsia",
     "aarch64-linux-android",
     "aarch64-pc-windows-msvc",
     "arm-unknown-linux-gnueabi",
@@ -38,6 +39,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "wasm32-unknown-unknown",
     "wasm32-wasi",
     "x86_64-apple-ios",
+    "x86_64-fuchsia",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
 ]
@@ -67,6 +69,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "s390": None,
     "s390x": "s390x",
     "thumbv6m": "armv6-m",
+    "thumbv7em": "armv7e-m",
     "thumbv7m": "armv7-m",
     "wasm32": None,
     "x86_64": "x86_64",
@@ -79,8 +82,10 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "darwin": "osx",
     "dragonfly": None,
     "eabi": "none",
+    "eabihf": "none",
     "emscripten": None,
     "freebsd": "freebsd",
+    "fuchsia": "fuchsia",
     "ios": "ios",
     "linux": "linux",
     "nacl": None,
@@ -97,8 +102,10 @@ _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
     "eabi": "",
+    "eabihf": "",
     "emscripten": ".js",
     "freebsd": "",
+    "fuchsia": "",
     "ios": "",
     "linux": "",
     "none": "",
@@ -114,8 +121,10 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
     "eabi": ".a",
+    "eabihf": ".a",
     "emscripten": ".js",
     "freebsd": ".a",
+    "fuchsia": ".a",
     "ios": ".a",
     "linux": ".a",
     "none": ".a",
@@ -128,8 +137,10 @@ _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
     "eabi": ".so",
+    "eabihf": ".so",
     "emscripten": ".js",
     "freebsd": ".so",
+    "fuchsia": ".so",
     "ios": ".dylib",
     "linux": ".so",
     "none": ".so",
@@ -151,6 +162,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "darwin": ["-lSystem", "-lresolv"],
     "dragonfly": ["-lpthread"],
     "eabi": [],
+    "eabihf": [],
     "emscripten": [],
     # TODO(bazelbuild/rules_cc#75):
     #
@@ -181,11 +193,24 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch):
+def cpu_arch_to_constraints(cpu_arch, *, system = None):
+    """Returns a list of contraint values which represents a triple's CPU.
+
+    Args:
+        cpu_arch (str): The architecture to match constraints for
+        system (str, optional): The system for the associated ABI value.
+
+    Returns:
+        List: A list of labels to constraint values
+    """
+    if cpu_arch not in _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX:
+        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
-    if not plat_suffix:
-        fail("CPU architecture \"{}\" is not supported by rules_rust".format(cpu_arch))
+    # Patch armv7e-m to mf if hardfloat abi is selected
+    if plat_suffix == "armv7e-m" and system == "eabihf":
+        plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
 
@@ -197,10 +222,10 @@ def vendor_to_constraints(_vendor):
     return []
 
 def system_to_constraints(system):
-    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
+    if system not in _SYSTEM_TO_BUILTIN_SYS_SUFFIX:
+        fail("System \"{}\" is not supported by rules_rust".format(system))
 
-    if not sys_suffix:
-        fail("System \"{}\" is not supported by rules_rust".format(sys_suffix))
+    sys_suffix = _SYSTEM_TO_BUILTIN_SYS_SUFFIX[system]
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
@@ -218,43 +243,16 @@ def abi_to_constraints(abi, *, arch = None, system = None):
         List: A list of labels to constraint values
     """
 
-    if not abi:
-        return []
-
-    if abi == "sim":
-        if not system:
-            fail("The ABI value {} is ambiguous. Please specify a system to match the right constraints.")
-        if not arch:
-            fail("The ABI value {} is ambiguous. Please specify an architecture to match the right constraints.")
-        if system == "ios":
-            if abi == "sim":
-                return ["@build_bazel_apple_support//constraints:simulator"]
-        elif arch == "aarch64":  # Only add device for archs that have both
-            return ["@build_bazel_apple_support//constraints:device"]
+    # add constraints for iOS + watchOS simulator and device triples
+    if system in ["ios", "watchos"]:
+        if arch == "x86_64" or abi == "sim":
+            return ["@build_bazel_apple_support//constraints:simulator"]
         else:
-            return []
+            return ["@build_bazel_apple_support//constraints:device"]
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
     return []
-
-def extra_ios_constraints(triple):
-    """Add constraints specific to iOS targets.
-
-    Deprecated: Instead, use `abi_to_constraints`
-
-    Args:
-        triple: The full triple struct for the target
-
-    Returns:
-        A list of constraints to add to the target
-    """
-
-    # TODO: Simplify if https://github.com/bazelbuild/bazel/issues/11454 is fixed
-    if triple.system != "ios":
-        return []
-
-    return abi_to_constraints(triple.abi, arch = triple.arch, system = triple.system)
 
 def triple_to_system(target_triple):
     """Returns a system name for a given platform triple
@@ -336,7 +334,10 @@ def triple_to_constraint_set(target_triple):
     triple_struct = triple(target_triple)
 
     constraint_set = []
-    constraint_set += cpu_arch_to_constraints(triple_struct.arch)
+    constraint_set += cpu_arch_to_constraints(
+        triple_struct.arch,
+        system = triple_struct.system,
+    )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
     constraint_set += abi_to_constraints(

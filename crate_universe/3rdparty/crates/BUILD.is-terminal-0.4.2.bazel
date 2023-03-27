@@ -50,6 +50,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
@@ -102,6 +105,9 @@ rust_library(
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

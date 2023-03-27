@@ -5,7 +5,8 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::Result;
+use crate::utils;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
 /// The [`[registry]`](https://doc.rust-lang.org/cargo/reference/config.html#registry)
@@ -34,7 +35,7 @@ pub struct Source {
 
 /// This is the default registry url per what's defined by Cargo.
 fn default_registry_url() -> String {
-    "https://github.com/rust-lang/crates.io-index".to_owned()
+    utils::CRATES_IO_INDEX_URL.to_owned()
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -122,7 +123,13 @@ impl CargoConfig {
 
     /// Look up a registry [Source] by its url.
     pub fn get_source_from_url(&self, url: &str) -> Option<&Source> {
-        self.source.values().find(|v| v.registry == url)
+        if let Some(found) = self.source.values().find(|v| v.registry == url) {
+            Some(found)
+        } else if url == utils::CRATES_IO_INDEX_URL {
+            self.source.get("crates-io")
+        } else {
+            None
+        }
     }
 
     pub fn get_registry_index_url_by_name(&self, name: &str) -> Option<&str> {
@@ -132,6 +139,22 @@ impl CargoConfig {
             Some(&source.registry)
         } else {
             None
+        }
+    }
+
+    pub fn resolve_replacement_url<'a>(&'a self, url: &'a str) -> Result<&'a str> {
+        if let Some(source) = self.get_source_from_url(url) {
+            if let Some(replace_with) = &source.replace_with {
+                if let Some(replacement) = self.get_registry_index_url_by_name(replace_with) {
+                    Ok(replacement)
+                } else {
+                    bail!("Tried to replace registry {} with registry named {} but didn't have metadata about the replacement", url, replace_with);
+                }
+            } else {
+                Ok(url)
+            }
+        } else {
+            Ok(url)
         }
     }
 }
@@ -239,6 +262,136 @@ mod test {
         assert_eq!(
             config.get_registry_index_url_by_name("art-crates-remote"),
             Some("https://artprod.mycompany/artifactory/git/cargo-remote.git"),
+        );
+    }
+
+    #[test]
+    fn registry_settings_get_source_from_url() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = temp_dir.as_ref().join("config.toml");
+
+        fs::write(
+            &config,
+            textwrap::dedent(
+                r##"
+                [source.some-mirror]
+                registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+            "##,
+            ),
+        )
+        .unwrap();
+
+        let config = CargoConfig::try_from_path(&config).unwrap();
+        assert_eq!(
+            config
+                .get_source_from_url("https://artmirror.mycompany/artifactory/cargo-mirror.git")
+                .map(|s| s.registry.as_str()),
+            Some("https://artmirror.mycompany/artifactory/cargo-mirror.git"),
+        );
+    }
+
+    #[test]
+    fn resolve_replacement_url_no_replacement() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = temp_dir.as_ref().join("config.toml");
+
+        fs::write(&config, "").unwrap();
+
+        let config = CargoConfig::try_from_path(&config).unwrap();
+
+        assert_eq!(
+            config
+                .resolve_replacement_url(utils::CRATES_IO_INDEX_URL)
+                .unwrap(),
+            utils::CRATES_IO_INDEX_URL
+        );
+        assert_eq!(
+            config
+                .resolve_replacement_url("https://artmirror.mycompany/artifactory/cargo-mirror.git")
+                .unwrap(),
+            "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+        );
+    }
+
+    #[test]
+    fn resolve_replacement_url_registry() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = temp_dir.as_ref().join("config.toml");
+
+        fs::write(&config, textwrap::dedent(
+            r##"
+                [registries]
+                art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
+
+                [source.crates-io]
+                replace-with = "some-mirror"
+
+                [source.some-mirror]
+                registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+            "##,
+        )).unwrap();
+
+        let config = CargoConfig::try_from_path(&config).unwrap();
+        assert_eq!(
+            config
+                .resolve_replacement_url(utils::CRATES_IO_INDEX_URL)
+                .unwrap(),
+            "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+        );
+        assert_eq!(
+            config
+                .resolve_replacement_url("https://artmirror.mycompany/artifactory/cargo-mirror.git")
+                .unwrap(),
+            "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+        );
+        assert_eq!(
+            config
+                .resolve_replacement_url(
+                    "https://artprod.mycompany/artifactory/git/cargo-remote.git"
+                )
+                .unwrap(),
+            "https://artprod.mycompany/artifactory/git/cargo-remote.git"
+        );
+    }
+
+    #[test]
+    fn resolve_replacement_url_source() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = temp_dir.as_ref().join("config.toml");
+
+        fs::write(&config, textwrap::dedent(
+            r##"
+                [registries]
+                art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
+
+                [source.crates-io]
+                replace-with = "art-crates-remote"
+
+                [source.some-mirror]
+                registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+            "##,
+        )).unwrap();
+
+        let config = CargoConfig::try_from_path(&config).unwrap();
+        assert_eq!(
+            config
+                .resolve_replacement_url(utils::CRATES_IO_INDEX_URL)
+                .unwrap(),
+            "https://artprod.mycompany/artifactory/git/cargo-remote.git"
+        );
+        assert_eq!(
+            config
+                .resolve_replacement_url("https://artmirror.mycompany/artifactory/cargo-mirror.git")
+                .unwrap(),
+            "https://artmirror.mycompany/artifactory/cargo-mirror.git"
+        );
+        assert_eq!(
+            config
+                .resolve_replacement_url(
+                    "https://artprod.mycompany/artifactory/git/cargo-remote.git"
+                )
+                .unwrap(),
+            "https://artprod.mycompany/artifactory/git/cargo-remote.git"
         );
     }
 }

@@ -98,9 +98,11 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     )?;
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(
+        &cargo,
         &cargo_lockfile,
         feature_map,
-        &manifest_path,
+        manifest_path.as_path_buf(),
+        manifest_path.as_path_buf(),
     )?;
 
     let output_dir = opt.output_dir.clone();

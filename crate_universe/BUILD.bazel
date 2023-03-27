@@ -134,6 +134,11 @@ rust_test(
 rust_doc(
     name = "rustdoc",
     crate = ":cargo_bazel",
+    rustdoc_flags = [
+        "--cap-lints=warn",
+        "--document-private-items",
+        "--allow=rustdoc::private_intra_doc_links",
+    ],
     visibility = ["//visibility:public"],
 )
 

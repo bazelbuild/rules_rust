@@ -16,6 +16,7 @@ use crate::lockfile::Digest;
 use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
+use semver::Version;
 
 use crate::config::CrateId;
 use crate::utils::starlark::SelectList;
@@ -75,7 +76,7 @@ impl MetadataGenerator for Generator {
 
         let metadata = self
             .cargo_bin
-            .metadata_command()
+            .metadata_command()?
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
             .other_options(["--locked".to_owned()])
@@ -103,19 +104,24 @@ impl Cargo {
     }
 
     /// Returns a new `Command` for running this cargo.
-    pub fn command(&self) -> Command {
-        Command::new(&self.path)
+    pub fn command(&self) -> Result<Command> {
+        let mut command = Command::new(&self.path);
+        command.envs(self.env()?);
+        Ok(command)
     }
 
     /// Returns a new `MetadataCommand` using this cargo.
-    pub fn metadata_command(&self) -> MetadataCommand {
+    pub fn metadata_command(&self) -> Result<MetadataCommand> {
         let mut command = MetadataCommand::new();
         command.cargo_path(&self.path);
-        command
+        for (k, v) in self.env()? {
+            command.env(k, v);
+        }
+        Ok(command)
     }
 
     /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
-    /// Note: This function performs normalisation to work around https://github.com/rust-lang/cargo/issues/10547
+    /// This function performs normalisation to work around `<https://github.com/rust-lang/cargo/issues/10547>`
     pub fn full_version(&self) -> Result<String> {
         let mut full_version = self.full_version.lock().unwrap();
         if full_version.is_none() {
@@ -123,6 +129,28 @@ impl Cargo {
             *full_version = Some(observed_version);
         }
         Ok(full_version.clone().unwrap())
+    }
+
+    pub fn use_sparse_registries_for_crates_io(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 68);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
+    fn env(&self) -> Result<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        if self.use_sparse_registries_for_crates_io()? {
+            map.insert(
+                "CARGO_REGISTRIES_CRATES_IO_PROTOCOL".into(),
+                "sparse".into(),
+            );
+        }
+        Ok(map)
     }
 }
 
@@ -192,7 +220,7 @@ impl CargoUpdateRequest {
 
         // Simply invoke `cargo update`
         let output = cargo_bin
-            .command()
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -267,7 +295,7 @@ impl LockGenerator {
             // of having just generated a new one
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -295,7 +323,7 @@ impl LockGenerator {
             // Simply invoke `cargo generate-lockfile`
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -347,7 +375,7 @@ impl VendorGenerator {
         // Simply invoke `cargo generate-lockfile`
         let output = self
             .cargo_bin
-            .command()
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -401,7 +429,7 @@ impl FeatureGenerator {
         platform_triples: &BTreeSet<String>,
     ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
         let manifest_dir = manifest_path.parent().unwrap();
-        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
+        let mut target_to_child = BTreeMap::new();
         for target in platform_triples {
             // We use `cargo tree` here because `cargo metadata` doesn't report
             // back target-specific features (enabled with `resolver = "2"`).
@@ -410,7 +438,7 @@ impl FeatureGenerator {
             // - https://github.com/bazelbuild/rules_rust/issues/1662
             let output = self
                 .cargo_bin
-                .command()
+                .command()?
                 .current_dir(manifest_dir)
                 .arg("tree")
                 .arg("--locked")
@@ -424,12 +452,29 @@ impl FeatureGenerator {
                 .arg("--target")
                 .arg(target)
                 .env("RUSTC", &self.rustc_bin)
-                .output()
-                .context(format!(
-                    "Error running cargo to compute features for target '{}', manifest path '{}'",
-                    target,
-                    manifest_path.display()
-                ))?;
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .with_context(|| {
+                    format!(
+                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
+            target_to_child.insert(target, output);
+        }
+        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
+        for (target, child) in target_to_child.into_iter() {
+            let output = child
+                .wait_with_output()
+                .with_context(|| {
+                    format!(
+                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target,
+                        manifest_path.display()
+                    )
+                })?;
             if !output.status.success() {
                 eprintln!("{}", String::from_utf8_lossy(&output.stdout));
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));
@@ -518,12 +563,15 @@ where
                 })?
                 .to_owned(),
         );
-        let features = if parts[2].is_empty() {
+        let mut features = if parts[2].is_empty() {
             BTreeSet::new()
         } else {
             parts[2].split(',').map(str::to_owned).collect()
         };
-        crate_features.insert(crate_id, features);
+        crate_features
+            .entry(crate_id)
+            .or_default()
+            .append(&mut features);
     }
     Ok(crate_features)
 }
@@ -619,9 +667,11 @@ mod test {
                 vec![
                     Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
                     Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
+                    Ok("|chrono v0.4.24|default,std|"),
                     Ok("|cpufeatures v0.2.1||"),
                     Ok("|libc v0.2.117|default,std|"),
                     Ok("|serde_derive v1.0.152 (proc-macro) (*)||"),
+                    Ok("|chrono v0.4.24|default,std,serde|"),
                 ]
                 .into_iter()
             )
@@ -654,6 +704,13 @@ mod test {
                         version: "1.0.152".to_owned()
                     },
                     BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "chrono".to_owned(),
+                        version: "0.4.24".to_owned()
+                    },
+                    BTreeSet::from(["default".to_owned(), "std".to_owned(), "serde".to_owned()])
                 ),
             ])
         );

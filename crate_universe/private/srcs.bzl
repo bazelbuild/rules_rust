@@ -29,6 +29,7 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/rendering/templates/vendor_module.j2"),
     Label("//crate_universe:src/splicing.rs"),
     Label("//crate_universe:src/splicing/cargo_config.rs"),
+    Label("//crate_universe:src/splicing/crate_index_lookup.rs"),
     Label("//crate_universe:src/splicing/splicer.rs"),
     Label("//crate_universe:src/test.rs"),
     Label("//crate_universe:src/utils.rs"),

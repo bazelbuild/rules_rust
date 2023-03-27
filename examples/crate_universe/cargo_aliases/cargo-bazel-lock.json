@@ -1,5 +1,5 @@
 {
-  "checksum": "c49d1b9f45313c229afa999a17e4f512ba1bb7d498dbb963261110ec84029640",
+  "checksum": "1cdcb3ee9e39310c1206f2e6f50e9647e981185ae54e39fb5b02ca46bc15ab56",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2430,6 +2430,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -2443,6 +2444,7 @@
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"

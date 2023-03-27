@@ -36,7 +36,7 @@ pub fn lock_context(
     })
 }
 
-/// Write a [crate::planning::PlannedContext] to disk
+/// Write a [crate::context::Context] to disk
 pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
     let content = serde_json::to_string_pretty(&lockfile)?;
 
