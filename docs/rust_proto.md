@@ -16,7 +16,7 @@ These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [R
 [protobuf]: https://developers.google.com/protocol-buffers/
 [grpc]: https://grpc.io
 
-See the [protobuf example](https://github.com/bazelbuild/rules_rust/tree/main/examples/proto) for a more complete example of use.
+See the [protobuf example](../examples/proto) for a more complete example of use.
 
 ### Setup
 
