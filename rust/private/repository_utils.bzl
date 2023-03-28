@@ -319,7 +319,6 @@ toolchain(
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
-    visibility = ["//visibility:public"],
     {target_settings}
 )
 """
