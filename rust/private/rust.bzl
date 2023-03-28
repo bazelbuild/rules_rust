@@ -197,6 +197,24 @@ def _rust_library_impl(ctx):
     """
     return _rust_library_common(ctx, "rlib")
 
+def _rust_dylib_library_impl(ctx):
+    """The implementation of the `rust_dylib_library` rule.
+
+    This rule provides CcInfo, so it can be used everywhere Bazel
+    expects rules_cc.
+
+    On Windows, a PDB file containing debugging information is available under
+    the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
+    is available under the key `dsym_folder` in `OutputGroupInfo`.
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list of providers.
+    """
+    return _rust_library_common(ctx, "dylib")
+
 def _rust_static_library_impl(ctx):
     """The implementation of the `rust_static_library` rule.
 
@@ -837,6 +855,29 @@ rust_library = rule(
         bazel-bin/examples/rust/hello_lib/libhello_lib.rlib
         INFO: Elapsed time: 1.245s, Critical Path: 1.01s
         ```
+        """),
+)
+
+rust_dylib_library = rule(
+    implementation = _rust_dylib_library_impl,
+    attrs = dict(_common_attrs.items()),
+    fragments = ["cpp"],
+    host_fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
+    incompatible_use_toolchain_transition = True,
+    doc = dedent("""\
+        Builds a Rust dynamic library.
+
+        This dynamic library will contain all transitively reachable crates and native objects.
+        It is meant to be used when producing an artifact that is then consumed by some other build system
+        (for example to produce a shared library that Python program links against).
+
+        This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
+
+        When building the whole binary in Bazel, use `rust_library` instead.
         """),
 )
 

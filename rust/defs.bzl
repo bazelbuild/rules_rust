@@ -32,6 +32,7 @@ load(
     _rust_library = "rust_library",
     _rust_proc_macro = "rust_proc_macro",
     _rust_shared_library = "rust_shared_library",
+    _rust_dylib_library = "rust_dylib_library",
     _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
     _rust_test_suite = "rust_test_suite",
@@ -67,6 +68,8 @@ load(
 
 rust_library = _rust_library
 # See @rules_rust//rust/private:rust.bzl for a complete description.
+
+rust_dylib_library = _rust_dylib_library
 
 rust_static_library = _rust_static_library
 # See @rules_rust//rust/private:rust.bzl for a complete description.
