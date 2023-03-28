@@ -27,6 +27,7 @@
 * [rust_clippy_aspect](#rust_clippy_aspect)
 * [rust_doc](#rust_doc)
 * [rust_doc_test](#rust_doc_test)
+* [rust_dylib_library](#rust_dylib_library)
 * [rust_grpc_library](#rust_grpc_library)
 * [rust_library](#rust_library)
 * [rust_proc_macro](#rust_proc_macro)

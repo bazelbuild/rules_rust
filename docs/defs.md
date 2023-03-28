@@ -4,6 +4,7 @@
 * [rust_binary](#rust_binary)
 * [rust_library](#rust_library)
 * [rust_static_library](#rust_static_library)
+* [rust_dylib_library](#rust_dylib_library)
 * [rust_shared_library](#rust_shared_library)
 * [rust_proc_macro](#rust_proc_macro)
 * [rust_test](#rust_test)
