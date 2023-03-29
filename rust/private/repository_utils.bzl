@@ -8,9 +8,21 @@ load(
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
 )
+load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
+DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
+
+TINYJSON_KWARGS = dict(
+    name = "rules_rust_tinyjson",
+    sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
+    url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
+    strip_prefix = "tinyjson-2.3.0",
+    type = "tar.gz",
+    build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
+)
 
 _build_file_for_compiler_template = """\
 filegroup(
@@ -220,15 +232,15 @@ load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 rust_toolchain(
     name = "{toolchain_name}",
-    rust_doc = "@{workspace_name}//:rustdoc",
-    rust_std = "@{workspace_name}//:rust_std-{target_triple}",
-    rustc = "@{workspace_name}//:rustc",
+    rust_doc = "//:rustdoc",
+    rust_std = "//:rust_std-{target_triple}",
+    rustc = "//:rustc",
     rustfmt = {rustfmt_label},
-    cargo = "@{workspace_name}//:cargo",
-    clippy_driver = "@{workspace_name}//:clippy_driver_bin",
+    cargo = "//:cargo",
+    clippy_driver = "//:clippy_driver_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
-    rustc_lib = "@{workspace_name}//:rustc_lib",
+    rustc_lib = "//:rustc_lib",
     allocator_library = {allocator_library},
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
@@ -243,7 +255,6 @@ rust_toolchain(
 """
 
 def BUILD_for_rust_toolchain(
-        workspace_name,
         name,
         exec_triple,
         target_triple,
@@ -255,7 +266,6 @@ def BUILD_for_rust_toolchain(
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
-        workspace_name (str): The name of the workspace that this toolchain resides in
         name (str): The name of the toolchain declaration
         exec_triple (triple): The rust-style target that this compiler runs on
         target_triple (triple): The rust-style target triple of the tool
@@ -276,19 +286,18 @@ def BUILD_for_rust_toolchain(
 
     rustfmt_label = "None"
     if include_rustfmt:
-        rustfmt_label = "\"@{workspace_name}//:rustfmt_bin\"".format(workspace_name = workspace_name)
+        rustfmt_label = "\"//:rustfmt_bin\""
     llvm_cov_label = "None"
     llvm_profdata_label = "None"
     if include_llvm_tools:
-        llvm_cov_label = "\"@{workspace_name}//:llvm_cov_bin\"".format(workspace_name = workspace_name)
-        llvm_profdata_label = "\"@{workspace_name}//:llvm_profdata_bin\"".format(workspace_name = workspace_name)
+        llvm_cov_label = "\"//:llvm_cov_bin\""
+        llvm_profdata_label = "\"//:llvm_profdata_bin\""
     allocator_library_label = "None"
     if allocator_library:
         allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
-        workspace_name = workspace_name,
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system),
         dylib_ext = system_to_dylib_ext(target_triple.system),
@@ -774,3 +783,68 @@ def select_rust_version(versions):
             current = ver
 
     return current
+
+_build_file_for_toolchain_hub_template = """
+toolchain(
+    name = "{name}",
+    exec_compatible_with = {exec_constraint_sets_serialized},
+    target_compatible_with = {target_constraint_sets_serialized},
+    toolchain = "{toolchain}",
+    toolchain_type = "{toolchain_type}",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_toolchain_hub(
+        toolchain_names,
+        toolchain_labels,
+        toolchain_types,
+        target_compatible_with,
+        exec_compatible_with):
+    return "\n".join([_build_file_for_toolchain_hub_template.format(
+        name = toolchain_name,
+        exec_constraint_sets_serialized = json.encode(exec_compatible_with[toolchain_name]),
+        target_constraint_sets_serialized = json.encode(target_compatible_with[toolchain_name]),
+        toolchain = toolchain_labels[toolchain_name],
+        toolchain_type = toolchain_types[toolchain_name],
+    ) for toolchain_name in toolchain_names])
+
+def _toolchain_repository_hub_impl(repository_ctx):
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        repository_ctx.name,
+    ))
+
+    repository_ctx.file("BUILD.bazel", BUILD_for_toolchain_hub(
+        toolchain_names = repository_ctx.attr.toolchain_names,
+        toolchain_labels = repository_ctx.attr.toolchain_labels,
+        toolchain_types = repository_ctx.attr.toolchain_types,
+        target_compatible_with = repository_ctx.attr.target_compatible_with,
+        exec_compatible_with = repository_ctx.attr.exec_compatible_with,
+    ))
+
+toolchain_repository_hub = repository_rule(
+    doc = (
+        "Generates a toolchain-bearing repository that declares a set of other toolchains from other " +
+        "repositories. This exists to allow registering a set of toolchains in one go with the `:all` target."
+    ),
+    attrs = {
+        "exec_compatible_with": attr.string_list_dict(
+            doc = "A list of constraints for the execution platform for this toolchain, keyed by toolchain name.",
+            mandatory = True,
+        ),
+        "target_compatible_with": attr.string_list_dict(
+            doc = "A list of constraints for the target platform for this toolchain, keyed by toolchain name.",
+            mandatory = True,
+        ),
+        "toolchain_labels": attr.string_dict(
+            doc = "The name of the toolchain implementation target, keyed by toolchain name.",
+            mandatory = True,
+        ),
+        "toolchain_names": attr.string_list(mandatory = True),
+        "toolchain_types": attr.string_dict(
+            doc = "The toolchain type of the toolchain to declare, keyed by toolchain name.",
+            mandatory = True,
+        ),
+    },
+    implementation = _toolchain_repository_hub_impl,
+)
