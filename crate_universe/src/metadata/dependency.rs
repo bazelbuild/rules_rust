@@ -1,6 +1,7 @@
 ///! Gathering dependencies is the largest part of annotating.
 use anyhow::{bail, Result};
 use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
+use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::sanitize_module_name;
@@ -37,7 +38,6 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                .filter(|dep| is_optional_crate_enabled(node, dep, metadata))
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
@@ -45,8 +45,8 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(dev, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, dev, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
@@ -61,8 +61,8 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(dev, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, dev, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
@@ -77,8 +77,8 @@ impl DependencySet {
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
 
             (
-                collect_deps_selectable(proc_macro, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, proc_macro, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
@@ -115,7 +115,12 @@ impl DependencySet {
 }
 
 /// For details on optional dependencies see [the Rust docs](https://doc.rust-lang.org/cargo/reference/features.html#optional-dependencies).
-fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetadata) -> bool {
+fn is_optional_crate_enabled(
+    parent: &Node,
+    dep: &NodeDep,
+    target: Option<&Platform>,
+    metadata: &CargoMetadata,
+) -> bool {
     let pkg = &metadata[&parent.id];
 
     let mut enabled_deps = pkg
@@ -130,6 +135,7 @@ fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetad
     if let Some(toml_dep) = pkg
         .dependencies
         .iter()
+        .filter(|&d| d.target.as_ref() == target)
         .filter(|&d| d.optional)
         .find(|&d| sanitize_module_name(&d.name) == dep.name)
     {
@@ -140,6 +146,7 @@ fn is_optional_crate_enabled(parent: &Node, dep: &NodeDep, metadata: &CargoMetad
 }
 
 fn collect_deps_selectable(
+    node: &Node,
     deps: Vec<&NodeDep>,
     metadata: &cargo_metadata::Metadata,
 ) -> SelectList<Dependency> {
@@ -152,17 +159,19 @@ fn collect_deps_selectable(
         let alias = get_target_alias(&dep.name, dep_pkg);
 
         for kind_info in &dep.dep_kinds {
-            selectable.insert(
-                Dependency {
-                    package_id: dep.pkg.clone(),
-                    target_name: target_name.clone(),
-                    alias: alias.clone(),
-                },
-                kind_info
-                    .target
-                    .as_ref()
-                    .map(|platform| platform.to_string()),
-            );
+            if is_optional_crate_enabled(&node, dep, kind_info.target.as_ref(), metadata) {
+                selectable.insert(
+                    Dependency {
+                        package_id: dep.pkg.clone(),
+                        target_name: target_name.clone(),
+                        alias: alias.clone(),
+                    },
+                    kind_info
+                        .target
+                        .as_ref()
+                        .map(|platform| platform.to_string()),
+                );
+            }
         }
     }
 
@@ -535,11 +544,10 @@ mod test {
     fn optional_deps_enabled() {
         let metadata = metadata::optional_deps_enabled();
 
-        let node = find_metadata_node("clap", &metadata);
-        let dependencies = DependencySet::new_for_node(node, &metadata);
-
+        let clap = find_metadata_node("clap", &metadata);
+        let clap_depset = DependencySet::new_for_node(clap, &metadata);
         assert_eq!(
-            dependencies
+            clap_depset
                 .normal_deps
                 .get_iter(None)
                 .expect("Iterating over known keys should never panic")
@@ -549,5 +557,32 @@ mod test {
                 .count(),
             2
         );
+
+        let notify = find_metadata_node("notify", &metadata);
+        let notify_depset = DependencySet::new_for_node(notify, &metadata);
+
+        // mio is not present in the common list of dependencies
+        assert!(notify_depset
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .find(|dep| { dep.target_name == "mio" })
+            .is_none());
+
+        // mio is a dependency on linux
+        assert!(notify_depset
+            .normal_deps
+            .get_iter(Some(&"cfg(target_os = \"linux\")".to_string()))
+            .expect("Iterating over known keys should never panic")
+            .find(|dep| { dep.target_name == "mio" })
+            .is_some());
+
+        // mio is marked optional=true on macos
+        assert!(notify_depset
+            .normal_deps
+            .get_iter(Some(&"cfg(target_os = \"macos\")".to_string()))
+            .expect("Iterating over known keys should never panic")
+            .find(|dep| { dep.target_name == "mio" })
+            .is_none());
     }
 }

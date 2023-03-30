@@ -3,6 +3,7 @@ members = [
     "tools/cross_installer",
     "tools/urls_generator",
 ]
+exclude = ["test_data"]
 
 [package]
 name = "cargo-bazel"
