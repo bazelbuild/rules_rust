@@ -406,7 +406,7 @@ This rule is useful for users whose workspaces are expected to be consumed in ot
 rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
 handles all the same [workflows](#workflows) `crate_universe` rules do.
 
-Example:
+Example: 
 
 Given the following workspace structure:
 

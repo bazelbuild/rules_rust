@@ -377,7 +377,7 @@ rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href=
 
 The tools required for the `rust_bindgen` rule.
 
-This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it
+This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it 
 in turn depends on both a clang binary and the clang library. To obtain these dependencies,
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
