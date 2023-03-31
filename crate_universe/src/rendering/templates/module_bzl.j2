@@ -17,7 +17,6 @@ Expected length = 6 lines
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 ###############################################################################
 # MACROS API
@@ -200,11 +199,22 @@ def all_crate_deps(
         else:
             return []
 
-    crate_deps = list(dependencies.pop(_COMMON_CONDITION, {}).values())
-    for condition, deps in dependencies.items():
-        crate_deps += selects.with_or({_CONDITIONS[condition]: deps.values()})
+    common_deps = dependencies.pop(_COMMON_CONDITION, {}).items()
 
-    return crate_deps
+    # If there are only common items in the dictionary, immediately return them
+    if len(dependencies.keys()) == 0:
+        return dict(common_deps)
+    
+    crate_deps = {"//conditions:default": dict(common_deps)}
+    for condition, deps in dependencies.items():
+        condition_triples = _CONDITIONS[condition]
+        for triple in condition_triples:
+            if triple in crate_deps:
+                crate_deps[triple].update(deps)
+            else:
+                crate_deps.update({triple: dict(deps.items() + common_deps)})
+
+    return select(crate_deps)
 
 def aliases(
         normal = False,
@@ -262,7 +272,7 @@ def aliases(
         all_aliases_maps.append(_PROC_MACRO_ALIASES)
 
     aliases = _flatten_dependency_maps(all_aliases_maps).pop(package_name, None)
-
+    print(aliases)
     if not aliases:
         return dict()
 
@@ -274,15 +284,17 @@ def aliases(
 
     # Build a single select statement where each conditional has accounted for the
     # common set of aliases.
-    crate_aliases = {"//conditions:default": common_items}
+    crate_aliases = {"//conditions:default": dict(common_items)}
     for condition, deps in aliases.items():
         condition_triples = _CONDITIONS[condition]
-        if condition_triples in crate_aliases:
-            crate_aliases[condition_triples].update(deps)
-        else:
-            crate_aliases.update({_CONDITIONS[condition]: dict(deps.items() + common_items)})
+        
+        for triple in condition_triples:
+            if triple in crate_aliases:
+                crate_aliases[triple].update(deps)
+            else:
+                crate_aliases.update({triple: dict(deps.items() + common_items)})
 
-    return selects.with_or(crate_aliases)
+    return select(crate_aliases)
 
 ###############################################################################
 # WORKSPACE MEMBER DEPS AND ALIASES
