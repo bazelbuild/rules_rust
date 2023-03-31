@@ -1,6 +1,7 @@
 """Unittests for the --experimental_use_cc_common_link build setting."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_binary",
@@ -61,8 +62,29 @@ def _use_cc_common_link_test(ctx):
 
 use_cc_common_link_test = analysistest.make(_use_cc_common_link_test)
 
+def _custom_malloc_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    registered_actions = tut[DepActionsInfo].actions
+    links = [action for action in registered_actions if action.mnemonic == "CppLink"]
+    cmdline = " ".join(links[0].argv)
+    asserts.true(env, "this_library_is_not_really_an_allocator" in cmdline, "expected to find custom malloc in linker invocation")
+    return analysistest.end(env)
+
+custom_malloc_test = analysistest.make(
+    _custom_malloc_test,
+    config_settings = {
+        "//command_line_option:custom_malloc": "@//unit:this_library_is_not_really_an_allocator",
+    },
+)
+
 def _cc_common_link_test_targets():
     """Generate targets and tests."""
+
+    cc_library(
+        name = "this_library_is_not_really_an_allocator",
+        srcs = ["this_library_is_not_really_an_allocator.c"],
+    )
 
     rust_binary(
         name = "bin",
@@ -130,6 +152,11 @@ def _cc_common_link_test_targets():
         target_under_test = ":cdylib_with_cc_common_link",
     )
 
+    custom_malloc_test(
+        name = "custom_malloc_on_binary_test",
+        target_under_test = ":bin_with_cc_common_link",
+    )
+
 def cc_common_link_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -145,5 +172,6 @@ def cc_common_link_test_suite(name):
             "use_cc_common_link_on_test",
             "use_cc_common_link_on_crate_test",
             "use_cc_common_link_on_cdylib",
+            "custom_malloc_on_binary_test",
         ],
     )
