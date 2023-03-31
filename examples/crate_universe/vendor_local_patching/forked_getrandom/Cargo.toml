@@ -1,0 +1,30 @@
+[package]
+edition = "2018"
+name = "getrandom"
+version = "0.2.8"
+authors = ["The Rand Project Developers"]
+exclude = [".*"]
+description = "A small cross-platform library for retrieving random data from system source"
+documentation = "https://docs.rs/getrandom"
+readme = "README.md"
+categories = [
+    "os",
+    "no-std",
+]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rust-random/getrandom"
+
+[features]
+# custom = []
+# js = [
+#     "wasm-bindgen",
+#     "js-sys",
+# ]
+# rdrand = []
+# rustc-dep-of-std = [
+#     "compiler_builtins",
+#     "core",
+#     "libc/rustc-dep-of-std",
+#     "wasi/rustc-dep-of-std",
+# ]
+std = []

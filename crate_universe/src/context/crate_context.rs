@@ -887,7 +887,9 @@ fn get_attributes(
         // TODO: remove once added to help-docs
         println!("\nThere's a patch crate at '//{pkg}'.");
         println!("Make sure that '//{pkg}/BUILD.bazel' exposes the following filegroups:");
-        println!("'crate_root', 'srcs', 'compile_data', and (if necessary) 'build_script'");
+        println!(
+            "'crate_root', 'srcs', 'compile_data', and (if necessary) 'build_script_crate_root'"
+        );
         let srcs = GlobOrLabels::Labels(vec![Label {
             repository: None,
             package: Some(pkg.clone()),

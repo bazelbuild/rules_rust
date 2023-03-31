@@ -1,0 +1,5 @@
+# Ignore everything but the `BUILD` files within the vendored directories
+vendor/*/*
+!vendor/*/BUILD.bazel
+forked_rand_core/*
+!forked_rand_core/BUILD.bazel

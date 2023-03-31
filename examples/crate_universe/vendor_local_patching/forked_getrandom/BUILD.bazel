@@ -1,0 +1,23 @@
+filegroup(
+    name = "crate_root",
+    srcs = ["src/lib.rs"],
+    visibility = ["//vendor_local_patching/vendor:__subpackages__"],
+)
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**/*.rs"]),
+    visibility = ["//vendor_local_patching/vendor:__subpackages__"],
+)
+
+filegroup(
+    name = "compile_data",
+    srcs = glob(["**/*"]),
+    visibility = ["//vendor_local_patching/vendor:__subpackages__"],
+)
+
+filegroup(
+    name = "build_script_crate_root",
+    srcs = ["build.rs"],
+    visibility = ["//vendor_local_patching/vendor:__subpackages__"],
+)
