@@ -159,7 +159,7 @@ fn collect_deps_selectable(
         let alias = get_target_alias(&dep.name, dep_pkg);
 
         for kind_info in &dep.dep_kinds {
-            if is_optional_crate_enabled(&node, dep, kind_info.target.as_ref(), metadata) {
+            if is_optional_crate_enabled(node, dep, kind_info.target.as_ref(), metadata) {
                 selectable.insert(
                     Dependency {
                         package_id: dep.pkg.clone(),
@@ -562,27 +562,24 @@ mod test {
         let notify_depset = DependencySet::new_for_node(notify, &metadata);
 
         // mio is not present in the common list of dependencies
-        assert!(notify_depset
+        assert!(!notify_depset
             .normal_deps
             .get_iter(None)
             .expect("Iterating over known keys should never panic")
-            .find(|dep| { dep.target_name == "mio" })
-            .is_none());
+            .any(|dep| { dep.target_name == "mio" }));
 
         // mio is a dependency on linux
         assert!(notify_depset
             .normal_deps
             .get_iter(Some(&"cfg(target_os = \"linux\")".to_string()))
             .expect("Iterating over known keys should never panic")
-            .find(|dep| { dep.target_name == "mio" })
-            .is_some());
+            .any(|dep| { dep.target_name == "mio" }));
 
         // mio is marked optional=true on macos
-        assert!(notify_depset
+        assert!(!notify_depset
             .normal_deps
             .get_iter(Some(&"cfg(target_os = \"macos\")".to_string()))
             .expect("Iterating over known keys should never panic")
-            .find(|dep| { dep.target_name == "mio" })
-            .is_none());
+            .any(|dep| { dep.target_name == "mio" }));
     }
 }
