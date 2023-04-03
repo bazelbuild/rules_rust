@@ -711,6 +711,25 @@ _experimental_use_cc_common_link_attrs = {
         values = [-1, 0, 1],
         default = -1,
     ),
+    "malloc": attr.label(
+        default = Label("@bazel_tools//tools/cpp:malloc"),
+        doc = """Override the default dependency on `malloc`.
+
+By default, Rust binaries linked with cc_common.link are linked against
+`@bazel_tools//tools/cpp:malloc"`, which is an empty library and the resulting binary will use
+libc's `malloc`. This label must refer to a `cc_library` rule.
+""",
+        mandatory = False,
+        providers = [[CcInfo]],
+    ),  # A late-bound attribute denoting the value of the `--custom_malloc`
+    # command line flag (or None if the flag is not provided).
+    "_custom_malloc": attr.label(
+        default = configuration_field(
+            fragment = "cpp",
+            name = "custom_malloc",
+        ),
+        providers = [[CcInfo]],
+    ),
 }
 
 _rust_test_attrs = dict({

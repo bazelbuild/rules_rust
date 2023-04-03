@@ -1266,8 +1266,14 @@ def rustc_compile_action(
             pic_objects = depset([output_o]),
         )
 
+        malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
+
         # Collect the linking contexts of the standard library and dependencies.
-        linking_contexts = [toolchain.libstd_and_allocator_ccinfo.linking_context, toolchain.stdlib_linkflags.linking_context]
+        linking_contexts = [
+            malloc_library[CcInfo].linking_context,
+            toolchain.libstd_and_allocator_ccinfo.linking_context,
+            toolchain.stdlib_linkflags.linking_context,
+        ]
 
         for dep in crate_info.deps.to_list():
             if dep.cc_info:
