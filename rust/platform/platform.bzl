@@ -19,9 +19,6 @@ _SUPPORTED_CPU_ARCH = [
     "x86_64",
     "riscv32",
     "riscv64",
-    "thumbv6m",
-    "thumbv7em",
-    "thumbv7m",
 ]
 
 _SUPPORTED_SYSTEMS = [
