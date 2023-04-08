@@ -485,6 +485,7 @@ def _rust_test_impl(ctx):
 def _rust_crate_group_impl(ctx):
     crate_infos = []
     dep_infos = []
+    runfiles = []
 
     for dep in ctx.attr.deps:
         if rust_common.crate_info in dep:
@@ -496,10 +497,16 @@ def _rust_crate_group_impl(ctx):
         else:
             fail("crate_group_info targets can only depend on rust_library or rust_crate_group targets.")
 
-    return [rust_common.crate_group_info(
-        crate_infos = crate_infos,
-        dep_infos = dep_infos,
-    )]
+        if dep[DefaultInfo].default_runfiles != None:
+            runfiles.append(dep[DefaultInfo].default_runfiles)
+
+    return [
+        rust_common.crate_group_info(
+            crate_infos = crate_infos,
+            dep_infos = dep_infos,
+        ),
+        DefaultInfo(runfiles = ctx.runfiles().merge_all(runfiles)),
+    ]
 
 def _stamp_attribute(default_value):
     return attr.int(
