@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,13 +33,14 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=wasm-bindgen-shared",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.83",
+    version = "0.2.84",
     deps = [
-        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.83//:build_script_build",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.84//:build_script_build",
     ],
 )
 
@@ -68,11 +66,12 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=wasm-bindgen-shared",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.83",
+    version = "0.2.84",
     visibility = ["//visibility:private"],
 )
 

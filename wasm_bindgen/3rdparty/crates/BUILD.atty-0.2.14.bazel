@@ -6,10 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -35,6 +32,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=atty",
         "manual",
         "noclippy",
         "norustfmt",
@@ -48,6 +46,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
@@ -93,6 +94,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

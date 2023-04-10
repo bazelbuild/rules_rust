@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -31,11 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "alloc",
-        "default",
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
@@ -44,6 +36,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=cxx",
         "manual",
         "noclippy",
         "norustfmt",
@@ -58,11 +51,6 @@ rust_library(
 cargo_build_script(
     name = "cxx_build_script",
     srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "alloc",
-        "default",
-        "std",
-    ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
@@ -82,6 +70,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=cxx",
         "manual",
         "noclippy",
         "norustfmt",

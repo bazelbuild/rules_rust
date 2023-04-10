@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -39,19 +36,20 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_wasm_bindgen__wasm-bindgen-macro-0.2.83//:wasm_bindgen_macro",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-macro-0.2.84//:wasm_bindgen_macro",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=wasm-bindgen",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.83",
+    version = "0.2.84",
     deps = [
         "@rules_rust_wasm_bindgen__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.83//:build_script_build",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.84//:build_script_build",
     ],
 )
 
@@ -81,11 +79,12 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=wasm-bindgen",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.83",
+    version = "0.2.84",
     visibility = ["//visibility:private"],
 )
 

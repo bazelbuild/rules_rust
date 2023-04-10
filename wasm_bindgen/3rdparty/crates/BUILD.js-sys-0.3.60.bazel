@@ -6,10 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -35,12 +32,13 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=js-sys",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.3.60",
     deps = [
-        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.83//:wasm_bindgen",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.84//:wasm_bindgen",
     ],
 )

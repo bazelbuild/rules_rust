@@ -6,10 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -41,13 +38,13 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=time",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.3.17",
     deps = [
-        "@rules_rust_wasm_bindgen__serde-1.0.152//:serde",
         "@rules_rust_wasm_bindgen__time-core-0.1.0//:time_core",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
@@ -59,6 +56,10 @@ rust_library(
             "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(target_family = "unix")
             "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
         ],
@@ -111,6 +112,10 @@ rust_library(
             "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(target_family = "unix")
             "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
         ],

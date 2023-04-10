@@ -6,10 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -18,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "wasm_bindgen_wasm_conventions",
+    name = "wasm_bindgen_multi_value_xform",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -35,11 +32,12 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=wasm-bindgen-multi-value-xform",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.83",
+    version = "0.2.84",
     deps = [
         "@rules_rust_wasm_bindgen__anyhow-1.0.68//:anyhow",
         "@rules_rust_wasm_bindgen__walrus-0.19.0//:walrus",

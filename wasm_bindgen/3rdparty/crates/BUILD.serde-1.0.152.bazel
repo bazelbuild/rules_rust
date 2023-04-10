@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -32,7 +29,6 @@ rust_library(
         ],
     ),
     crate_features = [
-        "alloc",
         "default",
         "derive",
         "serde_derive",
@@ -46,6 +42,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=serde",
         "manual",
         "noclippy",
         "norustfmt",
@@ -60,7 +57,6 @@ cargo_build_script(
     name = "serde_build_script",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "alloc",
         "default",
         "derive",
         "serde_derive",
@@ -84,6 +80,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=serde",
         "manual",
         "noclippy",
         "norustfmt",
