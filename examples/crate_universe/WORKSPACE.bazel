@@ -111,7 +111,7 @@ crates_repository(
     manifests = [
         "//cargo_workspace:Cargo.toml",
         "//cargo_workspace/num_printer:Cargo.toml",
-        "//cargo_workspace/printer:Cargo.toml",
+        "//cargo_workspace/num_printer/printer:Cargo.toml",
         "//cargo_workspace/rng:Cargo.toml",
     ],
 )

@@ -10,4 +10,4 @@ path = "src/main.rs"
 
 [dependencies]
 clap = "2.33.3"
-printer = { path = "../printer" }
+printer = { workspace = true }

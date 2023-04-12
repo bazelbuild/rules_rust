@@ -8,6 +8,6 @@ rust_binary(
     srcs = ["src/main.rs"],
     edition = "2018",
     deps = [
-        "//cargo_workspace/printer",
+        "//cargo_workspace/num_printer/printer",
     ] + all_crate_deps(),
 )
