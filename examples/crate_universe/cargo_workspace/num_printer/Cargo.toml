@@ -9,5 +9,5 @@ name = "number-printer"
 path = "src/main.rs"
 
 [dependencies]
-clap = "2.33.3"
+clap = { workspace = true}
 printer = { workspace = true }

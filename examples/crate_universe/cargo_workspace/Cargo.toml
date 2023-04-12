@@ -9,3 +9,6 @@ members = [
 num_printer = {path = "num_printer"}
 printer = {path = "num_printer/printer"}
 rng = {path = "rng"}
+
+clap = "2.33.3"
+ferris-says = "0.2.0"
