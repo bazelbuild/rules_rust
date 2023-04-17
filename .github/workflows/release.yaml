@@ -129,7 +129,7 @@ jobs:
           bazel ${BAZEL_STARTUP_FLAGS[@]}  run //crate_universe/tools/urls_generator -- --artifacts-dir="${ARTIFACTS_DIR}" --url-prefix="${URL_PREFIX}"
           bazel clean
           # Build an archive of the repo contents
-          tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz --exclude=".git" --exclude=".github" --exclude="examples" -C ${{ github.workspace }} .
+          tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz --exclude=".git" --exclude=".github" --exclude="examples" --exclude="crate_universe/target" -C ${{ github.workspace }} .
           # Save the sha256 checksum of the distro archive to the environment
           sha256="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust.tar.gz | awk '{ print $1 }')"
           echo "ARCHIVE_SHA256=${sha256}" >> $GITHUB_ENV
