@@ -1,0 +1,5 @@
+load(":rustc_opt_level_test.bzl", "rustc_opt_level_test_suite")
+
+rustc_opt_level_test_suite(
+    name = "rustc_opt_level_test_suite",
+)

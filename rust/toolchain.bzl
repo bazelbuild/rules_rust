@@ -428,12 +428,49 @@ def _rust_toolchain_impl(ctx):
         list: A list containing the target's toolchain Provider info
     """
     compilation_mode_opts = {}
-    for k, v in ctx.attr.opt_level.items():
-        if not k in ctx.attr.debug_info:
+
+    opt_level = ctx.attr.opt_level
+    opt_level_override = ctx.attr._opt_level_cmdline[BuildSettingInfo].value
+    if opt_level_override:
+        if len(opt_level_override) == 1:
+            opt_level = {
+                "dbg": opt_level_override[0],
+                "fastbuild": opt_level_override[0],
+                "opt": opt_level_override[0],
+            }
+        elif len(opt_level_override) == 3:
+            opt_level = {
+                "dbg": opt_level_override[0],
+                "fastbuild": opt_level_override[1],
+                "opt": opt_level_override[2],
+            }
+        else:
+            fail("Wrong number of elements in //rust/settings:opt_level")
+
+    debug_info = ctx.attr.debug_info
+    debug_info_override = ctx.attr._debug_info_cmdline[BuildSettingInfo].value
+    if debug_info_override:
+        if len(debug_info_override) == 1:
+            debug_info = {
+                "dbg": debug_info_override[0],
+                "fastbuild": debug_info_override[0],
+                "opt": debug_info_override[0],
+            }
+        elif len(debug_info_override) == 3:
+            debug_info = {
+                "dbg": debug_info_override[0],
+                "fastbuild": debug_info_override[1],
+                "opt": debug_info_override[2],
+            }
+        else:
+            fail("Wrong number of elements in //rust/settings:debug_info")
+
+    for k, v in opt_level.items():
+        if not k in debug_info:
             fail("Compilation mode {} is not defined in debug_info but is defined opt_level".format(k))
-        compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = v)
-    for k, v in ctx.attr.debug_info.items():
-        if not k in ctx.attr.opt_level:
+        compilation_mode_opts[k] = struct(debug_info = debug_info[k], opt_level = v)
+    for k, v in debug_info.items():
+        if not k in opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
@@ -732,6 +769,12 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_debug_info_cmdline": attr.label(
+            default = Label("//rust/settings:debug_info"),
+        ),
+        "_opt_level_cmdline": attr.label(
+            default = Label("//rust/settings:opt_level"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

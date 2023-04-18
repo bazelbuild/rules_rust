@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag", "string_list_flag")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -47,4 +47,38 @@ bool_flag(
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+)
+
+# Specifies the optimization level, provided to rustc in the command-line
+# argument `--codegen=opt-level=x`.
+#
+# If no arguments are specified, use the default values from
+# //rust/toolchain.bzl.
+#
+# If one argument is specified, use that value for all compilation modes (dbg,
+# fastbuild, and opt).
+#
+# If three arguments are specified (separated by commas on the Bazel command
+# line), use each value in sequence for each compilation mode (dbg, fastbuild,
+# and opt).
+string_list_flag(
+    name = "opt_level",
+    build_setting_default = [],
+)
+
+# Specifies the optimization level (provided to rustc in the command-line
+# argument `--codegen=debuginfo=x`)
+#
+# If no arguments are specified, use the default values from
+# //rust/toolchain.bzl.
+#
+# If one argument is specified, use that value for all compilation modes (dbg,
+# fastbuild, and opt).
+#
+# If three arguments are specified (separated by commas on the Bazel command
+# line), use each value in sequence for each compilation mode (dbg, fastbuild,
+# and opt).
+string_list_flag(
+    name = "debug_info",
+    build_setting_default = [],
 )
