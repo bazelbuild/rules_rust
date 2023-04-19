@@ -502,7 +502,10 @@ tasks:
       # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
       - "-//with_global_alloc/..."
     test_targets:
+      - "--"
       - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
     test_flags:
