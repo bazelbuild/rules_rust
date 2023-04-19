@@ -441,8 +441,18 @@ def _rust_toolchain_impl(ctx):
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
 
     experimental_use_cc_common_link = ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
-    if experimental_use_cc_common_link and not ctx.attr.allocator_library:
-        fail("rust_toolchain.experimental_use_cc_common_link requires rust_toolchain.allocator_library to be set")
+    experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
+    if experimental_use_cc_common_link:
+        if experimental_use_global_allocator and not ctx.attr.global_allocator_library:
+            fail("rust_toolchain.experimental_use_cc_common_link with --@rules_rust//rust/settings:experimental_use_global_allocator " +
+                 "requires rust_toolchain.global_allocator_library to be set")
+        if not ctx.attr.allocator_library:
+            fail("rust_toolchain.experimental_use_cc_common_link requires rust_toolchain.allocator_library to be set")
+    if experimental_use_global_allocator and not experimental_use_cc_common_link:
+        fail(
+            "Using @rules_rust//rust/settings:experimental_use_global_allocator requires" +
+            "--@rules_rust//rust/settings:experimental_use_cc_common_link requires",
+        )
 
     rust_std = ctx.attr.rust_std
 
@@ -564,6 +574,7 @@ def _rust_toolchain_impl(ctx):
         env = ctx.attr.env,
         exec_triple = exec_triple,
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
+        libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         make_variables = make_variable_info,
@@ -591,6 +602,7 @@ def _rust_toolchain_impl(ctx):
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
         _experimental_use_cc_common_link = experimental_use_cc_common_link,
+        _experimental_use_global_allocator = experimental_use_global_allocator,
     )
     return [
         toolchain,
@@ -655,6 +667,9 @@ rust_toolchain = rule(
         ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "global_allocator_library": attr.label(
+            doc = "Target that provides allocator functions for when a global allocator is present.",
         ),
         "llvm_cov": attr.label(
             doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item. If None, rust code is not instrumented for coverage.",
@@ -732,6 +747,13 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_experimental_use_global_allocator": attr.label(
+            default = Label("//rust/settings:experimental_use_global_allocator"),
+            doc = (
+                "Label to a boolean build setting that informs the target build whether a global allocator is being used." +
+                "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
+            ),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

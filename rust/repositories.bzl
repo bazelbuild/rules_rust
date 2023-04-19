@@ -99,6 +99,7 @@ def rust_register_toolchains(
         dev_components = False,
         edition = None,
         allocator_library = None,
+        global_allocator_library = None,
         iso_date = None,
         register_toolchains = True,
         rustfmt_version = DEFAULT_NIGHTLY_VERSION,
@@ -130,6 +131,7 @@ def rust_register_toolchains(
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its `edition` attribute.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
+        global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
         iso_date (str, optional):  **Deprecated**: Use `versions` instead.
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
         rustfmt_version (str, optional): The version of rustfmt.
@@ -219,6 +221,7 @@ def rust_register_toolchains(
             exec_triple = exec_triple,
             extra_target_triples = extra_target_triples,
             allocator_library = allocator_library,
+            global_allocator_library = global_allocator_library,
             iso_date = iso_date,
             register_toolchain = register_toolchains,
             rustfmt_version = rustfmt_version,
@@ -342,6 +345,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         name = "rust_toolchain",
         exec_triple = exec_triple,
         allocator_library = ctx.attr.allocator_library,
+        global_allocator_library = ctx.attr.global_allocator_library,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         default_edition = ctx.attr.edition,
@@ -388,6 +392,9 @@ rust_toolchain_tools_repository = repository_rule(
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
             mandatory = True,
+        ),
+        "global_allocator_library": attr.string(
+            doc = "Target that provides allocator functions when a global allocator is used with cc_common.link.",
         ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
@@ -470,6 +477,7 @@ def rust_toolchain_repository(
         target_settings = [],
         channel = None,
         allocator_library = None,
+        global_allocator_library = None,
         iso_date = None,
         rustfmt_version = None,
         edition = None,
@@ -490,6 +498,7 @@ def rust_toolchain_repository(
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
         target_settings (list, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
+        global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
         iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
@@ -523,6 +532,7 @@ def rust_toolchain_repository(
         name = tools_repo_name,
         exec_triple = exec_triple,
         allocator_library = allocator_library,
+        global_allocator_library = global_allocator_library,
         target_triple = target_triple,
         iso_date = iso_date,
         version = version,
@@ -850,6 +860,7 @@ def rust_repository_set(
         version = None,
         versions = [],
         allocator_library = None,
+        global_allocator_library = None,
         extra_target_triples = [],
         iso_date = None,
         rustfmt_version = None,
@@ -871,6 +882,7 @@ def rust_repository_set(
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
+        global_allocator_library (str, optional): Target that provides allocator functions a global allocator is used with cc_common.link.
         extra_target_triples (list, optional): Additional rust-style targets that this set of
             toolchains should support.
         iso_date (str, optional): The date of the tool.
@@ -911,6 +923,7 @@ def rust_repository_set(
         all_toolchain_names.append(rust_toolchain_repository(
             name = toolchain.name,
             allocator_library = allocator_library,
+            global_allocator_library = global_allocator_library,
             auth = auth,
             channel = toolchain.channel.name,
             dev_components = dev_components,

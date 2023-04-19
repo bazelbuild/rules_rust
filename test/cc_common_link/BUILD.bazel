@@ -14,6 +14,12 @@ cc_library(
 )
 
 cc_library(
+    name = "global_allocator_library",
+    srcs = ["global_allocator_library.cc"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "cclinkstampdep",
     linkstamp = "cclinkstampdep.cc",
 )

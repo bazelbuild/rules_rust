@@ -1271,7 +1271,7 @@ def rustc_compile_action(
         # Collect the linking contexts of the standard library and dependencies.
         linking_contexts = [
             malloc_library[CcInfo].linking_context,
-            toolchain.libstd_and_allocator_ccinfo.linking_context,
+            _get_std_and_alloc_info(ctx, toolchain).linking_context,
             toolchain.stdlib_linkflags.linking_context,
         ]
 
@@ -1379,6 +1379,14 @@ def rustc_compile_action(
         providers.append(OutputGroupInfo(build_metadata = depset([build_metadata])))
 
     return providers
+
+def _get_std_and_alloc_info(ctx, toolchain):
+    if is_exec_configuration(ctx):
+        return toolchain.libstd_and_allocator_ccinfo
+    if toolchain._experimental_use_global_allocator:
+        return toolchain.libstd_and_global_allocator_ccinfo
+    else:
+        return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
@@ -1492,9 +1500,11 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             else:
                 cc_infos.append(dep.cc_info)
 
-    if crate_info.type in ("rlib", "lib") and toolchain.libstd_and_allocator_ccinfo:
-        # TODO: if we already have an rlib in our deps, we could skip this
-        cc_infos.append(toolchain.libstd_and_allocator_ccinfo)
+    if crate_info.type in ("rlib", "lib"):
+        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain)
+        if libstd_and_allocator_cc_info:
+            # TODO: if we already have an rlib in our deps, we could skip this
+            cc_infos.append(libstd_and_allocator_cc_info)
 
     return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
 
