@@ -497,7 +497,10 @@ tasks:
     platform: ubuntu2004
     working_directory: test/cc_common_link
     build_targets:
+      - "--"
       - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
     test_targets:
       - "//..."
     build_flags:
@@ -505,7 +508,7 @@ tasks:
     test_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
   cc_common_link_with_global_alloc_ubuntu2004:
-    name: Build via cc_common.link using global allocator
+    name: Build via cc_common.link using s global allocator
     platform: ubuntu2004
     working_directory: test/cc_common_link/with_global_alloc
     build_targets:
