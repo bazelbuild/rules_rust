@@ -451,7 +451,7 @@ def _rust_toolchain_impl(ctx):
     if experimental_use_global_allocator and not experimental_use_cc_common_link:
         fail(
             "Using @rules_rust//rust/settings:experimental_use_global_allocator requires" +
-            "--@rules_rust//rust/settings:experimental_use_cc_common_link requires",
+            "--@rules_rust//rust/settings:experimental_use_cc_common_link to be set",
         )
 
     rust_std = ctx.attr.rust_std

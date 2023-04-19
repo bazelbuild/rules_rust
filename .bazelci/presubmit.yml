@@ -514,9 +514,9 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-    test_flags:
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
   android_examples_ubuntu2004:
     name: Android Examples
