@@ -272,7 +272,9 @@ def BUILD_for_rust_toolchain(
         exec_triple (triple): The rust-style target that this compiler runs on
         target_triple (triple): The rust-style target triple of the tool
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
-        global_allocator_library (str, optional): Target that provides allocator functions global allocator is used with cc_common_link.
+        global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common_link.
+                                                  This target is only used in the target configuration; exec builds still use the symbols provided
+                                                  by the `allocator_library` target.
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
