@@ -328,11 +328,17 @@ impl Renderer {
             build_script_env: attrs
                 .map_or_else(SelectDict::default, |attrs| attrs.build_script_env.clone())
                 .remap_configurations(platforms),
-            compile_data: make_data(
-                platforms,
-                &empty_set,
-                attrs.map_or(&empty_list, |attrs| &attrs.compile_data),
-            ),
+            compile_data: {
+                let mut data = make_data(
+                    platforms,
+                    &empty_set,
+                    attrs.map_or(&empty_list, |attrs| &attrs.compile_data),
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectList::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
                     render_platform_constraint_label(&self.config.platforms_template, &triple)
@@ -479,11 +485,17 @@ impl Renderer {
         target: &TargetAttributes,
     ) -> Result<CommonAttrs> {
         Ok(CommonAttrs {
-            compile_data: make_data(
-                platforms,
-                &krate.common_attrs.compile_data_glob,
-                &krate.common_attrs.compile_data,
-            ),
+            compile_data: {
+                let mut data = make_data(
+                    platforms,
+                    &krate.common_attrs.compile_data_glob,
+                    &krate.common_attrs.compile_data,
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectList::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
                     render_platform_constraint_label(&self.config.platforms_template, &triple)
@@ -719,7 +731,8 @@ fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList
                 .iter()
                 .map(|&glob| glob.to_owned())
                 .collect(),
-        },
+        }
+        .into(),
         select: select.clone().remap_configurations(platforms),
     }
 }

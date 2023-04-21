@@ -1,5 +1,5 @@
 {
-  "checksum": "93a70712434055b5fc6b3aa458ee3a032c9cf8615254ea8e881120e714f7e1b2",
+  "checksum": "b3e2e36e176cee21df634e3c3f8d37a0a507d000f429d70cbe35dae93033490b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -17,7 +17,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -63,7 +64,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -72,7 +74,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -123,7 +126,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -166,7 +170,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -213,7 +218,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -272,7 +278,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -342,7 +349,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -351,7 +359,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -453,7 +462,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -492,7 +502,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -531,7 +542,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -540,7 +552,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -634,7 +647,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -778,7 +792,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -815,7 +830,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -824,7 +840,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -880,7 +897,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -910,7 +928,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -940,7 +959,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -977,7 +997,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1014,7 +1035,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1053,7 +1075,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1112,7 +1135,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1148,7 +1172,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1185,7 +1210,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1231,7 +1257,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1261,7 +1288,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1291,7 +1319,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1337,7 +1366,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -1346,7 +1376,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1401,7 +1432,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1444,7 +1476,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -1453,7 +1486,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1537,7 +1571,8 @@
             "crate_root": "lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1608,7 +1643,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1654,7 +1690,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1700,7 +1737,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1730,7 +1768,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1771,7 +1810,8 @@
             "crate_root": "lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1808,7 +1848,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1847,7 +1888,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -1856,7 +1898,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1912,7 +1955,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -1921,7 +1965,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -1973,7 +2018,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2010,7 +2056,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2086,7 +2133,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2133,7 +2181,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2171,7 +2220,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -2180,7 +2230,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2231,7 +2282,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -2240,7 +2292,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2336,7 +2389,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -2345,7 +2399,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2402,7 +2457,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2462,7 +2518,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2541,7 +2598,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2577,7 +2635,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2616,7 +2675,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2646,7 +2706,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2693,7 +2754,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2740,7 +2802,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -2749,7 +2812,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2800,7 +2864,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2833,7 +2898,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -2955,7 +3021,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3068,7 +3135,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3123,7 +3191,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3166,7 +3235,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3175,7 +3245,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3238,7 +3309,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3277,7 +3349,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3316,7 +3389,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3325,7 +3399,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3467,7 +3542,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3497,7 +3573,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3536,7 +3613,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3575,7 +3653,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3605,7 +3684,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3635,7 +3715,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3644,7 +3725,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3695,7 +3777,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3704,7 +3787,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3766,7 +3850,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3775,7 +3860,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3850,7 +3936,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3859,7 +3946,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3918,7 +4006,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -3972,7 +4061,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -3981,7 +4071,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4032,7 +4123,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4062,7 +4154,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4133,7 +4226,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4180,7 +4274,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4226,7 +4321,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4284,7 +4380,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4323,7 +4420,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4353,7 +4451,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4383,7 +4482,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4420,7 +4520,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4459,7 +4560,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4506,7 +4608,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4536,7 +4639,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4566,7 +4670,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4588,9 +4693,12 @@
         {
           "Library": {
             "crate_name": "pkg_a",
-            "crate_root": "src/lib.rs",
+            "crate_root": "//pkg_a:crate_root",
             "srcs": [
-              "**/*.rs"
+              "//pkg_a:srcs"
+            ],
+            "compile_data": [
+              "//pkg_a:compile_data"
             ]
           }
         }
@@ -4635,9 +4743,12 @@
         {
           "Library": {
             "crate_name": "pkg_b",
-            "crate_root": "src/lib.rs",
+            "crate_root": "//pkg_b:crate_root",
             "srcs": [
-              "**/*.rs"
+              "//pkg_b:srcs"
+            ],
+            "compile_data": [
+              "//pkg_b:compile_data"
             ]
           }
         }
@@ -4673,9 +4784,12 @@
         {
           "Library": {
             "crate_name": "pkg_c",
-            "crate_root": "src/lib.rs",
+            "crate_root": "//pkg_c:crate_root",
             "srcs": [
-              "**/*.rs"
+              "//pkg_c:srcs"
+            ],
+            "compile_data": [
+              "//pkg_c:compile_data"
             ]
           }
         }
@@ -4724,7 +4838,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -4733,7 +4848,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4818,7 +4934,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4861,7 +4978,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -4870,7 +4988,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4925,7 +5044,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -4934,7 +5054,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -4989,7 +5110,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5058,7 +5180,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5102,7 +5225,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5285,7 +5409,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5294,7 +5419,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5396,7 +5522,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5405,7 +5532,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5475,7 +5603,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5484,7 +5613,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5563,7 +5693,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5602,7 +5733,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5641,7 +5773,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5650,7 +5783,8 @@
             "crate_root": "build/build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5694,7 +5828,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5724,7 +5859,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5763,7 +5899,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5806,7 +5943,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5815,7 +5953,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5877,7 +6016,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5886,7 +6026,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -5948,7 +6089,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -5957,7 +6099,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6020,7 +6163,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6063,7 +6207,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6114,7 +6259,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -6123,7 +6269,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6182,7 +6329,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6221,7 +6369,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6258,7 +6407,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -6267,7 +6417,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6327,7 +6478,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6374,7 +6526,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6427,7 +6580,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6457,7 +6611,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -6466,7 +6621,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6538,7 +6694,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6585,7 +6742,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6615,7 +6773,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -6624,7 +6783,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6758,7 +6918,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6805,7 +6966,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6860,7 +7022,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6927,7 +7090,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -6957,7 +7121,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7010,7 +7175,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7040,7 +7206,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7110,7 +7277,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7157,7 +7325,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7203,7 +7372,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7254,7 +7424,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7284,7 +7455,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -7293,7 +7465,8 @@
             "crate_root": "build/main.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7337,7 +7510,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7375,7 +7549,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7405,7 +7580,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7451,7 +7627,8 @@
             "crate_root": "src/untrusted.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7481,7 +7658,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7534,7 +7712,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -7543,7 +7722,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7606,7 +7786,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7636,7 +7817,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7666,7 +7848,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7696,7 +7879,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7739,7 +7923,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7776,7 +7961,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -7785,7 +7971,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7850,7 +8037,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7919,7 +8107,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -7973,7 +8162,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8022,7 +8212,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8083,7 +8274,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8092,7 +8284,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8137,7 +8330,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8204,7 +8398,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8254,7 +8449,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8293,7 +8489,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8302,7 +8499,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8362,7 +8560,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8371,7 +8570,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8450,7 +8650,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8459,7 +8660,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8503,7 +8705,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8512,7 +8715,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8556,7 +8760,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8683,7 +8888,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8744,7 +8950,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8851,7 +9058,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8860,7 +9068,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8904,7 +9113,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8913,7 +9123,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -8957,7 +9168,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -8966,7 +9178,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9010,7 +9223,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -9019,7 +9233,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9063,7 +9278,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -9072,7 +9288,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9116,7 +9333,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -9125,7 +9343,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9169,7 +9388,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -9178,7 +9398,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9222,7 +9443,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],
@@ -9260,7 +9482,8 @@
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         },
         {
@@ -9269,7 +9492,8 @@
             "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
-            ]
+            ],
+            "compile_data": null
           }
         }
       ],

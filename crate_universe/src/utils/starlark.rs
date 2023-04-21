@@ -122,7 +122,7 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
-    pub srcs: Glob,
+    pub srcs: GlobOrLabels,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
     #[serde(
@@ -232,14 +232,14 @@ pub struct CommonAttrs {
     pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rustc_flags: Vec<String>,
-    pub srcs: Glob,
+    pub srcs: GlobOrLabels,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
     pub version: String,
 }
 
 pub struct Data {
-    pub glob: Glob,
+    pub glob: GlobOrLabels,
     pub select: SelectList<WithOriginalConfigurations<String>>,
 }
 
