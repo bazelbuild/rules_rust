@@ -1,4 +1,5 @@
-///! Gathering dependencies is the largest part of annotating.
+//! Gathering dependencies is the largest part of annotating.
+
 use anyhow::{bail, Result};
 use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
 use cargo_platform::Platform;
