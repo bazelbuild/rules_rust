@@ -6,10 +6,7 @@
 #     bazel run @//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -50,18 +47,19 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=tower",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.4.13",
     deps = [
-        "//vendor_local_pkgs/crates/futures-core-0.3.25:futures_core",
-        "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
+        "//vendor_local_pkgs/crates/futures-core-0.3.28:futures_core",
+        "//vendor_local_pkgs/crates/futures-util-0.3.28:futures_util",
         "//vendor_local_pkgs/crates/pin-project-1.0.12:pin_project",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
-        "//vendor_local_pkgs/crates/tokio-1.16.1:tokio",
-        "//vendor_local_pkgs/crates/tokio-util-0.7.2:tokio_util",
+        "//vendor_local_pkgs/crates/tokio-1.27.0:tokio",
+        "//vendor_local_pkgs/crates/tokio-util-0.7.7:tokio_util",
         "//vendor_local_pkgs/crates/tower-layer-0.3.2:tower_layer",
         "//vendor_local_pkgs/crates/tower-service-0.3.2:tower_service",
         "//vendor_local_pkgs/crates/tracing-0.1.37:tracing",
