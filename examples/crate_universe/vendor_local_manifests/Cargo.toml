@@ -5,9 +5,7 @@ authors = ["UebelAndre <github@uebelandre.com>"]
 edition = "2018"
 
 [dependencies]
-# TODO: For some reason this fails only for locally vendored crates
-# https://github.com/abrisco/cargo-bazel/issues/173
-tokio = { version = "=1.16.1", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }
 
 [dev-dependencies]
 tempfile = "3.2.0"

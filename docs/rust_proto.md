@@ -120,7 +120,7 @@ configuration.
 ## rust_grpc_library
 
 <pre>
-rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>)
+rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>, <a href="#rust_grpc_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
@@ -156,6 +156,7 @@ rust_binary(
 | <a id="rust_grpc_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_grpc_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
+| <a id="rust_grpc_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
 
 
 <a id="rust_proto_library"></a>
@@ -163,7 +164,7 @@ rust_binary(
 ## rust_proto_library
 
 <pre>
-rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>)
+rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>, <a href="#rust_proto_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s.
@@ -199,6 +200,7 @@ rust_binary(
 | <a id="rust_proto_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_proto_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
+| <a id="rust_proto_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
 
 
 <a id="rust_proto_toolchain"></a>
