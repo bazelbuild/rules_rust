@@ -2,7 +2,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor", "render_c
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
 crates_vendor(
-    name = "crates_vendor_pkgs",
+    name = "crates_vendor",
     annotations = {
         "axum": [crate.annotation(
             compile_data_glob = ["**/*.md"],
@@ -29,12 +29,9 @@ crates_vendor(
             features = ["all"],
             version = "0.4.7",
         ),
-        # TODO: This is pinned due to a build failure introduced by 1.17
-        # bringing in windows-sys and introduces linker errors.
-        # https://github.com/abrisco/cargo-bazel/issues/173
         "tokio": crate.spec(
             features = ["full"],
-            version = "=1.16.1",
+            version = "1.26.0",
         ),
         "tower": crate.spec(
             features = ["util"],
@@ -56,6 +53,7 @@ crates_vendor(
     render_config = render_config(
         regen_command = "See https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/vendor_local_pkgs/BUILD.bazel",
     ),
+    repository_name = "crates_vendor_pkgs",
 )
 
 rust_binary(

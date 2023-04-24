@@ -6,10 +6,7 @@
 #     bazel run @//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -33,21 +30,22 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "//vendor_local_pkgs/crates/async-trait-0.1.60:async_trait",
+        "//vendor_local_pkgs/crates/async-trait-0.1.68:async_trait",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=axum-core",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.1.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.3.0:bytes",
-        "//vendor_local_pkgs/crates/futures-util-0.3.25:futures_util",
-        "//vendor_local_pkgs/crates/http-0.2.8:http",
+        "//vendor_local_pkgs/crates/bytes-1.4.0:bytes",
+        "//vendor_local_pkgs/crates/futures-util-0.3.28:futures_util",
+        "//vendor_local_pkgs/crates/http-0.2.9:http",
         "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
-        "//vendor_local_pkgs/crates/mime-0.3.16:mime",
+        "//vendor_local_pkgs/crates/mime-0.3.17:mime",
     ],
 )
