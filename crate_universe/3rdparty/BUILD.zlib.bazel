@@ -31,6 +31,12 @@ _ZLIB_PREFIXED_HEADERS = ["{}/{}".format(_ZLIB_HEADER_PREFIX, hdr) for hdr in _Z
     for hdr in _ZLIB_HEADERS
 ]
 
+_COMMON_COPTS = [
+    "-Wno-deprecated-non-prototype",
+    "-Wno-unused-variable",
+    "-Wno-implicit-function-declaration",
+]
+
 cc_library(
     name = "zlib",
     srcs = [
@@ -55,12 +61,15 @@ cc_library(
     ] + _ZLIB_HEADERS,
     hdrs = _ZLIB_PREFIXED_HEADERS,
     copts = select({
+        "@platforms//os:linux": [
+            # Required for opt builds to avoid
+            # `libzlib.a(crc32.o): requires unsupported dynamic reloc 11; recompile with -fPIC`
+            "-fPIC",
+            # Silence all warnings
+            "-w",
+        ] + _COMMON_COPTS,
         "@platforms//os:windows": [],
-        "//conditions:default": [
-            "-Wno-deprecated-non-prototype",
-            "-Wno-unused-variable",
-            "-Wno-implicit-function-declaration",
-        ],
+        "//conditions:default": _COMMON_COPTS,
     }),
     includes = ["zlib/include/"],
     visibility = ["//visibility:public"],
