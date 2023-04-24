@@ -30,11 +30,11 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets

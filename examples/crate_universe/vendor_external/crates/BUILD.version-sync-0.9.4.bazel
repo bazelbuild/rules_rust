@@ -6,10 +6,7 @@
 #     bazel run @//vendor_external:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -48,18 +45,19 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=version-sync",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.9.4",
     deps = [
-        "@crates_vendor__proc-macro2-1.0.36//:proc_macro2",
+        "@crates_vendor__proc-macro2-1.0.56//:proc_macro2",
         "@crates_vendor__pulldown-cmark-0.8.0//:pulldown_cmark",
-        "@crates_vendor__regex-1.5.4//:regex",
-        "@crates_vendor__semver-1.0.6//:semver",
-        "@crates_vendor__syn-1.0.86//:syn",
-        "@crates_vendor__toml-0.5.8//:toml",
-        "@crates_vendor__url-2.2.2//:url",
+        "@crates_vendor__regex-1.8.1//:regex",
+        "@crates_vendor__semver-1.0.17//:semver",
+        "@crates_vendor__syn-1.0.109//:syn",
+        "@crates_vendor__toml-0.5.11//:toml",
+        "@crates_vendor__url-2.3.1//:url",
     ],
 )

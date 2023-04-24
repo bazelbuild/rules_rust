@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -44,6 +41,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=proc-macro-error",
         "manual",
         "noclippy",
         "norustfmt",
@@ -51,9 +49,9 @@ rust_library(
     version = "1.0.4",
     deps = [
         "@crates_vendor__proc-macro-error-1.0.4//:build_script_build",
-        "@crates_vendor__proc-macro2-1.0.36//:proc_macro2",
-        "@crates_vendor__quote-1.0.15//:quote",
-        "@crates_vendor__syn-1.0.86//:syn",
+        "@crates_vendor__proc-macro2-1.0.56//:proc_macro2",
+        "@crates_vendor__quote-1.0.26//:quote",
+        "@crates_vendor__syn-1.0.109//:syn",
     ],
 )
 
@@ -83,6 +81,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=proc-macro-error",
         "manual",
         "noclippy",
         "norustfmt",

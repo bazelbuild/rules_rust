@@ -16,5 +16,8 @@ proto_library(
 
 rust_proto_library(
     name = "b_rust",
+    # In Rust nightly (2023-04-20), this target fails due to the following issue:
+    # https://doc.rust-lang.org/nightly/nightly-rustc/rustc_lint/builtin/static.AMBIGUOUS_GLOB_REEXPORTS.html
+    tags = ["no-clippy"],
     deps = [":b_proto"],
 )

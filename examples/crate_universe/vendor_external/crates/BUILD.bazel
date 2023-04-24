@@ -27,7 +27,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "clap",
-    actual = "@crates_vendor__clap-3.1.5//:clap",
+    actual = "@crates_vendor__clap-3.2.23//:clap",
     tags = ["manual"],
 )
 
