@@ -1,4 +1,4 @@
-use std::alloc::{GlobalAlloc, Layout, System};
+use std::alloc::{GlobalAlloc, System, Layout};
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 
 static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
@@ -33,11 +33,10 @@ mod tests {
 
     #[test]
     fn test_global_alloc_was_used() {
-        // Allocated bytes before main
         let bytes_start = ALLOCATED.load(SeqCst);
 
-        let _x = Box::new(5); // 4 bytes
-        let _y = Box::new(true); // 1 byte
+        let _ = Box::new(5);    // 4 bytes
+        let _ = Box::new(true); // 1 byte
 
         let bytes_end = ALLOCATED.load(SeqCst);
 

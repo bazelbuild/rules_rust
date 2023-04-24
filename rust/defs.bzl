@@ -49,6 +49,7 @@ load(
     _extra_rustc_flags = "extra_rustc_flags",
     _is_proc_macro_dep = "is_proc_macro_dep",
     _is_proc_macro_dep_enabled = "is_proc_macro_dep_enabled",
+    _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
 )
 load(
@@ -142,3 +143,5 @@ rustfmt_test = _rustfmt_test
 
 rust_stdlib_filegroup = _rust_stdlib_filegroup
 # See @rules_rust//rust:toolchain.bzl for a complete description.
+
+no_std = _no_std

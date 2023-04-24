@@ -36,6 +36,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         for file in rust_std
         if file.basename.endswith(".o") and "self-contained" in file.path
     ]
+    panic_files = []
 
     std_rlibs = [f for f in rust_std if f.basename.endswith(".rlib")]
     if std_rlibs:
@@ -45,6 +46,9 @@ def _rust_stdlib_filegroup_impl(ctx):
         # core only depends on alloc, but we poke adler in there
         # because that needs to be before miniz_oxide
         #
+        # panic_unwind depends on unwind, alloc, cfg_if, compiler_builtins, core, libc
+        # panic_abort depends on alloc, cfg_if, compiler_builtins, core, libc
+        #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
         dot_a_files = [make_static_lib_symlink(ctx.actions, f) for f in std_rlibs]
@@ -52,6 +56,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
         core_files = [f for f in dot_a_files if ("core" in f.basename or "adler" in f.basename) and "std" not in f.basename]
+        panic_files = [f for f in dot_a_files if f.basename in ["cfg_if", "libc", "panic_abort", "panic_unwind", "unwind"]]
         between_core_and_std_files = [
             f
             for f in dot_a_files
@@ -85,6 +90,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             memchr_files = memchr_files,
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
+            panic_files = panic_files,
             srcs = ctx.attr.srcs,
         ),
     ]
@@ -121,13 +127,15 @@ def _ltl(library, ctx, cc_toolchain, feature_configuration):
         pic_static_library = library,
     )
 
-def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
+def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "std"):
     """Make the CcInfo (if possible) for libstd and allocator libraries.
 
     Args:
         ctx (ctx): The rule's context object.
         rust_std: The Rust standard library.
         allocator_library: The target to use for providing allocator functions.
+        std: Standard library flavor. Currently only "std" and "no_std_with_alloc" are supported,
+             accompanied with the default panic behavior.
 
 
     Returns:
@@ -191,8 +199,27 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
             filtered_between_core_and_std_files = [
                 f
                 for f in filtered_between_core_and_std_files
-                if "panic_abort" not in f.basename
+                if "abort" not in f.basename
             ]
+            core_alloc_and_panic_inputs = depset(
+                [
+                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    for f in rust_stdlib_info.panic_files
+                    if "unwind" not in f.basename
+                ],
+                transitive = [core_inputs],
+                order = "topological",
+            )
+        else:
+            core_alloc_and_panic_inputs = depset(
+                [
+                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    for f in rust_stdlib_info.panic_files
+                    if "unwind" not in f.basename
+                ],
+                transitive = [core_inputs],
+                order = "topological",
+            )
         memchr_inputs = depset(
             [
                 _ltl(f, ctx, cc_toolchain, feature_configuration)
@@ -226,10 +253,18 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library):
             order = "topological",
         )
 
-        link_inputs = cc_common.create_linker_input(
-            owner = rust_std.label,
-            libraries = test_inputs,
-        )
+        if std == "std":
+            link_inputs = cc_common.create_linker_input(
+                owner = rust_std.label,
+                libraries = test_inputs,
+            )
+        elif std == "no_std_with_alloc":
+            link_inputs = cc_common.create_linker_input(
+                owner = rust_std.label,
+                libraries = core_alloc_and_panic_inputs,
+            )
+        else:
+            fail("Requested '{}' std mode is currently not supported.".format(std))
 
         allocator_inputs = None
         if allocator_library:
@@ -439,6 +474,7 @@ def _rust_toolchain_impl(ctx):
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
+    no_std = ctx.attr._no_std[BuildSettingInfo].value
 
     experimental_use_cc_common_link = ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
     experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
@@ -573,8 +609,9 @@ def _rust_toolchain_impl(ctx):
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
         exec_triple = exec_triple,
-        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library),
-        libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library),
+        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std"),
+        libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std"),
+        nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         make_variables = make_variable_info,
@@ -603,6 +640,7 @@ def _rust_toolchain_impl(ctx):
         _pipelined_compilation = pipelined_compilation,
         _experimental_use_cc_common_link = experimental_use_cc_common_link,
         _experimental_use_global_allocator = experimental_use_global_allocator,
+        _no_std = no_std,
     )
     return [
         toolchain,
@@ -754,6 +792,9 @@ rust_toolchain = rule(
                 "Label to a boolean build setting that informs the target build whether a global allocator is being used." +
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
             ),
+        ),
+        "_no_std": attr.label(
+            default = Label("//:no_std"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

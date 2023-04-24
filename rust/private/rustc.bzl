@@ -19,6 +19,7 @@ load(
     "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
@@ -1018,6 +1019,9 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
+    if _is_no_std(ctx, toolchain, crate_info):
+        rustc_flags.add_all(['--cfg=feature="no_std"'])
+
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
     args = struct(
@@ -1271,7 +1275,7 @@ def rustc_compile_action(
         # Collect the linking contexts of the standard library and dependencies.
         linking_contexts = [
             malloc_library[CcInfo].linking_context,
-            _get_std_and_alloc_info(ctx, toolchain).linking_context,
+            _get_std_and_alloc_info(ctx, toolchain, crate_info).linking_context,
             toolchain.stdlib_linkflags.linking_context,
         ]
 
@@ -1380,11 +1384,19 @@ def rustc_compile_action(
 
     return providers
 
-def _get_std_and_alloc_info(ctx, toolchain):
+def _is_no_std(ctx, toolchain, crate_info):
+    if is_exec_configuration(ctx) or crate_info.is_test:
+        return False
+    return toolchain._no_std
+
+def _get_std_and_alloc_info(ctx, toolchain, crate_info):
     if is_exec_configuration(ctx):
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
-        return toolchain.libstd_and_global_allocator_ccinfo
+        if _is_no_std(ctx, toolchain, crate_info):
+            return toolchain.nostd_and_global_allocator_cc_info
+        else:
+            return toolchain.libstd_and_global_allocator_ccinfo
     else:
         return toolchain.libstd_and_allocator_ccinfo
 
@@ -1501,7 +1513,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
                 cc_infos.append(dep.cc_info)
 
     if crate_info.type in ("rlib", "lib"):
-        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain)
+        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info)
         if libstd_and_allocator_cc_info:
             # TODO: if we already have an rlib in our deps, we could skip this
             cc_infos.append(libstd_and_allocator_cc_info)
@@ -1989,4 +2001,20 @@ per_crate_rustc_flag = rule(
     ),
     implementation = _per_crate_rustc_flag_impl,
     build_setting = config.string(flag = True, allow_multiple = True),
+)
+
+def _no_std_impl(ctx):
+    value = str(ctx.attr._no_std[BuildSettingInfo].value)
+    if is_exec_configuration(ctx):
+        return [config_common.FeatureFlagInfo(value = "off")]
+    return [config_common.FeatureFlagInfo(value = value)]
+
+no_std = rule(
+    doc = (
+        "No std; we need this so that we can distinguish between host and exec"
+    ),
+    attrs = {
+        "_no_std": attr.label(default = "//:no_std"),
+    },
+    implementation = _no_std_impl,
 )

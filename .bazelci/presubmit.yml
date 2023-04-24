@@ -524,6 +524,34 @@ tasks:
     test_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_no_std:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+  no_std:
+    name: Build with no_std + alloc
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//:no_std=alloc"
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
