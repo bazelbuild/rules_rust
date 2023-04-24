@@ -6,10 +6,7 @@
 #     bazel run @//vendor_local_manifests:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -35,16 +32,17 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=tokio-test",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.4.2",
     deps = [
-        "//vendor_local_manifests/crates/async-stream-0.3.3:async_stream",
-        "//vendor_local_manifests/crates/bytes-1.3.0:bytes",
-        "//vendor_local_manifests/crates/futures-core-0.3.25:futures_core",
-        "//vendor_local_manifests/crates/tokio-1.16.1:tokio",
-        "//vendor_local_manifests/crates/tokio-stream-0.1.11:tokio_stream",
+        "//vendor_local_manifests/crates/async-stream-0.3.5:async_stream",
+        "//vendor_local_manifests/crates/bytes-1.4.0:bytes",
+        "//vendor_local_manifests/crates/futures-core-0.3.28:futures_core",
+        "//vendor_local_manifests/crates/tokio-1.27.0:tokio",
+        "//vendor_local_manifests/crates/tokio-stream-0.1.12:tokio_stream",
     ],
 )

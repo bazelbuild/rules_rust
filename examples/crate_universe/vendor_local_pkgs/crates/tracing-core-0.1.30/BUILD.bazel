@@ -6,10 +6,7 @@
 #     bazel run @//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -41,12 +38,13 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=tracing-core",
         "manual",
         "noclippy",
         "norustfmt",
     ],
     version = "0.1.30",
     deps = [
-        "//vendor_local_pkgs/crates/once_cell-1.17.0:once_cell",
+        "//vendor_local_pkgs/crates/once_cell-1.17.1:once_cell",
     ],
 )
