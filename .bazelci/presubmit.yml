@@ -534,8 +534,6 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-    run_targets:
-      - "//:main"
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
@@ -554,8 +552,6 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-    run_targets:
-      - "//:main"
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//:no_std=alloc"
