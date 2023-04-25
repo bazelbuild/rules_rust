@@ -1020,6 +1020,7 @@ def construct_arguments(
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
     if _is_no_std(ctx, toolchain, crate_info):
+        print(ctx.label)
         rustc_flags.add_all(['--cfg=feature="no_std"'])
 
     # Create a struct which keeps the arguments separate so each may be tuned or
@@ -1387,7 +1388,9 @@ def rustc_compile_action(
 def _is_no_std(ctx, toolchain, crate_info):
     if is_exec_configuration(ctx) or crate_info.is_test:
         return False
-    return toolchain._no_std
+    if toolchain._no_std == "off":
+        return False
+    return True
 
 def _get_std_and_alloc_info(ctx, toolchain, crate_info):
     if is_exec_configuration(ctx):
