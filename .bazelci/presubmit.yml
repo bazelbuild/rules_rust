@@ -13,24 +13,20 @@ nightly_aspects_flags: &nightly_aspects_flags
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
-  - "-//test/no_std/..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
-  - "-//test/no_std/..."
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
-  - "-//test/no_std/..."
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
   - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
-  - "-//test/no_std/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -52,7 +48,6 @@ tasks:
     build_targets:
       - "--"
       - "//..."
-      - "-//test/no_std/..."
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
@@ -60,7 +55,6 @@ tasks:
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
-      - "-//test/no_std/..."
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -121,7 +115,6 @@ tasks:
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
-      - "-//test/no_std/..."
     build_flags: *aspects_flags
   rbe_ubuntu1604_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
@@ -137,7 +130,6 @@ tasks:
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
-      - "-//test/no_std/..."
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
