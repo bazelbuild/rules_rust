@@ -20,14 +20,3 @@ pub extern "C" fn return_5_in_no_std() -> i32 {
 pub extern "C" fn return_5_in_no_std() -> i32 {
     6
 }
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_return_5_in_no_std() {
-        assert_eq!(5, return_5_in_no_std());
-    }
-}

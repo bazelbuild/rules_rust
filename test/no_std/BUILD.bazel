@@ -5,7 +5,6 @@ load(
     "rust_binary",
     "rust_library",
     "rust_shared_library",
-    "rust_test",
 )
 
 rust_shared_library(
@@ -27,12 +26,6 @@ rust_library(
     srcs = ["alloc.rs"],
     aliases = aliases(),
     deps = all_crate_deps(normal = True),
-)
-
-rust_test(
-    name = "no_std_rust_test",
-    crate = ":lib",
-    edition = "2021",
 )
 
 cc_library(

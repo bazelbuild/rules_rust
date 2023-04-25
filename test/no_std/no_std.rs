@@ -3,7 +3,7 @@ use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    unsafe { intrinsics::abort() }
+    intrinsics::abort()
 }
 
 #[alloc_error_handler]
