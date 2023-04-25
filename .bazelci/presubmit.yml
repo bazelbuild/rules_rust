@@ -17,6 +17,7 @@ single_rust_channel_targets: &single_rust_channel_targets
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
 default_linux_targets: &default_linux_targets
+  - "--"
   - "//..."
   - "-//test/no_std/..."
 default_macos_targets: &default_macos_targets
@@ -49,6 +50,7 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
+      - "--"
       - "//..."
       - "-//test/no_std/..."
     test_targets:
@@ -541,10 +543,12 @@ tasks:
     test_targets:
       - "//..."
     build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
       - "--@rules_rust//:no_std=alloc"
     test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
       - "--@rules_rust//:no_std=alloc"
@@ -557,8 +561,10 @@ tasks:
     test_targets:
       - "//..."
     build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//:no_std=alloc"
     test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//:no_std=alloc"
   android_examples_ubuntu2004:
     name: Android Examples
