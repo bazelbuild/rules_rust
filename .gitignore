@@ -10,6 +10,8 @@
 /examples/crate_universe/bazel-*
 /examples/crate_universe/*/bazel-*
 /test/cc_common_link/bazel-*
+/test/cc_common_link/with_global_alloc/bazel-*
+/test/no_std/bazel-*
 /docs/bazel-*
 user.bazelrc
 
