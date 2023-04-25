@@ -12,7 +12,7 @@ nightly_aspects_flags: &nightly_aspects_flags
   - "--config=clippy"
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
-  - "//...
+  - "//..."
   - "-//test/no_std/..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
