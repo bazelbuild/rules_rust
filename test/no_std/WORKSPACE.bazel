@@ -1,4 +1,4 @@
-workspace(name = "no_std")
+workspace(name = "test_no_std")
 
 local_repository(
     name = "rules_rust",
@@ -31,7 +31,7 @@ crate_universe_dependencies(bootstrap = True)
 load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
 
 crates_repository(
-    name = "crate_index",
+    name = "no_std_crate_index",
     cargo_lockfile = "//:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -39,7 +39,7 @@ crates_repository(
     lockfile = "//:cargo-bazel-lock.json",
     packages = {
         "libc_alloc": crate.spec(
-            version = "1.0.4",
+            version = "1.0.3",
         ),
     },
     # Should match the version represented by the currently registered `rust_toolchain`.
@@ -47,7 +47,7 @@ crates_repository(
 )
 
 load(
-    "@crate_index//:defs.bzl",
+    "@no_std_crate_index//:defs.bzl",
     no_std_repositories = "crate_repositories",
 )
 
