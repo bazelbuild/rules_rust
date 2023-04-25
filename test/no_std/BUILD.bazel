@@ -30,7 +30,7 @@ rust_library(
 )
 
 rust_test(
-    name = "no_std_test",
+    name = "no_std_rust_test",
     crate = ":lib",
     edition = "2021",
 )
@@ -48,7 +48,7 @@ rust_binary(
 )
 
 cc_test(
-    name = "test",
+    name = "no_std_cc_test",
     srcs = ["main.c"],
     deps = [":lib"],
 )
