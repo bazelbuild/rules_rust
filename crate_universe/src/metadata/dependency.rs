@@ -67,6 +67,8 @@ impl DependencySet {
             )
         };
 
+        // For rules on build script dependencies see:
+        //  https://doc.rust-lang.org/cargo/reference/build-scripts.html#build-dependencies
         let (build_proc_macro_deps, mut build_deps) = {
             let (proc_macro, normal) = node
                 .deps
@@ -89,6 +91,7 @@ impl DependencySet {
         // on a `*-sys` crate for itself, so would it's build script. Hopefully this is correct.
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
+        // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
         let sys_name = format!("{}-sys", &metadata[&node.id].name);
         normal_deps.configurations().into_iter().for_each(|config| {
             normal_deps
@@ -442,6 +445,69 @@ mod test {
     }
 
     #[test]
+    fn sys_crate_with_build_script() {
+        let metadata = metadata::build_scripts();
+
+        let libssh2 = find_metadata_node("libssh2-sys", &metadata);
+        let libssh2_depset = DependencySet::new_for_node(libssh2, &metadata);
+
+        // Collect build dependencies into a set
+        let build_deps: BTreeSet<String> = libssh2_depset
+            .build_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                libssh2_depset
+                    .build_deps
+                    .get_iter(conf)
+                    .unwrap()
+                    .map(|dep| dep.package_id.repr.clone())
+                    .collect::<Vec<String>>()
+            })
+            .collect();
+
+        assert_eq!(
+            BTreeSet::from([
+                "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                    .to_owned(),
+                "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)".to_owned()
+            ]),
+            build_deps,
+        );
+
+        // Collect normal dependencies into a set
+        let normal_deps: BTreeSet<String> = libssh2_depset
+            .normal_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                libssh2_depset
+                    .normal_deps
+                    .get_iter(conf)
+                    .unwrap()
+                    .map(|dep| dep.package_id.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .collect();
+
+        assert_eq!(
+            BTreeSet::from([
+                "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                    .to_owned(),
+            ]),
+            normal_deps,
+        );
+
+        assert!(libssh2_depset.proc_macro_deps.is_empty());
+        assert!(libssh2_depset.normal_dev_deps.is_empty());
+        assert!(libssh2_depset.proc_macro_dev_deps.is_empty());
+        assert!(libssh2_depset.build_proc_macro_deps.is_empty());
+    }
+
+    #[test]
     fn tracked_aliases() {
         let metadata = metadata::alias();
 
@@ -501,7 +567,7 @@ mod test {
         let node = find_metadata_node("cpufeatures", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let libc_cfgs: Vec<Option<String>> = dependencies
+        let libc_cfgs: BTreeSet<String> = dependencies
             .normal_deps
             .configurations()
             .into_iter()
@@ -513,17 +579,16 @@ mod test {
                     .filter(|dep| dep.target_name == "libc")
                     .map(move |_| conf.cloned())
             })
+            .flatten()
             .collect();
 
-        assert_eq!(libc_cfgs.len(), 2);
-
-        let cfg_strs: BTreeSet<String> = libc_cfgs.into_iter().flatten().collect();
         assert_eq!(
-            cfg_strs,
             BTreeSet::from([
-                "aarch64-apple-darwin".to_owned(),
+                "aarch64-linux-android".to_owned(),
                 "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))".to_owned(),
-            ])
+                "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))".to_owned(),
+            ]),
+            libc_cfgs,
         );
     }
 

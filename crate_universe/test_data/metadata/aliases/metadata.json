@@ -476,6 +476,12 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "default": [],
                 "example_generated": [],
                 "rustc-dep-of-std": [
@@ -580,6 +586,12 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "rustc-dep-of-std": [
                     "core",
                     "compiler_builtins"
@@ -1734,8 +1746,17 @@
                 }
             ],
             "features": {
+                "atty": [
+                    "dep:atty"
+                ],
+                "backtrace": [
+                    "dep:backtrace"
+                ],
                 "cargo": [
                     "lazy_static"
+                ],
+                "clap_derive": [
+                    "dep:clap_derive"
                 ],
                 "color": [
                     "atty",
@@ -1755,11 +1776,29 @@
                     "lazy_static"
                 ],
                 "env": [],
+                "lazy_static": [
+                    "dep:lazy_static"
+                ],
+                "regex": [
+                    "dep:regex"
+                ],
                 "std": [
                     "indexmap/std"
                 ],
+                "strsim": [
+                    "dep:strsim"
+                ],
                 "suggestions": [
                     "strsim"
+                ],
+                "termcolor": [
+                    "dep:termcolor"
+                ],
+                "terminal_size": [
+                    "dep:terminal_size"
+                ],
+                "unicase": [
+                    "dep:unicase"
                 ],
                 "unicode": [
                     "textwrap/unicode-width",
@@ -1787,6 +1826,9 @@
                 ],
                 "yaml": [
                     "yaml-rust"
+                ],
+                "yaml-rust": [
+                    "dep:yaml-rust"
                 ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-3.1.5/Cargo.toml",
@@ -2306,10 +2348,19 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "custom": [],
                 "js": [
                     "wasm-bindgen",
                     "js-sys"
+                ],
+                "js-sys": [
+                    "dep:js-sys"
                 ],
                 "rdrand": [],
                 "rustc-dep-of-std": [
@@ -2319,7 +2370,10 @@
                     "wasi/rustc-dep-of-std"
                 ],
                 "std": [],
-                "test-in-browser": []
+                "test-in-browser": [],
+                "wasm-bindgen": [
+                    "dep:wasm-bindgen"
+                ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/getrandom-0.2.5/Cargo.toml",
             "metadata": {
@@ -2609,8 +2663,23 @@
                 }
             ],
             "features": {
+                "ahash": [
+                    "dep:ahash"
+                ],
                 "ahash-compile-time-rng": [
                     "ahash/compile-time-rng"
+                ],
+                "alloc": [
+                    "dep:alloc"
+                ],
+                "bumpalo": [
+                    "dep:bumpalo"
+                ],
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
                 ],
                 "default": [
                     "ahash",
@@ -2619,6 +2688,9 @@
                 "inline-more": [],
                 "nightly": [],
                 "raw": [],
+                "rayon": [
+                    "dep:rayon"
+                ],
                 "rustc-dep-of-std": [
                     "nightly",
                     "core",
@@ -2626,7 +2698,10 @@
                     "alloc",
                     "rustc-internal-api"
                 ],
-                "rustc-internal-api": []
+                "rustc-internal-api": [],
+                "serde": [
+                    "dep:serde"
+                ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/hashbrown-0.11.2/Cargo.toml",
             "metadata": {
@@ -2706,6 +2781,9 @@
                 "default": [],
                 "unicode": [
                     "unicode-segmentation"
+                ],
+                "unicode-segmentation": [
+                    "dep:unicode-segmentation"
                 ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/heck-0.4.0/Cargo.toml",
@@ -2794,6 +2872,12 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "default": [],
                 "docs": [],
                 "rustc-dep-of-std": [
@@ -3106,6 +3190,15 @@
                 }
             ],
             "features": {
+                "rayon": [
+                    "dep:rayon"
+                ],
+                "rustc-rayon": [
+                    "dep:rustc-rayon"
+                ],
+                "serde": [
+                    "dep:serde"
+                ],
                 "serde-1": [
                     "serde"
                 ],
@@ -3229,6 +3322,9 @@
                 }
             ],
             "features": {
+                "spin": [
+                    "dep:spin"
+                ],
                 "spin_no_std": [
                     "spin"
                 ]
@@ -3334,6 +3430,9 @@
                 "rustc-dep-of-std": [
                     "align",
                     "rustc-std-workspace-core"
+                ],
+                "rustc-std-workspace-core": [
+                    "dep:rustc-std-workspace-core"
                 ],
                 "std": [],
                 "use_std": [
@@ -3693,7 +3792,16 @@
                 "release_max_level_off": [],
                 "release_max_level_trace": [],
                 "release_max_level_warn": [],
-                "std": []
+                "serde": [
+                    "dep:serde"
+                ],
+                "std": [],
+                "sval": [
+                    "dep:sval"
+                ],
+                "value-bag": [
+                    "dep:value-bag"
+                ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/log-0.4.14/Cargo.toml",
             "metadata": {
@@ -3817,8 +3925,17 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "default": [
                     "std"
+                ],
+                "libc": [
+                    "dep:libc"
                 ],
                 "rustc-dep-of-std": [
                     "core",
@@ -3963,6 +4080,9 @@
                 "application": [
                     "clap"
                 ],
+                "clap": [
+                    "dep:clap"
+                ],
                 "default": [
                     "application"
                 ]
@@ -4105,6 +4225,9 @@
                 "application": [
                     "clap"
                 ],
+                "clap": [
+                    "dep:clap"
+                ],
                 "default": [
                     "application"
                 ]
@@ -4216,7 +4339,16 @@
                     "memchr",
                     "raw_os_str"
                 ],
-                "raw_os_str": []
+                "memchr": [
+                    "dep:memchr"
+                ],
+                "print_bytes": [
+                    "dep:print_bytes"
+                ],
+                "raw_os_str": [],
+                "uniquote": [
+                    "dep:uniquote"
+                ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.0.0/Cargo.toml",
             "metadata": {
@@ -4501,6 +4633,9 @@
             "features": {
                 "default": [
                     "syn-error"
+                ],
+                "syn": [
+                    "dep:syn"
                 ],
                 "syn-error": [
                     "syn"
@@ -5092,8 +5227,23 @@
                 "getrandom": [
                     "rand_core/getrandom"
                 ],
+                "libc": [
+                    "dep:libc"
+                ],
+                "log": [
+                    "dep:log"
+                ],
                 "min_const_gen": [],
                 "nightly": [],
+                "packed_simd": [
+                    "dep:packed_simd"
+                ],
+                "rand_chacha": [
+                    "dep:rand_chacha"
+                ],
+                "serde": [
+                    "dep:serde"
+                ],
                 "serde1": [
                     "serde",
                     "rand_core/serde1"
@@ -5235,6 +5385,9 @@
                 "default": [
                     "std"
                 ],
+                "serde": [
+                    "dep:serde"
+                ],
                 "serde1": [
                     "serde"
                 ],
@@ -5323,6 +5476,12 @@
             ],
             "features": {
                 "alloc": [],
+                "getrandom": [
+                    "dep:getrandom"
+                ],
+                "serde": [
+                    "dep:serde"
+                ],
                 "serde1": [
                     "serde"
                 ],
@@ -6103,6 +6262,9 @@
                     "proc-macro2/proc-macro",
                     "quote/proc-macro"
                 ],
+                "quote": [
+                    "dep:quote"
+                ],
                 "test": [
                     "syn-test-suite/all-features"
                 ],
@@ -6455,6 +6617,21 @@
                     "unicode-linebreak",
                     "unicode-width",
                     "smawk"
+                ],
+                "hyphenation": [
+                    "dep:hyphenation"
+                ],
+                "smawk": [
+                    "dep:smawk"
+                ],
+                "terminal_size": [
+                    "dep:terminal_size"
+                ],
+                "unicode-linebreak": [
+                    "dep:unicode-linebreak"
+                ],
+                "unicode-width": [
+                    "dep:unicode-width"
                 ]
             },
             "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/textwrap-0.15.0/Cargo.toml",
@@ -6774,6 +6951,9 @@
                 }
             ],
             "features": {
+                "erased-serde1": [
+                    "dep:erased-serde1"
+                ],
                 "error": [
                     "std",
                     "sval1_lib/std"
@@ -6788,12 +6968,21 @@
                     "erased-serde1/alloc",
                     "serde1_fmt"
                 ],
+                "serde1_fmt": [
+                    "dep:serde1_fmt"
+                ],
+                "serde1_lib": [
+                    "dep:serde1_lib"
+                ],
                 "std": [],
                 "sval": [
                     "sval1"
                 ],
                 "sval1": [
                     "sval1_lib"
+                ],
+                "sval1_lib": [
+                    "dep:sval1_lib"
                 ],
                 "test": [
                     "std"
@@ -6945,6 +7134,12 @@
                 }
             ],
             "features": {
+                "compiler_builtins": [
+                    "dep:compiler_builtins"
+                ],
+                "core": [
+                    "dep:core"
+                ],
                 "default": [
                     "std"
                 ],
@@ -6952,6 +7147,9 @@
                     "compiler_builtins",
                     "core",
                     "rustc-std-workspace-alloc"
+                ],
+                "rustc-std-workspace-alloc": [
+                    "dep:rustc-std-workspace-alloc"
                 ],
                 "std": []
             },
