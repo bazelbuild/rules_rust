@@ -43,7 +43,7 @@ crates_repository(
         ),
     },
     # Should match the version represented by the currently registered `rust_toolchain`.
-    rust_version = "nightly/2023-04-15",
+    rust_version = "nightly/2023-04-20",
 )
 
 load(
