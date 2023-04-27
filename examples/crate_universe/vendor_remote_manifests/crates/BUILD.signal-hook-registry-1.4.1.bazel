@@ -39,6 +39,6 @@ rust_library(
     ],
     version = "1.4.1",
     deps = [
-        "@crates_vendor_manifests__libc-0.2.142//:libc",
+        "@cvm__libc-0.2.142//:libc",
     ],
 )

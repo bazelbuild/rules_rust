@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "tracing",
+    name = "windows_sys",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,30 +28,32 @@ rust_library(
         ],
     ),
     crate_features = [
-        "attributes",
+        "Win32",
+        "Win32_Foundation",
+        "Win32_Security",
+        "Win32_Security_Authorization",
+        "Win32_Storage",
+        "Win32_Storage_FileSystem",
+        "Win32_System",
+        "Win32_System_Console",
+        "Win32_System_Pipes",
+        "Win32_System_SystemServices",
+        "Win32_System_Threading",
+        "Win32_System_WindowsProgramming",
         "default",
-        "log",
-        "std",
-        "tracing-attributes",
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
-    proc_macro_deps = [
-        "//vendor_local_pkgs/crates/tracing-attributes-0.1.23:tracing_attributes",
-    ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=tracing",
+        "crate-name=windows-sys",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.37",
+    version = "0.48.0",
     deps = [
-        "//vendor_local_pkgs/crates/cfg-if-1.0.0:cfg_if",
-        "//vendor_local_pkgs/crates/log-0.4.17:log",
-        "//vendor_local_pkgs/crates/pin-project-lite-0.2.9:pin_project_lite",
-        "//vendor_local_pkgs/crates/tracing-core-0.1.30:tracing_core",
+        "//vendor_local_pkgs/crates/windows-targets-0.48.0:windows_targets",
     ],
 )
