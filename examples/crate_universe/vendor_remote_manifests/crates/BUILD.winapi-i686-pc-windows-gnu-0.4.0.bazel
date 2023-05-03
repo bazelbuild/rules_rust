@@ -40,7 +40,7 @@ rust_library(
     ],
     version = "0.4.0",
     deps = [
-        "@crates_vendor_manifests__winapi-i686-pc-windows-gnu-0.4.0//:build_script_build",
+        "@cvm__winapi-i686-pc-windows-gnu-0.4.0//:build_script_build",
     ],
 )
 

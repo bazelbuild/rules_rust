@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_proc_macro(
-    name = "tracing_attributes",
+    name = "tokio_macros",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -32,15 +32,15 @@ rust_proc_macro(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=tracing-attributes",
+        "crate-name=tokio-macros",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.1.23",
+    version = "2.1.0",
     deps = [
         "//vendor_local_pkgs/crates/proc-macro2-1.0.56:proc_macro2",
         "//vendor_local_pkgs/crates/quote-1.0.26:quote",
-        "//vendor_local_pkgs/crates/syn-1.0.109:syn",
+        "//vendor_local_pkgs/crates/syn-2.0.15:syn",
     ],
 )

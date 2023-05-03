@@ -44,8 +44,8 @@ rust_library(
     ],
     version = "1.0.56",
     deps = [
-        "@crates_vendor_manifests__proc-macro2-1.0.56//:build_script_build",
-        "@crates_vendor_manifests__unicode-ident-1.0.8//:unicode_ident",
+        "@cvm__proc-macro2-1.0.56//:build_script_build",
+        "@cvm__unicode-ident-1.0.8//:unicode_ident",
     ],
 )
 

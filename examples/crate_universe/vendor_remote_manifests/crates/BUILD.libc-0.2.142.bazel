@@ -45,7 +45,7 @@ rust_library(
     ],
     version = "0.2.142",
     deps = [
-        "@crates_vendor_manifests__libc-0.2.142//:build_script_build",
+        "@cvm__libc-0.2.142//:build_script_build",
     ],
 )
 

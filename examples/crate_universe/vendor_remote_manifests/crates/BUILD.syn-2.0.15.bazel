@@ -50,8 +50,8 @@ rust_library(
     ],
     version = "2.0.15",
     deps = [
-        "@crates_vendor_manifests__proc-macro2-1.0.56//:proc_macro2",
-        "@crates_vendor_manifests__quote-1.0.26//:quote",
-        "@crates_vendor_manifests__unicode-ident-1.0.8//:unicode_ident",
+        "@cvm__proc-macro2-1.0.56//:proc_macro2",
+        "@cvm__quote-1.0.26//:quote",
+        "@cvm__unicode-ident-1.0.8//:unicode_ident",
     ],
 )

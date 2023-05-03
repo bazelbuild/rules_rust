@@ -40,8 +40,8 @@ rust_library(
     ],
     version = "0.1.2",
     deps = [
-        "@crates_vendor_manifests__errno-dragonfly-0.1.2//:build_script_build",
-        "@crates_vendor_manifests__libc-0.2.142//:libc",
+        "@cvm__errno-dragonfly-0.1.2//:build_script_build",
+        "@cvm__libc-0.2.142//:libc",
     ],
 )
 
@@ -74,7 +74,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@crates_vendor_manifests__cc-1.0.79//:cc",
+        "@cvm__cc-1.0.79//:cc",
     ],
 )
 

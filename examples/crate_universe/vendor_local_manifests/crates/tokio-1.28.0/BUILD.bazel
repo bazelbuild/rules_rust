@@ -56,7 +56,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "//vendor_local_manifests/crates/tokio-macros-2.0.0:tokio_macros",
+        "//vendor_local_manifests/crates/tokio-macros-2.1.0:tokio_macros",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
@@ -66,14 +66,14 @@ rust_library(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.27.0",
+    version = "1.28.0",
     deps = [
         "//vendor_local_manifests/crates/bytes-1.4.0:bytes",
         "//vendor_local_manifests/crates/mio-0.8.6:mio",
         "//vendor_local_manifests/crates/num_cpus-1.15.0:num_cpus",
         "//vendor_local_manifests/crates/parking_lot-0.12.1:parking_lot",
         "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
-        "//vendor_local_manifests/crates/tokio-1.27.0:build_script_build",
+        "//vendor_local_manifests/crates/tokio-1.28.0:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "//vendor_local_manifests/crates/libc-0.2.142:libc",  # cfg(unix)
@@ -102,7 +102,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "//vendor_local_manifests/crates/socket2-0.4.9:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "//vendor_local_manifests/crates/windows-sys-0.45.0:windows_sys",  # cfg(windows)
+            "//vendor_local_manifests/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "//vendor_local_manifests/crates/libc-0.2.142:libc",  # cfg(unix)
@@ -136,7 +136,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "//vendor_local_manifests/crates/socket2-0.4.9:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "//vendor_local_manifests/crates/windows-sys-0.45.0:windows_sys",  # cfg(windows)
+            "//vendor_local_manifests/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "//vendor_local_manifests/crates/libc-0.2.142:libc",  # cfg(unix)
@@ -186,7 +186,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "//vendor_local_manifests/crates/socket2-0.4.9:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "//vendor_local_manifests/crates/windows-sys-0.45.0:windows_sys",  # cfg(windows)
+            "//vendor_local_manifests/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "//vendor_local_manifests/crates/libc-0.2.142:libc",  # cfg(unix)
@@ -253,7 +253,7 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.27.0",
+    version = "1.28.0",
     visibility = ["//visibility:private"],
     deps = [
         "//vendor_local_manifests/crates/autocfg-1.1.0:autocfg",

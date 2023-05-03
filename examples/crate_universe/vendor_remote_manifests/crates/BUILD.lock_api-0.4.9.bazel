@@ -40,8 +40,8 @@ rust_library(
     ],
     version = "0.4.9",
     deps = [
-        "@crates_vendor_manifests__lock_api-0.4.9//:build_script_build",
-        "@crates_vendor_manifests__scopeguard-1.1.0//:scopeguard",
+        "@cvm__lock_api-0.4.9//:build_script_build",
+        "@cvm__scopeguard-1.1.0//:scopeguard",
     ],
 )
 
@@ -74,7 +74,7 @@ cargo_build_script(
     version = "0.4.9",
     visibility = ["//visibility:private"],
     deps = [
-        "@crates_vendor_manifests__autocfg-1.1.0//:autocfg",
+        "@cvm__autocfg-1.1.0//:autocfg",
     ],
 )
 

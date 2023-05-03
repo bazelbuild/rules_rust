@@ -40,8 +40,8 @@ rust_library(
     ],
     version = "0.4.17",
     deps = [
-        "@crates_vendor_manifests__cfg-if-1.0.0//:cfg_if",
-        "@crates_vendor_manifests__log-0.4.17//:build_script_build",
+        "@cvm__cfg-if-1.0.0//:cfg_if",
+        "@cvm__log-0.4.17//:build_script_build",
     ],
 )
 
