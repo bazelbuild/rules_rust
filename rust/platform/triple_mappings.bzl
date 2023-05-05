@@ -36,6 +36,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "riscv32imc-unknown-none-elf",
     "riscv64gc-unknown-none-elf",
     "s390x-unknown-linux-gnu",
+    "thumbv7em-none-eabi",
     "wasm32-unknown-unknown",
     "wasm32-wasi",
     "x86_64-apple-ios",
