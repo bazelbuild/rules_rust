@@ -1703,7 +1703,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
@@ -1742,10 +1742,23 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
             artifact.basename.startswith("test-") or artifact.basename.startswith("std-")
         ):
             return [] if for_darwin else ["-lstatic=%s" % get_lib_name(artifact)]
-        return [
-            "-lstatic=%s" % get_lib_name(artifact),
-            "-Clink-arg=-l%s" % (get_lib_name(artifact) if not for_windows else artifact.basename),
-        ]
+
+        if for_windows:
+            if flavor_msvc:
+                return [
+                    "-lstatic=%s" % get_lib_name(artifact),
+                    "-Clink-arg={}".format(artifact.basename),
+                ]
+            else:
+                return [
+                    "-lstatic=%s" % get_lib_name(artifact),
+                    "-Clink-arg=-l{}".format(artifact.basename),
+                ]
+        else:
+            return [
+                "-lstatic=%s" % get_lib_name(artifact),
+                "-Clink-arg=-l{}".format(get_lib_name(artifact)),
+            ]
     elif _is_dylib(lib):
         return [
             "-ldylib=%s" % get_lib_name(artifact),
@@ -1753,15 +1766,31 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
 
     return []
 
-def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs):
+def _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs, flavor_msvc):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
-            ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
+            if flavor_msvc:
+                ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
+            else:
+                ret.extend([
+                    "-C",
+                    "link-arg=-Wl,--whole-archive",
+                    "-C",
+                    ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
+                    "-C",
+                    "link-arg=-Wl,--no-whole-archive",
+                ])
         else:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True))
+            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
     return ret
+
+def _make_link_flags_windows_msvc(linker_input_and_use_pic_and_ambiguous_libs):
+    return _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs, flavor_msvc = True)
+
+def _make_link_flags_windows_gnu(linker_input_and_use_pic_and_ambiguous_libs):
+    return _make_link_flags_windows(linker_input_and_use_pic_and_ambiguous_libs, flavor_msvc = False)
 
 def _make_link_flags_darwin(linker_input_and_use_pic_and_ambiguous_libs):
     linker_input, use_pic, ambiguous_libs = linker_input_and_use_pic_and_ambiguous_libs
@@ -1819,7 +1848,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
 
     if toolchain.target_os == "windows":
-        make_link_flags = _make_link_flags_windows
+        make_link_flags = _make_link_flags_windows_msvc if toolchain.target_triple.abi == "msvc" else _make_link_flags_windows_gnu
         get_lib_name = get_lib_name_for_windows
     elif toolchain.target_os.startswith(("mac", "darwin", "ios")):
         make_link_flags = _make_link_flags_darwin
