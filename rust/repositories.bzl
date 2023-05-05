@@ -106,6 +106,8 @@ def rust_register_toolchains(
         rust_analyzer_version = None,
         sha256s = None,
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         version = None,
         versions = []):
@@ -138,6 +140,8 @@ def rust_register_toolchains(
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
+        extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         version (str, optional): **Deprecated**: Use `versions` instead.
         versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
@@ -225,6 +229,8 @@ def rust_register_toolchains(
             iso_date = iso_date,
             register_toolchain = register_toolchains,
             rustfmt_version = rustfmt_version,
+            extra_rustc_flags = extra_rustc_flags,
+            extra_exec_rustc_flags = extra_exec_rustc_flags,
             sha256s = sha256s,
             urls = urls,
             version = version,
@@ -351,6 +357,8 @@ def _rust_toolchain_tools_repository_impl(ctx):
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
+        extra_rustc_flags = ctx.attr.extra_rustc_flags,
+        extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
     ))
 
     # Not all target triples are expected to have dev components
@@ -392,6 +400,12 @@ rust_toolchain_tools_repository = repository_rule(
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
             mandatory = True,
+        ),
+        "extra_exec_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        "extra_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
         "global_allocator_library": attr.string(
             doc = "Target that provides allocator functions when a global allocator is used with cc_common.link.",
@@ -482,6 +496,8 @@ def rust_toolchain_repository(
         rustfmt_version = None,
         edition = None,
         dev_components = False,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None):
@@ -505,6 +521,8 @@ def rust_toolchain_repository(
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
+        extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
@@ -539,6 +557,8 @@ def rust_toolchain_repository(
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        extra_rustc_flags = extra_rustc_flags,
+        extra_exec_rustc_flags = extra_exec_rustc_flags,
         sha256s = sha256s,
         urls = urls,
         auth = auth,
@@ -866,6 +886,8 @@ def rust_repository_set(
         rustfmt_version = None,
         edition = None,
         dev_components = False,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
@@ -892,6 +914,8 @@ def rust_repository_set(
             required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly".
+        extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These
@@ -929,6 +953,8 @@ def rust_repository_set(
             dev_components = dev_components,
             edition = edition,
             exec_triple = exec_triple,
+            extra_exec_rustc_flags = extra_exec_rustc_flags,
+            extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple) if extra_rustc_flags != None else None,
             target_settings = target_settings,
             iso_date = toolchain.channel.iso_date,
             rustfmt_version = rustfmt_version,
