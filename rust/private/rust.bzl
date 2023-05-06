@@ -96,7 +96,7 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
               "please file an issue!").format(crate_type))
 
     prefix = "lib"
-    if toolchain.target_triple and toolchain.target_triple.system == "windows" and crate_type not in ("lib", "rlib"):
+    if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
         prefix = ""
     if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
         prefix = ""

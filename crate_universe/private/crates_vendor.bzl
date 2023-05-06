@@ -42,7 +42,7 @@ def _runfiles_path(file, is_windows):
 
 def _is_windows(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    return toolchain.target_triple.system == "windows"
+    return toolchain.target_os == "windows"
 
 def _get_output_package(ctx):
     # Determine output directory

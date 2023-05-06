@@ -559,11 +559,7 @@ def _rust_toolchain_impl(ctx):
 
     exec_triple = triple(ctx.attr.exec_triple)
 
-    exec_os = ctx.attr.os
-    if not ctx.attr.os:
-        exec_os = exec_triple.system
-
-    if not exec_os:
+    if not exec_triple.system:
         fail("No system was provided for the execution platform. Please update {}".format(
             ctx.label,
         ))
@@ -576,10 +572,12 @@ def _rust_toolchain_impl(ctx):
     target_triple = None
     target_json = None
     target_arch = None
+    target_os = None
 
     if ctx.attr.target_triple:
         target_triple = triple(ctx.attr.target_triple)
         target_arch = target_triple.arch
+        target_os = target_triple.system
 
     elif ctx.attr.target_json:
         # Ensure the data provided is valid json
@@ -593,6 +591,8 @@ def _rust_toolchain_impl(ctx):
 
         if "arch" in target_json_content:
             target_arch = target_json_content["arch"]
+        if "os" in target_json_content:
+            target_os = target_json_content["os"]
     else:
         fail("Either `target_triple` or `target_json` must be provided. Please update {}".format(
             ctx.label,
@@ -615,7 +615,6 @@ def _rust_toolchain_impl(ctx):
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         make_variables = make_variable_info,
-        os = exec_os,
         rust_doc = sysroot.rustdoc,
         rust_std = sysroot.rust_std,
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
@@ -632,6 +631,7 @@ def _rust_toolchain_impl(ctx):
         target_arch = target_arch,
         target_flag_value = target_json.path if target_json else target_triple.str,
         target_json = target_json,
+        target_os = target_os,
         target_triple = target_triple,
 
         # Experimental and incompatible flags
@@ -731,9 +731,6 @@ rust_toolchain = rule(
                 "opt": "3",
             },
         ),
-        "os": attr.string(
-            doc = "The operating system for the current toolchain",
-        ),
         "per_crate_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
@@ -824,24 +821,27 @@ load('@rules_rust//rust:toolchain.bzl', 'rust_toolchain')
 
 rust_toolchain(
     name = "rust_cpuX_impl",
+    binary_ext = "",
+    dylib_ext = ".so",
+    exec_triple = "cpuX-unknown-linux-gnu",
+    rust_doc = "@rust_cpuX//:rustdoc",
+    rust_std = "@rust_cpuX//:rust_std",
     rustc = "@rust_cpuX//:rustc",
     rustc_lib = "@rust_cpuX//:rustc_lib",
-    rust_std = "@rust_cpuX//:rust_std",
-    rust_doc = "@rust_cpuX//:rustdoc",
-    binary_ext = "",
     staticlib_ext = ".a",
-    dylib_ext = ".so",
     stdlib_linkflags = ["-lpthread", "-ldl"],
-    os = "linux",
+    target_triple = "cpuX-unknown-linux-gnu",
 )
 
 toolchain(
     name = "rust_cpuX",
     exec_compatible_with = [
         "@platforms//cpu:cpuX",
+        "@platforms//os:linux",
     ],
     target_compatible_with = [
         "@platforms//cpu:cpuX",
+        "@platforms//os:linux",
     ],
     toolchain = ":rust_cpuX_impl",
 )
@@ -850,7 +850,7 @@ toolchain(
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass \
 it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
-See @rules_rust//rust:repositories.bzl for examples of defining the @rust_cpuX repository \
+See `@rules_rust//rust:repositories.bzl` for examples of defining the `@rust_cpuX` repository \
 with the actual binaries and libraries.
 """,
 )

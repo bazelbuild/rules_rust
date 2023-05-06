@@ -115,13 +115,9 @@ def _get_rustc_env(attr, toolchain, crate_name):
     else:
         pre = ""
 
-    target_arch = ""
-    if toolchain.target_triple:
-        target_arch = toolchain.target_triple.arch
-
     result = {
-        "CARGO_CFG_TARGET_ARCH": target_arch,
-        "CARGO_CFG_TARGET_OS": toolchain.os,
+        "CARGO_CFG_TARGET_ARCH": "" if toolchain.target_arch == None else toolchain.target_arch,
+        "CARGO_CFG_TARGET_OS": "" if toolchain.target_os == None else toolchain.target_os,
         "CARGO_CRATE_NAME": crate_name,
         "CARGO_PKG_AUTHORS": "",
         "CARGO_PKG_DESCRIPTION": "",
@@ -455,9 +451,9 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
 
     # Take the absolute value of hash() since it could be negative.
     path_hash = abs(hash(lib.path))
-    lib_name = get_lib_name_for_windows(lib) if toolchain.os.startswith("windows") else get_lib_name_default(lib)
+    lib_name = get_lib_name_for_windows(lib) if toolchain.target_os.startswith("windows") else get_lib_name_default(lib)
 
-    if toolchain.os.startswith("windows"):
+    if toolchain.target_os.startswith("windows"):
         prefix = ""
         extension = ".lib"
     elif lib_name.endswith(".pic"):
@@ -524,7 +520,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             if _is_dylib(lib):
                 continue
             artifact = get_preferred_artifact(lib, use_pic)
-            name = get_lib_name_for_windows(artifact) if toolchain.os.startswith("windows") else get_lib_name_default(artifact)
+            name = get_lib_name_for_windows(artifact) if toolchain.target_os.startswith("windows") else get_lib_name_default(artifact)
 
             # On Linux-like platforms, normally library base names start with
             # `lib`, following the pattern `lib[name].(a|lo)` and we pass
@@ -534,10 +530,10 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             # FIXME: Under the native-link-modifiers unstable rustc feature,
             # we could use -lstatic:+verbatim instead.
             needs_symlink_to_standardize_name = (
-                (toolchain.os.startswith("linux") or toolchain.os.startswith("mac") or toolchain.os.startswith("darwin")) and
+                toolchain.target_os.startswith(("linux", "mac", "darwin")) and
                 artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
             ) or (
-                toolchain.os.startswith("windows") and not artifact.basename.endswith(".lib")
+                toolchain.target_os.startswith("windows") and not artifact.basename.endswith(".lib")
             )
 
             # Detect cases where we need to disambiguate library dependencies
@@ -871,7 +867,7 @@ def construct_arguments(
         json = ["artifacts"]
         if error_format == "short":
             json.append("diagnostic-short")
-        elif error_format == "human" and toolchain.os != "windows":
+        elif error_format == "human" and toolchain.target_os != "windows":
             # If the os is not windows, we can get colorized output.
             json.append("diagnostic-rendered-ansi")
 
@@ -1190,7 +1186,7 @@ def rustc_compile_action(
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
     interface_library = None
-    if toolchain.os == "windows" and crate_info.type == "cdylib":
+    if toolchain.target_os == "windows" and crate_info.type == "cdylib":
         # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
         # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
         interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
@@ -1204,10 +1200,10 @@ def rustc_compile_action(
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin"):
-        if toolchain.os == "windows":
+        if toolchain.target_os == "windows":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif toolchain.os == "darwin":
+        elif toolchain.target_os == "darwin":
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
@@ -1306,7 +1302,7 @@ def rustc_compile_action(
         # a (lib)foo_bar output file.
         if crate_info.type == "cdylib":
             output_lib = crate_info.output.basename
-            if toolchain.os != "windows":
+            if toolchain.target_os != "windows":
                 # Strip the leading "lib" prefix
                 output_lib = output_lib[3:]
 
@@ -1584,7 +1580,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
 
     # Windows has no rpath equivalent, so always return an empty depset.
     # Fuchsia assembles shared libraries during packaging.
-    if toolchain.os == "windows" or toolchain.os == "fuchsia":
+    if toolchain.target_os == "windows" or toolchain.target_os == "fuchsia":
         return depset([])
 
     dylibs = [
@@ -1600,9 +1596,9 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
     # without a version of Bazel that includes
     # https://github.com/bazelbuild/bazel/pull/13427. This is known to not be
     # included in Bazel 4.1 and below.
-    if toolchain.os != "linux" and toolchain.os != "darwin":
+    if toolchain.target_os != "linux" and toolchain.target_os != "darwin":
         fail("Runtime linking is not supported on {}, but found {}".format(
-            toolchain.os,
+            toolchain.target_os,
             dep_info.transitive_noncrates,
         ))
 
@@ -1822,10 +1818,10 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
 
-    if toolchain.os == "windows":
+    if toolchain.target_os == "windows":
         make_link_flags = _make_link_flags_windows
         get_lib_name = get_lib_name_for_windows
-    elif toolchain.os.startswith("mac") or toolchain.os.startswith("darwin") or toolchain.os.startswith("ios"):
+    elif toolchain.target_os.startswith(("mac", "darwin", "ios")):
         make_link_flags = _make_link_flags_darwin
         get_lib_name = get_lib_name_default
     else:
