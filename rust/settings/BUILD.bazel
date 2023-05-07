@@ -55,6 +55,8 @@ bool_flag(
 # If true (the default), rust_test output files will be prefixed with
 # a hash derived from the crate root and build target. This prefix
 # avoids possible filename collisions in non-sandboxed builds.
+#
+# See `docs/rust_test_output_path_uniqueness.md` for more details.
 bool_flag(
     name = "rust_test_prefix_output_files",
     build_setting_default = True,

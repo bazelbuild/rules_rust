@@ -362,6 +362,9 @@ def _rust_binary_impl(ctx):
 def _rust_test_output_name(ctx, toolchain, crate_root):
     """Generate the output name for a rust_test target.
 
+    See `docs/rust_test_output_path_uniqueness.md` for details on why a
+    `rust_test` output path needs special handling.
+
     Args:
         ctx (ctx): The ctx object for the current target.
         toolchain (rust_toolchain): The current `rust_toolchain`
