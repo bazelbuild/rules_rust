@@ -1199,12 +1199,12 @@ def rustc_compile_action(
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
 
-    # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
+    # Rustc generates a pdb file (on Windows MSVC) or a dsym folder (on macos) so provide it in an output group for crate
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin"):
-        if toolchain.os == "windows":
+        if toolchain.os == "windows" and not toolchain.target_triple.endswith("-gnu"):
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
         elif toolchain.os == "darwin":
