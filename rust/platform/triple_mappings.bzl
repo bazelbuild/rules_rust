@@ -43,6 +43,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-fuchsia",
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
+    "x86_64-unknown-none",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
