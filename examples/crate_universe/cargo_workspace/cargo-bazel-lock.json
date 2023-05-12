@@ -1,5 +1,5 @@
 {
-  "checksum": "d0c772ec9a1b712837102c7b763fcc7fb9114613850a46964f6e7c70ae4aed4e",
+  "checksum": "8dcac739a6ae8ab1f19b863d7da1d9b4e99078d8616a458f9fa9abb1d7a5c6ba",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1304,7 +1304,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
@@ -1332,7 +1333,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(target_os = \"emscripten\")": [],
     "cfg(target_os = \"hermit\")": [],

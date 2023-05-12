@@ -1,5 +1,5 @@
 {
-  "checksum": "c2dfd0205262fb9ad37e31083e0eca5ca7363c493e983cb9d9fbce00aae4e546",
+  "checksum": "28b36befccdbe5075b4ec0c75543600400d65b6707b641e9e8b1eb20e0ad300b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -9339,7 +9339,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(any(target_os = \"android\", target_os = \"linux\"))": [
       "aarch64-linux-android",
@@ -9409,7 +9410,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(not(target_arch = \"wasm32\"))": [
       "aarch64-apple-darwin",
@@ -9438,7 +9440,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(not(target_os = \"unknown\"))": [
       "aarch64-apple-darwin",
@@ -9468,7 +9471,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
@@ -9496,7 +9500,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(not(windows_raw_dylib))": [
       "aarch64-apple-darwin",
@@ -9527,7 +9532,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
     ],
     "cfg(target_arch = \"wasm32\")": [
       "wasm32-unknown-unknown",
