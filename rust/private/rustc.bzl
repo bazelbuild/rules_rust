@@ -1345,12 +1345,26 @@ def rustc_compile_action(
     # https://github.com/bazelbuild/rules_rust/issues/771
     out_binary = getattr(attr, "out_binary", False)
 
+    executable = None
+    if crate_info.type == "bin" or crate_info.is_test or out_binary:
+        executable = crate_info.output
+
+    # TODO: Write some details on why
+    if executable and crate_info.is_test:
+        predictable_output = ctx.actions.declare_file("{}{}".format(ctx.label.name, toolchain.binary_ext))
+        ctx.actions.symlink(
+            output = predictable_output,
+            target_file = executable,
+            is_executable = True,
+        )
+        executable = predictable_output
+
     providers = [
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
+            executable = executable,
         ),
         coverage_common.instrumented_files_info(
             ctx,
