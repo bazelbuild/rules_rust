@@ -1357,6 +1357,7 @@ def rustc_compile_action(
             target_file = executable,
             is_executable = True,
         )
+        runfiles = runfiles.merge(ctx.runfiles(files=outputs))
         executable = predictable_output
 
     providers = [
