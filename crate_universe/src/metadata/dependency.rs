@@ -29,6 +29,7 @@ pub struct DependencySet {
     pub proc_macro_deps: SelectList<Dependency>,
     pub proc_macro_dev_deps: SelectList<Dependency>,
     pub build_deps: SelectList<Dependency>,
+    pub build_link_deps: SelectList<Dependency>,
     pub build_proc_macro_deps: SelectList<Dependency>,
 }
 
@@ -69,7 +70,7 @@ impl DependencySet {
 
         // For rules on build script dependencies see:
         //  https://doc.rust-lang.org/cargo/reference/build-scripts.html#build-dependencies
-        let (build_proc_macro_deps, mut build_deps) = {
+        let (build_proc_macro_deps, build_deps) = {
             let (proc_macro, normal) = node
                 .deps
                 .iter()
@@ -92,6 +93,11 @@ impl DependencySet {
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
         // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
+
+        // TODO: The above/below is incorrect fyi. It is actually only when any
+        // crate has the `links` property, and has nothing to do with if it ends
+        // with `-sys`.
+        let mut build_link_deps = SelectList::<Dependency>::default();
         let sys_name = format!("{}-sys", &metadata[&node.id].name);
         normal_deps.configurations().into_iter().for_each(|config| {
             normal_deps
@@ -102,7 +108,7 @@ impl DependencySet {
                 .for_each(|dep| {
                     let dep_pkg_name = &metadata[&dep.package_id].name;
                     if *dep_pkg_name == sys_name {
-                        build_deps.insert(dep.clone(), config.cloned())
+                        build_link_deps.insert(dep.clone(), config.cloned())
                     }
                 });
         });
@@ -113,6 +119,7 @@ impl DependencySet {
             proc_macro_deps,
             proc_macro_dev_deps,
             build_deps,
+            build_link_deps,
             build_proc_macro_deps,
         }
     }

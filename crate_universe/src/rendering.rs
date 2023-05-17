@@ -365,6 +365,12 @@ impl Renderer {
                     attrs.map_or(&empty_set, |attrs| &attrs.extra_deps),
                 )
                 .remap_configurations(platforms),
+            link_deps: self
+                .make_deps(
+                    attrs.map_or(&empty_deps, |attrs| &attrs.link_deps),
+                    attrs.map_or(&empty_set, |attrs| &attrs.extra_link_deps),
+                )
+                .remap_configurations(platforms),
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),

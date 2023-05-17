@@ -203,6 +203,12 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_deps: BTreeSet<String>,
 
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub link_deps: SelectList<CrateDependency>,
+
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub extra_link_deps: BTreeSet<String>,
+
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
 
@@ -240,6 +246,8 @@ impl Default for BuildScriptAttributes {
             data_glob: BTreeSet::from(["**".to_owned()]),
             deps: Default::default(),
             extra_deps: Default::default(),
+            link_deps: Default::default(),
+            extra_link_deps: Default::default(),
             build_script_env: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
@@ -411,6 +419,7 @@ impl CrateContext {
             );
 
             let build_deps = annotation.deps.build_deps.clone().map(new_crate_dep);
+            let build_link_deps = annotation.deps.build_link_deps.clone().map(new_crate_dep);
             let build_proc_macro_deps = annotation
                 .deps
                 .build_proc_macro_deps
@@ -419,6 +428,7 @@ impl CrateContext {
 
             Some(BuildScriptAttributes {
                 deps: build_deps,
+                link_deps: build_link_deps,
                 proc_macro_deps: build_proc_macro_deps,
                 links: package.links.clone(),
                 ..Default::default()

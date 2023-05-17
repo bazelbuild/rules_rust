@@ -27,21 +27,21 @@ cargo_build_script(
     name = "read_a",
     srcs = ["read_a.rs"],
     edition = "2018",
-    deps = [":set_a"],
+    link_deps = [":set_a"],
 )
 
 cargo_build_script(
     name = "read_b",
     srcs = ["read_b.rs"],
     edition = "2018",
-    deps = [":set_b"],
+    link_deps = [":set_b"],
 )
 
 cargo_build_script(
     name = "read_dep_dir",
     srcs = ["read_dep_dir.rs"],
     edition = "2018",
-    deps = [":set_dep_dir"],
+    link_deps = [":set_dep_dir"],
 )
 
 rust_test(

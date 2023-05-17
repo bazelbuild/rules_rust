@@ -13,6 +13,7 @@ def cargo_build_script(
         crate_features = [],
         version = None,
         deps = [],
+        link_deps = [],
         build_script_env = {},
         data = [],
         tools = [],
@@ -85,7 +86,9 @@ def cargo_build_script(
             being compiled, optionally with a suffix of `_build_script`.
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
-        deps (list, optional): The dependencies of the crate.
+        deps (list, optional): The build-dependencies of the crate.
+        link_deps (list, optional): The subset of the (normal) dependencies of the crate that have the
+            links attribute and therefore provide environment variables to this build script.
         build_script_env (dict, optional): Environment variables for build scripts.
         data (list, optional): Files needed by the build script.
         tools (list, optional): Tools (executables) needed by the build script.
@@ -144,6 +147,7 @@ def cargo_build_script(
         build_script_env = build_script_env,
         links = links,
         deps = deps,
+        link_deps = link_deps,
         data = data,
         tools = tools,
         rustc_flags = rustc_flags,
