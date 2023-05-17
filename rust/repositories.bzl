@@ -881,7 +881,7 @@ def rust_repository_set(
         versions = [],
         allocator_library = None,
         global_allocator_library = None,
-        extra_target_triples = [],
+        extra_target_triples = {},
         iso_date = None,
         rustfmt_version = None,
         edition = None,
@@ -891,7 +891,9 @@ def rust_repository_set(
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
-        register_toolchain = True):
+        register_toolchain = True,
+        exec_compatible_with = None,
+        default_target_compatible_with = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -905,8 +907,8 @@ def rust_repository_set(
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions a global allocator is used with cc_common.link.
-        extra_target_triples (list, optional): Additional rust-style targets that this set of
-            toolchains should support.
+        extra_target_triples (list or map, optional): Additional rust-style targets that this set of
+            toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
@@ -923,6 +925,8 @@ def rust_repository_set(
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
+        exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
+        default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
     """
 
     if version and versions:
@@ -942,8 +946,20 @@ def rust_repository_set(
     if version and not versions:
         versions = [version]
 
+    # extra_target_triples may be a dict or list - make a list we can pass to _get_toolchain_repositories
+    extra_target_triples_list = []
+    for extra_target_triple in extra_target_triples:
+        extra_target_triples_list.append(extra_target_triple)
+
     all_toolchain_names = []
-    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples_list, versions, iso_date):
+        target_compatible_with = None
+        if toolchain.target_triple == exec_triple:
+            # The exec triple implicitly gets a toolchain with itself as a target - use default_target_compatible_with for it
+            target_compatible_with = default_target_compatible_with
+        elif type(extra_target_triples) == "dict":
+            target_compatible_with = extra_target_triples.get(toolchain.target_triple)
+
         all_toolchain_names.append(rust_toolchain_repository(
             name = toolchain.name,
             allocator_library = allocator_library,
@@ -962,6 +978,8 @@ def rust_repository_set(
             target_triple = toolchain.target_triple,
             urls = urls,
             version = toolchain.channel.version,
+            exec_compatible_with = exec_compatible_with,
+            target_compatible_with = target_compatible_with,
         ))
 
     # This repository exists to allow `rust_repository_set` to work with the `maybe` wrapper.
