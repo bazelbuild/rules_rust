@@ -16,6 +16,7 @@ single_rust_channel_targets: &single_rust_channel_targets
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
 default_linux_targets: &default_linux_targets
+  - "--"
   - "//..."
 default_macos_targets: &default_macos_targets
   - "--"
@@ -30,11 +31,11 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -45,6 +46,7 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
+      - "--"
       - "//..."
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -342,6 +344,12 @@ tasks:
       - "//..."
     build_flags: *aspects_flags
     soft_fail: yes
+  ubuntu2004_examples_bzlmod:
+    name: Bzlmod Examples
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/hello_world
+    build_targets:
+      - "//..."
   rbe_ubuntu1604_examples:
     name: Examples
     platform: rbe_ubuntu1604
@@ -440,17 +448,16 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/1814
-  # crate_universe_examples_macos:
-  #   name: Crate Universe Examples
-  #   platform: macos
-  #   working_directory: examples/crate_universe
-  #   run_targets: *crate_universe_vendor_example_targets
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
-  #   build_flags: *aspects_flags
+  crate_universe_examples_macos:
+    name: Crate Universe Examples
+    platform: macos
+    working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
   crate_universe_unnamed_examples_macos:
     name: Crate Universe Unnamed Examples
     platform: macos
@@ -492,11 +499,65 @@ tasks:
     platform: ubuntu2004
     working_directory: test/cc_common_link
     build_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    test_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    build_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+  cc_common_link_with_global_alloc_ubuntu2004:
+    name: Build via cc_common.link using a global allocator
+    platform: ubuntu2004
+    working_directory: test/cc_common_link/with_global_alloc
+    build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_no_std_ubuntu2004:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+  no_std_ubuntu2004:
+    name: Build with no_std + alloc
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
@@ -524,12 +585,13 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  zig_cross_compiling:
-    name: Zig cross compiling test
-    platform: ubuntu2004
-    working_directory: examples/zig_cross_compiling
-    build_targets:
-      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/1892
+  # zig_cross_compiling:
+  #   name: Zig cross compiling test
+  #   platform: ubuntu2004
+  #   working_directory: examples/zig_cross_compiling
+  #   build_targets:
+  #     - "//..."
 
 buildifier:
   version: latest

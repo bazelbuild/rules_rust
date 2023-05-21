@@ -12,7 +12,10 @@ load(
     "BUILD_for_rust_toolchain",
     "BUILD_for_rustfmt_toolchain",
     "BUILD_for_toolchain",
+    "DEFAULT_EXTRA_TARGET_TRIPLES",
+    "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
+    "TINYJSON_KWARGS",
     "check_version_valid",
     "includes_rust_analyzer_proc_macro_srv",
     "load_cargo",
@@ -24,6 +27,7 @@ load(
     "load_rustc_dev_nightly",
     "load_rustfmt",
     "select_rust_version",
+    "toolchain_repository_hub",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
@@ -82,19 +86,12 @@ def rules_rust_dependencies():
     # process_wrapper needs a low-dependency way to process json.
     maybe(
         http_archive,
-        name = "rules_rust_tinyjson",
-        sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
-        url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
-        strip_prefix = "tinyjson-2.3.0",
-        type = "tar.gz",
-        build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
+        **TINYJSON_KWARGS
     )
-
-_DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
-    _DEFAULT_NIGHTLY_VERSION,
+    DEFAULT_NIGHTLY_VERSION,
 ]
 
 # buildifier: disable=unnamed-macro
@@ -102,12 +99,15 @@ def rust_register_toolchains(
         dev_components = False,
         edition = None,
         allocator_library = None,
+        global_allocator_library = None,
         iso_date = None,
         register_toolchains = True,
-        rustfmt_version = _DEFAULT_NIGHTLY_VERSION,
+        rustfmt_version = DEFAULT_NIGHTLY_VERSION,
         rust_analyzer_version = None,
         sha256s = None,
-        extra_target_triples = ["wasm32-unknown-unknown", "wasm32-wasi"],
+        extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         version = None,
         versions = []):
@@ -133,12 +133,15 @@ def rust_register_toolchains(
         dev_components (bool, optional): Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its `edition` attribute.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
+        global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
         iso_date (str, optional):  **Deprecated**: Use `versions` instead.
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
         rustfmt_version (str, optional): The version of rustfmt.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
+        extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         version (str, optional): **Deprecated**: Use `versions` instead.
         versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
@@ -180,6 +183,12 @@ def rust_register_toolchains(
     if rust_analyzer_version.startswith(("beta", "nightly")):
         rust_analyzer_version, _, rust_analyzer_iso_date = rustfmt_version.partition("/")
 
+    toolchain_names = []
+    toolchain_labels = {}
+    toolchain_types = {}
+    exec_compatible_with_by_toolchain = {}
+    target_compatible_with_by_toolchain = {}
+
     maybe(
         rust_analyzer_toolchain_repository,
         name = rust_analyzer_repo_name,
@@ -188,6 +197,14 @@ def rust_register_toolchains(
         sha256s = sha256s,
         iso_date = rust_analyzer_iso_date,
     )
+
+    toolchain_names.append(rust_analyzer_repo_name)
+    toolchain_labels[rust_analyzer_repo_name] = "@{}_srcs//:rust_analyzer_toolchain".format(
+        rust_analyzer_repo_name,
+    )
+    exec_compatible_with_by_toolchain[rust_analyzer_repo_name] = []
+    target_compatible_with_by_toolchain[rust_analyzer_repo_name] = []
+    toolchain_types[rust_analyzer_repo_name] = "@rules_rust//rust/rust_analyzer:toolchain_type"
 
     if register_toolchains:
         native.register_toolchains("@{}//:toolchain".format(
@@ -208,9 +225,12 @@ def rust_register_toolchains(
             exec_triple = exec_triple,
             extra_target_triples = extra_target_triples,
             allocator_library = allocator_library,
+            global_allocator_library = global_allocator_library,
             iso_date = iso_date,
             register_toolchain = register_toolchains,
             rustfmt_version = rustfmt_version,
+            extra_rustc_flags = extra_rustc_flags,
+            extra_exec_rustc_flags = extra_exec_rustc_flags,
             sha256s = sha256s,
             urls = urls,
             version = version,
@@ -233,6 +253,22 @@ def rust_register_toolchains(
             native.register_toolchains("@{}//:toolchain".format(
                 rustfmt_repo_name,
             ))
+
+        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+            toolchain_names.append(toolchain.name)
+            toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
+            exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
+            target_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(toolchain.target_triple)
+            toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
+
+    toolchain_repository_hub(
+        name = "rust_toolchains",
+        toolchain_names = toolchain_names,
+        toolchain_labels = toolchain_labels,
+        toolchain_types = toolchain_types,
+        exec_compatible_with = exec_compatible_with_by_toolchain,
+        target_compatible_with = target_compatible_with_by_toolchain,
+    )
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(**kwargs):
@@ -315,12 +351,14 @@ def _rust_toolchain_tools_repository_impl(ctx):
         name = "rust_toolchain",
         exec_triple = exec_triple,
         allocator_library = ctx.attr.allocator_library,
+        global_allocator_library = ctx.attr.global_allocator_library,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
-        workspace_name = ctx.attr.name,
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
+        extra_rustc_flags = ctx.attr.extra_rustc_flags,
+        extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
     ))
 
     # Not all target triples are expected to have dev components
@@ -362,6 +400,15 @@ rust_toolchain_tools_repository = repository_rule(
         "exec_triple": attr.string(
             doc = "The Rust-style target that this compiler runs on",
             mandatory = True,
+        ),
+        "extra_exec_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        "extra_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "global_allocator_library": attr.string(
+            doc = "Target that provides allocator functions when a global allocator is used with cc_common.link.",
         ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
@@ -444,10 +491,13 @@ def rust_toolchain_repository(
         target_settings = [],
         channel = None,
         allocator_library = None,
+        global_allocator_library = None,
         iso_date = None,
         rustfmt_version = None,
         edition = None,
         dev_components = False,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None):
@@ -464,12 +514,15 @@ def rust_toolchain_repository(
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
         target_settings (list, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
+        global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
         iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
+        extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
@@ -497,12 +550,15 @@ def rust_toolchain_repository(
         name = tools_repo_name,
         exec_triple = exec_triple,
         allocator_library = allocator_library,
+        global_allocator_library = global_allocator_library,
         target_triple = target_triple,
         iso_date = iso_date,
         version = version,
         rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
+        extra_rustc_flags = extra_rustc_flags,
+        extra_exec_rustc_flags = extra_exec_rustc_flags,
         sha256s = sha256s,
         urls = urls,
         auth = auth,
@@ -783,6 +839,40 @@ rust_toolchain_set_repository = repository_rule(
     implementation = _rust_toolchain_set_repository_impl,
 )
 
+def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+    toolchain_repos = []
+
+    for target_triple in [exec_triple] + extra_target_triples:
+        # Parse all provided versions while checking for duplicates
+        channels = {}
+        for version in versions:
+            if version.startswith(("beta", "nightly")):
+                channel, _, date = version.partition("/")
+                ver = channel
+            else:
+                channel = "stable"
+                date = iso_date
+                ver = version
+
+            if channel in channels:
+                fail("Duplicate {} channels provided for {}: {}".format(channel, name, versions))
+
+            channels.update({channel: struct(
+                name = channel,
+                iso_date = date,
+                version = ver,
+            )})
+
+        # Define toolchains for each requested version
+        for channel in channels.values():
+            toolchain_repos.append(struct(
+                name = "{}__{}__{}".format(name, target_triple, channel.name),
+                target_triple = target_triple,
+                channel = channel,
+            ))
+
+    return toolchain_repos
+
 def rust_repository_set(
         name,
         exec_triple,
@@ -790,15 +880,20 @@ def rust_repository_set(
         version = None,
         versions = [],
         allocator_library = None,
-        extra_target_triples = [],
+        global_allocator_library = None,
+        extra_target_triples = {},
         iso_date = None,
         rustfmt_version = None,
         edition = None,
         dev_components = False,
+        extra_rustc_flags = None,
+        extra_exec_rustc_flags = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
-        register_toolchain = True):
+        register_toolchain = True,
+        exec_compatible_with = None,
+        default_target_compatible_with = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -811,8 +906,9 @@ def rust_repository_set(
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
-        extra_target_triples (list, optional): Additional rust-style targets that this set of
-            toolchains should support.
+        global_allocator_library (str, optional): Target that provides allocator functions a global allocator is used with cc_common.link.
+        extra_target_triples (list or map, optional): Additional rust-style targets that this set of
+            toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         iso_date (str, optional): The date of the tool.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
@@ -820,6 +916,8 @@ def rust_repository_set(
             required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly".
+        extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These
@@ -827,6 +925,8 @@ def rust_repository_set(
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
+        exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
+        default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
     """
 
     if version and versions:
@@ -846,47 +946,41 @@ def rust_repository_set(
     if version and not versions:
         versions = [version]
 
+    # extra_target_triples may be a dict or list - make a list we can pass to _get_toolchain_repositories
+    extra_target_triples_list = []
+    for extra_target_triple in extra_target_triples:
+        extra_target_triples_list.append(extra_target_triple)
+
     all_toolchain_names = []
-    for target_triple in [exec_triple] + extra_target_triples:
-        # Parse all provided versions while checking for duplicates
-        channels = {}
-        for version in versions:
-            if version.startswith(("beta", "nightly")):
-                channel, _, date = version.partition("/")
-                ver = channel
-            else:
-                channel = "stable"
-                date = iso_date
-                ver = version
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples_list, versions, iso_date):
+        target_compatible_with = None
+        if toolchain.target_triple == exec_triple:
+            # The exec triple implicitly gets a toolchain with itself as a target - use default_target_compatible_with for it
+            target_compatible_with = default_target_compatible_with
+        elif type(extra_target_triples) == "dict":
+            target_compatible_with = extra_target_triples.get(toolchain.target_triple)
 
-            if channel in channels:
-                fail("Duplicate {} channels provided for {}: {}".format(channel, name, versions))
-
-            channels.update({channel: struct(
-                iso_date = date,
-                version = ver,
-            )})
-
-        # Define toolchains for each requested version
-        for channel, info in channels.items():
-            toolchain_name = "{}__{}__{}".format(name, target_triple, channel)
-
-            all_toolchain_names.append(rust_toolchain_repository(
-                name = toolchain_name,
-                allocator_library = allocator_library,
-                auth = auth,
-                channel = channel,
-                dev_components = dev_components,
-                edition = edition,
-                exec_triple = exec_triple,
-                target_settings = target_settings,
-                iso_date = info.iso_date,
-                rustfmt_version = rustfmt_version,
-                sha256s = sha256s,
-                target_triple = target_triple,
-                urls = urls,
-                version = info.version,
-            ))
+        all_toolchain_names.append(rust_toolchain_repository(
+            name = toolchain.name,
+            allocator_library = allocator_library,
+            global_allocator_library = global_allocator_library,
+            auth = auth,
+            channel = toolchain.channel.name,
+            dev_components = dev_components,
+            edition = edition,
+            exec_triple = exec_triple,
+            extra_exec_rustc_flags = extra_exec_rustc_flags,
+            extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple) if extra_rustc_flags != None else None,
+            target_settings = target_settings,
+            iso_date = toolchain.channel.iso_date,
+            rustfmt_version = rustfmt_version,
+            sha256s = sha256s,
+            target_triple = toolchain.target_triple,
+            urls = urls,
+            version = toolchain.channel.version,
+            exec_compatible_with = exec_compatible_with,
+            target_compatible_with = target_compatible_with,
+        ))
 
     # This repository exists to allow `rust_repository_set` to work with the `maybe` wrapper.
     rust_toolchain_set_repository(

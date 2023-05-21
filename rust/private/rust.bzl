@@ -96,7 +96,7 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
               "please file an issue!").format(crate_type))
 
     prefix = "lib"
-    if toolchain.target_triple and toolchain.target_triple.system == "windows" and crate_type not in ("lib", "rlib"):
+    if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
         prefix = ""
     if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
         prefix = ""
@@ -708,6 +708,9 @@ _common_attrs = {
     "_is_proc_macro_dep_enabled": attr.label(
         default = Label("//:is_proc_macro_dep_enabled"),
     ),
+    "_per_crate_rustc_flag": attr.label(
+        default = Label("//:experimental_per_crate_rustc_flag"),
+    ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
         default = Label("//util/process_wrapper"),
@@ -733,6 +736,25 @@ _experimental_use_cc_common_link_attrs = {
         ),
         values = [-1, 0, 1],
         default = -1,
+    ),
+    "malloc": attr.label(
+        default = Label("@bazel_tools//tools/cpp:malloc"),
+        doc = """Override the default dependency on `malloc`.
+
+By default, Rust binaries linked with cc_common.link are linked against
+`@bazel_tools//tools/cpp:malloc"`, which is an empty library and the resulting binary will use
+libc's `malloc`. This label must refer to a `cc_library` rule.
+""",
+        mandatory = False,
+        providers = [[CcInfo]],
+    ),  # A late-bound attribute denoting the value of the `--custom_malloc`
+    # command line flag (or None if the flag is not provided).
+    "_custom_malloc": attr.label(
+        default = configuration_field(
+            fragment = "cpp",
+            name = "custom_malloc",
+        ),
+        providers = [[CcInfo]],
     ),
 }
 

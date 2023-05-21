@@ -25,7 +25,7 @@ def rust_proto_repositories(register_default_toolchain = True):
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_proto_toolchain](#rust_proto_toolchain)
             (`@rules_rust//proto:default-proto-toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.
+            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
     """
     maybe(
         http_archive,

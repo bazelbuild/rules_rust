@@ -18,9 +18,24 @@ fn test_encoded_rustflags() {
     assert_eq!(flags[1], "--verbose");
 }
 
+
+/// Ensure Make variables provided by the `toolchains` attribute are expandable.
+fn test_toolchain_var() {
+    let tool = std::env::var("EXPANDED_TOOLCHAIN_VAR").unwrap();
+    if cfg!(target_os = "windows") {
+        assert!(tool.ends_with("rustc.exe"));
+    } else {
+        assert!(tool.ends_with("rustc"));
+    }
+    eprintln!("{}", std::env::current_dir().unwrap().display());
+    let tool_path = std::path::PathBuf::from(tool);
+    assert!(tool_path.exists(), "{} does not exist", tool_path.display());
+}
+
 fn main() {
     // Perform some unit testing
     test_encoded_rustflags();
+    test_toolchain_var();
 
     // Pass the TOOL_PATH along to the rust_test so we can assert on it.
     println!(

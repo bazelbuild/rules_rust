@@ -3,7 +3,7 @@ a way to convert a triple string into a well structured object to avoid constant
 parsing in starlark code, and a way for a repository_rule to extract the target triple
 of the host platform.
 
-Triples can be described at the following link: 
+Triples can be described at the following link:
 https://clang.llvm.org/docs/CrossCompilation.html#target-triple
 """
 
@@ -26,6 +26,14 @@ def triple(triple):
             arch = "wasm32",
             system = "wasi",
             vendor = "wasi",
+            abi = None,
+            str = triple,
+        )
+    elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
+        return struct(
+            arch = triple.split("-")[0],
+            system = "fuchsia",
+            vendor = "fuchsia",
             abi = None,
             str = triple,
         )
@@ -92,12 +100,16 @@ def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
         # Example output:
         # OSArchitecture
         # 64-bit
+        #
+        # In some cases windows can return the same but with an uppercase b
+        # OSArchitecture
+        # 64-Bit
         lines = result.stdout.split("\n")
-        arch = lines[1].strip()
+        arch = lines[1].strip().lower()
 
         # Translate 64-bit to a compatible rust platform
         # https://doc.rust-lang.org/nightly/rustc/platform-support.html
-        if arch.startswith("ARM 64-bit"):
+        if arch.startswith("arm 64-bit"):
             arch = "aarch64"
         elif arch == "64-bit":
             arch = "x86_64"

@@ -33,12 +33,10 @@ load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_re
 rust_proto_transitive_repositories()
 ```
 
-[raze]: https://github.com/google/cargo-raze
-
 This will load crate dependencies of protobuf that are generated using
-[cargo raze][raze] inside the rules_rust
+[crate_universe](./crate_universe.md) inside the rules_rust
 repository. However, using those dependencies might conflict with other uses
-of [cargo raze][raze]. If you need to change
+of [crate_universe](./crate_universe.md). If you need to change
 those dependencies, please see the [dedicated section below](#custom-deps).
 
 For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
@@ -49,17 +47,17 @@ These rules depends on the [`protobuf`](https://crates.io/crates/protobuf) and
 the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
 compiler](https://github.com/google/protobuf). To obtain these crates,
 `rust_proto_repositories` imports the given crates using BUILD files generated with
-[`cargo raze`][raze].
+[crate_universe](./crate_universe.md).
 
 If you want to either change the protobuf and gRPC rust compilers, or to
-simply use [`cargo raze`][raze] in a more
+simply use [crate_universe](./crate_universe.md) in a more
 complex scenario (with more dependencies), you must redefine those
 dependencies.
 
 To do this, once you've imported the needed dependencies (see our
-[Cargo.toml](raze/Cargo.toml) file to see the default dependencies), you
-need to create your own toolchain. To do so you can create a BUILD
-file with your toolchain definition, for example:
+[@rules_rust//proto/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/3rdparty/BUILD.bazel)
+file to see the default dependencies), you need to create your own toolchain. 
+To do so you can create a BUILD file with your toolchain definition, for example:
 
 ```python
 load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
@@ -69,9 +67,9 @@ rust_proto_toolchain(
     # Path to the protobuf compiler.
     protoc = "@com_google_protobuf//:protoc",
     # Protobuf compiler plugin to generate rust gRPC stubs.
-    grpc_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust_grpc",
+    grpc_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust_grpc",
     # Protobuf compiler plugin to generate rust protobuf stubs.
-    proto_plugin = "//cargo_raze/remote:cargo_bin_protoc_gen_rust",
+    proto_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust",
 )
 
 toolchain(
@@ -95,17 +93,17 @@ dependencies:
 ```python
 rust_proto_library(
     ...
-    rust_deps = ["//cargo_raze/remote:protobuf"],
+    rust_deps = ["//3rdparty/crates:protobuf"],
     ...
 )
 
 rust_grpc_library(
     ...
     rust_deps = [
-        "//cargo_raze/remote:protobuf",
-        "//cargo_raze/remote:grpc",
-        "//cargo_raze/remote:tls_api",
-        "//cargo_raze/remote:tls_api_stub",
+        "//3rdparty/crates:protobuf",
+        "//3rdparty/crates:grpc",
+        "//3rdparty/crates:tls_api",
+        "//3rdparty/crates:tls_api_stub",
     ],
     ...
 )
@@ -122,7 +120,7 @@ configuration.
 ## rust_grpc_library
 
 <pre>
-rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>)
+rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>, <a href="#rust_grpc_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
@@ -158,6 +156,7 @@ rust_binary(
 | <a id="rust_grpc_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_grpc_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
+| <a id="rust_grpc_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
 
 
 <a id="rust_proto_library"></a>
@@ -165,7 +164,7 @@ rust_binary(
 ## rust_proto_library
 
 <pre>
-rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>)
+rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>, <a href="#rust_proto_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s.
@@ -201,6 +200,7 @@ rust_binary(
 | <a id="rust_proto_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_proto_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
+| <a id="rust_proto_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
 
 
 <a id="rust_proto_toolchain"></a>
@@ -275,7 +275,7 @@ Declare dependencies needed for proto compilation.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [cargo raze](https://github.com/google/cargo-raze). These will also be loaded.   |  `True` |
+| <a id="rust_proto_repositories-register_default_toolchain"></a>register_default_toolchain |  If True, the default [rust_proto_toolchain](#rust_proto_toolchain) (<code>@rules_rust//proto:default-proto-toolchain</code>) is registered. This toolchain requires a set of dependencies that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.   |  `True` |
 
 
 <a id="rust_proto_transitive_repositories"></a>

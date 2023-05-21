@@ -2,35 +2,47 @@
     "packages": [
         {
             "name": "cpufeatures",
-            "version": "0.2.1",
-            "id": "cpufeatures 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "version": "0.2.7",
+            "id": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
-            "description": "Lightweight and efficient no-std compatible alternative to the\nis_x86_feature_detected! macro\n",
+            "description": "Lightweight runtime CPU feature detection for x86/x86_64 and aarch64 with\nno_std support and support for mobile targets including Android and iOS\n",
             "source": "registry+https://github.com/rust-lang/crates.io-index",
             "dependencies": [
                 {
                     "name": "libc",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.2.101",
+                    "req": "^0.2.95",
                     "kind": null,
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
                     "features": [],
-                    "target": "aarch64-apple-darwin",
+                    "target": "aarch64-linux-android",
                     "registry": null
                 },
                 {
                     "name": "libc",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.2.101",
+                    "req": "^0.2.95",
                     "kind": null,
                     "rename": null,
                     "optional": false,
                     "uses_default_features": true,
                     "features": [],
                     "target": "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))",
+                    "registry": null
+                },
+                {
+                    "name": "libc",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "req": "^0.2.95",
+                    "kind": null,
+                    "rename": null,
+                    "optional": false,
+                    "uses_default_features": true,
+                    "features": [],
+                    "target": "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))",
                     "registry": null
                 }
             ],
@@ -43,7 +55,7 @@
                         "lib"
                     ],
                     "name": "cpufeatures",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.1/src/lib.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.7/src/lib.rs",
                     "edition": "2018",
                     "doc": true,
                     "doctest": true,
@@ -57,7 +69,7 @@
                         "bin"
                     ],
                     "name": "x86",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.1/tests/x86.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.7/tests/x86.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -71,7 +83,7 @@
                         "bin"
                     ],
                     "name": "aarch64",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.1/tests/aarch64.rs",
+                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.7/tests/aarch64.rs",
                     "edition": "2018",
                     "doc": false,
                     "doctest": false,
@@ -79,13 +91,14 @@
                 }
             ],
             "features": {},
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.1/Cargo.toml",
+            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/cpufeatures-0.2.7/Cargo.toml",
             "metadata": null,
             "publish": null,
             "authors": [
                 "RustCrypto Developers"
             ],
             "categories": [
+                "hardware-support",
                 "no-std"
             ],
             "keywords": [
@@ -178,6 +191,9 @@
                     "align",
                     "rustc-std-workspace-core"
                 ],
+                "rustc-std-workspace-core": [
+                    "dep:rustc-std-workspace-core"
+                ],
                 "std": [],
                 "use_std": [
                     "std"
@@ -231,7 +247,7 @@
                 {
                     "name": "cpufeatures",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "=0.2.1",
+                    "req": "=0.2.7",
                     "kind": null,
                     "rename": null,
                     "optional": false,
@@ -280,7 +296,7 @@
     "resolve": {
         "nodes": [
             {
-                "id": "cpufeatures 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                "id": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
@@ -291,11 +307,15 @@
                         "dep_kinds": [
                             {
                                 "kind": null,
-                                "target": "aarch64-apple-darwin"
+                                "target": "aarch64-linux-android"
                             },
                             {
                                 "kind": null,
                                 "target": "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))"
+                            },
+                            {
+                                "kind": null,
+                                "target": "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))"
                             }
                         ]
                     }
@@ -314,12 +334,12 @@
             {
                 "id": "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)",
                 "dependencies": [
-                    "cpufeatures 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
                         "name": "cpufeatures",
-                        "pkg": "cpufeatures 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+                        "pkg": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,

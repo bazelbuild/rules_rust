@@ -45,6 +45,6 @@ rust_library(
     ],
     version = "0.1.30",
     deps = [
-        "@crates_vendor_pkgs__once_cell-1.17.0//:once_cell",
+        "@crates_vendor_pkgs__once_cell-1.17.1//:once_cell",
     ],
 )

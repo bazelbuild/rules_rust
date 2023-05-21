@@ -612,7 +612,7 @@ impl Renderer {
     }
 }
 
-/// Write a set of [CrateContext][crate::context::CrateContext] to disk.
+/// Write a set of [crate::context::crate_context::CrateContext] to disk.
 pub fn write_outputs(
     outputs: BTreeMap<PathBuf, String>,
     out_dir: &Path,
@@ -1100,7 +1100,7 @@ mod test {
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
-            .get(&PathBuf::from("BUILD.cpufeatures-0.2.1.bazel"))
+            .get(&PathBuf::from("BUILD.cpufeatures-0.2.7.bazel"))
             .unwrap();
 
         // This is unfortunately somewhat brittle. Alas. Ultimately we wish to demonstrate that the
@@ -1108,7 +1108,7 @@ mod test {
         let expected = indoc! {r#"
             deps = select({
                 "@rules_rust//rust/platform:aarch64-apple-darwin": [
-                    "@multi_cfg_dep__libc-0.2.117//:libc",  # aarch64-apple-darwin
+                    "@multi_cfg_dep__libc-0.2.117//:libc",  # cfg(all(target_arch = "aarch64", target_vendor = "apple"))
                 ],
                 "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
                     "@multi_cfg_dep__libc-0.2.117//:libc",  # cfg(all(target_arch = "aarch64", target_os = "linux"))

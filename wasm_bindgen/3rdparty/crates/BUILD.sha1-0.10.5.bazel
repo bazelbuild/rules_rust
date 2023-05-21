@@ -6,10 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -39,6 +36,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=sha1",
         "manual",
         "noclippy",
         "norustfmt",
@@ -55,6 +53,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
@@ -85,6 +86,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

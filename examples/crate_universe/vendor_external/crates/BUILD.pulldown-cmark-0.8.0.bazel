@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,6 +33,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=pulldown-cmark",
         "manual",
         "noclippy",
         "norustfmt",
@@ -43,7 +41,7 @@ rust_library(
     version = "0.8.0",
     deps = [
         "@crates_vendor__bitflags-1.3.2//:bitflags",
-        "@crates_vendor__memchr-2.4.1//:memchr",
+        "@crates_vendor__memchr-2.5.0//:memchr",
         "@crates_vendor__pulldown-cmark-0.8.0//:build_script_build",
         "@crates_vendor__unicase-2.6.0//:unicase",
     ],
@@ -70,6 +68,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=pulldown-cmark",
         "manual",
         "noclippy",
         "norustfmt",

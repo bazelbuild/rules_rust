@@ -21,6 +21,8 @@ def _spec(
         default_features = True,
         features = [],
         git = None,
+        branch = None,
+        tag = None,
         rev = None):
     """A constructor for a crate dependency.
 
@@ -34,7 +36,9 @@ def _spec(
         default_features (bool, optional): Maps to the `default-features` flag.
         features (list, optional): A list of features to use for the crate
         git (str, optional): The Git url to use for the crate. Cannot be used with `version`.
-        rev (str, optional): The git revision of the remote crate. Tied with the `git` param.
+        branch (str, optional): The git branch of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.
+        tag (str, optional): The git tag of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.
+        rev (str, optional): The git revision of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified.
 
     Returns:
         string: A json encoded string of all inputs
@@ -45,6 +49,8 @@ def _spec(
         features = features,
         version = version,
         git = git,
+        branch = branch,
+        tag = tag,
         rev = rev,
     ))
 

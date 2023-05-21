@@ -55,6 +55,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
+        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
@@ -83,6 +86,9 @@ rust_library(
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@cui__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

@@ -7,10 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load(
-    "@rules_rust//rust:defs.bzl",
-    "rust_library",
-)
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -42,6 +39,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=curl",
         "manual",
         "noclippy",
         "norustfmt",
@@ -58,6 +56,10 @@ rust_library(
             "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
             "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
         ],
@@ -113,6 +115,10 @@ rust_library(
             "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
             "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
         ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+        ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rules_rust_wasm_bindgen__openssl-probe-0.1.5//:openssl_probe",  # cfg(all(unix, not(target_os = "macos")))
             "@rules_rust_wasm_bindgen__openssl-sys-0.9.80//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
@@ -160,6 +166,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=curl",
         "manual",
         "noclippy",
         "norustfmt",

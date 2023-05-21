@@ -3,10 +3,11 @@ members = [
     "tools/cross_installer",
     "tools/urls_generator",
 ]
+exclude = ["test_data"]
 
 [package]
 name = "cargo-bazel"
-version = "0.6.0"
+version = "0.8.0"
 authors = [
     "Andre Brisco - andre.brisco@protonmail.com",
 ]
@@ -21,14 +22,14 @@ default = ["cargo"]
 [dependencies]
 anyhow = "1.0.68"
 cargo_metadata = "0.15.3"
-cargo_toml = "0.14.0"
+cargo_toml = "0.15.2"
 cargo-lock = "8.0.3"
 cargo-platform = "0.1.2"
-cfg-expr = "0.13.0"
+cfg-expr = "0.14.0"
 clap = { version = "4.0.32", features = ["derive", "env"] }
-crates-index = { version = "0.18.11", default-features = false }
+crates-index = { version = "0.19.7", default-features = false }
 hex = "0.4.3"
-indoc = "1.0.8"
+indoc = "2.0.1"
 normpath = "1.0.1"
 pathdiff = "0.2.1"
 regex = "1.7.1"
@@ -40,7 +41,7 @@ sha2 = "0.10.6"
 tempfile = "3.3.0"
 tera = "1.17.1"
 textwrap = "0.16.0"
-toml = "0.5.10"
+toml = "0.7.2"
 
 [dev-dependencies]
 maplit = "1.0.2"
