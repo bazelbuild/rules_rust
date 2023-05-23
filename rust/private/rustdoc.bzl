@@ -122,7 +122,7 @@ def rustdoc_compile_action(
         build_flags_files = build_flags_files,
         emit = [],
         remap_path_prefix = None,
-        force_link = True,
+        rustdoc = True,
         force_depend_on_objects = is_test,
     )
 
