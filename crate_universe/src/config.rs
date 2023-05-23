@@ -38,7 +38,7 @@ impl std::fmt::Display for VendorMode {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RenderConfig {
     /// The name of the repository being rendered
@@ -77,8 +77,27 @@ pub struct RenderConfig {
     /// The command to use for regenerating generated files.
     pub regen_command: String,
 
-    /// An optional configuration for rendirng content to be rendered into repositories.
+    /// An optional configuration for rendering content to be rendered into repositories.
     pub vendor_mode: Option<VendorMode>,
+}
+
+// Default is manually implemented so that the default values match the default
+// values when deserializing, which involves calling the vairous `default_x()`
+// functions specified in `#[serde(default = "default_x")]`.
+impl Default for RenderConfig {
+    fn default() -> Self {
+        RenderConfig {
+            repository_name: String::default(),
+            build_file_template: default_build_file_template(),
+            crate_label_template: default_crate_label_template(),
+            crates_module_template: default_crates_module_template(),
+            crate_repository_template: default_crate_repository_template(),
+            default_package_name: Option::default(),
+            platforms_template: default_platforms_template(),
+            regen_command: String::default(),
+            vendor_mode: Option::default(),
+        }
+    }
 }
 
 fn default_build_file_template() -> String {

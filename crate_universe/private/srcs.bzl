@@ -38,4 +38,5 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/utils/starlark/label.rs"),
     Label("//crate_universe:src/utils/starlark/select.rs"),
     Label("//crate_universe:src/utils/starlark/serialize.rs"),
+    Label("//crate_universe:src/utils/starlark/target_compatible_with.rs"),
 ]

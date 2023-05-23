@@ -4,6 +4,7 @@ mod glob;
 mod label;
 mod select;
 mod serialize;
+mod target_compatible_with;
 
 use std::collections::BTreeSet as Set;
 
@@ -13,6 +14,7 @@ use serde_starlark::Error as StarlarkError;
 pub use glob::*;
 pub use label::*;
 pub use select::*;
+pub use target_compatible_with::*;
 
 pub type SelectStringList = SelectList<String>;
 pub type SelectStringDict = SelectDict<String>;
@@ -235,6 +237,8 @@ pub struct CommonAttrs {
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
+    #[serde(serialize_with = "TargetCompatibleWith::serialize_starlark")]
+    pub target_compatible_with: TargetCompatibleWith,
     pub version: String,
 }
 
