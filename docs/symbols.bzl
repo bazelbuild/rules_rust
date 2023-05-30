@@ -12,7 +12,6 @@ load(
     "@rules_rust//bindgen:repositories.bzl",
     _rust_bindgen_dependencies = "rust_bindgen_dependencies",
     _rust_bindgen_register_toolchains = "rust_bindgen_register_toolchains",
-    _rust_bindgen_repositories = "rust_bindgen_repositories",
 )
 load(
     "@rules_rust//cargo:defs.bzl",
@@ -128,7 +127,6 @@ rust_bindgen = _rust_bindgen
 rust_bindgen_dependencies = _rust_bindgen_dependencies
 rust_bindgen_library = _rust_bindgen_library
 rust_bindgen_register_toolchains = _rust_bindgen_register_toolchains
-rust_bindgen_repositories = _rust_bindgen_repositories
 rust_bindgen_toolchain = _rust_bindgen_toolchain
 
 rust_toolchain = _rust_toolchain
