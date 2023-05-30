@@ -32,6 +32,12 @@ alias(
 )
 
 alias(
+    name = "clang-sys",
+    actual = "@rules_rust_bindgen__clang-sys-1.4.0//:clang_sys",
+    tags = ["manual"],
+)
+
+alias(
     name = "libloading",
     actual = "@rules_rust_bindgen__libloading-0.7.4//:libloading",
     tags = ["manual"],
