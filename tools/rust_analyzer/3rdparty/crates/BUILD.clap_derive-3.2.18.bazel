@@ -42,10 +42,10 @@ rust_proc_macro(
     ],
     version = "3.2.18",
     deps = [
-        "@rules_rust_rust_analyzer__heck-0.4.0//:heck",
-        "@rules_rust_rust_analyzer__proc-macro-error-1.0.4//:proc_macro_error",
-        "@rules_rust_rust_analyzer__proc-macro2-1.0.49//:proc_macro2",
-        "@rules_rust_rust_analyzer__quote-1.0.23//:quote",
-        "@rules_rust_rust_analyzer__syn-1.0.107//:syn",
+        "@rrra__heck-0.4.0//:heck",
+        "@rrra__proc-macro-error-1.0.4//:proc_macro_error",
+        "@rrra__proc-macro2-1.0.49//:proc_macro2",
+        "@rrra__quote-1.0.23//:quote",
+        "@rrra__syn-1.0.107//:syn",
     ],
 )

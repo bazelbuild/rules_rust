@@ -17,7 +17,7 @@ load("@rules_rust//tools/rust_analyzer/3rdparty/crates:defs.bzl", _crate_reposit
 def crate_repositories():
     maybe(
         crates_vendor_remote_repository,
-        name = "rules_rust_rust_analyzer",
+        name = "rrra",
         build_file = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:BUILD.bazel"),
         defs_module = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:defs.bzl"),
     )

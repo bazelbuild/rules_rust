@@ -44,6 +44,6 @@ rust_library(
     ],
     version = "0.10.5",
     deps = [
-        "@rules_rust_rust_analyzer__either-1.8.0//:either",
+        "@rrra__either-1.8.0//:either",
     ],
 )

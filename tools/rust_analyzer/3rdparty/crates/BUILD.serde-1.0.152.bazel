@@ -37,7 +37,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2015",
     proc_macro_deps = [
-        "@rules_rust_rust_analyzer__serde_derive-1.0.152//:serde_derive",
+        "@rrra__serde_derive-1.0.152//:serde_derive",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
@@ -49,7 +49,7 @@ rust_library(
     ],
     version = "1.0.152",
     deps = [
-        "@rules_rust_rust_analyzer__serde-1.0.152//:build_script_build",
+        "@rrra__serde-1.0.152//:build_script_build",
     ],
 )
 

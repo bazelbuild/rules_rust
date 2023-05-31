@@ -39,6 +39,6 @@ rust_library(
     ],
     version = "0.2.4",
     deps = [
-        "@rules_rust_rust_analyzer__os_str_bytes-6.4.1//:os_str_bytes",
+        "@rrra__os_str_bytes-6.4.1//:os_str_bytes",
     ],
 )

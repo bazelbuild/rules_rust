@@ -44,7 +44,7 @@ rust_library(
     ],
     version = "1.0.68",
     deps = [
-        "@rules_rust_rust_analyzer__anyhow-1.0.68//:build_script_build",
+        "@rrra__anyhow-1.0.68//:build_script_build",
     ],
 )
 

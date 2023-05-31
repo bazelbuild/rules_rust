@@ -40,7 +40,7 @@ rust_library(
     ],
     version = "0.2.139",
     deps = [
-        "@rules_rust_rust_analyzer__libc-0.2.139//:build_script_build",
+        "@rrra__libc-0.2.139//:build_script_build",
     ],
 )
 

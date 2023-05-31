@@ -43,10 +43,10 @@ rust_proc_macro(
     ],
     version = "1.0.152",
     deps = [
-        "@rules_rust_rust_analyzer__proc-macro2-1.0.49//:proc_macro2",
-        "@rules_rust_rust_analyzer__quote-1.0.23//:quote",
-        "@rules_rust_rust_analyzer__serde_derive-1.0.152//:build_script_build",
-        "@rules_rust_rust_analyzer__syn-1.0.107//:syn",
+        "@rrra__proc-macro2-1.0.49//:proc_macro2",
+        "@rrra__quote-1.0.23//:quote",
+        "@rrra__serde_derive-1.0.152//:build_script_build",
+        "@rrra__syn-1.0.107//:syn",
     ],
 )
 

@@ -40,9 +40,9 @@ rust_proc_macro(
     ],
     version = "1.0.4",
     deps = [
-        "@rules_rust_rust_analyzer__proc-macro-error-attr-1.0.4//:build_script_build",
-        "@rules_rust_rust_analyzer__proc-macro2-1.0.49//:proc_macro2",
-        "@rules_rust_rust_analyzer__quote-1.0.23//:quote",
+        "@rrra__proc-macro-error-attr-1.0.4//:build_script_build",
+        "@rrra__proc-macro2-1.0.49//:proc_macro2",
+        "@rrra__quote-1.0.23//:quote",
     ],
 )
 
@@ -75,7 +75,7 @@ cargo_build_script(
     version = "1.0.4",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_rust_analyzer__version_check-0.9.4//:version_check",
+        "@rrra__version_check-0.9.4//:version_check",
     ],
 )
 

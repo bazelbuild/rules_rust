@@ -44,8 +44,8 @@ rust_library(
     ],
     version = "1.0.49",
     deps = [
-        "@rules_rust_rust_analyzer__proc-macro2-1.0.49//:build_script_build",
-        "@rules_rust_rust_analyzer__unicode-ident-1.0.6//:unicode_ident",
+        "@rrra__proc-macro2-1.0.49//:build_script_build",
+        "@rrra__unicode-ident-1.0.6//:unicode_ident",
     ],
 )
 

@@ -36,7 +36,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_rust_analyzer__proc-macro-error-attr-1.0.4//:proc_macro_error_attr",
+        "@rrra__proc-macro-error-attr-1.0.4//:proc_macro_error_attr",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
@@ -48,10 +48,10 @@ rust_library(
     ],
     version = "1.0.4",
     deps = [
-        "@rules_rust_rust_analyzer__proc-macro-error-1.0.4//:build_script_build",
-        "@rules_rust_rust_analyzer__proc-macro2-1.0.49//:proc_macro2",
-        "@rules_rust_rust_analyzer__quote-1.0.23//:quote",
-        "@rules_rust_rust_analyzer__syn-1.0.107//:syn",
+        "@rrra__proc-macro-error-1.0.4//:build_script_build",
+        "@rrra__proc-macro2-1.0.49//:proc_macro2",
+        "@rrra__quote-1.0.23//:quote",
+        "@rrra__syn-1.0.107//:syn",
     ],
 )
 
@@ -89,7 +89,7 @@ cargo_build_script(
     version = "1.0.4",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_rust_analyzer__version_check-0.9.4//:version_check",
+        "@rrra__version_check-0.9.4//:version_check",
     ],
 )
 

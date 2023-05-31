@@ -44,10 +44,10 @@ rust_library(
     ],
     version = "1.0.91",
     deps = [
-        "@rules_rust_rust_analyzer__itoa-1.0.5//:itoa",
-        "@rules_rust_rust_analyzer__ryu-1.0.12//:ryu",
-        "@rules_rust_rust_analyzer__serde-1.0.152//:serde",
-        "@rules_rust_rust_analyzer__serde_json-1.0.91//:build_script_build",
+        "@rrra__itoa-1.0.5//:itoa",
+        "@rrra__ryu-1.0.12//:ryu",
+        "@rrra__serde-1.0.152//:serde",
+        "@rrra__serde_json-1.0.91//:build_script_build",
     ],
 )
 

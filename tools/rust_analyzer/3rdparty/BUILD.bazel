@@ -33,7 +33,7 @@ crates_vendor(
             version = "1.0.82",
         ),
     },
-    repository_name = "rules_rust_rust_analyzer",
+    repository_name = "rrra",
     supported_platform_triples = [
         "i686-apple-darwin",
         "i686-pc-windows-msvc",
