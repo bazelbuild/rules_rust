@@ -742,6 +742,7 @@ rust_toolchain = rule(
         ),
         "rust_std": attr.label(
             doc = "The Rust standard library.",
+            mandatory = True,
         ),
         "rustc": attr.label(
             doc = "The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.",
