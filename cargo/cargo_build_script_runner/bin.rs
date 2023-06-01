@@ -77,6 +77,10 @@ fn run_buildrs() -> Result<(), String> {
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
+    eprintln!("DWH: Walking manifest dir:");
+    walk(&manifest_dir);
+    eprintln!("DWH: Done walking manifest dir");
+
     let mut command = Command::new(exec_root.join(progname));
     command
         .current_dir(&manifest_dir)
@@ -193,6 +197,17 @@ fn run_buildrs() -> Result<(), String> {
     write(&link_search_paths_file, link_search_paths.as_bytes())
         .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_search_paths_file));
     Ok(())
+}
+
+fn walk(path: &Path) {
+    for entry in std::fs::read_dir(path).expect("Failed to read dir") {
+        let entry = entry.expect("Failed to get entry");
+        let path = entry.path();
+        eprintln!("{}", path.display());
+        if path.is_dir() {
+            walk(&path);
+        }
+    }
 }
 
 fn should_symlink_exec_root() -> bool {
