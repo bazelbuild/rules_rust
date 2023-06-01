@@ -321,7 +321,7 @@ impl Renderer {
             // on having certain Cargo environment variables set.
             //
             // Do not change this name to "cargo_build_script".
-            name: format!("{}_build_script", krate.name),
+            name: format!("{}_bs", krate.name),
             aliases: self
                 .make_aliases(krate, true, false)
                 .remap_configurations(platforms),
@@ -839,7 +839,7 @@ mod test {
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
-        assert!(build_file_content.contains("name = \"mock_crate_build_script\""));
+        assert!(build_file_content.contains("name = \"mock_crate_bs\""));
     }
 
     #[test]
