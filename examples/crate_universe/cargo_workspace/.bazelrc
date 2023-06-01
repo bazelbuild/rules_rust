@@ -1,5 +1,10 @@
 # A config file containing Bazel settings
 
+# Required on windows
+common --enable_platform_specific_config
+startup:windows --windows_enable_symlinks
+build:windows --enable_runfiles
+
 # Enable rustfmt
 build:strict --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 build:strict --output_groups=+rustfmt_checks
