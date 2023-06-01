@@ -51,7 +51,7 @@ cargo_aliases_crate_repositories()
 ###############################################################################
 
 crates_repository(
-    name = "crate_index_cargo_local",
+    name = "cicl",
     cargo_lockfile = "//cargo_local:Cargo.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -60,7 +60,7 @@ crates_repository(
 )
 
 load(
-    "@crate_index_cargo_local//:defs.bzl",
+    "@cicl//:defs.bzl",
     cargo_local_crate_repositories = "crate_repositories",
 )
 
