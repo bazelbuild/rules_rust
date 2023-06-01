@@ -2,6 +2,7 @@
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
+tasks:
   crate_universe_examples_windows:
     name: Crate Universe Examples
     platform: windows
