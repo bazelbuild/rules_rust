@@ -2,7 +2,7 @@
 
 Details related to patches required for the rules_rust protobuf rules.
 
-## protobuf-2.8.2
+## protobuf-2.18.2
 
 The protobuf crate from the rust-protobuf repository introduced a build.rs
 script in the 2.x.x series. This generates a small version.rs file that would be
