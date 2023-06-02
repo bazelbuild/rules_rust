@@ -60,10 +60,6 @@ tasks:
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
   windows:
-    build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   ubuntu2004_opt:
@@ -88,10 +84,8 @@ tasks:
     name: Opt Mode
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--compilation_mode=opt"
     test_flags:
-      - "--enable_runfiles"
       - "--compilation_mode=opt"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
@@ -151,22 +145,16 @@ tasks:
     name: With Aspects
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
     soft_fail: yes
@@ -385,11 +373,8 @@ tasks:
     platform: windows
     working_directory: examples
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
@@ -472,9 +457,6 @@ tasks:
     name: Crate Universe Examples
     platform: windows
     working_directory: examples/crate_universe
-    batch_commands:
-      - echo startup --windows_enable_symlinks >> user.bazelrc
-      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets: *crate_universe_vendor_example_targets
     build_flags: *aspects_flags
     build_targets:
@@ -485,9 +467,6 @@ tasks:
     name: Crate Universe Unnamed Examples
     platform: windows
     working_directory: examples/crate_universe_unnamed
-    batch_commands:
-      - echo startup --windows_enable_symlinks >> user.bazelrc
-      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets: *crate_universe_unnamed_vendor_example_targets
     build_flags: *aspects_flags
     build_targets:
