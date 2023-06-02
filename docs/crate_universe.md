@@ -281,7 +281,7 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#crates_repository_repinning_updating_dependencies) for more details. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 
 Example:
@@ -325,8 +325,6 @@ Rust targets found in the dependency graph defined by the given manifests.
 **NOTE**: The `cargo_lockfile` and `lockfile` must be manually created. The rule unfortunately does not yet create
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
-
-&lt;a id="#crates_repository_repinning_updating_dependencies"&gt;&lt;/a&gt;
 
 ### Repinning / Updating Dependencies
 

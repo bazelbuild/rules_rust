@@ -136,7 +136,7 @@ def _write_config_file(ctx):
     output_pkg = _get_output_package(ctx)
 
     workspace_name = ctx.workspace_name
-    if ctx.workspace_name == "__main__":
+    if ctx.workspace_name == "__main__" or ctx.workspace_name == "_main":
         workspace_name = ""
 
     if ctx.attr.mode == "local":
