@@ -27,7 +27,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = ["std"],
+    crate_features = [
+        "std",
+    ],
     crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = [
@@ -36,6 +38,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=log",
         "manual",
         "noclippy",
         "norustfmt",
