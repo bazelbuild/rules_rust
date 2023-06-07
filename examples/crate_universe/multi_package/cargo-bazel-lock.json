@@ -1,5 +1,5 @@
 {
-  "checksum": "e09e44d67506ec82822daad5b00769db9e2d193ab72d81dced1714df4f7d7f8b",
+  "checksum": "a7a29e2d33773430d58291c3a7489398fefb23d02f9a05b3c770c29f48da42cc",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -9404,6 +9404,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-fuchsia",
@@ -9434,6 +9435,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-fuchsia",
@@ -9464,6 +9466,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
@@ -9493,6 +9496,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
@@ -9524,6 +9528,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",

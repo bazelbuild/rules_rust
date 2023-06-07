@@ -1,5 +1,5 @@
 {
-  "checksum": "8a4b27db62672159db0ea93be26fd4f4049d3130cbfb576483c11a7d9d900659",
+  "checksum": "fff2077bd789f4f7e6ac8b3564ef606c22b8e5808c3ba66f3167b6c1d4d1d992",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -4885,6 +4885,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-fuchsia",
@@ -4913,6 +4914,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
@@ -4944,6 +4946,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
