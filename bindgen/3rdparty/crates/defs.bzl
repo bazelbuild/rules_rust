@@ -292,6 +292,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "bindgen": "@rules_rust_bindgen__bindgen-0.60.1//:bindgen",
+            "clang-sys": "@rules_rust_bindgen__clang-sys-1.4.0//:clang_sys",
             "libloading": "@rules_rust_bindgen__libloading-0.7.4//:libloading",
         },
     },
