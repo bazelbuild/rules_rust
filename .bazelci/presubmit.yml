@@ -24,7 +24,6 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
@@ -349,9 +348,6 @@ tasks:
       - "-//sys/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
-      # The bindgen rules currently do not work on RBE
-      # see: https://github.com/bazelbuild/rules_rust/issues/919
-      - "-//bindgen/..."
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -378,9 +374,6 @@ tasks:
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # The bindgen rules currently do not work on windows
-      # see: https://github.com/bazelbuild/rules_rust/issues/919
-      - "-//bindgen/..."
       # The proto rules do not work on windows
       - "-//proto/..."
       # The wasm rules do not work on windows
