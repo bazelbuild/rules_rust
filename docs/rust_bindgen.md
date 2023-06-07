@@ -2,10 +2,10 @@
 # Rust Bindgen
 
 * [rust_bindgen_library](#rust_bindgen_library)
+* [rust_bindgen](#rust_bindgen)
+* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_bindgen_dependencies](#rust_bindgen_dependencies)
 * [rust_bindgen_register_toolchains](#rust_bindgen_register_toolchains)
-* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
-* [rust_bindgen](#rust_bindgen)
 
 
 ## Overview
@@ -28,6 +28,10 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
+
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
 ```
 
 ---
