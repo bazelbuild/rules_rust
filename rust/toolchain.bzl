@@ -640,6 +640,7 @@ def _rust_toolchain_impl(ctx):
         _pipelined_compilation = pipelined_compilation,
         _experimental_use_cc_common_link = experimental_use_cc_common_link,
         _experimental_use_global_allocator = experimental_use_global_allocator,
+        _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _no_std = no_std,
     )
     return [
@@ -783,6 +784,9 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_experimental_use_coverage_metadata_files": attr.label(
+            default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
         ),
         "_experimental_use_global_allocator": attr.label(
             default = Label("//rust/settings:experimental_use_global_allocator"),

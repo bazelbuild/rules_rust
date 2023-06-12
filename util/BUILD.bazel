@@ -4,8 +4,8 @@ sh_binary(
     tags = ["manual"],
 )
 
-filegroup(
+alias(
     name = "collect_coverage",
-    srcs = ["collect_coverage.sh"],
+    actual = "//util/collect_coverage",
     visibility = ["//visibility:public"],
 )
