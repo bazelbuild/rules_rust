@@ -50,7 +50,6 @@ tasks:
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      - "//test/..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
@@ -103,8 +102,7 @@ tasks:
     build_targets: *default_linux_targets
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "..."
-      - "//test/..."
+      - "//..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
@@ -118,8 +116,7 @@ tasks:
     build_targets: *default_linux_targets
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "..."
-      - "//test/..."
+      - "//..."
       - "-//test/conflicting_deps:conflicting_deps_test"
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
@@ -302,11 +299,12 @@ tasks:
     working_directory: examples
     build_flags:
       - "--repo_env=CC=clang"
+      - "--config=rustfmt"
+      - "--config=clippy"
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags: *aspects_flags
   ubuntu2004_examples_clang_lld:
     name: Examples with Clang and LLD
     platform: ubuntu2004
@@ -316,11 +314,12 @@ tasks:
     build_flags:
       - "--repo_env=CC=clang"
       - "--linkopt=-fuse-ld=lld"
+      - "--config=rustfmt"
+      - "--config=clippy"
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags: *aspects_flags
   ubuntu2004_examples_rolling:
     name: "Examples with Rolling Bazel Version"
     platform: ubuntu2004
