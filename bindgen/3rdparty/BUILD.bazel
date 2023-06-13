@@ -14,11 +14,11 @@ crates_vendor(
         "indexmap": [crate.annotation(
             gen_build_script = True,
         )],
-        "libloading": [crate.annotation(
-            gen_build_script = True,
-        )],
         "log": [crate.annotation(
             rustc_flags = ["--cfg=atomic_cas"],
+        )],
+        "winapi": [crate.annotation(
+            gen_build_script = True,
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
@@ -26,7 +26,12 @@ crates_vendor(
     mode = "remote",
     packages = {
         "bindgen": crate.spec(
+            features = ["runtime"],
             version = "0.60.1",
+        ),
+        "clang-sys": crate.spec(
+            # Should match the version of llvm-project being used.
+            features = ["clang_14_0"],
         ),
         "libloading": crate.spec(
             version = "0.7.3",

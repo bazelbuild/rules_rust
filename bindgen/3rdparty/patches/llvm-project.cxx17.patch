@@ -1,0 +1,537 @@
+diff --git a/utils/bazel/configure.bzl b/utils/bazel/configure.bzl
+index 4c5ab8bd0972..44de2da1a136 100644
+--- a/utils/bazel/configure.bzl
++++ b/utils/bazel/configure.bzl
+@@ -70,6 +70,11 @@ def _overlay_directories(repository_ctx):
+         ))
+ 
+ def _llvm_configure_impl(repository_ctx):
++    # Force this repository rule to update if any of the overlay
++    # sources change.
++    for target in repository_ctx.attr._srcs:
++        repository_ctx.path(target)
++
+     _overlay_directories(repository_ctx)
+ 
+     # Create a starlark file with the requested LLVM targets.
+@@ -86,6 +91,16 @@ llvm_configure = repository_rule(
+     configure = True,
+     attrs = {
+         "targets": attr.string_list(default = DEFAULT_TARGETS),
++        "_srcs": attr.label_list(default = [
++            Label("//utils/bazel/llvm-project-overlay/clang:BUILD.bazel"),
++            Label("//utils/bazel/llvm-project-overlay/libunwind:BUILD.bazel"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:binary_alias.bzl"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:BUILD.bazel"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:cc_plugin_library.bzl"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:config.bzl"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:tblgen.bzl"),
++            Label("//utils/bazel/llvm-project-overlay/llvm:template_rule.bzl"),
++        ]),
+     },
+ )
+ 
+diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+index a2b1e0f33073..0c1abe607b58 100644
+--- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+@@ -5,6 +5,7 @@
+ load("//llvm:tblgen.bzl", "gentbl")
+ load("//llvm:binary_alias.bzl", "binary_alias")
+ load("//llvm:cc_plugin_library.bzl", "cc_plugin_library")
++load("//llvm:config.bzl", "llvm_stdcxx_copts")
+ 
+ package(
+     default_visibility = ["//visibility:public"],
+@@ -28,7 +29,7 @@ cc_binary(
+     ]),
+     copts = [
+         "$(STACK_FRAME_UNLIMITED)",
+-    ],
++    ] + llvm_stdcxx_copts,
+     stamp = 0,
+     deps = [
+         "//llvm:Support",
+@@ -391,8 +392,8 @@ cc_library(
+ cc_library(
+     name = "basic",
+     srcs = [
+-        "include/clang/Basic/Version.inc",
+         "include/VCSVersion.inc",
++        "include/clang/Basic/Version.inc",
+     ] + glob([
+         "lib/Basic/*.cpp",
+         "lib/Basic/*.c",
+@@ -406,7 +407,7 @@ cc_library(
+     copts = [
+         "-DHAVE_VCS_VERSION_INC",
+         "$(STACK_FRAME_UNLIMITED)",
+-    ],
++    ] + llvm_stdcxx_copts,
+     includes = ["include"],
+     textual_hdrs = [
+         "include/clang/Basic/arm_fp16.inc",
+@@ -471,6 +472,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Lex/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":basic",
+@@ -711,7 +713,7 @@ cc_library(
+         # headers such as `CXXABI.h`.
+         "-I$(GENDIR)/external/llvm-project/clang/lib/AST",
+         "-I$(GENDIR)/external/llvm-project/clang/lib/AST/Interp",
+-    ],
++    ] + llvm_stdcxx_copts,
+     textual_hdrs = [
+         "include/clang/AST/AttrImpl.inc",
+         "include/clang/AST/AttrNodeTraverse.inc",
+@@ -763,6 +765,7 @@ cc_library(
+         "include/clang/Index/*.h",
+         "include/clang-c/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -786,6 +789,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Analysis/**/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     textual_hdrs = glob([
+         "include/clang/Analysis/**/*.def",
+@@ -844,7 +848,7 @@ cc_library(
+         "include/clang/Sema/*.h",
+         "include/clang-c/*.h",
+     ]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     includes = ["include"],
+     textual_hdrs = [
+         "include/clang/Sema/AttrParsedAttrImpl.inc",
+@@ -911,6 +915,7 @@ cc_library(
+         "include/clang/Parse/AttrParserStringSwitches.inc",
+         "include/clang/Parse/AttrSubMatchRulesParserStringSwitches.inc",
+     ] + glob(["include/clang/Parse/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -932,6 +937,7 @@ cc_library(
+         "lib/ASTMatchers/*.h",
+     ]),
+     hdrs = glob(["include/clang/ASTMatchers/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -948,7 +954,7 @@ cc_library(
+         "lib/ASTMatchers/Dynamic/*.h",
+     ]),
+     hdrs = glob(["include/clang/ASTMatchers/Dynamic/*.h"]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -966,6 +972,7 @@ cc_library(
+         "lib/Rewrite/*.h",
+     ]),
+     hdrs = glob(["include/clang/Rewrite/Core/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -982,6 +989,7 @@ cc_library(
+         "lib/Testing/*.cpp",
+     ]),
+     hdrs = glob(["include/clang/Testing/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":basic",
+@@ -996,6 +1004,7 @@ cc_library(
+         "lib/Tooling/Core/*.h",
+     ]),
+     hdrs = glob(["include/clang/Tooling/Core/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -1018,6 +1027,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Tooling/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -1042,6 +1052,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Tooling/Inclusions/**/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":basic",
+         ":lex",
+@@ -1061,6 +1072,7 @@ cc_library(
+         "include/clang/Tooling/Refactoring/**/*.h",
+         "include/clang/Tooling/Refactoring/**/*.def",
+     ]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":ast",
+         ":ast_matchers",
+@@ -1094,6 +1106,7 @@ cc_library(
+     name = "tooling_syntax",
+     srcs = glob(["lib/Tooling/Syntax/**/*.cpp"]),
+     hdrs = glob(["include/clang/Tooling/Syntax/**/*.h"]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":ast",
+         ":basic",
+@@ -1108,6 +1121,7 @@ cc_library(
+     name = "tooling_dependency_scanning",
+     srcs = glob(["lib/Tooling/DependencyScanning/**/*.cpp"]),
+     hdrs = glob(["include/clang/Tooling/DependencyScanning/**/*.h"]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":basic",
+         ":codegen",
+@@ -1123,6 +1137,7 @@ cc_library(
+     name = "transformer",
+     srcs = glob(["lib/Tooling/Transformer/**/*.cpp"]),
+     hdrs = glob(["include/clang/Tooling/Transformer/**/*.h"]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":ast",
+         ":ast_matchers",
+@@ -1138,6 +1153,7 @@ cc_library(
+     name = "ast-diff",
+     srcs = glob(["lib/Tooling/ASTDiff/*.cpp"]),
+     hdrs = glob(["include/clang/Tooling/ASTDiff/*.h"]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":ast",
+         ":basic",
+@@ -1150,6 +1166,7 @@ cc_library(
+     name = "crosstu",
+     srcs = glob(["lib/CrossTU/*.cpp"]),
+     hdrs = glob(["include/clang/CrossTU/*.h"]),
++    copts = llvm_stdcxx_copts,
+     deps = [
+         ":ast",
+         ":basic",
+@@ -1174,6 +1191,7 @@ cc_library(
+     ] + glob([
+         "include/clang/Format/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":basic",
+@@ -1188,6 +1206,7 @@ cc_library(
+     name = "edit",
+     srcs = glob(["lib/Edit/*.cpp"]),
+     hdrs = glob(["include/clang/Edit/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -1222,6 +1241,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/StaticAnalyzer/Core/**/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     textual_hdrs = glob([
+         "include/clang/StaticAnalyzer/Core/**/*.def",
+@@ -1268,7 +1288,7 @@ cc_library(
+     ] + glob([
+         "include/clang/StaticAnalyzer/Checkers/**/*.h",
+     ]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":analysis",
+@@ -1316,7 +1336,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Driver/*.h",
+     ]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     includes = [
+         "include",
+         # TODO: This is likely a layering issue, but files in Arch are currently
+@@ -1479,7 +1499,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Frontend/*.h",
+     ]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     data = [":builtin_headers_gen"],
+     includes = ["include"],
+     textual_hdrs = glob([
+@@ -1519,6 +1539,7 @@ cc_library(
+         "lib/Frontend/Rewrite/*.h",
+     ]),
+     hdrs = glob(["include/clang/Rewrite/Frontend/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":ast",
+@@ -1541,6 +1562,7 @@ cc_library(
+         "lib/Interpreter/*.h",
+     ]),
+     hdrs = glob(["include/clang/Interpreter/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":analysis",
+@@ -1573,7 +1595,7 @@ cc_library(
+         "lib/CodeGen/*.h",
+     ]),
+     hdrs = glob(["include/clang/CodeGen/*.h"]),
+-    copts = ["$(STACK_FRAME_UNLIMITED)"],
++    copts = ["$(STACK_FRAME_UNLIMITED)"] + llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":analysis",
+@@ -1624,6 +1646,7 @@ cc_library(
+         "lib/StaticAnalyzer/Frontend/**/*.h",
+     ]),
+     hdrs = glob(["include/clang/StaticAnalyzer/Frontend/**/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":analysis",
+@@ -1678,6 +1701,7 @@ cc_library(
+     hdrs = glob([
+         "include/clang/Serialization/*.h",
+     ]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     textual_hdrs = glob([
+         "include/clang/Serialization/*.def",
+@@ -1705,6 +1729,7 @@ cc_library(
+         "lib/FrontendTool/*.h",
+     ]),
+     hdrs = glob(["include/clang/FrontendTool/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":arc_migrate",
+@@ -1726,6 +1751,7 @@ cc_library(
+         "lib/ARCMigrate/*.h",
+     ]),
+     hdrs = glob(["include/clang/ARCMigrate/*.h"]),
++    copts = llvm_stdcxx_copts,
+     includes = ["include"],
+     deps = [
+         ":analysis",
+@@ -1752,6 +1778,7 @@ cc_library(
+         "tools/libclang/*.h",
+     ]),
+     hdrs = glob(["include/clang-c/*.h"]),
++    copts = llvm_stdcxx_copts,
+     defines = ["CINDEX_NO_EXPORTS"],
+     deps = [
+         ":arc_migrate",
+@@ -1783,7 +1810,7 @@ cc_plugin_library(
+     copts = select({
+         "@bazel_tools//src/conditions:windows": ["-D_CINDEX_LIB_"],
+         "//conditions:default": [],
+-    }),
++    }) + llvm_stdcxx_copts,
+     strip_include_prefix = "include",
+     deps = [
+         ":arc_migrate",
+@@ -1912,7 +1939,7 @@ cc_library(
+         # Disable stack frame size checks in the driver because
+         # clang::ensureStackAddressSpace allocates a large array on the stack.
+         "$(STACK_FRAME_UNLIMITED)",
+-    ],
++    ] + llvm_stdcxx_copts,
+     deps = [
+         ":analysis",
+         ":ast",
+@@ -1947,6 +1974,7 @@ cc_library(
+ cc_binary(
+     name = "clang",
+     srcs = [],
++    copts = llvm_stdcxx_copts,
+     stamp = 0,
+     deps = [
+         ":clang-driver",
+diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+index 85d79a29b571..716d7f5d9645 100644
+--- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+@@ -4,7 +4,7 @@
+ 
+ load(":template_rule.bzl", "template_rule")
+ load(":tblgen.bzl", "gentbl")
+-load(":config.bzl", "llvm_config_defines")
++load(":config.bzl", "llvm_config_defines", "llvm_stdcxx_copts")
+ load(":targets.bzl", "llvm_targets")
+ load(":enum_targets_gen.bzl", "enum_targets_gen")
+ load(":binary_alias.bzl", "binary_alias")
+@@ -21,10 +21,12 @@ exports_files(["LICENSE.TXT"])
+ # toolchain or the `.bazelrc` file. This is just a workaround until we have a
+ # widely available feature to enable unlimited stack frame instead of using
+ # this `Make` variable.
+-llvm_copts = [
++llvm_c_only_opts = [
+     "$(STACK_FRAME_UNLIMITED)",
+ ]
+ 
++llvm_copts = llvm_c_only_opts + llvm_stdcxx_copts
++
+ enum_targets_gen(
+     name = "targets_def_gen",
+     src = "include/llvm/Config/Targets.def.in",
+@@ -167,10 +169,69 @@ genrule(
+           "echo -e '#undef HANDLE_EXTENSION' >> $@\n",
+ )
+ 
++# TODO: This separation is required to separate out C++ and C opts
++# https://github.com/bazelbuild/bazel/issues/16551
+ cc_library(
+-    name = "Support",
++    name = "Support-c",
+     srcs = glob([
+         "lib/Support/*.c",
++    ]),
++    hdrs = glob([
++        "include/llvm/Support/**/*.h",
++        "include/llvm/ADT/*.h",
++    ]) + [
++        "include/llvm-c/Core.h",
++        "include/llvm-c/DataTypes.h",
++        "include/llvm-c/Deprecated.h",
++        "include/llvm-c/DisassemblerTypes.h",
++        "include/llvm-c/Error.h",
++        "include/llvm-c/ErrorHandling.h",
++        "include/llvm-c/ExternC.h",
++        "include/llvm-c/Support.h",
++        "include/llvm-c/Types.h",
++        "include/llvm/ExecutionEngine/JITSymbol.h",
++        "include/llvm/Support/Extension.def",
++        "include/llvm/Support/VCSRevision.h",
++    ],
++    copts = llvm_c_only_opts,
++    includes = ["include"],
++    linkopts = select({
++        "@bazel_tools//src/conditions:windows": [],
++        "@bazel_tools//src/conditions:freebsd": [
++            "-pthread",
++            "-lexecinfo",
++            "-ldl",
++            "-lm",
++        ],
++        "//conditions:default": [
++            "-pthread",
++            "-ldl",
++            "-lm",
++        ],
++    }),
++    textual_hdrs = glob([
++        "include/llvm/Support/*.def",
++        "lib/Support/*.h",
++        "lib/Support/*.inc",
++    ]),
++    deps = [
++        ":config",
++        ":Demangle",
++        # We unconditionally depend on the custom LLVM terminfo wrapper. This
++        # will be an empty library unless terminfo is enabled, in which case it
++        # will both provide the necessary dependencies and configuration
++        # defines.
++        "@llvm_terminfo//:terminfo",
++        # We unconditionally depend on the custom LLVM zlib wrapper. This will
++        # be an empty library unless zlib is enabled, in which case it will
++        # both provide the necessary dependencies and configuration defines.
++        "@llvm_zlib//:zlib",
++    ],
++)
++
++cc_library(
++    name = "Support",
++    srcs = glob([
+         "lib/Support/*.cpp",
+         "lib/Support/*.h",
+         "lib/Support/*.inc",
+@@ -223,6 +284,7 @@ cc_library(
+         "include/llvm/Support/*.def",
+     ]),
+     deps = [
++        ":Support-c",
+         ":config",
+         ":Demangle",
+         # We unconditionally depend on the custom LLVM terminfo wrapper. This
+diff --git a/utils/bazel/llvm-project-overlay/llvm/cc_plugin_library.bzl b/utils/bazel/llvm-project-overlay/llvm/cc_plugin_library.bzl
+index 2ebd39c630dc..e45bd8a1ce92 100644
+--- a/utils/bazel/llvm-project-overlay/llvm/cc_plugin_library.bzl
++++ b/utils/bazel/llvm-project-overlay/llvm/cc_plugin_library.bzl
+@@ -16,6 +16,7 @@ configure generic aspects of all generated rules such as `testonly`. Lastly,
+ """
+ 
+ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library")
++load(":config.bzl", "llvm_stdcxx_copts")
+ 
+ def cc_plugin_library(name, srcs, hdrs, include_prefix = None, strip_include_prefix = None, alwayslink = False, features = [], tags = [], testonly = False, **kwargs):
+     # Neither the name of the plugin binary nor tags on whether it is built are
+@@ -29,6 +30,7 @@ def cc_plugin_library(name, srcs, hdrs, include_prefix = None, strip_include_pre
+     dylib_name = name + ".dylib"
+     interface_output_name = name + "_interface_output"
+     import_name = name + "_import"
++    copts = kwargs.pop("copts", [])
+     for impl_name in [dll_name, dylib_name, so_name]:
+         cc_binary(
+             name = impl_name,
+@@ -38,6 +40,7 @@ def cc_plugin_library(name, srcs, hdrs, include_prefix = None, strip_include_pre
+             features = features,
+             tags = ["manual"] + tags,
+             testonly = testonly,
++            copts = copts + llvm_stdcxx_copts,
+             **kwargs
+         )
+     native.filegroup(
+diff --git a/utils/bazel/llvm-project-overlay/llvm/config.bzl b/utils/bazel/llvm-project-overlay/llvm/config.bzl
+index 2046b2645362..736844bfc2d0 100644
+--- a/utils/bazel/llvm-project-overlay/llvm/config.bzl
++++ b/utils/bazel/llvm-project-overlay/llvm/config.bzl
+@@ -97,3 +97,8 @@ llvm_config_defines = os_defines + select({
+     "__STDC_CONSTANT_MACROS",
+     "__STDC_FORMAT_MACROS",
+ ]
++
++llvm_stdcxx_copts = select({
++    "@platforms//os:windows": ["/std:c++17"],
++    "//conditions:default": ["-std=c++17"],
++})
+diff --git a/utils/bazel/llvm-project-overlay/llvm/tblgen.bzl b/utils/bazel/llvm-project-overlay/llvm/tblgen.bzl
+index d43390918e39..e0482a6fd4fa 100644
+--- a/utils/bazel/llvm-project-overlay/llvm/tblgen.bzl
++++ b/utils/bazel/llvm-project-overlay/llvm/tblgen.bzl
+@@ -12,6 +12,8 @@ TODO(chandlerc): Currently this expresses include-based dependencies as
+ correctly understood by the build system.
+ """
+ 
++load(":config.bzl", "llvm_stdcxx_copts")
++
+ def gentbl(
+         name,
+         tblgen,
+@@ -77,5 +79,6 @@ def gentbl(
+             # distinction between these two.
+             hdrs = [f for (_, f) in tbl_outs],
+             features = ["-parse_headers", "-header_modules"],
++            copts = llvm_stdcxx_copts,
+             **kwargs
+         )
