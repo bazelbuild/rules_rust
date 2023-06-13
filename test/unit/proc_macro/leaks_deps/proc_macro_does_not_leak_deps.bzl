@@ -3,6 +3,9 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
 
+def _get_toolchain(ctx):
+    return ctx.attr._toolchain[platform_common.ToolchainInfo]
+
 def _proc_macro_does_not_leak_deps_impl(ctx):
     env = analysistest.begin(ctx)
     actions = analysistest.target_under_test(env).actions
@@ -11,6 +14,7 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
         if action.mnemonic == "Rustc":
             rustc_action = action
             break
+    toolchain = _get_toolchain(ctx)
 
     asserts.false(env, rustc_action == None)
 
@@ -25,7 +29,13 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     # Our test target depends on proc_macro_dep:native directly, as well as transitively through the
     # proc_macro. The proc_macro should not leak its dependency, so we should only get the "native"
     # library once on the command line.
-    native_deps = [arg for arg in rustc_action.argv if arg.startswith("-Clink-arg=-lnative")]
+    if toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=native.lib"]
+        else:
+            native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative.lib"]
+    else:
+        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative"]
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)
@@ -66,7 +76,9 @@ def _proc_macro_does_not_leak_deps_test():
         target_under_test = ":deps_not_leaked",
     )
 
-proc_macro_does_not_leak_deps_test = analysistest.make(_proc_macro_does_not_leak_deps_impl)
+proc_macro_does_not_leak_deps_test = analysistest.make(_proc_macro_does_not_leak_deps_impl, attrs = {
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+})
 
 # Tests that a lib_a -> proc_macro -> lib_b does not propagate lib_b to the inputs of lib_a
 def _proc_macro_does_not_leak_lib_deps_impl(ctx):

@@ -58,7 +58,7 @@ impl ServerInfo {
                 }
             }
         }
-        println!("Started server on port {}", port);
+        println!("Started server on port {port}");
         ServerInfo { process: c, port }
     }
 

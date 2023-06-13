@@ -1,6 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "REPIN_ENV_VARS", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -11,6 +11,8 @@ GENERATOR_ENV_VARS = [
 ]
 
 CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
+    REPIN_ALLOWLIST_ENV_VAR,
+] + [
     CARGO_BAZEL_ISOLATED,
 ]
 
@@ -207,7 +209,15 @@ def _get_render_config(repository_ctx):
 
     return config
 
-def compile_config(crate_annotations, generate_build_scripts, cargo_config, render_config, supported_platform_triples, repository_name, repository_ctx = None):
+def compile_config(
+        crate_annotations,
+        generate_binaries,
+        generate_build_scripts,
+        cargo_config,
+        render_config,
+        supported_platform_triples,
+        repository_name,
+        repository_ctx = None):
     """Create a config file for generating crate targets
 
     [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
@@ -215,6 +225,7 @@ def compile_config(crate_annotations, generate_build_scripts, cargo_config, rend
     Args:
         crate_annotations (dict): Extra settings to apply to crates. See
             `crates_repository.annotations` or `crates_vendor.annotations`.
+        generate_binaries (bool): Whether to generate `rust_binary` targets for all bins.
         generate_build_scripts (bool): Whether or not to globally disable build scripts.
         cargo_config (str): The optional contents of a [Cargo config][cargo_config].
         render_config (dict): The deserialized dict of the `render_config` function.
@@ -246,6 +257,7 @@ def compile_config(crate_annotations, generate_build_scripts, cargo_config, rend
         fail("The following annotations use `additive_build_file` which is not supported for {}: {}".format(repository_name, unexpected))
 
     config = struct(
+        generate_binaries = generate_binaries,
         generate_build_scripts = generate_build_scripts,
         annotations = annotations,
         cargo_config = cargo_config,
@@ -270,6 +282,7 @@ def generate_config(repository_ctx):
 
     config = compile_config(
         crate_annotations = repository_ctx.attr.annotations,
+        generate_binaries = repository_ctx.attr.generate_binaries,
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,
         cargo_config = _read_cargo_config(repository_ctx),
         render_config = _get_render_config(repository_ctx),
@@ -319,7 +332,13 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # If a repin environment variable is set, always repin
     for var in REPIN_ENV_VARS:
         if var in repository_ctx.os.environ and repository_ctx.os.environ[var].lower() not in ["false", "no", "0", "off"]:
-            return True
+            # If a repin allowlist is present only force repin if name is in list
+            if REPIN_ALLOWLIST_ENV_VAR in repository_ctx.os.environ:
+                indices_to_repin = repository_ctx.os.environ[REPIN_ALLOWLIST_ENV_VAR].split(",")
+                if repository_ctx.name in indices_to_repin:
+                    return True
+            else:
+                return True
 
     # If a deterministic lockfile was not added then always repin
     if not lockfile_path:
@@ -360,13 +379,14 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # flag indicating repinning was requested, an error is raised
     # since repinning should be an explicit action
     if result.stdout.strip().lower() == "repin":
-        # buildifier: disable=print
-        print(result.stderr)
-        fail((
-            "The current `lockfile` is out of date for '{}'. Please re-run " +
-            "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
-            "and the lockfile should be updated."
-        ).format(repository_ctx.name))
+        fail(("\n".join([
+            result.stderr,
+            (
+                "The current `lockfile` is out of date for '{}'. Please re-run " +
+                "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
+                "and the lockfile should be updated."
+            ).format(repository_ctx.name),
+        ])))
 
     return False
 

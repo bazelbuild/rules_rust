@@ -246,6 +246,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             rustc_env = {},
             is_test = False,
             compile_data = depset([target.files for target in getattr(ctx.attr, "compile_data", [])]),
+            compile_data_targets = depset(getattr(ctx.attr, "compile_data", [])),
             wrapped_crate_type = None,
             owner = ctx.label,
         ),
@@ -308,6 +309,16 @@ rust_proto_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
+        ),
+        "rustc_flags": attr.string_list(
+            doc = """\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and 
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -386,6 +397,16 @@ rust_grpc_library = rule(
         ),
         "rust_deps": attr.label_list(
             doc = "The crates the generated library depends on.",
+        ),
+        "rustc_flags": attr.string_list(
+            doc = """\
+                List of compiler flags passed to `rustc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and 
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """,
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",

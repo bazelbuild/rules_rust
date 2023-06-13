@@ -1,6 +1,8 @@
-///! Gathering dependencies is the largest part of annotating.
+//! Gathering dependencies is the largest part of annotating.
+
 use anyhow::{bail, Result};
 use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
+use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::sanitize_module_name;
@@ -44,8 +46,8 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(dev, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, dev, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
@@ -60,11 +62,13 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(dev, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, dev, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
+        // For rules on build script dependencies see:
+        //  https://doc.rust-lang.org/cargo/reference/build-scripts.html#build-dependencies
         let (build_proc_macro_deps, mut build_deps) = {
             let (proc_macro, normal) = node
                 .deps
@@ -76,8 +80,8 @@ impl DependencySet {
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
 
             (
-                collect_deps_selectable(proc_macro, metadata),
-                collect_deps_selectable(normal, metadata),
+                collect_deps_selectable(node, proc_macro, metadata),
+                collect_deps_selectable(node, normal, metadata),
             )
         };
 
@@ -87,6 +91,7 @@ impl DependencySet {
         // on a `*-sys` crate for itself, so would it's build script. Hopefully this is correct.
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
+        // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
         let sys_name = format!("{}-sys", &metadata[&node.id].name);
         normal_deps.configurations().into_iter().for_each(|config| {
             normal_deps
@@ -113,7 +118,39 @@ impl DependencySet {
     }
 }
 
+/// For details on optional dependencies see [the Rust docs](https://doc.rust-lang.org/cargo/reference/features.html#optional-dependencies).
+fn is_optional_crate_enabled(
+    parent: &Node,
+    dep: &NodeDep,
+    target: Option<&Platform>,
+    metadata: &CargoMetadata,
+) -> bool {
+    let pkg = &metadata[&parent.id];
+
+    let mut enabled_deps = pkg
+        .features
+        .iter()
+        .filter(|(pkg_feature, _)| parent.features.contains(pkg_feature))
+        .flat_map(|(_, features)| features)
+        .filter_map(|f| f.strip_prefix("dep:"));
+
+    // if the crate is marked as optional dependency, we check whether
+    // a feature prefixed with dep: is enabled
+    if let Some(toml_dep) = pkg
+        .dependencies
+        .iter()
+        .filter(|&d| d.target.as_ref() == target)
+        .filter(|&d| d.optional)
+        .find(|&d| sanitize_module_name(&d.name) == dep.name)
+    {
+        enabled_deps.any(|d| d == toml_dep.name.as_str())
+    } else {
+        true
+    }
+}
+
 fn collect_deps_selectable(
+    node: &Node,
     deps: Vec<&NodeDep>,
     metadata: &cargo_metadata::Metadata,
 ) -> SelectList<Dependency> {
@@ -126,17 +163,19 @@ fn collect_deps_selectable(
         let alias = get_target_alias(&dep.name, dep_pkg);
 
         for kind_info in &dep.dep_kinds {
-            selectable.insert(
-                Dependency {
-                    package_id: dep.pkg.clone(),
-                    target_name: target_name.clone(),
-                    alias: alias.clone(),
-                },
-                kind_info
-                    .target
-                    .as_ref()
-                    .map(|platform| platform.to_string()),
-            );
+            if is_optional_crate_enabled(node, dep, kind_info.target.as_ref(), metadata) {
+                selectable.insert(
+                    Dependency {
+                        package_id: dep.pkg.clone(),
+                        target_name: target_name.clone(),
+                        alias: alias.clone(),
+                    },
+                    kind_info
+                        .target
+                        .as_ref()
+                        .map(|platform| platform.to_string()),
+                );
+            }
         }
     }
 
@@ -227,7 +266,7 @@ fn get_library_target_name(package: &Package, potential_name: &str) -> Result<St
 /// for targets where packages (packages[#].targets[#].name) uses crate names. In order to
 /// determine whether or not a dependency is aliased, we compare it with all available targets
 /// on it's package. Note that target names are not guaranteed to be module names where Node
-/// dependnecies are, so we need to do a conversion to check for this
+/// dependencies are, so we need to do a conversion to check for this
 fn get_target_alias(target_name: &str, package: &Package) -> Option<String> {
     match package
         .targets
@@ -406,6 +445,69 @@ mod test {
     }
 
     #[test]
+    fn sys_crate_with_build_script() {
+        let metadata = metadata::build_scripts();
+
+        let libssh2 = find_metadata_node("libssh2-sys", &metadata);
+        let libssh2_depset = DependencySet::new_for_node(libssh2, &metadata);
+
+        // Collect build dependencies into a set
+        let build_deps: BTreeSet<String> = libssh2_depset
+            .build_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                libssh2_depset
+                    .build_deps
+                    .get_iter(conf)
+                    .unwrap()
+                    .map(|dep| dep.package_id.repr.clone())
+                    .collect::<Vec<String>>()
+            })
+            .collect();
+
+        assert_eq!(
+            BTreeSet::from([
+                "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                    .to_owned(),
+                "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)".to_owned()
+            ]),
+            build_deps,
+        );
+
+        // Collect normal dependencies into a set
+        let normal_deps: BTreeSet<String> = libssh2_depset
+            .normal_deps
+            .configurations()
+            .into_iter()
+            .flat_map(|conf| {
+                libssh2_depset
+                    .normal_deps
+                    .get_iter(conf)
+                    .unwrap()
+                    .map(|dep| dep.package_id.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .collect();
+
+        assert_eq!(
+            BTreeSet::from([
+                "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
+                "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                    .to_owned(),
+            ]),
+            normal_deps,
+        );
+
+        assert!(libssh2_depset.proc_macro_deps.is_empty());
+        assert!(libssh2_depset.normal_dev_deps.is_empty());
+        assert!(libssh2_depset.proc_macro_dev_deps.is_empty());
+        assert!(libssh2_depset.build_proc_macro_deps.is_empty());
+    }
+
+    #[test]
     fn tracked_aliases() {
         let metadata = metadata::alias();
 
@@ -465,7 +567,7 @@ mod test {
         let node = find_metadata_node("cpufeatures", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let libc_cfgs: Vec<Option<String>> = dependencies
+        let libc_cfgs: BTreeSet<String> = dependencies
             .normal_deps
             .configurations()
             .into_iter()
@@ -477,17 +579,73 @@ mod test {
                     .filter(|dep| dep.target_name == "libc")
                     .map(move |_| conf.cloned())
             })
+            .flatten()
             .collect();
 
-        assert_eq!(libc_cfgs.len(), 2);
-
-        let cfg_strs: BTreeSet<String> = libc_cfgs.into_iter().flatten().collect();
         assert_eq!(
-            cfg_strs,
             BTreeSet::from([
-                "aarch64-apple-darwin".to_owned(),
+                "aarch64-linux-android".to_owned(),
                 "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))".to_owned(),
-            ])
+                "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))".to_owned(),
+            ]),
+            libc_cfgs,
         );
+    }
+
+    #[test]
+    fn optional_deps_disabled() {
+        let metadata = metadata::optional_deps_disabled();
+
+        let node = find_metadata_node("clap", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert!(!dependencies
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
+    }
+
+    #[test]
+    fn optional_deps_enabled() {
+        let metadata = metadata::optional_deps_enabled();
+
+        let clap = find_metadata_node("clap", &metadata);
+        let clap_depset = DependencySet::new_for_node(clap, &metadata);
+        assert_eq!(
+            clap_depset
+                .normal_deps
+                .get_iter(None)
+                .expect("Iterating over known keys should never panic")
+                .filter(|dep| {
+                    dep.target_name == "is-terminal" || dep.target_name == "termcolor"
+                })
+                .count(),
+            2
+        );
+
+        let notify = find_metadata_node("notify", &metadata);
+        let notify_depset = DependencySet::new_for_node(notify, &metadata);
+
+        // mio is not present in the common list of dependencies
+        assert!(!notify_depset
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "mio" }));
+
+        // mio is a dependency on linux
+        assert!(notify_depset
+            .normal_deps
+            .get_iter(Some(&"cfg(target_os = \"linux\")".to_string()))
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "mio" }));
+
+        // mio is marked optional=true on macos
+        assert!(!notify_depset
+            .normal_deps
+            .get_iter(Some(&"cfg(target_os = \"macos\")".to_string()))
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "mio" }));
     }
 }

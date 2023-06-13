@@ -3,6 +3,7 @@ mod tests {
     use std::env;
     use std::path::PathBuf;
 
+    #[allow(clippy::uninlined_format_args)]
     #[test]
     fn test_aspect_traverses_all_the_right_corners_of_target_graph() {
         let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());

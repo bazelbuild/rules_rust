@@ -29,12 +29,9 @@ crates_vendor(
             features = ["all"],
             version = "0.4.7",
         ),
-        # TODO: This is pinned due to a build failure introduced by 1.17
-        # bringing in windows-sys and introduces linker errors.
-        # https://github.com/abrisco/cargo-bazel/issues/173
         "tokio": crate.spec(
             features = ["full"],
-            version = "=1.16.1",
+            version = "1.27.0",
         ),
         "tower": crate.spec(
             features = ["util"],

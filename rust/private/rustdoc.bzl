@@ -43,6 +43,7 @@ def _strip_crate_info_output(crate_info):
         rustc_env_files = crate_info.rustc_env_files,
         is_test = crate_info.is_test,
         compile_data = crate_info.compile_data,
+        compile_data_targets = crate_info.compile_data_targets,
     )
 
 def rustdoc_compile_action(
@@ -131,6 +132,8 @@ def rustdoc_compile_action(
     if is_test:
         if "SYSROOT" in env:
             env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
+        if "OUT_DIR" in env:
+            env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
 
         # `rustdoc` does not support the SYSROOT environment variable. To account
         # for this, the flag must be explicitly passed to the `rustdoc` binary.
@@ -175,6 +178,12 @@ def _rust_doc_impl(ctx):
         ctx (ctx): The rule's context object
     """
 
+    if ctx.attr.rustc_flags:
+        # buildifier: disable=print
+        print("rustc_flags is deprecated in favor of `rustdoc_flags` for rustdoc targets. Please update {}".format(
+            ctx.label,
+        ))
+
     crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
 
@@ -185,6 +194,8 @@ def _rust_doc_impl(ctx):
         "--extern",
         "{}={}".format(crate_info.name, crate_info.output.path),
     ]
+
+    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,
@@ -210,7 +221,7 @@ def _rust_doc_impl(ctx):
 
     return [
         DefaultInfo(
-            files = depset([ctx.outputs.rust_doc_zip]),
+            files = depset([output_dir]),
         ),
         OutputGroupInfo(
             rustdoc_dir = depset([output_dir]),
@@ -287,8 +298,11 @@ rust_doc = rule(
             allow_files = [".css"],
         ),
         "rustc_flags": attr.string_list(
+            doc = "**Deprecated**: use `rustdoc_flags` instead",
+        ),
+        "rustdoc_flags": attr.string_list(
             doc = dedent("""\
-                List of compiler flags passed to `rustc`.
+                List of flags passed to `rustdoc`.
 
                 These strings are subject to Make variable expansion for predefined
                 source/output path variables like `$location`, `$execpath`, and

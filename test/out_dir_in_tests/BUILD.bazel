@@ -1,5 +1,5 @@
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+load("//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test", "rust_test_suite")
 
 cargo_build_script(
     name = "build_script",
@@ -20,6 +20,11 @@ rust_test(
     name = "demo_lib_test",
     crate = ":demo_lib",
     edition = "2018",
+)
+
+rust_doc_test(
+    name = "demo_lib_doc_test",
+    crate = ":demo_lib",
 )
 
 rust_test_suite(

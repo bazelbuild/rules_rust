@@ -79,7 +79,7 @@ a unique toolchain can be created as in the example below:
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
-    bindgen = "//my/cargo_raze:cargo_bin_wasm_bindgen",
+    bindgen = "//3rdparty/crates:wasm_bindgen_cli__bin",
 )
 
 toolchain(

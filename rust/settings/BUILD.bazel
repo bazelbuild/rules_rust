@@ -44,6 +44,14 @@ bool_flag(
     build_setting_default = False,
 )
 
+# A flag to indicate that a global allocator is in use when using --@rules_rust//rust/settings:experimental_use_cc_common_link
+# Users need to specify this flag because rustc generates different set of symbols at link time when a global allocator is in use.
+# When the linking is not done by rustc, the `rust_toolchain` itself provides the appropriate set of symbols.
+bool_flag(
+    name = "experimental_use_global_allocator",
+    build_setting_default = False,
+)
+
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),

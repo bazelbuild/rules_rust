@@ -1,89 +1,29 @@
 //! A template engine backed by [Tera] for rendering Files.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::HashMap;
 
 use anyhow::{Context as AnyhowContext, Result};
-use serde::{Deserialize, Serialize};
 use serde_json::{from_value, to_value, Value};
 use tera::{self, Tera};
 
-use crate::config::{CrateId, RenderConfig};
-use crate::context::crate_context::CrateDependency;
+use crate::config::RenderConfig;
 use crate::context::Context;
 use crate::rendering::{
     render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
-    render_module_label, render_platform_constraint_label,
+    render_module_label,
 };
-use crate::utils::sanitize_module_name;
 use crate::utils::sanitize_repository_name;
-use crate::utils::starlark::{SelectList, SelectStringDict, SelectStringList};
+use crate::utils::starlark::SelectStringList;
 
 pub struct TemplateEngine {
     engine: Tera,
     context: tera::Context,
 }
 
-const COMMON_GLOB_EXCLUDES: &[&str] = &[
-    "**/* *",
-    "BUILD.bazel",
-    "BUILD",
-    "WORKSPACE.bazel",
-    "WORKSPACE",
-];
-
 impl TemplateEngine {
     pub fn new(render_config: &RenderConfig) -> Self {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
-            (
-                "partials/crate/aliases.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/aliases.j2"
-                )),
-            ),
-            (
-                "partials/crate/binary.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/binary.j2"
-                )),
-            ),
-            (
-                "partials/crate/build_script.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/build_script.j2"
-                )),
-            ),
-            (
-                "partials/crate/common_attrs.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/common_attrs.j2"
-                )),
-            ),
-            (
-                "partials/crate/deps.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/deps.j2"
-                )),
-            ),
-            (
-                "partials/crate/library.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/library.j2"
-                )),
-            ),
-            (
-                "partials/crate/proc_macro.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/crate/proc_macro.j2"
-                )),
-            ),
             (
                 "partials/module/aliases_map.j2",
                 include_str!(concat!(
@@ -113,45 +53,10 @@ impl TemplateEngine {
                 )),
             ),
             (
-                "partials/starlark/glob.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/starlark/glob.j2"
-                )),
-            ),
-            (
-                "partials/starlark/selectable_dict.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/starlark/selectable_dict.j2"
-                )),
-            ),
-            (
-                "partials/starlark/selectable_list.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/partials/starlark/selectable_list.j2"
-                )),
-            ),
-            (
                 "partials/header.j2",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/src/rendering/templates/partials/header.j2"
-                )),
-            ),
-            (
-                "crate_build_file.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/crate_build_file.j2"
-                )),
-            ),
-            (
-                "module_build_file.j2",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/module_build_file.j2"
                 )),
             ),
             (
@@ -190,27 +95,16 @@ impl TemplateEngine {
             ),
         );
         tera.register_function(
-            "platform_label",
-            platform_label_fn_generator(render_config.platforms_template.clone()),
-        );
-        tera.register_function("sanitize_module_name", sanitize_module_name_fn);
-        tera.register_function(
             "crates_module_label",
             module_label_fn_generator(render_config.crates_module_template.clone()),
-        );
-        tera.register_filter(
-            "remap_deps_configurations",
-            remap_select_list_configurations::<CrateDependency>,
         );
 
         let mut context = tera::Context::new();
         context.insert("default_select_list", &SelectStringList::default());
-        context.insert("default_select_dict", &SelectStringDict::default());
         context.insert("repository_name", &render_config.repository_name);
         context.insert("vendor_mode", &render_config.vendor_mode);
         context.insert("regen_command", &render_config.regen_command);
         context.insert("Null", &tera::Value::Null);
-        context.insert("common_glob_excludes", &COMMON_GLOB_EXCLUDES);
         context.insert(
             "default_package_name",
             &match render_config.default_package_name.as_ref() {
@@ -229,48 +123,14 @@ impl TemplateEngine {
         self.context.clone()
     }
 
-    pub fn render_crate_build_files<'a>(
-        &self,
-        ctx: &'a Context,
-    ) -> Result<HashMap<&'a CrateId, String>> {
-        // Create the render context with the global planned context to be
-        // reused when rendering crates.
-        let mut context = self.new_tera_ctx();
-        context.insert("context", ctx);
-
-        ctx.crates
-            .keys()
-            .map(|id| {
-                let aliases = ctx.crate_aliases(id, false, false);
-                let build_aliases = ctx.crate_aliases(id, true, false);
-
-                context.insert("crate_id", &id);
-                context.insert("common_aliases", &aliases);
-                context.insert("build_aliases", &build_aliases);
-
-                let content = self
-                    .engine
-                    .render("crate_build_file.j2", &context)
-                    .context("Failed to render BUILD file")?;
-
-                Ok((id, content))
-            })
-            .collect()
-    }
-
-    pub fn render_module_build_file(&self, data: &Context) -> Result<String> {
-        let mut context = self.new_tera_ctx();
-        context.insert("context", data);
-
-        let workspace_member_deps = data.flat_workspace_member_deps();
-        context.insert("workspace_member_dependencies", &workspace_member_deps);
-
-        let binary_crates_map = data.flat_binary_deps();
-        context.insert("binary_crates_map", &binary_crates_map);
-
-        self.engine
-            .render("module_build_file.j2", &context)
-            .context("Failed to render crates module")
+    pub fn render_header(&self) -> Result<String> {
+        let context = self.new_tera_ctx();
+        let mut header = self
+            .engine
+            .render("partials/header.j2", &context)
+            .context("Failed to render header comment")?;
+        header.push('\n');
+        Ok(header)
     }
 
     pub fn render_module_bzl(&self, data: &Context) -> Result<String> {
@@ -313,29 +173,6 @@ macro_rules! parse_tera_param {
             }
         }
     };
-}
-
-/// Convert a crate name into a module name by applying transforms to invalid characters.
-fn sanitize_module_name_fn(args: &HashMap<String, Value>) -> tera::Result<Value> {
-    let crate_name = parse_tera_param!("crate_name", String, args);
-
-    match to_value(sanitize_module_name(&crate_name)) {
-        Ok(v) => Ok(v),
-        Err(_) => Err(tera::Error::msg("Failed to generate resulting module name")),
-    }
-}
-
-/// Convert a crate name into a module name by applying transforms to invalid characters.
-fn platform_label_fn_generator(template: String) -> impl tera::Function {
-    Box::new(
-        move |args: &HashMap<String, Value>| -> tera::Result<Value> {
-            let triple = parse_tera_param!("triple", String, args);
-            match to_value(render_platform_constraint_label(&template, &triple)) {
-                Ok(v) => Ok(v),
-                Err(_) => Err(tera::Error::msg("Failed to generate resulting module name")),
-            }
-        },
-    )
 }
 
 /// Convert a crate name into a module name by applying transforms to invalid characters.
@@ -412,21 +249,4 @@ fn crate_repository_fn_generator(template: String, repository_name: String) -> i
             }
         },
     )
-}
-
-/// Tera filter which re-keys a [`SelectList`]. See [`SelectList::remap_configurations`]
-/// for more details. The mapping must be provided as a Tera argument named `mapping`.
-fn remap_select_list_configurations<T: Ord + Clone + for<'a> Deserialize<'a> + Serialize>(
-    input: &Value,
-    args: &HashMap<String, Value>,
-) -> tera::Result<Value> {
-    let mapping = parse_tera_param!("mapping", BTreeMap<String, BTreeSet<String>>, args);
-
-    match from_value::<SelectList<T>>(input.clone()) {
-        Ok(v) => match to_value(v.remap_configurations(&mapping)) {
-            Ok(v) => Ok(v),
-            Err(_) => Err(tera::Error::msg("Failed to remap conditions.")),
-        },
-        Err(_) => Err(tera::Error::msg("The filter input could not be parsed.")),
-    }
 }

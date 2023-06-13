@@ -74,6 +74,7 @@ EOF
             owner = ctx.label,
             edition = "2018",
             compile_data = depset([]),
+            compile_data_targets = depset([]),
             rustc_env = {},
             is_test = False,
         ),

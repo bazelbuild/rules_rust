@@ -61,6 +61,7 @@ def _crates_repository_impl(repository_ctx):
             generator = generator,
             cargo_lockfile = lockfiles.cargo,
             splicing_manifest = splicing_manifest,
+            config_path = config_path,
             cargo = cargo_path,
             rustc = rustc_path,
         )
@@ -115,7 +116,8 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#crates_repository_repinning_updating_dependencies) for more details. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
+| `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 
 Example:
 
@@ -159,8 +161,6 @@ Rust targets found in the dependency graph defined by the given manifests.
 it on its own. When initially setting up this rule, an empty file should be created and then
 populated by repinning dependencies.
 
-<a id="#crates_repository_repinning_updating_dependencies"></a>
-
 ### Repinning / Updating Dependencies
 
 Dependency syncing and updating is done in the repository rule which means it's done during the
@@ -180,10 +180,19 @@ that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
+
+If the `crates_repository` is used multiple times in the same Bazel workspace (e.g. for multiple independent
+Rust workspaces), it may additionally be useful to use the `CARGO_BAZEL_REPIN_ONLY` environment variable, which
+limits execution of the repinning to one or multiple instances of the `crates_repository` rule via a comma-delimited
+allowlist:
+
+```shell
+CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index
+```
 
 """,
     implementation = _crates_repository_impl,
@@ -203,6 +212,13 @@ that is called behind the scenes to update dependencies.
                 "should be used here, which will keep the versions used by cargo and bazel in sync."
             ),
             mandatory = True,
+        ),
+        "generate_binaries": attr.bool(
+            doc = (
+                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+                "By default only the `rust_library` targets are generated."
+            ),
+            default = False,
         ),
         "generate_build_scripts": attr.bool(
             doc = (

@@ -19,6 +19,7 @@ CrateInfo = provider(
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "compile_data": "depset[File]: Compile data required by this crate.",
+        "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
@@ -93,6 +94,7 @@ StdLibInfo = provider(
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "memchr_files": "Depset[File]: `.a` files associated with the `memchr` module.",
+        "panic_files": "Depset[File]: `.a` files associated with `panic_unwind` and `panic_abort`.",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",

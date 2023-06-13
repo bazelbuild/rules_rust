@@ -20,6 +20,7 @@ bzl_library(
     deps = [
         "//rust:bzl_lib",
         "//wasm_bindgen/3rdparty:bzl_lib",
+        "//wasm_bindgen/private:bzl_lib",
     ],
 )
 

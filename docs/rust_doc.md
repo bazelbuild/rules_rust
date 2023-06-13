@@ -10,7 +10,7 @@
 
 <pre>
 rust_doc(<a href="#rust_doc-name">name</a>, <a href="#rust_doc-crate">crate</a>, <a href="#rust_doc-html_after_content">html_after_content</a>, <a href="#rust_doc-html_before_content">html_before_content</a>, <a href="#rust_doc-html_in_header">html_in_header</a>, <a href="#rust_doc-markdown_css">markdown_css</a>,
-         <a href="#rust_doc-rustc_flags">rustc_flags</a>)
+         <a href="#rust_doc-rustc_flags">rustc_flags</a>, <a href="#rust_doc-rustdoc_flags">rustdoc_flags</a>)
 </pre>
 
 Generates code documentation.
@@ -61,7 +61,8 @@ Running `bazel build //hello_lib:hello_lib_doc` will build a zip file containing
 | <a id="rust_doc-html_before_content"></a>html_before_content |  File to add in <code>&lt;body&gt;</code>, before content.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="rust_doc-html_in_header"></a>html_in_header |  File to add to <code>&lt;head&gt;</code>.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="rust_doc-markdown_css"></a>markdown_css |  CSS files to include via <code>&lt;link&gt;</code> in a rendered Markdown file.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
-| <a id="rust_doc-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
+| <a id="rust_doc-rustc_flags"></a>rustc_flags |  **Deprecated**: use <code>rustdoc_flags</code> instead   | List of strings | optional | <code>[]</code> |
+| <a id="rust_doc-rustdoc_flags"></a>rustdoc_flags |  List of flags passed to <code>rustdoc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
 
 
 <a id="rust_doc_test"></a>

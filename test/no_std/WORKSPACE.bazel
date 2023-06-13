@@ -1,0 +1,54 @@
+workspace(name = "test_no_std")
+
+local_repository(
+    name = "rules_rust",
+    path = "../../",
+)
+
+local_repository(
+    name = "test_cc_common_link",
+    path = "../cc_common_link/",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    allocator_library = "@test_cc_common_link//:allocator_library",
+    edition = "2021",
+    global_allocator_library = "@test_cc_common_link//:global_allocator_library",
+    versions = [
+        "nightly/2023-04-20",
+        "1.68.0",
+    ],
+)
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
+
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
+
+crates_repository(
+    name = "no_std_crate_index",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//:cargo-bazel-lock.json",
+    packages = {
+        "libc_alloc": crate.spec(
+            version = "1.0.3",
+        ),
+    },
+    # Should match the version represented by the currently registered `rust_toolchain`.
+    rust_version = "nightly/2023-04-20",
+)
+
+load(
+    "@no_std_crate_index//:defs.bzl",
+    no_std_repositories = "crate_repositories",
+)
+
+no_std_repositories()

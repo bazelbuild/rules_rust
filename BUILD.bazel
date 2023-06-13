@@ -1,5 +1,19 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "capture_clippy_output", "clippy_flags", "error_format", "extra_exec_rustc_flag", "extra_exec_rustc_flags", "extra_rustc_flag", "extra_rustc_flags", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load(
+    "//rust:defs.bzl",
+    "capture_clippy_output",
+    "clippy_flags",
+    "error_format",
+    "extra_exec_rustc_flag",
+    "extra_exec_rustc_flags",
+    "extra_rustc_flag",
+    "extra_rustc_flags",
+    "is_proc_macro_dep",
+    "is_proc_macro_dep_enabled",
+    "no_std",
+    "per_crate_rustc_flag",
+)
 
 exports_files(["LICENSE"])
 
@@ -76,6 +90,12 @@ extra_exec_rustc_flag(
     visibility = ["//visibility:public"],
 )
 
+per_crate_rustc_flag(
+    name = "experimental_per_crate_rustc_flag",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
 # This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html
 label_flag(
     name = "clippy.toml",
@@ -99,5 +119,32 @@ alias(
 capture_clippy_output(
     name = "capture_clippy_output",
     build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to enable builds without the standard library.
+# Currently only no_std + alloc is supported, which can be enabled with setting the value to "alloc".
+# In the future we could add support for additional modes, e.g "core", "alloc,collections".
+string_flag(
+    name = "no_std",
+    build_setting_default = "off",
+    values = [
+        "alloc",
+        "off",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# A hack target to allow as to only apply the no_std mode in target config.
+no_std(
+    name = "build_target_in_no_std",
+)
+
+# A config setting for setting conditional `cargo_features`, `deps`, based on the `:no_std` value.
+config_setting(
+    name = "is_no_std",
+    flag_values = {
+        ":build_target_in_no_std": "alloc",
+    },
     visibility = ["//visibility:public"],
 )

@@ -4,12 +4,19 @@ aspects_flags: &aspects_flags
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
   - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.59.0"],\n|' WORKSPACE.bazel
+nightly_flags: &nightly_flags
+  - "--//rust/toolchain/channel=nightly"
+nightly_aspects_flags: &nightly_aspects_flags
+  - "--//rust/toolchain/channel=nightly"
+  - "--config=rustfmt"
+  - "--config=clippy"
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
 default_linux_targets: &default_linux_targets
+  - "--"
   - "//..."
 default_macos_targets: &default_macos_targets
   - "--"
@@ -17,18 +24,17 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//bindgen/..."
   - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
-  - "//vendor_remote_manifests:crates_vendor_manifests"
-  - "//vendor_remote_pkgs:crates_vendor_pkgs"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -39,6 +45,7 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets:
+      - "--"
       - "//..."
     test_targets:
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -52,10 +59,6 @@ tasks:
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
   windows:
-    build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   ubuntu2004_opt:
@@ -80,10 +83,8 @@ tasks:
     name: Opt Mode
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--compilation_mode=opt"
     test_flags:
-      - "--enable_runfiles"
       - "--compilation_mode=opt"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
@@ -143,22 +144,16 @@ tasks:
     name: With Aspects
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
     soft_fail: yes
@@ -219,9 +214,48 @@ tasks:
     name: "Min Rust Version With Aspects"
     platform: ubuntu2004
     shell_commands: *min_rust_version_shell_commands
+    build_flags: *aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_stable_toolchain:
+    name: "Only Stable Toolchain"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
     build_targets: *single_rust_channel_targets
     test_targets: *single_rust_channel_targets
+  ubuntu2004_stable_with_aspects:
+    name: "Only Stable Toolchain With Aspects"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
     build_flags: *aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_nightly_toolchain:
+    name: "Only Nightly Toolchain"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+    build_flags: *nightly_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2004_nightly_with_aspects:
+    name: "Only Nightly Toolchain With Aspects"
+    platform: ubuntu2004
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+    build_flags: *nightly_aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_aspects_flags
+    test_targets: *single_rust_channel_targets
   ubuntu2004_rolling_with_aspects:
     name: "Rolling Bazel Version With Aspects"
     bazel: "rolling"
@@ -247,7 +281,7 @@ tasks:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
     run_targets:
-      - "//test/rustfmt:test_runner"
+      - "//test/rustfmt:rustfmt_integration_test_suite.test_runner"
   rust_analyzer_tests:
     name: Rust-Analyzer Tests
     platform: ubuntu2004
@@ -297,6 +331,12 @@ tasks:
       - "//..."
     build_flags: *aspects_flags
     soft_fail: yes
+  ubuntu2004_examples_bzlmod:
+    name: Bzlmod Examples
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/hello_world
+    build_targets:
+      - "//..."
   rbe_ubuntu1604_examples:
     name: Examples
     platform: rbe_ubuntu1604
@@ -308,9 +348,6 @@ tasks:
       - "-//sys/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
-      # The bindgen rules currently do not work on RBE
-      # see: https://github.com/bazelbuild/rules_rust/issues/919
-      - "-//bindgen/..."
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -332,17 +369,11 @@ tasks:
     platform: windows
     working_directory: examples
     build_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
       - "--config=rustfmt"
       - "--config=clippy"
-    test_flags:
-      - "--enable_runfiles"
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # The bindgen rules currently do not work on windows
-      # see: https://github.com/bazelbuild/rules_rust/issues/919
-      - "-//bindgen/..."
       # The proto rules do not work on windows
       - "-//proto/..."
       # The wasm rules do not work on windows
@@ -419,9 +450,6 @@ tasks:
     name: Crate Universe Examples
     platform: windows
     working_directory: examples/crate_universe
-    batch_commands:
-      - echo startup --windows_enable_symlinks >> user.bazelrc
-      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets: *crate_universe_vendor_example_targets
     build_flags: *aspects_flags
     build_targets:
@@ -432,9 +460,6 @@ tasks:
     name: Crate Universe Unnamed Examples
     platform: windows
     working_directory: examples/crate_universe_unnamed
-    batch_commands:
-      - echo startup --windows_enable_symlinks >> user.bazelrc
-      - echo build --enable_runfiles >> user.bazelrc  # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets: *crate_universe_unnamed_vendor_example_targets
     build_flags: *aspects_flags
     build_targets:
@@ -446,11 +471,65 @@ tasks:
     platform: ubuntu2004
     working_directory: test/cc_common_link
     build_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    test_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    build_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+  cc_common_link_with_global_alloc_ubuntu2004:
+    name: Build via cc_common.link using a global allocator
+    platform: ubuntu2004
+    working_directory: test/cc_common_link/with_global_alloc
+    build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_no_std_ubuntu2004:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+  no_std_ubuntu2004:
+    name: Build with no_std + alloc
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
@@ -478,12 +557,13 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  zig_cross_compiling:
-    name: Zig cross compiling test
-    platform: ubuntu2004
-    working_directory: examples/zig_cross_compiling
-    build_targets:
-      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/1892
+  # zig_cross_compiling:
+  #   name: Zig cross compiling test
+  #   platform: ubuntu2004
+  #   working_directory: examples/zig_cross_compiling
+  #   build_targets:
+  #     - "//..."
 
 buildifier:
   version: latest

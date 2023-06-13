@@ -1,58 +1,9 @@
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rustfmt_test")
+load(":rustfmt_integration_test_suite.bzl", "rustfmt_integration_test_suite")
 
 exports_files([
     "test_rustfmt.toml",
 ])
 
-rust_binary(
-    name = "formatted_2018",
-    srcs = ["srcs/2018/formatted.rs"],
-    edition = "2018",
-)
-
-rustfmt_test(
-    name = "test_formatted_2018",
-    targets = [":formatted_2018"],
-)
-
-rust_binary(
-    name = "unformatted_2018",
-    srcs = ["srcs/2018/unformatted.rs"],
-    edition = "2018",
-    tags = ["norustfmt"],
-)
-
-rustfmt_test(
-    name = "test_unformatted_2018",
-    tags = ["manual"],
-    targets = [":unformatted_2018"],
-)
-
-rust_binary(
-    name = "formatted_2015",
-    srcs = ["srcs/2015/formatted.rs"],
-    edition = "2015",
-)
-
-rustfmt_test(
-    name = "test_formatted_2015",
-    targets = [":formatted_2015"],
-)
-
-rust_binary(
-    name = "unformatted_2015",
-    srcs = ["srcs/2015/unformatted.rs"],
-    edition = "2015",
-    tags = ["norustfmt"],
-)
-
-rustfmt_test(
-    name = "test_unformatted_2015",
-    tags = ["manual"],
-    targets = [":unformatted_2015"],
-)
-
-sh_binary(
-    name = "test_runner",
-    srcs = ["rustfmt_failure_test.sh"],
+rustfmt_integration_test_suite(
+    name = "rustfmt_integration_test_suite",
 )

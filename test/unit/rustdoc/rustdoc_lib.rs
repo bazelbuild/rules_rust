@@ -4,6 +4,9 @@ use rustdoc_proc_macro::make_answer;
 #[cfg(feature = "with_proc_macro")]
 make_answer!();
 
+#[cfg(feature = "with_build_script")]
+pub const CONST: &str = env!("CONST");
+
 /// The answer to the ultimate question
 /// ```
 /// fn answer() -> u32 { 42 }

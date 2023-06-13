@@ -12,7 +12,13 @@ export RUNTIME_PWD="$(pwd)"
 if [[ -z "${{BAZEL_REAL:-}}" ]]; then
     BAZEL_REAL="$(which bazel || echo 'bazel')"
 fi
-eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" {env} \\
+
+# The path needs to be preserved to prevent bazel from starting with different
+# startup options (requiring a restart of bazel).
+# If you provide an empty path, bazel starts itself with
+# --default_system_javabase set to the empty string, but if you provide a path,
+# it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
+eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
 "{bin}" {args} "$@"
 """
 
@@ -36,7 +42,7 @@ def _runfiles_path(file, is_windows):
 
 def _is_windows(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    return "windows" in toolchain.target_triple
+    return toolchain.target_os == "windows"
 
 def _get_output_package(ctx):
     # Determine output directory
@@ -120,16 +126,17 @@ def _write_splicing_manifest(ctx):
     return args, runfiles
 
 def _write_config_file(ctx):
-    rendering_config = dict(json.decode(render_config(
-        regen_command = "bazel run {}".format(
-            ctx.label,
-        ),
-    )))
+    default_render_config = dict(json.decode(render_config()))
+
+    if ctx.attr.render_config:
+        rendering_config = dict(json.decode(ctx.attr.render_config))
+    else:
+        rendering_config = default_render_config
 
     output_pkg = _get_output_package(ctx)
 
     workspace_name = ctx.workspace_name
-    if ctx.workspace_name == "__main__":
+    if ctx.workspace_name == "__main__" or ctx.workspace_name == "_main":
         workspace_name = ""
 
     if ctx.attr.mode == "local":
@@ -141,7 +148,7 @@ def _write_config_file(ctx):
         build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
         crate_label_template = rendering_config["crate_label_template"]
 
-    rendering_config.update({
+    updates = {
         "build_file_template": build_file_base_template.format(
             workspace_name,
             output_pkg,
@@ -152,10 +159,24 @@ def _write_config_file(ctx):
             output_pkg,
         ),
         "vendor_mode": ctx.attr.mode,
-    })
+    }
+
+    for key in updates:
+        if rendering_config[key] != default_render_config[key]:
+            fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
+                key,
+                ctx.label,
+            ))
+
+    rendering_config.update(updates)
+
+    # Allow users to override the regen command.
+    if "regen_command" not in rendering_config or not rendering_config["regen_command"]:
+        rendering_config.update({"regen_command": "bazel run {}".format(ctx.label)})
 
     config_data = compile_config(
         crate_annotations = ctx.attr.annotations,
+        generate_binaries = ctx.attr.generate_binaries,
         generate_build_scripts = ctx.attr.generate_build_scripts,
         cargo_config = None,
         render_config = rendering_config,
@@ -329,8 +350,8 @@ call against the generated workspace. The following table describes how to contr
 
 | Value | Cargo command |
 | --- | --- |
-| Any of [`true`, `1`, `yes`, `on`] | `cargo update` |
-| `workspace` | `cargo update --workspace` |
+| Any of [`true`, `1`, `yes`, `on`, `workspace`] | `cargo update --workspace` |
+| Any of [`full`, `eager`, `all`] | `cargo update` |
 | `package_name` | `cargo upgrade --package package_name` |
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
@@ -370,6 +391,13 @@ call against the generated workspace. The following table describes how to contr
             doc = "The path to an existing `Cargo.lock` file",
             allow_single_file = True,
         ),
+        "generate_binaries": attr.bool(
+            doc = (
+                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+                "By default only the `rust_library` targets are generated."
+            ),
+            default = False,
+        ),
         "generate_build_scripts": attr.bool(
             doc = (
                 "Whether or not to generate " +
@@ -395,6 +423,12 @@ call against the generated workspace. The following table describes how to contr
         ),
         "packages": attr.string_dict(
             doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
+        ),
+        "render_config": attr.string(
+            doc = (
+                "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
+                "generate the value for this field. If unset, the defaults defined there will be used."
+            ),
         ),
         "repository_name": attr.string(
             doc = "The name of the repository to generate for `remote` vendor modes. If unset, the label name will be used",

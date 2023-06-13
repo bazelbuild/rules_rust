@@ -16,5 +16,4 @@ build --verbose_failures
 # UI for cleaner CI output
 common --color=no
 common --curses=no
-common --show_task_finish
 common --show_timestamps

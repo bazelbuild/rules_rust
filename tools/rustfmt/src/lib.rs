@@ -62,7 +62,6 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
 
     let mut lines: Vec<String> = content
         .split('\n')
-        .into_iter()
         .filter(|s| !s.is_empty())
         .map(|s| s.to_owned())
         .collect();
@@ -99,8 +98,13 @@ pub fn find_manifests() -> Vec<PathBuf> {
     std::env::var("RUSTFMT_MANIFESTS")
         .map(|var| {
             var.split(PATH_ENV_SEP)
-                .map(|path| {
-                    runfiles.rlocation(format!("{}/{}", runfiles.current_repository(), path,))
+                .filter_map(|path| match path.is_empty() {
+                    true => None,
+                    false => Some(runfiles.rlocation(format!(
+                        "{}/{}",
+                        runfiles.current_repository(),
+                        path
+                    ))),
                 })
                 .collect()
         })

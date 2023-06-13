@@ -19,6 +19,7 @@ write_file(
                     version = "0.8.5",
                 )],
             },
+            generate_binaries = False,
             generate_build_scripts = False,
             render_config = json.decode(render_config(
                 platforms_template = "//custom/platform:{triple}",
@@ -46,6 +47,18 @@ write_file(
             "/tmp/abs/path/workspace/Cargo.toml": "//:Cargo.toml",
         },
         packages = {
+            "cargo_toml": crate.spec(
+                git = "https://gitlab.com/crates.rs/cargo_toml.git",
+                tag = "v0.15.2",
+            ),
+            "cfg-if": crate.spec(
+                git = "https://github.com/rust-lang/cfg-if.git",
+                rev = "b9c2246a",
+            ),
+            "log": crate.spec(
+                branch = "master",
+                git = "https://github.com/rust-lang/log.git",
+            ),
             "rand": crate.spec(
                 default_features = False,
                 features = ["small_rng"],

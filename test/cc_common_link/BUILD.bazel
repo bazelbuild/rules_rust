@@ -1,9 +1,21 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_shared_library",
+    "rust_test",
+)
 
 cc_library(
     name = "allocator_library",
     srcs = ["allocator_library.cc"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "global_allocator_library",
+    srcs = ["global_allocator_library.cc"],
     visibility = ["//visibility:public"],
 )
 
@@ -33,4 +45,32 @@ rust_test(
     srcs = ["test.rs"],
     edition = "2021",
     deps = [":rdep"],
+)
+
+rust_test(
+    name = "subdirectory/test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":rdep"],
+)
+
+rust_test(
+    name = "test-with-dashes-in-the-name",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":rdep"],
+)
+
+rust_shared_library(
+    name = "cdylib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+)
+
+cc_test(
+    name = "main",
+    srcs = [
+        "main.cc",
+    ],
+    deps = [":cdylib"],
 )

@@ -19,8 +19,8 @@ bazel clean \
 && chmod 0644 *.md
 
 if [ -n "$(git status --porcelain)" ]; then 
-    git status
-    echo '/docs is out of date. Please run `./docs/update_docs.sh` from the root of rules_rust and push the results' >&2
+    >&2 git status
+    >&2 echo '/docs is out of date. Please run `./docs/update_docs.sh` from the root of rules_rust and push the results' >&2
     exit 1
 fi
 

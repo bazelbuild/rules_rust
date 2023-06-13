@@ -1,41 +1,43 @@
-"""A helper module solving for complex select statements in rendered cargo-bazel modules"""
+"""Function for preserving `select` entries for Cargo cfg expressions which did
+not match any enabled target triple / Bazel platform.
 
+For example we might generate:
+
+    rust_library(
+        ...
+        deps = [
+            "//common:unconditional_dep",
+        ] + selects.with_unmapped({
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+                "//third-party/rust:windows-sys",  # cfg(windows)
+            ],
+            "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+                "//third-party/rust:libc",  # cfg(any(unix, target_os = "wasi"))
+            ],
+            "//conditions:default": [],
+            selects.NO_MATCHING_PLATFORM_TRIPLES: [
+                "//third-party/rust:hermit-abi",  # cfg(target_os = "hermit")
+            ],
+        })
+    )
+"""
+
+_SENTINEL = struct()
+
+def _with_unmapped(configurations):
+    configurations.pop(_SENTINEL)
+    return select(configurations)
+
+selects = struct(
+    with_unmapped = _with_unmapped,
+    NO_MATCHING_PLATFORM_TRIPLES = _SENTINEL,
+)
+
+# TODO: No longer used by the serde_starlark-based renderer. Delete after all
+# BUILD files using it have been regenerated.
+#
+# buildifier: disable=function-docstring
 def select_with_or(input_dict, no_match_error = ""):
-    """Drop-in replacement for `select()` that supports ORed keys.
-
-    This is notably different from [@bazel_skylib//lib:selects.bzl%selects.with_or][swo] in that
-    the input dict must have a list as it's values and they keys will continue to expand for each
-    entry instead of failing on duplicates.
-
-    Example:
-    ```starlark
-    deps = selects.with_or({
-        "//configs:one": [":dep1"],
-        ("//configs:two", "//configs:three"): [":dep2or3"],
-        "//configs:four": [":dep4"],
-        "//conditions:default": [":default"]
-    })
-    ```
-    Key labels may appear at most once anywhere in the input.
-
-    This macro eturns a native `select` that expands `("//configs:two", "//configs:three"): [":dep2or3"]` to
-    ```starlark
-    "//configs:two": [":dep2or3"],
-    "//configs:three": [":dep2or3"],
-    ```
-
-    [swo]: https://github.com/bazelbuild/bazel-skylib/blob/1.1.1/docs/selects_doc.md#selectswith_or
-
-    Args:
-        input_dict: The same dictionary `select()` takes, except keys may take
-            either the usual form `"//foo:config1"` or
-            `("//foo:config1", "//foo:config2", ...)` to signify
-            `//foo:config1` OR `//foo:config2` OR `...`.
-        no_match_error: Optional custom error to report if no condition matches.
-
-    Returns:
-        A native `select()`
-    """
     output_dict = {}
     for (key, value) in input_dict.items():
         if type(key) == type(()):
