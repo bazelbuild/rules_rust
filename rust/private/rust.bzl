@@ -1099,7 +1099,7 @@ def _common_attrs_for_binary_with_basic_process_wrapper(attrs):
 
     # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
-        default = "//util/process_wrapper:basic_process_wrapper",
+        default = Label("//util/process_wrapper:basic_process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
