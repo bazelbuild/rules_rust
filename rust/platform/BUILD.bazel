@@ -21,6 +21,25 @@ constraint_value(
     constraint_setting = ":wasi_version",
 )
 
+constraint_setting(
+    name = "qnx_version",
+)
+
+constraint_value(
+    name = "qnx7",
+    constraint_setting = ":qnx_version",
+)
+
+constraint_value(
+    name = "qnx7_iosock",
+    constraint_setting = ":qnx_version",
+)
+
+constraint_value(
+    name = "qnx8",
+    constraint_setting = ":qnx_version",
+)
+
 package_group(
     name = "function_transition_allowlist",
     packages = [

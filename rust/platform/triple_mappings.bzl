@@ -75,7 +75,12 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "aarch64-unknown-nto-qnx710_iosock": _support(std = True, host_tools = False),
+    "aarch64-unknown-nto-qnx800": _support(std = True, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
+    "x86_64-pc-nto-qnx710": _support(std = True, host_tools = False),
+    "x86_64-pc-nto-qnx710_iosock": _support(std = True, host_tools = False),
+    "x86_64-pc-nto-qnx800": _support(std = True, host_tools = False),
 }
 
 # The only T3 triples that are supported are ones with at least a stdlib
@@ -282,6 +287,12 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
+_NTO_ABI_TO_CONSTRAINT = {
+    "qnx710": "@rules_rust//rust/platform:qnx7",
+    "qnx710_iosock": "@rules_rust//rust/platform:qnx7_iosock",
+    "qnx800": "@rules_rust//rust/platform:qnx8",
+}
+
 def cpu_arch_to_constraints(cpu_arch, *, system = None):
     """Returns a list of constraint values which represents a triple's CPU.
 
@@ -345,6 +356,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
             all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
         else:
             all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
+
+    if system == "nto":
+        all_abi_constraints.append(_NTO_ABI_TO_CONSTRAINT[abi])
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
