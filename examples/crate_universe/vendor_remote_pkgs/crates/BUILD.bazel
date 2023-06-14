@@ -57,7 +57,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "@crates_vendor_pkgs__tokio-1.27.0//:tokio",
+    actual = "@crates_vendor_pkgs__tokio-1.28.2//:tokio",
     tags = ["manual"],
 )
 
