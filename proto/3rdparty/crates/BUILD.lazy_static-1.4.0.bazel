@@ -35,6 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=lazy_static",
         "manual",
         "noclippy",
         "norustfmt",
