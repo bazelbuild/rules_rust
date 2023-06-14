@@ -203,6 +203,23 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_deps: BTreeSet<String>,
 
+    // TODO: refactor a crate with a build.rs file from two into three bazel
+    // rules in order to deduplicate link_dep information. Currently as the
+    // crate depends upon the build.rs file, the build.rs cannot find the
+    // information for the normal dependencies of the crate. This could be
+    // solved by switching the dependency graph from:
+    //
+    //   rust_library -> cargo_build_script
+    //
+    // to:
+    //
+    //   rust_library ->-+-->------------------->--+
+    //                   |                         |
+    //                   +--> cargo_build_script --+--> crate dependencies
+    //
+    // in which either all of the deps are in crate dependencies, or just the
+    // normal dependencies. This could be handled a special rule, or just using
+    // a `filegroup`.
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub link_deps: SelectList<CrateDependency>,
 
