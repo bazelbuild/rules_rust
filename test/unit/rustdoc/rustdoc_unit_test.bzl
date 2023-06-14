@@ -262,6 +262,21 @@ def _define_targets():
         ],
     )
 
+    rust_library(
+        name = "lib_dep_with_alias",
+        srcs = ["rustdoc_test_dep_with_alias.rs"],
+        edition = "2018",
+        deps = [":adder"],
+        aliases = {
+            ":adder": "aliased_adder",
+        },
+    )
+
+    rust_doc_test(
+        name = "rustdoc_test_with_alias_test",
+        crate = ":lib_dep_with_alias",
+    )
+
 def rustdoc_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
