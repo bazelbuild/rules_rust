@@ -98,6 +98,12 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
+        "@rules_rust//rust/platform:thumbv7em-none-eabi": [
+            "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
+            "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
         "@rules_rust//rust/platform:wasm32-wasi": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
@@ -120,6 +126,9 @@ rust_library(
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-none": [
             "@cui__rustix-0.36.6//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "//conditions:default": [],

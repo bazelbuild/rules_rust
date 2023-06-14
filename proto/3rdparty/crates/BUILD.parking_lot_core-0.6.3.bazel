@@ -33,6 +33,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
+        "crate-name=parking_lot_core",
         "manual",
         "noclippy",
         "norustfmt",
@@ -50,6 +51,9 @@ rust_library(
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
@@ -97,6 +101,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
+        ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
@@ -134,6 +141,7 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
+        "crate-name=parking_lot_core",
         "manual",
         "noclippy",
         "norustfmt",

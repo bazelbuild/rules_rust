@@ -42,7 +42,7 @@ rust_library(
         "@cvm__async-stream-0.3.5//:async_stream",
         "@cvm__bytes-1.4.0//:bytes",
         "@cvm__futures-core-0.3.28//:futures_core",
-        "@cvm__tokio-1.28.0//:tokio",
+        "@cvm__tokio-1.28.2//:tokio",
         "@cvm__tokio-stream-0.1.14//:tokio_stream",
     ],
 )

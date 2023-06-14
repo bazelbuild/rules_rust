@@ -56,7 +56,7 @@ rust_library(
         "@crates_vendor_pkgs__sharded-slab-0.1.4//:sharded_slab",
         "@crates_vendor_pkgs__smallvec-1.10.0//:smallvec",
         "@crates_vendor_pkgs__thread_local-1.1.7//:thread_local",
-        "@crates_vendor_pkgs__tracing-core-0.1.30//:tracing_core",
+        "@crates_vendor_pkgs__tracing-core-0.1.31//:tracing_core",
         "@crates_vendor_pkgs__tracing-log-0.1.3//:tracing_log",
     ],
 )

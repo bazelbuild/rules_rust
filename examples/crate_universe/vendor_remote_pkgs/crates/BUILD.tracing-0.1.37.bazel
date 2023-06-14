@@ -37,7 +37,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@crates_vendor_pkgs__tracing-attributes-0.1.23//:tracing_attributes",
+        "@crates_vendor_pkgs__tracing-attributes-0.1.24//:tracing_attributes",
     ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
@@ -50,8 +50,8 @@ rust_library(
     version = "0.1.37",
     deps = [
         "@crates_vendor_pkgs__cfg-if-1.0.0//:cfg_if",
-        "@crates_vendor_pkgs__log-0.4.17//:log",
+        "@crates_vendor_pkgs__log-0.4.19//:log",
         "@crates_vendor_pkgs__pin-project-lite-0.2.9//:pin_project_lite",
-        "@crates_vendor_pkgs__tracing-core-0.1.30//:tracing_core",
+        "@crates_vendor_pkgs__tracing-core-0.1.31//:tracing_core",
     ],
 )

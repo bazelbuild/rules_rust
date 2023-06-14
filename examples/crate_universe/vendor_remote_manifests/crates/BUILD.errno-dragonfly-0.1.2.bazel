@@ -41,7 +41,7 @@ rust_library(
     version = "0.1.2",
     deps = [
         "@cvm__errno-dragonfly-0.1.2//:build_script_build",
-        "@cvm__libc-0.2.142//:libc",
+        "@cvm__libc-0.2.146//:libc",
     ],
 )
 

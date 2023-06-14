@@ -43,7 +43,4 @@ rust_library(
         "norustfmt",
     ],
     version = "0.3.5",
-    deps = [
-        "@cui__memchr-2.5.0//:memchr",
-    ],
 )

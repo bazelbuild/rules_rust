@@ -39,7 +39,7 @@ rust_library(
     ],
     version = "0.3.0",
     deps = [
-        "//vendor_local_pkgs/crates/log-0.4.17:log",
+        "//vendor_local_pkgs/crates/log-0.4.19:log",
         "//vendor_local_pkgs/crates/try-lock-0.2.4:try_lock",
     ],
 )
