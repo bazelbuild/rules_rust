@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0/MIT
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "cexpr",
+    name = "which",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -32,13 +32,25 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=cexpr",
+        "crate-name=which",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.6.0",
+    version = "4.4.0",
     deps = [
-        "@rules_rust_bindgen__nom-7.1.3//:nom",
-    ],
+        "@rules_rust_bindgen__either-1.8.1//:either",
+        "@rules_rust_bindgen__libc-0.2.146//:libc",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_bindgen__once_cell-1.18.0//:once_cell",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_bindgen__once_cell-1.18.0//:once_cell",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_bindgen__once_cell-1.18.0//:once_cell",  # cfg(windows)
+        ],
+        "//conditions:default": [],
+    }),
 )

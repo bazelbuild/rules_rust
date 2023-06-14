@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "cexpr",
+    name = "windows_sys",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -27,18 +27,36 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "Win32",
+        "Win32_Foundation",
+        "Win32_NetworkManagement",
+        "Win32_NetworkManagement_IpHelper",
+        "Win32_Networking",
+        "Win32_Networking_WinSock",
+        "Win32_Security",
+        "Win32_Storage",
+        "Win32_Storage_FileSystem",
+        "Win32_System",
+        "Win32_System_Console",
+        "Win32_System_Diagnostics",
+        "Win32_System_Diagnostics_Debug",
+        "Win32_System_IO",
+        "Win32_System_Threading",
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=cexpr",
+        "crate-name=windows-sys",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.6.0",
+    version = "0.48.0",
     deps = [
-        "@rules_rust_bindgen__nom-7.1.3//:nom",
+        "@rules_rust_bindgen__windows-targets-0.48.0//:windows_targets",
     ],
 )
