@@ -90,6 +90,12 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
         ],
+        "@rules_rust//rust/platform:thumbv7em-none-eabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
+        ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
         ],
@@ -112,6 +118,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-none": [
             "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(not(windows))
         ],
         "//conditions:default": [],
