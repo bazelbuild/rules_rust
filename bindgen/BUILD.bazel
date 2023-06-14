@@ -46,18 +46,6 @@ rust_bindgen_toolchain(
     bindgen = "//bindgen/3rdparty:bindgen",
     clang = "@llvm-project//clang:clang",
     libclang = "@llvm-project//clang:libclang",
-    # clang = select({
-    #     "@platforms//os:macos": ":clang_macos",
-    #     "//conditions:default": ":clang_linux",
-    # }),
-    # libclang = select({
-    #     "//rust/platform:osx": "@bindgen_clang_osx//:libclang",
-    #     "//conditions:default": "@bindgen_clang_linux//:libclang",
-    # }),
-    # libstdcxx = select({
-    #     "//rust/platform:osx": "@bindgen_clang_osx//:libc++",
-    #     "//conditions:default": None,
-    # }),
 )
 
 toolchain(

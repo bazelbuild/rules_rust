@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Apache-2.0/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "cexpr",
+    name = "anstyle_query",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,17 +28,26 @@ rust_library(
         ],
     ),
     crate_root = "src/lib.rs",
-    edition = "2018",
+    edition = "2021",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=cexpr",
+        "crate-name=anstyle-query",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.6.0",
-    deps = [
-        "@rules_rust_bindgen__nom-7.1.3//:nom",
-    ],
+    version = "1.0.0",
+    deps = select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "//conditions:default": [],
+    }),
 )

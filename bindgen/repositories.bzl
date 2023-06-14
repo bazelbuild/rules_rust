@@ -18,6 +18,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
 
+BINDGEN_VERSION = "0.65.1"
+
 # buildifier: disable=unnamed-macro
 def rust_bindgen_dependencies():
     """Declare dependencies needed for bindgen."""
@@ -34,6 +36,16 @@ def rust_bindgen_dependencies():
             Label("//bindgen/3rdparty/patches:llvm-project.cxx17.patch"),
             Label("//bindgen/3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch"),
         ],
+    )
+
+    maybe(
+        http_archive,
+        name = "rules_rust_bindgen__bindgen-cli-{}".format(BINDGEN_VERSION),
+        sha256 = "33373a4e0ec8b6fa2654e0c941ad16631b0d564cfd20e7e4b3db4c5b28f4a237",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/bindgen-cli/{}/download".format(BINDGEN_VERSION)],
+        strip_prefix = "bindgen-cli-{}".format(BINDGEN_VERSION),
+        build_file = Label("//bindgen/3rdparty:BUILD.bindgen-cli.bazel"),
     )
 
     crate_repositories()
