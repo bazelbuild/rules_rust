@@ -24,5 +24,5 @@ if [[ "${OPTION}" == "files" ]]; then
     exit 0
 fi
 
-echo "Unexpected option: ${OPTION}"
+>&2 echo "Unexpected option: ${OPTION}"
 exit 1

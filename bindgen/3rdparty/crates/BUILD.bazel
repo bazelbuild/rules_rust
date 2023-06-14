@@ -27,19 +27,30 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "bindgen",
-    actual = "@rules_rust_bindgen__bindgen-0.60.1//:bindgen",
+    actual = "@rules_rust_bindgen__bindgen-0.65.1//:bindgen",
     tags = ["manual"],
 )
 
 alias(
-    name = "libloading",
-    actual = "@rules_rust_bindgen__libloading-0.7.4//:libloading",
+    name = "clang-sys",
+    actual = "@rules_rust_bindgen__clang-sys-1.6.1//:clang_sys",
     tags = ["manual"],
 )
 
-# Binaries
 alias(
-    name = "bindgen__bindgen",
-    actual = "@rules_rust_bindgen__bindgen-0.60.1//:bindgen__bin",
+    name = "clap",
+    actual = "@rules_rust_bindgen__clap-4.3.3//:clap",
+    tags = ["manual"],
+)
+
+alias(
+    name = "clap_complete",
+    actual = "@rules_rust_bindgen__clap_complete-4.3.1//:clap_complete",
+    tags = ["manual"],
+)
+
+alias(
+    name = "env_logger",
+    actual = "@rules_rust_bindgen__env_logger-0.10.0//:env_logger",
     tags = ["manual"],
 )

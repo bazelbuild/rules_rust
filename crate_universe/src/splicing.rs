@@ -374,7 +374,7 @@ impl WorkspaceMetadata {
 
     fn inject_into(&self, manifest: &mut Manifest) -> Result<()> {
         let metadata_value = toml::Value::try_from(self)?;
-        let mut workspace = manifest.workspace.as_mut().unwrap();
+        let workspace = manifest.workspace.as_mut().unwrap();
 
         match &mut workspace.metadata {
             Some(data) => match data.as_table_mut() {

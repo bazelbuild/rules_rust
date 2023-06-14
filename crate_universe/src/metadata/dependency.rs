@@ -266,7 +266,7 @@ fn get_library_target_name(package: &Package, potential_name: &str) -> Result<St
 /// for targets where packages (packages[#].targets[#].name) uses crate names. In order to
 /// determine whether or not a dependency is aliased, we compare it with all available targets
 /// on it's package. Note that target names are not guaranteed to be module names where Node
-/// dependnecies are, so we need to do a conversion to check for this
+/// dependencies are, so we need to do a conversion to check for this
 fn get_target_alias(target_name: &str, package: &Package) -> Option<String> {
     match package
         .targets

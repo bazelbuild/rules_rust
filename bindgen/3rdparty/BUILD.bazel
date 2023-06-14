@@ -1,44 +1,64 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//bindgen:repositories.bzl", "BINDGEN_VERSION")
 load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+_BINDGEN_CLI_PACKAGES = {
+    "clap": crate.spec(
+        version = "4.3.3",
+    ),
+    "clap_complete": crate.spec(
+        version = "4.3.1",
+    ),
+    "env_logger": crate.spec(
+        version = "0.10.0",
+    ),
+}
 
 crates_vendor(
     name = "crates_vendor",
     annotations = {
         "bindgen": [crate.annotation(
-            gen_binaries = ["bindgen"],
             gen_build_script = True,
         )],
         "clang-sys": [crate.annotation(
             gen_build_script = True,
         )],
-        "indexmap": [crate.annotation(
+        "libc": [crate.annotation(
             gen_build_script = True,
         )],
-        "libloading": [crate.annotation(
+        "rustix": [crate.annotation(
             gen_build_script = True,
         )],
-        "log": [crate.annotation(
-            rustc_flags = ["--cfg=atomic_cas"],
+        "winapi": [crate.annotation(
+            gen_build_script = True,
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
     generate_build_scripts = False,
     mode = "remote",
-    packages = {
+    packages = dict({
         "bindgen": crate.spec(
-            version = "0.60.1",
+            default_features = False,
+            features = ["runtime"],
+            version = BINDGEN_VERSION,
         ),
-        "libloading": crate.spec(
-            version = "0.7.3",
+        "bindgen-cli": crate.spec(
+            default_features = False,
+            features = ["runtime"],
+            version = BINDGEN_VERSION,
         ),
-    },
+        "clang-sys": crate.spec(
+            # Should match the version of llvm-project being used.
+            features = ["clang_14_0"],
+        ),
+    }.items() + _BINDGEN_CLI_PACKAGES.items()),
     repository_name = "rules_rust_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "bindgen",
-    actual = "//bindgen/3rdparty/crates:bindgen__bindgen",
+    actual = "@rules_rust_bindgen__bindgen-cli-{}//:bindgen-cli".format(BINDGEN_VERSION),
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )

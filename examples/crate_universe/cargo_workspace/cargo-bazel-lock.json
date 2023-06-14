@@ -1,5 +1,5 @@
 {
-  "checksum": "8dcac739a6ae8ab1f19b863d7da1d9b4e99078d8616a458f9fa9abb1d7a5c6ba",
+  "checksum": "1e5d1916e3d45194fcd3fb00b0dc7abe957c2a9a0c284227115633da8e193b1a",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1296,6 +1296,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
@@ -1326,6 +1327,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",

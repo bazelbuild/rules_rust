@@ -5,11 +5,13 @@ load("@rules_rust//rust:defs.bzl", "rust_test")
 proto_library(
     name = "helloworld",
     srcs = ["helloworld.proto"],
+    tags = ["manual"],
     deps = ["//proto:common"],
 )
 
 rust_grpc_library(
     name = "helloworld_proto",
+    tags = ["manual"],
     visibility = ["//proto/helloworld:__subpackages__"],
     deps = [":helloworld"],
 )
@@ -21,5 +23,6 @@ rust_test(
         "//proto/helloworld/greeter_client",
         "//proto/helloworld/greeter_server",
     ],
+    tags = ["manual"],
     deps = ["@rules_rust//tools/runfiles"],
 )
