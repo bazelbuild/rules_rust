@@ -21,7 +21,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
+load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo", "copy_crate_info")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
@@ -1359,6 +1359,8 @@ def rustc_compile_action(
             source_attributes = ["srcs"],
         ),
     ]
+
+    crate_info = copy_crate_info(crate_info, rustc_env = env)
 
     if crate_info.type in ["staticlib", "cdylib"]:
         # These rules are not supposed to be depended on by other rust targets, and
