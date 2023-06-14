@@ -47,6 +47,11 @@ def triple(triple):
     system = component_parts[2]
     abi = None
 
+    if cpu_arch.startswith(("thumbv8m", "thumbv7m", "thumbv7e", "thumbv6m")):
+        abi = system
+        system = vendor
+        vendor = None
+
     if system == "androideabi":
         system = "android"
         abi = "eabi"
