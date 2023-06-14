@@ -1,6 +1,6 @@
 # Required on windows
 common --enable_platform_specific_config
-startup:windows --windows_enable_symlinks
+startup --windows_enable_symlinks
 build:windows --enable_runfiles
 
 build --incompatible_enable_cc_toolchain_resolution
