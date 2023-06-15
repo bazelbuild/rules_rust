@@ -53,6 +53,7 @@ def _create_crate_info(**kwargs):
         kwargs.update({"metadata": None})
     if not "rustc_env_files" in kwargs:
         kwargs.update({"rustc_env_files": []})
+    kwargs.update({"rustc_env_original": kwargs.get("rustc_env", {})})
     return CrateInfo(**kwargs)
 
 rust_common = struct(

@@ -401,7 +401,7 @@ def _rust_test_impl(ctx):
         else:
             compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
-        rustc_env = dict(crate.rustc_env)
+        rustc_env = dict(crate.rustc_env_original)
         rustc_env.update(**ctx.attr.rustc_env)
 
         # Build the test binary using the dependency's srcs.

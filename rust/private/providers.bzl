@@ -30,6 +30,7 @@ CrateInfo = provider(
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
+        "rustc_env_original": "Dict[String, String]: Snapshot of the original rustc_env passed by the user (should not be modified, mostly for internal use.)",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": (
@@ -59,6 +60,7 @@ def copy_crate_info(
     proc_macro_deps = None,
     root = None,
     rustc_env = None,
+    rustc_env_original = None,
     rustc_env_files = None,
     srcs = None,
     type = None,
@@ -78,6 +80,7 @@ def copy_crate_info(
         proc_macro_deps = proc_macro_deps or crate_info.proc_macro_deps,
         root = root or crate_info.root,
         rustc_env = rustc_env or crate_info.rustc_env,
+        rustc_env_original = rustc_env_original or crate_info.rustc_env_original,
         rustc_env_files = rustc_env_files or crate_info.rustc_env_files,
         srcs = srcs or crate_info.srcs,
         type = type or crate_info.type,
