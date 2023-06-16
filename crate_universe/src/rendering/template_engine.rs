@@ -10,7 +10,7 @@ use crate::config::RenderConfig;
 use crate::context::Context;
 use crate::rendering::{
     render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
-    render_module_label, Platforms
+    render_module_label, Platforms,
 };
 use crate::utils::sanitize_repository_name;
 use crate::utils::starlark::SelectStringList;

@@ -25,7 +25,7 @@ use crate::utils::{self, sanitize_repository_name};
 
 // Configuration remapper used to convert from cfg expressions like "cfg(unix)"
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
-pub (crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
+pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub struct Renderer {
     config: RenderConfig,
@@ -91,7 +91,11 @@ impl Renderer {
             .collect()
     }
 
-    fn render_crates_module(&self, context: &Context, platforms: &Platforms) -> Result<BTreeMap<PathBuf, String>> {
+    fn render_crates_module(
+        &self,
+        context: &Context,
+        platforms: &Platforms,
+    ) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
             .context("Failed to resolve string to module file label")?;
         let module_build_label =
