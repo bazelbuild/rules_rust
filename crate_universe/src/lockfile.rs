@@ -211,7 +211,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("7b4142c24aff865f158da49840f7f23a6921c65f28999dd03fdd4bc83eb3fcb1".to_owned())
+            Digest("fcca6635448d70091bffb6409f5edb153a46fcf7e889e39a33a9b9ff6e345ca0".to_owned())
         );
     }
 
@@ -256,7 +256,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("c8cffedeccfa9262d8d69d15210c2b9322d40486c1f73da652a92c7f2efef9d7".to_owned())
+            Digest("c90e7e5a98e49884c9962f99aea5cf20d5a32df243dbb549001c50badf0a02d3".to_owned())
         );
     }
 
@@ -287,7 +287,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("fab65a87a9b8e008c68842cde1a62ca1c1196b835affeb8525cae0bfc890f1c2".to_owned())
+            Digest("e199dd859bd5b75d6b152f364f8cc6ad6c3a2a68ae777dfb8b250c2d90e35f28".to_owned())
         );
     }
 
@@ -336,7 +336,7 @@ mod test {
 
         assert_eq!(
             digest,
-            Digest("302a5f2e564ecb8002838a1e7865cf2b97ce776cb55f06c7d3efab8b73eee922".to_owned())
+            Digest("0222be160f1031346cc209a8732c678bf32acb08f891fdfa0e9965d0ad22a33a".to_owned())
         );
     }
 }

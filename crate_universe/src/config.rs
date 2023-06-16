@@ -508,6 +508,13 @@ pub struct Config {
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
+    /// A set of platform triples to use in generated select statements
+    #[serde(
+        default = "default_generate_target_compatible_with",
+        skip_serializing_if = "skip_generate_target_compatible_with"
+    )]
+    pub generate_target_compatible_with: bool,
+
     /// Additional settings to apply to generated crates
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub annotations: BTreeMap<CrateId, CrateAnnotations>,
@@ -528,6 +535,13 @@ impl Config {
         let data = fs::read_to_string(path)?;
         Ok(serde_json::from_str(&data)?)
     }
+}
+
+fn default_generate_target_compatible_with() -> bool {
+    true
+}
+fn skip_generate_target_compatible_with(value: &bool) -> bool {
+    *value
 }
 
 #[cfg(test)]

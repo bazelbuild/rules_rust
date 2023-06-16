@@ -8,7 +8,7 @@ mod target_compatible_with;
 
 use std::collections::BTreeSet as Set;
 
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use serde_starlark::Error as StarlarkError;
 
 pub use glob::*;
@@ -237,9 +237,23 @@ pub struct CommonAttrs {
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
-    #[serde(serialize_with = "TargetCompatibleWith::serialize_starlark")]
-    pub target_compatible_with: TargetCompatibleWith,
+    #[serde(
+        serialize_with = "serialize_target_compatible_with",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub target_compatible_with: Option<TargetCompatibleWith>,
     pub version: String,
+}
+
+fn serialize_target_compatible_with<S>(
+    value: &Option<TargetCompatibleWith>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    // SAFETY: Option::is_none causes serialization to get skipped.
+    value.as_ref().unwrap().serialize_starlark(serializer)
 }
 
 pub struct Data {
