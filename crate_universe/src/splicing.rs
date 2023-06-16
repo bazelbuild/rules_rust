@@ -118,8 +118,10 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             .manifests
             .into_iter()
             .map(|(path, label)| {
-                let manifest = cargo_toml::Manifest::from_path(&path)
+                let manifest_content = fs::read(&path)
                     .with_context(|| format!("Failed to load manifest '{}'", path.display()))?;
+                let manifest = cargo_toml::Manifest::from_slice(&manifest_content)
+                    .with_context(|| format!("Failed to parse manifest '{}'", path.display()))?;
 
                 Ok((label, manifest))
             })
@@ -581,5 +583,39 @@ mod test {
             manifest.cargo_config.unwrap(),
             PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"),
         )
+    }
+
+    #[test]
+    fn splicing_metadata_workspace_path() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let parent_path = runfiles
+            .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
+        let child_a_path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/metadata/workspace_path/child_a/Cargo.toml",
+        );
+        let child_b_path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/metadata/workspace_path/child_b/Cargo.toml",
+        );
+        let child_b_label = Label::from_str("//child_b:Cargo.toml").unwrap();
+        let manifest = SplicingManifest {
+            direct_packages: BTreeMap::new(),
+            manifests: BTreeMap::from([
+                (
+                    PathBuf::from(parent_path),
+                    Label::from_str("//:Cargo.toml").unwrap(),
+                ),
+                (
+                    PathBuf::from(child_a_path),
+                    Label::from_str("//child_a:Cargo.toml").unwrap(),
+                ),
+                (PathBuf::from(child_b_path), child_b_label.clone()),
+            ]),
+            cargo_config: None,
+            resolver_version: cargo_toml::Resolver::V2,
+        };
+        let metadata = SplicingMetadata::try_from(manifest).unwrap();
+        let child_b_manifest = metadata.manifests.get(&child_b_label).unwrap();
+        let dep_child_a = child_b_manifest.dependencies.get("child_a").unwrap();
+        assert!(matches!(dep_child_a, cargo_toml::Dependency::Inherited(_)))
     }
 }
