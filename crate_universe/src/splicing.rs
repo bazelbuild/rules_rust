@@ -596,7 +596,7 @@ mod test {
         let workspace_manifest_path = runfiles
             .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
         let workspace_path = workspace_manifest_path.parent().unwrap();
-            runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path");
+        runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path");
         let parent_path = runfiles
             .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
         let child_a_path = runfiles.rlocation(
