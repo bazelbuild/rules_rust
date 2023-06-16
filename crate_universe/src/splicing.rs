@@ -118,11 +118,16 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             .manifests
             .into_iter()
             .map(|(path, label)| {
+                // We read the content of a manifest file to buffer and use `from_slice` to
+                // parse it. The reason is that the `from_path` version will resolve indirect
+                // path dependencies in the workspace to absolute path, which causes the hash
+                // to be unstable. Not resolving implicit data is okay here because the
+                // workspace manifest is also included in the hash.
+                // See issue #2016
                 let manifest_content = fs::read(&path)
                     .with_context(|| format!("Failed to load manifest '{}'", path.display()))?;
                 let manifest = cargo_toml::Manifest::from_slice(&manifest_content)
                     .with_context(|| format!("Failed to parse manifest '{}'", path.display()))?;
-
                 Ok((label, manifest))
             })
             .collect::<Result<BTreeMap<Label, Manifest>>>()?;
@@ -588,6 +593,8 @@ mod test {
     #[test]
     fn splicing_metadata_workspace_path() {
         let runfiles = runfiles::Runfiles::create().unwrap();
+        let workspace_path =
+            runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path");
         let parent_path = runfiles
             .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
         let child_a_path = runfiles.rlocation(
@@ -605,14 +612,16 @@ mod test {
                     child_a_path,
                     Label::from_str("//child_a:Cargo.toml").unwrap(),
                 ),
-                (child_b_path, child_b_label.clone()),
+                (child_b_path, child_b_label),
             ]),
             cargo_config: None,
             resolver_version: cargo_toml::Resolver::V2,
         };
         let metadata = SplicingMetadata::try_from(manifest).unwrap();
-        let child_b_manifest = metadata.manifests.get(&child_b_label).unwrap();
-        let dep_child_a = child_b_manifest.dependencies.get("child_a").unwrap();
-        assert!(matches!(dep_child_a, cargo_toml::Dependency::Inherited(_)))
+        let metadata = serde_json::to_string(&metadata).unwrap();
+        assert!(
+            !metadata.contains(workspace_path.to_str().unwrap()),
+            "serialized metadata should not contain absolute path"
+        );
     }
 }
