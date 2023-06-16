@@ -600,15 +600,12 @@ mod test {
         let manifest = SplicingManifest {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([
+                (parent_path, Label::from_str("//:Cargo.toml").unwrap()),
                 (
-                    PathBuf::from(parent_path),
-                    Label::from_str("//:Cargo.toml").unwrap(),
-                ),
-                (
-                    PathBuf::from(child_a_path),
+                    child_a_path,
                     Label::from_str("//child_a:Cargo.toml").unwrap(),
                 ),
-                (PathBuf::from(child_b_path), child_b_label.clone()),
+                (child_b_path, child_b_label.clone()),
             ]),
             cargo_config: None,
             resolver_version: cargo_toml::Resolver::V2,
