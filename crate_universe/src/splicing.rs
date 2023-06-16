@@ -595,26 +595,28 @@ mod test {
         let runfiles = runfiles::Runfiles::create().unwrap();
         let workspace_manifest_path = runfiles
             .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
-        let workspace_path = workspace_manifest_path.parent().unwrap();
-        runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path");
-        let parent_path = runfiles
-            .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
-        let child_a_path = runfiles.rlocation(
+        let workspace_path = workspace_manifest_path.parent().unwrap().to_path_buf();
+        let child_a_manifest_path = runfiles.rlocation(
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_a/Cargo.toml",
         );
-        let child_b_path = runfiles.rlocation(
+        let child_b_manifest_path = runfiles.rlocation(
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_b/Cargo.toml",
         );
-        let child_b_label = Label::from_str("//child_b:Cargo.toml").unwrap();
         let manifest = SplicingManifest {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([
-                (parent_path, Label::from_str("//:Cargo.toml").unwrap()),
                 (
-                    child_a_path,
+                    workspace_manifest_path,
+                    Label::from_str("//:Cargo.toml").unwrap(),
+                ),
+                (
+                    child_a_manifest_path,
                     Label::from_str("//child_a:Cargo.toml").unwrap(),
                 ),
-                (child_b_path, child_b_label),
+                (
+                    child_b_manifest_path,
+                    Label::from_str("//child_b:Cargo.toml").unwrap(),
+                ),
             ]),
             cargo_config: None,
             resolver_version: cargo_toml::Resolver::V2,
