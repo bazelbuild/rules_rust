@@ -123,7 +123,7 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
                 // path dependencies in the workspace to absolute path, which causes the hash
                 // to be unstable. Not resolving implicit data is okay here because the
                 // workspace manifest is also included in the hash.
-                // See issue #2016
+                // See https://github.com/bazelbuild/rules_rust/issues/2016
                 let manifest_content = fs::read(&path)
                     .with_context(|| format!("Failed to load manifest '{}'", path.display()))?;
                 let manifest = cargo_toml::Manifest::from_slice(&manifest_content)
@@ -593,7 +593,9 @@ mod test {
     #[test]
     fn splicing_metadata_workspace_path() {
         let runfiles = runfiles::Runfiles::create().unwrap();
-        let workspace_path =
+        let workspace_manifest_path = runfiles
+            .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
+        let workspace_path = workspace_manifest_path.parent().unwrap();
             runfiles.rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path");
         let parent_path = runfiles
             .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
