@@ -314,7 +314,7 @@ _BUILD_PROC_MACRO_DEPENDENCIES = {% set deps_type = "build-proc-macro" %}{% incl
 _BUILD_PROC_MACRO_ALIASES = {% set deps_type = "build-proc-macro" %}{% include "partials/module/aliases_map.j2" %}
 
 _CONDITIONS = {
-{%- for condition, triples in context.conditions %}
+{%- for condition, triples in platforms %}
     "{{ condition | addslashes }}": {{ triples | sort | json_encode | safe }},
 {%- endfor %}
 }
