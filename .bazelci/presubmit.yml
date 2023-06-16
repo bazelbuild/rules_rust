@@ -621,6 +621,21 @@ tasks:
   #   working_directory: examples/zig_cross_compiling
   #   build_targets:
   #     - "//..."
+  nix_cross_compiling:
+    name: Nix cross compiling test
+    platform: ubuntu2204
+    working_directory: examples/nix_cross_compiling
+    setup:
+      - curl -L https://nixos.org/nix/install | bash
+      - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
+      - sudo mkdir /etc/nix
+      - echo "experimental-features = nix-command flakes" | sudo tee --append /etc/nix/nix.conf
+    build_targets:
+      # Root `build_test` target is called directly to catch missing platforms
+      # that would otherwise be quietly skipped due to `target_compatible_with`.
+      - "//:nix_cross_compiling"
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest

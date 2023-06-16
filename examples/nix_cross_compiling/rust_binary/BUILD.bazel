@@ -1,0 +1,28 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "rust_binary",
+    srcs = select({
+        # See comments in `rust_binary_wasm32-unknown-unknown.rs`.
+        "@platforms//os:none": ["rust_binary_wasm32-unknown-unknown.rs"],
+        # See comments in `rust_binary_wasm32-wasi.rs`.
+        "@platforms//os:wasi": ["rust_binary_wasm32-wasi.rs"],
+        "//conditions:default": ["rust_binary.rs"],
+    }),
+    tags = ["platform_missing"],
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+    ] + select({
+        "@platforms//os:none": [],
+        # To be removed once the `wasm32-wasi` version of `tokio` can `select()`
+        # over different features.
+        "@platforms//os:wasi": [],
+        "//conditions:default": [
+            "@crate_index//:tokio",
+        ],
+    }),
+)

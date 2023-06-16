@@ -4,4 +4,5 @@ crate_universe
 crate_universe_unnamed
 ios
 ios_build
+nix_cross_compiling
 zig_cross_compiling
