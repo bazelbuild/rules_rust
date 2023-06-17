@@ -118,7 +118,7 @@ def _rust_doc_test_impl(ctx):
         srcs = crate.srcs,
         deps = depset(deps, transitive = [crate.deps]),
         proc_macro_deps = crate.proc_macro_deps,
-        aliases = {},
+        aliases = crate.aliases,
         output = crate.output,
         edition = crate.edition,
         rustc_env = crate.rustc_env,

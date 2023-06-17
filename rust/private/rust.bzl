@@ -474,8 +474,16 @@ def _rust_test_impl(ctx):
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
 
-        env["RUST_LLVM_COV"] = toolchain.llvm_cov.path
-        env["RUST_LLVM_PROFDATA"] = toolchain.llvm_profdata.path
+        llvm_cov_path = toolchain.llvm_cov.short_path
+        if llvm_cov_path.startswith("../"):
+            llvm_cov_path = llvm_cov_path[len("../"):]
+
+        llvm_profdata_path = toolchain.llvm_profdata.short_path
+        if llvm_profdata_path.startswith("../"):
+            llvm_profdata_path = llvm_profdata_path[len("../"):]
+
+        env["RUST_LLVM_COV"] = llvm_cov_path
+        env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
     providers.append(testing.TestEnvironment(env))
@@ -678,11 +686,6 @@ _common_attrs = {
         ),
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
-    "_collect_cc_coverage": attr.label(
-        default = Label("//util:collect_coverage"),
-        executable = True,
-        cfg = "exec",
-    ),
     "_error_format": attr.label(
         default = Label("//:error_format"),
     ),
@@ -721,6 +724,28 @@ _common_attrs = {
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
+    ),
+}
+
+_coverage_attrs = {
+    "_collect_cc_coverage": attr.label(
+        default = Label("//util:collect_coverage"),
+        executable = True,
+        cfg = "exec",
+    ),
+    # Bazel’s coverage runner
+    # (https://github.com/bazelbuild/bazel/blob/6.0.0/tools/test/collect_coverage.sh)
+    # needs a binary called “lcov_merge.”  Its location is passed in the
+    # LCOV_MERGER environmental variable.  For builtin rules, this variable
+    # is set automatically based on a magic “$lcov_merger” or
+    # “:lcov_merger” attribute, but it’s not possible to create such
+    # attributes in Starlark.  Therefore we specify the variable ourselves.
+    # Note that the coverage runner runs in the runfiles root instead of
+    # the execution root, therefore we use “path” instead of “short_path.”
+    "_lcov_merger": attr.label(
+        default = configuration_field(fragment = "coverage", name = "output_generator"),
+        executable = True,
+        cfg = "exec",
     ),
 }
 
@@ -791,7 +816,7 @@ _rust_test_attrs = dict({
         default = Label("@bazel_tools//tools/cpp:grep-includes"),
         executable = True,
     ),
-}.items() + _experimental_use_cc_common_link_attrs.items())
+}.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
 
 _common_providers = [
     rust_common.crate_info,

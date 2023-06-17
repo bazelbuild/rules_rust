@@ -23,21 +23,29 @@ bzl_library(
     ],
 )
 
+alias(
+    name = "clang_macos",
+    actual = select({
+        "@platforms//cpu:aarch64": "@bindgen_clang_macos_aarch64//:clang",
+        "//conditions:default": "@bindgen_clang_macos_x86_64//:clang",
+    }),
+    tags = ["manual"],
+)
+
+alias(
+    name = "clang_linux",
+    actual = select({
+        "@platforms//cpu:aarch64": "@bindgen_clang_linux_aarch64//:clang",
+        "//conditions:default": "@bindgen_clang_linux_x86_64//:clang",
+    }),
+    tags = ["manual"],
+)
+
 rust_bindgen_toolchain(
     name = "default_bindgen_toolchain_impl",
     bindgen = "//bindgen/3rdparty:bindgen",
-    clang = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:clang",
-        "//conditions:default": "@bindgen_clang_linux//:clang",
-    }),
-    libclang = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:libclang",
-        "//conditions:default": "@bindgen_clang_linux//:libclang",
-    }),
-    libstdcxx = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:libc++",
-        "//conditions:default": None,
-    }),
+    clang = "@llvm-project//clang:clang",
+    libclang = "@llvm-project//clang:libclang",
 )
 
 toolchain(

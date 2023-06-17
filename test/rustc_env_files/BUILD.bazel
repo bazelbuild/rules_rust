@@ -20,11 +20,13 @@ write_file(
     ],
 )
 
-sh_test(
+rust_test(
     name = "output_test",
-    srcs = ["output_test.sh"],
+    srcs = ["output_test.rs"],
     args = ["$(rootpath :hello_env)"],
     data = [":hello_env"],
+    edition = "2018",
+    use_libtest_harness = False,
 )
 
 rust_library(

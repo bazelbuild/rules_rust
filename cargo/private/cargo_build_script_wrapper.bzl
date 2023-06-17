@@ -122,6 +122,9 @@ def cargo_build_script(
     if "toolchains" in kwargs:
         build_script_kwargs["toolchains"] = kwargs["toolchains"]
 
+    if "features" in kwargs:
+        build_script_kwargs["features"] = kwargs["features"]
+
     rust_binary(
         name = name + "_",
         crate_features = crate_features,

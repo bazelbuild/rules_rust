@@ -56,7 +56,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "//vendor_local_pkgs/crates/tokio-1.28.0:tokio",
+    actual = "//vendor_local_pkgs/crates/tokio-1.28.2:tokio",
     tags = ["manual"],
 )
 
@@ -74,7 +74,7 @@ alias(
 
 alias(
     name = "tracing",
-    actual = "//vendor_local_pkgs/crates/tracing-0.1.38:tracing",
+    actual = "//vendor_local_pkgs/crates/tracing-0.1.37:tracing",
     tags = ["manual"],
 )
 

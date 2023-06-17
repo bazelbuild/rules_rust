@@ -53,6 +53,27 @@ fn run_buildrs() -> Result<(), String> {
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
 
+    if should_symlink_exec_root() {
+        // Symlink the execroot to the manifest_dir so that we can use relative paths in the arguments.
+        let exec_root_paths = std::fs::read_dir(&exec_root)
+            .map_err(|err| format!("Failed while listing exec root: {err:?}"))?;
+        for path in exec_root_paths {
+            let path = path
+                .map_err(|err| {
+                    format!("Failed while getting path from exec root listing: {err:?}")
+                })?
+                .path();
+
+            let file_name = path
+                .file_name()
+                .ok_or_else(|| "Failed while getting file name".to_string())?;
+            let link = manifest_dir.join(file_name);
+
+            symlink_if_not_exists(&path, &link)
+                .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?;
+        }
+    }
+
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
@@ -172,6 +193,42 @@ fn run_buildrs() -> Result<(), String> {
     write(&link_search_paths_file, link_search_paths.as_bytes())
         .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_search_paths_file));
     Ok(())
+}
+
+fn should_symlink_exec_root() -> bool {
+    env::var("RULES_RUST_SYMLINK_EXEC_ROOT")
+        .map(|s| s == "1")
+        .unwrap_or(false)
+}
+
+/// Create a symlink from `link` to `original` if `link` doesn't already exist.
+#[cfg(windows)]
+fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
+    if original.is_dir() {
+        std::os::windows::fs::symlink_dir(original, link)
+            .or_else(swallow_already_exists)
+            .map_err(|err| format!("Failed to create directory symlink: {err}"))
+    } else {
+        std::os::windows::fs::symlink_file(original, link)
+            .or_else(swallow_already_exists)
+            .map_err(|err| format!("Failed to create file symlink: {err}"))
+    }
+}
+
+/// Create a symlink from `link` to `original` if `link` doesn't already exist.
+#[cfg(not(windows))]
+fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
+    std::os::unix::fs::symlink(original, link)
+        .or_else(swallow_already_exists)
+        .map_err(|err| format!("Failed to create symlink: {err}"))
+}
+
+fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
+    if err.kind() == std::io::ErrorKind::AlreadyExists {
+        Ok(())
+    } else {
+        Err(err)
+    }
 }
 
 /// A representation of expected command line arguments.
