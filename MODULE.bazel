@@ -20,8 +20,20 @@ use_repo(
     "rules_rust_tinyjson",
 )
 
-# This is the default host tools configuration, but if a user defines it in
-# their repo, it's overridden.
 rust = use_extension("//rust:extensions.bzl", "rust")
-rust.host_tools(edition = "2021")
+
+# Allow us to run, for example, "bazel build //tools/runfiles" with bzlmod.
+# Register it as a dev dependency so that we don't force this toolchain on
+# downstream users.
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains(
+    "@rust_toolchains//:all",
+    dev_dependency = True,
+)
+
 use_repo(rust, "rust_host_tools")
+
+cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
+use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
