@@ -490,6 +490,36 @@ def _rust_test_impl(ctx):
 
     return providers
 
+def _rust_library_group_impl(ctx):
+    crate_infos = []
+    dep_infos = []
+    runfiles = []
+
+    for dep in ctx.attr.deps:
+        if rust_common.crate_info in dep:
+            crate_infos.append(dep[rust_common.crate_info])
+            dep_infos.append(dep[rust_common.dep_info])
+        elif rust_common.crate_group_info in dep:
+            crate_infos.extend(dep[rust_common.crate_group_info].crate_infos)
+            dep_infos.extend(dep[rust_common.crate_group_info].dep_infos)
+        else:
+            fail("crate_group_info targets can only depend on rust_library or rust_library_group targets.")
+
+        if dep[DefaultInfo].default_runfiles != None:
+            runfiles.append(dep[DefaultInfo].default_runfiles)
+
+    return [
+        rust_common.crate_group_info(
+            crate_infos = crate_infos,
+            dep_infos = dep_infos,
+        ),
+        DefaultInfo(runfiles = ctx.runfiles().merge_all(runfiles)),
+        coverage_common.instrumented_files_info(
+            ctx,
+            dependency_attributes = ["deps"],
+        ),
+    ]
+
 def _stamp_attribute(default_value):
     return attr.int(
         doc = dedent("""\
@@ -1385,3 +1415,47 @@ def rust_test_suite(name, srcs, **kwargs):
         tests = tests,
         tags = kwargs.get("tags", None),
     )
+
+rust_library_group = rule(
+    implementation = _rust_library_group_impl,
+    provides = [rust_common.crate_group_info],
+    attrs = {
+        "deps": attr.label_list(
+            doc = "Other dependencies to forward through this crate group.",
+        ),
+    },
+    doc = dedent("""\
+        Functions as an alias for a set of dependencies.
+
+        Specifically, the following are equivalent:
+
+        ```rust
+        rust_library_group(
+            name = "crate_group",
+            deps = [
+                ":crate1",
+                ":crate2",
+            ],
+        )
+
+        rust_library(
+            name = "foobar",
+            deps = [":crate_group"],
+            ...
+        )
+        ```
+
+        and
+
+        ```rust
+        rust_library(
+            name = "foobar",
+            deps = [
+                ":crate1",
+                ":crate2",
+            ],
+            ...
+        )
+        ```
+    """),
+)

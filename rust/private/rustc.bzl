@@ -219,8 +219,28 @@ def collect_deps(
     transitive_crate_outputs = []
     transitive_metadata_outputs = []
 
-    aliases = {k.label: v for k, v in aliases.items()}
+    crate_deps = []
     for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
+        crate_group = None
+
+        if type(dep) == "Target" and rust_common.crate_group_info in dep:
+            crate_group = dep[rust_common.crate_group_info]
+        elif type(dep) == "struct" and hasattr(dep, "crate_group_info") and dep.crate_group_info != None:
+            crate_group = dep.crate_group_info
+        else:
+            crate_deps.append(dep)
+
+        if crate_group:
+            if len(crate_group.crate_infos) != len(crate_group.dep_infos):
+                fail("CrateGroupInfo must have len(crate_infos) == len(dep_infos)")
+            for (crate_info, dep_info) in zip(crate_group.crate_infos, crate_group.dep_infos):
+                crate_deps.append(struct(
+                    crate_info = crate_info,
+                    dep_info = dep_info,
+                ))
+
+    aliases = {k.label: v for k, v in aliases.items()}
+    for dep in crate_deps:
         (crate_info, dep_info) = _get_crate_and_dep_info(dep)
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
