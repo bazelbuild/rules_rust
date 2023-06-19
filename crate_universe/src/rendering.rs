@@ -25,7 +25,7 @@ use crate::utils::{self, sanitize_repository_name};
 
 // Configuration remapper used to convert from cfg expressions like "cfg(unix)"
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
-type Platforms = BTreeMap<String, BTreeSet<String>>;
+pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub struct Renderer {
     config: RenderConfig,
@@ -54,7 +54,7 @@ impl Renderer {
 
         let platforms = self.render_platform_labels(context);
         output.extend(self.render_build_files(context, &platforms)?);
-        output.extend(self.render_crates_module(context)?);
+        output.extend(self.render_crates_module(context, &platforms)?);
 
         if let Some(vendor_mode) = &self.config.vendor_mode {
             match vendor_mode {
@@ -91,7 +91,11 @@ impl Renderer {
             .collect()
     }
 
-    fn render_crates_module(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    fn render_crates_module(
+        &self,
+        context: &Context,
+        platforms: &Platforms,
+    ) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
             .context("Failed to resolve string to module file label")?;
         let module_build_label =
@@ -101,7 +105,7 @@ impl Renderer {
         let mut map = BTreeMap::new();
         map.insert(
             Renderer::label_to_path(&module_label),
-            self.engine.render_module_bzl(context)?,
+            self.engine.render_module_bzl(context, platforms)?,
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
