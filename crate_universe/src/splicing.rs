@@ -118,9 +118,16 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             .manifests
             .into_iter()
             .map(|(path, label)| {
-                let manifest = cargo_toml::Manifest::from_path(&path)
+                // We read the content of a manifest file to buffer and use `from_slice` to
+                // parse it. The reason is that the `from_path` version will resolve indirect
+                // path dependencies in the workspace to absolute path, which causes the hash
+                // to be unstable. Not resolving implicit data is okay here because the
+                // workspace manifest is also included in the hash.
+                // See https://github.com/bazelbuild/rules_rust/issues/2016
+                let manifest_content = fs::read(&path)
                     .with_context(|| format!("Failed to load manifest '{}'", path.display()))?;
-
+                let manifest = cargo_toml::Manifest::from_slice(&manifest_content)
+                    .with_context(|| format!("Failed to parse manifest '{}'", path.display()))?;
                 Ok((label, manifest))
             })
             .collect::<Result<BTreeMap<Label, Manifest>>>()?;
@@ -581,5 +588,44 @@ mod test {
             manifest.cargo_config.unwrap(),
             PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"),
         )
+    }
+
+    #[test]
+    fn splicing_metadata_workspace_path() {
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let workspace_manifest_path = runfiles
+            .rlocation("rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml");
+        let workspace_path = workspace_manifest_path.parent().unwrap().to_path_buf();
+        let child_a_manifest_path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/metadata/workspace_path/child_a/Cargo.toml",
+        );
+        let child_b_manifest_path = runfiles.rlocation(
+            "rules_rust/crate_universe/test_data/metadata/workspace_path/child_b/Cargo.toml",
+        );
+        let manifest = SplicingManifest {
+            direct_packages: BTreeMap::new(),
+            manifests: BTreeMap::from([
+                (
+                    workspace_manifest_path,
+                    Label::from_str("//:Cargo.toml").unwrap(),
+                ),
+                (
+                    child_a_manifest_path,
+                    Label::from_str("//child_a:Cargo.toml").unwrap(),
+                ),
+                (
+                    child_b_manifest_path,
+                    Label::from_str("//child_b:Cargo.toml").unwrap(),
+                ),
+            ]),
+            cargo_config: None,
+            resolver_version: cargo_toml::Resolver::V2,
+        };
+        let metadata = SplicingMetadata::try_from(manifest).unwrap();
+        let metadata = serde_json::to_string(&metadata).unwrap();
+        assert!(
+            !metadata.contains(workspace_path.to_str().unwrap()),
+            "serialized metadata should not contain absolute path"
+        );
     }
 }
