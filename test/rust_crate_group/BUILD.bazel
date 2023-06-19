@@ -1,4 +1,4 @@
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_library_group")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_library_group", "rust_test")
 
 rust_library(
     name = "dep1",
@@ -21,8 +21,15 @@ rust_library_group(
 )
 
 rust_library(
-    name = "test",
+    name = "library",
     srcs = ["lib.rs"],
+    edition = "2021",
+    deps = [":dep1_and_2"],
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
     edition = "2021",
     deps = [":dep1_and_2"],
 )
