@@ -19,3 +19,9 @@ use_repo(
     internal_deps,
     "rules_rust_tinyjson",
 )
+
+# This is the default host tools configuration, but if a user defines it in
+# their repo, it's overridden.
+rust = use_extension("//rust:extensions.bzl", "rust")
+rust.host_tools(edition = "2021")
+use_repo(rust, "rust_host_tools")
