@@ -514,6 +514,10 @@ def _rust_library_group_impl(ctx):
             dep_infos = dep_infos,
         ),
         DefaultInfo(runfiles = ctx.runfiles().merge_all(runfiles)),
+        coverage_common.instrumented_files_info(
+            ctx,
+            dependency_attributes = ["deps"],
+        ),
     ]
 
 def _stamp_attribute(default_value):
