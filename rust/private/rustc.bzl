@@ -231,12 +231,10 @@ def collect_deps(
             crate_deps.append(dep)
 
         if crate_group:
-            if len(crate_group.crate_infos) != len(crate_group.dep_infos):
-                fail("CrateGroupInfo must have len(crate_infos) == len(dep_infos)")
-            for (crate_info, dep_info) in zip(crate_group.crate_infos, crate_group.dep_infos):
+            for dep_variant_info in crate_group.dep_variant_infos.to_list():
                 crate_deps.append(struct(
-                    crate_info = crate_info,
-                    dep_info = dep_info,
+                    crate_info = dep_variant_info.crate_info,
+                    dep_info = dep_variant_info.dep_info,
                 ))
 
     aliases = {k.label: v for k, v in aliases.items()}

@@ -60,8 +60,7 @@ DepInfo = provider(
 CrateGroupInfo = provider(
     doc = "A provider containing a group of crates.",
     fields = {
-        "crate_infos": "List[CrateInfo]",
-        "dep_infos": "List[DepInfo]",
+        "dep_variant_infos": "depset[DepVariantInfo]: Dependency information from all crates in the group.",
     },
 )
 

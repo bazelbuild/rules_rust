@@ -16,6 +16,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "BuildInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
@@ -491,17 +492,21 @@ def _rust_test_impl(ctx):
     return providers
 
 def _rust_library_group_impl(ctx):
-    crate_infos = []
-    dep_infos = []
+    dep_variant_infos = []
+    dep_variant_transitive_infos = []
     runfiles = []
 
     for dep in ctx.attr.deps:
         if rust_common.crate_info in dep:
-            crate_infos.append(dep[rust_common.crate_info])
-            dep_infos.append(dep[rust_common.dep_info])
+            dep_variant_infos.append(rust_common.dep_variant_info(
+                crate_info = dep[rust_common.crate_info] if rust_common.crate_info in dep else None,
+                dep_info = dep[rust_common.dep_info] if rust_common.crate_info in dep else None,
+                build_info = dep[BuildInfo] if BuildInfo in dep else None,
+                cc_info = dep[CcInfo] if CcInfo in dep else None,
+                crate_group_info = None,
+            ))
         elif rust_common.crate_group_info in dep:
-            crate_infos.extend(dep[rust_common.crate_group_info].crate_infos)
-            dep_infos.extend(dep[rust_common.crate_group_info].dep_infos)
+            dep_variant_transitive_infos.append(dep[rust_common.crate_group_info].dep_variant_infos)
         else:
             fail("crate_group_info targets can only depend on rust_library or rust_library_group targets.")
 
@@ -510,8 +515,7 @@ def _rust_library_group_impl(ctx):
 
     return [
         rust_common.crate_group_info(
-            crate_infos = crate_infos,
-            dep_infos = dep_infos,
+            dep_variant_infos = depset(dep_variant_infos, transitive = dep_variant_transitive_infos),
         ),
         DefaultInfo(runfiles = ctx.runfiles().merge_all(runfiles)),
         coverage_common.instrumented_files_info(
@@ -1422,6 +1426,7 @@ rust_library_group = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "Other dependencies to forward through this crate group.",
+            providers = [[rust_common.crate_group_info], [rust_common.crate_info]],
         ),
     },
     doc = dedent("""\
@@ -1429,7 +1434,7 @@ rust_library_group = rule(
 
         Specifically, the following are equivalent:
 
-        ```rust
+        ```starlark
         rust_library_group(
             name = "crate_group",
             deps = [
@@ -1447,7 +1452,7 @@ rust_library_group = rule(
 
         and
 
-        ```rust
+        ```starlark
         rust_library(
             name = "foobar",
             deps = [

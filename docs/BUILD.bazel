@@ -49,6 +49,7 @@ PAGES = dict([
         symbols = [
             "rust_binary",
             "rust_library",
+            "rust_library_group",
             "rust_static_library",
             "rust_shared_library",
             "rust_proc_macro",
