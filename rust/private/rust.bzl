@@ -490,7 +490,7 @@ def _rust_test_impl(ctx):
 
     return providers
 
-def _rust_crate_group_impl(ctx):
+def _rust_library_group_impl(ctx):
     crate_infos = []
     dep_infos = []
     runfiles = []
@@ -503,7 +503,7 @@ def _rust_crate_group_impl(ctx):
             crate_infos.extend(dep[rust_common.crate_group_info].crate_infos)
             dep_infos.extend(dep[rust_common.crate_group_info].dep_infos)
         else:
-            fail("crate_group_info targets can only depend on rust_library or rust_crate_group targets.")
+            fail("crate_group_info targets can only depend on rust_library or rust_library_group targets.")
 
         if dep[DefaultInfo].default_runfiles != None:
             runfiles.append(dep[DefaultInfo].default_runfiles)
@@ -1412,8 +1412,8 @@ def rust_test_suite(name, srcs, **kwargs):
         tags = kwargs.get("tags", None),
     )
 
-rust_crate_group = rule(
-    implementation = _rust_crate_group_impl,
+rust_library_group = rule(
+    implementation = _rust_library_group_impl,
     provides = [rust_common.crate_group_info],
     attrs = {
         "deps": attr.label_list(
@@ -1426,7 +1426,7 @@ rust_crate_group = rule(
         Specifically, the following are equivalent:
 
         ```rust
-        rust_crate_group(
+        rust_library_group(
             name = "crate_group",
             deps = [
                 ":crate1",
