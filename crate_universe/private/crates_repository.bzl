@@ -227,6 +227,13 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             ),
             default = True,
         ),
+        "generate_target_compatible_with": attr.bool(
+            doc = (
+                "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` " +
+                "being targeted that isn't declared in `supported_platform_triples."
+            ),
+            default = True,
+        ),
         "generator": attr.string(
             doc = (
                 "The absolute label of a generator. Eg. `@cargo_bazel_bootstrap//:cargo-bazel`. " +

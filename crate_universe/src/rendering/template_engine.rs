@@ -10,7 +10,7 @@ use crate::config::RenderConfig;
 use crate::context::Context;
 use crate::rendering::{
     render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
-    render_module_label,
+    render_module_label, Platforms,
 };
 use crate::utils::sanitize_repository_name;
 use crate::utils::starlark::SelectStringList;
@@ -133,9 +133,10 @@ impl TemplateEngine {
         Ok(header)
     }
 
-    pub fn render_module_bzl(&self, data: &Context) -> Result<String> {
+    pub fn render_module_bzl(&self, data: &Context, platforms: &Platforms) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
+        context.insert("platforms", platforms);
 
         self.engine
             .render("module_bzl.j2", &context)

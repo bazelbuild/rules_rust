@@ -44,8 +44,17 @@ RustAnalyzerInfo = provider(
     },
 )
 
+RustAnalyzerGroupInfo = provider(
+    doc = "RustAnalyzerGroupInfo holds multiple RustAnalyzerInfos",
+    fields = {
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
+    },
+)
+
 def _rust_analyzer_aspect_impl(target, ctx):
-    if rust_common.crate_info not in target and rust_common.test_crate_info not in target:
+    if (rust_common.crate_info not in target and
+        rust_common.test_crate_info not in target and
+        rust_common.crate_group_info not in target):
         return []
 
     toolchain = find_toolchain(ctx)
@@ -67,14 +76,33 @@ def _rust_analyzer_aspect_impl(target, ctx):
                 build_info = dep[BuildInfo]
         dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
 
+        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.deps if RustAnalyzerGroupInfo in dep]
+        for group_info in group_infos:
+            dep_infos.extend(group_info.deps)
+
     if hasattr(ctx.rule.attr, "proc_macro_deps"):
         dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
-    if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
-        dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
-    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None and RustAnalyzerInfo in ctx.rule.attr.actual:
-        dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
 
-    crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
+        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerGroupInfo in dep]
+        for group_info in group_infos:
+            dep_infos.extend(group_info.deps)
+
+    if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
+        if RustAnalyzerInfo in ctx.rule.attr.crate:
+            dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
+
+        if RustAnalyzerGroupInfo in ctx.rule.attr.crate:
+            dep_infos.extend(ctx.rule.attr.crate[RustAnalyzerGroupInfo])
+
+    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None:
+        if RustAnalyzerInfo in ctx.rule.attr.actual:
+            dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
+
+        if RustAnalyzerGroupInfo in ctx.rule.attr.actual:
+            dep_infos.extend(ctx.rule.attr.actul[RustAnalyzerGroupInfo])
+
+    if rust_common.crate_group_info in target:
+        return [RustAnalyzerGroupInfo(deps = dep_infos)]
 
     if rust_common.crate_info in target:
         crate_info = target[rust_common.crate_info]
@@ -82,6 +110,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
         crate_info = target[rust_common.test_crate_info].crate
     else:
         fail("Unexpected target type: {}".format(target))
+
+    crate_spec = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_crate_spec")
 
     rust_analyzer_info = RustAnalyzerInfo(
         crate = crate_info,

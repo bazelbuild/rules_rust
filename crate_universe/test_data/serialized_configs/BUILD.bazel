@@ -21,6 +21,7 @@ write_file(
             },
             generate_binaries = False,
             generate_build_scripts = False,
+            generate_target_compatible_with = True,
             render_config = json.decode(render_config(
                 platforms_template = "//custom/platform:{triple}",
                 regen_command = "cargo_bazel_regen_command",
