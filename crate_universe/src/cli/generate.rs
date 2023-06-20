@@ -73,7 +73,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             let context = Context::try_from_path(lockfile)?;
 
             // Render build files
-            let outputs = Renderer::new(config.rendering).render(&context)?;
+            let outputs = Renderer::new(
+                config.rendering,
+                config.supported_platform_triples,
+                config.generate_target_compatible_with,
+            )
+            .render(&context)?;
 
             // Write the outputs to disk
             write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
@@ -101,9 +106,6 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     // Load Metadata and Lockfile
     let (cargo_metadata, cargo_lockfile) = load_metadata(metadata_path)?;
 
-    // Copy the rendering config for later use
-    let render_config = config.rendering.clone();
-
     // Annotate metadata
     let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
 
@@ -111,7 +113,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     let context = Context::new(annotations)?;
 
     // Render build files
-    let outputs = Renderer::new(render_config).render(&context)?;
+    let outputs = Renderer::new(
+        config.rendering.clone(),
+        config.supported_platform_triples.clone(),
+        config.generate_target_compatible_with,
+    )
+    .render(&context)?;
 
     // Write outputs
     write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;

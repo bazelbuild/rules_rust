@@ -124,6 +124,29 @@ load(
 cargo_workspace_crate_repositories()
 
 ###############################################################################
+# C A R G O   C O N D I T I O N A L   D E P S
+###############################################################################
+
+crates_repository(
+    name = "crate_index_cargo_conditional_deps",
+    cargo_lockfile = "//cargo_conditional_deps:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//cargo_conditional_deps:cargo-bazel-lock.json",
+    manifests = [
+        "//cargo_conditional_deps:Cargo.toml",
+    ],
+)
+
+load(
+    "@crate_index_cargo_conditional_deps//:defs.bzl",
+    cargo_conditional_deps_crate_repositories = "crate_repositories",
+)
+
+cargo_conditional_deps_crate_repositories()
+
+###############################################################################
 # M U L T I   P A C K A G E
 ###############################################################################
 
