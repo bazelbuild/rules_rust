@@ -79,9 +79,10 @@ fn run_buildrs() -> Result<(), String> {
 
     let argv0 = exec_root.join(progname);
     eprintln!("DWH: working dir: {}: {:?}", exec_root.display(), std::fs::metadata(&exec_root));
-    let children: Vec<PathBuf> = std::fs::read_dir(&exec_root).unwrap().map(|de| de.unwrap().path()).collect();
-    eprintln!("DWH: children: {:?}", children);
     eprintln!("DWH: dir: {}: {:?}", manifest_dir.display(), std::fs::metadata(&manifest_dir));
+    for ancestor in manifest_dir.ancestors() {
+        eprintln!("DWH: ancestor: {}: {:?}", ancestor.display(), std::fs::metadata(&ancestor));
+    }
     let mut command = Command::new(argv0);
     command
         .current_dir(&manifest_dir)
