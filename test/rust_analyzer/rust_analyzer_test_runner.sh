@@ -34,6 +34,7 @@ rust_analyzer_dependencies()
 EOF
 
     cat <<EOF >"${new_workspace}/.bazelrc"
+startup --output_user_root=C:/b
 build --keep_going
 test --test_output=errors
 # The 'strict' config is used to ensure extra checks are run on the test
