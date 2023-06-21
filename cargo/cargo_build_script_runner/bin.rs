@@ -78,8 +78,7 @@ fn run_buildrs() -> Result<(), String> {
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
     let argv0 = exec_root.join(progname);
-    eprintln!("DWH: argv0: {}", argv0.display());
-    eprintln!("DWH: dir: {}", manifest_dir.display());
+    eprintln!("DWH: dir: {}: {:?}", manifest_dir.display(), std::fs::metadata(&manifest_dir));
     let mut command = Command::new(argv0);
     command
         .current_dir(&manifest_dir)
