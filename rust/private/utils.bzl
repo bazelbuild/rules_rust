@@ -15,7 +15,7 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
-load(":providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
+load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 UNSUPPORTED_FEATURES = [
     "thin_lto",
@@ -475,6 +475,7 @@ def transform_deps(deps):
         dep_info = dep[DepInfo] if DepInfo in dep else None,
         build_info = dep[BuildInfo] if BuildInfo in dep else None,
         cc_info = dep[CcInfo] if CcInfo in dep else None,
+        crate_group_info = dep[CrateGroupInfo] if CrateGroupInfo in dep else None,
     ) for dep in deps]
 
 def get_import_macro_deps(ctx):

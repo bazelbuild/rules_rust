@@ -103,6 +103,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-none": [
+            "@rules_rust_wasm_bindgen__cpufeatures-0.2.5//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))
+        ],
         "//conditions:default": [],
     }),
 )

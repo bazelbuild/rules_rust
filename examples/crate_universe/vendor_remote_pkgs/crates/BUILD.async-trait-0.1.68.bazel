@@ -41,9 +41,9 @@ rust_proc_macro(
     version = "0.1.68",
     deps = [
         "@crates_vendor_pkgs__async-trait-0.1.68//:build_script_build",
-        "@crates_vendor_pkgs__proc-macro2-1.0.56//:proc_macro2",
-        "@crates_vendor_pkgs__quote-1.0.26//:quote",
-        "@crates_vendor_pkgs__syn-2.0.15//:syn",
+        "@crates_vendor_pkgs__proc-macro2-1.0.60//:proc_macro2",
+        "@crates_vendor_pkgs__quote-1.0.28//:quote",
+        "@crates_vendor_pkgs__syn-2.0.18//:syn",
     ],
 )
 

@@ -45,6 +45,6 @@ rust_library(
     deps = [
         "@cvm__futures-core-0.3.28//:futures_core",
         "@cvm__pin-project-lite-0.2.9//:pin_project_lite",
-        "@cvm__tokio-1.28.0//:tokio",
+        "@cvm__tokio-1.28.2//:tokio",
     ],
 )

@@ -30,6 +30,7 @@ load(
     "//rust/private:rust.bzl",
     _rust_binary = "rust_binary",
     _rust_library = "rust_library",
+    _rust_library_group = "rust_library_group",
     _rust_proc_macro = "rust_proc_macro",
     _rust_shared_library = "rust_shared_library",
     _rust_static_library = "rust_static_library",
@@ -79,6 +80,9 @@ rust_proc_macro = _rust_proc_macro
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_binary = _rust_binary
+# See @rules_rust//rust/private:rust.bzl for a complete description.
+
+rust_library_group = _rust_library_group
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_test = _rust_test

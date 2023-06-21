@@ -25,8 +25,8 @@ function check_build_result() {
   echo -n "Testing ${2}... "
   (bazel test //test/rustfmt:"${2}") || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
-    echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/rustfmt:${2}"
-    echo "  Run \"bazel test //test/rustfmt:${2}\" to see the output"
+    >&2 echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/rustfmt:${2}"
+    >&2 echo "  Run \"bazel test //test/rustfmt:${2}\" to see the output"
     exit 1
   else
     echo "OK"

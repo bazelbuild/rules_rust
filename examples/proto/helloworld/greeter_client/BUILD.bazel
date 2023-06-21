@@ -4,6 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 rust_binary(
     name = "greeter_client",
     srcs = ["greeter_client.rs"],
+    tags = ["manual"],
     visibility = ["//proto/helloworld:__subpackages__"],
     deps = [
         "//proto/helloworld:helloworld_proto",
