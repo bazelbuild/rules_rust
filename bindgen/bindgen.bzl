@@ -139,6 +139,19 @@ def _rust_bindgen_impl(ctx):
     _, _, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
+    tools = depset([clang_bin])
+
+    # Allow sysroots configured by the toolchain to be added to Clang arguments.
+    if "no-rust-bindgen-cc-sysroot" not in ctx.features:
+        if cc_toolchain.sysroot:
+            tools = depset(transitive = [tools, cc_toolchain.all_files])
+            sysroot_args = ["--sysroot", cc_toolchain.sysroot]
+            for arg in clang_args:
+                if arg.startswith("--sysroot"):
+                    sysroot_args = []
+                    break
+            args.add_all(sysroot_args)
+
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
     # DYLD_LIBRARY_PATH is LD_LIBRARY_PATH on macOS.
     if libstdcxx:
@@ -161,7 +174,7 @@ def _rust_bindgen_impl(ctx):
         progress_message = "Generating bindings for {}..".format(header.path),
         env = env,
         arguments = [args],
-        tools = [clang_bin],
+        tools = tools,
     )
 
     if run_rustfmt:
