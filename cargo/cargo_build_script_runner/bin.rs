@@ -79,6 +79,7 @@ fn run_buildrs() -> Result<(), String> {
 
     let argv0 = exec_root.join(progname);
     eprintln!("DWH: argv0: {}", argv0.display());
+    eprintln!("DWH: dir: {}", manifest_dir.display());
     let mut command = Command::new(argv0);
     command
         .current_dir(&manifest_dir)
