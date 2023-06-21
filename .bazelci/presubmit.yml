@@ -46,10 +46,7 @@ tasks:
   rust_analyzer_tests_windows:
     name: Rust-Analyzer Tests
     platform: windows
-    run_flags:
-      - "--enable_runfiles" # this is not enabled by default on windows and is necessary for the cargo build scripts
     run_targets:
-      - "//:debug"
       - "//test/rust_analyzer:rust_analyzer_test"
 
 buildifier:
