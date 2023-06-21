@@ -230,14 +230,12 @@ def _cargo_build_script_impl(ctx):
             dep_env_file = dep[rust_common.dep_info].dep_env
             args.add(dep_env_file.path)
             build_script_inputs.append(dep_env_file)
-            # TODO: switch this to be `transitive_link_deps_build_infos` as
-            # opposed to `transitive_build_infos` as only the results from
-            # `OUT_DIR`s from other link_deps should be findable by the
-            # environment variables passed. As `OUT_DIR`s are randomly generated
-            # they should not be findable without this information being passed
-            # through the link_deps environment variables.
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
+
+    for dep in ctx.attr.deps:
+        for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
+            build_script_inputs.append(dep_build_info.out_dir)
 
     if feature_enabled(ctx, SYMLINK_EXEC_ROOT_FEATURE):
         env["RULES_RUST_SYMLINK_EXEC_ROOT"] = "1"
