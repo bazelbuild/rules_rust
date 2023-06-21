@@ -97,6 +97,9 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    link_deps = [
+        "@cui__cxx-1.0.86//:cxx",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
