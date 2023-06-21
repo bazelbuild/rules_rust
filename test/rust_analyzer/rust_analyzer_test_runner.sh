@@ -22,7 +22,7 @@ function generate_workspace() {
 
     mkdir -p "${new_workspace}"
     cat <<EOF >"${new_workspace}/WORKSPACE.bazel"
-workspace(name = "rules_rust_test_rust_analyzer")
+workspace(name = "rrt_ra")
 local_repository(
     name = "rules_rust",
     path = "${BUILD_WORKSPACE_DIRECTORY}",
