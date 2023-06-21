@@ -36,8 +36,9 @@ EOF
     cat <<EOF >"${new_workspace}/.bazelrc"
 common --enable_platform_specific_config
 startup --windows_enable_symlinks
-startup --output_user_root=C:/b2
+startup --output_user_root=C:/b
 build:windows --enable_runfiles
+build --nolegacy_external_runfiles
 
 build --keep_going
 test --test_output=errors
@@ -75,7 +76,8 @@ function rust_analyzer_test() {
     if [[ -n "${generator_arg}" ]]; then
         bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
     else
-        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
+        bazel run --run_under=echo "@rules_rust//tools/rust_analyzer:gen_rust_project"
+        ls -lah bazel-bin/external/rules_rust/tools/rust_analyzer
     fi
     echo "Building..."
     bazel build //...
