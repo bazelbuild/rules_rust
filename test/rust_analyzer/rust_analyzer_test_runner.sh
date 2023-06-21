@@ -36,7 +36,7 @@ EOF
     cat <<EOF >"${new_workspace}/.bazelrc"
 common --enable_platform_specific_config
 startup --windows_enable_symlinks
-startup --output_user_root=C:/b
+startup --output_user_root=C:/b2
 build:windows --enable_runfiles
 
 build --keep_going
