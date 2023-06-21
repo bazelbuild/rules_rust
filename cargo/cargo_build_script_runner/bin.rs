@@ -20,7 +20,7 @@ use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{create_dir_all, read_to_string, write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 fn run_buildrs() -> Result<(), String> {
@@ -77,11 +77,7 @@ fn run_buildrs() -> Result<(), String> {
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
-    let argv0 = exec_root.join(progname);
-    eprintln!("DWH: dir: {}: {:?}", manifest_dir.display(), std::fs::metadata(&manifest_dir));
-    let children: Vec<PathBuf> = std::fs::read_dir(&manifest_dir.parent().unwrap()).unwrap().map(|de| de.unwrap().path()).collect();
-    eprintln!("DWH: children: {:?}", children);
-    let mut command = Command::new(argv0);
+    let mut command = Command::new(exec_root.join(progname));
     command
         .current_dir(&manifest_dir)
         .envs(target_env_vars)
