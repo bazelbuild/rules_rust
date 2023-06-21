@@ -150,10 +150,10 @@ def _gen_lib(ctx, grpc, srcs, lib):
         content.append("extern crate tls_api;")
     for f in srcs.to_list():
         content.append("pub mod %s;" % _generated_file_stem(f))
-        content.append("pub use %s::*;" % _generated_file_stem(f))
+        content.append("pub use self::%s::*;" % _generated_file_stem(f))
         if grpc:
             content.append("pub mod %s_grpc;" % _generated_file_stem(f))
-            content.append("pub use %s_grpc::*;" % _generated_file_stem(f))
+            content.append("pub use self::%s_grpc::*;" % _generated_file_stem(f))
     ctx.actions.write(lib, "\n".join(content))
 
 def _expand_provider(lst, provider):
