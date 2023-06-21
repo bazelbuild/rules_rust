@@ -15,6 +15,7 @@ cargo_build_script(
     name = "set_c_build",
     srcs = ["set_c.rs"],
     edition = "2018",
+    link_deps = [":set_a"],
     links = "Y",
 )
 
@@ -34,7 +35,10 @@ rust_library(
     name = "set_c",
     srcs = ["empty.rs"],
     edition = "2018",
-    deps = [":set_a", ":set_c_build"],
+    deps = [
+        ":set_a",
+        ":set_c_build",
+    ],
 )
 
 cargo_build_script(
@@ -56,6 +60,7 @@ cargo_build_script(
     srcs = ["read_c.rs"],
     edition = "2018",
     link_deps = [":set_c"],
+    deps = [":set_a"],
 )
 
 cargo_build_script(
