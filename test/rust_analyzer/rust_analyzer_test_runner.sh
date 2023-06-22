@@ -76,7 +76,7 @@ function rust_analyzer_test() {
     if [[ -n "${generator_arg}" ]]; then
         bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
     else
-        path="$(bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project")"
+        path="$(bazel run --run_under=echo "@rules_rust//tools/rust_analyzer:gen_rust_project")"
         stat "${path}"
         ".\${path}"
     fi
