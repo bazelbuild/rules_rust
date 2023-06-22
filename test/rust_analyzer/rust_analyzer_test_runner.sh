@@ -78,7 +78,7 @@ function rust_analyzer_test() {
     else
         path="$(bazel run --run_under=echo "@rules_rust//tools/rust_analyzer:gen_rust_project")"
         stat "${path}"
-        ".\${path}"
+        .\\"${path}"
     fi
     echo "Building..."
     bazel build //...
