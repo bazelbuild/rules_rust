@@ -738,6 +738,7 @@ fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList
         "BUILD",
         "WORKSPACE.bazel",
         "WORKSPACE",
+        ".tmp_git_root/**/*",
     ];
 
     Data {

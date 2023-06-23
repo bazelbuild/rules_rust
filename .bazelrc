@@ -16,6 +16,10 @@ build:windows --enable_runfiles
 # https://bazel.build/reference/command-line-reference#flag--combined_report
 coverage --combined_report=lcov
 
+# Avoid fully cached builds reporting no coverage and failing CI
+# https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
+coverage --experimental_fetch_all_coverage_outputs
+
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################
