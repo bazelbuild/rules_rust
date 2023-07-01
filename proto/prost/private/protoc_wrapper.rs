@@ -307,7 +307,7 @@ fn descriptor_set_file_to_extern_paths(
     file: &FileDescriptorProto,
 ) {
     let package = file.package.clone().unwrap_or_default();
-    let rust_path = rust_path.join(&package.replace('.', "::"));
+    let rust_path = rust_path.join(&package.replace('.', "::").to_lowercase());
     let proto_path = ProtoPath(package);
 
     for message_type in file.message_type.iter() {
@@ -1042,6 +1042,11 @@ mod test {
             let proto_path = ProtoPath::from("foo.bar");
             assert_eq!(proto_path.to_string(), "foo.bar");
             assert_eq!(proto_path.join("baz"), ProtoPath::from("foo.bar.baz"));
+        }
+        {
+            let proto_path = ProtoPath::from("Foo.baR");
+            assert_eq!(proto_path.to_string(), "Foo.baR");
+            assert_eq!(proto_path.join("baz"), ProtoPath::from("Foo.baR.baz"));
         }
     }
 
