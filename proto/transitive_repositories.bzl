@@ -1,15 +1,11 @@
 """Definitions for loading transitive `@rules_rust//proto` dependencies"""
 
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+load("//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
 
 def rust_proto_transitive_repositories():
-    """Load transitive dependencies of the `@rules_rust//proto` rules.
+    """Load rust_protobuf transitive dependencies.
 
-    This macro should be called immediately after the `rust_proto_repositories` macro.
+    Deprecated:
+        Instead call `@rules_rust//proto/protobuf:transitive_repositories.bzl%rust_protobuf_transitive_repositories`
     """
-    rules_proto_dependencies()
-
-    rules_proto_toolchains()
-
-    protobuf_deps()
+    rust_proto_protobuf_transitive_repositories()

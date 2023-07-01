@@ -35,15 +35,15 @@ load(
 )
 load(
     "@rules_rust//proto:repositories.bzl",
-    _rust_proto_repositories = "rust_proto_repositories",
-)
-load(
-    "@rules_rust//proto:toolchain.bzl",
-    _rust_proto_toolchain = "rust_proto_toolchain",
+    _rust_proto_dependencies = "rust_proto_dependencies",
 )
 load(
     "@rules_rust//proto:transitive_repositories.bzl",
     _rust_proto_transitive_repositories = "rust_proto_transitive_repositories",
+)
+load(
+    "@rules_rust//proto/protobuf:toolchain.bzl",
+    _rust_proto_toolchain = "rust_proto_toolchain",
 )
 load(
     "@rules_rust//rust:defs.bzl",
@@ -135,7 +135,7 @@ rust_bindgen_toolchain = _rust_bindgen_toolchain
 
 rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
-rust_proto_repositories = _rust_proto_repositories
+rust_proto_dependencies = _rust_proto_dependencies
 rust_stdlib_filegroup = _rust_stdlib_filegroup
 rust_proto_transitive_repositories = _rust_proto_transitive_repositories
 
