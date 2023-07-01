@@ -18,7 +18,7 @@ def rust_prost_dependencies():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
-        strip_prefix = "protobuf-3.10.0",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v23.3/protobuf-23.3.tar.gz"],
+        sha256 = "52b6160ae9266630adb5e96a9fc645215336371a740e87d411bfb63ea2f268a0",
+        strip_prefix = "protobuf-3.18.0",
+        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.18.0/protobuf-all-3.18.0.tar.gz"],
     )
