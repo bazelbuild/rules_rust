@@ -1,10 +1,10 @@
 //! Tests protos with various capitalizations in their package names are
 //! consumable in an expected way.
 
-use bar_proto::bar::baz::qaz::qux::bar::Baz as BazMessage;
-use bar_proto::bar::baz::qaz::qux::Bar as BarMessage;
-use foo_proto::foo::quux::corge::grault::garply::foo::NestedFoo as NestedFooMessage;
-use foo_proto::foo::quux::corge::grault::garply::Foo as FooMessage;
+use bar_proto::b_ar::b_az::qaz::qu_x::bar::Baz as BazMessage;
+use bar_proto::b_ar::b_az::qaz::qu_x::Bar as BarMessage;
+use foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::foo::NestedFoo as NestedFooMessage;
+use foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::Foo as FooMessage;
 
 #[test]
 fn test_packages() {
