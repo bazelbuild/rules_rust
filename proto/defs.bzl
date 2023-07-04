@@ -3,7 +3,6 @@
 load(
     "//proto/prost:defs.bzl",
     _rust_prost_library = "rust_prost_library",
-    _rust_tonic_library = "rust_tonic_library",
 )
 load(
     ":proto.bzl",
@@ -15,4 +14,3 @@ rust_proto_library = _rust_proto_library
 rust_grpc_library = _rust_grpc_library
 
 rust_prost_library = _rust_prost_library
-rust_tonic_library = _rust_tonic_library

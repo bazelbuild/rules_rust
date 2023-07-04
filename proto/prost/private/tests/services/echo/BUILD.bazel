@@ -1,5 +1,5 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//proto/prost:defs.bzl", "rust_tonic_library")
+load("//proto/prost:defs.bzl", "rust_prost_library")
 load("//rust:defs.bzl", "rust_binary")
 
 package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
@@ -11,7 +11,7 @@ proto_library(
     ],
 )
 
-rust_tonic_library(
+rust_prost_library(
     name = "echo_rs_proto",
     proto = ":echo_proto",
 )

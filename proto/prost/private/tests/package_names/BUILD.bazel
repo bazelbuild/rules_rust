@@ -1,6 +1,6 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//proto/prost:defs.bzl", "rust_tonic_library")
+load("//proto/prost:defs.bzl", "rust_prost_library")
 
 package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
 
@@ -11,7 +11,7 @@ proto_library(
     ],
 )
 
-rust_tonic_library(
+rust_prost_library(
     name = "pkg_empty_rs_proto",
     proto = ":pkg_empty_proto",
 )
@@ -23,7 +23,7 @@ proto_library(
     ],
 )
 
-rust_tonic_library(
+rust_prost_library(
     name = "pkg_rs_proto",
     proto = ":pkg_proto",
 )
@@ -35,7 +35,7 @@ proto_library(
     ],
 )
 
-rust_tonic_library(
+rust_prost_library(
     name = "pkg_a_rs_proto",
     proto = ":pkg_a_proto",
 )
@@ -47,7 +47,7 @@ proto_library(
     ],
 )
 
-rust_tonic_library(
+rust_prost_library(
     name = "pkg_a_b_rs_proto",
     proto = ":pkg_a_b_proto",
 )

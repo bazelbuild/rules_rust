@@ -4,8 +4,7 @@ These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [R
 
 There are two rule sets. The first ruleset defines the `rust_proto_library` and `rust_grpc_library`
 rules which generate Rust code using the [`rust-protobuf`] dependencies. The second ruleset defines
-the `rust_prost_library` and `rust_tonic_library` rules which generate Rust code using the [`prost`]
-and [`tonic`] dependencies respectively.
+the `rust_prost_library` which generates Rust code using the [`prost`] and [`tonic`] dependencies.
 
 [rust]: http://www.rust-lang.org/
 [protobuf]: https://developers.google.com/protocol-buffers/
