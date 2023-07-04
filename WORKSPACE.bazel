@@ -52,6 +52,10 @@ load("//test:deps.bzl", "rules_rust_test_deps")
 
 rules_rust_test_deps()
 
+load("//test:deps_transitive.bzl", "rules_rust_test_deps_transitive")
+
+rules_rust_test_deps_transitive()
+
 # --- end stardoc
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
