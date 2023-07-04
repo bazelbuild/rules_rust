@@ -7,7 +7,6 @@
 * [rust_proto_transitive_repositories](#rust_proto_transitive_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
 * [rust_prost_library](#rust_prost_library)
-* [rust_tonic_library](#rust_tonic_library)
 
 
 ## Overview
@@ -15,8 +14,7 @@ These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [R
 
 There are two rule sets. The first ruleset defines the `rust_proto_library` and `rust_grpc_library`
 rules which generate Rust code using the [`rust-protobuf`] dependencies. The second ruleset defines
-the `rust_prost_library` and `rust_tonic_library` rules which generate Rust code using the [`prost`]
-and [`tonic`] dependencies respectively.
+the `rust_prost_library` which generates Rust code using the [`prost`] and [`tonic`] dependencies.
 
 [rust]: http://www.rust-lang.org/
 [protobuf]: https://developers.google.com/protocol-buffers/
@@ -425,24 +423,5 @@ Load transitive dependencies of the `@rules_rust//proto` rules.
 
 This macro should be called immediately after the `rust_proto_repositories` macro.
 
-
-
-<a id="rust_tonic_library"></a>
-
-## rust_tonic_library
-
-<pre>
-rust_tonic_library(<a href="#rust_tonic_library-name">name</a>, <a href="#rust_tonic_library-kwargs">kwargs</a>)
-</pre>
-
-A rule for generating a Rust library using Prost and Tonic.
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="rust_tonic_library-name"></a>name |  The name of the target.   |  none |
-| <a id="rust_tonic_library-kwargs"></a>kwargs |  Additional keyword arguments for the underlying <code>rust_tonic_library</code> rule.   |  none |
 
 
