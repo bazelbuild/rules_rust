@@ -121,6 +121,7 @@ PAGES = dict([
             "rust_proto_repositories",
             "rust_proto_transitive_repositories",
             "rust_proto_toolchain",
+            "rust_prost_library",
         ],
     ),
     page(

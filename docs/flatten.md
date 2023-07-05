@@ -31,6 +31,7 @@
 * [rust_library](#rust_library)
 * [rust_library_group](#rust_library_group)
 * [rust_proc_macro](#rust_proc_macro)
+* [rust_prost_library](#rust_prost_library)
 * [rust_proto_library](#rust_proto_library)
 * [rust_proto_repositories](#rust_proto_repositories)
 * [rust_proto_toolchain](#rust_proto_toolchain)
@@ -1790,6 +1791,25 @@ Registers the default toolchains for the `rules_rust` [bindgen][bg] rules.
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  `True` |
+
+
+<a id="rust_prost_library"></a>
+
+## rust_prost_library
+
+<pre>
+rust_prost_library(<a href="#rust_prost_library-name">name</a>, <a href="#rust_prost_library-kwargs">kwargs</a>)
+</pre>
+
+A rule for generating a Rust library using Prost.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_prost_library-name"></a>name |  The name of the target.   |  none |
+| <a id="rust_prost_library-kwargs"></a>kwargs |  Additional keyword arguments for the underlying <code>rust_prost_library</code> rule.   |  none |
 
 
 <a id="rust_proto_repositories"></a>

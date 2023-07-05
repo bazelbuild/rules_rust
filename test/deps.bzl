@@ -45,3 +45,13 @@ def rules_rust_test_deps():
         name = "rules_rust_toolchain_test_target_json",
         target_json = Label("//test/unit/toolchain:toolchain-test-triple.json"),
     )
+
+    maybe(
+        http_archive,
+        name = "com_google_googleapis",
+        urls = [
+            "https://github.com/googleapis/googleapis/archive/18becb1d1426feb7399db144d7beeb3284f1ccb0.zip",
+        ],
+        strip_prefix = "googleapis-18becb1d1426feb7399db144d7beeb3284f1ccb0",
+        sha256 = "b8c487191eb942361af905e40172644eab490190e717c3d09bf83e87f3994fff",
+    )

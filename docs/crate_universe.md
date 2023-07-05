@@ -462,7 +462,7 @@ bazel run //3rdparty:crates_vendor -- --repin
 ```
 
 Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
-call against the generated workspace. The following table describes how to controll particular values passed to the
+call against the generated workspace. The following table describes how to control particular values passed to the
 `cargo update` command.
 
 | Value | Cargo command |

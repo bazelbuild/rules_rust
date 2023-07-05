@@ -48,5 +48,6 @@ bzl_library(
     srcs = glob(["**/*.bzl"]),
     deps = [
         "//proto/3rdparty:bzl_lib",
+        "//proto/prost:bzl_lib",
     ],
 )

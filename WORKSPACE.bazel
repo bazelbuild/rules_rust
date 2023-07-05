@@ -10,13 +10,17 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto:repositories.bzl", "rust_proto_dependencies", "rust_proto_register_toolchains")
 
-rust_proto_repositories()
+rust_proto_dependencies()
+
+rust_proto_register_toolchains()
 
 load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
 
 rust_proto_transitive_repositories()
+
+register_toolchains("@rules_rust//proto/prost/private/...")
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
@@ -47,6 +51,10 @@ bazel_skylib_workspace()
 load("//test:deps.bzl", "rules_rust_test_deps")
 
 rules_rust_test_deps()
+
+load("//test:deps_transitive.bzl", "rules_rust_test_deps_transitive")
+
+rules_rust_test_deps_transitive()
 
 # --- end stardoc
 

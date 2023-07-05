@@ -1,0 +1,62 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "protoc-gen-prost": [crate.annotation(
+            gen_binaries = ["protoc-gen-prost"],
+            patch_args = [
+                "-p1",
+            ],
+            patches = [
+                # This patch is needed to handle duplicate package names.
+                # See: https://github.com/neoeinstein/protoc-gen-prost/issues/70
+                "@rules_rust//proto/prost/private/3rdparty/patches:protoc-gen-prost.patch",
+            ],
+        )],
+        "protoc-gen-tonic": [crate.annotation(
+            gen_binaries = ["protoc-gen-tonic"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "h2": crate.spec(
+            version = "0.3.19",
+        ),
+        "prost": crate.spec(
+            version = "0.11.9",
+        ),
+        "prost-types": crate.spec(
+            version = "0.11.9",
+        ),
+        "protoc-gen-prost": crate.spec(
+            version = "0.2.2",
+        ),
+        "protoc-gen-tonic": crate.spec(
+            version = "0.2.2",
+        ),
+        "tokio": crate.spec(
+            features = ["full"],
+            version = "1.28.2",
+        ),
+        "tokio-stream": crate.spec(
+            version = "0.1.14",
+        ),
+        "tonic": crate.spec(
+            version = "0.9.2",
+        ),
+    },
+    repository_name = "rules_rust_prost",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//proto/prost/private/3rdparty/crates:crates.bzl",
+        "//proto/prost/private/3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//proto/prost/private:__pkg__"],
+)

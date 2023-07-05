@@ -17,24 +17,17 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/3rdparty/crates:defs.bzl", "crate_repositories")
+load("//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
-# buildifier: disable=unnamed-macro
-def rust_proto_repositories(register_default_toolchain = True):
-    """Declare dependencies needed for proto compilation.
-
-    Args:
-        register_default_toolchain (bool, optional): If True, the default [rust_proto_toolchain](#rust_proto_toolchain)
-            (`@rules_rust//proto:default-proto-toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
-    """
+def rust_proto_dependencies():
     maybe(
         http_archive,
         name = "rules_proto",
-        sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
-        strip_prefix = "rules_proto-4.0.0",
+        sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
+        strip_prefix = "rules_proto-5.3.0-21.7",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
-            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
+            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
         ],
     )
 
@@ -55,6 +48,24 @@ def rust_proto_repositories(register_default_toolchain = True):
 
     crate_repositories()
 
-    # Register toolchains
-    if register_default_toolchain:
+    rust_prost_dependencies()
+
+# buildifier: disable=unnamed-macro
+def rust_proto_register_toolchains(register_proto_toolchains = True):
+    """Register toolchains for proto compilation."""
+
+    if register_proto_toolchains:
         native.register_toolchains(str(Label("//proto:default-proto-toolchain")))
+
+# buildifier: disable=unnamed-macro
+def rust_proto_repositories(register_default_toolchain = True):
+    """Declare dependencies needed for proto compilation.
+
+    Args:
+        register_default_toolchain (bool, optional): If True, the default [rust_proto_toolchain](#rust_proto_toolchain)
+            (`@rules_rust//proto:default-proto-toolchain`) is registered. This toolchain requires a set of dependencies
+            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
+    """
+
+    rust_proto_dependencies()
+    rust_proto_register_toolchains(register_proto_toolchains = register_default_toolchain)

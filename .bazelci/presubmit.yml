@@ -3,7 +3,7 @@ aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
-  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.59.0"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.62.0"],\n|' WORKSPACE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
 nightly_aspects_flags: &nightly_aspects_flags
@@ -205,7 +205,7 @@ tasks:
   ubuntu1804:
     name: "Min Bazel Version"
     # If updating the minimum bazel version, please also update /docs/index.md
-    bazel: "5.2.0"
+    bazel: "6.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -213,7 +213,7 @@ tasks:
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "5.2.0"
+    bazel: "6.0.0"
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets

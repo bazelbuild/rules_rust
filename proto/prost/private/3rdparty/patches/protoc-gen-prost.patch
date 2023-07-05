@@ -1,0 +1,33 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index 43fc5ba..2098949 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -86,17 +86,17 @@ impl ModuleRequestSet {
+             |mut acc, (proto, raw)| {
+                 let module = Module::from_protobuf_package_name(proto.package());
+                 let proto_filename = proto.name();
+-                let entry = acc.entry(module).or_insert_with(|| {
+-                    let mut request = ModuleRequest::new(proto.package().to_owned());
+-                    if input_protos.contains(proto_filename) {
+-                        let filename = match proto.package() {
+-                            "" => default_package_filename.to_owned(),
+-                            package => format!("{package}.rs"),
+-                        };
+-                        request.with_output_filename(filename);
+-                    }
+-                    request
+-                });
++                let entry = acc
++                    .entry(module)
++                    .or_insert_with(|| ModuleRequest::new(proto.package().to_owned()));
++
++                if entry.output_filename().is_none() && input_protos.contains(proto_filename) {
++                    let filename = match proto.package() {
++                        "" => default_package_filename.to_owned(),
++                        package => format!("{package}.rs"),
++                    };
++                    entry.with_output_filename(filename);
++                }
+ 
+                 entry.push_file_descriptor_proto(proto, raw);
+                 acc
