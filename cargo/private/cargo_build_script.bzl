@@ -163,6 +163,13 @@ def _cargo_build_script_impl(ctx):
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
         env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
         env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+        bindgen_flags = []
+        if cc_toolchain.sysroot:
+            bindgen_flags.append("--sysroot={}".format(cc_toolchain.sysroot))
+        if cc_toolchain.built_in_include_directories:
+            for include_dir in cc_toolchain.built_in_include_directories:
+                bindgen_flags.append("-I{}".format(include_dir))
+        env["BINDGEN_EXTRA_CLANG_ARGS"] = " ".join(bindgen_flags)
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
