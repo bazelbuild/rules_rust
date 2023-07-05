@@ -17,9 +17,9 @@ DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
 
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
-    sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
-    url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
-    strip_prefix = "tinyjson-2.3.0",
+    sha256 = "9ab95735ea2c8fd51154d01e39cf13912a78071c2d89abc49a7ef102a7dd725a",
+    url = "https://crates.io/api/v1/crates/tinyjson/2.5.1/download",
+    strip_prefix = "tinyjson-2.5.1",
     type = "tar.gz",
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
 )
