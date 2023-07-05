@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::process;
 use std::{env, fmt};
 
+use heck::ToSnakeCase;
 use prost::Message;
 use prost_types::{
     DescriptorProto, EnumDescriptorProto, FileDescriptorProto, FileDescriptorSet,
@@ -42,6 +43,18 @@ fn find_generated_rust_files(out_dir: &Path) -> BTreeSet<PathBuf> {
     }
 
     all_rs_files
+}
+
+fn snake_cased_package_name(package: &str) -> String {
+    if package == "_" {
+        return package.to_owned();
+    }
+
+    package
+        .split('.')
+        .map(|s| s.to_snake_case())
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// Rust module definition.
@@ -121,20 +134,25 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
                 .to_string()
         };
 
-        let module_name = package.to_lowercase().to_string();
-
-        if module_name.is_empty() {
+        if package.is_empty() {
             continue;
         }
 
-        let mut name = module_name.clone();
-        if module_name.contains('.') {
-            name = module_name
+        let name = if package == "_" {
+            package.clone()
+        } else if package.contains('.') {
+            package
                 .rsplit_once('.')
                 .expect("Failed to split on '.'")
                 .1
-                .to_string();
-        }
+                .to_snake_case()
+                .to_string()
+        } else {
+            package.to_snake_case()
+        };
+
+        // Avoid a stack overflow by skipping a known bad package name
+        let module_name = snake_cased_package_name(&package);
 
         module_info.insert(
             module_name.clone(),
@@ -145,7 +163,7 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
             },
         );
 
-        let module_parts = module_name.split('.').collect::<Vec<&str>>();
+        let module_parts = module_name.split('.').collect::<Vec<_>>();
         for parent_module_index in 0..module_parts.len() {
             let child_module_index = parent_module_index + 1;
             if child_module_index >= module_parts.len() {
@@ -307,7 +325,7 @@ fn descriptor_set_file_to_extern_paths(
     file: &FileDescriptorProto,
 ) {
     let package = file.package.clone().unwrap_or_default();
-    let rust_path = rust_path.join(&package.replace('.', "::"));
+    let rust_path = rust_path.join(&snake_cased_package_name(&package).replace('.', "::"));
     let proto_path = ProtoPath(package);
 
     for message_type in file.message_type.iter() {
@@ -1042,6 +1060,11 @@ mod test {
             let proto_path = ProtoPath::from("foo.bar");
             assert_eq!(proto_path.to_string(), "foo.bar");
             assert_eq!(proto_path.join("baz"), ProtoPath::from("foo.bar.baz"));
+        }
+        {
+            let proto_path = ProtoPath::from("Foo.baR");
+            assert_eq!(proto_path.to_string(), "Foo.baR");
+            assert_eq!(proto_path.join("baz"), ProtoPath::from("Foo.baR.baz"));
         }
     }
 
