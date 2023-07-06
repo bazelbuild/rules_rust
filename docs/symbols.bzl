@@ -28,22 +28,31 @@ load(
     _crates_vendor = "crates_vendor",
 )
 load(
-    "@rules_rust//proto:defs.bzl",
-    _rust_grpc_library = "rust_grpc_library",
+    "@rules_rust//proto/prost:defs.bzl",
     _rust_prost_library = "rust_prost_library",
+    _rust_prost_toolchain = "rust_prost_toolchain",
+)
+load(
+    "@rules_rust//proto/prost:repositories.bzl",
+    _rust_prost_dependencies = "rust_prost_dependencies",
+)
+load(
+    "@rules_rust//proto/protobuf:defs.bzl",
+    _rust_grpc_library = "rust_grpc_library",
     _rust_proto_library = "rust_proto_library",
 )
 load(
-    "@rules_rust//proto:repositories.bzl",
-    _rust_proto_dependencies = "rust_proto_dependencies",
-)
-load(
-    "@rules_rust//proto:transitive_repositories.bzl",
-    _rust_proto_transitive_repositories = "rust_proto_transitive_repositories",
+    "@rules_rust//proto/protobuf:repositories.bzl",
+    _rust_proto_protobuf_dependencies = "rust_proto_protobuf_dependencies",
+    _rust_proto_protobuf_register_toolchains = "rust_proto_protobuf_register_toolchains",
 )
 load(
     "@rules_rust//proto/protobuf:toolchain.bzl",
     _rust_proto_toolchain = "rust_proto_toolchain",
+)
+load(
+    "@rules_rust//proto/protobuf:transitive_repositories.bzl",
+    _rust_proto_protobuf_transitive_repositories = "rust_proto_protobuf_transitive_repositories",
 )
 load(
     "@rules_rust//rust:defs.bzl",
@@ -123,9 +132,10 @@ rust_test_suite = _rust_test_suite
 rust_doc = _rust_doc
 rust_doc_test = _rust_doc_test
 
-rust_proto_library = _rust_proto_library
-rust_grpc_library = _rust_grpc_library
 rust_prost_library = _rust_prost_library
+rust_prost_toolchain = _rust_prost_toolchain
+rust_grpc_library = _rust_grpc_library
+rust_proto_library = _rust_proto_library
 
 rust_bindgen = _rust_bindgen
 rust_bindgen_dependencies = _rust_bindgen_dependencies
@@ -135,9 +145,12 @@ rust_bindgen_toolchain = _rust_bindgen_toolchain
 
 rust_toolchain = _rust_toolchain
 rust_proto_toolchain = _rust_proto_toolchain
-rust_proto_dependencies = _rust_proto_dependencies
+rust_proto_protobuf_dependencies = _rust_proto_protobuf_dependencies
+rust_proto_protobuf_register_toolchains = _rust_proto_protobuf_register_toolchains
+rust_prost_dependencies = _rust_prost_dependencies
 rust_stdlib_filegroup = _rust_stdlib_filegroup
-rust_proto_transitive_repositories = _rust_proto_transitive_repositories
+rust_proto_protobuf_transitive_repositories = _rust_proto_protobuf_transitive_repositories
+rust_prost_transitive_repositories = _rust_proto_protobuf_transitive_repositories
 
 cargo_bootstrap_repository = _cargo_bootstrap_repository
 cargo_build_script = _cargo_build_script

@@ -1,22 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
-alias(
-    name = "toolchain_type",
-    actual = "//proto/protobuf:toolchain_type",
-    deprecation = "Use @rules_rust//proto/protobuf:toolchain_type instead",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "default-proto-toolchain",
-    actual = "//proto/protobuf:default-proto-toolchain",
-    deprecation = "Use @rules_rust//proto/protobuf:default-proto-toolchain instead",
-    visibility = ["//visibility:public"],
-)
-
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]),
     visibility = ["//visibility:public"],
     deps = [
         "//proto/prost:bzl_lib",

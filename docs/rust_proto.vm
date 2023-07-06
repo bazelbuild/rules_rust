@@ -2,9 +2,9 @@
 ## Overview
 These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [Rust][rust] with Bazel.
 
-There are two rule sets. The first ruleset defines the `rust_proto_library` and `rust_grpc_library`
-rules which generate Rust code using the [`rust-protobuf`] dependencies. The second ruleset defines
-the `rust_prost_library` which generates Rust code using the [`prost`] and [`tonic`] dependencies.
+There are two rule sets. The first ruleset defines the `rust_prost_library` which generates Rust code
+using the [`prost`] and [`tonic`] dependencies. The second ruleset defines the `rust_proto_library` and
+`rust_grpc_library` rules which generate Rust code using the [`rust-protobuf`] dependencies. 
 
 [rust]: http://www.rust-lang.org/
 [protobuf]: https://developers.google.com/protocol-buffers/
@@ -13,110 +13,28 @@ the `rust_prost_library` which generates Rust code using the [`prost`] and [`ton
 
 See the [protobuf example](../examples/proto) for a more complete example of use.
 
-### Setup
-
-To use the Rust proto rules, add the following to your `WORKSPACE` file to add the
-external repositories for the Rust proto toolchain (in addition to the [rust rules setup](..)):
+### Prost Setup
 
 ```python
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
-rust_proto_repositories()
+rust_proto_protobuf_dependencies()
 
-load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
-rust_proto_transitive_repositories()
+rust_prost_transitive_repositories()
 ```
 
-This will load the required dependencies for the Proto, Prost, and Tonic rules. It will also
-register a default toolchain for the `rust_proto_library` and `rust_grpc_library` rules. The
-`prost` and `tonic` rules do not specify a default toolchain in order to avoid mismatched
-dependency issues.
-
-To customize the `rust_proto_library` and `rust_grpc_library` toolchain, please see the section
-[Customizing `rust-protobuf` Dependencies](#custom-proto-deps).
-
-To setup the `prost` and `tonic` toolchain, please see the section [Customizing `prost` and `tonic` Dependencies](#custom-prost-deps).
+The `prost` and `tonic` rules do not specify a default toolchain in order to avoid mismatched
+dependency issues. To setup the `prost` and `tonic` toolchain, please see the section
+[Customizing `prost` and `tonic` Dependencies](#custom-prost-deps).
 
 For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
 
-## <a name="custom-proto-deps">Customizing `rust-protobuf` Dependencies
-
-These rules depend on the [`protobuf`](https://crates.io/crates/protobuf) and
-the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
-compiler](https://github.com/google/protobuf). To obtain these crates,
-`rust_proto_repositories` imports the given crates using BUILD files generated with
-[crate_universe](./crate_universe.md).
-
-If you want to either change the protobuf and gRPC rust compilers, or to
-simply use [crate_universe](./crate_universe.md) in a more
-complex scenario (with more dependencies), you must redefine those
-dependencies.
-
-To do this, once you've imported the needed dependencies (see our
-[@rules_rust//proto/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/3rdparty/BUILD.bazel)
-file to see the default dependencies), you need to create your own toolchain. 
-To do so you can create a BUILD file with your toolchain definition, for example:
-
-```python
-load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
-
-rust_proto_toolchain(
-    name = "proto-toolchain-impl",
-    # Path to the protobuf compiler.
-    protoc = "@com_google_protobuf//:protoc",
-    # Protobuf compiler plugin to generate rust gRPC stubs.
-    grpc_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust_grpc",
-    # Protobuf compiler plugin to generate rust protobuf stubs.
-    proto_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust",
-)
-
-toolchain(
-    name = "proto-toolchain",
-    toolchain = ":proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
-)
-```
-
-Now that you have your own toolchain, you need to register it by
-inserting the following statement in your `WORKSPACE` file:
-
-```python
-register_toolchains("//my/toolchains:proto-toolchain")
-```
-
-Finally, you might want to set the `rust_deps` attribute in
-`rust_proto_library` and `rust_grpc_library` to change the compile-time
-dependencies:
-
-```python
-rust_proto_library(
-    ...
-    rust_deps = ["//3rdparty/crates:protobuf"],
-    ...
-)
-
-rust_grpc_library(
-    ...
-    rust_deps = [
-        "//3rdparty/crates:protobuf",
-        "//3rdparty/crates:grpc",
-        "//3rdparty/crates:tls_api",
-        "//3rdparty/crates:tls_api_stub",
-    ],
-    ...
-)
-```
-
-__Note__: Ideally, we would inject those dependencies from the toolchain,
-but due to [bazelbuild/bazel#6889](https://github.com/bazelbuild/bazel/issues/6889)
-all dependencies added via the toolchain ends-up being in the wrong
-configuration.
-
-## <a name="custom-prost-deps">Customizing `prost` and `tonic` Dependencies
+#### <a name="custom-prost-deps">Customizing `prost` and `tonic` Dependencies
 
 These rules depend on the [`prost`] and [`tonic`] dependencies. To setup the necessary toolchain
-for these rules, you must define a toolchain with the [`prost`], [`prost-types`], [`tonic`],[`protoc-gen-prost`], and [`protoc-gen-tonic`] crates as well as the [`protoc`] binary.
+for these rules, you must define a toolchain with the [`prost`], [`prost-types`], [`tonic`], [`protoc-gen-prost`], and [`protoc-gen-tonic`] crates as well as the [`protoc`] binary.
 
 [`prost`]: https://crates.io/crates/prost
 [`prost-types`]: https://crates.io/crates/prost-types
@@ -208,7 +126,7 @@ rust_prost_toolchain(
 toolchain(
     name = "prost_toolchain",
     toolchain = "default_prost_toolchain_impl",
-    toolchain_type = "//proto/prost:toolchain_type",
+    toolchain_type = "@rules_rust//proto/prost:toolchain_type",
 )
 ```
 
@@ -217,4 +135,106 @@ Lastly, you must register the toolchain in your `WORKSPACE` file. For example:
 ```python
 register_toolchains("//toolchains:prost_toolchain")
 ```
+
+## Rust-Protobuf Setup
+
+To use the Rust proto rules, add the following to your `WORKSPACE` file to add the
+external repositories for the Rust proto toolchain (in addition to the [rust rules setup](..)):
+
+```python
+load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
+
+rust_proto_protobuf_dependencies()
+
+rust_proto_protobuf_register_toolchains()
+
+load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
+
+rust_proto_protobuf_transitive_repositories()
+```
+
+This will load the required dependencies for the [`rust-protobuf`] rules. It will also
+register a default toolchain for the `rust_proto_library` and `rust_grpc_library` rules.
+
+To customize the `rust_proto_library` and `rust_grpc_library` toolchain, please see the section
+[Customizing `rust-protobuf` Dependencies](#custom-proto-deps).
+
+For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
+
+#### <a name="custom-proto-deps">Customizing `rust-protobuf` Dependencies
+
+These rules depend on the [`protobuf`](https://crates.io/crates/protobuf) and
+the [`grpc`](https://crates.io/crates/grpc) crates in addition to the [protobuf
+compiler](https://github.com/google/protobuf). To obtain these crates,
+`rust_proto_repositories` imports the given crates using BUILD files generated with
+[crate_universe](./crate_universe.md).
+
+If you want to either change the protobuf and gRPC rust compilers, or to
+simply use [crate_universe](./crate_universe.md) in a more
+complex scenario (with more dependencies), you must redefine those
+dependencies.
+
+To do this, once you've imported the needed dependencies (see our
+[@rules_rust//proto/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/3rdparty/BUILD.bazel)
+file to see the default dependencies), you need to create your own toolchain. 
+To do so you can create a BUILD file with your toolchain definition, for example:
+
+```python
+load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
+
+rust_proto_toolchain(
+    name = "proto-toolchain-impl",
+    # Path to the protobuf compiler.
+    protoc = "@com_google_protobuf//:protoc",
+    # Protobuf compiler plugin to generate rust gRPC stubs.
+    grpc_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust_grpc",
+    # Protobuf compiler plugin to generate rust protobuf stubs.
+    proto_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust",
+)
+
+toolchain(
+    name = "proto-toolchain",
+    toolchain = ":proto-toolchain-impl",
+    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
+)
+```
+
+Now that you have your own toolchain, you need to register it by
+inserting the following statement in your `WORKSPACE` file:
+
+```python
+register_toolchains("//my/toolchains:proto-toolchain")
+```
+
+Finally, you might want to set the `rust_deps` attribute in
+`rust_proto_library` and `rust_grpc_library` to change the compile-time
+dependencies:
+
+```python
+rust_proto_library(
+    ...
+    rust_deps = ["//3rdparty/crates:protobuf"],
+    ...
+)
+
+rust_grpc_library(
+    ...
+    rust_deps = [
+        "//3rdparty/crates:protobuf",
+        "//3rdparty/crates:grpc",
+        "//3rdparty/crates:tls_api",
+        "//3rdparty/crates:tls_api_stub",
+    ],
+    ...
+)
+```
+
+__Note__: Ideally, we would inject those dependencies from the toolchain,
+but due to [bazelbuild/bazel#6889](https://github.com/bazelbuild/bazel/issues/6889)
+all dependencies added via the toolchain ends-up being in the wrong
+configuration.
+
+---
+---
+
 ]]#

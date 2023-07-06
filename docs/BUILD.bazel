@@ -116,12 +116,17 @@ PAGES = dict([
         name = "rust_proto",
         header_template = ":rust_proto.vm",
         symbols = [
-            "rust_grpc_library",
-            "rust_proto_library",
-            "rust_proto_dependencies",
-            "rust_proto_transitive_repositories",
-            "rust_proto_toolchain",
             "rust_prost_library",
+            "rust_prost_toolchain",
+            "rust_prost_dependencies",
+            "rust_prost_transitive_repositories",
+        ] + [
+            "rust_proto_library",
+            "rust_grpc_library",
+            "rust_proto_protobuf_toolchain",
+            "rust_proto_protobuf_dependencies",
+            "rust_proto_protobuf_register_toolchains",
+            "rust_proto_protobuf_transitive_repositories",
         ],
     ),
     page(
