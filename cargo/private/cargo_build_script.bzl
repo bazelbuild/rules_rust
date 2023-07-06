@@ -5,12 +5,10 @@ load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_N
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//cargo:features.bzl", "SYMLINK_EXEC_ROOT_FEATURE")
 load("//rust:defs.bzl", "rust_common")
+load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:providers.bzl", _DepInfo = "DepInfo")
-
-# buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "BuildInfo", "get_compilation_mode_opts", "get_linker_and_args")
+load("//rust/private:rustc.bzl", "get_compilation_mode_opts", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", _name_to_crate_name = "name_to_crate_name")
@@ -406,7 +404,7 @@ def _cargo_dep_env_implementation(ctx):
         # Information here is used directly by dependencies, and it is an error to have more than
         # one dependency which sets this. This is the main way to specify information from build
         # scripts, which is what we're looking to do.
-        _DepInfo(
+        DepInfo(
             dep_env = ctx.file.src,
             direct_crates = depset(),
             link_search_path_files = depset(),
