@@ -715,7 +715,7 @@ fn main() {
     let has_services = has_services(&descriptor_set);
 
     if has_services && !is_tonic {
-        println!("Warning: Service definitions will not be generated because the prost toolchain did not define a tonic plugin.");
+        eprintln!("Warning: Service definitions will not be generated because the prost toolchain did not define a tonic plugin.");
     }
 
     let mut cmd = process::Command::new(&protoc);
