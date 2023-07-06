@@ -301,6 +301,7 @@ def _cargo_build_script_impl(ctx):
             flags = flags_out,
             link_flags = link_flags,
             link_search_paths = link_search_paths,
+            compile_data = depset([]),
         ),
         OutputGroupInfo(
             streams = depset([streams.stdout, streams.stderr]),
@@ -449,6 +450,7 @@ def _cargo_dep_env_implementation(ctx):
             link_search_paths = empty_file,
             out_dir = out_dir,
             rustc_env = empty_file,
+            compile_data = depset([]),
         ))
     return [
         DefaultInfo(files = depset(ctx.files.src)),
@@ -465,8 +467,9 @@ def _cargo_dep_env_implementation(ctx):
             flags = empty_file,
             link_flags = empty_file,
             link_search_paths = empty_file,
-            out_dir = empty_dir,
+            out_dir = None,
             rustc_env = empty_file,
+            compile_data = depset([]),
         ),
         # Information here is used directly by dependencies, and it is an error to have more than
         # one dependency which sets this. This is the main way to specify information from build
