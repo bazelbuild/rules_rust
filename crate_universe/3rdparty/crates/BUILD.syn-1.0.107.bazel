@@ -86,8 +86,8 @@ rust_library(
     }),
     version = "1.0.107",
     deps = [
-        "@cui__proc-macro2-1.0.49//:proc_macro2",
-        "@cui__quote-1.0.23//:quote",
+        "@cui__proc-macro2-1.0.64//:proc_macro2",
+        "@cui__quote-1.0.29//:quote",
         "@cui__syn-1.0.107//:build_script_build",
         "@cui__unicode-ident-1.0.6//:unicode_ident",
     ],

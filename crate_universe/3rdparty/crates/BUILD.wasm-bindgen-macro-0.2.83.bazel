@@ -77,7 +77,7 @@ rust_proc_macro(
     }),
     version = "0.2.83",
     deps = [
-        "@cui__quote-1.0.23//:quote",
+        "@cui__quote-1.0.29//:quote",
         "@cui__wasm-bindgen-macro-support-0.2.83//:wasm_bindgen_macro_support",
     ],
 )

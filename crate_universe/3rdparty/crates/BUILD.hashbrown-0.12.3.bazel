@@ -32,7 +32,6 @@ rust_library(
         "ahash",
         "default",
         "inline-more",
-        "raw",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",

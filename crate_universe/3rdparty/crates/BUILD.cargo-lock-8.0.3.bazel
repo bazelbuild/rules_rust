@@ -74,8 +74,8 @@ rust_library(
     }),
     version = "8.0.3",
     deps = [
-        "@cui__semver-1.0.16//:semver",
-        "@cui__serde-1.0.152//:serde",
+        "@cui__semver-1.0.17//:semver",
+        "@cui__serde-1.0.171//:serde",
         "@cui__toml-0.5.10//:toml",
         "@cui__url-2.3.1//:url",
     ],
