@@ -33,7 +33,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "@cvm__tokio-1.28.2//:tokio",
+    actual = "@cvm__tokio-1.29.1//:tokio",
     tags = ["manual"],
 )
 

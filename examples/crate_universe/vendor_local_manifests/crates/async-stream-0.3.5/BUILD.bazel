@@ -21,6 +21,7 @@ rust_library(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",
@@ -77,6 +78,6 @@ rust_library(
     version = "0.3.5",
     deps = [
         "//vendor_local_manifests/crates/futures-core-0.3.28:futures_core",
-        "//vendor_local_manifests/crates/pin-project-lite-0.2.9:pin_project_lite",
+        "//vendor_local_manifests/crates/pin-project-lite-0.2.10:pin_project_lite",
     ],
 )

@@ -21,6 +21,7 @@ rust_library(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",
@@ -75,6 +76,6 @@ rust_library(
     deps = [
         "//vendor_local_pkgs/crates/bytes-1.4.0:bytes",
         "//vendor_local_pkgs/crates/fnv-1.0.7:fnv",
-        "//vendor_local_pkgs/crates/itoa-1.0.6:itoa",
+        "//vendor_local_pkgs/crates/itoa-1.0.8:itoa",
     ],
 )
