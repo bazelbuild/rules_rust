@@ -75,8 +75,8 @@ rust_library(
     version = "1.1.1",
     deps = [
         "@rules_rust_wasm_bindgen__lazy_static-1.4.0//:lazy_static",
-        "@rules_rust_wasm_bindgen__regex-1.7.0//:regex",
-        "@rules_rust_wasm_bindgen__serde-1.0.152//:serde",
+        "@rules_rust_wasm_bindgen__regex-1.9.1//:regex",
+        "@rules_rust_wasm_bindgen__serde-1.0.171//:serde",
         "@rules_rust_wasm_bindgen__strsim-0.10.0//:strsim",
     ],
 )

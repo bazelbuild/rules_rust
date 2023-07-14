@@ -79,6 +79,6 @@ rust_library(
     deps = [
         "@rules_rust_wasm_bindgen__difflib-0.4.0//:difflib",
         "@rules_rust_wasm_bindgen__itertools-0.10.5//:itertools",
-        "@rules_rust_wasm_bindgen__predicates-core-1.0.5//:predicates_core",
+        "@rules_rust_wasm_bindgen__predicates-core-1.0.6//:predicates_core",
     ],
 )

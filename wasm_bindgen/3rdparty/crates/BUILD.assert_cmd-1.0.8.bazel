@@ -77,8 +77,8 @@ rust_library(
         "@rules_rust_wasm_bindgen__bstr-0.2.17//:bstr",
         "@rules_rust_wasm_bindgen__doc-comment-0.3.3//:doc_comment",
         "@rules_rust_wasm_bindgen__predicates-2.1.5//:predicates",
-        "@rules_rust_wasm_bindgen__predicates-core-1.0.5//:predicates_core",
-        "@rules_rust_wasm_bindgen__predicates-tree-1.0.7//:predicates_tree",
+        "@rules_rust_wasm_bindgen__predicates-core-1.0.6//:predicates_core",
+        "@rules_rust_wasm_bindgen__predicates-tree-1.0.9//:predicates_tree",
         "@rules_rust_wasm_bindgen__wait-timeout-0.2.0//:wait_timeout",
     ],
 )

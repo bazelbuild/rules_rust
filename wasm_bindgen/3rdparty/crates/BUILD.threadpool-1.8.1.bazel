@@ -74,6 +74,6 @@ rust_library(
     }),
     version = "1.8.1",
     deps = [
-        "@rules_rust_wasm_bindgen__num_cpus-1.15.0//:num_cpus",
+        "@rules_rust_wasm_bindgen__num_cpus-1.16.0//:num_cpus",
     ],
 )
