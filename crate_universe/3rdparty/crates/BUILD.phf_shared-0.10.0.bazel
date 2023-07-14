@@ -80,6 +80,6 @@ rust_library(
     version = "0.10.0",
     deps = [
         "@cui__siphasher-0.3.10//:siphasher",
-        "@cui__uncased-0.9.7//:uncased",
+        "@cui__uncased-0.9.9//:uncased",
     ],
 )

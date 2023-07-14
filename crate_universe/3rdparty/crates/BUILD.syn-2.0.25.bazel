@@ -86,6 +86,6 @@ rust_library(
     deps = [
         "@cui__proc-macro2-1.0.64//:proc_macro2",
         "@cui__quote-1.0.29//:quote",
-        "@cui__unicode-ident-1.0.6//:unicode_ident",
+        "@cui__unicode-ident-1.0.10//:unicode_ident",
     ],
 )

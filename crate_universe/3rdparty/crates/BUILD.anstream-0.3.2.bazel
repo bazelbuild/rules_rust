@@ -83,7 +83,7 @@ rust_library(
         "@cui__anstyle-parse-0.2.1//:anstyle_parse",
         "@cui__anstyle-query-1.0.0//:anstyle_query",
         "@cui__colorchoice-1.0.0//:colorchoice",
-        "@cui__is-terminal-0.4.9//:is_terminal",
+        "@cui__is-terminal-0.4.7//:is_terminal",
         "@cui__utf8parse-0.2.1//:utf8parse",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [

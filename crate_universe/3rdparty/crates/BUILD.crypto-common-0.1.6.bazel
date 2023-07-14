@@ -77,7 +77,7 @@ rust_library(
     }),
     version = "0.1.6",
     deps = [
-        "@cui__generic-array-0.14.6//:generic_array",
+        "@cui__generic-array-0.14.7//:generic_array",
         "@cui__typenum-1.16.0//:typenum",
     ],
 )

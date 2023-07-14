@@ -76,7 +76,7 @@ rust_library(
     version = "3.6.0",
     deps = [
         "@cui__cfg-if-1.0.0//:cfg_if",
-        "@cui__fastrand-1.8.0//:fastrand",
+        "@cui__fastrand-1.9.0//:fastrand",
         "@cui__tempfile-3.6.0//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

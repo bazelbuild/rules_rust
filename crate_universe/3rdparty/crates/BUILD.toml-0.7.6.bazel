@@ -82,6 +82,6 @@ rust_library(
         "@cui__serde-1.0.171//:serde",
         "@cui__serde_spanned-0.6.3//:serde_spanned",
         "@cui__toml_datetime-0.6.3//:toml_datetime",
-        "@cui__toml_edit-0.19.12//:toml_edit",
+        "@cui__toml_edit-0.19.13//:toml_edit",
     ],
 )

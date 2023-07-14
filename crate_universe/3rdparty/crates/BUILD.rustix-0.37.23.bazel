@@ -112,12 +112,80 @@ rust_library(
     ),
     crate_features = [
         "default",
-        "fs",
         "io-lifetimes",
         "libc",
         "std",
+        "termios",
         "use-libc-auxv",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:wasm32-wasi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "fs",
+        ],
+        "//conditions:default": [],
+    }),
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
@@ -307,12 +375,80 @@ cargo_build_script(
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
-        "fs",
         "io-lifetimes",
         "libc",
         "std",
+        "termios",
         "use-libc-auxv",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:wasm32-wasi": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "fs",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "fs",
+        ],
+        "//conditions:default": [],
+    }),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(

@@ -32,7 +32,6 @@ rust_library(
     crate_features = [
         "default",
         "proc-macro",
-        "span-locations",
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
@@ -81,7 +80,7 @@ rust_library(
     version = "1.0.64",
     deps = [
         "@cui__proc-macro2-1.0.64//:build_script_build",
-        "@cui__unicode-ident-1.0.6//:unicode_ident",
+        "@cui__unicode-ident-1.0.10//:unicode_ident",
     ],
 )
 
@@ -91,7 +90,6 @@ cargo_build_script(
     crate_features = [
         "default",
         "proc-macro",
-        "span-locations",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
