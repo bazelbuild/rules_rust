@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "2.2.1",
     deps = [
-        "@rules_rust_wasm_bindgen__rayon-1.6.1//:rayon",
+        "@rules_rust_wasm_bindgen__rayon-1.7.0//:rayon",
     ],
 )

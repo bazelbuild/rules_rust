@@ -77,6 +77,6 @@ rust_library(
         "@rules_rust_wasm_bindgen__ascii-1.1.0//:ascii",
         "@rules_rust_wasm_bindgen__chunked_transfer-1.4.1//:chunked_transfer",
         "@rules_rust_wasm_bindgen__httpdate-1.0.2//:httpdate",
-        "@rules_rust_wasm_bindgen__log-0.4.17//:log",
+        "@rules_rust_wasm_bindgen__log-0.4.19//:log",
     ],
 )

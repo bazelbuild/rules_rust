@@ -1,0 +1,13 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index c2dfa86..300fa51 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -25,7 +25,7 @@ documentation = "https://rustwasm.github.io/wasm-bindgen/"
+ categories = ["wasm"]
+ license = "MIT/Apache-2.0"
+ repository = "https://github.com/rustwasm/wasm-bindgen/tree/master/crates/cli"
+-resolver = "2"
++# resolver = "2"
+ 
+ [[test]]
+ name = "reference"

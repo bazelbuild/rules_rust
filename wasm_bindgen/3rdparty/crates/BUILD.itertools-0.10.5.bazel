@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.10.5",
     deps = [
-        "@rules_rust_wasm_bindgen__either-1.8.0//:either",
+        "@rules_rust_wasm_bindgen__either-1.8.1//:either",
     ],
 )
