@@ -50,7 +50,7 @@ rust_library(
         include = ["src/**"],
         exclude = ["src/**/*.rs"],
     ),
-    edition = "2018",
+    edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     # This target embeds additional, stamping related information (see
     # https://docs.bazel.build/versions/main/user-manual.html#workspace_status
@@ -65,7 +65,7 @@ rust_library(
 rust_binary(
     name = "cargo_bazel_bin",
     srcs = ["src/main.rs"],
-    edition = "2018",
+    edition = "2021",
     version = VERSION,
     visibility = ["//visibility:public"],
     deps = [":cargo_bazel"],
@@ -111,7 +111,7 @@ rust_test(
         "@rules_rust//rust/toolchain:current_cargo_files",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],
-    edition = "2018",
+    edition = "2021",
     env = {
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
