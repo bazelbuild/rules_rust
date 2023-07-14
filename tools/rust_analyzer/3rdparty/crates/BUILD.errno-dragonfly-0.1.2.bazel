@@ -12,11 +12,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "winapi_x86_64_pc_windows_gnu",
+    name = "errno_dragonfly",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -30,11 +30,11 @@ rust_library(
         ],
     ),
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=winapi-x86_64-pc-windows-gnu",
+        "crate-name=errno-dragonfly",
         "manual",
         "noclippy",
         "norustfmt",
@@ -58,14 +58,15 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.0",
+    version = "0.1.2",
     deps = [
-        "@rrra__winapi-x86_64-pc-windows-gnu-0.4.0//:build_script_build",
+        "@rrra__errno-dragonfly-0.1.2//:build_script_build",
+        "@rrra__libc-0.2.147//:libc",
     ],
 )
 
 cargo_build_script(
-    name = "winapi-x86_64-pc-windows-gnu_build_script",
+    name = "errno-dragonfly_build_script",
     srcs = glob(["**/*.rs"]),
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -80,23 +81,26 @@ cargo_build_script(
             "WORKSPACE.bazel",
         ],
     ),
-    edition = "2015",
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=winapi-x86_64-pc-windows-gnu",
+        "crate-name=errno-dragonfly",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.4.0",
+    version = "0.1.2",
     visibility = ["//visibility:private"],
+    deps = [
+        "@rrra__cc-1.0.79//:cc",
+    ],
 )
 
 alias(
     name = "build_script_build",
-    actual = "winapi-x86_64-pc-windows-gnu_build_script",
+    actual = "errno-dragonfly_build_script",
     tags = ["manual"],
 )

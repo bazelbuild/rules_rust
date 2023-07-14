@@ -6,17 +6,16 @@
 #     bazel run @//tools/rust_analyzer/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "winapi_x86_64_pc_windows_gnu",
+    name = "clap_lex",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -30,11 +29,11 @@ rust_library(
         ],
     ),
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2021",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=winapi-x86_64-pc-windows-gnu",
+        "crate-name=clap_lex",
         "manual",
         "noclippy",
         "norustfmt",
@@ -58,45 +57,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.0",
-    deps = [
-        "@rrra__winapi-x86_64-pc-windows-gnu-0.4.0//:build_script_build",
-    ],
-)
-
-cargo_build_script(
-    name = "winapi-x86_64-pc-windows-gnu_build_script",
-    srcs = glob(["**/*.rs"]),
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(
-        include = ["**"],
-        exclude = [
-            "**/* *",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    tags = [
-        "cargo-bazel",
-        "crate-name=winapi-x86_64-pc-windows-gnu",
-        "manual",
-        "noclippy",
-        "norustfmt",
-    ],
-    version = "0.4.0",
-    visibility = ["//visibility:private"],
-)
-
-alias(
-    name = "build_script_build",
-    actual = "winapi-x86_64-pc-windows-gnu_build_script",
-    tags = ["manual"],
+    version = "0.5.0",
 )

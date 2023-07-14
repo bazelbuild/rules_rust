@@ -60,7 +60,7 @@ rust_library(
     }),
     version = "0.4.0",
     deps = [
-        "@rules_rust_rust_analyzer__winapi-i686-pc-windows-gnu-0.4.0//:build_script_build",
+        "@rrra__winapi-i686-pc-windows-gnu-0.4.0//:build_script_build",
     ],
 )
 

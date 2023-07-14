@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # Unlicense/MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "winapi_util",
+    name = "errno",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -33,7 +33,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=winapi-util",
+        "crate-name=errno",
         "manual",
         "noclippy",
         "norustfmt",
@@ -57,16 +57,55 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.1.5",
+    version = "0.3.1",
     deps = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rrra__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),
