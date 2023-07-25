@@ -716,7 +716,6 @@ def collect_inputs(
                 actions = ctx.actions,
                 cc_toolchain = cc_toolchain,
                 feature_configuration = feature_configuration,
-                grep_includes = ctx.file._grep_includes,
                 source_file = linkstamp.file(),
                 output_file = linkstamp_out,
                 compilation_inputs = linkstamp.hdrs(),
@@ -1109,7 +1108,7 @@ def rustc_compile_action(
         aliases = crate_info.aliases,
         are_linkstamps_supported = _are_linkstamps_supported(
             feature_configuration = feature_configuration,
-            has_grep_includes = hasattr(ctx.attr, "_grep_includes"),
+            has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
         ),
     )
 
@@ -1353,7 +1352,6 @@ def rustc_compile_action(
             linking_contexts = linking_contexts,
             compilation_outputs = compilation_outputs,
             name = output_relative_to_package,
-            grep_includes = ctx.file._grep_includes,
             stamp = ctx.attr.stamp,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
