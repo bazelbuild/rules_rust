@@ -213,6 +213,8 @@ def collect_deps(
     """
     direct_crates = []
     transitive_crates = []
+    transitive_data = []
+    transitive_proc_macro_data = []
     transitive_noncrates = []
     transitive_build_infos = []
     transitive_link_search_paths = []
@@ -267,6 +269,18 @@ def collect_deps(
                 ),
             )
 
+            if _is_proc_macro(crate_info):
+                # This crate's data and its non-macro dependencies' data are proc macro data.
+                transitive_proc_macro_data.append(crate_info.data)
+                transitive_proc_macro_data.append(dep_info.transitive_data)
+            else:
+                # This crate's proc macro dependencies' data are proc macro data.
+                transitive_proc_macro_data.append(dep_info.transitive_proc_macro_data)
+
+                # Track transitive non-macro data in case a proc macro depends on this crate.
+                transitive_data.append(crate_info.data)
+                transitive_data.append(dep_info.transitive_data)
+
             # If this dependency produces metadata, add it to the metadata outputs.
             # If it doesn't (for example a custom library that exports crate_info),
             # we depend on crate_info.output.
@@ -312,11 +326,15 @@ def collect_deps(
                  "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
+    transitive_data_depset = depset(transitive = transitive_data)
+    transitive_proc_macro_data_depset = depset(transitive = transitive_proc_macro_data)
 
     return (
         rust_common.dep_info(
             direct_crates = depset(direct_crates),
             transitive_crates = transitive_crates_depset,
+            transitive_data = transitive_data_depset,
+            transitive_proc_macro_data = transitive_proc_macro_data_depset,
             transitive_noncrates = depset(
                 transitive = transitive_noncrates,
                 order = "topological",  # dylib link flag ordering matters.
@@ -691,6 +709,7 @@ def collect_inputs(
             transitive_crate_outputs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
+            dep_info.transitive_proc_macro_data,
             toolchain.all_files,
         ],
     )
