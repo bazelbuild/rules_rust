@@ -8,6 +8,5 @@ package common;
 // A configuration object.  This is used to test the viability of
 // protobuf imports.
 message Config {
-  bool verbose = 1;
+    bool verbose = 1;
 }
-
