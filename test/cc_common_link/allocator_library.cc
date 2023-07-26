@@ -52,3 +52,7 @@ extern "C" __attribute__((weak)) void __rust_alloc_error_handler(
     uintptr_t size, uintptr_t align) {
     __rdl_oom(size, align);
 }
+
+// New requirement as of Rust 1.71.0. For more details see
+// https://github.com/rust-lang/rust/issues/73632.
+__attribute__((weak)) uint8_t __rust_no_alloc_shim_is_unstable = 0;
