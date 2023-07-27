@@ -1036,7 +1036,6 @@ _rust_binary_attrs = dict({
         doc = dedent("""\
             Link script to forward into linker via rustc options.
         """),
-        cfg = "exec",
         allow_single_file = True,
     ),
     "out_binary": attr.bool(
