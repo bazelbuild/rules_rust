@@ -297,8 +297,8 @@ def _crates_vendor_impl(ctx):
     cargo_bazel_runfiles = []
 
     # Allow action envs to override the use of the cargo-bazel target.
-    if CARGO_BAZEL_GENERATOR_PATH in ctx.var:
-        bin_path = ctx.var[CARGO_BAZEL_GENERATOR_PATH]
+    if CARGO_BAZEL_GENERATOR_PATH in ctx.configuration.default_shell_env:
+        bin_path = ctx.configuration.default_shell_env[CARGO_BAZEL_GENERATOR_PATH]
     elif ctx.executable.cargo_bazel:
         bin_path = _runfiles_path(ctx.executable.cargo_bazel, is_windows)
         cargo_bazel_runfiles.append(ctx.executable.cargo_bazel)
