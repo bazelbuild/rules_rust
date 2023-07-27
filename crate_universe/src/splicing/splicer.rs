@@ -347,7 +347,7 @@ impl<'a> SplicerKind<'a> {
                 fs::create_dir(&dot_cargo_dir)?;
                 symlink_roots(&real_path, &dot_cargo_dir, Some(&["config", "config.toml"]))?;
             } else {
-                for config in vec![
+                for config in [
                     dot_cargo_dir.join("config"),
                     dot_cargo_dir.join("config.toml"),
                 ] {
@@ -364,7 +364,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         // Make sure no other config files exist
-        for config in vec![
+        for config in [
             workspace_dir.join("config"),
             workspace_dir.join("config.toml"),
             dot_cargo_dir.join("config"),
@@ -384,7 +384,7 @@ impl<'a> SplicerKind<'a> {
         let mut current_parent = workspace_dir.parent();
         while let Some(parent) = current_parent {
             let dot_cargo_dir = parent.join(".cargo");
-            for config in vec![
+            for config in [
                 dot_cargo_dir.join("config.toml"),
                 dot_cargo_dir.join("config"),
             ] {
