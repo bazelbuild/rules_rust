@@ -210,7 +210,8 @@ tasks:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/2079
+    # post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
     bazel: "6.0.0"
@@ -219,7 +220,8 @@ tasks:
     test_targets: *default_linux_targets
     build_flags: *aspects_flags
     coverage_targets: *default_linux_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/2079
+    # post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2004_min_rust_version:
     name: "Min Rust Version"
     platform: ubuntu2004
