@@ -251,14 +251,15 @@ def _rust_library_common(ctx, crate_type):
     Returns:
         list: A list of providers. See `rustc_compile_action`
     """
-
-    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
-    if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, srcs, "lib")
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
     toolchain = find_toolchain(ctx)
+
+    crate_root = getattr(ctx.file, "crate_root", None)
+    if not crate_root:
+        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
+    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
 
     # Determine unique hash for this rlib.
     # Note that we don't include a hash for `cdylib` and `staticlib` since they are meant to be consumed externally
@@ -332,9 +333,10 @@ def _rust_binary_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+    crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, srcs, ctx.attr.crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
+    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -373,9 +375,7 @@ def _rust_test_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
     crate_type = "bin"
-
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
@@ -391,6 +391,8 @@ def _rust_test_impl(ctx):
                 toolchain.binary_ext,
             ),
         )
+
+        srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
 
         # Optionally join compile data
         if crate.compile_data:
@@ -425,9 +427,12 @@ def _rust_test_impl(ctx):
             owner = ctx.label,
         )
     else:
+        crate_root = getattr(ctx.file, "crate_root", None)
+
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
+        srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
 
         output_hash = determine_output_hash(crate_root, ctx.label)
         output = ctx.actions.declare_file(
@@ -475,13 +480,17 @@ def _rust_test_impl(ctx):
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
 
-        llvm_cov_path = toolchain.llvm_cov.short_path
-        if llvm_cov_path.startswith("../"):
-            llvm_cov_path = llvm_cov_path[len("../"):]
+        if toolchain._experimental_use_coverage_metadata_files:
+            llvm_cov_path = toolchain.llvm_cov.path
+            llvm_profdata_path = toolchain.llvm_profdata.path
+        else:
+            llvm_cov_path = toolchain.llvm_cov.short_path
+            if llvm_cov_path.startswith("../"):
+                llvm_cov_path = llvm_cov_path[len("../"):]
 
-        llvm_profdata_path = toolchain.llvm_profdata.short_path
-        if llvm_profdata_path.startswith("../"):
-            llvm_profdata_path = llvm_profdata_path[len("../"):]
+            llvm_profdata_path = toolchain.llvm_profdata.short_path
+            if llvm_profdata_path.startswith("../"):
+                llvm_profdata_path = llvm_profdata_path[len("../"):]
 
         env["RUST_LLVM_COV"] = llvm_cov_path
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
@@ -737,7 +746,7 @@ _common_attrs = {
 
 _coverage_attrs = {
     "_collect_cc_coverage": attr.label(
-        default = Label("//util:collect_coverage"),
+        default = Label("//util/collect_coverage"),
         executable = True,
         cfg = "exec",
     ),
@@ -1031,7 +1040,6 @@ _rust_binary_attrs = dict({
         doc = dedent("""\
             Link script to forward into linker via rustc options.
         """),
-        cfg = "exec",
         allow_single_file = True,
     ),
     "out_binary": attr.bool(

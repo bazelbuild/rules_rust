@@ -15,13 +15,17 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies()
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
-rust_proto_repositories()
+rust_prost_dependencies()
 
-load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
-rust_proto_transitive_repositories()
+rust_prost_transitive_repositories()
+
+load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
+
+rust_proto_protobuf_dependencies()
 
 load(
     "@rules_rust//wasm_bindgen:repositories.bzl",

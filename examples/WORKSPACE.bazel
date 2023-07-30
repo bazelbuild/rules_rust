@@ -34,13 +34,15 @@ load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitiv
 
 rust_bindgen_transitive_dependencies()
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
 
-rust_proto_repositories()
+rust_proto_protobuf_dependencies()
 
-load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+rust_proto_protobuf_register_toolchains()
 
-rust_proto_transitive_repositories()
+load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
+
+rust_proto_protobuf_transitive_repositories()
 
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
 

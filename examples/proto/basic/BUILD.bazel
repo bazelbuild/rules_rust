@@ -1,4 +1,4 @@
-load("@rules_rust//proto:proto.bzl", "rust_proto_library")
+load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 
 package(default_visibility = ["//proto:__subpackages__"])

@@ -75,76 +75,76 @@ rust_library(
     version = "0.2.14",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.139//:libc",  # cfg(unix)
+            "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),

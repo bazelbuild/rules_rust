@@ -21,6 +21,7 @@ rust_proc_macro(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",

@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::process;
 use std::{env, fmt};
 
+use heck::ToSnakeCase;
 use prost::Message;
 use prost_types::{
     DescriptorProto, EnumDescriptorProto, FileDescriptorProto, FileDescriptorSet,
@@ -42,6 +43,18 @@ fn find_generated_rust_files(out_dir: &Path) -> BTreeSet<PathBuf> {
     }
 
     all_rs_files
+}
+
+fn snake_cased_package_name(package: &str) -> String {
+    if package == "_" {
+        return package.to_owned();
+    }
+
+    package
+        .split('.')
+        .map(|s| s.to_snake_case())
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// Rust module definition.
@@ -121,20 +134,25 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
                 .to_string()
         };
 
-        let module_name = package.to_lowercase().to_string();
-
-        if module_name.is_empty() {
+        if package.is_empty() {
             continue;
         }
 
-        let mut name = module_name.clone();
-        if module_name.contains('.') {
-            name = module_name
+        let name = if package == "_" {
+            package.clone()
+        } else if package.contains('.') {
+            package
                 .rsplit_once('.')
                 .expect("Failed to split on '.'")
                 .1
-                .to_string();
-        }
+                .to_snake_case()
+                .to_string()
+        } else {
+            package.to_snake_case()
+        };
+
+        // Avoid a stack overflow by skipping a known bad package name
+        let module_name = snake_cased_package_name(&package);
 
         module_info.insert(
             module_name.clone(),
@@ -145,7 +163,7 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
             },
         );
 
-        let module_parts = module_name.split('.').collect::<Vec<&str>>();
+        let module_parts = module_name.split('.').collect::<Vec<_>>();
         for parent_module_index in 0..module_parts.len() {
             let child_module_index = parent_module_index + 1;
             if child_module_index >= module_parts.len() {
@@ -287,16 +305,11 @@ impl From<&str> for RustModulePath {
 /// expected to convert proto files into a BTreeMap of
 /// `example.prost.helloworld`: `crate_name::example::prost::helloworld`.
 fn get_extern_paths(
-    descriptor_set_path: &PathBuf,
+    descriptor_set: &FileDescriptorSet,
     crate_name: &str,
 ) -> Result<BTreeMap<ProtoPath, RustModulePath>, String> {
     let mut extern_paths = BTreeMap::new();
     let rust_path = RustModulePath(crate_name.to_string());
-
-    let descriptor_set_bytes =
-        fs::read(descriptor_set_path).expect("Failed to read descriptor set");
-    let descriptor_set = FileDescriptorSet::decode(descriptor_set_bytes.as_slice())
-        .expect("Failed to decode descriptor set");
 
     for file in descriptor_set.file.iter() {
         descriptor_set_file_to_extern_paths(&mut extern_paths, &rust_path, file);
@@ -312,7 +325,7 @@ fn descriptor_set_file_to_extern_paths(
     file: &FileDescriptorProto,
 ) {
     let package = file.package.clone().unwrap_or_default();
-    let rust_path = rust_path.join(&package.replace('.', "::"));
+    let rust_path = rust_path.join(&snake_cased_package_name(&package).replace('.', "::"));
     let proto_path = ProtoPath(package);
 
     for message_type in file.message_type.iter() {
@@ -488,9 +501,6 @@ impl Args {
                 ("--prost_out", value) => {
                     out_dir = Some(PathBuf::from(value));
                 }
-                ("--crate_name", value) => {
-                    crate_name = Some(value.to_string());
-                }
                 ("--package_info_output", value) => {
                     let (key, value) = value
                         .split_once('=')
@@ -620,6 +630,63 @@ fn get_and_create_output_dir(out_dir: &Path, label: &str) -> PathBuf {
     out_dir
 }
 
+/// Parse the descriptor set file into a `FileDescriptorSet`.
+fn parse_descriptor_set_file(descriptor_set_path: &PathBuf) -> FileDescriptorSet {
+    let descriptor_set_bytes =
+        fs::read(descriptor_set_path).expect("Failed to read descriptor set");
+    let descriptor_set = FileDescriptorSet::decode(descriptor_set_bytes.as_slice())
+        .expect("Failed to decode descriptor set");
+
+    descriptor_set
+}
+
+/// Get the package name from the descriptor set.
+fn get_package_name(descriptor_set: &FileDescriptorSet) -> Option<String> {
+    let mut package_name = None;
+
+    for file in &descriptor_set.file {
+        if let Some(package) = &file.package {
+            package_name = Some(package.clone());
+            break;
+        }
+    }
+
+    package_name
+}
+
+/// Whether the proto file should expect to generate a .rs file.
+///
+/// If the proto file contains any messages, enums, or services, then it should generate a rust file.
+/// If the proto file only contains extensions, then it will not generate any rust files.
+fn expect_fs_file_to_be_generated(descriptor_set: &FileDescriptorSet) -> bool {
+    let mut expect_rs = false;
+
+    for file in descriptor_set.file.iter() {
+        let has_messages = !file.message_type.is_empty();
+        let has_enums = !file.enum_type.is_empty();
+        let has_services = !file.service.is_empty();
+        let has_extensions = !file.extension.is_empty();
+
+        let has_definition = has_messages || has_enums || has_services;
+
+        if has_definition {
+            return true;
+        } else if !has_definition && !has_extensions {
+            expect_rs = true;
+        }
+    }
+
+    expect_rs
+}
+
+/// Whether the proto file should expect to generate service definitions.
+fn has_services(descriptor_set: &FileDescriptorSet) -> bool {
+    descriptor_set
+        .file
+        .iter()
+        .any(|file| !file.service.is_empty())
+}
+
 fn main() {
     // Always enable backtraces for the protoc wrapper.
     env::set_var("RUST_BACKTRACE", "1");
@@ -641,6 +708,15 @@ fn main() {
     } = Args::parse().expect("Failed to parse args");
 
     let out_dir = get_and_create_output_dir(&out_dir, &label);
+
+    let descriptor_set = parse_descriptor_set_file(&descriptor_set);
+    let package_name = get_package_name(&descriptor_set).unwrap_or_default();
+    let expect_rs = expect_fs_file_to_be_generated(&descriptor_set);
+    let has_services = has_services(&descriptor_set);
+
+    if has_services && !is_tonic {
+        eprintln!("Warning: Service definitions will not be generated because the prost toolchain did not define a tonic plugin.");
+    }
 
     let mut cmd = process::Command::new(&protoc);
     cmd.arg(format!("--prost_out={}", out_dir.display()));
@@ -719,9 +795,21 @@ fn main() {
     }
 
     // Locate all prost-generated outputs.
-    let rust_files = find_generated_rust_files(&out_dir);
+    let mut rust_files = find_generated_rust_files(&out_dir);
     if rust_files.is_empty() {
-        panic!("No .rs files were generated by prost.");
+        if expect_rs {
+            panic!("No .rs files were generated by prost.");
+        } else {
+            let file_stem = if package_name.is_empty() {
+                "_"
+            } else {
+                &package_name
+            };
+            let file_stem = format!("{}{}", file_stem, if is_tonic { ".tonic" } else { "" });
+            let empty_rs_file = out_dir.join(format!("{}.rs", file_stem));
+            fs::write(&empty_rs_file, "").expect("Failed to write file.");
+            rust_files.insert(empty_rs_file);
+        }
     }
 
     let extern_paths = get_extern_paths(&descriptor_set, &crate_name)
@@ -784,6 +872,7 @@ mod test {
 
     use super::*;
 
+    use prost_types::{FieldDescriptorProto, FileDescriptorProto, ServiceDescriptorProto};
     use std::collections::BTreeMap;
 
     #[test]
@@ -972,6 +1061,11 @@ mod test {
             assert_eq!(proto_path.to_string(), "foo.bar");
             assert_eq!(proto_path.join("baz"), ProtoPath::from("foo.bar.baz"));
         }
+        {
+            let proto_path = ProtoPath::from("Foo.baR");
+            assert_eq!(proto_path.to_string(), "Foo.baR");
+            assert_eq!(proto_path.join("baz"), ProtoPath::from("Foo.baR.baz"));
+        }
     }
 
     #[test]
@@ -1002,6 +1096,131 @@ mod test {
                 RustModulePath::from("foo::bar::baz")
             );
         }
+    }
+
+    #[test]
+    fn expect_fs_file_to_be_generated_test() {
+        {
+            // Empty descriptor set should create a file.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(expect_fs_file_to_be_generated(&descriptor_set));
+        }
+        {
+            // Descriptor set with only message should create a file.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    message_type: vec![DescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..DescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(expect_fs_file_to_be_generated(&descriptor_set));
+        }
+        {
+            // Descriptor set with only enum should create a file.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    enum_type: vec![EnumDescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..EnumDescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(expect_fs_file_to_be_generated(&descriptor_set));
+        }
+        {
+            // Descriptor set with only service should create a file.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    service: vec![ServiceDescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..ServiceDescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(expect_fs_file_to_be_generated(&descriptor_set));
+        }
+        {
+            // Descriptor set with only extensions should not create a file.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    extension: vec![FieldDescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..FieldDescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(!expect_fs_file_to_be_generated(&descriptor_set));
+        }
+    }
+
+    #[test]
+    fn has_services_test() {
+        {
+            // Empty file should not have services.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(!has_services(&descriptor_set));
+        }
+        {
+            // File with only message should not have services.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    message_type: vec![DescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..DescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(!has_services(&descriptor_set));
+        }
+        {
+            // File with services should have services.
+            let descriptor_set = FileDescriptorSet {
+                file: vec![FileDescriptorProto {
+                    name: Some("foo.proto".to_string()),
+                    service: vec![ServiceDescriptorProto {
+                        name: Some("Foo".to_string()),
+                        ..ServiceDescriptorProto::default()
+                    }],
+                    ..FileDescriptorProto::default()
+                }],
+            };
+            assert!(has_services(&descriptor_set));
+        }
+    }
+
+    #[test]
+    fn get_package_name_test() {
+        let descriptor_set = FileDescriptorSet {
+            file: vec![FileDescriptorProto {
+                name: Some("foo.proto".to_string()),
+                package: Some("foo".to_string()),
+                ..FileDescriptorProto::default()
+            }],
+        };
+
+        assert_eq!(get_package_name(&descriptor_set), Some("foo".to_string()));
     }
 
     #[test]

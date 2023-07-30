@@ -110,7 +110,7 @@ cargo_build_script(
     visibility = ["//visibility:private"],
     deps = [
         "@cui__hashbrown-0.12.3//:hashbrown",
-        "@cui__regex-1.7.1//:regex",
+        "@cui__regex-1.9.1//:regex",
     ],
 )
 

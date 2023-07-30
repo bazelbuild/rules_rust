@@ -67,11 +67,11 @@ def rules_rust_dependencies():
     maybe(
         http_archive,
         name = "bazel_skylib",
+        sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
         urls = [
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.2.0/bazel-skylib-1.2.0.tar.gz",
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.2.0/bazel-skylib-1.2.0.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
         ],
-        sha256 = "af87959afe497dc8dfd4c6cb66e1279cb98ccc84284619ebfec27d9c09a903de",
     )
 
     # Make the iOS simulator constraint available, which is referenced in abi_to_constraints()
@@ -359,6 +359,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         include_llvm_tools = include_llvm_tools,
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
+        opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
     ))
 
     # Not all target triples are expected to have dev components
@@ -412,6 +413,9 @@ rust_toolchain_tools_repository = repository_rule(
         ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
+        ),
+        "opt_level": attr.string_dict(
+            doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
         ),
         "rustfmt_version": attr.string(
             doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
@@ -498,6 +502,7 @@ def rust_toolchain_repository(
         dev_components = False,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        opt_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None):
@@ -523,6 +528,7 @@ def rust_toolchain_repository(
             Requires version to be "nightly". Defaults to False.
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        opt_level (dict, optional): Optimization level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
@@ -559,6 +565,7 @@ def rust_toolchain_repository(
         dev_components = dev_components,
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
+        opt_level = opt_level,
         sha256s = sha256s,
         urls = urls,
         auth = auth,
@@ -888,6 +895,7 @@ def rust_repository_set(
         dev_components = False,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        opt_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
@@ -918,6 +926,7 @@ def rust_repository_set(
             Requires version to be "nightly".
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        opt_level (dict, dict, optional): Dictionary of target triples to optimiztion config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These
@@ -971,6 +980,7 @@ def rust_repository_set(
             exec_triple = exec_triple,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
             extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple) if extra_rustc_flags != None else None,
+            opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
             target_settings = target_settings,
             iso_date = toolchain.channel.iso_date,
             rustfmt_version = rustfmt_version,

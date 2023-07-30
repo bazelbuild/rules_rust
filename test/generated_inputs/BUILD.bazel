@@ -85,6 +85,17 @@ rust_library(
 )
 
 rust_test(
+    name = "use_generated_src_with_crate_root_in_subdir_srcs_test",
+    srcs = [
+        "src/generated.rs",
+        "src/generated/submodule.rs",
+        "src/lib.rs",
+    ],
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
     name = "use_generated_src_with_crate_root_in_subdir_test",
     crate = "use_generated_src_with_crate_root_in_subdir",
     edition = "2018",

@@ -1,5 +1,5 @@
 {
-  "checksum": "98fee2030d35caae97320432fe79f7be705fa919b68082452b6d6ae21ea24d65",
+  "checksum": "beaff14af74802a0384e8a0bc4cfb334bdd387ac9cb71487ffc7247995fc57f9",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1509,7 +1509,7 @@
         "data_glob": [
           "**"
         ],
-        "deps": {
+        "link_deps": {
           "common": [
             {
               "id": "curl-sys 0.4.60+curl-7.88.1",
@@ -3447,7 +3447,16 @@
       "build_script_attrs": {
         "data_glob": [
           "**"
-        ]
+        ],
+        "link_deps": {
+          "common": [
+            {
+              "id": "curl-sys 0.4.60+curl-7.88.1",
+              "target": "curl_sys"
+            }
+          ],
+          "selects": {}
+        }
       },
       "license": "MIT"
     },
@@ -5455,7 +5464,16 @@
       "build_script_attrs": {
         "data_glob": [
           "**"
-        ]
+        ],
+        "link_deps": {
+          "common": [
+            {
+              "id": "ring 0.16.20",
+              "target": "ring"
+            }
+          ],
+          "selects": {}
+        }
       },
       "license": "Apache-2.0/ISC/MIT"
     },

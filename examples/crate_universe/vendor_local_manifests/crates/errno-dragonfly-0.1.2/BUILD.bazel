@@ -22,6 +22,7 @@ rust_library(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",
@@ -75,7 +76,7 @@ rust_library(
     version = "0.1.2",
     deps = [
         "//vendor_local_manifests/crates/errno-dragonfly-0.1.2:build_script_build",
-        "//vendor_local_manifests/crates/libc-0.2.146:libc",
+        "//vendor_local_manifests/crates/libc-0.2.147:libc",
     ],
 )
 
@@ -88,6 +89,7 @@ cargo_build_script(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",

@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "1.6.0",
     deps = [
-        "@cui__tinyvec_macros-0.1.0//:tinyvec_macros",
+        "@cui__tinyvec_macros-0.1.1//:tinyvec_macros",
     ],
 )

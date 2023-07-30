@@ -3,5 +3,5 @@ syntax = "proto3";
 package mod;
 
 message A {
-  string name = 1;
+    string name = 1;
 }

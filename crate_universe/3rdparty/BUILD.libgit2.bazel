@@ -133,7 +133,7 @@ cc_library(
 
 write_file(
     name = "configure_features",
-    out = "include/git2/sys/features.h",
+    out = "include/git2_features.h",
     content = [
         "#ifndef INCLUDE_features_h",
         "#define INCLUDE_features_h",

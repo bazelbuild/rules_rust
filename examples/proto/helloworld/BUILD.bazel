@@ -1,5 +1,5 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_rust//proto:proto.bzl", "rust_grpc_library")
+load("@rules_rust//proto/protobuf:defs.bzl", "rust_grpc_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
 
 proto_library(

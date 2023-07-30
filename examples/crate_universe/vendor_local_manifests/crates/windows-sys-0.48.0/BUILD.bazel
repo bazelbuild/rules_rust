@@ -21,6 +21,7 @@ rust_library(
         include = ["**"],
         exclude = [
             "**/* *",
+            ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
             "WORKSPACE",
@@ -35,7 +36,6 @@ rust_library(
         "Win32_Networking",
         "Win32_Networking_WinSock",
         "Win32_Security",
-        "Win32_Security_Authorization",
         "Win32_Storage",
         "Win32_Storage_FileSystem",
         "Win32_System",
@@ -95,6 +95,6 @@ rust_library(
     }),
     version = "0.48.0",
     deps = [
-        "//vendor_local_manifests/crates/windows-targets-0.48.0:windows_targets",
+        "//vendor_local_manifests/crates/windows-targets-0.48.1:windows_targets",
     ],
 )

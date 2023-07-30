@@ -84,13 +84,13 @@ rust_library(
     deps = [
         "@rules_rust_wasm_bindgen__buf_redux-0.8.4//:buf_redux",
         "@rules_rust_wasm_bindgen__httparse-1.8.0//:httparse",
-        "@rules_rust_wasm_bindgen__log-0.4.17//:log",
-        "@rules_rust_wasm_bindgen__mime-0.3.16//:mime",
+        "@rules_rust_wasm_bindgen__log-0.4.19//:log",
+        "@rules_rust_wasm_bindgen__mime-0.3.17//:mime",
         "@rules_rust_wasm_bindgen__mime_guess-2.0.4//:mime_guess",
         "@rules_rust_wasm_bindgen__quick-error-1.2.3//:quick_error",
         "@rules_rust_wasm_bindgen__rand-0.8.5//:rand",
         "@rules_rust_wasm_bindgen__safemem-0.3.3//:safemem",
-        "@rules_rust_wasm_bindgen__tempfile-3.3.0//:tempfile",
+        "@rules_rust_wasm_bindgen__tempfile-3.6.0//:tempfile",
         "@rules_rust_wasm_bindgen__twoway-0.1.8//:twoway",
     ],
 )

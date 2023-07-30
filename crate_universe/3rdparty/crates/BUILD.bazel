@@ -27,49 +27,49 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "anyhow",
-    actual = "@cui__anyhow-1.0.68//:anyhow",
+    actual = "@cui__anyhow-1.0.71//:anyhow",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-lock",
-    actual = "@cui__cargo-lock-8.0.3//:cargo_lock",
+    actual = "@cui__cargo-lock-9.0.0//:cargo_lock",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-platform",
-    actual = "@cui__cargo-platform-0.1.2//:cargo_platform",
+    actual = "@cui__cargo-platform-0.1.3//:cargo_platform",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_metadata",
-    actual = "@cui__cargo_metadata-0.15.3//:cargo_metadata",
+    actual = "@cui__cargo_metadata-0.15.4//:cargo_metadata",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml",
-    actual = "@cui__cargo_toml-0.15.2//:cargo_toml",
+    actual = "@cui__cargo_toml-0.15.3//:cargo_toml",
     tags = ["manual"],
 )
 
 alias(
     name = "cfg-expr",
-    actual = "@cui__cfg-expr-0.14.0//:cfg_expr",
+    actual = "@cui__cfg-expr-0.15.3//:cfg_expr",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
-    actual = "@cui__clap-4.0.32//:clap",
+    actual = "@cui__clap-4.3.11//:clap",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index",
-    actual = "@cui__crates-index-0.19.7//:crates_index",
+    actual = "@cui__crates-index-0.19.13//:crates_index",
     tags = ["manual"],
 )
 
@@ -81,7 +81,7 @@ alias(
 
 alias(
     name = "indoc",
-    actual = "@cui__indoc-2.0.1//:indoc",
+    actual = "@cui__indoc-2.0.2//:indoc",
     tags = ["manual"],
 )
 
@@ -93,7 +93,7 @@ alias(
 
 alias(
     name = "normpath",
-    actual = "@cui__normpath-1.0.1//:normpath",
+    actual = "@cui__normpath-1.1.1//:normpath",
     tags = ["manual"],
 )
 
@@ -105,37 +105,37 @@ alias(
 
 alias(
     name = "regex",
-    actual = "@cui__regex-1.7.1//:regex",
+    actual = "@cui__regex-1.9.1//:regex",
     tags = ["manual"],
 )
 
 alias(
     name = "semver",
-    actual = "@cui__semver-1.0.16//:semver",
+    actual = "@cui__semver-1.0.17//:semver",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
-    actual = "@cui__serde-1.0.152//:serde",
+    actual = "@cui__serde-1.0.171//:serde",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@cui__serde_json-1.0.91//:serde_json",
+    actual = "@cui__serde_json-1.0.102//:serde_json",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_starlark",
-    actual = "@cui__serde_starlark-0.1.10//:serde_starlark",
+    actual = "@cui__serde_starlark-0.1.13//:serde_starlark",
     tags = ["manual"],
 )
 
 alias(
     name = "sha2",
-    actual = "@cui__sha2-0.10.6//:sha2",
+    actual = "@cui__sha2-0.10.7//:sha2",
     tags = ["manual"],
 )
 
@@ -147,13 +147,13 @@ alias(
 
 alias(
     name = "tempfile",
-    actual = "@cui__tempfile-3.3.0//:tempfile",
+    actual = "@cui__tempfile-3.6.0//:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tera",
-    actual = "@cui__tera-1.17.1//:tera",
+    actual = "@cui__tera-1.19.0//:tera",
     tags = ["manual"],
 )
 
@@ -165,6 +165,6 @@ alias(
 
 alias(
     name = "toml",
-    actual = "@cui__toml-0.7.2//:toml",
+    actual = "@cui__toml-0.7.6//:toml",
     tags = ["manual"],
 )

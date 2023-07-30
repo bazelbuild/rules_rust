@@ -29,6 +29,7 @@ pub struct DependencySet {
     pub proc_macro_deps: SelectList<Dependency>,
     pub proc_macro_dev_deps: SelectList<Dependency>,
     pub build_deps: SelectList<Dependency>,
+    pub build_link_deps: SelectList<Dependency>,
     pub build_proc_macro_deps: SelectList<Dependency>,
 }
 
@@ -69,7 +70,7 @@ impl DependencySet {
 
         // For rules on build script dependencies see:
         //  https://doc.rust-lang.org/cargo/reference/build-scripts.html#build-dependencies
-        let (build_proc_macro_deps, mut build_deps) = {
+        let (build_proc_macro_deps, build_deps) = {
             let (proc_macro, normal) = node
                 .deps
                 .iter()
@@ -85,14 +86,15 @@ impl DependencySet {
             )
         };
 
-        // `*-sys` packages follow slightly different rules than other dependencies. These
-        // packages seem to provide some environment variables required to build the top level
-        // package and are expected to be avialable to other build scripts. If a target depends
-        // on a `*-sys` crate for itself, so would it's build script. Hopefully this is correct.
+        // packages with the `links` property follow slightly different rules than other
+        // dependencies. These packages provide zero or more environment variables to the build
+        // script's of packages that directly (non-transitively) depend on these packages. Note that
+        // dependency specifically means of the package (`dependencies`), and not of the build
+        // script (`build-dependencies`).
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
         // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
-        let sys_name = format!("{}-sys", &metadata[&node.id].name);
+        let mut build_link_deps = SelectList::<Dependency>::default();
         normal_deps.configurations().into_iter().for_each(|config| {
             normal_deps
                 .get_iter(config)
@@ -100,9 +102,8 @@ impl DependencySet {
                 .unwrap()
                 // Add any normal dependency to build dependencies that are associated `*-sys` crates
                 .for_each(|dep| {
-                    let dep_pkg_name = &metadata[&dep.package_id].name;
-                    if *dep_pkg_name == sys_name {
-                        build_deps.insert(dep.clone(), config.cloned())
+                    if metadata[&dep.package_id].links.is_some() {
+                        build_link_deps.insert(dep.clone(), config.cloned())
                     }
                 });
         });
@@ -113,6 +114,7 @@ impl DependencySet {
             proc_macro_deps,
             proc_macro_dev_deps,
             build_deps,
+            build_link_deps,
             build_proc_macro_deps,
         }
     }
@@ -430,8 +432,17 @@ mod test {
 
         let dependencies = DependencySet::new_for_node(openssl_node, &metadata);
 
-        let sys_crate = dependencies
+        let normal_sys_crate = dependencies
             .normal_deps
+            .get_iter(None)
+            .unwrap()
+            .find(|dep| {
+                let pkg = &metadata[&dep.package_id];
+                pkg.name == "openssl-sys"
+            });
+
+        let link_dep_sys_crate = dependencies
+            .build_link_deps
             .get_iter(None)
             .unwrap()
             .find(|dep| {
@@ -441,7 +452,8 @@ mod test {
 
         // sys crates like `openssl-sys` should always be dependencies of any
         // crate which matches it's name minus the `-sys` suffix
-        assert!(sys_crate.is_some());
+        assert!(normal_sys_crate.is_some());
+        assert!(link_dep_sys_crate.is_some());
     }
 
     #[test]

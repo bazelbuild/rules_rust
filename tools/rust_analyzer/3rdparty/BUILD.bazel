@@ -7,33 +7,36 @@ crates_vendor(
     mode = "remote",
     packages = {
         "anyhow": crate.spec(
-            version = "1.0.58",
+            version = "1.0.71",
         ),
         "clap": crate.spec(
             features = [
                 "derive",
                 "env",
             ],
-            version = "3.2.12",
+            version = "4.3.11",
         ),
         "env_logger": crate.spec(
-            version = "0.9.0",
+            version = "0.10.0",
         ),
         "itertools": crate.spec(
-            version = "0.10.3",
+            version = "0.11.0",
         ),
         "log": crate.spec(
-            version = "0.4.17",
+            version = "0.4.19",
         ),
         "serde": crate.spec(
             features = ["derive"],
-            version = "1.0.139",
+            version = "1.0.171",
         ),
         "serde_json": crate.spec(
-            version = "1.0.82",
+            version = "1.0.102",
         ),
     },
-    repository_name = "rules_rust_rust_analyzer",
+    # Short for 'rules_rust rust_analyzer'. Keep this short to reduce
+    # the risk to bump into absolute path length issues on Windows. See:
+    # https://github.com/bazelbuild/rules_rust/issues/1120
+    repository_name = "rrra",
     supported_platform_triples = [
         "i686-apple-darwin",
         "i686-pc-windows-msvc",

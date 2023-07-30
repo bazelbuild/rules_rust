@@ -74,8 +74,8 @@ rust_library(
     }),
     version = "0.14.2+1.5.1",
     deps = [
-        "@cui__libc-0.2.139//:libc",
-        "@cui__libz-sys-1.1.8//:libz_sys",
+        "@cui__libc-0.2.147//:libc",
+        "@cui__libz-sys-1.1.9//:libz_sys",
         "@libgit2",
     ],
 )

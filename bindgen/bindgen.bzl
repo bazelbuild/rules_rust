@@ -266,6 +266,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
         "default_rustfmt": attr.bool(
             doc = "If set, `rust_bindgen` targets will always format generated sources with `rustfmt`.",
             mandatory = False,
+            default = True,
         ),
         "libclang": attr.label(
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",

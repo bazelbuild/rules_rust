@@ -6,9 +6,9 @@ import "b/c/c.proto";
 package a.b;
 
 message B {
-  string name = 1;
+    string name = 1;
 
-  google.protobuf.Empty empty = 2;
+    google.protobuf.Empty empty = 2;
 
-  a.b.c.C c = 3;
+    a.b.c.C c = 3;
 }

@@ -64,7 +64,7 @@ rust_library(
     }),
     version = "2.5.0",
     deps = [
-        "@rules_rust_rust_analyzer__memchr-2.5.0//:build_script_build",
+        "@rrra__memchr-2.5.0//:build_script_build",
     ],
 )
 

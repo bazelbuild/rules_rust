@@ -1,5 +1,3 @@
 #include <stdio.h>
 
-void lib() {
-    printf("Hello, C lib!");
-}
+void lib() { printf("Hello, C lib!"); }

@@ -171,7 +171,7 @@ mod test {
         let config = temp_dir.as_ref().join("config.toml");
 
         fs::write(&config, textwrap::dedent(
-            r##"
+            r#"
                 # Makes artifactory the default registry and saves passing --registry parameter
                 [registry]
                 default = "art-crates-remote"
@@ -185,7 +185,7 @@ mod test {
 
                 [net]
                 git-fetch-with-cli = true
-            "##,
+            "#,
         )).unwrap();
 
         let config = CargoConfig::try_from_path(&config).unwrap();
@@ -224,7 +224,7 @@ mod test {
         let config = temp_dir.as_ref().join("config.toml");
 
         fs::write(&config, textwrap::dedent(
-            r##"
+            r#"
                 [registries]
                 art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
 
@@ -233,7 +233,7 @@ mod test {
 
                 [source.some-mirror]
                 registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
-            "##,
+            "#,
         )).unwrap();
 
         let config = CargoConfig::try_from_path(&config).unwrap();
@@ -249,13 +249,13 @@ mod test {
         let config = temp_dir.as_ref().join("config.toml");
 
         fs::write(&config, textwrap::dedent(
-            r##"
+            r#"
                 [registries]
                 art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
 
                 [source.crates-io]
                 replace-with = "art-crates-remote"
-            "##,
+            "#,
         )).unwrap();
 
         let config = CargoConfig::try_from_path(&config).unwrap();
@@ -273,10 +273,10 @@ mod test {
         fs::write(
             &config,
             textwrap::dedent(
-                r##"
+                r#"
                 [source.some-mirror]
                 registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
-            "##,
+            "#,
             ),
         )
         .unwrap();
@@ -319,7 +319,7 @@ mod test {
         let config = temp_dir.as_ref().join("config.toml");
 
         fs::write(&config, textwrap::dedent(
-            r##"
+            r#"
                 [registries]
                 art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
 
@@ -328,7 +328,7 @@ mod test {
 
                 [source.some-mirror]
                 registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
-            "##,
+            "#,
         )).unwrap();
 
         let config = CargoConfig::try_from_path(&config).unwrap();
@@ -360,7 +360,7 @@ mod test {
         let config = temp_dir.as_ref().join("config.toml");
 
         fs::write(&config, textwrap::dedent(
-            r##"
+            r#"
                 [registries]
                 art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
 
@@ -369,7 +369,7 @@ mod test {
 
                 [source.some-mirror]
                 registry = "https://artmirror.mycompany/artifactory/cargo-mirror.git"
-            "##,
+            "#,
         )).unwrap();
 
         let config = CargoConfig::try_from_path(&config).unwrap();

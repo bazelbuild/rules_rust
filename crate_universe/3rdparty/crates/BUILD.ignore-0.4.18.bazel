@@ -74,15 +74,15 @@ rust_library(
     }),
     version = "0.4.18",
     deps = [
-        "@cui__crossbeam-utils-0.8.14//:crossbeam_utils",
-        "@cui__globset-0.4.10//:globset",
+        "@cui__crossbeam-utils-0.8.16//:crossbeam_utils",
+        "@cui__globset-0.4.11//:globset",
         "@cui__lazy_static-1.4.0//:lazy_static",
-        "@cui__log-0.4.17//:log",
+        "@cui__log-0.4.19//:log",
         "@cui__memchr-2.5.0//:memchr",
-        "@cui__regex-1.7.1//:regex",
+        "@cui__regex-1.9.1//:regex",
         "@cui__same-file-1.0.6//:same_file",
         "@cui__thread_local-1.1.4//:thread_local",
-        "@cui__walkdir-2.3.2//:walkdir",
+        "@cui__walkdir-2.3.3//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__winapi-util-0.1.5//:winapi_util",  # cfg(windows)

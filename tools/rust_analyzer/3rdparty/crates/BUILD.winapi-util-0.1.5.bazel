@@ -60,13 +60,13 @@ rust_library(
     version = "0.1.5",
     deps = select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_rust_analyzer__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_rust_analyzer__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_rust_analyzer__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rrra__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "//conditions:default": [],
     }),

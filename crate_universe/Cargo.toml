@@ -7,11 +7,11 @@ exclude = ["test_data"]
 
 [package]
 name = "cargo-bazel"
-version = "0.8.0"
+version = "0.9.0"
 authors = [
     "Andre Brisco - andre.brisco@protonmail.com",
 ]
-edition = "2018"
+edition = "2021"
 
 [features]
 cargo = []
@@ -20,28 +20,28 @@ default = ["cargo"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.68"
-cargo_metadata = "0.15.3"
+anyhow = "1.0.71"
+cargo_metadata = "0.15.4"
 cargo_toml = "0.15.2"
-cargo-lock = "8.0.3"
+cargo-lock = "9.0.0"
 cargo-platform = "0.1.2"
-cfg-expr = "0.14.0"
-clap = { version = "4.0.32", features = ["derive", "env"] }
-crates-index = { version = "0.19.7", default-features = false }
+cfg-expr = "0.15.0"
+clap = { version = "4.3.11", features = ["derive", "env"] }
+crates-index = { version = "0.19.13", default-features = false }
 hex = "0.4.3"
-indoc = "2.0.1"
-normpath = "1.0.1"
+indoc = "2.0.2"
+normpath = "1.1.1"
 pathdiff = "0.2.1"
-regex = "1.7.1"
-semver = "1.0.16"
-serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.91"
-serde_starlark = "0.1.10"
-sha2 = "0.10.6"
-tempfile = "3.3.0"
-tera = "1.17.1"
+regex = "1.9.1"
+semver = "1.0.17"
+serde = { version = "1.0.171", features = ["derive"] }
+serde_json = "1.0.102"
+serde_starlark = "0.1.13"
+sha2 = "0.10.7"
+tempfile = "3.6.0"
+tera = "1.19.0"
 textwrap = "0.16.0"
-toml = "0.7.2"
+toml = "0.7.6"
 
 [dev-dependencies]
 maplit = "1.0.2"

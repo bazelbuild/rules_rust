@@ -13,7 +13,10 @@ rust_binary(
     srcs = ["protoc_wrapper.rs"],
     edition = RUST_EDITION,
     visibility = ["//visibility:public"],
-    deps = [":current_prost_runtime"],
+    deps = [
+        ":current_prost_runtime",
+        "@rules_rust_prost__heck//:heck",
+    ],
 )
 
 rust_test(

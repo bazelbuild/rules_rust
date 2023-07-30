@@ -99,6 +99,11 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub link_deps: SelectList<WithOriginalConfigurations<String>>,
     pub edition: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
