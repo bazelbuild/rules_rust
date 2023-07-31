@@ -52,6 +52,13 @@ bool_flag(
     build_setting_default = False,
 )
 
+# A flag to have coverage tooling added as `coverage_common.instrumented_files_info.metadata_files` instead of
+# reporting tools like `llvm-cov` and `llvm-profdata` as runfiles to each test.
+bool_flag(
+    name = "experimental_use_coverage_metadata_files",
+    build_setting_default = False,
+)
+
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
