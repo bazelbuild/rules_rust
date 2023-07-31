@@ -950,6 +950,12 @@ rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
     attrs = dict(
         _common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
+            "linker_script": attr.label(
+                doc = dedent("""\
+            Link script to forward into linker via rustc options.
+        """),
+                allow_single_file = True,
+            ),
             "_grep_includes": attr.label(
                 allow_single_file = True,
                 cfg = "exec",

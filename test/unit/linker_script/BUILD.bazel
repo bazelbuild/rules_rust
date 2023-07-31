@@ -1,0 +1,4 @@
+load(":linker_script_test.bzl", "linker_script_test_suite")
+
+############################ UNIT TESTS #############################
+linker_script_test_suite(name = "linker_script_test_suite")
