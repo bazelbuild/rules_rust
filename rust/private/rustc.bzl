@@ -997,6 +997,7 @@ def construct_arguments(
         rustc_flags.add("proc_macro")
 
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+        # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
     # Make bin crate data deps available to tests.
@@ -1364,8 +1365,10 @@ def rustc_compile_action(
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
 
+    experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
+
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) + coverage_runfiles,
+        files = getattr(ctx.files, "data", []) + ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
         collect_data = True,
     )
     if getattr(ctx.attr, "crate", None):
@@ -1376,18 +1379,29 @@ def rustc_compile_action(
     # https://github.com/bazelbuild/rules_rust/issues/771
     out_binary = getattr(attr, "out_binary", False)
 
+    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None
+
+    instrumented_files_kwargs = {
+        "dependency_attributes": ["deps", "crate"],
+        "extensions": ["rs"],
+        "source_attributes": ["srcs"],
+    }
+
+    if experimental_use_coverage_metadata_files:
+        instrumented_files_kwargs.update({
+            "metadata_files": coverage_runfiles + [executable] if executable else [],
+        })
+
     providers = [
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
+            executable = executable,
         ),
         coverage_common.instrumented_files_info(
             ctx,
-            dependency_attributes = ["deps", "crate"],
-            extensions = ["rs"],
-            source_attributes = ["srcs"],
+            **instrumented_files_kwargs
         ),
     ]
 
