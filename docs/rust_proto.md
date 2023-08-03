@@ -32,7 +32,7 @@ See the [protobuf example](../examples/proto) for a more complete example of use
 ```python
 load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
-rust_proto_protobuf_dependencies()
+rust_prost_dependencies()
 
 load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
@@ -139,7 +139,7 @@ rust_prost_toolchain(
 
 toolchain(
     name = "prost_toolchain",
-    toolchain = "default_prost_toolchain_impl",
+    toolchain = "prost_toolchain_impl",
     toolchain_type = "@rules_rust//proto/prost:toolchain_type",
 )
 ```
