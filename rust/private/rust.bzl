@@ -631,7 +631,7 @@ _common_attrs = {
     # `@local_config_platform//:exec` exposed.
     "proc_macro_deps": attr.label_list(
         doc = dedent("""\
-            List of `rust_library` targets with kind `proc-macro` used to help build this library target.
+            List of `rust_proc_macro` targets used to help build this library target.
         """),
         cfg = "exec",
         providers = [rust_common.crate_info],
