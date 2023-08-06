@@ -30,6 +30,7 @@ CrateInfo = provider(
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
+        "rustc_env_original": "Dict[String, String]: Snapshot of the original rustc_env passed by the user (should not be modified, mostly for internal use.)",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": (
@@ -42,6 +43,49 @@ CrateInfo = provider(
         ),
     },
 )
+
+def copy_crate_info(
+    crate_info,
+    *,
+    aliases = None,
+    compile_data = None,
+    compile_data_targets = None,
+    deps = None,
+    edition = None,
+    is_test = None,
+    metadata = None,
+    name = None,
+    output = None,
+    owner = None,
+    proc_macro_deps = None,
+    root = None,
+    rustc_env = None,
+    rustc_env_original = None,
+    rustc_env_files = None,
+    srcs = None,
+    type = None,
+    wrapped_crate_type = None,
+):
+    return CrateInfo(
+        aliases = aliases or crate_info.aliases,
+        compile_data = compile_data or crate_info.compile_data,
+        compile_data_targets = compile_data_targets or crate_info.compile_data_targets,
+        deps = deps or crate_info.deps,
+        edition = edition or crate_info.edition,
+        is_test = is_test or crate_info.is_test,
+        metadata = metadata or crate_info.metadata,
+        name = name or crate_info.name,
+        output = output or crate_info.output,
+        owner = owner or crate_info.owner,
+        proc_macro_deps = proc_macro_deps or crate_info.proc_macro_deps,
+        root = root or crate_info.root,
+        rustc_env = rustc_env or crate_info.rustc_env,
+        rustc_env_original = rustc_env_original or crate_info.rustc_env_original,
+        rustc_env_files = rustc_env_files or crate_info.rustc_env_files,
+        srcs = srcs or crate_info.srcs,
+        type = type or crate_info.type,
+        wrapped_crate_type = wrapped_crate_type or crate_info.wrapped_crate_type,
+    )
 
 DepInfo = provider(
     doc = "A provider containing information about a Crate's dependencies.",
