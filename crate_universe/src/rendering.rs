@@ -164,6 +164,14 @@ impl Renderer {
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
+
+            for extra_aliased_target in &krate.extra_aliased_targets {
+                dependencies.push(Alias {
+                    name: extra_aliased_target.clone(),
+                    actual: self.crate_label(&krate.name, &krate.version, extra_aliased_target),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                });
+            }
         }
         if !dependencies.is_empty() {
             let comment = "# Workspace Member Dependencies".to_owned();

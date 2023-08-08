@@ -317,6 +317,10 @@ pub struct CrateContext {
     /// If true, disables pipelining for library targets generated for this crate
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub disable_pipelining: bool,
+
+    /// Extra targets that should be aliased.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extra_aliased_targets: Vec<String>,
 }
 
 impl CrateContext {
@@ -472,6 +476,7 @@ impl CrateContext {
             license,
             additive_build_file_content: None,
             disable_pipelining: false,
+            extra_aliased_targets: Vec::new(),
         }
         .with_overrides(extras)
     }
@@ -608,6 +613,11 @@ impl CrateContext {
                     // For prettier rendering, dedent the build contents
                     textwrap::dedent(content)
                 });
+
+            // Extra aliased targets
+            if let Some(extra) = &crate_extra.extra_aliased_targets {
+                self.extra_aliased_targets.append(&mut extra.clone());
+            }
 
             // Git shallow_since
             if let Some(SourceAnnotation::Git { shallow_since, .. }) = &mut self.repository {

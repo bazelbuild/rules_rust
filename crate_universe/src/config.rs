@@ -262,6 +262,9 @@ pub struct CrateAnnotations {
     /// The `patches` attribute of a Bazel repository rule. See
     /// [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)
     pub patches: Option<BTreeSet<String>>,
+
+    /// Extra targets the should be aliased during rendering.
+    pub extra_aliased_targets: Option<Vec<String>>,
 }
 
 macro_rules! joined_extra_member {
@@ -319,6 +322,7 @@ impl Add for CrateAnnotations {
             patch_args: joined_extra_member!(self.patch_args, rhs.patch_args, Vec::new, Vec::extend),
             patch_tool: self.patch_tool.or(rhs.patch_tool),
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
+            extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, Vec::new, Vec::extend),
         };
 
         output
