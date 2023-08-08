@@ -44,6 +44,7 @@ def _strip_crate_info_output(crate_info):
         is_test = crate_info.is_test,
         compile_data = crate_info.compile_data,
         compile_data_targets = crate_info.compile_data_targets,
+        data = crate_info.data,
     )
 
 def rustdoc_compile_action(
