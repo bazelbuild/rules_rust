@@ -1,5 +1,5 @@
 {
-  "checksum": "89d0da633786e6ac96711da60f4f217d262171b913686d9252eed03899a59e45",
+  "checksum": "a13ac0eabb4432f4d6a5cdfacc4022c82c7ae32ad5ed8cc5e3a233f2ec5910ac",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -98,9 +98,9 @@
       },
       "license": "MIT OR Apache-2.0",
       "additive_build_file_content": "\n# This file is included in the BUILD for the cxx crate, to export its header\n# file for C++ code to depend on.\ncc_library(\n    name = \"cxx_cc\",\n    visibility = [\"//visibility:public\"],\n    hdrs = [\"include/cxx.h\"],\n    srcs = [\"src/cxx.cc\"],\n    includes = [\"include\"],\n)\n",
-      "extra_aliased_targets": [
-        "cxx_cc"
-      ]
+      "extra_aliased_targets": {
+        "cxx_cc": "cxx_cc"
+      }
     },
     "cxxbridge-flags 1.0.104": {
       "name": "cxxbridge-flags",

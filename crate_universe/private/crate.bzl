@@ -84,7 +84,7 @@ def _annotation(
         data = None,
         data_glob = None,
         deps = None,
-        extra_aliased_targets = [],
+        extra_aliased_targets = {},
         gen_binaries = [],
         disable_pipelining = False,
         gen_build_script = None,
@@ -124,7 +124,8 @@ def _annotation(
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
-        extra_aliased_targets (list, optional): A list of targets to add to the generated aliases.
+        extra_aliased_targets (dict, optional): A list of targets to add to the generated aliases in the root
+            crate_universe repository.
         gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
             targets produced. Or `True` to generate all, `False` to generate none.
         disable_pipelining (bool, optional): If True, disables pipelining for library targets for this crate.

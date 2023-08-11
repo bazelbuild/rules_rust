@@ -22,6 +22,7 @@ rust_cxx_bridge(
 cc_library(
     name = "blobstore-sys",
     srcs = ["src/blobstore.cc"],
+    copts = ["-std=c++17"],
     deps = [
         ":blobstore-include",
         ":bridge/include",
@@ -31,5 +32,6 @@ cc_library(
 cc_library(
     name = "blobstore-include",
     hdrs = ["include/blobstore.h"],
+    copts = ["-std=c++17"],
     deps = ["@using_cxx//:cxx_cc"],
 )

@@ -16,7 +16,7 @@ build:clippy --output_groups=+clippy_checks
 
 # Confirm crate universe works without relying on the legacy
 # external symlink in runfiles.
-build --nolegacy_external_runfiles --repo_env=CC=clang --copt=-std=c++17
+build --nolegacy_external_runfiles
 
 # This import should always be last to allow users to override
 # settings for local development.

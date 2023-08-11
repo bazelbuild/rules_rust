@@ -319,8 +319,8 @@ pub struct CrateContext {
     pub disable_pipelining: bool,
 
     /// Extra targets that should be aliased.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub extra_aliased_targets: Vec<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra_aliased_targets: BTreeMap<String, String>,
 }
 
 impl CrateContext {
@@ -476,7 +476,7 @@ impl CrateContext {
             license,
             additive_build_file_content: None,
             disable_pipelining: false,
-            extra_aliased_targets: Vec::new(),
+            extra_aliased_targets: BTreeMap::new(),
         }
         .with_overrides(extras)
     }

@@ -279,8 +279,9 @@ crates_repository(
     name = "using_cxx",
     annotations = {
         # CXX provides a header file that should be used in C++ sources that depend on cxx.
-        "cxx": [crate.annotation(
-            additive_build_file_content = """
+        "cxx": [
+            crate.annotation(
+                additive_build_file_content = """
                 # This file is included in the BUILD for the cxx crate, to export its header
                 # file for C++ code to depend on.
                 cc_library(
@@ -291,9 +292,10 @@ crates_repository(
                     includes = ["include"],
                 )
             """,
-            extra_aliased_targets = ["cxx_cc"],
-            gen_build_script = False,
-        )],
+                extra_aliased_targets = {"cxx_cc": "cxx_cc"},
+                gen_build_script = False,
+            ),
+        ],
     },
     cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
