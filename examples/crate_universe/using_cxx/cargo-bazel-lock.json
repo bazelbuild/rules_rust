@@ -1,5 +1,5 @@
 {
-  "checksum": "a13ac0eabb4432f4d6a5cdfacc4022c82c7ae32ad5ed8cc5e3a233f2ec5910ac",
+  "checksum": "e5d24b98993df177a8e5518f4dd7ea12b619dc811e1052d6212bbdc7749002be",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -97,7 +97,7 @@
         "version": "1.0.104"
       },
       "license": "MIT OR Apache-2.0",
-      "additive_build_file_content": "\n# This file is included in the BUILD for the cxx crate, to export its header\n# file for C++ code to depend on.\ncc_library(\n    name = \"cxx_cc\",\n    visibility = [\"//visibility:public\"],\n    hdrs = [\"include/cxx.h\"],\n    srcs = [\"src/cxx.cc\"],\n    includes = [\"include\"],\n)\n",
+      "additive_build_file_content": "\n# This file is included in the BUILD for the cxx crate, to export its header\n# file for C++ code to depend on.\ncc_library(\n    name = \"cxx_cc\",\n    visibility = [\"//visibility:public\"],\n    hdrs = [\"include/cxx.h\"],\n    srcs = [\"src/cxx.cc\"],\n    includes = [\"include\"],\n    target_compatible_with = [\n        \"@platforms//os:linux\",\n    ],\n)\n",
       "extra_aliased_targets": {
         "cxx_cc": "cxx_cc"
       }

@@ -290,6 +290,9 @@ crates_repository(
                     hdrs = ["include/cxx.h"],
                     srcs = ["src/cxx.cc"],
                     includes = ["include"],
+                    target_compatible_with = [
+                        "@platforms//os:linux",
+                    ],
                 )
             """,
                 extra_aliased_targets = {"cxx_cc": "cxx_cc"},
