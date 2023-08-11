@@ -16,8 +16,9 @@ build:clippy --output_groups=+clippy_checks
 
 # Confirm crate universe works without relying on the legacy
 # external symlink in runfiles.
-build --nolegacy_external_runfiles
+build --nolegacy_external_runfiles --repo_env=CC=clang --copt=-std=c++17
 
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc
+
