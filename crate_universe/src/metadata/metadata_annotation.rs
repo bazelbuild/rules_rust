@@ -383,7 +383,7 @@ impl Annotations {
             .packages
             .iter()
             .filter_map(|(pkg_id, pkg)| {
-                let extras: Vec<CrateAnnotations> = config
+                let mut crate_extra: CrateAnnotations = config
                     .annotations
                     .iter()
                     .filter(|(id, _)| id.matches(pkg))
@@ -395,18 +395,20 @@ impl Annotations {
                         extra
                     })
                     .cloned()
-                    .collect();
+                    .sum();
 
-                if !extras.is_empty() {
+                crate_extra.apply_defaults_from_package_metadata(&pkg.metadata);
+
+                if crate_extra == CrateAnnotations::default() {
+                    None
+                } else {
                     Some((
                         CrateId::new(pkg.name.clone(), pkg.version.to_string()),
                         PairredExtras {
                             package_id: pkg_id.clone(),
-                            crate_extra: extras.into_iter().sum(),
+                            crate_extra,
                         },
                     ))
-                } else {
-                    None
                 }
             })
             .collect();

@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 
-#include "cxx.h"
+#include "rust/cxx.h"
 
 namespace org {
 namespace blobstore {

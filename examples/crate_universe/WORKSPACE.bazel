@@ -277,27 +277,6 @@ no_cargo_crate_repositories()
 
 crates_repository(
     name = "using_cxx",
-    annotations = {
-        # CXX provides a header file that should be used in C++ sources that depend on cxx.
-        "cxx": [
-            crate.annotation(
-                additive_build_file_content = """
-                # This file is included in the BUILD for the cxx crate, to export its header
-                # file for C++ code to depend on.
-                cc_library(
-                    name = "cxx_cc",
-                    visibility = ["//visibility:public"],
-                    hdrs = ["include/cxx.h"],
-                    srcs = ["src/cxx.cc"],
-                    includes = ["include"],
-                    linkstatic = True,
-                )
-            """,
-                extra_aliased_targets = {"cxx_cc": "cxx_cc"},
-                gen_build_script = False,
-            ),
-        ],
-    },
     cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -305,7 +284,7 @@ crates_repository(
     lockfile = "//using_cxx:cargo-bazel-lock.json",
     packages = {
         "cxx": crate.spec(
-            version = "1.0.0",
+            version = "1.0.105",
         ),
     },
     splicing_config = splicing_config(
@@ -341,10 +320,10 @@ rust_binary(
     ),
 )
     """,
-    sha256 = "df13eece12ed9e7bd4fb071a6af4c44421bb9024d339d029f5333bcdaca00000",
-    strip_prefix = "cxxbridge-cmd-1.0.100",
+    sha256 = "0b3eea393dbcbc1e875302846de4e4f9a31bf2e57ad3657bc83d61d00293b0fe",
+    strip_prefix = "cxxbridge-cmd-1.0.105",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.100/download"],
+    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.105/download"],
 )
 
 crates_repository(
