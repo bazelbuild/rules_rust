@@ -1,13 +1,13 @@
 """Unittest to verify re-exported symbols propagate to downstream crates"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//test/unit:common.bzl", "assert_argv_contains_prefix", "assert_argv_contains_prefix_suffix")
+load("//test/unit:common.bzl", "assert_argv_contains_prefix", "assert_argv_contains_prefix_suffix", "find_by_mnemonic")
 
 def _exports_test_impl(ctx, dependencies, externs):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
+    action = find_by_mnemonic(env, target.actions, "Rustc")
     asserts.equals(env, action.mnemonic, "Rustc")
 
     # Transitive symbols that get re-exported are expected to be located by a `-Ldependency` flag.

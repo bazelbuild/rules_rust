@@ -2,12 +2,12 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_test")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_argv_contains_not", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
+load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_argv_contains_not", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not", "find_by_mnemonic")
 
 def _use_libtest_harness_rustc_flags_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
+    action = find_by_mnemonic(env, tut.actions, "Rustc")
     assert_action_mnemonic(env, action, "Rustc")
     assert_argv_contains(env, action, "test/unit/use_libtest_harness/mytest.rs")
     assert_argv_contains(env, action, "--test")

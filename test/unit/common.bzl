@@ -2,6 +2,27 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 
+def find_by_mnemonic(env, actions, mnemonic):
+    """
+    Finds first action with matching mnemonic.
+
+    Args:
+        env: testing environment
+        actions: list of actions
+        mnemonic: mnemonic to match against
+
+    Returns:
+        action: the matching action
+    """
+    for action in actions:
+        if action.mnemonic == mnemonic:
+            return action
+    unittest.fail(
+        env,
+        "No such action with mnemonic {mnemonic}".format(mnemonic=mnemonic),
+    )
+    fail("unreachable")
+
 def assert_argv_contains_not(env, action, flag):
     asserts.true(
         env,

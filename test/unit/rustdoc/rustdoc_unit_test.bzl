@@ -9,6 +9,7 @@ load(
     "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_prefix_not",
+    "find_by_mnemonic",
 )
 
 # TODO: `rust_doc_test` currently does not work on Windows.
@@ -20,7 +21,7 @@ NOT_WINDOWS = select({
 
 def _get_rustdoc_action(env, tut):
     actions = tut.actions
-    action = actions[0]
+    action = find_by_mnemonic(env, actions, "Rustdoc")
     assert_action_mnemonic(env, action, "Rustdoc")
 
     return action
