@@ -19,9 +19,9 @@
 #include <stdlib.h>
 
 typedef struct {
-  size_t rows;
-  size_t cols;
-  uint64_t* data;
+    size_t rows;
+    size_t cols;
+    uint64_t* data;
 } Matrix;
 
 // Constructs a new Matrix from the given data.

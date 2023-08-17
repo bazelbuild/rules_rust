@@ -42,6 +42,10 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
       ; 1>&2 cat bazel-out/_coverage/_coverage_report.dat \
       ; exit 1 \
       ; }
+split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
+  - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
+  - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc
+  - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
 tasks:
   ubuntu2004:
     build_targets: *default_linux_targets
@@ -69,6 +73,18 @@ tasks:
   windows:
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
+  ubuntu2004_split_coverage_postprocessing:
+    name: Split Coverage Postprocessing
+    platform: ubuntu2004
+    shell_commands: *split_coverage_postprocessing_shell_commands
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  macos_split_coverage_postprocessing:
+    name: Split Coverage Postprocessing
+    platform: macos
+    shell_commands: *split_coverage_postprocessing_shell_commands
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2004_opt:
     name: Opt Mode
     platform: ubuntu2004
@@ -580,12 +596,13 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  zig_cross_compiling:
-    name: Zig cross compiling test
-    platform: ubuntu2004
-    working_directory: examples/zig_cross_compiling
-    build_targets:
-      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
+  # zig_cross_compiling:
+  #   name: Zig cross compiling test
+  #   platform: ubuntu2004
+  #   working_directory: examples/zig_cross_compiling
+  #   build_targets:
+  #     - "//..."
 
 buildifier:
   version: latest

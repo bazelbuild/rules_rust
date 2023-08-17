@@ -308,6 +308,7 @@ def _rust_library_common(ctx, crate_type):
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
+            data = depset(ctx.files.data),
             compile_data = depset(ctx.files.compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
@@ -480,13 +481,17 @@ def _rust_test_impl(ctx):
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
 
-        llvm_cov_path = toolchain.llvm_cov.short_path
-        if llvm_cov_path.startswith("../"):
-            llvm_cov_path = llvm_cov_path[len("../"):]
+        if toolchain._experimental_use_coverage_metadata_files:
+            llvm_cov_path = toolchain.llvm_cov.path
+            llvm_profdata_path = toolchain.llvm_profdata.path
+        else:
+            llvm_cov_path = toolchain.llvm_cov.short_path
+            if llvm_cov_path.startswith("../"):
+                llvm_cov_path = llvm_cov_path[len("../"):]
 
-        llvm_profdata_path = toolchain.llvm_profdata.short_path
-        if llvm_profdata_path.startswith("../"):
-            llvm_profdata_path = llvm_profdata_path[len("../"):]
+            llvm_profdata_path = toolchain.llvm_profdata.short_path
+            if llvm_profdata_path.startswith("../"):
+                llvm_profdata_path = llvm_profdata_path[len("../"):]
 
         env["RUST_LLVM_COV"] = llvm_cov_path
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
@@ -627,7 +632,7 @@ _common_attrs = {
     # `@local_config_platform//:exec` exposed.
     "proc_macro_deps": attr.label_list(
         doc = dedent("""\
-            List of `rust_library` targets with kind `proc-macro` used to help build this library target.
+            List of `rust_proc_macro` targets used to help build this library target.
         """),
         cfg = "exec",
         providers = [rust_common.crate_info],
@@ -742,7 +747,7 @@ _common_attrs = {
 
 _coverage_attrs = {
     "_collect_cc_coverage": attr.label(
-        default = Label("//util:collect_coverage"),
+        default = Label("//util/collect_coverage"),
         executable = True,
         cfg = "exec",
     ),
@@ -1036,7 +1041,6 @@ _rust_binary_attrs = dict({
         doc = dedent("""\
             Link script to forward into linker via rustc options.
         """),
-        cfg = "exec",
         allow_single_file = True,
     ),
     "out_binary": attr.bool(

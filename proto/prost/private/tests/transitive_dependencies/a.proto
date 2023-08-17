@@ -8,13 +8,13 @@ import "types/types.proto";
 package a;
 
 message A {
-  string name = 1;
+    string name = 1;
 
-  a.b.B b = 2;
+    a.b.B b = 2;
 
-  google.protobuf.Timestamp timestamp = 3;
+    google.protobuf.Timestamp timestamp = 3;
 
-  google.protobuf.Duration duration = 4;
+    google.protobuf.Duration duration = 4;
 
-  Types types = 5;
+    Types types = 5;
 }

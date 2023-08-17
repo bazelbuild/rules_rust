@@ -23,30 +23,41 @@
 // New feature as of https://github.com/rust-lang/rust/pull/88098.
 __attribute__((weak)) uint8_t __rust_alloc_error_handler_should_panic = 0;
 
+// As of 1.71.0, the following begin to cause issues if defined. For
+// more details see https://github.com/rust-lang/rust/issues/73632.
+/*
 extern "C" uint8_t *__rg_alloc(uintptr_t size, uintptr_t align);
-extern "C" __attribute__((weak))
-uint8_t *__rust_alloc(uintptr_t size, uintptr_t align) {
-  return __rg_alloc(size, align);
+extern "C" __attribute__((weak)) uint8_t *__rust_alloc(uintptr_t size,
+                                                       uintptr_t align) {
+    return __rg_alloc(size, align);
 }
 extern "C" void __rg_dealloc(uint8_t *ptr, uintptr_t size, uintptr_t align);
-extern "C" __attribute__((weak))
-void __rust_dealloc(uint8_t *ptr, uintptr_t size, uintptr_t align) {
-  __rg_dealloc(ptr, size, align);
+extern "C" __attribute__((weak)) void __rust_dealloc(uint8_t *ptr,
+                                                     uintptr_t size,
+                                                     uintptr_t align) {
+    __rg_dealloc(ptr, size, align);
 }
-extern "C" uint8_t *__rg_realloc(uint8_t *ptr, uintptr_t old_size, uintptr_t align,
-                       uintptr_t new_size);
-extern "C" __attribute__((weak))
-uint8_t *__rust_realloc(uint8_t *ptr, uintptr_t old_size, uintptr_t align,
-                        uintptr_t new_size) {
-  return __rg_realloc(ptr, old_size, align, new_size);
+extern "C" uint8_t *__rg_realloc(uint8_t *ptr, uintptr_t old_size,
+                                 uintptr_t align, uintptr_t new_size);
+extern "C" __attribute__((weak)) uint8_t *__rust_realloc(uint8_t *ptr,
+                                                         uintptr_t old_size,
+                                                         uintptr_t align,
+                                                         uintptr_t new_size) {
+    return __rg_realloc(ptr, old_size, align, new_size);
 }
 extern "C" uint8_t *__rg_alloc_zeroed(uintptr_t size, uintptr_t align);
-extern "C" __attribute__((weak))
-uint8_t *__rust_alloc_zeroed(uintptr_t size, uintptr_t align) {
-  return __rg_alloc_zeroed(size, align);
+extern "C" __attribute__((weak)) uint8_t *__rust_alloc_zeroed(uintptr_t size,
+                                                              uintptr_t align) {
+    return __rg_alloc_zeroed(size, align);
 }
+*/
+
 extern "C" void __rg_oom(uintptr_t size, uintptr_t align);
-extern "C" __attribute__((weak))
-void __rust_alloc_error_handler(uintptr_t size, uintptr_t align) {
-  __rg_oom(size, align);
+extern "C" __attribute__((weak)) void __rust_alloc_error_handler(
+    uintptr_t size, uintptr_t align) {
+    __rg_oom(size, align);
 }
+
+// New requirement as of Rust 1.71.0. For more details see
+// https://github.com/rust-lang/rust/issues/73632.
+__attribute__((weak)) uint8_t __rust_no_alloc_shim_is_unstable = 0;

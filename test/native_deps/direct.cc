@@ -1,6 +1,6 @@
 #include "direct.h"
 
 RustStruct MakeRustStruct() {
-  RustStruct result;
-  return result;
+    RustStruct result;
+    return result;
 }

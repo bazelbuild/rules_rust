@@ -304,6 +304,7 @@ _NORMAL_DEPENDENCIES = {
             "clap": "@cui__clap-4.3.11//:clap",
             "crates-index": "@cui__crates-index-0.19.13//:crates_index",
             "hex": "@cui__hex-0.4.3//:hex",
+            "itertools": "@cui__itertools-0.11.0//:itertools",
             "normpath": "@cui__normpath-1.1.1//:normpath",
             "pathdiff": "@cui__pathdiff-0.2.1//:pathdiff",
             "regex": "@cui__regex-1.9.1//:regex",
@@ -873,6 +874,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__either-1.9.0",
+        sha256 = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/either/1.9.0/download"],
+        strip_prefix = "either-1.9.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.either-1.9.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__equivalent-1.0.1",
         sha256 = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5",
         type = "tar.gz",
@@ -1149,6 +1160,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/is-terminal/0.4.7/download"],
         strip_prefix = "is-terminal-0.4.7",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.is-terminal-0.4.7.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__itertools-0.11.0",
+        sha256 = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/itertools/0.11.0/download"],
+        strip_prefix = "itertools-0.11.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.itertools-0.11.0.bazel"),
     )
 
     maybe(

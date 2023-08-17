@@ -270,6 +270,103 @@ load(
 no_cargo_crate_repositories()
 
 ###############################################################################
+# U S I N G   C X X   C R A T E
+###############################################################################
+
+# CXX crate is a bit different since there are C++ headers provided.
+
+crates_repository(
+    name = "using_cxx",
+    annotations = {
+        # CXX provides a header file that should be used in C++ sources that depend on cxx.
+        "cxx": [
+            crate.annotation(
+                additive_build_file_content = """
+                # This file is included in the BUILD for the cxx crate, to export its header
+                # file for C++ code to depend on.
+                cc_library(
+                    name = "cxx_cc",
+                    visibility = ["//visibility:public"],
+                    hdrs = ["include/cxx.h"],
+                    srcs = ["src/cxx.cc"],
+                    includes = ["include"],
+                    target_compatible_with = [
+                        "@platforms//os:linux",
+                    ],
+                )
+            """,
+                extra_aliased_targets = {"cxx_cc": "cxx_cc"},
+                gen_build_script = False,
+            ),
+        ],
+    },
+    cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//using_cxx:cargo-bazel-lock.json",
+    packages = {
+        "cxx": crate.spec(
+            version = "1.0.0",
+        ),
+    },
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+)
+
+load(
+    "@using_cxx//:defs.bzl",
+    using_cxx_crate_repositories = "crate_repositories",
+)
+
+using_cxx_crate_repositories()
+
+# The codegen tool needed by cxx.
+http_archive(
+    name = "cxxbridge-cmd",
+    build_file_content = """
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@cxxbridge_cmd_deps//:defs.bzl", "aliases", "all_crate_deps")
+
+rust_binary(
+    name = "cxxbridge-cmd",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    data = [
+        "src/gen/include/cxx.h",
+    ],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ),
+)
+    """,
+    sha256 = "df13eece12ed9e7bd4fb071a6af4c44421bb9024d339d029f5333bcdaca00000",
+    strip_prefix = "cxxbridge-cmd-1.0.100",
+    type = "tar.gz",
+    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.100/download"],
+)
+
+crates_repository(
+    name = "cxxbridge_cmd_deps",
+    cargo_lockfile = "//using_cxx:cxxbridge-cmd.Cargo.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//using_cxx:cxxbridge-cmd.Cargo.Bazel.lock",
+    manifests = ["@cxxbridge-cmd//:Cargo.toml"],
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+)
+
+load("@cxxbridge_cmd_deps//:defs.bzl", cxxbridge_cmd_deps = "crate_repositories")
+
+cxxbridge_cmd_deps()
+
+###############################################################################
 # V E N D O R   E X T E R N A L
 ###############################################################################
 

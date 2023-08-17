@@ -213,6 +213,8 @@ def collect_deps(
     """
     direct_crates = []
     transitive_crates = []
+    transitive_data = []
+    transitive_proc_macro_data = []
     transitive_noncrates = []
     transitive_build_infos = []
     transitive_link_search_paths = []
@@ -267,6 +269,18 @@ def collect_deps(
                 ),
             )
 
+            if _is_proc_macro(crate_info):
+                # This crate's data and its non-macro dependencies' data are proc macro data.
+                transitive_proc_macro_data.append(crate_info.data)
+                transitive_proc_macro_data.append(dep_info.transitive_data)
+            else:
+                # This crate's proc macro dependencies' data are proc macro data.
+                transitive_proc_macro_data.append(dep_info.transitive_proc_macro_data)
+
+                # Track transitive non-macro data in case a proc macro depends on this crate.
+                transitive_data.append(crate_info.data)
+                transitive_data.append(dep_info.transitive_data)
+
             # If this dependency produces metadata, add it to the metadata outputs.
             # If it doesn't (for example a custom library that exports crate_info),
             # we depend on crate_info.output.
@@ -312,11 +326,15 @@ def collect_deps(
                  "targets.")
 
     transitive_crates_depset = depset(transitive = transitive_crates)
+    transitive_data_depset = depset(transitive = transitive_data)
+    transitive_proc_macro_data_depset = depset(transitive = transitive_proc_macro_data)
 
     return (
         rust_common.dep_info(
             direct_crates = depset(direct_crates),
             transitive_crates = transitive_crates_depset,
+            transitive_data = transitive_data_depset,
+            transitive_proc_macro_data = transitive_proc_macro_data_depset,
             transitive_noncrates = depset(
                 transitive = transitive_noncrates,
                 order = "topological",  # dylib link flag ordering matters.
@@ -691,6 +709,7 @@ def collect_inputs(
             transitive_crate_outputs,
             depset(additional_transitive_inputs),
             crate_info.compile_data,
+            dep_info.transitive_proc_macro_data,
             toolchain.all_files,
         ],
     )
@@ -997,6 +1016,7 @@ def construct_arguments(
         rustc_flags.add("proc_macro")
 
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+        # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
     # Make bin crate data deps available to tests.
@@ -1364,8 +1384,10 @@ def rustc_compile_action(
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
 
+    experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
+
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) + coverage_runfiles,
+        files = getattr(ctx.files, "data", []) + ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
         collect_data = True,
     )
     if getattr(ctx.attr, "crate", None):
@@ -1376,18 +1398,29 @@ def rustc_compile_action(
     # https://github.com/bazelbuild/rules_rust/issues/771
     out_binary = getattr(attr, "out_binary", False)
 
+    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None
+
+    instrumented_files_kwargs = {
+        "dependency_attributes": ["deps", "crate"],
+        "extensions": ["rs"],
+        "source_attributes": ["srcs"],
+    }
+
+    if experimental_use_coverage_metadata_files:
+        instrumented_files_kwargs.update({
+            "metadata_files": coverage_runfiles + [executable] if executable else [],
+        })
+
     providers = [
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
             runfiles = runfiles,
-            executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None,
+            executable = executable,
         ),
         coverage_common.instrumented_files_info(
             ctx,
-            dependency_attributes = ["deps", "crate"],
-            extensions = ["rs"],
-            source_attributes = ["srcs"],
+            **instrumented_files_kwargs
         ),
     ]
 
