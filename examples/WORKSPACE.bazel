@@ -79,15 +79,20 @@ rust_repository_set(
 # Examples dependencies
 ###############################################################################
 
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "c78216f5be5d451a42275b0b7dc809fb9347e2b04a68f68bad620a2b01f5c774",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.2/rules_nodejs-5.5.2.tar.gz"],
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+
+rules_js_dependencies()
+
+load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = DEFAULT_NODE_VERSION,
 )
 
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
 
-node_repositories()
+bazel_features_deps()
 
 http_archive(
     name = "rules_foreign_cc",

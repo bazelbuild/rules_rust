@@ -15,11 +15,7 @@
 """Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
 load("//rust:defs.bzl", "rust_common")
-load(
-    "//wasm_bindgen:providers.bzl",
-    "DeclarationInfo",
-    "JSModuleInfo",
-)
+load("//wasm_bindgen:providers.bzl", "JsInfo")
 load("//wasm_bindgen/private:transitions.bzl", "wasm_bindgen_transition")
 
 _WASM_BINDGEN_DOC = """\
@@ -125,7 +121,7 @@ def _rust_wasm_bindgen_impl(ctx):
         arguments = [args],
     )
 
-    # Return a structure that is compatible with the deps[] of a ts_library.
+    # Return a structure that is compatible with the deps[] of the aspect JS/TS rules.
     declarations = depset(ts_out)
     es5_sources = depset(js_out)
 
@@ -133,14 +129,11 @@ def _rust_wasm_bindgen_impl(ctx):
         DefaultInfo(
             files = depset(outputs),
         ),
-        DeclarationInfo(
+        JsInfo(
             declarations = declarations,
-            transitive_declarations = declarations,
-            type_blocklisted_declarations = depset([]),
-        ),
-        JSModuleInfo(
-            direct_sources = es5_sources,
             sources = es5_sources,
+            transitive_declarations = declarations,
+            transitive_sources = es5_sources,
         ),
     ]
 

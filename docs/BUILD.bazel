@@ -7,9 +7,9 @@ package(default_visibility = ["//visibility:private"])
 bzl_library(
     name = "docs_deps",
     srcs = [
+        "@aspect_rules_js//js:providers",
         "@bazel_tools//tools:bzl_srcs",
         "@com_google_protobuf//:bzl_srcs",
-        "@rules_nodejs//nodejs:bzl",
     ],
     deps = [
         "@bazel_skylib//lib:paths",

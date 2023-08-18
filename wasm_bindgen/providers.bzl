@@ -1,10 +1,8 @@
 """A module for re-exporting the providers used by the rust_wasm_bindgen rule"""
 
 load(
-    "@rules_nodejs//nodejs:providers.bzl",
-    _DeclarationInfo = "DeclarationInfo",
-    _JSModuleInfo = "JSModuleInfo",
+    "@aspect_rules_js//js:providers.bzl",
+    _JsInfo = "JsInfo",
 )
 
-DeclarationInfo = _DeclarationInfo
-JSModuleInfo = _JSModuleInfo
+JsInfo = _JsInfo

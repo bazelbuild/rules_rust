@@ -41,9 +41,10 @@ def rust_wasm_bindgen_dependencies():
 
     maybe(
         http_archive,
-        name = "rules_nodejs",
-        sha256 = "017e2348bb8431156d5cf89b6f502c2e7fcffc568729f74f89e4a12bd8279e90",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.2/rules_nodejs-core-5.5.2.tar.gz"],
+        name = "aspect_rules_js",
+        sha256 = "7b2a4d1d264e105eae49a27e2e78065b23e2e45724df2251eacdd317e95bfdfd",
+        strip_prefix = "rules_js-1.31.0",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v1.31.0/rules_js-v1.31.0.tar.gz",
     )
 
     crate_repositories()
@@ -65,7 +66,7 @@ def rust_wasm_bindgen_register_toolchains(register_toolchains = True):
 def rust_wasm_bindgen_repositories(register_default_toolchain = True):
     """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
 
-    **Deprecated**: Use [rust_wasm_bindgen_dependencies](#rust_wasm_bindgen_depednencies) and [rust_wasm_bindgen_register_toolchains](#rust_wasm_bindgen_register_toolchains).
+    **Deprecated**: Use [rust_wasm_bindgen_dependencies](#rust_wasm_bindgen_dependencies) and [rust_wasm_bindgen_register_toolchains](#rust_wasm_bindgen_register_toolchains).
 
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
