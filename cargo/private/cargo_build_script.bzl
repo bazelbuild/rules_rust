@@ -213,18 +213,17 @@ def _cargo_build_script_impl(ctx):
     # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
     # for details.
     args = ctx.actions.args()
-    args.add_all([
-        script.path,
-        links,
-        out_dir.path,
-        env_out.path,
-        flags_out.path,
-        link_flags.path,
-        link_search_paths.path,
-        dep_env_out.path,
-        streams.stdout.path,
-        streams.stderr.path,
-    ])
+    args.add(script)
+    args.add(links)
+    args.add(out_dir.path)
+    args.add(env_out)
+    args.add(flags_out)
+    args.add(link_flags)
+    args.add(link_search_paths)
+    args.add(dep_env_out)
+    args.add(streams.stdout)
+    args.add(streams.stderr)
+
     build_script_inputs = []
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
