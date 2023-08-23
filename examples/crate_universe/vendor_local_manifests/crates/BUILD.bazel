@@ -26,7 +26,7 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "tempfile",
-    actual = "//vendor_local_manifests/crates/tempfile-3.6.0:tempfile",
+    actual = "//vendor_local_manifests/crates/tempfile-3.7.1:tempfile",
     tags = ["manual"],
 )
 

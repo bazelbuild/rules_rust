@@ -115,7 +115,7 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
-    args.add(header.path)
+    args.add(header)
     args.add("--output", output)
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
