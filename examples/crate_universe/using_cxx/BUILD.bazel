@@ -23,6 +23,7 @@ cc_library(
     name = "blobstore-sys",
     srcs = ["src/blobstore.cc"],
     copts = ["-std=c++17"],
+    linkstatic = True,
     deps = [
         ":blobstore-include",
         ":bridge/include",

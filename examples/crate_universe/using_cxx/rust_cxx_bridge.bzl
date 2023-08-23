@@ -40,6 +40,7 @@ def rust_cxx_bridge(name, src, deps = []):
     cc_library(
         name = name,
         srcs = [src + ".cc"],
+        linkstatic = True,
         deps = deps + [":%s/include" % name],
     )
 
