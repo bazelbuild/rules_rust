@@ -187,6 +187,9 @@ def _cargo_build_script_impl(ctx):
             if type(all_files) == "list":
                 all_files = depset(all_files)
             toolchain_tools.append(all_files)
+        if platform_common.TemplateVariableInfo in target:
+            variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
+            env.update(variables)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
