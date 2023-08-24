@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
 use indoc::formatdoc;
+use itertools::Itertools;
 
 use crate::config::{RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
@@ -164,7 +165,29 @@ impl Renderer {
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
+
+            for (alias, target) in &krate.extra_aliased_targets {
+                dependencies.push(Alias {
+                    name: alias.clone(),
+                    actual: self.crate_label(&krate.name, &krate.version, target),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                });
+            }
         }
+
+        let duplicates: Vec<_> = dependencies
+            .iter()
+            .map(|alias| &alias.name)
+            .duplicates()
+            .sorted()
+            .collect();
+
+        assert!(
+            duplicates.is_empty(),
+            "Found duplicate aliases that must be changed (Check your `extra_aliased_targets`): {:#?}",
+            duplicates
+        );
+
         if !dependencies.is_empty() {
             let comment = "# Workspace Member Dependencies".to_owned();
             starlark.push(Starlark::Verbatim(comment));

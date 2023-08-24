@@ -389,7 +389,6 @@ rust_prost_toolchain = rule(
         ),
         "prost_plugin_flag": attr.string(
             doc = "Prost plugin flag format. (e.g. `--plugin=protoc-gen-prost=%s`)",
-            mandatory = True,
             default = "--plugin=protoc-gen-prost=%s",
         ),
         "prost_runtime": attr.label(

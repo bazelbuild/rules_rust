@@ -899,8 +899,8 @@ def construct_arguments(
     rustc_flags.set_param_file_format("multiline")
     rustc_flags.use_param_file("@%s", use_always = False)
     rustc_flags.add(crate_info.root)
-    rustc_flags.add("--crate-name=" + crate_info.name)
-    rustc_flags.add("--crate-type=" + crate_info.type)
+    rustc_flags.add(crate_info.name, format = "--crate-name=%s")
+    rustc_flags.add(crate_info.type, format = "--crate-type=%s")
 
     error_format = "human"
     if hasattr(attr, "_error_format"):
@@ -921,7 +921,7 @@ def construct_arguments(
             # If the os is not windows, we can get colorized output.
             json.append("diagnostic-rendered-ansi")
 
-        rustc_flags.add("--json=" + ",".join(json))
+        rustc_flags.add_joined(json, format_joined = "--json=%s", join_with = ",")
 
         error_format = "json"
 
@@ -929,7 +929,7 @@ def construct_arguments(
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
 
-    rustc_flags.add("--error-format=" + error_format)
+    rustc_flags.add(error_format, format = "--error-format=%s")
 
     # Mangle symbols to disambiguate crates with the same name. This could
     # happen only for non-final artifacts where we compute an output_hash,
@@ -939,37 +939,33 @@ def construct_arguments(
     # Bazel, such as rust_binary, rust_static_library and rust_shared_library,
     # where output_hash is None we don't need to add these flags.
     if output_hash:
-        extra_filename = "-" + output_hash
-        rustc_flags.add("--codegen=metadata=" + extra_filename)
-        rustc_flags.add("--codegen=extra-filename=" + extra_filename)
+        rustc_flags.add(output_hash, format = "--codegen=metadata=-%s")
+        rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        rustc_flags.add("--out-dir=" + output_dir)
+        rustc_flags.add(output_dir, format = "--out-dir=%s")
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
-    rustc_flags.add("--codegen=opt-level=" + compilation_mode.opt_level)
-    rustc_flags.add("--codegen=debuginfo=" + compilation_mode.debug_info)
+    rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
+    rustc_flags.add(compilation_mode.debug_info, format = "--codegen=debuginfo=%s")
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
     if emit:
-        rustc_flags.add("--emit=" + ",".join(emit_with_paths))
+        rustc_flags.add_joined(emit_with_paths, format_joined = "--emit=%s", join_with = ",")
     if error_format != "json":
         # Color is not compatible with json output.
         rustc_flags.add("--color=always")
-    rustc_flags.add("--target=" + toolchain.target_flag_value)
+    rustc_flags.add(toolchain.target_flag_value, format = "--target=%s")
     if hasattr(attr, "crate_features"):
         rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
-        rustc_flags.add(linker_script.path, format = "--codegen=link-arg=-T%s")
+        rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    # Gets the paths to the folders containing the standard library (or libcore)
-    rust_std_paths = toolchain.rust_std_paths.to_list()
-
-    # Tell Rustc where to find the standard library
-    rustc_flags.add_all(rust_std_paths, before_each = "-L", format_each = "%s")
+    # Tell Rustc where to find the standard library (or libcore)
+    rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
     rustc_flags.add_all(rust_flags)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
@@ -995,12 +991,12 @@ def construct_arguments(
                 use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
-                rpaths = depset([])
+                rpaths = depset()
 
             ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths, rustdoc)
 
             env.update(link_env)
-            rustc_flags.add("--codegen=linker=" + ld)
+            rustc_flags.add(ld, format = "--codegen=linker=%s")
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
@@ -1067,7 +1063,7 @@ def construct_arguments(
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
     if _is_no_std(ctx, toolchain, crate_info):
-        rustc_flags.add_all(['--cfg=feature="no_std"'])
+        rustc_flags.add('--cfg=feature="no_std"')
 
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
@@ -1590,7 +1586,7 @@ def add_edition_flags(args, crate):
         crate (CrateInfo): A CrateInfo provider
     """
     if crate.edition != "2015":
-        args.add("--edition={}".format(crate.edition))
+        args.add(crate.edition, format = "--edition=%s")
 
 def _create_extra_input_args(build_info, dep_info):
     """Gather additional input arguments from transitive dependencies
@@ -1928,12 +1924,11 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
         # If there are ambiguous libs, the disambiguation symlinks to them are
         # all created in the same directory. Add it to the library search path.
         ambiguous_libs_dirname = ambiguous_libs.values()[0].dirname
-        args.add("-Lnative={}".format(ambiguous_libs_dirname))
+        args.add(ambiguous_libs_dirname, format = "-Lnative=%s")
 
     args.add_all(args_and_pic_and_ambiguous_libs, map_each = make_link_flags)
 
-    for linkstamp_out in linkstamp_outs:
-        args.add_all(["-C", "link-arg=%s" % linkstamp_out.path])
+    args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically

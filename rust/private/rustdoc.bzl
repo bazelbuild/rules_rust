@@ -138,7 +138,7 @@ def rustdoc_compile_action(
 
         # `rustdoc` does not support the SYSROOT environment variable. To account
         # for this, the flag must be explicitly passed to the `rustdoc` binary.
-        args.rustc_flags.add("--sysroot=${{pwd}}/{}".format(toolchain.sysroot_short_path))
+        args.rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
 
     return struct(
         executable = ctx.executable._process_wrapper,

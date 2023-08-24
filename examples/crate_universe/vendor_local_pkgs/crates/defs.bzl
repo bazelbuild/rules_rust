@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
             "axum": "//vendor_local_pkgs/crates/axum-0.4.8:axum",
             "hyper": "//vendor_local_pkgs/crates/hyper-0.14.27:hyper",
             "mime": "//vendor_local_pkgs/crates/mime-0.3.17:mime",
-            "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.102:serde_json",
+            "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.104:serde_json",
             "socket2": "//vendor_local_pkgs/crates/socket2-0.4.9:socket2",
             "tokio": "//vendor_local_pkgs/crates/tokio-1.29.1:tokio",
             "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
