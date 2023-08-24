@@ -938,6 +938,7 @@ rust_static_library = rule(
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
+    provides = [CcInfo],
     doc = dedent("""\
         Builds a Rust static library.
 
@@ -970,6 +971,7 @@ rust_shared_library = rule(
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     incompatible_use_toolchain_transition = True,
+    provides = [CcInfo],
     doc = dedent("""\
         Builds a Rust shared library.
 

@@ -20,6 +20,10 @@ coverage --combined_report=lcov
 # https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
 coverage --experimental_fetch_all_coverage_outputs
 
+# Required for some of the tests
+# https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
+common --experimental_cc_shared_library
+
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################
