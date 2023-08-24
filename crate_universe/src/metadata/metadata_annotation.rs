@@ -562,4 +562,42 @@ mod test {
         assert!(result_str.contains("Unused annotations were provided. Please remove them"));
         assert!(result_str.contains("mock-crate"));
     }
+
+    #[test]
+    fn defaults_from_package_metadata() {
+        let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
+        let annotations = CrateAnnotations {
+            rustc_env: Some({
+                let mut rustc_env = BTreeMap::new();
+                rustc_env.insert("BAR".to_owned(), "bar is set".to_owned());
+                rustc_env
+            }),
+            ..CrateAnnotations::default()
+        };
+
+        let mut config = Config::default();
+        config
+            .annotations
+            .insert(crate_id.clone(), annotations.clone());
+
+        // Combine the above annotations with default values provided by the
+        // crate author in package metadata.
+        let combined_annotations = Annotations::new(
+            test::metadata::has_package_metadata(),
+            test::lockfile::has_package_metadata(),
+            config,
+        )
+        .unwrap();
+
+        let extras = &combined_annotations.pairred_extras[&crate_id].crate_extra;
+        let expected = CrateAnnotations {
+            // This comes from has_package_metadata's [package.metadata.bazel].
+            additive_build_file_content: Some("genrule(**kwargs)\n".to_owned()),
+            // The package metadata defines a default rustc_env containing FOO,
+            // but it is superseded by a rustc_env annotation containing only
+            // BAR. These dictionaries are intentionally not merged together.
+            ..annotations
+        };
+        assert_eq!(*extras, expected);
+    }
 }
