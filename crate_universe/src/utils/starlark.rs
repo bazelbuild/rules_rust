@@ -4,15 +4,17 @@ mod glob;
 mod label;
 mod select;
 mod serialize;
+mod target_compatible_with;
 
 use std::collections::BTreeSet as Set;
 
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use serde_starlark::Error as StarlarkError;
 
 pub use glob::*;
 pub use label::*;
 pub use select::*;
+pub use target_compatible_with::*;
 
 pub type SelectStringList = SelectList<String>;
 pub type SelectStringDict = SelectDict<String>;
@@ -97,6 +99,11 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub link_deps: SelectList<WithOriginalConfigurations<String>>,
     pub edition: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
@@ -235,7 +242,23 @@ pub struct CommonAttrs {
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
+    #[serde(
+        serialize_with = "serialize_target_compatible_with",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub target_compatible_with: Option<TargetCompatibleWith>,
     pub version: String,
+}
+
+fn serialize_target_compatible_with<S>(
+    value: &Option<TargetCompatibleWith>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    // SAFETY: Option::is_none causes serialization to get skipped.
+    value.as_ref().unwrap().serialize_starlark(serializer)
 }
 
 pub struct Data {

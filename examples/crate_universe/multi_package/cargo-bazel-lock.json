@@ -1,5 +1,5 @@
 {
-  "checksum": "28b36befccdbe5075b4ec0c75543600400d65b6707b641e9e8b1eb20e0ad300b",
+  "checksum": "18ad2cc0814eb27b3c070784112968418f33359994c1e89ef89214a198cdabc1",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1509,7 +1509,7 @@
         "data_glob": [
           "**"
         ],
-        "deps": {
+        "link_deps": {
           "common": [
             {
               "id": "curl-sys 0.4.60+curl-7.88.1",
@@ -3447,7 +3447,16 @@
       "build_script_attrs": {
         "data_glob": [
           "**"
-        ]
+        ],
+        "link_deps": {
+          "common": [
+            {
+              "id": "curl-sys 0.4.60+curl-7.88.1",
+              "target": "curl_sys"
+            }
+          ],
+          "selects": {}
+        }
       },
       "license": "MIT"
     },
@@ -5455,7 +5464,16 @@
       "build_script_attrs": {
         "data_glob": [
           "**"
-        ]
+        ],
+        "link_deps": {
+          "common": [
+            {
+              "id": "ring 0.16.20",
+              "target": "ring"
+            }
+          ],
+          "selects": {}
+        }
       },
       "license": "Apache-2.0/ISC/MIT"
     },
@@ -9404,6 +9422,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-fuchsia",
@@ -9434,6 +9453,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-fuchsia",
@@ -9464,6 +9484,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
@@ -9493,6 +9514,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
@@ -9524,6 +9546,7 @@
       "riscv64gc-unknown-none-elf",
       "s390x-unknown-linux-gnu",
       "thumbv7em-none-eabi",
+      "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",

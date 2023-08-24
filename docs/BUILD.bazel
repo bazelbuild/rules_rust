@@ -49,6 +49,7 @@ PAGES = dict([
         symbols = [
             "rust_binary",
             "rust_library",
+            "rust_library_group",
             "rust_static_library",
             "rust_shared_library",
             "rust_proc_macro",
@@ -81,10 +82,10 @@ PAGES = dict([
         header_template = ":rust_bindgen.vm",
         symbols = [
             "rust_bindgen_library",
+            "rust_bindgen",
+            "rust_bindgen_toolchain",
             "rust_bindgen_dependencies",
             "rust_bindgen_register_toolchains",
-            "rust_bindgen_toolchain",
-            "rust_bindgen",
         ],
     ),
     page(
@@ -115,11 +116,17 @@ PAGES = dict([
         name = "rust_proto",
         header_template = ":rust_proto.vm",
         symbols = [
-            "rust_grpc_library",
+            "rust_prost_library",
+            "rust_prost_toolchain",
+            "rust_prost_dependencies",
+            "rust_prost_transitive_repositories",
+        ] + [
             "rust_proto_library",
-            "rust_proto_repositories",
-            "rust_proto_transitive_repositories",
-            "rust_proto_toolchain",
+            "rust_grpc_library",
+            "rust_proto_protobuf_toolchain",
+            "rust_proto_protobuf_dependencies",
+            "rust_proto_protobuf_register_toolchains",
+            "rust_proto_protobuf_transitive_repositories",
         ],
     ),
     page(

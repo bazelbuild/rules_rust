@@ -1,0 +1,26 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//proto/prost:defs.bzl", "rust_prost_library")
+load("//rust:defs.bzl", "rust_test")
+
+package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
+
+proto_library(
+    name = "mod_named_mod_proto",
+    srcs = [
+        "mod_named_mod.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "mod_named_mod_rs_proto",
+    proto = ":mod_named_mod_proto",
+)
+
+rust_test(
+    name = "mod_named_mod_test",
+    srcs = ["mod_named_mod_test.rs"],
+    edition = "2021",
+    deps = [
+        ":mod_named_mod_rs_proto",
+    ],
+)

@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
 use indoc::formatdoc;
+use itertools::Itertools;
 
 use crate::config::{RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
@@ -19,23 +20,34 @@ use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
     Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
-    Starlark,
+    Starlark, TargetCompatibleWith,
 };
 use crate::utils::{self, sanitize_repository_name};
 
 // Configuration remapper used to convert from cfg expressions like "cfg(unix)"
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
-type Platforms = BTreeMap<String, BTreeSet<String>>;
+pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub struct Renderer {
     config: RenderConfig,
+    supported_platform_triples: BTreeSet<String>,
+    generate_target_compatible_with: bool,
     engine: TemplateEngine,
 }
 
 impl Renderer {
-    pub fn new(config: RenderConfig) -> Self {
+    pub fn new(
+        config: RenderConfig,
+        supported_platform_triples: BTreeSet<String>,
+        generate_target_compatible_with: bool,
+    ) -> Self {
         let engine = TemplateEngine::new(&config);
-        Self { config, engine }
+        Self {
+            config,
+            supported_platform_triples,
+            generate_target_compatible_with,
+            engine,
+        }
     }
 
     pub fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
@@ -43,7 +55,7 @@ impl Renderer {
 
         let platforms = self.render_platform_labels(context);
         output.extend(self.render_build_files(context, &platforms)?);
-        output.extend(self.render_crates_module(context)?);
+        output.extend(self.render_crates_module(context, &platforms)?);
 
         if let Some(vendor_mode) = &self.config.vendor_mode {
             match vendor_mode {
@@ -80,7 +92,11 @@ impl Renderer {
             .collect()
     }
 
-    fn render_crates_module(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    fn render_crates_module(
+        &self,
+        context: &Context,
+        platforms: &Platforms,
+    ) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
             .context("Failed to resolve string to module file label")?;
         let module_build_label =
@@ -90,7 +106,7 @@ impl Renderer {
         let mut map = BTreeMap::new();
         map.insert(
             Renderer::label_to_path(&module_label),
-            self.engine.render_module_bzl(context)?,
+            self.engine.render_module_bzl(context, platforms)?,
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
@@ -149,7 +165,29 @@ impl Renderer {
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
+
+            for (alias, target) in &krate.extra_aliased_targets {
+                dependencies.push(Alias {
+                    name: alias.clone(),
+                    actual: self.crate_label(&krate.name, &krate.version, target),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                });
+            }
         }
+
+        let duplicates: Vec<_> = dependencies
+            .iter()
+            .map(|alias| &alias.name)
+            .duplicates()
+            .sorted()
+            .collect();
+
+        assert!(
+            duplicates.is_empty(),
+            "Found duplicate aliases that must be changed (Check your `extra_aliased_targets`): {:#?}",
+            duplicates
+        );
+
         if !dependencies.is_empty() {
             let comment = "# Workspace Member Dependencies".to_owned();
             starlark.push(Starlark::Verbatim(comment));
@@ -350,6 +388,12 @@ impl Renderer {
                     attrs.map_or(&empty_set, |attrs| &attrs.extra_deps),
                 )
                 .remap_configurations(platforms),
+            link_deps: self
+                .make_deps(
+                    attrs.map_or(&empty_deps, |attrs| &attrs.link_deps),
+                    attrs.map_or(&empty_set, |attrs| &attrs.extra_link_deps),
+                )
+                .remap_configurations(platforms),
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
@@ -525,6 +569,19 @@ impl Renderer {
                 tags.insert(format!("crate-name={}", krate.name));
                 tags
             },
+            target_compatible_with: self.generate_target_compatible_with.then(|| {
+                TargetCompatibleWith::new(
+                    self.supported_platform_triples
+                        .iter()
+                        .map(|triple| {
+                            render_platform_constraint_label(
+                                &self.config.platforms_template,
+                                triple,
+                            )
+                        })
+                        .collect(),
+                )
+            }),
             version: krate.common_attrs.version.clone(),
         })
     }
@@ -710,6 +767,7 @@ fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList
         "BUILD",
         "WORKSPACE.bazel",
         "WORKSPACE",
+        ".tmp_git_root/**/*",
     ];
 
     Data {
@@ -740,20 +798,48 @@ mod test {
     use crate::test;
     use crate::utils::starlark::SelectList;
 
-    fn mock_render_config() -> RenderConfig {
-        serde_json::from_value(serde_json::json!({
-            "repository_name": "test_rendering",
-            "regen_command": "cargo_bazel_regen_command",
-        }))
-        .unwrap()
-    }
-
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
             crate_name: "mock_crate".to_owned(),
             crate_root: Some("src/root.rs".to_owned()),
             ..TargetAttributes::default()
         }
+    }
+
+    fn mock_render_config(vendor_mode: Option<VendorMode>) -> RenderConfig {
+        RenderConfig {
+            repository_name: "test_rendering".to_owned(),
+            regen_command: "cargo_bazel_regen_command".to_owned(),
+            vendor_mode,
+            ..RenderConfig::default()
+        }
+    }
+
+    fn mock_supported_platform_triples() -> BTreeSet<String> {
+        BTreeSet::from([
+            "aarch64-apple-darwin".to_owned(),
+            "aarch64-apple-ios".to_owned(),
+            "aarch64-linux-android".to_owned(),
+            "aarch64-pc-windows-msvc".to_owned(),
+            "aarch64-unknown-linux-gnu".to_owned(),
+            "arm-unknown-linux-gnueabi".to_owned(),
+            "armv7-unknown-linux-gnueabi".to_owned(),
+            "i686-apple-darwin".to_owned(),
+            "i686-linux-android".to_owned(),
+            "i686-pc-windows-msvc".to_owned(),
+            "i686-unknown-freebsd".to_owned(),
+            "i686-unknown-linux-gnu".to_owned(),
+            "powerpc-unknown-linux-gnu".to_owned(),
+            "s390x-unknown-linux-gnu".to_owned(),
+            "wasm32-unknown-unknown".to_owned(),
+            "wasm32-wasi".to_owned(),
+            "x86_64-apple-darwin".to_owned(),
+            "x86_64-apple-ios".to_owned(),
+            "x86_64-linux-android".to_owned(),
+            "x86_64-pc-windows-msvc".to_owned(),
+            "x86_64-unknown-freebsd".to_owned(),
+            "x86_64-unknown-linux-gnu".to_owned(),
+        ])
     }
 
     #[test]
@@ -770,7 +856,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -797,7 +887,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -827,7 +921,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -856,7 +954,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -882,7 +984,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -911,7 +1017,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -931,7 +1041,11 @@ mod test {
             Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
         let context = Context::new(annotations).unwrap();
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
@@ -954,7 +1068,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
@@ -977,12 +1095,11 @@ mod test {
         );
 
         // Enable remote vendor mode
-        let config = RenderConfig {
-            vendor_mode: Some(VendorMode::Remote),
-            ..mock_render_config()
-        };
-
-        let renderer = Renderer::new(config);
+        let renderer = Renderer::new(
+            mock_render_config(Some(VendorMode::Remote)),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
@@ -1007,12 +1124,11 @@ mod test {
         );
 
         // Enable local vendor mode
-        let config = RenderConfig {
-            vendor_mode: Some(VendorMode::Local),
-            ..mock_render_config()
-        };
-
-        let renderer = Renderer::new(config);
+        let renderer = Renderer::new(
+            mock_render_config(Some(VendorMode::Local)),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         // Local vendoring does not produce a `crate_repositories` macro
@@ -1050,12 +1166,11 @@ mod test {
         );
 
         // Enable local vendor mode
-        let config = RenderConfig {
-            vendor_mode: Some(VendorMode::Local),
-            ..mock_render_config()
-        };
-
-        let renderer = Renderer::new(config);
+        let renderer = Renderer::new(
+            mock_render_config(Some(VendorMode::Local)),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1096,7 +1211,7 @@ mod test {
         let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
         let context = Context::new(annotations).unwrap();
 
-        let renderer = Renderer::new(config.rendering);
+        let renderer = Renderer::new(config.rendering, config.supported_platform_triples, true);
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1145,7 +1260,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1180,7 +1299,11 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(mock_render_config());
+        let renderer = Renderer::new(
+            mock_render_config(None),
+            mock_supported_platform_triples(),
+            true,
+        );
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output

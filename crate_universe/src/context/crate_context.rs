@@ -203,6 +203,29 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_deps: BTreeSet<String>,
 
+    // TODO: refactor a crate with a build.rs file from two into three bazel
+    // rules in order to deduplicate link_dep information. Currently as the
+    // crate depends upon the build.rs file, the build.rs cannot find the
+    // information for the normal dependencies of the crate. This could be
+    // solved by switching the dependency graph from:
+    //
+    //   rust_library -> cargo_build_script
+    //
+    // to:
+    //
+    //   rust_library ->-+-->------------------->--+
+    //                   |                         |
+    //                   +--> cargo_build_script --+--> crate dependencies
+    //
+    // in which either all of the deps are in crate dependencies, or just the
+    // normal dependencies. This could be handled a special rule, or just using
+    // a `filegroup`.
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub link_deps: SelectList<CrateDependency>,
+
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub extra_link_deps: BTreeSet<String>,
+
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
 
@@ -240,6 +263,8 @@ impl Default for BuildScriptAttributes {
             data_glob: BTreeSet::from(["**".to_owned()]),
             deps: Default::default(),
             extra_deps: Default::default(),
+            link_deps: Default::default(),
+            extra_link_deps: Default::default(),
             build_script_env: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
@@ -292,6 +317,10 @@ pub struct CrateContext {
     /// If true, disables pipelining for library targets generated for this crate
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub disable_pipelining: bool,
+
+    /// Extra targets that should be aliased.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra_aliased_targets: BTreeMap<String, String>,
 }
 
 impl CrateContext {
@@ -411,6 +440,7 @@ impl CrateContext {
             );
 
             let build_deps = annotation.deps.build_deps.clone().map(new_crate_dep);
+            let build_link_deps = annotation.deps.build_link_deps.clone().map(new_crate_dep);
             let build_proc_macro_deps = annotation
                 .deps
                 .build_proc_macro_deps
@@ -419,6 +449,7 @@ impl CrateContext {
 
             Some(BuildScriptAttributes {
                 deps: build_deps,
+                link_deps: build_link_deps,
                 proc_macro_deps: build_proc_macro_deps,
                 links: package.links.clone(),
                 ..Default::default()
@@ -445,6 +476,7 @@ impl CrateContext {
             license,
             additive_build_file_content: None,
             disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::new(),
         }
         .with_overrides(extras)
     }
@@ -581,6 +613,11 @@ impl CrateContext {
                     // For prettier rendering, dedent the build contents
                     textwrap::dedent(content)
                 });
+
+            // Extra aliased targets
+            if let Some(extra) = &crate_extra.extra_aliased_targets {
+                self.extra_aliased_targets.append(&mut extra.clone());
+            }
 
             // Git shallow_since
             if let Some(SourceAnnotation::Git { shallow_since, .. }) = &mut self.repository {

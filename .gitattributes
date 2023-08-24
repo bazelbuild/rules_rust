@@ -12,7 +12,8 @@ examples/crate_universe_unnamed/vendor_remote_manifests/crates/** linguist-gener
 examples/crate_universe_unnamed/vendor_remote_pkgs/crates/** linguist-generated
 examples/sys/basic/3rdparty/crates/** linguist-generated
 examples/sys/complex/3rdparty/crates/** linguist-generated
-proto/3rdparty/crates/** linguist-generated
+proto/prost/private/3rdparty/crates/** linguist-generated
+proto/protobuf/3rdparty/crates/** linguist-generated
 tools/rust_analyzer/3rdparty/crates/** linguist-generated
 util/import/3rdparty/crates/** linguist-generated
 wasm_bindgen/3rdparty/crates/** linguist-generated

@@ -19,7 +19,19 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
+
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
 ```
+
+Bindgen aims to be as hermetic as possible so will end up building `libclang` from [llvm-project][llvm_proj] from
+source. If this is found to be undesirable then no Bindgen related calls should be added to your WORKSPACE and instead
+users should define their own repositories using something akin to [crate_universe][cra_uni] and define their own
+toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen_toolchain).
+
+[llvm_proj]: https://github.com/llvm/llvm-project
+[cra_uni]: https://bazelbuild.github.io/rules_rust/crate_universe.html
 
 ---
 

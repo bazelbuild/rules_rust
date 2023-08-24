@@ -25,21 +25,21 @@ def _impl(ctx):
     if combined or ctx.attr.test_config == "stdout":
         stdout_output = ctx.actions.declare_file(ctx.label.name + ".stdout")
         outputs.append(stdout_output)
-        args.add("--stdout-file", stdout_output.path)
+        args.add("--stdout-file", stdout_output)
 
     if combined or ctx.attr.test_config == "stderr":
         stderr_output = ctx.actions.declare_file(ctx.label.name + ".stderr")
         outputs.append(stderr_output)
-        args.add("--stderr-file", stderr_output.path)
+        args.add("--stderr-file", stderr_output)
 
     if combined or (ctx.attr.test_config != "stdout" and ctx.attr.test_config != "stderr"):
         touch_output = ctx.actions.declare_file(ctx.label.name + ".touch")
         outputs.append(touch_output)
-        args.add("--touch-file", touch_output.path)
+        args.add("--touch-file", touch_output)
         if ctx.attr.test_config == "copy-output":
             copy_output = ctx.actions.declare_file(ctx.label.name + ".touch.copy")
             outputs.append(copy_output)
-            args.add_all("--copy-output", [touch_output.path, copy_output.path])
+            args.add_all("--copy-output", [touch_output, copy_output])
 
     if combined or ctx.attr.test_config == "env-files":
         args.add_all(ctx.files.env_files, before_each = "--env-file")
@@ -53,7 +53,7 @@ def _impl(ctx):
 
     args.add("--")
 
-    args.add(ctx.executable._process_wrapper_tester.path)
+    args.add(ctx.executable._process_wrapper_tester)
     args.add(ctx.attr.test_config)
     args.add("--current-dir", "${pwd}")
     args.add("--test-subst", "subst key to ${key}")

@@ -93,7 +93,7 @@ Failure to do so will result in rules attempting to match a `stable` toolchain w
 
 ## Supported bazel versions
 
-The oldest version of Bazel the `main` branch is tested against is `5.0.0`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
+The oldest version of Bazel the `main` branch is tested against is `6.0.0`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
 
 We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.
 

@@ -1,0 +1,35 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust:defs.bzl", "rust_binary")
+load(":toolchain.bzl", "rust_proto_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+rust_binary(
+    name = "optional_output_wrapper",
+    srcs = ["optional_output_wrapper.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "default-proto-toolchain",
+    toolchain = ":default-proto-toolchain-impl",
+    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
+)
+
+rust_proto_toolchain(
+    name = "default-proto-toolchain-impl",
+    edition = "2018",
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//proto/protobuf/3rdparty:bzl_lib",
+    ],
+)

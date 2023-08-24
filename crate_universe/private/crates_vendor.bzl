@@ -18,7 +18,7 @@ fi
 # If you provide an empty path, bazel starts itself with
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
-eval exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
+exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
 "{bin}" {args} "$@"
 """
 
@@ -136,7 +136,7 @@ def _write_config_file(ctx):
     output_pkg = _get_output_package(ctx)
 
     workspace_name = ctx.workspace_name
-    if ctx.workspace_name == "__main__":
+    if ctx.workspace_name == "__main__" or ctx.workspace_name == "_main":
         workspace_name = ""
 
     if ctx.attr.mode == "local":
@@ -178,6 +178,7 @@ def _write_config_file(ctx):
         crate_annotations = ctx.attr.annotations,
         generate_binaries = ctx.attr.generate_binaries,
         generate_build_scripts = ctx.attr.generate_build_scripts,
+        generate_target_compatible_with = ctx.attr.generate_target_compatible_with,
         cargo_config = None,
         render_config = rendering_config,
         supported_platform_triples = ctx.attr.supported_platform_triples,
@@ -290,7 +291,7 @@ This rule is useful for users whose workspaces are expected to be consumed in ot
 rendered `BUILD` files reduce the number of workspace dependencies, allowing for easier loads. This rule
 handles all the same [workflows](#workflows) `crate_universe` rules do.
 
-Example: 
+Example:
 
 Given the following workspace structure:
 
@@ -345,7 +346,7 @@ bazel run //3rdparty:crates_vendor -- --repin
 ```
 
 Under the hood, `--repin` will trigger a [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
-call against the generated workspace. The following table describes how to controll particular values passed to the
+call against the generated workspace. The following table describes how to control particular values passed to the
 `cargo update` command.
 
 | Value | Cargo command |
@@ -402,6 +403,13 @@ call against the generated workspace. The following table describes how to contr
             doc = (
                 "Whether or not to generate " +
                 "[cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default."
+            ),
+            default = True,
+        ),
+        "generate_target_compatible_with": attr.bool(
+            doc = (
+                "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` " +
+                "being targeted that isn't declared in `supported_platform_triples."
             ),
             default = True,
         ),

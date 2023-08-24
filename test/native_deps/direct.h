@@ -1,4 +1,3 @@
-struct RustStruct{};
+struct RustStruct {};
 
 extern "C" RustStruct MakeRustStruct();
-

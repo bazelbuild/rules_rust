@@ -171,7 +171,12 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     let context = Context::new(annotations)?;
 
     // Render build files
-    let outputs = Renderer::new(config.rendering.clone()).render(&context)?;
+    let outputs = Renderer::new(
+        config.rendering.clone(),
+        config.supported_platform_triples.clone(),
+        config.generate_target_compatible_with,
+    )
+    .render(&context)?;
 
     // Cache the file names for potential use with buildifier
     let file_names: BTreeSet<PathBuf> = outputs.keys().cloned().collect();

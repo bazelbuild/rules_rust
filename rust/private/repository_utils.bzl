@@ -17,9 +17,9 @@ DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
 
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
-    sha256 = "1a8304da9f9370f6a6f9020b7903b044aa9ce3470f300a1fba5bc77c78145a16",
-    url = "https://crates.io/api/v1/crates/tinyjson/2.3.0/download",
-    strip_prefix = "tinyjson-2.3.0",
+    sha256 = "9ab95735ea2c8fd51154d01e39cf13912a78071c2d89abc49a7ef102a7dd725a",
+    url = "https://crates.io/api/v1/crates/tinyjson/2.5.1/download",
+    strip_prefix = "tinyjson-2.5.1",
     type = "tar.gz",
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
 )
@@ -253,6 +253,7 @@ rust_toolchain(
     visibility = ["//visibility:public"],
     extra_rustc_flags = {extra_rustc_flags},
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
+    opt_level = {opt_level},
 )
 """
 
@@ -267,7 +268,8 @@ def BUILD_for_rust_toolchain(
         include_llvm_tools,
         stdlib_linkflags = None,
         extra_rustc_flags = None,
-        extra_exec_rustc_flags = None):
+        extra_exec_rustc_flags = None,
+        opt_level = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -286,6 +288,7 @@ def BUILD_for_rust_toolchain(
                                            None.
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        opt_level (dict, optional): Optimization level config for this toolchain.
 
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
@@ -324,6 +327,7 @@ def BUILD_for_rust_toolchain(
         llvm_profdata_label = llvm_profdata_label,
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
+        opt_level = opt_level,
     )
 
 _build_file_for_toolchain_template = """\

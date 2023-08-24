@@ -42,7 +42,7 @@ load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
 register_toolchains(rust_analyzer_toolchain_repository(
     name = "rust_analyzer_toolchain",
     # This should match the currently registered toolchain.
-    version = "1.62.0",
+    version = "1.63.0",
 ))
 ```
 

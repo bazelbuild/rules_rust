@@ -11,6 +11,14 @@ cargo_build_script(
     links = "X",
 )
 
+cargo_build_script(
+    name = "set_c_build",
+    srcs = ["set_c.rs"],
+    edition = "2018",
+    link_deps = [":set_a"],
+    links = "Y",
+)
+
 rust_library(
     name = "set_a",
     srcs = ["empty.rs"],
@@ -23,25 +31,43 @@ cargo_dep_env(
     src = "set_b.env",
 )
 
+rust_library(
+    name = "set_c",
+    srcs = ["empty.rs"],
+    edition = "2018",
+    deps = [
+        ":set_a",
+        ":set_c_build",
+    ],
+)
+
 cargo_build_script(
     name = "read_a",
     srcs = ["read_a.rs"],
     edition = "2018",
-    deps = [":set_a"],
+    link_deps = [":set_a"],
 )
 
 cargo_build_script(
     name = "read_b",
     srcs = ["read_b.rs"],
     edition = "2018",
-    deps = [":set_b"],
+    link_deps = [":set_b"],
+)
+
+cargo_build_script(
+    name = "read_c",
+    srcs = ["read_c.rs"],
+    edition = "2018",
+    link_deps = [":set_c"],
+    deps = [":set_a"],
 )
 
 cargo_build_script(
     name = "read_dep_dir",
     srcs = ["read_dep_dir.rs"],
     edition = "2018",
-    deps = [":set_dep_dir"],
+    link_deps = [":set_dep_dir"],
 )
 
 rust_test(
@@ -56,6 +82,13 @@ rust_test(
     srcs = ["read_b.rs"],
     edition = "2018",
     deps = [":read_b"],
+)
+
+rust_test(
+    name = "build_read_c",
+    srcs = ["read_c.rs"],
+    edition = "2018",
+    deps = [":read_c"],
 )
 
 rust_test(

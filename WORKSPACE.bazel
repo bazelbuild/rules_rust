@@ -10,19 +10,36 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+# buildifier: disable=bzl-visibility
+load("@rules_rust//proto/prost/private:repositories.bzl", "rust_prost_dependencies", "rust_prost_register_toolchains")
 
-rust_proto_repositories()
+rust_prost_dependencies()
 
-load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+rust_prost_register_toolchains()
 
-rust_proto_transitive_repositories()
+load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
+
+rust_prost_transitive_repositories()
+
+load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
+
+rust_proto_protobuf_dependencies()
+
+rust_proto_protobuf_register_toolchains()
+
+load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
+
+rust_proto_protobuf_transitive_repositories()
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
+
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
 
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
@@ -43,6 +60,10 @@ bazel_skylib_workspace()
 load("//test:deps.bzl", "rules_rust_test_deps")
 
 rules_rust_test_deps()
+
+load("//test:deps_transitive.bzl", "rules_rust_test_deps_transitive")
+
+rules_rust_test_deps_transitive()
 
 # --- end stardoc
 

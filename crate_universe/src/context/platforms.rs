@@ -21,15 +21,15 @@ pub fn resolve_cfg_platforms(
             attr.deps
                 .configurations()
                 .into_iter()
-                .chain(attr.deps_dev.configurations().into_iter())
-                .chain(attr.proc_macro_deps.configurations().into_iter())
-                .chain(attr.proc_macro_deps_dev.configurations().into_iter())
+                .chain(attr.deps_dev.configurations())
+                .chain(attr.proc_macro_deps.configurations())
+                .chain(attr.proc_macro_deps_dev.configurations())
                 // Chain the build dependencies if some are defined
                 .chain(if let Some(attr) = &ctx.build_script_attrs {
                     attr.deps
                         .configurations()
                         .into_iter()
-                        .chain(attr.proc_macro_deps.configurations().into_iter())
+                        .chain(attr.proc_macro_deps.configurations())
                         .collect::<BTreeSet<Option<&String>>>()
                         .into_iter()
                 } else {

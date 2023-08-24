@@ -118,7 +118,7 @@ def _rust_doc_test_impl(ctx):
         srcs = crate.srcs,
         deps = depset(deps, transitive = [crate.deps]),
         proc_macro_deps = crate.proc_macro_deps,
-        aliases = {},
+        aliases = crate.aliases,
         output = crate.output,
         edition = crate.edition,
         rustc_env = crate.rustc_env,
@@ -205,7 +205,7 @@ rust_doc_test = rule(
                 These can be either other `rust_library` targets or `cc_library` targets if
                 linking a native library.
             """),
-            providers = [CrateInfo, CcInfo],
+            providers = [[CrateInfo], [CcInfo]],
         ),
         "_cc_toolchain": attr.label(
             doc = (
