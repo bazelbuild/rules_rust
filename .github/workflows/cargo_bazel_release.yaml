@@ -1,0 +1,47 @@
+---
+name: Release Cargo-bazel
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - crate_universe/version.bzl
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validation:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
+      # so this step ensures releases are always done off of `main`.
+      - name: Ensure branch is 'main'
+        run: |
+          git fetch origin &> /dev/null
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "${branch}" != "main" ]]; then
+            echo "The release branch must be main. Got '${branch}'' instead." >&2
+            exit 1
+          else
+            echo "Branch is '${branch}'"
+          fi
+  builds:
+    needs: validation
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install rust toolchains for host
+        run: |
+          # Detect the current version of rust
+          version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
+          rustup override set "${version}"
+          rustup update stable && rustup default stable
+      - name: Publish to crates.io
+        run: cargo publish --token ${CRATES_TOKEN}
+        working-directory: ./crate_universe
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
