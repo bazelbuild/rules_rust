@@ -161,7 +161,7 @@ pub enum Checksumish {
     },
 }
 
-#[derive(Debug, Default, Deserialize, Serialize, Clone)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq)]
 pub struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
     pub gen_binaries: Option<GenBinaries>,
@@ -335,6 +335,89 @@ impl Sum for CrateAnnotations {
     }
 }
 
+/// A subset of `crate.annotation` that we allow packages to define in their
+/// free-form Cargo.toml metadata.
+///
+/// ```toml
+/// [package.metadata.bazel]
+/// additive_build_file_contents = """
+///     ...
+/// """
+/// data = ["font.woff2"]
+/// extra_aliased_targets = { ... }
+/// gen_build_script = false
+/// ```
+///
+/// These are considered default values which apply if the Bazel workspace does
+/// not specify a different value for the same annotation in their
+/// crates_repository attributes.
+#[derive(Debug, Deserialize)]
+pub struct AnnotationsProvidedByPackage {
+    pub gen_build_script: Option<bool>,
+    pub data: Option<BTreeSet<String>>,
+    pub data_glob: Option<BTreeSet<String>>,
+    pub compile_data: Option<BTreeSet<String>>,
+    pub compile_data_glob: Option<BTreeSet<String>>,
+    pub rustc_env: Option<BTreeMap<String, String>>,
+    pub rustc_env_files: Option<BTreeSet<String>>,
+    pub rustc_flags: Option<Vec<String>>,
+    pub build_script_env: Option<BTreeMap<String, String>>,
+    pub build_script_rustc_env: Option<BTreeMap<String, String>>,
+    pub additive_build_file_content: Option<String>,
+    pub extra_aliased_targets: Option<BTreeMap<String, String>>,
+}
+
+impl CrateAnnotations {
+    pub fn apply_defaults_from_package_metadata(&mut self, pkg_metadata: &serde_json::Value) {
+        #[deny(unused_variables)]
+        let AnnotationsProvidedByPackage {
+            gen_build_script,
+            data,
+            data_glob,
+            compile_data,
+            compile_data_glob,
+            rustc_env,
+            rustc_env_files,
+            rustc_flags,
+            build_script_env,
+            build_script_rustc_env,
+            additive_build_file_content,
+            extra_aliased_targets,
+        } = match AnnotationsProvidedByPackage::deserialize(&pkg_metadata["bazel"]) {
+            Ok(annotations) => annotations,
+            // Ignore bad annotations. The set of supported annotations evolves
+            // over time across different versions of crate_universe, and we
+            // don't want a library to be impossible to import into Bazel for
+            // having old or broken annotations. The Bazel workspace can specify
+            // its own correct annotations.
+            Err(_) => return,
+        };
+
+        fn default<T>(workspace_value: &mut Option<T>, default_value: Option<T>) {
+            if workspace_value.is_none() {
+                *workspace_value = default_value;
+            }
+        }
+
+        default(&mut self.gen_build_script, gen_build_script);
+        default(&mut self.gen_build_script, gen_build_script);
+        default(&mut self.data, data);
+        default(&mut self.data_glob, data_glob);
+        default(&mut self.compile_data, compile_data);
+        default(&mut self.compile_data_glob, compile_data_glob);
+        default(&mut self.rustc_env, rustc_env);
+        default(&mut self.rustc_env_files, rustc_env_files);
+        default(&mut self.rustc_flags, rustc_flags);
+        default(&mut self.build_script_env, build_script_env);
+        default(&mut self.build_script_rustc_env, build_script_rustc_env);
+        default(
+            &mut self.additive_build_file_content,
+            additive_build_file_content,
+        );
+        default(&mut self.extra_aliased_targets, extra_aliased_targets);
+    }
+}
+
 /// A unique identifier for Crates
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CrateId {
@@ -444,7 +527,7 @@ impl std::fmt::Display for CrateId {
     }
 }
 
-#[derive(Debug, Hash, Clone)]
+#[derive(Debug, Hash, Clone, PartialEq)]
 pub enum GenBinaries {
     All,
     Some(BTreeSet<String>),
