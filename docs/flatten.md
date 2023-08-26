@@ -2180,7 +2180,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect               --output_groups=clippy_checks //hello_lib:all
+$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect //hello_lib:all
 ```
 
 
@@ -2208,7 +2208,7 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
+- `_validation`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
 used at runtime.

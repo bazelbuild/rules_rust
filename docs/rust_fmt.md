@@ -24,14 +24,13 @@ in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source
 
 In addition to this formatter, a simple check can be performed using the [rustfmt_aspect](#rustfmt-aspect) aspect by running
 ```text
-bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
+bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 ```
 
 Add the following to a `.bazelrc` file to enable this check during the build phase.
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
-build --output_groups=+rustfmt_checks
 ```
 
 It's recommended to only enable this aspect in your CI environment so formatting issues do not
@@ -103,7 +102,7 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
+- `_validation`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
 used at runtime.

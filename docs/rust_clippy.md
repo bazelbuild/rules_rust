@@ -22,7 +22,6 @@ Simply add the following to the `.bazelrc` file in the root of your workspace:
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
-build --output_groups=+clippy_checks
 ```
 
 This will enable clippy on all [Rust targets](./defs.md).
@@ -123,7 +122,7 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect               --output_groups=clippy_checks //hello_lib:all
+$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect //hello_lib:all
 ```
 
 
