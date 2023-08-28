@@ -1,5 +1,5 @@
 {
-  "checksum": "7f4d3942ea59e714a8f596d2517046e89e7cc0918c78bfe4924fc37b8f7b1d4e",
+  "checksum": "92513866045681ab1c1489220c4043a7dca51fe4a96f58d9b78e09b13b5b0825",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -217,9 +217,9 @@
       },
       "license": "Apache-2.0"
     },
-    "cxxbridge-cmd 1.0.100": {
+    "cxxbridge-cmd 1.0.105": {
       "name": "cxxbridge-cmd",
-      "version": "1.0.100",
+      "version": "1.0.105",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -253,7 +253,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.100"
+        "version": "1.0.105"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -784,7 +784,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "cxxbridge-cmd 1.0.100": ""
+    "cxxbridge-cmd 1.0.105": ""
   },
   "conditions": {
     "cfg(windows)": [

@@ -1,5 +1,5 @@
 {
-  "checksum": "c1f1a6f4e385c34b24fba8b5f9cbf6ff89dc26aa85f4054d46b06e4a6efff068",
+  "checksum": "8ce2f458f525297ce6ecbd1afb3d304637c90f010c01cc7831bc997d78d42b2c",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -42,13 +42,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxx 1.0.104": {
+    "cxx 1.0.105": {
       "name": "cxx",
-      "version": "1.0.104",
+      "version": "1.0.105",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxx/1.0.104/download",
-          "sha256": "ba1ba0a82363c553ecb7b4cd58ba6e1c017baef8e3cca4e7d66ca17879201144"
+          "url": "https://crates.io/api/v1/crates/cxx/1.0.105/download",
+          "sha256": "666a3ec767f4bbaf0dcfcc3b4ea048b90520b254fdf88813e763f4c762636c14"
         }
       },
       "targets": [
@@ -88,27 +88,27 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "cxxbridge-macro 1.0.104",
+              "id": "cxxbridge-macro 1.0.105",
               "target": "cxxbridge_macro"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.104"
+        "version": "1.0.105"
       },
       "license": "MIT OR Apache-2.0",
-      "additive_build_file_content": "\n# This file is included in the BUILD for the cxx crate, to export its header\n# file for C++ code to depend on.\ncc_library(\n    name = \"cxx_cc\",\n    visibility = [\"//visibility:public\"],\n    hdrs = [\"include/cxx.h\"],\n    srcs = [\"src/cxx.cc\"],\n    includes = [\"include\"],\n    linkstatic = True,\n)\n",
+      "additive_build_file_content": "cc_library(\n    name = \"cxx_cc\",\n    srcs = [\"src/cxx.cc\"],\n    hdrs = [\"include/cxx.h\"],\n    include_prefix = \"rust\",\n    includes = [\"include\"],\n    linkstatic = True,\n    strip_include_prefix = \"include\",\n    visibility = [\"//visibility:public\"],\n)\n",
       "extra_aliased_targets": {
         "cxx_cc": "cxx_cc"
       }
     },
-    "cxxbridge-flags 1.0.104": {
+    "cxxbridge-flags 1.0.105": {
       "name": "cxxbridge-flags",
-      "version": "1.0.104",
+      "version": "1.0.105",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.104/download",
-          "sha256": "409667bbb937bae87f7cfa91ca29e1415bb92d415371e3344b5269c10d90d595"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.105/download",
+          "sha256": "d6e8c238aadc4b9f2c00269d04c87abb23f96dd240803872536eed1a304bb40e"
         }
       },
       "targets": [
@@ -134,17 +134,17 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.104"
+        "version": "1.0.105"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxxbridge-macro 1.0.104": {
+    "cxxbridge-macro 1.0.105": {
       "name": "cxxbridge-macro",
-      "version": "1.0.104",
+      "version": "1.0.105",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.104/download",
-          "sha256": "5fb2a9757fb085d6d97856b28d4f049141ca4a61a64c697f4426433b5f6caa1f"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.105/download",
+          "sha256": "59d9ffb4193dd22180b8d5747b1e095c3d9c9c665ce39b0483a488948f437e06"
         }
       },
       "targets": [
@@ -181,7 +181,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.104"
+        "version": "1.0.105"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -208,7 +208,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx 1.0.104",
+              "id": "cxx 1.0.105",
               "target": "cxx"
             }
           ],
