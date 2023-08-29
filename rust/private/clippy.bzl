@@ -178,6 +178,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         tools = [toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
+        toolchain = "@rules_rust//rust:toolchain_type",
     )
 
     return [
