@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, GenBinaries};
+use crate::config::{CrateId, GenBinaries, StringOrSelect};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -601,7 +601,24 @@ impl CrateContext {
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs.build_script_env.extend(extra.clone(), None);
+                    for (key, value) in extra {
+                        match value {
+                            StringOrSelect::Value(value) => {
+                                attrs
+                                    .build_script_env
+                                    .insert(key.clone(), value.clone(), None);
+                            }
+                            StringOrSelect::Select(select) => {
+                                for (select_key, value) in select {
+                                    attrs.build_script_env.insert(
+                                        key.clone(),
+                                        value.clone(),
+                                        Some(select_key.clone()),
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
