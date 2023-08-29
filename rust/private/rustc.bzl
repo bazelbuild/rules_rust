@@ -1641,7 +1641,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
     # without a version of Bazel that includes
     # https://github.com/bazelbuild/bazel/pull/13427. This is known to not be
     # included in Bazel 4.1 and below.
-    if toolchain.target_os != "linux" and toolchain.target_os != "darwin":
+    if toolchain.target_os not in ["linux", "darwin", "android"]:
         fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.target_os,
             dep_info.transitive_noncrates,
