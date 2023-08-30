@@ -142,6 +142,14 @@ impl From<GitReference> for Commitish {
         }
     }
 }
+/// A value which may either be a plain String, or a dict of platform triples
+/// (or other cfg expressions understood by `crate::context::platforms::resolve_cfg_platforms`) to Strings.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum StringOrSelect {
+    Value(String),
+    Select(BTreeMap<String, String>),
+}
 
 /// Information representing deterministic identifiers for some remote asset.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -234,7 +242,7 @@ pub struct CrateAnnotations {
 
     /// Additional environment variables to pass to a build script's
     /// [build_script_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_env: Option<BTreeMap<String, String>>,
+    pub build_script_env: Option<BTreeMap<String, StringOrSelect>>,
 
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
@@ -361,7 +369,7 @@ pub struct AnnotationsProvidedByPackage {
     pub rustc_env: Option<BTreeMap<String, String>>,
     pub rustc_env_files: Option<BTreeSet<String>>,
     pub rustc_flags: Option<Vec<String>>,
-    pub build_script_env: Option<BTreeMap<String, String>>,
+    pub build_script_env: Option<BTreeMap<String, StringOrSelect>>,
     pub build_script_rustc_env: Option<BTreeMap<String, String>>,
     pub additive_build_file_content: Option<String>,
     pub extra_aliased_targets: Option<BTreeMap<String, String>>,
