@@ -4,7 +4,8 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 package(default_visibility = ["//proto:__subpackages__"])
 
 rust_proto_library(
-    name = "common_proto_rust",
+    name = "libcommon_proto_rust",
+    crate_name = "common_proto_rust",
     tags = ["manual"],
     deps = ["//proto:common"],
 )
@@ -13,7 +14,7 @@ rust_library(
     name = "common_lib",
     srcs = ["lib.rs"],
     tags = ["manual"],
-    deps = [":common_proto_rust"],
+    deps = [":libcommon_proto_rust"],
 )
 
 rust_binary(
@@ -22,6 +23,6 @@ rust_binary(
     tags = ["manual"],
     deps = [
         ":common_lib",
-        ":common_proto_rust",
+        ":libcommon_proto_rust",
     ],
 )

@@ -10,7 +10,8 @@ proto_library(
 )
 
 rust_grpc_library(
-    name = "helloworld_proto",
+    name = "libhelloworld_proto",
+    crate_name = "helloworld_proto",
     tags = ["manual"],
     visibility = ["//proto/helloworld:__subpackages__"],
     deps = [":helloworld"],

@@ -205,7 +205,7 @@ rust_doc_test = rule(
                 These can be either other `rust_library` targets or `cc_library` targets if
                 linking a native library.
             """),
-            providers = [CrateInfo, CcInfo],
+            providers = [[CrateInfo], [CcInfo]],
         ),
         "_cc_toolchain": attr.label(
             doc = (

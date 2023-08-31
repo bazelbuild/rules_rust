@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, GenBinaries};
+use crate::config::{CrateId, GenBinaries, StringOrSelect};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -317,6 +317,10 @@ pub struct CrateContext {
     /// If true, disables pipelining for library targets generated for this crate
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub disable_pipelining: bool,
+
+    /// Extra targets that should be aliased.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub extra_aliased_targets: BTreeMap<String, String>,
 }
 
 impl CrateContext {
@@ -472,6 +476,7 @@ impl CrateContext {
             license,
             additive_build_file_content: None,
             disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::new(),
         }
         .with_overrides(extras)
     }
@@ -596,7 +601,24 @@ impl CrateContext {
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs.build_script_env.extend(extra.clone(), None);
+                    for (key, value) in extra {
+                        match value {
+                            StringOrSelect::Value(value) => {
+                                attrs
+                                    .build_script_env
+                                    .insert(key.clone(), value.clone(), None);
+                            }
+                            StringOrSelect::Select(select) => {
+                                for (select_key, value) in select {
+                                    attrs.build_script_env.insert(
+                                        key.clone(),
+                                        value.clone(),
+                                        Some(select_key.clone()),
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -608,6 +630,11 @@ impl CrateContext {
                     // For prettier rendering, dedent the build contents
                     textwrap::dedent(content)
                 });
+
+            // Extra aliased targets
+            if let Some(extra) = &crate_extra.extra_aliased_targets {
+                self.extra_aliased_targets.append(&mut extra.clone());
+            }
 
             // Git shallow_since
             if let Some(SourceAnnotation::Git { shallow_since, .. }) = &mut self.repository {

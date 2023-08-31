@@ -1,6 +1,7 @@
 """Rules for Cargo build scripts (`build.rs` files)"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//cargo:features.bzl", "SYMLINK_EXEC_ROOT_FEATURE")
@@ -187,6 +188,9 @@ def _cargo_build_script_impl(ctx):
             if type(all_files) == "list":
                 all_files = depset(all_files)
             toolchain_tools.append(all_files)
+        if platform_common.TemplateVariableInfo in target:
+            variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
+            env.update(variables)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
@@ -212,18 +216,17 @@ def _cargo_build_script_impl(ctx):
     # See https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
     # for details.
     args = ctx.actions.args()
-    args.add_all([
-        script.path,
-        links,
-        out_dir.path,
-        env_out.path,
-        flags_out.path,
-        link_flags.path,
-        link_search_paths.path,
-        dep_env_out.path,
-        streams.stdout.path,
-        streams.stderr.path,
-    ])
+    args.add(script)
+    args.add(links)
+    args.add(out_dir.path)
+    args.add(env_out)
+    args.add(flags_out)
+    args.add(link_flags)
+    args.add(link_search_paths)
+    args.add(dep_env_out)
+    args.add(streams.stdout)
+    args.add(streams.stderr)
+
     build_script_inputs = []
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
@@ -237,7 +240,10 @@ def _cargo_build_script_impl(ctx):
         for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
             build_script_inputs.append(dep_build_info.out_dir)
 
-    if feature_enabled(ctx, SYMLINK_EXEC_ROOT_FEATURE):
+    experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
+                                    feature_enabled(ctx, SYMLINK_EXEC_ROOT_FEATURE)
+
+    if experimental_symlink_execroot:
         env["RULES_RUST_SYMLINK_EXEC_ROOT"] = "1"
 
     ctx.actions.run(
@@ -335,6 +341,9 @@ cargo_build_script = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_experimental_symlink_execroot": attr.label(
+            default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
     },
     fragments = ["cpp"],
