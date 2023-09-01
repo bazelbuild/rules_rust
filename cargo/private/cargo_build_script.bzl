@@ -301,7 +301,6 @@ cargo_build_script = rule(
                 variables to this build script.
             """),
             providers = [rust_common.dep_info],
-            cfg = "exec",
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
