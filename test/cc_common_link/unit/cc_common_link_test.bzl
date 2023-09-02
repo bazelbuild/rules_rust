@@ -8,6 +8,7 @@ load(
     "rust_shared_library",
     "rust_test",
 )
+load("@rules_rust//test/unit:common.bzl", "assert_argv_contains")
 
 DepActionsInfo = provider(
     "Contains information about dependencies actions.",
@@ -78,6 +79,28 @@ custom_malloc_test = analysistest.make(
     },
 )
 
+def _linker_script_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    registered_actions = tut[DepActionsInfo].actions
+    link_action = [action for action in registered_actions if action.mnemonic == "CppLink"][0]
+
+    asserts.true(env, _contains_input(link_action.inputs, "linker_script.lds"))
+    assert_argv_contains(env, link_action, "-Wl,--version-script=unit/linker_script.lds")
+
+    return analysistest.end(env)
+
+def _contains_input(inputs, name):
+    for input in inputs.to_list():
+        if input.basename == name:
+            return True
+    return False
+
+linker_script_test = analysistest.make(
+    _linker_script_test_impl,
+)
+
 def _cc_common_link_test_targets():
     """Generate targets and tests."""
 
@@ -90,6 +113,7 @@ def _cc_common_link_test_targets():
         name = "bin",
         srcs = ["bin.rs"],
         edition = "2018",
+        linker_script = ":linker_script.lds",
     )
 
     use_cc_common_link_on_target(
@@ -101,6 +125,7 @@ def _cc_common_link_test_targets():
         name = "cdylib",
         srcs = ["lib.rs"],
         edition = "2018",
+        linker_script = ":linker_script.lds",
     )
 
     use_cc_common_link_on_target(
@@ -157,6 +182,16 @@ def _cc_common_link_test_targets():
         target_under_test = ":bin_with_cc_common_link",
     )
 
+    linker_script_test(
+        name = "linker_script_on_binary_test",
+        target_under_test = ":bin_with_cc_common_link",
+    )
+
+    linker_script_test(
+        name = "linker_script_on_cdylib_test",
+        target_under_test = ":cdylib_with_cc_common_link",
+    )
+
 def cc_common_link_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -173,5 +208,7 @@ def cc_common_link_test_suite(name):
             "use_cc_common_link_on_crate_test",
             "use_cc_common_link_on_cdylib",
             "custom_malloc_on_binary_test",
+            "linker_script_on_binary_test",
+            "linker_script_on_cdylib_test",
         ],
     )

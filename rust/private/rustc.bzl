@@ -1362,6 +1362,15 @@ def rustc_compile_action(
             # Append the name of the library
             output_relative_to_package = output_relative_to_package + output_lib
 
+        linker_script = getattr(ctx.file, "linker_script", None)
+        if linker_script:
+            if toolchain.target_os == "windows":
+                fail("Linking with cc_common.link for windows is currently not supported")
+            else:
+                user_link_flags = ["-Wl,--version-script={}".format(linker_script.path)]
+        else:
+            user_link_flags = []
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1370,6 +1379,8 @@ def rustc_compile_action(
             compilation_outputs = compilation_outputs,
             name = output_relative_to_package,
             grep_includes = ctx.file._grep_includes,
+            user_link_flags = user_link_flags,
+            additional_inputs = [] if not linker_script else [linker_script],
             stamp = ctx.attr.stamp,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
         )
