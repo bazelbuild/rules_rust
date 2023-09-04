@@ -70,7 +70,7 @@ As well as an exact version, `versions` can accept `nightly/{iso_date}` and `bet
 
 ```python
 rust_register_toolchains(
-    edition = "2021"
+    edition = "2021",
     versions = [
         "nightly/2022-12-15",
     ],
