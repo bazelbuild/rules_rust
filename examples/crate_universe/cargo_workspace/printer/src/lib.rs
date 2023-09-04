@@ -21,18 +21,18 @@ mod test {
     #[test]
     fn test_say_number() {
         let said = say_number(3);
-        assert!(said.contains(r#"    _~^~^~_"#));
-        assert!(said.contains(r#"\) /  o o  \ (/"#));
-        assert!(said.contains(r#"  '_   -   _'"#));
-        assert!(said.contains(r#"  / '-----' \"#));
+        assert!(said.contains(r"    _~^~^~_"));
+        assert!(said.contains(r"\) /  o o  \ (/"));
+        assert!(said.contains(r"  '_   -   _'"));
+        assert!(said.contains(r"  / '-----' \"));
     }
 
     #[test]
     fn test_say_random_number() {
         let said = say_random_number();
-        assert!(said.contains(r#"    _~^~^~_"#));
-        assert!(said.contains(r#"\) /  o o  \ (/"#));
-        assert!(said.contains(r#"  '_   -   _'"#));
-        assert!(said.contains(r#"  / '-----' \"#));
+        assert!(said.contains(r"    _~^~^~_"));
+        assert!(said.contains(r"\) /  o o  \ (/"));
+        assert!(said.contains(r"  '_   -   _'"));
+        assert!(said.contains(r"  / '-----' \"));
     }
 }

@@ -115,7 +115,7 @@ cargo_build_script(
     version = "0.3.68",
     visibility = ["//visibility:private"],
     deps = [
-        "//vendor_local_manifests/crates/cc-1.0.79:cc",
+        "//vendor_local_manifests/crates/cc-1.0.82:cc",
     ],
 )
 

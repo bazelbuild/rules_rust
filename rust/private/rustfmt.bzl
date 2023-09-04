@@ -74,14 +74,11 @@ def _perform_check(edition, srcs, ctx):
     marker = ctx.actions.declare_file(ctx.label.name + ".rustfmt.ok")
 
     args = ctx.actions.args()
-    args.add("--touch-file")
-    args.add(marker)
+    args.add("--touch-file", marker)
     args.add("--")
     args.add(rustfmt_toolchain.rustfmt)
-    args.add("--config-path")
-    args.add(config)
-    args.add("--edition")
-    args.add(edition)
+    args.add("--config-path", config)
+    args.add("--edition", edition)
     args.add("--check")
     args.add_all(srcs)
 
