@@ -221,16 +221,22 @@ tasks:
   ubuntu1804:
     name: "Min Bazel Version"
     # If updating the minimum bazel version, please also update /docs/index.md
-    bazel: "6.0.0"
+    bazel: "6.3.0"
     platform: ubuntu1804
+    # Disable use of `instrumented_files_info.metadata_files` until Bazel 6.3 is the min version
+    shell_commands:
+      - echo 'build --//rust/settings:experimental_use_coverage_metadata_files=false' > user.bazelrc
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "6.0.0"
+    bazel: "6.3.0"
     platform: ubuntu1804
+    # Disable use of `instrumented_files_info.metadata_files` until Bazel 6.3 is the min version
+    shell_commands:
+      - echo 'build --//rust/settings:experimental_use_coverage_metadata_files=false' > user.bazelrc
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags: *aspects_flags

@@ -551,6 +551,179 @@ mod test {
     use indoc::indoc;
 
     #[test]
+    fn empty_select_list() {
+        let select_list: SelectList<String> = SelectList::default();
+
+        let expected_starlark = indoc! {r#"
+            []
+        "#};
+
+        assert_eq!(
+            select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn no_platform_specific_select_list() {
+        let mut select_list = SelectList::default();
+        select_list.insert("Hello".to_owned(), None);
+
+        let expected_starlark = indoc! {r#"
+            [
+                "Hello",
+            ]
+        "#};
+
+        assert_eq!(
+            select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn only_platform_specific_select_list() {
+        let mut select_list = SelectList::default();
+        select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
+
+        let expected_starlark = indoc! {r#"
+            select({
+                "platform": [
+                    "Hello",
+                ],
+                "//conditions:default": [],
+            })
+        "#};
+
+        assert_eq!(
+            select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn mixed_select_list() {
+        let mut select_list = SelectList::default();
+        select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
+        select_list.insert("Goodbye".to_owned(), None);
+
+        let expected_starlark = indoc! {r#"
+            [
+                "Goodbye",
+            ] + select({
+                "platform": [
+                    "Hello",
+                ],
+                "//conditions:default": [],
+            })
+        "#};
+
+        assert_eq!(
+            select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn empty_select_dict() {
+        let select_dict: SelectDict<String> = SelectDict::default();
+
+        let expected_starlark = indoc! {r#"
+            {}
+        "#};
+
+        assert_eq!(
+            select_dict
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn no_platform_specific_select_dict() {
+        let mut select_dict = SelectDict::default();
+        select_dict.insert("Greeting".to_owned(), "Hello".to_owned(), None);
+
+        let expected_starlark = indoc! {r#"
+            {
+                "Greeting": "Hello",
+            }
+        "#};
+
+        assert_eq!(
+            select_dict
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn only_platform_specific_select_dict() {
+        let mut select_dict = SelectDict::default();
+        select_dict.insert(
+            "Greeting".to_owned(),
+            "Hello".to_owned(),
+            Some("platform".to_owned()),
+        );
+
+        let expected_starlark = indoc! {r#"
+            select({
+                "platform": {
+                    "Greeting": "Hello",
+                },
+                "//conditions:default": {},
+            })
+        "#};
+
+        assert_eq!(
+            select_dict
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn mixed_select_dict() {
+        let mut select_dict = SelectDict::default();
+        select_dict.insert(
+            "Greeting".to_owned(),
+            "Hello".to_owned(),
+            Some("platform".to_owned()),
+        );
+        select_dict.insert("Message".to_owned(), "Goodbye".to_owned(), None);
+
+        let expected_starlark = indoc! {r#"
+            select({
+                "platform": {
+                    "Greeting": "Hello",
+                    "Message": "Goodbye",
+                },
+                "//conditions:default": {
+                    "Message": "Goodbye",
+                },
+            })
+        "#};
+
+        assert_eq!(
+            select_dict
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
     fn remap_select_list_configurations() {
         let mut select_list = SelectList::default();
         select_list.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
