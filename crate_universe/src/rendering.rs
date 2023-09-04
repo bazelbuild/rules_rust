@@ -403,6 +403,7 @@ impl Renderer {
                     attrs.map_or(&empty_set, |attrs| &attrs.extra_proc_macro_deps),
                 )
                 .remap_configurations(platforms),
+            rundir: attrs.and_then(|attrs| attrs.rundir.clone()),
             rustc_env: attrs
                 .map_or_else(SelectDict::default, |attrs| attrs.rustc_env.clone())
                 .remap_configurations(platforms),
