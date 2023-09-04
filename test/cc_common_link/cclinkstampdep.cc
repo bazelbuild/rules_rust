@@ -1,3 +1,1 @@
-extern "C" int cclinkstampdep() {
-  return 121;
-}
+extern "C" int cclinkstampdep() { return 121; }

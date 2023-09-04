@@ -44,6 +44,7 @@ def _strip_crate_info_output(crate_info):
         is_test = crate_info.is_test,
         compile_data = crate_info.compile_data,
         compile_data_targets = crate_info.compile_data_targets,
+        data = crate_info.data,
     )
 
 def rustdoc_compile_action(
@@ -137,7 +138,7 @@ def rustdoc_compile_action(
 
         # `rustdoc` does not support the SYSROOT environment variable. To account
         # for this, the flag must be explicitly passed to the `rustdoc` binary.
-        args.rustc_flags.add("--sysroot=${{pwd}}/{}".format(toolchain.sysroot_short_path))
+        args.rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
 
     return struct(
         executable = ctx.executable._process_wrapper,

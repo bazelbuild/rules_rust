@@ -84,13 +84,13 @@ mod test {
 
     #[test]
     fn test_read_to_array() {
-        let input = r#"some escaped \\\
+        let input = r"some escaped \\\
 string
-with other lines"#
+with other lines"
             .to_owned();
         let expected = vec![
-            r#"some escaped \
-string"#,
+            r"some escaped \
+string",
             "with other lines",
         ];
         let got = read_to_array(input.as_bytes()).unwrap();

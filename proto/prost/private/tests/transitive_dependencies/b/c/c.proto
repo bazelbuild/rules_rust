@@ -6,9 +6,9 @@ import "google/protobuf/duration.proto";
 package a.b.c;
 
 message C {
-  string name = 1;
+    string name = 1;
 
-  google.protobuf.Any any = 3;
+    google.protobuf.Any any = 3;
 
-  google.protobuf.Duration duration = 4;
+    google.protobuf.Duration duration = 4;
 }

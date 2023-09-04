@@ -9,6 +9,7 @@ use crate::utils::starlark::Select;
 
 /// Walk through all dependencies in a [CrateContext] list for all configuration specific
 /// dependencies to produce a mapping of configuration to compatible platform triples.
+/// Also adds mappings for all known platform triples.
 pub fn resolve_cfg_platforms(
     crates: Vec<&CrateContext>,
     supported_platform_triples: &BTreeSet<String>,
@@ -21,15 +22,15 @@ pub fn resolve_cfg_platforms(
             attr.deps
                 .configurations()
                 .into_iter()
-                .chain(attr.deps_dev.configurations().into_iter())
-                .chain(attr.proc_macro_deps.configurations().into_iter())
-                .chain(attr.proc_macro_deps_dev.configurations().into_iter())
+                .chain(attr.deps_dev.configurations())
+                .chain(attr.proc_macro_deps.configurations())
+                .chain(attr.proc_macro_deps_dev.configurations())
                 // Chain the build dependencies if some are defined
                 .chain(if let Some(attr) = &ctx.build_script_attrs {
                     attr.deps
                         .configurations()
                         .into_iter()
-                        .chain(attr.proc_macro_deps.configurations().into_iter())
+                        .chain(attr.proc_macro_deps.configurations())
                         .collect::<BTreeSet<Option<&String>>>()
                         .into_iter()
                 } else {
@@ -99,6 +100,10 @@ pub fn resolve_cfg_platforms(
 
             Ok((cfg, triples))
         })
+        .chain(supported_platform_triples.iter().filter_map(|triple| {
+            let target = get_builtin_target_by_triple(triple);
+            target.map(|target| Ok((triple.clone(), [target.triple.to_string()].into())))
+        }))
         .collect()
 }
 
@@ -114,26 +119,7 @@ mod test {
     fn supported_platform_triples() -> BTreeSet<String> {
         BTreeSet::from([
             "aarch64-apple-darwin".to_owned(),
-            "aarch64-apple-ios".to_owned(),
-            "aarch64-linux-android".to_owned(),
-            "aarch64-pc-windows-msvc".to_owned(),
-            "aarch64-unknown-linux-gnu".to_owned(),
-            "arm-unknown-linux-gnueabi".to_owned(),
-            "armv7-unknown-linux-gnueabi".to_owned(),
             "i686-apple-darwin".to_owned(),
-            "i686-linux-android".to_owned(),
-            "i686-pc-windows-msvc".to_owned(),
-            "i686-unknown-freebsd".to_owned(),
-            "i686-unknown-linux-gnu".to_owned(),
-            "powerpc-unknown-linux-gnu".to_owned(),
-            "s390x-unknown-linux-gnu".to_owned(),
-            "wasm32-unknown-unknown".to_owned(),
-            "wasm32-wasi".to_owned(),
-            "x86_64-apple-darwin".to_owned(),
-            "x86_64-apple-ios".to_owned(),
-            "x86_64-linux-android".to_owned(),
-            "x86_64-pc-windows-msvc".to_owned(),
-            "x86_64-unknown-freebsd".to_owned(),
             "x86_64-unknown-linux-gnu".to_owned(),
         ])
     }
@@ -163,7 +149,24 @@ mod test {
         let configurations =
             resolve_cfg_platforms(vec![&context], &supported_platform_triples()).unwrap();
 
-        assert_eq!(configurations, BTreeMap::new(),)
+        assert_eq!(
+            configurations,
+            BTreeMap::from([
+                // All known triples.
+                (
+                    "aarch64-apple-darwin".to_owned(),
+                    BTreeSet::from(["aarch64-apple-darwin".to_owned()]),
+                ),
+                (
+                    "i686-apple-darwin".to_owned(),
+                    BTreeSet::from(["i686-apple-darwin".to_owned()]),
+                ),
+                (
+                    "x86_64-unknown-linux-gnu".to_owned(),
+                    BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),
+                ),
+            ])
+        )
     }
 
     fn mock_resolve_context(configuration: String) -> CrateContext {
@@ -199,10 +202,7 @@ mod test {
                 r#"cfg(any(target_os = "macos", target_os = "ios"))"#.to_owned(),
                 BTreeSet::from([
                     "aarch64-apple-darwin".to_owned(),
-                    "aarch64-apple-ios".to_owned(),
                     "i686-apple-darwin".to_owned(),
-                    "x86_64-apple-darwin".to_owned(),
-                    "x86_64-apple-ios".to_owned(),
                 ]),
             ),
         ]);
@@ -215,7 +215,22 @@ mod test {
 
             assert_eq!(
                 configurations,
-                BTreeMap::from([(configuration, expectation,)])
+                BTreeMap::from([
+                    (configuration, expectation,),
+                    // All known triples.
+                    (
+                        "aarch64-apple-darwin".to_owned(),
+                        BTreeSet::from(["aarch64-apple-darwin".to_owned()]),
+                    ),
+                    (
+                        "i686-apple-darwin".to_owned(),
+                        BTreeSet::from(["i686-apple-darwin".to_owned()]),
+                    ),
+                    (
+                        "x86_64-unknown-linux-gnu".to_owned(),
+                        BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),
+                    ),
+                ])
             );
         })
     }
@@ -248,10 +263,25 @@ mod test {
 
         assert_eq!(
             configurations,
-            BTreeMap::from([(
-                configuration,
-                BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()])
-            )])
+            BTreeMap::from([
+                (
+                    configuration,
+                    BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()])
+                ),
+                // All known triples.
+                (
+                    "aarch64-apple-darwin".to_owned(),
+                    BTreeSet::from(["aarch64-apple-darwin".to_owned()]),
+                ),
+                (
+                    "i686-apple-darwin".to_owned(),
+                    BTreeSet::from(["i686-apple-darwin".to_owned()]),
+                ),
+                (
+                    "x86_64-unknown-linux-gnu".to_owned(),
+                    BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),
+                ),
+            ])
         );
     }
 
@@ -283,7 +313,22 @@ mod test {
 
         assert_eq!(
             configurations,
-            BTreeMap::from([(configuration, BTreeSet::new())])
+            BTreeMap::from([
+                (configuration, BTreeSet::new()),
+                // All known triples.
+                (
+                    "aarch64-apple-darwin".to_owned(),
+                    BTreeSet::from(["aarch64-apple-darwin".to_owned()]),
+                ),
+                (
+                    "i686-apple-darwin".to_owned(),
+                    BTreeSet::from(["i686-apple-darwin".to_owned()]),
+                ),
+                (
+                    "x86_64-unknown-linux-gnu".to_owned(),
+                    BTreeSet::from(["x86_64-unknown-linux-gnu".to_owned()]),
+                ),
+            ])
         );
     }
 }

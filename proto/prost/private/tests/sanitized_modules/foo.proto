@@ -3,9 +3,9 @@ syntax = "proto3";
 package Foo.QuuX.CoRgE.GRAULT.gaRply;
 
 message Foo {
-  string name = 1;
+    string name = 1;
 
-  message NestedFoo {
-    string name = 2;
-  }
+    message NestedFoo {
+        string name = 2;
+    }
 }

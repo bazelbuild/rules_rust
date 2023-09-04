@@ -308,7 +308,7 @@ fn environment_block(
     // Have the last values added take precedence over the first.
     // This is simpler than needing to track duplicates and explicitly override
     // them.
-    environment_variables.extend(environment_file_block.into_iter());
+    environment_variables.extend(environment_file_block);
     for (f, replace_with) in &[stable_stamp_mappings, volatile_stamp_mappings].concat() {
         for value in environment_variables.values_mut() {
             let from = format!("{{{f}}}");
