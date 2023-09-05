@@ -75,8 +75,8 @@ rust_library(
     version = "0.7.1",
     deps = [
         "@crates_vendor_pkgs__form_urlencoded-1.2.0//:form_urlencoded",
-        "@crates_vendor_pkgs__itoa-1.0.8//:itoa",
-        "@crates_vendor_pkgs__ryu-1.0.14//:ryu",
-        "@crates_vendor_pkgs__serde-1.0.171//:serde",
+        "@crates_vendor_pkgs__itoa-1.0.9//:itoa",
+        "@crates_vendor_pkgs__ryu-1.0.15//:ryu",
+        "@crates_vendor_pkgs__serde-1.0.188//:serde",
     ],
 )

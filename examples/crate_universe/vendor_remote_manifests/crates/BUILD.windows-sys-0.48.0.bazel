@@ -95,6 +95,6 @@ rust_library(
     }),
     version = "0.48.0",
     deps = [
-        "@cvm__windows-targets-0.48.1//:windows_targets",
+        "@cvm__windows-targets-0.48.5//:windows_targets",
     ],
 )
