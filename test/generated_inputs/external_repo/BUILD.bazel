@@ -1,0 +1,20 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_library",
+    "rust_test",
+)
+
+rust_library(
+    name = "generated_inputs_external_repo",
+    srcs = ["lib.rs"],
+    deps = [
+        "@rules_rust//test/generated_inputs:use_generated_src_with_crate_root_defined"
+    ],
+    edition = "2021",
+)
+
+rust_test(
+    name = "generated_inputs_external_repo_test",
+    crate = ":generated_inputs_external_repo",
+    edition = "2021",
+)

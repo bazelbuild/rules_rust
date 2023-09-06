@@ -57,6 +57,7 @@ rust_library(
     crate_root = "lib.rs",
     edition = "2018",
     tags = ["norustfmt"],
+    visibility = ["//visibility:public"],
 )
 
 rust_library(

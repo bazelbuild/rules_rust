@@ -11,6 +11,7 @@
 /examples/crate_universe/*/bazel-*
 /test/cc_common_link/bazel-*
 /test/cc_common_link/with_global_alloc/bazel-*
+/test/generated_inputs/external_repo/bazel-*
 /test/no_std/bazel-*
 /docs/bazel-*
 user.bazelrc
