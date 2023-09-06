@@ -32,7 +32,7 @@ See the [protobuf example](../examples/proto) for a more complete example of use
 ```python
 load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
-rust_proto_protobuf_dependencies()
+rust_prost_dependencies()
 
 load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
@@ -128,7 +128,7 @@ rust_library_group(
 )
 
 rust_prost_toolchain(
-    name = "prost_toolchain_impl",
+    name = "default_prost_toolchain_impl",
     prost_plugin = "@crates_io//:protoc-gen-prost__protoc-gen-prost",
     prost_runtime = ":prost_runtime",
     prost_types = "@crates_io//:prost-types",
@@ -258,7 +258,7 @@ configuration.
 ## rust_grpc_library
 
 <pre>
-rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>, <a href="#rust_grpc_library-rustc_flags">rustc_flags</a>)
+rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-crate_name">crate_name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>, <a href="#rust_grpc_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
@@ -292,6 +292,7 @@ rust_binary(
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_grpc_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_grpc_library-crate_name"></a>crate_name |  Crate name to use for this target.<br><br>                This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.                 Defaults to the target name, with any hyphens replaced by underscores.   | String | optional | <code>""</code> |
 | <a id="rust_grpc_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_grpc_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="rust_grpc_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |
@@ -316,7 +317,7 @@ Rust Prost toolchain rule.
 | <a id="rust_prost_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_prost_toolchain-prost_opts"></a>prost_opts |  Additional options to add to Prost.   | List of strings | optional | <code>[]</code> |
 | <a id="rust_prost_toolchain-prost_plugin"></a>prost_plugin |  Additional plugins to add to Prost.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-| <a id="rust_prost_toolchain-prost_plugin_flag"></a>prost_plugin_flag |  Prost plugin flag format. (e.g. <code>--plugin=protoc-gen-prost=%s</code>)   | String | required |  |
+| <a id="rust_prost_toolchain-prost_plugin_flag"></a>prost_plugin_flag |  Prost plugin flag format. (e.g. <code>--plugin=protoc-gen-prost=%s</code>)   | String | optional | <code>"--plugin=protoc-gen-prost=%s"</code> |
 | <a id="rust_prost_toolchain-prost_runtime"></a>prost_runtime |  The Prost runtime crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_prost_toolchain-prost_types"></a>prost_types |  The Prost types crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_prost_toolchain-proto_compiler"></a>proto_compiler |  The protoc compiler to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
@@ -331,7 +332,7 @@ Rust Prost toolchain rule.
 ## rust_proto_library
 
 <pre>
-rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>, <a href="#rust_proto_library-rustc_flags">rustc_flags</a>)
+rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-crate_name">crate_name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>, <a href="#rust_proto_library-rustc_flags">rustc_flags</a>)
 </pre>
 
 Builds a Rust library crate from a set of `proto_library`s.
@@ -365,6 +366,7 @@ rust_binary(
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_proto_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_proto_library-crate_name"></a>crate_name |  Crate name to use for this target.<br><br>                This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.                 Defaults to the target name, with any hyphens replaced by underscores.   | String | optional | <code>""</code> |
 | <a id="rust_proto_library-deps"></a>deps |  List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | required |  |
 | <a id="rust_proto_library-rust_deps"></a>rust_deps |  The crates the generated library depends on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="rust_proto_library-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.<br><br>                These strings are subject to Make variable expansion for predefined                 source/output path variables like <code>$location</code>, <code>$execpath</code>, and                  <code>$rootpath</code>. This expansion is useful if you wish to pass a generated                 file of arguments to rustc: <code>@$(location //package:target)</code>.   | List of strings | optional | <code>[]</code> |

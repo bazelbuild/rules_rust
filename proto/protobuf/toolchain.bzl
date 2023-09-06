@@ -80,10 +80,10 @@ def rust_generate_proto(
         # so we create an empty grpc module in the other case.
         tools.append(proto_toolchain.grpc_plugin)
         tools.append(ctx.executable._optional_output_wrapper)
-        args.add_all([f.path for f in grpc_files])
+        args.add_all(grpc_files)
         args.add_all([
             "--",
-            proto_toolchain.protoc.path,
+            proto_toolchain.protoc,
             "--plugin=protoc-gen-grpc-rust=" + proto_toolchain.grpc_plugin.path,
             "--grpc-rust_out=" + output_directory,
         ])

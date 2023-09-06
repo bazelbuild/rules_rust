@@ -7,6 +7,6 @@ rust_binary(
     tags = ["manual"],
     visibility = ["//proto/helloworld:__subpackages__"],
     deps = [
-        "//proto/helloworld:helloworld_proto",
+        "//proto/helloworld:libhelloworld_proto",
     ] + GRPC_COMPILE_DEPS,
 )

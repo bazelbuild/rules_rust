@@ -308,6 +308,7 @@ def _rust_library_common(ctx, crate_type):
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
+            data = depset(ctx.files.data),
             compile_data = depset(ctx.files.compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
@@ -631,7 +632,7 @@ _common_attrs = {
     # `@local_config_platform//:exec` exposed.
     "proc_macro_deps": attr.label_list(
         doc = dedent("""\
-            List of `rust_library` targets with kind `proc-macro` used to help build this library target.
+            List of `rust_proc_macro` targets used to help build this library target.
         """),
         cfg = "exec",
         providers = [rust_common.crate_info],
@@ -827,12 +828,7 @@ _rust_test_attrs = dict({
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
     ),
-    "_grep_includes": attr.label(
-        allow_single_file = True,
-        cfg = "exec",
-        default = Label("@bazel_tools//tools/cpp:grep-includes"),
-        executable = True,
-    ),
+    "_use_grep_includes": attr.bool(default = True),
 }.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
 
 _common_providers = [
@@ -954,12 +950,7 @@ rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
     attrs = dict(
         _common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
-            "_grep_includes": attr.label(
-                allow_single_file = True,
-                cfg = "exec",
-                default = Label("@bazel_tools//tools/cpp:grep-includes"),
-                executable = True,
-            ),
+            "_use_grep_includes": attr.bool(default = True),
         }.items(),
     ),
     fragments = ["cpp"],
@@ -1051,12 +1042,7 @@ _rust_binary_attrs = dict({
         default = False,
     ),
     "stamp": _stamp_attribute(default_value = -1),
-    "_grep_includes": attr.label(
-        allow_single_file = True,
-        cfg = "exec",
-        default = Label("@bazel_tools//tools/cpp:grep-includes"),
-        executable = True,
-    ),
+    "_use_grep_includes": attr.bool(default = True),
 }.items() + _experimental_use_cc_common_link_attrs.items())
 
 rust_binary = rule(

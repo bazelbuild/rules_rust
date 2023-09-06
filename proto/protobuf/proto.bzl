@@ -253,7 +253,7 @@ def _rust_protogrpc_library_impl(ctx, is_grpc):
     ]
 
     toolchain = find_toolchain(ctx)
-    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain)
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
 
     return _rust_proto_compile(
         protos = depset(transitive = transitive_sources),
@@ -280,6 +280,14 @@ def _rust_proto_library_impl(ctx):
 rust_proto_library = rule(
     implementation = _rust_proto_library_impl,
     attrs = {
+        "crate_name": attr.string(
+            doc = """\
+                Crate name to use for this target.
+
+                This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.
+                Defaults to the target name, with any hyphens replaced by underscores.
+            """,
+        ),
         "deps": attr.label_list(
             doc = (
                 "List of proto_library dependencies that will be built. " +
@@ -368,6 +376,14 @@ def _rust_grpc_library_impl(ctx):
 rust_grpc_library = rule(
     implementation = _rust_grpc_library_impl,
     attrs = {
+        "crate_name": attr.string(
+            doc = """\
+                Crate name to use for this target.
+
+                This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores.
+                Defaults to the target name, with any hyphens replaced by underscores.
+            """,
+        ),
         "deps": attr.label_list(
             doc = (
                 "List of proto_library dependencies that will be built. " +

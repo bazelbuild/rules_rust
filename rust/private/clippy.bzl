@@ -137,7 +137,7 @@ def _clippy_aspect_impl(target, ctx):
     # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
+        args.process_wrapper_flags.add("--stderr-file", clippy_out)
 
         if clippy_flags:
             fail("""Combining @rules_rust//:clippy_flags with @rules_rust//:capture_clippy_output=true is currently not supported.
@@ -150,7 +150,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         # A marker file indicating clippy has executed successfully.
         # This file is necessary because "ctx.actions.run" mandates an output.
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--touch-file", clippy_out.path)
+        args.process_wrapper_flags.add("--touch-file", clippy_out)
 
         if clippy_flags:
             args.rustc_flags.add_all(clippy_flags)
