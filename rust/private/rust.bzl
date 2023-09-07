@@ -132,8 +132,9 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
 
     This rule uses the full path to the source files and the rule directory to compute
     the relative paths. This is needed, instead of using `short_path`, because of non-generated
-    source files in external repositories returning relative paths.
-
+    source files in external repositories possibly returning relative paths depending on the
+    current version of Bazel.
+    
     Args:
         ctx (struct): The current rule's context.
         src_file (File): The source file.
