@@ -179,3 +179,9 @@ bool_flag(
     name = "change_cfg",
     build_setting_default = False,
 )
+
+rust_test(
+    name = "generated_inputs_external_repo_test",
+    crate = "@generated_inputs_in_external_repo//lib:generated_inputs_external_repo",
+    edition = "2021",
+)

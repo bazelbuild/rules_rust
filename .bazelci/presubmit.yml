@@ -575,14 +575,6 @@ tasks:
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//:no_std=alloc"
-  generated_inputs_external_repo_ubuntu2004:
-    name: Crate with generated sources in external repository
-    platform: ubuntu2004
-    working_directory: test/generated_inputs/external_repo
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
