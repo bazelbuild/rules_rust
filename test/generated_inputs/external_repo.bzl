@@ -39,7 +39,7 @@ mod test {
 
 def _generated_inputs_in_external_repo_impl(repository_ctx):
     # Create repository files (not in the root directory)
-    repo_path = repository_ctx.path("lib")  
+    repo_path = repository_ctx.path("lib")
     repository_ctx.file(
         "{}/BUILD.bazel".format(repo_path),
         content = _BUILD_FILE_CONTENT,
@@ -55,7 +55,6 @@ _generated_inputs_in_external_repo = repository_rule(
         "A test repository rule providing a Rust library using generated sources"
     ),
 )
-
 
 def generated_inputs_in_external_repo():
     """Define the a test repository with Rust library using generated sources"""
