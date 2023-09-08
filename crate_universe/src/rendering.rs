@@ -654,7 +654,11 @@ impl Renderer {
 
     fn label_to_path(label: &Label) -> PathBuf {
         match &label.package {
-            Some(package) => PathBuf::from(format!("{}/{}", package, label.target)),
+            Some(package) => PathBuf::from(format!(
+                "{}/{}",
+                sanitize_repository_name(package),
+                label.target
+            )),
             None => PathBuf::from(&label.target),
         }
     }
