@@ -1269,7 +1269,7 @@ def rustc_compile_action(
                 formatted_version,
                 len(crate_info.srcs.to_list()),
             ),
-            toolchain = None,
+            toolchain = "@rules_rust//rust:toolchain_type",
         )
         if args_metadata:
             ctx.actions.run(
@@ -1285,7 +1285,7 @@ def rustc_compile_action(
                     formatted_version,
                     len(crate_info.srcs.to_list()),
                 ),
-                toolchain = None,
+                toolchain = "@rules_rust//rust:toolchain_type",
             )
     else:
         # Run without process_wrapper
