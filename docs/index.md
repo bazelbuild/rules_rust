@@ -70,7 +70,7 @@ As well as an exact version, `versions` can accept `nightly/{iso_date}` and `bet
 
 ```python
 rust_register_toolchains(
-    edition = "2021"
+    edition = "2021",
     versions = [
         "nightly/2022-12-15",
     ],
@@ -93,7 +93,7 @@ Failure to do so will result in rules attempting to match a `stable` toolchain w
 
 ## Supported bazel versions
 
-The oldest version of Bazel the `main` branch is tested against is `6.0.0`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
+The oldest version of Bazel the `main` branch is tested against is `6.3.0`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
 
 We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.
 

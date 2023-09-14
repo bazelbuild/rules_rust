@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, GenBinaries};
+use crate::config::{CrateId, GenBinaries, StringOrSelect};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -229,6 +229,9 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rundir: Option<String>,
+
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_proc_macro_deps: BTreeSet<String>,
 
@@ -266,6 +269,7 @@ impl Default for BuildScriptAttributes {
             link_deps: Default::default(),
             extra_link_deps: Default::default(),
             build_script_env: Default::default(),
+            rundir: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
             rustc_env: Default::default(),
@@ -601,7 +605,28 @@ impl CrateContext {
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs.build_script_env.extend(extra.clone(), None);
+                    for (key, value) in extra {
+                        match value {
+                            StringOrSelect::Value(value) => {
+                                attrs
+                                    .build_script_env
+                                    .insert(key.clone(), value.clone(), None);
+                            }
+                            StringOrSelect::Select(select) => {
+                                for (select_key, value) in select {
+                                    attrs.build_script_env.insert(
+                                        key.clone(),
+                                        value.clone(),
+                                        Some(select_key.clone()),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if let Some(rundir) = &crate_extra.build_script_rundir {
+                    attrs.rundir = Some(rundir.clone());
                 }
             }
 

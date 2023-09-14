@@ -114,6 +114,8 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rundir: Option<String>,
     #[serde(
         skip_serializing_if = "SelectDict::is_empty",
         serialize_with = "SelectDict::serialize_starlark"

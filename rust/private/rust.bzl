@@ -127,6 +127,35 @@ def get_edition(attr, toolchain, label):
     else:
         return toolchain.default_edition
 
+def _symlink_for_non_generated_source(ctx, src_file, package_root):
+    """Creates and returns a symlink for non-generated source files.
+
+    This rule uses the full path to the source files and the rule directory to compute
+    the relative paths. This is needed, instead of using `short_path`, because of non-generated
+    source files in external repositories possibly returning relative paths depending on the
+    current version of Bazel.
+
+    Args:
+        ctx (struct): The current rule's context.
+        src_file (File): The source file.
+        package_root (File): The full path to the directory containing the current rule.
+
+    Returns:
+        File: The created symlink if a non-generated file, or the file itself.
+    """
+
+    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
+        src_short_path = paths.relativize(src_file.path, src_file.root.path)
+        src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
+        ctx.actions.symlink(
+            output = src_symlink,
+            target_file = src_file,
+            progress_message = "Creating symlink to source file: {}".format(src_file.path),
+        )
+        return src_symlink
+    else:
+        return src_file
+
 def _transform_sources(ctx, srcs, crate_root):
     """Creates symlinks of the source files if needed.
 
@@ -151,35 +180,12 @@ def _transform_sources(ctx, srcs, crate_root):
     if not has_generated_sources:
         return srcs, crate_root
 
-    generated_sources = []
-
+    package_root = paths.dirname(paths.join(ctx.label.workspace_root, ctx.build_file_path))
+    generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
     generated_root = crate_root
-    package_root = paths.dirname(ctx.build_file_path)
-
-    if crate_root and (crate_root.is_source or crate_root.root.path != ctx.bin_dir.path):
-        generated_root = ctx.actions.declare_file(paths.relativize(crate_root.short_path, package_root))
-        ctx.actions.symlink(
-            output = generated_root,
-            target_file = crate_root,
-            progress_message = "Creating symlink to source file: {}".format(crate_root.path),
-        )
-    if generated_root:
+    if crate_root:
+        generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
         generated_sources.append(generated_root)
-
-    for src in srcs:
-        # We took care of the crate root above.
-        if src == crate_root:
-            continue
-        if src.is_source or src.root.path != ctx.bin_dir.path:
-            src_symlink = ctx.actions.declare_file(paths.relativize(src.short_path, package_root))
-            ctx.actions.symlink(
-                output = src_symlink,
-                target_file = src,
-                progress_message = "Creating symlink to source file: {}".format(src.path),
-            )
-            generated_sources.append(src_symlink)
-        else:
-            generated_sources.append(src)
 
     return generated_sources, generated_root
 
@@ -828,12 +834,7 @@ _rust_test_attrs = dict({
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
     ),
-    "_grep_includes": attr.label(
-        allow_single_file = True,
-        cfg = "exec",
-        default = Label("@bazel_tools//tools/cpp:grep-includes"),
-        executable = True,
-    ),
+    "_use_grep_includes": attr.bool(default = True),
 }.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
 
 _common_providers = [
@@ -955,12 +956,7 @@ rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
     attrs = dict(
         _common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
-            "_grep_includes": attr.label(
-                allow_single_file = True,
-                cfg = "exec",
-                default = Label("@bazel_tools//tools/cpp:grep-includes"),
-                executable = True,
-            ),
+            "_use_grep_includes": attr.bool(default = True),
         }.items(),
     ),
     fragments = ["cpp"],
@@ -1052,12 +1048,7 @@ _rust_binary_attrs = dict({
         default = False,
     ),
     "stamp": _stamp_attribute(default_value = -1),
-    "_grep_includes": attr.label(
-        allow_single_file = True,
-        cfg = "exec",
-        default = Label("@bazel_tools//tools/cpp:grep-includes"),
-        executable = True,
-    ),
+    "_use_grep_includes": attr.bool(default = True),
 }.items() + _experimental_use_cc_common_link_attrs.items())
 
 rust_binary = rule(

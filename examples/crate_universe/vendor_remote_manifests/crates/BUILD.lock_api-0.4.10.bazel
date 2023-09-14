@@ -80,7 +80,7 @@ rust_library(
     version = "0.4.10",
     deps = [
         "@cvm__lock_api-0.4.10//:build_script_build",
-        "@cvm__scopeguard-1.1.0//:scopeguard",
+        "@cvm__scopeguard-1.2.0//:scopeguard",
     ],
 )
 
