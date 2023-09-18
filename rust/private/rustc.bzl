@@ -1233,7 +1233,7 @@ def create_crate_info(ctx, toolchain, crate_type):
             sibling = rust_lib,
         )
 
-    return rust_common.create_crate_info(
+    return dict(
         name = crate_name,
         type = crate_type,
         root = crate_root,
@@ -1285,10 +1285,15 @@ def rustc_compile_action(
     """
     # TODO: Remove create_crate_info_callback after all rustc_compile_action callers migrate to
     # removing CrateInfo construction before `rust_compile_action
+
+    crate_info_dict = None
     if create_crate_info_callback != None:
-        if ctx == None or toolchain == None or crate_type == None:
+        if ctx == None or toolchain == None or crate_type == None or crate_info != None:
             fail("FAIL", ctx, toolchain, crate_type)
-        crate_info = create_crate_info_callback(ctx, toolchain, crate_type)
+        crate_info_dict = create_crate_info_callback(ctx, toolchain, crate_type)
+
+    if crate_info_dict != None:
+        crate_info = rust_common.create_crate_info(**crate_info_dict)
 
     build_metadata = getattr(crate_info, "metadata", None)
 
@@ -1402,6 +1407,23 @@ def rustc_compile_action(
 
     # this is the final list of env vars
     env.update(env_from_args)
+
+    if crate_info_dict != None:
+        crate_info_dict.update({
+            "rustc_env": env,
+        })
+        # Here we remove the env vars that have ${pwd} from crate_info
+        # Bazel doesn't support `${pwd}` syntax but `$(pwd)` while Rust code
+        # use `${pwd}` explicitly
+        # TODO: Either expand ${pwd} here or change rust code to use $(pwd) like Bazel
+        crate_info_dict["rustc_env"].pop("CARGO_MANIFEST_DIR")
+        if "OUT_DIR" in crate_info_dict["rustc_env"]:
+            crate_info_dict["rustc_env"].pop("OUT_DIR")
+        if "COMPILE_DATA_PATH" in crate_info_dict["rustc_env"]:
+            # Fix //test/unit/compile_data:compile_data_env_rust_doc
+            crate_info_dict["rustc_env"].pop("COMPILE_DATA_PATH")
+
+        crate_info = rust_common.create_crate_info(**crate_info_dict)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
