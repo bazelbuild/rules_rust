@@ -17,7 +17,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo")
-load("//rust/private:rustc.bzl", "rustc_compile_action", "create_crate_info", "transform_sources", "get_edition")
+load("//rust/private:rustc.bzl", "create_crate_info", "get_edition", "rustc_compile_action", "transform_sources")
 load(
     "//rust/private:utils.bzl",
     "can_build_metadata",

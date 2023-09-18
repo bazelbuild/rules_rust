@@ -1412,6 +1412,7 @@ def rustc_compile_action(
         crate_info_dict.update({
             "rustc_env": env,
         })
+
         # Here we remove the env vars that have ${pwd} from crate_info
         # Bazel doesn't support `${pwd}` syntax but `$(pwd)` while Rust code
         # use `${pwd}` explicitly
