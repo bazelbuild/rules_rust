@@ -336,7 +336,7 @@ impl LockfileAnnotation {
     }
 }
 
-/// A pairring of a crate's package identifier to it's annotations.
+/// A pairing of a crate's package identifier to its annotations.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PairredExtras {
     /// The crate's package identifier

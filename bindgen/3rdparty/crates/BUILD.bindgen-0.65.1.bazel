@@ -134,6 +134,10 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    link_deps = [
+        "@rules_rust_bindgen__clang-sys-1.6.1//:clang_sys",
+        "@rules_rust_bindgen__prettyplease-0.2.6//:prettyplease",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],

@@ -18,6 +18,7 @@ def cargo_build_script(
         data = [],
         tools = [],
         links = None,
+        rundir = None,
         rustc_env = {},
         rustc_flags = [],
         visibility = None,
@@ -93,6 +94,11 @@ def cargo_build_script(
         data (list, optional): Files needed by the build script.
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
+        rundir (str, optional): A directory to `cd` to before the cargo_build_script is run. This should be a path relative to the exec root.
+
+            The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.
+
+            If set to `.`, the cargo build script will run in the exec root.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
@@ -150,6 +156,7 @@ def cargo_build_script(
         link_deps = link_deps,
         data = data,
         tools = tools,
+        rundir = rundir,
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
