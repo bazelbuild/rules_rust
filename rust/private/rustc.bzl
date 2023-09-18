@@ -14,6 +14,7 @@
 
 """Functionality for constructing actions that invoke the Rust compiler"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -28,15 +29,21 @@ load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
     "abs",
+    "can_build_metadata",
+    "compute_crate_name",
+    "crate_root_src",
+    "determine_output_hash",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
+    "get_import_macro_deps",
     "get_lib_name_default",
     "get_lib_name_for_windows",
     "get_preferred_artifact",
     "is_exec_configuration",
     "make_static_lib_symlink",
     "relativize",
+    "transform_deps",
 )
 
 BuildInfo = _BuildInfo
@@ -1075,25 +1082,200 @@ def construct_arguments(
 
     return args, env
 
+def get_edition(attr, toolchain, label):
+    """Returns the Rust edition from either the current rule's attirbutes or the current `rust_toolchain`
+
+    Args:
+        attr (struct): The current rule's attributes
+        toolchain (rust_toolchain): The `rust_toolchain` for the current target
+        label (Label): The label of the target being built
+
+    Returns:
+        str: The target Rust edition
+    """
+    if getattr(attr, "edition"):
+        return attr.edition
+    elif not toolchain.default_edition:
+        fail("Attribute `edition` is required for {}.".format(label))
+    else:
+        return toolchain.default_edition
+
+def _symlink_for_non_generated_source(ctx, src_file, package_root):
+    """Creates and returns a symlink for non-generated source files.
+
+    This rule uses the full path to the source files and the rule directory to compute
+    the relative paths. This is needed, instead of using `short_path`, because of non-generated
+    source files in external repositories possibly returning relative paths depending on the
+    current version of Bazel.
+
+    Args:
+        ctx (struct): The current rule's context.
+        src_file (File): The source file.
+        package_root (File): The full path to the directory containing the current rule.
+
+    Returns:
+        File: The created symlink if a non-generated file, or the file itself.
+    """
+
+    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
+        src_short_path = paths.relativize(src_file.path, src_file.root.path)
+        src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
+        ctx.actions.symlink(
+            output = src_symlink,
+            target_file = src_file,
+            progress_message = "Creating symlink to source file: {}".format(src_file.path),
+        )
+        return src_symlink
+    else:
+        return src_file
+
+def transform_sources(ctx, srcs, crate_root):
+    """Creates symlinks of the source files if needed.
+
+    Rustc assumes that the source files are located next to the crate root.
+    In case of a mix between generated and non-generated source files, this
+    we violate this assumption, as part of the sources will be located under
+    bazel-out/... . In order to allow for targets that contain both generated
+    and non-generated source files, we generate symlinks for all non-generated
+    files.
+
+    Args:
+        ctx (struct): The current rule's context.
+        srcs (List[File]): The sources listed in the `srcs` attribute
+        crate_root (File): The file specified in the `crate_root` attribute,
+                           if it exists, otherwise None
+
+    Returns:
+        Tuple(List[File], File): The transformed srcs and crate_root
+    """
+    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+
+    if not has_generated_sources:
+        return srcs, crate_root
+
+    package_root = paths.dirname(paths.join(ctx.label.workspace_root, ctx.build_file_path))
+    generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
+    generated_root = crate_root
+    if crate_root:
+        generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
+        generated_sources.append(generated_root)
+
+    return generated_sources, generated_root
+
+def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
+    """See https://github.com/bazelbuild/rules_rust/issues/405
+
+    Args:
+        name (str): The name of the current target
+        crate_type (str): The `crate_type`
+        toolchain (rust_toolchain): The current `rust_toolchain`
+        lib_hash (str, optional): The hashed crate root path
+
+    Returns:
+        str: A unique library name
+    """
+    extension = None
+    prefix = ""
+    if crate_type in ("dylib", "cdylib", "proc-macro"):
+        extension = toolchain.dylib_ext
+    elif crate_type == "staticlib":
+        extension = toolchain.staticlib_ext
+    elif crate_type in ("lib", "rlib"):
+        # All platforms produce 'rlib' here
+        extension = ".rlib"
+        prefix = "lib"
+    elif crate_type == "bin":
+        fail("crate_type of 'bin' was detected in a rust_library. Please compile " +
+             "this crate as a rust_binary instead.")
+
+    if not extension:
+        fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
+              "please file an issue!").format(crate_type))
+
+    prefix = "lib"
+    if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
+        prefix = ""
+    if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
+        prefix = ""
+
+    return "{prefix}{name}{lib_hash}{extension}".format(
+        prefix = prefix,
+        name = name,
+        lib_hash = "-" + lib_hash if lib_hash else "",
+        extension = extension,
+    )
+
+def create_crate_info(ctx, toolchain, crate_type):
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
+    crate_root = getattr(ctx.file, "crate_root", None)
+    if not crate_root:
+        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+
+    if crate_type in ["cdylib", "staticlib"]:
+        output_hash = None
+    else:
+        output_hash = determine_output_hash(crate_root, ctx.label)
+
+    deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    rust_lib_name = _determine_lib_name(
+        crate_name,
+        crate_type,
+        toolchain,
+        output_hash,
+    )
+    rust_lib = ctx.actions.declare_file(rust_lib_name)
+    rust_metadata = None
+    if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
+        rust_metadata = ctx.actions.declare_file(
+            paths.replace_extension(rust_lib_name, ".rmeta"),
+            sibling = rust_lib,
+        )
+
+    return rust_common.create_crate_info(
+        name = crate_name,
+        type = crate_type,
+        root = crate_root,
+        srcs = depset(srcs),
+        deps = depset(deps),
+        proc_macro_deps = depset(proc_macro_deps),
+        aliases = ctx.attr.aliases,
+        output = rust_lib,
+        metadata = rust_metadata,
+        edition = get_edition(ctx.attr, toolchain, ctx.label),
+        rustc_env = ctx.attr.rustc_env,
+        rustc_env_files = ctx.files.rustc_env_files,
+        is_test = False,
+        data = depset(ctx.files.data),
+        compile_data = depset(ctx.files.compile_data),
+        compile_data_targets = depset(ctx.attr.compile_data),
+        owner = ctx.label,
+    )
+
 def rustc_compile_action(
         ctx,
         attr,
         toolchain,
-        crate_info,
-        output_hash = None,
         rust_flags = [],
-        force_all_deps_direct = False):
+        crate_info = None,
+        output_hash = None,
+        force_all_deps_direct = False,
+        create_crate_info_callback = None,
+        crate_type = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
         ctx (ctx): The rule's context object
         attr (struct): Attributes to use for the rust compile action
         toolchain (rust_toolchain): The current `rust_toolchain`
+        crate_type: TODO
         crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        create_crate_info_callback: TODO
 
     Returns:
         list: A list of the following providers:
@@ -1101,6 +1283,13 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
+    # TODO: Remove create_crate_info_callback after all rustc_compile_action callers migrate to
+    # removing CrateInfo construction before `rust_compile_action
+    if create_crate_info_callback != None:
+        if ctx == None or toolchain == None or crate_type == None:
+            fail("FAIL", ctx, toolchain, crate_type)
+        crate_info = create_crate_info_callback(ctx, toolchain, crate_type)
+
     build_metadata = getattr(crate_info, "metadata", None)
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
@@ -1210,6 +1399,8 @@ def rustc_compile_action(
         )
 
     env = dict(ctx.configuration.default_shell_env)
+
+    # this is the final list of env vars
     env.update(env_from_args)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
