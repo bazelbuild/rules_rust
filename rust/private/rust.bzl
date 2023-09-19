@@ -227,6 +227,8 @@ def _rust_test_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
+    skip_expanding_rustc_env = False
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
@@ -252,8 +254,16 @@ def _rust_test_impl(ctx):
         else:
             compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
+
         rustc_env = dict(crate.rustc_env)
-        rustc_env.update(**ctx.attr.rustc_env)
+
+        # crate.rustc_env is already expanded upstream in rust_library rule implementation
+        data_paths = depset(direct = getattr(ctx.attr.data, "data", [])).to_list()
+        rustc_env.update(expand_dict_value_locations(
+            ctx,
+            ctx.attr.rustc_env,
+            data_paths,
+        ))
 
         # Build the test binary using the dependency's srcs.
         crate_info = rust_common.create_crate_info(
@@ -274,6 +284,8 @@ def _rust_test_impl(ctx):
             wrapped_crate_type = crate.type,
             owner = ctx.label,
         )
+
+        skip_expanding_rustc_env = True
     else:
         crate_root = getattr(ctx.file, "crate_root", None)
 
@@ -316,6 +328,7 @@ def _rust_test_impl(ctx):
         toolchain = toolchain,
         crate_info = crate_info,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
+        skip_expanding_rustc_env = skip_expanding_rustc_env,
     )
     data = getattr(ctx.attr, "data", [])
 

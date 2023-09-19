@@ -1266,7 +1266,8 @@ def rustc_compile_action(
         output_hash = None,
         force_all_deps_direct = False,
         create_crate_info_callback = None,
-        crate_type = None):
+        crate_type = None,
+        skip_expanding_rustc_env = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1379,6 +1380,7 @@ def rustc_compile_action(
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata),
+        skip_expanding_rustc_env = skip_expanding_rustc_env,
     )
 
     args_metadata = None
