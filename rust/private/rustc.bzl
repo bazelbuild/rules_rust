@@ -794,7 +794,8 @@ def construct_arguments(
         remap_path_prefix = "",
         use_json_output = False,
         build_metadata = False,
-        force_depend_on_objects = False):
+        force_depend_on_objects = False,
+        skip_expanding_rustc_env = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1034,11 +1035,14 @@ def construct_arguments(
     env.update(toolchain.env)
 
     # Update environment with user provided variables.
-    env.update(expand_dict_value_locations(
-        ctx,
-        crate_info.rustc_env,
-        data_paths,
-    ))
+    if skip_expanding_rustc_env:
+        env.update(crate_info.rustc_env)
+    else:
+        env.update(expand_dict_value_locations(
+            ctx,
+            crate_info.rustc_env,
+            data_paths,
+        ))
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
@@ -1619,20 +1623,7 @@ def rustc_compile_action(
         crate_info_dict.update({
             "rustc_env": env,
         })
-
-        # Here we remove the env vars that have ${pwd} from crate_info
-        # Bazel doesn't support `${pwd}` syntax but `$(pwd)` while Rust code
-        # use `${pwd}` explicitly
-        # TODO: Either expand ${pwd} here or change rust code to use $(pwd) like Bazel
-        crate_info_dict["rustc_env"].pop("CARGO_MANIFEST_DIR")
-        if "OUT_DIR" in crate_info_dict["rustc_env"]:
-            crate_info_dict["rustc_env"].pop("OUT_DIR")
-        if "COMPILE_DATA_PATH" in crate_info_dict["rustc_env"]:
-            # Fix //test/unit/compile_data:compile_data_env_rust_doc
-            crate_info_dict["rustc_env"].pop("COMPILE_DATA_PATH")
-
         crate_info = rust_common.create_crate_info(**crate_info_dict)
-
 
     if crate_info.type in ["staticlib", "cdylib"]:
         # These rules are not supposed to be depended on by other rust targets, and

@@ -125,6 +125,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         rustdoc = True,
         force_depend_on_objects = is_test,
+        skip_expanding_rustc_env = True,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
