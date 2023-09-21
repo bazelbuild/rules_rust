@@ -131,6 +131,20 @@ rust_test(
     ),
 )
 
+rust_test(
+    name = "versions_test",
+    srcs = ["tests/version_test.rs"],
+    data = [
+        "Cargo.toml",
+        "version.bzl",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "CARGO_TOML": "$(rootpath :Cargo.toml)",
+        "VERSION_BZL": "$(rootpath :version.bzl)",
+    },
+)
+
 rust_doc(
     name = "rustdoc",
     crate = ":cargo_bazel",

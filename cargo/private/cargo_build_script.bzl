@@ -226,6 +226,7 @@ def _cargo_build_script_impl(ctx):
     args.add(dep_env_out)
     args.add(streams.stdout)
     args.add(streams.stderr)
+    args.add(ctx.attr.rundir)
 
     build_script_inputs = []
     for dep in ctx.attr.link_deps:
@@ -304,6 +305,16 @@ cargo_build_script = rule(
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
+        ),
+        "rundir": attr.string(
+            default = "",
+            doc = dedent("""\
+                A directory to cd to before the cargo_build_script is run. This should be a path relative to the exec root.
+
+                The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.
+
+                If set to `.`, the cargo build script will run in the exec root.
+            """),
         ),
         "rustc_flags": attr.string_list(
             doc = dedent("""\

@@ -91,6 +91,6 @@ rust_library(
     }),
     version = "0.48.0",
     deps = [
-        "//vendor_local_pkgs/crates/windows-targets-0.48.1:windows_targets",
+        "//vendor_local_pkgs/crates/windows-targets-0.48.5:windows_targets",
     ],
 )

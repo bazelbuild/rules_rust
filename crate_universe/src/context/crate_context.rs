@@ -229,6 +229,9 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rundir: Option<String>,
+
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub extra_proc_macro_deps: BTreeSet<String>,
 
@@ -266,6 +269,7 @@ impl Default for BuildScriptAttributes {
             link_deps: Default::default(),
             extra_link_deps: Default::default(),
             build_script_env: Default::default(),
+            rundir: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
             rustc_env: Default::default(),
@@ -619,6 +623,10 @@ impl CrateContext {
                             }
                         }
                     }
+                }
+
+                if let Some(rundir) = &crate_extra.build_script_rundir {
+                    attrs.rundir = Some(rundir.clone());
                 }
             }
 
