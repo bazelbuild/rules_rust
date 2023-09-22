@@ -1,7 +1,7 @@
-"""Rust Bindgen rules legacy load path"""
+"""Rust Bindgen rules"""
 
 load(
-    ":defs.bzl",
+    "//bindgen/private:bindgen.bzl",
     _rust_bindgen = "rust_bindgen",
     _rust_bindgen_library = "rust_bindgen_library",
     _rust_bindgen_toolchain = "rust_bindgen_toolchain",
