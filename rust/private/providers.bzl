@@ -30,6 +30,8 @@ CrateInfo = provider(
         "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        # TODO: Remove `rustc_env_attr` after refactoring rust_test to only rely on rustc_env
+        "rustc_env_attr":  "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "srcs": "depset[File]: All source Files that are part of the crate.",

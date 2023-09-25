@@ -1040,7 +1040,7 @@ def construct_arguments(
     else:
         env.update(expand_dict_value_locations(
             ctx,
-            crate_info.rustc_env,
+            crate_info.rustc_env_attr,
             data_paths,
         ))
 
@@ -1255,6 +1255,7 @@ def create_crate_info(ctx, toolchain, crate_type):
         compile_data = depset(ctx.files.compile_data),
         compile_data_targets = depset(ctx.attr.compile_data),
         owner = ctx.label,
+        rustc_env_attr = ctx.attr.rustc_env,
     )
 
 def rustc_compile_action(
@@ -1619,7 +1620,6 @@ def rustc_compile_action(
             **instrumented_files_kwargs
         ),
     ]
-
 
     if crate_info_dict != None:
         crate_info_dict.update({

@@ -200,6 +200,7 @@ def _rust_binary_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
+            rustc_env_attr = ctx.attr.rustc_env,
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
@@ -255,10 +256,10 @@ def _rust_test_impl(ctx):
             compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
 
-        rustc_env = dict(crate.rustc_env)
+        rustc_env = dict(crate.rustc_env_attr)
 
         # crate.rustc_env is already expanded upstream in rust_library rule implementation
-        data_paths = depset(direct = getattr(ctx.attr.data, "data", [])).to_list()
+        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
         rustc_env.update(expand_dict_value_locations(
             ctx,
             ctx.attr.rustc_env,
@@ -277,6 +278,7 @@ def _rust_test_impl(ctx):
             output = output,
             edition = crate.edition,
             rustc_env = rustc_env,
+            rustc_env_attr = ctx.attr.rustc_env,
             rustc_env_files = rustc_env_files,
             is_test = True,
             compile_data = compile_data,
@@ -303,6 +305,13 @@ def _rust_test_impl(ctx):
             ),
         )
 
+        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
+        rustc_env = expand_dict_value_locations(
+            ctx,
+            ctx.attr.rustc_env,
+            data_paths,
+        )
+
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info = rust_common.create_crate_info(
             name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name),
@@ -314,13 +323,16 @@ def _rust_test_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
-            rustc_env = ctx.attr.rustc_env,
+            rustc_env = rustc_env,
+            rustc_env_attr = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         )
+
+        skip_expanding_rustc_env = True
 
     providers = rustc_compile_action(
         ctx = ctx,

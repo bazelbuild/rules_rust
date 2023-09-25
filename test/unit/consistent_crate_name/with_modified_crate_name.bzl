@@ -49,6 +49,7 @@ def _with_modified_crate_name_impl(ctx):
             compile_data = depset([]),
             compile_data_targets = depset([]),
             rustc_env = {},
+            rustc_env_attr = {},
             is_test = False,
         ),
         output_hash = output_hash,
