@@ -17,7 +17,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo")
-load("//rust/private:rustc.bzl", "create_crate_info", "get_edition", "rustc_compile_action", "transform_sources")
+load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
     "can_build_metadata",
@@ -29,6 +29,9 @@ load(
     "find_toolchain",
     "get_import_macro_deps",
     "transform_deps",
+    "create_crate_info_dict",
+    "get_edition",
+    "transform_sources",
 )
 # TODO(marco): Separate each rule into its own file.
 
@@ -160,7 +163,7 @@ def _rust_library_common(ctx, crate_type):
         toolchain = toolchain,
         output_hash = output_hash,
         crate_type = crate_type,
-        create_crate_info_callback = create_crate_info,
+        create_crate_info_callback = create_crate_info_dict,
     )
 
 def _rust_binary_impl(ctx):
