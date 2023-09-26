@@ -203,7 +203,7 @@ def _rust_binary_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
-            rustc_env_attr = ctx.attr.rustc_env,
+            _rustc_env_attr = ctx.attr.rustc_env,
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
@@ -257,7 +257,7 @@ def _rust_test_impl(ctx):
             compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
 
-        rustc_env = dict(crate.rustc_env_attr)
+        rustc_env = dict(crate._rustc_env_attr)
 
         # crate.rustc_env is already expanded upstream in rust_library rule implementation
         data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
@@ -279,7 +279,7 @@ def _rust_test_impl(ctx):
             output = output,
             edition = crate.edition,
             rustc_env = rustc_env,
-            rustc_env_attr = ctx.attr.rustc_env,
+            _rustc_env_attr = ctx.attr.rustc_env,
             rustc_env_files = rustc_env_files,
             is_test = True,
             compile_data = compile_data,
@@ -323,7 +323,7 @@ def _rust_test_impl(ctx):
             output = output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = rustc_env,
-            rustc_env_attr = ctx.attr.rustc_env,
+            _rustc_env_attr = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),

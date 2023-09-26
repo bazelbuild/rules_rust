@@ -1034,7 +1034,7 @@ def construct_arguments(
     else:
         env.update(expand_dict_value_locations(
             ctx,
-            crate_info.rustc_env_attr,
+            crate_info._rustc_env_attr,
             data_paths,
         ))
 

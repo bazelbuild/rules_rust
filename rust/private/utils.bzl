@@ -906,5 +906,5 @@ def create_crate_info_dict(ctx, toolchain, crate_type):
         compile_data = depset(ctx.files.compile_data),
         compile_data_targets = depset(ctx.attr.compile_data),
         owner = ctx.label,
-        rustc_env_attr = ctx.attr.rustc_env,
+        _rustc_env_attr = ctx.attr.rustc_env,
     )
