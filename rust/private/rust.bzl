@@ -231,8 +231,6 @@ def _rust_test_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    skip_expanding_rustc_env = False
-
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
@@ -289,8 +287,6 @@ def _rust_test_impl(ctx):
             wrapped_crate_type = crate.type,
             owner = ctx.label,
         )
-
-        skip_expanding_rustc_env = True
     else:
         crate_root = getattr(ctx.file, "crate_root", None)
 
@@ -335,15 +331,13 @@ def _rust_test_impl(ctx):
             owner = ctx.label,
         )
 
-        skip_expanding_rustc_env = True
-
     providers = rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
         crate_info = crate_info,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
-        skip_expanding_rustc_env = skip_expanding_rustc_env,
+        skip_expanding_rustc_env = True,
     )
     data = getattr(ctx.attr, "data", [])
 

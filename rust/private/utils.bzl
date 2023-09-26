@@ -853,6 +853,14 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
         return src_file
 
 def create_crate_info_dict(ctx, toolchain, crate_type):
+    """Creates a mutable dict() representing CrateInfo provider
+
+    create_crate_info_dict is a *temporary* solution until create_crate_info is completely moved into
+    rustc_compile_action function.
+
+    The function is currently used as a callback to support constructing CrateInfo in rustc_compile_action
+    to ensure `CrateInfo.rustc_env` is fully loaded with all the env vars passed to rustc.
+    """
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:

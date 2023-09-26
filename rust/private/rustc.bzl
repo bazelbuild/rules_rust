@@ -1085,11 +1085,13 @@ def rustc_compile_action(
         attr,
         toolchain,
         rust_flags = [],
+        crate_type = None,
         crate_info = None,
         output_hash = None,
         force_all_deps_direct = False,
+        # TODO: Remove create_crate_info_callback and skip_expanding_rustc_env attributes
+        # after all CrateInfo structs are constructed in rustc_compile_action
         create_crate_info_callback = None,
-        crate_type = None,
         skip_expanding_rustc_env = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
@@ -1103,7 +1105,8 @@ def rustc_compile_action(
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
-        create_crate_info_callback: TODO
+        create_crate_info_callback: A callback to construct a mutable dict for constructor CrateInfo
+        skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
 
     Returns:
         list: A list of the following providers:
