@@ -770,7 +770,6 @@ def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
         extension = extension,
     )
 
-
 def transform_sources(ctx, srcs, crate_root):
     """Creates symlinks of the source files if needed.
 
@@ -804,9 +803,8 @@ def transform_sources(ctx, srcs, crate_root):
 
     return generated_sources, generated_root
 
-
 def get_edition(attr, toolchain, label):
-    """Returns the Rust edition from either the current rule's attirbutes or the current `rust_toolchain`
+    """Returns the Rust edition from either the current rule's attributes or the current `rust_toolchain`
 
     Args:
         attr (struct): The current rule's attributes
@@ -860,6 +858,14 @@ def create_crate_info_dict(ctx, toolchain, crate_type):
 
     The function is currently used as a callback to support constructing CrateInfo in rustc_compile_action
     to ensure `CrateInfo.rustc_env` is fully loaded with all the env vars passed to rustc.
+
+    Args:
+        ctx (struct): The current rule's context
+        toolchain (toolchain): The rust toolchain
+        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+
+    Returns:
+        File: The created symlink if a non-generated file, or the file itself.
     """
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     crate_root = getattr(ctx.file, "crate_root", None)

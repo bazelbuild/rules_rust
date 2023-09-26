@@ -14,23 +14,21 @@
 
 """Rust rule implementations"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
-    "can_build_metadata",
     "compute_crate_name",
     "crate_root_src",
+    "create_crate_info_dict",
     "dedent",
     "determine_output_hash",
     "expand_dict_value_locations",
     "find_toolchain",
+    "get_edition",
     "get_import_macro_deps",
     "transform_deps",
-    "create_crate_info_dict",
-    "get_edition",
     "transform_sources",
 )
 # TODO(marco): Separate each rule into its own file.

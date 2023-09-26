@@ -14,7 +14,6 @@
 
 """Functionality for constructing actions that invoke the Rust compiler"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -819,6 +818,7 @@ def construct_arguments(
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
+        skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
 
     Returns:
         tuple: A tuple of the following items
