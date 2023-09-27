@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("//bindgen:defs.bzl", "rust_bindgen_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,38 +7,14 @@ toolchain_type(
     name = "toolchain_type",
 )
 
-alias(
-    name = "bindgen_toolchain",
-    actual = "toolchain_type",
-    deprecation = "instead use `@rules_rust//bindgen:toolchain_type`",
-    tags = ["manual"],
-)
-
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     deps = [
         "//bindgen/3rdparty:bzl_lib",
+        "//bindgen/private:bzl_lib",
         "//rust:bzl_lib",
     ],
-)
-
-alias(
-    name = "clang_macos",
-    actual = select({
-        "@platforms//cpu:aarch64": "@bindgen_clang_macos_aarch64//:clang",
-        "//conditions:default": "@bindgen_clang_macos_x86_64//:clang",
-    }),
-    tags = ["manual"],
-)
-
-alias(
-    name = "clang_linux",
-    actual = select({
-        "@platforms//cpu:aarch64": "@bindgen_clang_linux_aarch64//:clang",
-        "//conditions:default": "@bindgen_clang_linux_x86_64//:clang",
-    }),
-    tags = ["manual"],
 )
 
 rust_bindgen_toolchain(
