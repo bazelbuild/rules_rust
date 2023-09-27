@@ -1,0 +1,6 @@
+cc_library(
+    name = "allocator_library",
+    srcs = ["allocator_library.cc"],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
