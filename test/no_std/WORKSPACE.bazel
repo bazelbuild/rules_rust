@@ -16,7 +16,6 @@ rules_rust_dependencies()
 
 rust_register_toolchains(
     edition = "2021",
-    global_allocator_library = "@test_cc_common_link//:global_allocator_library",
     versions = [
         "nightly/2023-04-20",
         "1.68.0",
