@@ -33,7 +33,7 @@ def _stdlibs(tut):
         for li in tut[CcInfo].linking_context.linker_inputs.to_list()
         for lib in li.libraries
     ]
-    stdlibs = [lib for lib in libs if (tut.label.name not in lib.basename)]
+    stdlibs = [lib for lib in libs if (lib and tut.label.name not in lib.basename)]
     return stdlibs
 
 def _libstd_ordering_test_impl(ctx):
