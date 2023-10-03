@@ -385,13 +385,13 @@ impl Renderer {
             deps: self
                 .make_deps(
                     attrs.map_or(&empty_deps, |attrs| &attrs.deps),
-                    attrs.map_or(&empty_set, |attrs| &attrs.extra_deps),
+                    attrs.map_or(&empty_list, |attrs| &attrs.extra_deps),
                 )
                 .remap_configurations(platforms),
             link_deps: self
                 .make_deps(
                     attrs.map_or(&empty_deps, |attrs| &attrs.link_deps),
-                    attrs.map_or(&empty_set, |attrs| &attrs.extra_link_deps),
+                    attrs.map_or(&empty_list, |attrs| &attrs.extra_link_deps),
                 )
                 .remap_configurations(platforms),
             edition: krate.common_attrs.edition.clone(),
@@ -400,7 +400,7 @@ impl Renderer {
             proc_macro_deps: self
                 .make_deps(
                     attrs.map_or(&empty_deps, |attrs| &attrs.proc_macro_deps),
-                    attrs.map_or(&empty_set, |attrs| &attrs.extra_proc_macro_deps),
+                    attrs.map_or(&empty_list, |attrs| &attrs.extra_proc_macro_deps),
                 )
                 .remap_configurations(platforms),
             rundir: attrs.and_then(|attrs| attrs.rundir.clone()),
@@ -628,14 +628,12 @@ impl Renderer {
     fn make_deps(
         &self,
         deps: &SelectList<CrateDependency>,
-        extra_deps: &BTreeSet<String>,
+        extra_deps: &SelectList<String>,
     ) -> SelectList<String> {
         let mut deps = deps
             .clone()
             .map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target));
-        for extra_dep in extra_deps {
-            deps.insert(extra_dep.clone(), None);
-        }
+        deps.extend(extra_deps.into_iter());
         deps
     }
 
