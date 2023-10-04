@@ -25,7 +25,7 @@ def _rust_impl(ctx):
         )
 
 rust_toolchain = tag_class(attrs = {
-    "allocator_library": attr.string(),
+    "allocator_library": attr.string(default = "@rules_rust//ffi/cc/allocator_library"),
     "dev_components": attr.bool(default = False),
     "edition": attr.string(),
     "extra_target_triples": attr.string_list(default = DEFAULT_EXTRA_TARGET_TRIPLES),

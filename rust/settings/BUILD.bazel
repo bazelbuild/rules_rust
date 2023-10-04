@@ -56,7 +56,7 @@ bool_flag(
 # reporting tools like `llvm-cov` and `llvm-profdata` as runfiles to each test.
 bool_flag(
     name = "experimental_use_coverage_metadata_files",
-    build_setting_default = True,
+    build_setting_default = False,
 )
 
 bzl_library(

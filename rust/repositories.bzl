@@ -381,6 +381,7 @@ rust_toolchain_tools_repository = repository_rule(
     attrs = {
         "allocator_library": attr.string(
             doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
+            default = "@rules_rust//ffi/cc/allocator_library",
         ),
         "auth": attr.string_dict(
             doc = (
@@ -410,6 +411,7 @@ rust_toolchain_tools_repository = repository_rule(
         ),
         "global_allocator_library": attr.string(
             doc = "Target that provides allocator functions when a global allocator is used with cc_common.link.",
+            default = "@rules_rust//ffi/cc/global_allocator_library",
         ),
         "iso_date": attr.string(
             doc = "The date of the tool (or None, if the version is a specific version).",
