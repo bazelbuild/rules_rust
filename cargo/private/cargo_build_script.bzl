@@ -256,6 +256,7 @@ def _cargo_build_script_impl(ctx):
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
+        toolchain = None,
     )
 
     return [

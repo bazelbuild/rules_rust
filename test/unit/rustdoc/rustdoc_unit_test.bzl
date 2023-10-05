@@ -111,6 +111,18 @@ def _rustdoc_zip_output_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_with_json_error_format_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    action = _get_rustdoc_action(env, tut)
+
+    assert_argv_contains(env, action, "--error-format=json")
+
+    return analysistest.end(env)
+
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
 rustdoc_for_proc_macro_test = analysistest.make(_rustdoc_for_proc_macro_test_impl)
@@ -119,6 +131,9 @@ rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
 rustdoc_with_args_test = analysistest.make(_rustdoc_with_args_test_impl)
 rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
+rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
+    "@//:error_format": "json",
+})
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
     rule_fn(
@@ -321,6 +336,11 @@ def rustdoc_test_suite(name):
         target_under_test = ":rustdoc_with_args",
     )
 
+    rustdoc_with_json_error_format_test(
+        name = "rustdoc_with_json_error_format_test",
+        target_under_test = ":lib_doc",
+    )
+
     native.filegroup(
         name = "lib_doc_zip",
         srcs = [":lib_doc.zip"],
@@ -340,6 +360,7 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_lib_with_proc_macro_test",
             ":rustdoc_for_lib_with_cc_lib_test",
             ":rustdoc_with_args_test",
+            ":rustdoc_with_json_error_format_test",
             ":rustdoc_zip_output_test",
         ],
     )

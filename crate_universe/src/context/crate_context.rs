@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, GenBinaries, StringOrSelect};
+use crate::config::{CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -122,8 +122,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub extra_deps: BTreeSet<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub extra_deps: SelectList<String>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps_dev: SelectList<CrateDependency>,
@@ -136,8 +136,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub extra_proc_macro_deps: BTreeSet<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub extra_proc_macro_deps: SelectList<String>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps_dev: SelectList<CrateDependency>,
@@ -200,8 +200,8 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub extra_deps: BTreeSet<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub extra_deps: SelectStringList,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -223,8 +223,8 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub link_deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub extra_link_deps: BTreeSet<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub extra_link_deps: SelectStringList,
 
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub build_script_env: SelectStringDict,
@@ -232,8 +232,8 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rundir: Option<String>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub extra_proc_macro_deps: BTreeSet<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub extra_proc_macro_deps: SelectStringList,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps: SelectList<CrateDependency>,
@@ -494,12 +494,14 @@ impl CrateContext {
 
             // Deps
             if let Some(extra) = &crate_extra.deps {
-                self.common_attrs.extra_deps = extra.clone();
+                self.common_attrs.extra_deps.extend(extra.iter().cloned());
             }
 
             // Proc macro deps
             if let Some(extra) = &crate_extra.proc_macro_deps {
-                self.common_attrs.extra_proc_macro_deps = extra.clone();
+                self.common_attrs
+                    .extra_proc_macro_deps
+                    .extend(extra.iter().cloned());
             }
 
             // Compile data
@@ -564,26 +566,22 @@ impl CrateContext {
             if let Some(attrs) = &mut self.build_script_attrs {
                 // Deps
                 if let Some(extra) = &crate_extra.build_script_deps {
-                    attrs.extra_deps = extra.clone();
+                    attrs.extra_deps.extend(extra.iter().cloned())
                 }
 
                 // Proc macro deps
                 if let Some(extra) = &crate_extra.build_script_proc_macro_deps {
-                    attrs.extra_proc_macro_deps = extra.clone();
+                    attrs.extra_proc_macro_deps.extend(extra.iter().cloned());
                 }
 
                 // Data
                 if let Some(extra) = &crate_extra.build_script_data {
-                    for data in extra {
-                        attrs.data.insert(data.clone(), None);
-                    }
+                    attrs.data.extend(extra.iter().cloned());
                 }
 
                 // Tools
                 if let Some(extra) = &crate_extra.build_script_tools {
-                    for data in extra {
-                        attrs.tools.insert(data.clone(), None);
-                    }
+                    attrs.tools.extend(extra.iter().cloned());
                 }
 
                 // Toolchains
@@ -600,29 +598,16 @@ impl CrateContext {
 
                 // Rustc env
                 if let Some(extra) = &crate_extra.build_script_rustc_env {
-                    attrs.rustc_env.extend(extra.clone(), None);
+                    attrs
+                        .rustc_env
+                        .extend_from_string_or_select(extra.iter().map(clone_tuple));
                 }
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    for (key, value) in extra {
-                        match value {
-                            StringOrSelect::Value(value) => {
-                                attrs
-                                    .build_script_env
-                                    .insert(key.clone(), value.clone(), None);
-                            }
-                            StringOrSelect::Select(select) => {
-                                for (select_key, value) in select {
-                                    attrs.build_script_env.insert(
-                                        key.clone(),
-                                        value.clone(),
-                                        Some(select_key.clone()),
-                                    );
-                                }
-                            }
-                        }
-                    }
+                    attrs
+                        .build_script_env
+                        .extend_from_string_or_select(extra.iter().map(clone_tuple))
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
@@ -769,6 +754,11 @@ impl CrateContext {
             })
             .collect()
     }
+}
+
+fn clone_tuple<V1: Clone, V2: Clone>(t: (&V1, &V2)) -> (V1, V2) {
+    let (v1, v2) = t;
+    (v1.clone(), v2.clone())
 }
 
 #[cfg(test)]

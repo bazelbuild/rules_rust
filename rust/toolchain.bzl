@@ -654,6 +654,7 @@ rust_toolchain = rule(
     attrs = {
         "allocator_library": attr.label(
             doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
+            default = "@rules_rust//ffi/cc/allocator_library",
         ),
         "binary_ext": attr.string(
             doc = "The extension for binaries created from rustc.",
@@ -709,6 +710,7 @@ rust_toolchain = rule(
         ),
         "global_allocator_library": attr.label(
             doc = "Target that provides allocator functions for when a global allocator is present.",
+            default = "@rules_rust//ffi/cc/global_allocator_library",
         ),
         "llvm_cov": attr.label(
             doc = "The location of the `llvm-cov` binary. Can be a direct source or a filegroup containing one item. If None, rust code is not instrumented for coverage.",

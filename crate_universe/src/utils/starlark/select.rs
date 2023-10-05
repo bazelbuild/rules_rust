@@ -1,6 +1,7 @@
 use std::collections::{btree_set, BTreeMap, BTreeSet};
 use std::iter::{once, FromIterator};
 
+use crate::config::StringOrSelect;
 use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, LineComment, MULTILINE};
@@ -89,6 +90,42 @@ impl<T: Ord> SelectList<T> {
             selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
             unmapped: self.unmapped,
         }
+    }
+}
+
+impl SelectList<String> {
+    pub fn extend<Iter: Iterator<Item = StringOrSelect>>(&mut self, values: Iter) {
+        for value in values {
+            match value {
+                StringOrSelect::Value(value) => {
+                    self.insert(value, None);
+                }
+                StringOrSelect::Select(select) => {
+                    for (select_key, value) in select {
+                        self.insert(value.clone(), Some(select_key.clone()));
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl IntoIterator for &SelectList<String> {
+    type Item = StringOrSelect;
+    type IntoIter = <Vec<StringOrSelect> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        let mut all_values = Vec::with_capacity(self.common.len() + self.selects.len());
+        for value in &self.common {
+            all_values.push(StringOrSelect::Value(value.clone()))
+        }
+        for (key, values) in &self.selects {
+            for value in values {
+                let mut map = BTreeMap::new();
+                map.insert(key.clone(), value.clone());
+                all_values.push(StringOrSelect::Select(map))
+            }
+        }
+        all_values.into_iter()
     }
 }
 
@@ -368,6 +405,26 @@ impl<T: Ord> SelectDict<T> {
 
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
+    }
+}
+
+impl SelectDict<String> {
+    pub fn extend_from_string_or_select<Iter: Iterator<Item = (String, StringOrSelect)>>(
+        &mut self,
+        values: Iter,
+    ) {
+        for (key, value) in values {
+            match value {
+                StringOrSelect::Value(value) => {
+                    self.insert(key, value, None);
+                }
+                StringOrSelect::Select(select) => {
+                    for (select_key, value) in select {
+                        self.insert(key.clone(), value, Some(select_key));
+                    }
+                }
+            }
+        }
     }
 }
 
