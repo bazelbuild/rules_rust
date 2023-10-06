@@ -25,6 +25,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:rustc.bzl", "BuildInfo")
 load(
     "//rust/private:utils.bzl",
+    "cargo_manifest_dir",
     "concat",
     "dedent",
     "dedup_expand_location",
@@ -223,6 +224,9 @@ def _create_single_crate(ctx, info):
     expand_targets = concat([getattr(ctx.rule.attr, attr, []) for attr in ["data", "compile_data"]])
 
     crate["env"].update({k: dedup_expand_location(ctx, v, expand_targets) for k, v in info.env.items()})
+
+    # CARGO_MANIFEST_DIR is used by some proc macros, set it to the same value that we use with rustc
+    crate["env"].setdefault("CARGO_MANIFEST_DIR", cargo_manifest_dir(_EXEC_ROOT_TEMPLATE, ctx.label))
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     # It can happen a single source file is present in multiple crates - there can

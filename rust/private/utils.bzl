@@ -725,3 +725,19 @@ def _shortest_src_with_basename(srcs, basename):
             if not shortest or len(f.dirname) < len(shortest.dirname):
                 shortest = f
     return shortest
+
+def cargo_manifest_dir(prefix, label):
+    """Builds a useful value for CARGO_MANIFEST_DIR.
+
+    Args:
+        prefix (str): The prefix that will be replaced with the execroot.
+        label (Label): The label to build the path with.
+
+    Returns:
+        str: The path to the root directory for the label.
+    """
+
+    # Both label.workspace_root and label.package are relative paths
+    # and either can be empty strings. Avoid trailing/double slashes in the path.
+    components = "{}/{}/{}".format(prefix, label.workspace_root, label.package).split("/")
+    return "/".join([c for c in components if c])

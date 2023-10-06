@@ -28,6 +28,7 @@ load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
     "abs",
+    "cargo_manifest_dir",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -863,10 +864,7 @@ def construct_arguments(
         process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
         process_wrapper_flags.add("--stable-status-file", ctx.info_file)
 
-    # Both ctx.label.workspace_root and ctx.label.package are relative paths
-    # and either can be empty strings. Avoid trailing/double slashes in the path.
-    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
-    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    env["CARGO_MANIFEST_DIR"] = cargo_manifest_dir("${pwd}", ctx.label)
 
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
