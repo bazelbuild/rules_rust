@@ -718,7 +718,7 @@ fn main() {
         eprintln!("Warning: Service definitions will not be generated because the prost toolchain did not define a tonic plugin.");
     }
 
-    let mut cmd = process::Command::new(&protoc);
+    let mut cmd = process::Command::new(protoc);
     cmd.arg(format!("--prost_out={}", out_dir.display()));
     if is_tonic {
         cmd.arg(format!("--tonic_out={}", out_dir.display()));
