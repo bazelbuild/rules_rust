@@ -226,6 +226,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             metadata = rust_metadata,
             edition = proto_toolchain.edition,
             rustc_env = {},
+            _rustc_env_attr = {},
             is_test = False,
             compile_data = depset([target.files for target in getattr(ctx.attr, "compile_data", [])]),
             compile_data_targets = depset(getattr(ctx.attr, "compile_data", [])),

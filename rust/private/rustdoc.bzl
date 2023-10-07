@@ -39,6 +39,7 @@ def _strip_crate_info_output(crate_info):
         output = None,
         metadata = None,
         edition = crate_info.edition,
+        _rustc_env_attr = crate_info._rustc_env_attr,
         rustc_env = crate_info.rustc_env,
         rustc_env_files = crate_info.rustc_env_files,
         is_test = crate_info.is_test,
@@ -125,6 +126,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         rustdoc = True,
         force_depend_on_objects = is_test,
+        skip_expanding_rustc_env = True,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
