@@ -485,26 +485,27 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_examples_windows:
-    name: Crate Universe Examples
-    platform: windows
-    working_directory: examples/crate_universe
-    run_targets: *crate_universe_vendor_example_targets
-    build_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  crate_universe_unnamed_examples_windows:
-    name: Crate Universe Unnamed Examples
-    platform: windows
-    working_directory: examples/crate_universe_unnamed
-    run_targets: *crate_universe_unnamed_vendor_example_targets
-    build_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
+# See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
+#  crate_universe_examples_windows:
+#    name: Crate Universe Examples
+#    platform: windows
+#    working_directory: examples/crate_universe
+#    run_targets: *crate_universe_vendor_example_targets
+#    build_flags: *aspects_flags
+#    build_targets:
+#      - "//..."
+#    test_targets:
+#      - "//..."
+#  crate_universe_unnamed_examples_windows:
+#    name: Crate Universe Unnamed Examples
+#    platform: windows
+#    working_directory: examples/crate_universe_unnamed
+#    run_targets: *crate_universe_unnamed_vendor_example_targets
+#    build_flags: *aspects_flags
+#    build_targets:
+#      - "//..."
+#    test_targets:
+#      - "//..."
   cc_common_link_ubuntu2004:
     name: Build via cc_common.link
     platform: ubuntu2004
