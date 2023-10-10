@@ -173,6 +173,10 @@ def _cargo_build_script_impl(ctx):
     for f in ctx.attr.crate_features:
         env["CARGO_FEATURE_" + f.upper().replace("-", "_")] = "1"
 
+    links = ctx.attr.links or ""
+    if links:
+        env["CARGO_MANIFEST_LINKS"] = links
+
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
@@ -207,8 +211,6 @@ def _cargo_build_script_impl(ctx):
         ] + ctx.files.data + ctx.files.tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = toolchain_tools,
     )
-
-    links = ctx.attr.links or ""
 
     # dep_env_file contains additional environment variables coming from
     # direct dependency sys-crates' build scripts. These need to be made
