@@ -140,7 +140,12 @@ def _proc_macro_does_not_leak_lib_deps_test():
         target_compatible_with = NOT_WINDOWS,
     )
 
-proc_macro_does_not_leak_lib_deps_test = analysistest.make(_proc_macro_does_not_leak_lib_deps_impl, config_settings = {"@//rust/settings:pipelined_compilation": True})
+proc_macro_does_not_leak_lib_deps_test = analysistest.make(
+    _proc_macro_does_not_leak_lib_deps_impl,
+    config_settings = {
+        str(Label("//rust/settings:pipelined_compilation")): True,
+    },
+)
 
 def proc_macro_does_not_leak_deps_test_suite(name):
     """Entry-point macro called from the BUILD file.
