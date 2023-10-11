@@ -287,6 +287,14 @@ crates_repository(
             version = "1.0.105",
         ),
     },
+    annotations = {
+        "cxx": [
+            crate.annotation(
+                # Until https://github.com/dtolnay/cxx/pull/1257#issuecomment-1755816850 gets resolved.
+                deps = [":cxx_cc"],
+            ),
+        ],
+    },
     splicing_config = splicing_config(
         resolver_version = "2",
     ),

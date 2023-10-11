@@ -1,5 +1,5 @@
 {
-  "checksum": "8be96719f615bbe2ddff9c4bb131b70589dec6e2098e7460eee7d75f1c8ce159",
+  "checksum": "1c8a8ade9ae2054f346e20ad66cb1d2c0e95f4ec87cdb3299dc584df78f9b6a4",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -81,6 +81,12 @@
               "id": "link-cplusplus 1.0.9",
               "target": "link_cplusplus"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":cxx_cc"
           ],
           "selects": {}
         },

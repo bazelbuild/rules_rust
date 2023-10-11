@@ -368,6 +368,7 @@ pub struct AnnotationsProvidedByPackage {
     pub gen_build_script: Option<bool>,
     pub data: Option<BTreeSet<String>>,
     pub data_glob: Option<BTreeSet<String>>,
+    pub deps: Option<BTreeSet<StringOrSelect>>,
     pub compile_data: Option<BTreeSet<String>>,
     pub compile_data_glob: Option<BTreeSet<String>>,
     pub rustc_env: Option<BTreeMap<String, String>>,
@@ -387,6 +388,7 @@ impl CrateAnnotations {
             gen_build_script,
             data,
             data_glob,
+            deps,
             compile_data,
             compile_data_glob,
             rustc_env,
@@ -417,6 +419,7 @@ impl CrateAnnotations {
         default(&mut self.gen_build_script, gen_build_script);
         default(&mut self.data, data);
         default(&mut self.data_glob, data_glob);
+        default(&mut self.deps, deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
         default(&mut self.rustc_env, rustc_env);

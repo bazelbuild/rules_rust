@@ -391,7 +391,7 @@ impl Annotations {
                         // Mark that an annotation has been consumed
                         unused_extra_annotations.remove(id);
 
-                        // Fitler out the annotation
+                        // Filter out the annotation
                         extra
                     })
                     .cloned()
