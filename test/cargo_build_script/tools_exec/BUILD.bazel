@@ -15,6 +15,7 @@ cargo_build_script(
         "TOOL": "$(execpath :tool)",
     },
     edition = "2018",
+    links = "beep",
     # Add a flag to test that they're exposed to the build script
     rustc_flags = ["--verbose"],
     toolchains = ["//rust/toolchain:current_rust_toolchain"],
