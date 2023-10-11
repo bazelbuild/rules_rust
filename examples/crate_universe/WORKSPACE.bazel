@@ -277,6 +277,14 @@ no_cargo_crate_repositories()
 
 crates_repository(
     name = "using_cxx",
+    annotations = {
+        "cxx": [
+            crate.annotation(
+                # Until https://github.com/dtolnay/cxx/pull/1257#issuecomment-1755816850 gets resolved.
+                deps = [":cxx_cc"],
+            ),
+        ],
+    },
     cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -286,14 +294,6 @@ crates_repository(
         "cxx": crate.spec(
             version = "1.0.105",
         ),
-    },
-    annotations = {
-        "cxx": [
-            crate.annotation(
-                # Until https://github.com/dtolnay/cxx/pull/1257#issuecomment-1755816850 gets resolved.
-                deps = [":cxx_cc"],
-            ),
-        ],
     },
     splicing_config = splicing_config(
         resolver_version = "2",
