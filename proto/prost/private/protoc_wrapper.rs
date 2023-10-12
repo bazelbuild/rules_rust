@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter, Write};
 use std::fs;
+use std::io::BufRead;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
@@ -465,13 +466,10 @@ impl Args {
 
         let mut extra_args = Vec::new();
 
-        // Iterate over the given command line arguments parsing out arguments
-        // for the process runner and arguments for protoc and potentially spawn
-        // additional arguments needed by prost.
-        for arg in env::args().skip(1) {
+        let mut handle_arg = |arg: String| {
             if !arg.starts_with('-') {
                 proto_files.push(PathBuf::from(arg));
-                continue;
+                return;
             }
 
             if arg.starts_with("-I") {
@@ -480,17 +478,17 @@ impl Args {
                         .expect("Failed to strip -I")
                         .to_string(),
                 );
-                continue;
+                return;
             }
 
             if arg == "--is_tonic" {
                 is_tonic = true;
-                continue;
+                return;
             }
 
             if !arg.contains('=') {
                 extra_args.push(arg);
-                continue;
+                return;
             }
 
             let parts = arg.split_once('=').expect("Failed to split argument on =");
@@ -541,6 +539,22 @@ impl Args {
                 (arg, value) => {
                     extra_args.push(format!("{}={}", arg, value));
                 }
+            }
+        };
+
+        // Iterate over the given command line arguments parsing out arguments
+        // for the process runner and arguments for protoc and potentially spawn
+        // additional arguments needed by prost.
+        for arg in env::args().skip(1) {
+            if let Some(path) = arg.strip_prefix('@') {
+                // handle argfile
+                let file = std::fs::File::open(path)
+                    .map_err(|_| format!("could not open argfile: {}", arg))?;
+                for line in std::io::BufReader::new(file).lines() {
+                    handle_arg(line.map_err(|_| format!("could not read argfile: {}", arg))?);
+                }
+            } else {
+                handle_arg(arg);
             }
         }
 
