@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::process;
 use std::{env, fmt};
 
-use heck::ToSnakeCase;
+use heck::{ToSnakeCase, ToUpperCamelCase};
 use prost::Message;
 use prost_types::{
     DescriptorProto, EnumDescriptorProto, FileDescriptorProto, FileDescriptorSet,
@@ -351,7 +351,7 @@ fn message_type_to_extern_paths(
 
     extern_paths.insert(
         proto_path.join(message_type_name),
-        rust_path.join(message_type_name),
+        rust_path.join(&message_type_name.to_upper_camel_case()),
     );
 
     let name_lower = message_type_name.to_lowercase();
