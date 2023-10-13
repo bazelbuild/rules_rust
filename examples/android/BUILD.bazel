@@ -38,9 +38,9 @@ android_binary(
 )
 
 platform(
-    name = "android_aarch64",
+    name = "arm64-v8a",
     constraint_values = [
-        "@platforms//cpu:aarch64",
+        "@platforms//cpu:arm64",
         "@platforms//os:android",
     ],
 )

@@ -574,12 +574,20 @@ tasks:
     name: Android Examples
     platform: ubuntu2004
     working_directory: examples/android
+    bazel: "last_green"
+    build_flags:
+      - "--incompatible_enable_android_toolchain_resolution"
+      - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
   android_examples_macos:
     name: Android Examples
     platform: macos
     working_directory: examples/android
+    bazel: "last_green"
+    build_flags:
+      - "--incompatible_enable_android_toolchain_resolution"
+      - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
   ios_examples:
