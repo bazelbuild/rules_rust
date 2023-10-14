@@ -1,5 +1,5 @@
 {
-  "checksum": "0228cfef9fd54e916e9aa00486f13901aec64547da293627aabfb6bf1a426239",
+  "checksum": "2ac40591dc369d36ba80a6f16cd22421662cd96937636813a59af18726b8ad2c",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -217,9 +217,9 @@
       },
       "license": "Apache-2.0"
     },
-    "cxxbridge-cmd 1.0.105": {
+    "cxxbridge-cmd 1.0.109": {
       "name": "cxxbridge-cmd",
-      "version": "1.0.105",
+      "version": "1.0.109",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -253,7 +253,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.105"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -784,7 +784,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "cxxbridge-cmd 1.0.105": ""
+    "cxxbridge-cmd 1.0.109": ""
   },
   "conditions": {
     "aarch64-apple-darwin": [
