@@ -1,4 +1,4 @@
-**/Cargo.Bazel.lock linguist-generated
+**/*Cargo.Bazel.lock linguist-generated
 **/cargo-bazel-lock.json linguist-generated
 bindgen/3rdparty/crates/** linguist-generated
 crate_universe/3rdparty/crates/** linguist-generated
