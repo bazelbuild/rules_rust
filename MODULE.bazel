@@ -6,7 +6,7 @@ module(
 print("WARNING: The rules_rust Bazel module is still highly experimental and subject to change at any time. Only use it to try out bzlmod for now.")  # buildifier: disable=print
 
 bazel_dep(name = "platforms", version = "0.0.7")
-bazel_dep(name = "rules_cc", version = "0.0.1")
+bazel_dep(name = "rules_cc", version = "0.0.9")
 bazel_dep(name = "bazel_skylib", version = "1.2.0")
 bazel_dep(name = "apple_support", version = "1.3.1")
 
