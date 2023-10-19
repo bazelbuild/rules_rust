@@ -79,4 +79,4 @@ http_archive(
 # To run with RBE on Bazel CI, uncomment the following lines.
 #
 # load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")
-# rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu1604-bazel-java8")
+# rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu2004-bazel-java11")

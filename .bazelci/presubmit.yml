@@ -52,7 +52,7 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
-  rbe_ubuntu1604:
+  rbe_ubuntu2004:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -120,9 +120,9 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
-  rbe_ubuntu1604_with_aspects:
+  rbe_ubuntu2004_with_aspects:
     name: With Aspects
-    platform: rbe_ubuntu1604
+    platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -134,9 +134,9 @@ tasks:
       # TODO: This test does not work on RBE
       - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
-  rbe_ubuntu1604_rolling_with_aspects:
+  rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
-    platform: rbe_ubuntu1604
+    platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -373,9 +373,9 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     build_targets:
       - "//..."
-  rbe_ubuntu1604_examples:
+  rbe_ubuntu2004_examples:
     name: Examples
-    platform: rbe_ubuntu1604
+    platform: rbe_ubuntu2004
     working_directory: examples
     rbe_examples_targets: &rbe_examples_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -439,9 +439,9 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_rbe_ubuntu1604:
+  crate_universe_rbe_ubuntu2004:
     name: Crate Universe Examples
-    platform: rbe_ubuntu1604
+    platform: rbe_ubuntu2004
     working_directory: examples/crate_universe
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
@@ -452,9 +452,9 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_unnamed_rbe_ubuntu1604:
+  crate_universe_unnamed_rbe_ubuntu2004:
     name: Crate Universe Unnamed Examples
-    platform: rbe_ubuntu1604
+    platform: rbe_ubuntu2004
     working_directory: examples/crate_universe_unnamed
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
