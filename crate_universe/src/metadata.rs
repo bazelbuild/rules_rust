@@ -42,10 +42,20 @@ pub struct Generator {
 impl Generator {
     pub fn new() -> Self {
         Generator {
-            cargo_bin: Cargo::new(PathBuf::from(
-                env::var("CARGO").unwrap_or_else(|_| "cargo".to_string()),
-            )),
-            rustc_bin: PathBuf::from(env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string())),
+            // Since we may change directories, where cargo or rust are
+            // executed. We need to resovle the absolute path to the binaries.
+            cargo_bin: Cargo::new(match env::var("CARGO") {
+                Ok(path) => PathBuf::from(path)
+                    .canonicalize()
+                    .expect("Can not canonicalize cargo path"),
+                _ => PathBuf::from("cargo".to_string()),
+            }),
+            rustc_bin: match env::var("RUSTC") {
+                Ok(path) => PathBuf::from(path)
+                    .canonicalize()
+                    .expect("Can not canonicalize rustc path"),
+                _ => PathBuf::from("rustc".to_string()),
+            },
         }
     }
 
@@ -66,17 +76,22 @@ impl MetadataGenerator for Generator {
             .as_ref()
             .parent()
             .expect("The manifest should have a parent directory");
+        println!("Looking for a Cargo.lock file in {:?}", manifest_dir);
         let lockfile = {
             let lock_path = manifest_dir.join("Cargo.lock");
             if !lock_path.exists() {
                 bail!("No `Cargo.lock` file was found with the given manifest")
             }
-            cargo_lock::Lockfile::load(lock_path)?
+            cargo_lock::Lockfile::load(lock_path).expect("Can not lockfile")
         };
 
         let metadata = self
             .cargo_bin
-            .metadata_command()?
+            .metadata_command()
+            .expect("Can not create cargo metadata command")
+            .verbose(true)
+            .env("RUSTC", self.rustc_bin.to_str().unwrap())
+            .features(cargo_metadata::CargoOpt::AllFeatures)
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
             .other_options(["--locked".to_owned()])
@@ -714,5 +729,28 @@ mod test {
                 ),
             ])
         );
+    }
+
+    #[test]
+    fn generate_metadata_for_crate_with_optional_deps() {
+        let cargo_home: PathBuf = PathBuf::from(
+            env::var("TEST_TMPDIR").expect("TEST_TMPDIR environment variable must be set."),
+        )
+        .join("cargo_home");
+        env::set_var("CARGO_HOME", cargo_home.as_os_str());
+        fs::create_dir_all(&cargo_home).expect("Can not create directories");
+
+        let generator = Generator::new();
+        let runfiles = runfiles::Runfiles::create().unwrap();
+        let matinfest_path = runfiles
+            .rlocation("rules_rust/crate_universe/test_data/crate_with_features/Cargo.toml");
+        let result = generator.generate(matinfest_path);
+
+        let (metadata, _lockfile) = result.expect("Failed to generate metadata");
+        let resolve = metadata.resolve.unwrap();
+        assert!(resolve
+            .nodes
+            .iter()
+            .any(|n| n.id.repr.starts_with("notify")));
     }
 }

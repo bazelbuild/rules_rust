@@ -86,6 +86,13 @@ rust_test(
         "@rules_rust//rust/toolchain:current_cargo_files",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],
+    # There are private functions in cargo_bazel crate, that use CARGO
+    # and RUSTC. In order to test them, we need to set these environment
+    # variables.
+    env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
+    },
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),

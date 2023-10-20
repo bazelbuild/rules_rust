@@ -142,6 +142,9 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps_dev: SelectList<CrateDependency>,
 
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub all_optional_deps: SelectList<CrateDependency>,
+
     #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
     pub rustc_env: SelectStringDict,
 
@@ -174,6 +177,7 @@ impl Default for CommonAttributes {
             proc_macro_deps: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps_dev: Default::default(),
+            all_optional_deps: Default::default(),
             rustc_env: Default::default(),
             rustc_env_files: Default::default(),
             rustc_flags: Default::default(),
@@ -364,6 +368,7 @@ impl CrateContext {
             .proc_macro_dev_deps
             .clone()
             .map(new_crate_dep);
+        let all_optional_deps = annotation.deps.all_optional_deps.clone().map(new_crate_dep);
 
         // Gather all "common" attributes
         let mut common_attrs = CommonAttributes {
@@ -377,6 +382,7 @@ impl CrateContext {
             edition: package.edition.as_str().to_string(),
             proc_macro_deps,
             proc_macro_deps_dev,
+            all_optional_deps,
             version: package.version.to_string(),
             ..Default::default()
         };

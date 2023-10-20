@@ -1,5 +1,7 @@
 //! Gathering dependencies is the largest part of annotating.
 
+use std::collections::HashSet;
+
 use anyhow::{bail, Result};
 use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
 use cargo_platform::Platform;
@@ -31,6 +33,7 @@ pub struct DependencySet {
     pub build_deps: SelectList<Dependency>,
     pub build_link_deps: SelectList<Dependency>,
     pub build_proc_macro_deps: SelectList<Dependency>,
+    pub all_optional_deps: SelectList<Dependency>,
 }
 
 impl DependencySet {
@@ -44,6 +47,7 @@ impl DependencySet {
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
+                .filter(|dep| !is_optional_dependency(dep, metadata, node))
                 .partition(|dep| is_dev_dependency(dep));
 
             (
@@ -60,6 +64,7 @@ impl DependencySet {
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
                 .filter(|dep| !is_build_dependency(dep))
+                .filter(|dep| !is_optional_dependency(dep, metadata, node))
                 .partition(|dep| is_dev_dependency(dep));
 
             (
@@ -78,6 +83,7 @@ impl DependencySet {
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_build_dependency(dep))
                 .filter(|dep| !is_dev_dependency(dep))
+                .filter(|dep| !is_optional_dependency(dep, metadata, node))
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
 
             (
@@ -108,6 +114,13 @@ impl DependencySet {
                 });
         });
 
+        let all_optional = node
+            .deps
+            .iter()
+            .filter(|dep| is_optional_dependency(dep, metadata, node))
+            .collect();
+        let all_optional_deps = collect_deps_selectable(node, all_optional, metadata);
+
         Self {
             normal_deps,
             normal_dev_deps,
@@ -116,6 +129,7 @@ impl DependencySet {
             build_deps,
             build_link_deps,
             build_proc_macro_deps,
+            all_optional_deps,
         }
     }
 }
@@ -231,6 +245,45 @@ fn is_workspace_member(node_dep: &NodeDep, metadata: &CargoMetadata) -> bool {
         .workspace_members
         .iter()
         .any(|id| id == &node_dep.pkg)
+}
+
+fn is_optional_dependency(node_dep: &NodeDep, metadata: &CargoMetadata, node: &Node) -> bool {
+    // If node is the workspace member, then we check if node_dep is its optional dependency.
+    // if it is not, then it is a transitive dependency. And we treat it as non-optional,
+    // since cargo resolved it and included into manifest.
+    if !metadata.workspace_members.iter().any(|id| id == &node.id) {
+        return false;
+    }
+
+    let is_optional = metadata[&node.id].dependencies.iter().any(|dep| {
+        let normalized_dep_name = dep.name.replace('-', "_");
+        let normalized_node_dep_name = node_dep.name.replace('-', "_");
+        normalized_dep_name == normalized_node_dep_name && dep.optional
+    });
+    if !is_optional {
+        return false;
+    }
+
+    // Recursively go through all the features and check if any of them enables the dependency
+    let mut features_to_explore = vec!["default".to_string()];
+    let mut explored_features = HashSet::new();
+    while let Some(feature) = features_to_explore.pop() {
+        if explored_features.contains(&feature) {
+            continue;
+        }
+        explored_features.insert(feature.clone());
+        let required = metadata[&node.id].features[&feature].iter().all(|dep| {
+            if dep == &format!("dep:{}", node_dep.name) {
+                return true;
+            }
+            features_to_explore.push(dep.clone());
+            true
+        });
+        if required {
+            return false;
+        }
+    }
+    true
 }
 
 fn get_library_target_name(package: &Package, potential_name: &str) -> Result<String> {

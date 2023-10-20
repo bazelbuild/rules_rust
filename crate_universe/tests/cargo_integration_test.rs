@@ -31,7 +31,7 @@ fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
         env::set_var("RUSTC", rustc.as_os_str());
     }
 
-    let cargo_home = PathBuf::from(
+    let cargo_home: PathBuf = PathBuf::from(
         env::var("TEST_TMPDIR").context("TEST_TMPDIR environment variable must be set.")?,
     )
     .join("cargo_home");

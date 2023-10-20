@@ -171,6 +171,7 @@ impl Context {
                     &ctx.common_attrs.deps_dev,
                     &ctx.common_attrs.proc_macro_deps,
                     &ctx.common_attrs.proc_macro_deps_dev,
+                    &ctx.common_attrs.all_optional_deps,
                 ])
                 .flat_map(|deps| {
                     deps.configurations().into_iter().flat_map(move |conf| {
