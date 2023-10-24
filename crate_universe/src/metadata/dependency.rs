@@ -59,7 +59,7 @@ impl DependencySet {
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
-                .filter(|dep| !is_build_dependency(dep))
+                .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
 
             (
@@ -602,6 +602,23 @@ mod test {
             ]),
             libc_cfgs,
         );
+    }
+
+    #[test]
+    fn multi_kind_proc_macro_dep() {
+        let metadata = metadata::multi_kind_proc_macro_dep();
+
+        let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        let result: Vec<_> = dependencies
+            .proc_macro_deps
+            .get_iter(None)
+            .unwrap()
+            .map(|dep| dep.target_name.clone())
+            .collect();
+
+        assert_eq!(result, vec!["paste"]);
     }
 
     #[test]

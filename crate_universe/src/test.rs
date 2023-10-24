@@ -75,6 +75,14 @@ pub mod metadata {
         .unwrap()
     }
 
+    pub fn multi_kind_proc_macro_dep() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/multi_kind_proc_macro_dep/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub fn no_deps() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
