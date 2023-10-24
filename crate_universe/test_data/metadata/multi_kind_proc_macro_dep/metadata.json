@@ -1,0 +1,297 @@
+{
+  "packages": [
+    {
+      "name": "multi-kind-proc-macro-dep",
+      "version": "0.1.0",
+      "id": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)",
+      "license": null,
+      "license_file": null,
+      "description": null,
+      "source": null,
+      "dependencies": [
+        {
+          "name": "paste",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "=1.0.14",
+          "kind": null,
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        },
+        {
+          "name": "paste",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "=1.0.14",
+          "kind": "build",
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        }
+      ],
+      "targets": [
+        {
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ],
+          "name": "multi-kind-proc-macro-dep",
+          "src_path": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/lib.rs",
+          "edition": "2018",
+          "doc": true,
+          "doctest": true,
+          "test": true
+        }
+      ],
+      "features": {},
+      "manifest_path": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/Cargo.toml",
+      "metadata": null,
+      "publish": null,
+      "authors": [],
+      "categories": [],
+      "keywords": [],
+      "readme": null,
+      "repository": null,
+      "homepage": null,
+      "documentation": null,
+      "edition": "2018",
+      "links": null,
+      "default_run": null,
+      "rust_version": null
+    },
+    {
+      "name": "paste",
+      "version": "1.0.14",
+      "id": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+      "license": "MIT OR Apache-2.0",
+      "license_file": null,
+      "description": "Macros for all your token pasting needs",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "dependencies": [
+        {
+          "name": "paste-test-suite",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "^0",
+          "kind": "dev",
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        },
+        {
+          "name": "rustversion",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "^1.0",
+          "kind": "dev",
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        },
+        {
+          "name": "trybuild",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "^1.0.49",
+          "kind": "dev",
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [
+            "diff"
+          ],
+          "target": null,
+          "registry": null
+        }
+      ],
+      "targets": [
+        {
+          "kind": [
+            "proc-macro"
+          ],
+          "crate_types": [
+            "proc-macro"
+          ],
+          "name": "paste",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/src/lib.rs",
+          "edition": "2018",
+          "doc": true,
+          "doctest": true,
+          "test": true
+        },
+        {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "test_doc",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_doc.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "test_item",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_item.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "test_attr",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_attr.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "test_expr",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_expr.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        {
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "compiletest",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/compiletest.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": true
+        },
+        {
+          "kind": [
+            "custom-build"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "build-script-build",
+          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/build.rs",
+          "edition": "2018",
+          "doc": false,
+          "doctest": false,
+          "test": false
+        }
+      ],
+      "features": {},
+      "manifest_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/Cargo.toml",
+      "metadata": {
+        "docs": {
+          "rs": {
+            "rustdoc-args": [
+              "--generate-link-to-definition"
+            ],
+            "targets": [
+              "x86_64-unknown-linux-gnu"
+            ]
+          }
+        }
+      },
+      "publish": null,
+      "authors": [
+        "David Tolnay <dtolnay@gmail.com>"
+      ],
+      "categories": [
+        "development-tools",
+        "no-std",
+        "no-std::no-alloc"
+      ],
+      "keywords": [
+        "macros"
+      ],
+      "readme": "README.md",
+      "repository": "https://github.com/dtolnay/paste",
+      "homepage": null,
+      "documentation": null,
+      "edition": "2018",
+      "links": null,
+      "default_run": null,
+      "rust_version": "1.31"
+    }
+  ],
+  "workspace_members": [
+    "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+  ],
+  "workspace_default_members": [
+    "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+  ],
+  "resolve": {
+    "nodes": [
+      {
+        "id": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)",
+        "dependencies": [
+          "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+        ],
+        "deps": [
+          {
+            "name": "paste",
+            "pkg": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+            "dep_kinds": [
+              {
+                "kind": null,
+                "target": null
+              },
+              {
+                "kind": "build",
+                "target": null
+              }
+            ]
+          }
+        ],
+        "features": []
+      },
+      {
+        "id": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+        "dependencies": [],
+        "deps": [],
+        "features": []
+      }
+    ],
+    "root": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+  },
+  "target_directory": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/target",
+  "version": 1,
+  "workspace_root": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep",
+  "metadata": null
+}
