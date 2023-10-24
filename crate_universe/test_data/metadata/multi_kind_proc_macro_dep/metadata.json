@@ -3,7 +3,7 @@
     {
       "name": "multi-kind-proc-macro-dep",
       "version": "0.1.0",
-      "id": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)",
+      "id": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TMP_DIR}/multi_kind_proc_macro_dep)",
       "license": null,
       "license_file": null,
       "description": null,
@@ -43,7 +43,7 @@
             "lib"
           ],
           "name": "multi-kind-proc-macro-dep",
-          "src_path": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/lib.rs",
+          "src_path": "{TMP_DIR}/multi_kind_proc_macro_dep/lib.rs",
           "edition": "2018",
           "doc": true,
           "doctest": true,
@@ -51,7 +51,7 @@
         }
       ],
       "features": {},
-      "manifest_path": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/Cargo.toml",
+      "manifest_path": "{TMP_DIR}/multi_kind_proc_macro_dep/Cargo.toml",
       "metadata": null,
       "publish": null,
       "authors": [],
@@ -123,7 +123,7 @@
             "proc-macro"
           ],
           "name": "paste",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/src/lib.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/src/lib.rs",
           "edition": "2018",
           "doc": true,
           "doctest": true,
@@ -137,7 +137,7 @@
             "bin"
           ],
           "name": "test_doc",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_doc.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_doc.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -151,7 +151,7 @@
             "bin"
           ],
           "name": "test_item",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_item.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_item.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -165,7 +165,7 @@
             "bin"
           ],
           "name": "test_attr",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_attr.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_attr.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -179,7 +179,7 @@
             "bin"
           ],
           "name": "test_expr",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_expr.rs",
+          "src_path": "{CARGO_HOME}registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/test_expr.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -193,7 +193,7 @@
             "bin"
           ],
           "name": "compiletest",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/compiletest.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/tests/compiletest.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -207,7 +207,7 @@
             "bin"
           ],
           "name": "build-script-build",
-          "src_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/build.rs",
+          "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/build.rs",
           "edition": "2018",
           "doc": false,
           "doctest": false,
@@ -215,7 +215,7 @@
         }
       ],
       "features": {},
-      "manifest_path": "/home/ulan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/Cargo.toml",
+      "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/paste-1.0.14/Cargo.toml",
       "metadata": {
         "docs": {
           "rs": {
@@ -251,15 +251,15 @@
     }
   ],
   "workspace_members": [
-    "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+    "multi-kind-proc-macro-dep 0.1.0 (path+file://{TMP_DIR}/multi_kind_proc_macro_dep)"
   ],
   "workspace_default_members": [
-    "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+    "multi-kind-proc-macro-dep 0.1.0 (path+file://{TMP_DIR}/multi_kind_proc_macro_dep)"
   ],
   "resolve": {
     "nodes": [
       {
-        "id": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)",
+        "id": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TMP_DIR}/multi_kind_proc_macro_dep)",
         "dependencies": [
           "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
         ],
@@ -288,10 +288,10 @@
         "features": []
       }
     ],
-    "root": "multi-kind-proc-macro-dep 0.1.0 (path+file:///home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep)"
+    "root": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TMP_DIR}/multi_kind_proc_macro_dep)"
   },
-  "target_directory": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep/target",
+  "target_directory": "{TMP_DIR}/multi_kind_proc_macro_dep/target",
   "version": 1,
-  "workspace_root": "/home/ulan/rules_rust/crate_universe/test_data/metadata/multi_kind_proc_macro_dep",
+  "workspace_root": "{TMP_DIR}/multi_kind_proc_macro_dep",
   "metadata": null
 }
