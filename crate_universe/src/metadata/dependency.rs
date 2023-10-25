@@ -611,14 +611,21 @@ mod test {
         let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let result: Vec<_> = dependencies
+        let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
             .get_iter(None)
             .unwrap()
             .map(|dep| dep.target_name.clone())
             .collect();
+        assert_eq!(lib_deps, vec!["paste"]);
 
-        assert_eq!(result, vec!["paste"]);
+        let build_deps: Vec<_> = dependencies
+            .build_proc_macro_deps
+            .get_iter(None)
+            .unwrap()
+            .map(|dep| dep.target_name.clone())
+            .collect();
+        assert_eq!(build_deps, vec!["paste"]);
     }
 
     #[test]
