@@ -109,7 +109,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
 | <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional | <code>600</code> |
-| <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | <code>"1.72.1"</code> |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of cargo the resolver should use   | String | optional | <code>"1.73.0"</code> |
 
 
 <a id="cargo_dep_env"></a>
@@ -1545,8 +1545,9 @@ A collection of files either found within the `rust-stdlib` artifact or generate
 ## cargo_build_script
 
 <pre>
-cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>, <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-tools">tools</a>,
-                   <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
+cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
+                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>,
+                   <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -1613,12 +1614,18 @@ The `hello_lib` target will be build with the flags and the environment variable
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
 | <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of <code>_build_script</code>.   |  none |
+| <a id="cargo_build_script-edition"></a>edition |  The rust edition to use for the internal binary crate.   |  `None` |
+| <a id="cargo_build_script-crate_name"></a>crate_name |  Crate name to use for build script.   |  `None` |
+| <a id="cargo_build_script-crate_root"></a>crate_root |  The file that will be passed to rustc to be used for building this crate.   |  `None` |
+| <a id="cargo_build_script-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.   |  `[]` |
 | <a id="cargo_build_script-crate_features"></a>crate_features |  A list of features to enable for the build script.   |  `[]` |
 | <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  `None` |
 | <a id="cargo_build_script-deps"></a>deps |  The build-dependencies of the crate.   |  `[]` |
 | <a id="cargo_build_script-link_deps"></a>link_deps |  The subset of the (normal) dependencies of the crate that have the links attribute and therefore provide environment variables to this build script.   |  `[]` |
+| <a id="cargo_build_script-proc_macro_deps"></a>proc_macro_deps |  List of rust_proc_macro targets used to build the script.   |  `[]` |
 | <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  `{}` |
 | <a id="cargo_build_script-data"></a>data |  Files needed by the build script.   |  `[]` |
+| <a id="cargo_build_script-compile_data"></a>compile_data |  Files needed for the compilation of the build script.   |  `[]` |
 | <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  `[]` |
 | <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  `None` |
 | <a id="cargo_build_script-rundir"></a>rundir |  A directory to <code>cd</code> to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to <code>.</code>, the cargo build script will run in the exec root.   |  `None` |
@@ -1626,6 +1633,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.   |  `[]` |
 | <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  `None` |
 | <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  `None` |
+| <a id="cargo_build_script-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target.             These are other <code>rust_library</code> targets and will be presented as the new name given.   |  `None` |
 | <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule. An exception is the <code>compatible_with</code> attribute, which shouldn't be forwarded to the <code>rust_binary</code>, as the <code>rust_binary</code> is only built and used in <code>exec</code> mode. We propagate the <code>compatible_with</code> attribute to the <code>_build_scirpt_run</code> target.   |  none |
 
 
@@ -1905,7 +1913,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-global_allocator_library"></a>global_allocator_library |  Target that provides allocator functions when global allocator is used with cc_common.link.   |  `None` |
 | <a id="rust_register_toolchains-iso_date"></a>iso_date |  **Deprecated**: Use <code>versions</code> instead.   |  `None` |
 | <a id="rust_register_toolchains-register_toolchains"></a>register_toolchains |  If true, repositories will be generated to produce and register <code>rust_toolchain</code> targets.   |  `True` |
-| <a id="rust_register_toolchains-rustfmt_version"></a>rustfmt_version |  The version of rustfmt.   |  `"nightly/2023-09-19"` |
+| <a id="rust_register_toolchains-rustfmt_version"></a>rustfmt_version |  The version of rustfmt.   |  `"nightly/2023-10-05"` |
 | <a id="rust_register_toolchains-rust_analyzer_version"></a>rust_analyzer_version |  The version of Rustc to pair with rust-analyzer.   |  `None` |
 | <a id="rust_register_toolchains-sha256s"></a>sha256s |  A dict associating tool subdirectories to sha256 hashes.   |  `None` |
 | <a id="rust_register_toolchains-extra_target_triples"></a>extra_target_triples |  Additional rust-style targets that rust toolchains should support.   |  `["wasm32-unknown-unknown", "wasm32-wasi"]` |

@@ -1,5 +1,5 @@
 {
-  "checksum": "bccba273c0f0cc6d41ccd090a7bb2acf16e83d881d0ec28c4185d5b00f208ce4",
+  "checksum": "71b6f19ac904caf96b1b84bdca72bfc5ef2b8696396d04314ebb4be13c98f62a",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -42,13 +42,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxx 1.0.105": {
+    "cxx 1.0.109": {
       "name": "cxx",
-      "version": "1.0.105",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxx/1.0.105/download",
-          "sha256": "666a3ec767f4bbaf0dcfcc3b4ea048b90520b254fdf88813e763f4c762636c14"
+          "url": "https://crates.io/api/v1/crates/cxx/1.0.109/download",
+          "sha256": "c390c123d671cc547244943ecad81bdaab756c6ea332d9ca9c1f48d952a24895"
         }
       },
       "targets": [
@@ -84,17 +84,23 @@
           ],
           "selects": {}
         },
+        "extra_deps": {
+          "common": [
+            ":cxx_cc"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
         "proc_macro_deps": {
           "common": [
             {
-              "id": "cxxbridge-macro 1.0.105",
+              "id": "cxxbridge-macro 1.0.109",
               "target": "cxxbridge_macro"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.105"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0",
       "additive_build_file_content": "cc_library(\n    name = \"cxx_cc\",\n    srcs = [\"src/cxx.cc\"],\n    hdrs = [\"include/cxx.h\"],\n    include_prefix = \"rust\",\n    includes = [\"include\"],\n    linkstatic = True,\n    strip_include_prefix = \"include\",\n    visibility = [\"//visibility:public\"],\n)\n",
@@ -102,13 +108,13 @@
         "cxx_cc": "cxx_cc"
       }
     },
-    "cxxbridge-flags 1.0.105": {
+    "cxxbridge-flags 1.0.109": {
       "name": "cxxbridge-flags",
-      "version": "1.0.105",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.105/download",
-          "sha256": "d6e8c238aadc4b9f2c00269d04c87abb23f96dd240803872536eed1a304bb40e"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.109/download",
+          "sha256": "94415827ecfea0f0c74c8cad7d1a86ddb3f05354d6a6ddeda0adee5e875d2939"
         }
       },
       "targets": [
@@ -134,17 +140,17 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.105"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxxbridge-macro 1.0.105": {
+    "cxxbridge-macro 1.0.109": {
       "name": "cxxbridge-macro",
-      "version": "1.0.105",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.105/download",
-          "sha256": "59d9ffb4193dd22180b8d5747b1e095c3d9c9c665ce39b0483a488948f437e06"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.109/download",
+          "sha256": "e33dbbe9f5621c9247f97ec14213b04f350bff4b6cebefe834c60055db266ecf"
         }
       },
       "targets": [
@@ -181,7 +187,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.105"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -208,7 +214,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx 1.0.105",
+              "id": "cxx 1.0.109",
               "target": "cxx"
             }
           ],

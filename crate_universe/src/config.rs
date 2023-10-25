@@ -144,7 +144,7 @@ impl From<GitReference> for Commitish {
 }
 /// A value which may either be a plain String, or a dict of platform triples
 /// (or other cfg expressions understood by `crate::context::platforms::resolve_cfg_platforms`) to Strings.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(untagged)]
 pub enum StringOrSelect {
     Value(String),
@@ -179,11 +179,11 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
-    pub deps: Option<BTreeSet<String>>,
+    pub deps: Option<BTreeSet<StringOrSelect>>,
 
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
-    pub proc_macro_deps: Option<BTreeSet<String>>,
+    pub proc_macro_deps: Option<BTreeSet<StringOrSelect>>,
 
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
@@ -222,19 +222,19 @@ pub struct CrateAnnotations {
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
-    pub build_script_deps: Option<BTreeSet<String>>,
+    pub build_script_deps: Option<BTreeSet<StringOrSelect>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
-    pub build_script_proc_macro_deps: Option<BTreeSet<String>>,
+    pub build_script_proc_macro_deps: Option<BTreeSet<StringOrSelect>>,
 
     /// Additional data to pass to a build script's
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-data) attribute.
-    pub build_script_data: Option<BTreeSet<String>>,
+    pub build_script_data: Option<BTreeSet<StringOrSelect>>,
 
     /// Additional data to pass to a build script's
     /// [tools](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-tools) attribute.
-    pub build_script_tools: Option<BTreeSet<String>>,
+    pub build_script_tools: Option<BTreeSet<StringOrSelect>>,
 
     /// An optional glob pattern to set on the
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env) attribute.
@@ -246,7 +246,7 @@ pub struct CrateAnnotations {
 
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_rustc_env: Option<BTreeMap<String, String>>,
+    pub build_script_rustc_env: Option<BTreeMap<String, StringOrSelect>>,
 
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
@@ -368,13 +368,14 @@ pub struct AnnotationsProvidedByPackage {
     pub gen_build_script: Option<bool>,
     pub data: Option<BTreeSet<String>>,
     pub data_glob: Option<BTreeSet<String>>,
+    pub deps: Option<BTreeSet<StringOrSelect>>,
     pub compile_data: Option<BTreeSet<String>>,
     pub compile_data_glob: Option<BTreeSet<String>>,
     pub rustc_env: Option<BTreeMap<String, String>>,
     pub rustc_env_files: Option<BTreeSet<String>>,
     pub rustc_flags: Option<Vec<String>>,
     pub build_script_env: Option<BTreeMap<String, StringOrSelect>>,
-    pub build_script_rustc_env: Option<BTreeMap<String, String>>,
+    pub build_script_rustc_env: Option<BTreeMap<String, StringOrSelect>>,
     pub build_script_rundir: Option<String>,
     pub additive_build_file_content: Option<String>,
     pub extra_aliased_targets: Option<BTreeMap<String, String>>,
@@ -387,6 +388,7 @@ impl CrateAnnotations {
             gen_build_script,
             data,
             data_glob,
+            deps,
             compile_data,
             compile_data_glob,
             rustc_env,
@@ -417,6 +419,7 @@ impl CrateAnnotations {
         default(&mut self.gen_build_script, gen_build_script);
         default(&mut self.data, data);
         default(&mut self.data_glob, data_glob);
+        default(&mut self.deps, deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
         default(&mut self.rustc_env, rustc_env);

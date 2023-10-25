@@ -99,8 +99,8 @@ We test these rules against the latest rolling releases of Bazel, and aim for co
 
 ## Supported platforms
 
-We aim to support Linux, macOS, and Windows.
+We aim to support Linux and macOS.
 
-Windows support is less complete than the other two platforms, but most things work, and we welcome contributions to help improve its support.
+We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.
 
 Windows support for some features requires `--enable_runfiles` to be passed to Bazel, we recommend putting it in your bazelrc. See [Using Bazel on Windows](https://bazel.build/configure/windows) for more Windows-specific recommendations.

@@ -12,7 +12,7 @@ NOT_WINDOWS = select({
 })
 
 ENABLE_PIPELINING = {
-    "@//rust/settings:pipelined_compilation": True,
+    str(Label("//rust/settings:pipelined_compilation")): True,
 }
 
 def _second_lib_test_impl(ctx):

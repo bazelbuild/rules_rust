@@ -160,7 +160,7 @@ def _compile_rust(ctx, attr, crate_name, src, deps, edition):
         ctx = ctx,
         attr = attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = "rlib",
             root = src,

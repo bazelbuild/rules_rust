@@ -126,6 +126,7 @@ def _clippy_aspect_impl(target, ctx):
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
+        skip_expanding_rustc_env = True,
     )
 
     if crate_info.is_test:

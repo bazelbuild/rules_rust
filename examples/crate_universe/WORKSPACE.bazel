@@ -284,7 +284,7 @@ crates_repository(
     lockfile = "//using_cxx:cargo-bazel-lock.json",
     packages = {
         "cxx": crate.spec(
-            version = "1.0.105",
+            version = "1.0.109",
         ),
     },
     splicing_config = splicing_config(
@@ -320,10 +320,10 @@ rust_binary(
     ),
 )
     """,
-    sha256 = "0b3eea393dbcbc1e875302846de4e4f9a31bf2e57ad3657bc83d61d00293b0fe",
-    strip_prefix = "cxxbridge-cmd-1.0.105",
+    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
+    strip_prefix = "cxxbridge-cmd-1.0.109",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.105/download"],
+    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
 )
 
 crates_repository(

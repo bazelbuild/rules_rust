@@ -1,9 +1,6 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:common.bzl", "rust_common")
-
-# buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 # buildifier: disable=bzl-visibility
@@ -52,7 +49,7 @@ EOF
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = crate_type,
             root = rs_file,

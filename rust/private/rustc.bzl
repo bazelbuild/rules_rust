@@ -787,7 +787,8 @@ def construct_arguments(
         remap_path_prefix = "",
         use_json_output = False,
         build_metadata = False,
-        force_depend_on_objects = False):
+        force_depend_on_objects = False,
+        skip_expanding_rustc_env = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -817,6 +818,7 @@ def construct_arguments(
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
+        skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
 
     Returns:
         tuple: A tuple of the following items
@@ -1027,11 +1029,14 @@ def construct_arguments(
     env.update(toolchain.env)
 
     # Update environment with user provided variables.
-    env.update(expand_dict_value_locations(
-        ctx,
-        crate_info.rustc_env,
-        data_paths,
-    ))
+    if skip_expanding_rustc_env:
+        env.update(crate_info.rustc_env)
+    else:
+        env.update(expand_dict_value_locations(
+            ctx,
+            crate_info.rustc_env,
+            data_paths,
+        ))
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
@@ -1079,21 +1084,23 @@ def rustc_compile_action(
         ctx,
         attr,
         toolchain,
-        crate_info,
-        output_hash = None,
         rust_flags = [],
-        force_all_deps_direct = False):
+        output_hash = None,
+        force_all_deps_direct = False,
+        crate_info_dict = None,
+        skip_expanding_rustc_env = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
         ctx (ctx): The rule's context object
         attr (struct): Attributes to use for the rust compile action
         toolchain (rust_toolchain): The current `rust_toolchain`
-        crate_info (CrateInfo): The CrateInfo provider for the current target.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        crate_info_dict: A mutable dict used to create CrateInfo provider
+        skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
 
     Returns:
         list: A list of the following providers:
@@ -1101,7 +1108,11 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
-    build_metadata = getattr(crate_info, "metadata", None)
+    crate_info = rust_common.create_crate_info(**crate_info_dict)
+
+    build_metadata = None
+    if "metadata" in crate_info_dict:
+        build_metadata = crate_info_dict["metadata"]
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -1119,9 +1130,9 @@ def rustc_compile_action(
             experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
 
     dep_info, build_info, linkstamps = collect_deps(
-        deps = crate_info.deps,
-        proc_macro_deps = crate_info.proc_macro_deps,
-        aliases = crate_info.aliases,
+        deps = crate_info_dict["deps"],
+        proc_macro_deps = crate_info_dict["proc_macro_deps"],
+        aliases = crate_info_dict["aliases"],
         are_linkstamps_supported = _are_linkstamps_supported(
             feature_configuration = feature_configuration,
             has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
@@ -1181,6 +1192,7 @@ def rustc_compile_action(
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata),
+        skip_expanding_rustc_env = skip_expanding_rustc_env,
     )
 
     args_metadata = None
@@ -1210,6 +1222,8 @@ def rustc_compile_action(
         )
 
     env = dict(ctx.configuration.default_shell_env)
+
+    # this is the final list of env vars
     env.update(env_from_args)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
@@ -1420,6 +1434,12 @@ def rustc_compile_action(
             **instrumented_files_kwargs
         ),
     ]
+
+    if crate_info_dict != None:
+        crate_info_dict.update({
+            "rustc_env": env,
+        })
+        crate_info = rust_common.create_crate_info(**crate_info_dict)
 
     if crate_info.type in ["staticlib", "cdylib"]:
         # These rules are not supposed to be depended on by other rust targets, and

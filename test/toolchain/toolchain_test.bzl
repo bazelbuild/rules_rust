@@ -41,7 +41,7 @@ def _toolchain_adds_rustc_flags_impl(ctx):
 toolchain_adds_rustc_flags_test = analysistest.make(
     _toolchain_adds_rustc_flags_impl,
     config_settings = {
-        "@//:extra_rustc_flags": [CONFIG_FLAG],
+        str(Label("//:extra_rustc_flags")): [CONFIG_FLAG],
     },
 )
 

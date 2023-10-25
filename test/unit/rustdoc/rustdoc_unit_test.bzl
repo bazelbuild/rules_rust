@@ -132,7 +132,7 @@ rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_li
 rustdoc_with_args_test = analysistest.make(_rustdoc_with_args_test_impl)
 rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
-    "@//:error_format": "json",
+    str(Label("//:error_format")): "json",
 })
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
