@@ -412,8 +412,6 @@ tasks:
       - "//..."
       # The proto rules do not work on windows
       - "-//proto/..."
-      # The wasm rules do not work on windows
-      - "-//wasm/..."
       # The bindgen rules are currently broken on windows
       # https://github.com/bazelbuild/rules_rust/issues/2009
       - "-//bindgen/..."
