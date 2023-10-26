@@ -1,7 +1,7 @@
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:rust.bzl", "rust_library_without_process_wrapper")
+load("@rules_rust//rust/private:rust.bzl", "rust_library_with_basic_process_wrapper")
 
-rust_library_without_process_wrapper(
+rust_library_with_basic_process_wrapper(
     name = "tinyjson",
     srcs = glob(["src/*.rs"]),
     edition = "2018",

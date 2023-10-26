@@ -1049,12 +1049,12 @@ rust_binary = rule(
 """),
 )
 
-def _common_attrs_for_binary_without_process_wrapper(attrs):
+def _common_attrs_for_binary_with_basic_process_wrapper(attrs):
     new_attr = dict(attrs)
 
     # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
-        default = None,
+        default = Label("//util/process_wrapper:basic_process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",
@@ -1063,7 +1063,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
     # fix stamp = 0
     new_attr["stamp"] = attr.int(
         doc = dedent("""\
-            Fix `stamp = 0` as stamping is not supported when building without process_wrapper:
+            Fix `stamp = 0` as stamping is not supported when building with the basic process_wrapper:
             https://github.com/bazelbuild/rules_rust/blob/8df4517d370b0c543a01ba38b63e1d5a4104b035/rust/private/rustc.bzl#L955
         """),
         default = 0,
@@ -1075,10 +1075,10 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 # Provides an internal rust_{binary,library} to use that we can use to build the process
 # wrapper, this breaks the dependency of rust_* on the process wrapper by
 # setting it to None, which the functions in rustc detect and build accordingly.
-rust_binary_without_process_wrapper = rule(
+rust_binary_with_basic_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items()),
+    attrs = _common_attrs_for_binary_with_basic_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -1089,10 +1089,10 @@ rust_binary_without_process_wrapper = rule(
     incompatible_use_toolchain_transition = True,
 )
 
-rust_library_without_process_wrapper = rule(
+rust_library_with_basic_process_wrapper = rule(
     implementation = _rust_library_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
+    attrs = dict(_common_attrs_for_binary_with_basic_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
