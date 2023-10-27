@@ -1060,6 +1060,13 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
         cfg = "exec",
     )
 
+    new_attr["_bootstrap_process_wrapper"] = attr.label(
+        default = Label("//util/process_wrapper:bootstrap_process_wrapper"),
+        executable = True,
+        allow_single_file = True,
+        cfg = "exec",
+    )
+
     # fix stamp = 0
     new_attr["stamp"] = attr.int(
         doc = dedent("""\
