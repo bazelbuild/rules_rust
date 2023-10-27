@@ -1038,9 +1038,6 @@ def construct_arguments(
             data_paths,
         ))
 
-    # Ensure the sysroot is set for the target platform
-    env["SYSROOT"] = toolchain.sysroot
-
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
@@ -1267,6 +1264,9 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
+    rustc_sysroot_arg = ctx.actions.args()
+    rustc_sysroot_arg.add("--sysroot", toolchain.sysroot)
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -1274,7 +1274,12 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = args.all,
+            arguments = [
+                args.process_wrapper_flags,
+                args.rustc_path,
+                rustc_sysroot_arg,
+                args.rustc_flags,
+            ],
             mnemonic = "Rustc",
             progress_message = "Compiling Rust {} {}{} ({} files)".format(
                 crate_info.type,
@@ -1290,7 +1295,12 @@ def rustc_compile_action(
                 inputs = compile_inputs,
                 outputs = [build_metadata],
                 env = env,
-                arguments = args_metadata.all,
+                arguments = [
+                    args_metadata.process_wrapper_flags,
+                    args_metadata.rustc_path,
+                    rustc_sysroot_arg,
+                    args_metadata.rustc_flags,
+                ],
                 mnemonic = "RustcMetadata",
                 progress_message = "Compiling Rust metadata {} {}{} ({} files)".format(
                     crate_info.type,
@@ -1309,7 +1319,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = [args.rustc_path, args.rustc_flags],
+            arguments = [args.rustc_path, rustc_sysroot_arg, args.rustc_flags],
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
                 crate_info.type,
