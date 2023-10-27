@@ -317,6 +317,8 @@ _NORMAL_DEPENDENCIES = {
             "tera": "@cui__tera-1.19.0//:tera",
             "textwrap": "@cui__textwrap-0.16.0//:textwrap",
             "toml": "@cui__toml-0.7.6//:toml",
+            "tracing": "@cui__tracing-0.1.40//:tracing",
+            "tracing-subscriber": "@cui__tracing-subscriber-0.3.17//:tracing_subscriber",
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -490,6 +492,7 @@ _CONDITIONS = {
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": ["@rules_rust//rust/platform:wasm32-wasi"],
     "cfg(target_os = \"windows\")": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc", "@rules_rust//rust/platform:i686-pc-windows-msvc", "@rules_rust//rust/platform:x86_64-pc-windows-msvc"],
+    "cfg(tracing_unstable)": [],
     "cfg(unix)": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-fuchsia", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-fuchsia", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu"],
     "cfg(windows)": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc", "@rules_rust//rust/platform:i686-pc-windows-msvc", "@rules_rust//rust/platform:x86_64-pc-windows-msvc"],
     "i686-apple-darwin": ["@rules_rust//rust/platform:i686-apple-darwin"],
@@ -1334,6 +1337,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__nu-ansi-term-0.46.0",
+        sha256 = "77a8165726e8236064dbb45459242600304b42a5ea24ee2948e18e023bf7ba84",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/nu-ansi-term/0.46.0/download"],
+        strip_prefix = "nu-ansi-term-0.46.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.nu-ansi-term-0.46.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__num-0.1.42",
         sha256 = "4703ad64153382334aa8db57c637364c322d3372e097840c72000dabdcf6156e",
         type = "tar.gz",
@@ -1410,6 +1423,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/once_cell/1.18.0/download"],
         strip_prefix = "once_cell-1.18.0",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.18.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__overload-0.1.1",
+        sha256 = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/overload/0.1.1/download"],
+        strip_prefix = "overload-0.1.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.overload-0.1.1.bazel"),
     )
 
     maybe(
@@ -1520,6 +1543,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/phf_shared/0.10.0/download"],
         strip_prefix = "phf_shared-0.10.0",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.phf_shared-0.10.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__pin-project-lite-0.2.13",
+        sha256 = "8afb450f006bf6385ca15ef45d71d2288452bc3683ce2e2cacc0d18e4be60b58",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/pin-project-lite/0.2.13/download"],
+        strip_prefix = "pin-project-lite-0.2.13",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.pin-project-lite-0.2.13.bazel"),
     )
 
     maybe(
@@ -1794,6 +1827,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__sharded-slab-0.1.7",
+        sha256 = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/sharded-slab/0.1.7/download"],
+        strip_prefix = "sharded-slab-0.1.7",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.sharded-slab-0.1.7.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__siphasher-0.3.10",
         sha256 = "7bd3e3206899af3f8b12af284fafc038cc1dc2b41d1b89dd17297221c5d225de",
         type = "tar.gz",
@@ -1984,6 +2027,56 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__tracing-0.1.40",
+        sha256 = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/tracing/0.1.40/download"],
+        strip_prefix = "tracing-0.1.40",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.tracing-0.1.40.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__tracing-attributes-0.1.27",
+        sha256 = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/tracing-attributes/0.1.27/download"],
+        strip_prefix = "tracing-attributes-0.1.27",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.tracing-attributes-0.1.27.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__tracing-core-0.1.32",
+        sha256 = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/tracing-core/0.1.32/download"],
+        strip_prefix = "tracing-core-0.1.32",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.tracing-core-0.1.32.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__tracing-log-0.1.4",
+        sha256 = "f751112709b4e791d8ce53e32c4ed2d353565a795ce84da2285393f41557bdf2",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/tracing-log/0.1.4/download"],
+        strip_prefix = "tracing-log-0.1.4",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.tracing-log-0.1.4.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__tracing-subscriber-0.3.17",
+        sha256 = "30a651bc37f915e81f087d86e62a18eec5f79550c7faff886f7090b4ea757c77",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/tracing-subscriber/0.3.17/download"],
+        strip_prefix = "tracing-subscriber-0.3.17",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.tracing-subscriber-0.3.17.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__typenum-1.16.0",
         sha256 = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba",
         type = "tar.gz",
@@ -2140,6 +2233,16 @@ def crate_repositories():
         urls = ["https://crates.io/api/v1/crates/utf8parse/0.2.1/download"],
         strip_prefix = "utf8parse-0.2.1",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.utf8parse-0.2.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__valuable-0.1.0",
+        sha256 = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/valuable/0.1.0/download"],
+        strip_prefix = "valuable-0.1.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.valuable-0.1.0.bazel"),
     )
 
     maybe(

@@ -48,6 +48,8 @@ tempfile = "3.6.0"
 tera = "1.19.0"
 textwrap = "0.16.0"
 toml = "0.7.6"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.17"
 
 [dev-dependencies]
 maplit = "1.0.2"

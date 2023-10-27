@@ -1,8 +1,6 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
-
-CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
+load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
 
 def splicing_config(resolver_version = "1"):
     """Various settings used to configure Cargo manifest splicing behavior.
