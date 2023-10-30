@@ -1,31 +1,21 @@
 {
+    "metadata": null,
     "packages": [
         {
-            "name": "has_package_metadata",
-            "version": "0.0.0",
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": null,
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
             "id": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)",
+            "keywords": [],
             "license": null,
             "license_file": null,
-            "description": null,
-            "source": null,
-            "dependencies": [],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "has_package_metadata",
-                    "src_path": "{TEMP_DIR}/has_package_metadata/lib.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
-            "features": {},
+            "links": null,
             "manifest_path": "{TEMP_DIR}/has_package_metadata/Cargo.toml",
             "metadata": {
                 "bazel": {
@@ -35,39 +25,49 @@
                     }
                 }
             },
+            "name": "has_package_metadata",
             "publish": null,
-            "authors": [],
-            "categories": [],
-            "keywords": [],
             "readme": null,
             "repository": null,
-            "homepage": null,
-            "documentation": null,
-            "edition": "2021",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "has_package_metadata",
+                    "src_path": "{TEMP_DIR}/has_package_metadata/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.0.0"
         }
-    ],
-    "workspace_members": [
-        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
-    ],
-    "workspace_default_members": [
-        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
     ],
     "resolve": {
         "nodes": [
             {
-                "id": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)",
                 "dependencies": [],
                 "deps": [],
-                "features": []
+                "features": [],
+                "id": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
             }
         ],
         "root": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
     },
     "target_directory": "{TEMP_DIR}/has_package_metadata/target",
     "version": 1,
-    "workspace_root": "{TEMP_DIR}/has_package_metadata",
-    "metadata": null
+    "workspace_default_members": [
+        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+    ],
+    "workspace_members": [
+        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+    ],
+    "workspace_root": "{TEMP_DIR}/has_package_metadata"
 }

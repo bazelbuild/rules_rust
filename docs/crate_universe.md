@@ -794,7 +794,7 @@ Various settings used to configure Cargo manifest splicing behavior.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"1"` |
+| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"2"` |
 
 **RETURNS**
 
