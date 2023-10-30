@@ -333,6 +333,106 @@ def _crates_vendor_impl(ctx):
         executable = runner,
     )
 
+CRATES_VENDOR_ATTRS = {
+    "annotations": attr.string_list_dict(
+        doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
+    ),
+    "bazel": attr.label(
+        doc = "The path to a bazel binary used to locate the output_base for the current workspace.",
+        cfg = "exec",
+        executable = True,
+        allow_files = True,
+    ),
+    "buildifier": attr.label(
+        doc = "The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.",
+        cfg = "exec",
+        executable = True,
+        allow_files = True,
+        default = Label("//crate_universe/private/vendor:buildifier"),
+    ),
+    "cargo_bazel": attr.label(
+        doc = (
+            "The cargo-bazel binary to use for vendoring. If this attribute is not set, then a " +
+            "`{}` action env will be used.".format(CARGO_BAZEL_GENERATOR_PATH)
+        ),
+        cfg = "exec",
+        executable = True,
+        allow_files = True,
+        default = CARGO_BAZEL_LABEL,
+    ),
+    "cargo_config": attr.label(
+        doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
+        allow_single_file = True,
+    ),
+    "cargo_lockfile": attr.label(
+        doc = "The path to an existing `Cargo.lock` file",
+        allow_single_file = True,
+    ),
+    "generate_binaries": attr.bool(
+        doc = (
+            "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+            "By default only the `rust_library` targets are generated."
+        ),
+        default = False,
+    ),
+    "generate_build_scripts": attr.bool(
+        doc = (
+            "Whether or not to generate " +
+            "[cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default."
+        ),
+        default = True,
+    ),
+    "generate_target_compatible_with": attr.bool(
+        doc = (
+            "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` " +
+            "being targeted that isn't declared in `supported_platform_triples."
+        ),
+        default = True,
+    ),
+    "manifests": attr.label_list(
+        doc = "A list of Cargo manifests (`Cargo.toml` files).",
+        allow_files = ["Cargo.toml"],
+    ),
+    "mode": attr.string(
+        doc = (
+            "Flags determining how crates should be vendored. `local` is where crate source and BUILD files are " +
+            "written to the repository. `remote` is where only BUILD files are written and repository rules " +
+            "used to fetch source code."
+        ),
+        values = [
+            "local",
+            "remote",
+        ],
+        default = "remote",
+    ),
+    "packages": attr.string_dict(
+        doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
+    ),
+    "render_config": attr.string(
+        doc = (
+            "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
+            "generate the value for this field. If unset, the defaults defined there will be used."
+        ),
+    ),
+    "repository_name": attr.string(
+        doc = "The name of the repository to generate for `remote` vendor modes. If unset, the label name will be used",
+    ),
+    "splicing_config": attr.string(
+        doc = (
+            "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
+            "generate the value for this field. If unset, the defaults defined there will be used."
+        ),
+    ),
+    "supported_platform_triples": attr.string_list(
+        doc = "A set of all platform triples to consider when generating dependencies.",
+        default = SUPPORTED_PLATFORM_TRIPLES,
+    ),
+    "vendor_path": attr.string(
+        doc = "The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root",
+        default = "crates",
+    ),
+}
+
 crates_vendor = rule(
     implementation = _crates_vendor_impl,
     doc = """\
@@ -407,105 +507,7 @@ call against the generated workspace. The following table describes how to contr
 | `package_name@1.2.3` | `cargo upgrade --package package_name --precise 1.2.3` |
 
 """,
-    attrs = {
-        "annotations": attr.string_list_dict(
-            doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
-        ),
-        "bazel": attr.label(
-            doc = "The path to a bazel binary used to locate the output_base for the current workspace.",
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-        ),
-        "buildifier": attr.label(
-            doc = "The path to a [buildifier](https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md) binary used to format generated BUILD files.",
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-            default = Label("//crate_universe/private/vendor:buildifier"),
-        ),
-        "cargo_bazel": attr.label(
-            doc = (
-                "The cargo-bazel binary to use for vendoring. If this attribute is not set, then a " +
-                "`{}` action env will be used.".format(CARGO_BAZEL_GENERATOR_PATH)
-            ),
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-            default = CARGO_BAZEL_LABEL,
-        ),
-        "cargo_config": attr.label(
-            doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
-            allow_single_file = True,
-        ),
-        "cargo_lockfile": attr.label(
-            doc = "The path to an existing `Cargo.lock` file",
-            allow_single_file = True,
-        ),
-        "generate_binaries": attr.bool(
-            doc = (
-                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
-                "By default only the `rust_library` targets are generated."
-            ),
-            default = False,
-        ),
-        "generate_build_scripts": attr.bool(
-            doc = (
-                "Whether or not to generate " +
-                "[cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default."
-            ),
-            default = True,
-        ),
-        "generate_target_compatible_with": attr.bool(
-            doc = (
-                "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` " +
-                "being targeted that isn't declared in `supported_platform_triples."
-            ),
-            default = True,
-        ),
-        "manifests": attr.label_list(
-            doc = "A list of Cargo manifests (`Cargo.toml` files).",
-            allow_files = ["Cargo.toml"],
-        ),
-        "mode": attr.string(
-            doc = (
-                "Flags determining how crates should be vendored. `local` is where crate source and BUILD files are " +
-                "written to the repository. `remote` is where only BUILD files are written and repository rules " +
-                "used to fetch source code."
-            ),
-            values = [
-                "local",
-                "remote",
-            ],
-            default = "remote",
-        ),
-        "packages": attr.string_dict(
-            doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
-        ),
-        "render_config": attr.string(
-            doc = (
-                "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
-                "generate the value for this field. If unset, the defaults defined there will be used."
-            ),
-        ),
-        "repository_name": attr.string(
-            doc = "The name of the repository to generate for `remote` vendor modes. If unset, the label name will be used",
-        ),
-        "splicing_config": attr.string(
-            doc = (
-                "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
-                "generate the value for this field. If unset, the defaults defined there will be used."
-            ),
-        ),
-        "supported_platform_triples": attr.string_list(
-            doc = "A set of all platform triples to consider when generating dependencies.",
-            default = SUPPORTED_PLATFORM_TRIPLES,
-        ),
-        "vendor_path": attr.string(
-            doc = "The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root",
-            default = "crates",
-        ),
-    },
+    attrs = CRATES_VENDOR_ATTRS,
     executable = True,
     toolchains = ["@rules_rust//rust:toolchain_type"],
 )
