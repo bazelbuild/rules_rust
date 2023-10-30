@@ -3,7 +3,15 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
 package(default_visibility = ["//visibility:public"])
 
 rust_binary(
-    name = "hello_world",
+    name = "hello_world_transient",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates//:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "hello_world_vendored",
     srcs = ["src/main.rs"],
     deps = [
         "//third-party/crates:anyhow",
@@ -19,10 +27,12 @@ sh_test(
     name = "hello_world_test",
     srcs = ["hello_world_test.sh"],
     args = [
-        "$(rlocationpath :hello_world)",
+        "$(rlocationpath :hello_world_transient)",
+        "$(rlocationpath :hello_world_vendored)",
     ],
     data = [
-        ":hello_world",
+        ":hello_world_transient",
+        ":hello_world_vendored",
     ],
     deps = [
         "@bazel_tools//tools/bash/runfiles",
