@@ -47,6 +47,28 @@ load(
 cargo_aliases_crate_repositories()
 
 ###############################################################################
+# C A R G O   B I N D E P S
+###############################################################################
+
+crates_repository(
+    name = "crate_index_cargo_bindeps",
+    cargo_lockfile = "//cargo_bindeps:Cargo.lock",
+    generate_binaries = True,
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    manifests = ["//cargo_bindeps:Cargo.toml"],
+    rust_version = "nightly",
+)
+
+load(
+    "@crate_index_cargo_bindeps//:defs.bzl",
+    cargo_bindeps_crate_repositories = "crate_repositories",
+)
+
+cargo_bindeps_crate_repositories()
+
+###############################################################################
 # C A R G O   L O C A L
 ###############################################################################
 

@@ -75,12 +75,17 @@ impl MetadataGenerator for Generator {
             cargo_lock::Lockfile::load(lock_path)?
         };
 
+        let mut other_options = vec!["--locked".to_owned()];
+        if self.cargo_bin.is_nightly()? {
+            other_options.push("-Zbindeps".to_owned());
+        }
+
         let metadata = self
             .cargo_bin
             .metadata_command()?
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
-            .other_options(["--locked".to_owned()])
+            .other_options(other_options)
             .exec()?;
 
         Ok((metadata, lockfile))
@@ -108,6 +113,9 @@ impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut command = Command::new(&self.path);
         command.envs(self.env()?);
+        if self.is_nightly()? {
+            command.arg("-Zbindeps");
+        }
         Ok(command)
     }
 
@@ -130,6 +138,16 @@ impl Cargo {
             *full_version = Some(observed_version);
         }
         Ok(full_version.clone().unwrap())
+    }
+
+    pub fn is_nightly(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.pre.as_str() == "nightly");
+        }
+        bail!("Couldn't parse cargo version");
     }
 
     pub fn use_sparse_registries_for_crates_io(&self) -> Result<bool> {
