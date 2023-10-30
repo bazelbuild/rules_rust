@@ -788,7 +788,8 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
-        skip_expanding_rustc_env = False):
+        skip_expanding_rustc_env = False,
+        sandboxed = True):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -964,6 +965,11 @@ def construct_arguments(
         rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
+
+    if sandboxed:
+        rustc_flags.add("--sysroot", toolchain.sysroot)
+    elif hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot") and getattr(ctx.attr, "_experimental_toolchain_generated_sysroot") == True:
+        rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
@@ -1264,9 +1270,6 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
-    rustc_sysroot_arg = ctx.actions.args()
-    rustc_sysroot_arg.add("--sysroot", toolchain.sysroot)
-
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -1274,12 +1277,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = [
-                args.process_wrapper_flags,
-                args.rustc_path,
-                rustc_sysroot_arg,
-                args.rustc_flags,
-            ],
+            arguments = args.all,
             mnemonic = "Rustc",
             progress_message = "Compiling Rust {} {}{} ({} files)".format(
                 crate_info.type,
@@ -1295,12 +1293,7 @@ def rustc_compile_action(
                 inputs = compile_inputs,
                 outputs = [build_metadata],
                 env = env,
-                arguments = [
-                    args_metadata.process_wrapper_flags,
-                    args_metadata.rustc_path,
-                    rustc_sysroot_arg,
-                    args_metadata.rustc_flags,
-                ],
+                arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
                 progress_message = "Compiling Rust metadata {} {}{} ({} files)".format(
                     crate_info.type,
@@ -1319,7 +1312,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = [args.rustc_path, rustc_sysroot_arg, args.rustc_flags],
+            arguments = [args.rustc_path, args.rustc_flags],
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
                 crate_info.type,
