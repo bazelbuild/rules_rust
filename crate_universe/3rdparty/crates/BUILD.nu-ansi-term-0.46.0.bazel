@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT OR Apache-2.0
+#     "TODO",  # MIT
 # ])
 
 rust_library(
-    name = "log",
+    name = "nu_ansi_term",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,15 +28,12 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=log",
+        "crate-name=nu-ansi-term",
         "manual",
         "noclippy",
         "norustfmt",
@@ -75,5 +72,19 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.19",
+    version = "0.46.0",
+    deps = [
+        "@cui__overload-0.1.1//:overload",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@cui__winapi-0.3.9//:winapi",  # cfg(target_os = "windows")
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@cui__winapi-0.3.9//:winapi",  # cfg(target_os = "windows")
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@cui__winapi-0.3.9//:winapi",  # cfg(target_os = "windows")
+        ],
+        "//conditions:default": [],
+    }),
 )

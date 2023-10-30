@@ -8,6 +8,7 @@ get_host_triple = _get_host_triple
 
 CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
 CARGO_BAZEL_REPIN = "CARGO_BAZEL_REPIN"
+CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 REPIN = "REPIN"
 
 CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
@@ -38,10 +39,15 @@ def execute(repository_ctx, args, env = {}):
     Returns:
         struct: The results of `repository_ctx.execute`
     """
+
+    quiet = repository_ctx.attr.quiet
+    if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
+        quiet = False
+
     result = repository_ctx.execute(
         args,
         environment = env,
-        quiet = repository_ctx.attr.quiet,
+        quiet = quiet,
     )
 
     if result.return_code:

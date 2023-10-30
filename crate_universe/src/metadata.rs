@@ -12,13 +12,14 @@ use std::process::Command;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use crate::lockfile::Digest;
 use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
 use semver::Version;
+use tracing::debug;
 
 use crate::config::CrateId;
+use crate::lockfile::Digest;
 use crate::utils::starlark::SelectList;
 
 pub use self::dependency::*;
@@ -89,7 +90,7 @@ impl MetadataGenerator for Generator {
 /// Cargo encapsulates a path to a `cargo` binary.
 /// Any invocations of `cargo` (either as a `std::process::Command` or via `cargo_metadata`) should
 /// go via this wrapper to ensure that any environment variables needed are set appropriately.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Cargo {
     path: PathBuf,
     full_version: Arc<Mutex<Option<String>>>,
@@ -264,16 +265,20 @@ impl LockGenerator {
         }
     }
 
+    #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
     pub fn generate(
         &self,
         manifest_path: &Path,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
     ) -> Result<cargo_lock::Lockfile> {
+        debug!("Generating Cargo Lockfile for {}", manifest_path.display());
+
         let manifest_dir = manifest_path.parent().unwrap();
         let generated_lockfile_path = manifest_dir.join("Cargo.lock");
 
         if let Some(lock) = existing_lock {
+            debug!("Using existing lock {}", lock.display());
             if !lock.exists() {
                 bail!(
                     "An existing lockfile path was provided but a file at '{}' does not exist",
@@ -320,6 +325,7 @@ impl LockGenerator {
                 ))
             }
         } else {
+            debug!("Generating new lockfile");
             // Simply invoke `cargo generate-lockfile`
             let output = self
                 .cargo_bin
@@ -368,8 +374,13 @@ impl VendorGenerator {
             rustc_bin,
         }
     }
-
+    #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
     pub fn generate(&self, manifest_path: &Path, output_dir: &Path) -> Result<()> {
+        debug!(
+            "Vendoring {} to {}",
+            manifest_path.display(),
+            output_dir.display()
+        );
         let manifest_dir = manifest_path.parent().unwrap();
 
         // Simply invoke `cargo generate-lockfile`
@@ -401,6 +412,7 @@ impl VendorGenerator {
             bail!(format!("Failed to vendor sources with: {}", output.status))
         }
 
+        debug!("Done");
         Ok(())
     }
 }
@@ -423,13 +435,20 @@ impl FeatureGenerator {
     }
 
     /// Computes the set of enabled features for each target triplet for each crate.
+    #[tracing::instrument(name = "FeatureGenerator::generate", skip_all)]
     pub fn generate(
         &self,
         manifest_path: &Path,
         platform_triples: &BTreeSet<String>,
     ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
+        debug!(
+            "Generating features for manifest {}",
+            manifest_path.display()
+        );
+
         let manifest_dir = manifest_path.parent().unwrap();
         let mut target_to_child = BTreeMap::new();
+        debug!("Spawning processes for {:?}", platform_triples);
         for target in platform_triples {
             // We use `cargo tree` here because `cargo metadata` doesn't report
             // back target-specific features (enabled with `resolver = "2"`).
@@ -480,9 +499,11 @@ impl FeatureGenerator {
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));
                 bail!(format!("Failed to run cargo tree: {}", output.status))
             }
+            debug!("Process complete for {}", target);
             for (crate_id, features) in
                 parse_features_from_cargo_tree_output(output.stdout.lines())?
             {
+                debug!("\tFor {} features were: {:?}", crate_id, features);
                 crate_features
                     .entry(crate_id)
                     .or_default()
