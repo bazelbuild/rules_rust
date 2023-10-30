@@ -27,7 +27,7 @@ default = ["cargo"]
 [dependencies]
 anyhow = "1.0.71"
 cargo_metadata = "0.15.4"
-cargo_toml = "0.15.2"
+cargo_toml = "0.17.0"
 cargo-lock = "9.0.0"
 cargo-platform = "0.1.2"
 cfg-expr = "0.15.0"
@@ -47,7 +47,7 @@ sha2 = "0.10.7"
 tempfile = "3.6.0"
 tera = "1.19.0"
 textwrap = "0.16.0"
-toml = "0.7.6"
+toml = "0.8.0"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.17"
 

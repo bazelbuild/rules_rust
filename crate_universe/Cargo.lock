@@ -166,7 +166,7 @@ dependencies = [
  "tempfile",
  "tera",
  "textwrap",
- "toml",
+ "toml 0.8.2",
  "tracing",
  "tracing-subscriber",
 ]
@@ -179,7 +179,7 @@ checksum = "e11c675378efb449ed3ce8de78d75d0d80542fc98487c26aba28eb3b82feac72"
 dependencies = [
  "semver",
  "serde",
- "toml",
+ "toml 0.7.6",
  "url",
 ]
 
@@ -208,12 +208,12 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
-version = "0.15.3"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "599aa35200ffff8f04c1925aa1acc92fa2e08874379ef42e210a80e527e60838"
+checksum = "6ca592ad99e6a0fd4b95153406138b997cc26ccd3cd0aecdfd4fbdbf1519bd77"
 dependencies = [
  "serde",
- "toml",
+ "toml 0.8.2",
 ]
 
 [[package]]
@@ -352,7 +352,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "smol_str",
- "toml",
+ "toml 0.7.6",
 ]
 
 [[package]]
@@ -1406,7 +1406,19 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit",
+ "toml_edit 0.19.13",
+]
+
+[[package]]
+name = "toml"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "185d8ab0dfbb35cf1399a6344d8484209c088f75f8f68230da55d48d95d43e3d"
+dependencies = [
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_edit 0.20.2",
 ]
 
 [[package]]
@@ -1423,6 +1435,19 @@ name = "toml_edit"
 version = "0.19.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f8751d9c1b03c6500c387e96f81f815a4f8e72d142d2d4a9ffa6fedd51ddee7"
+dependencies = [
+ "indexmap",
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "winnow",
+]
+
+[[package]]
+name = "toml_edit"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "396e4d48bbb2b7554c944bde63101b5ae446cff6ec4a24227428f15eb72ef338"
 dependencies = [
  "indexmap",
  "serde",

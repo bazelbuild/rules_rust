@@ -1,5 +1,5 @@
 {
-  "checksum": "762f9faabb2c99e97ac5af7e3cbbe30afec964cd85c203589efe0275abca78f8",
+  "checksum": "6031f97ae62e508313612e60e1ad5c2c18646b1b15226af6126ab39eeae825fa",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2023,17 +2023,309 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "alloc",
-            "default",
-            "fastrand",
-            "futures-io",
-            "memchr",
-            "parking",
-            "std",
-            "waker-fn"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-apple-ios": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-apple-ios-sim": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-fuchsia": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-linux-android": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "armv7-linux-androideabi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "i686-apple-darwin": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "i686-linux-android": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "i686-pc-windows-msvc": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "i686-unknown-freebsd": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "i686-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "thumbv7em-none-eabi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "wasm32-wasi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-apple-darwin": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-apple-ios": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-fuchsia": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-linux-android": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-freebsd": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-none": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -2969,17 +3261,188 @@
         ],
         "crate_features": {
           "common": [
-            "client",
             "default",
-            "h2",
             "http1",
-            "http2",
-            "runtime",
             "server",
             "socket2",
             "tcp"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-apple-ios": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-apple-ios-sim": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-fuchsia": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-linux-android": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "armv7-linux-androideabi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "i686-apple-darwin": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "i686-linux-android": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "i686-pc-windows-msvc": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "i686-unknown-freebsd": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "i686-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "thumbv7em-none-eabi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-apple-darwin": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-apple-ios": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-fuchsia": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-linux-android": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-freebsd": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-none": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -3188,10 +3651,96 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std"
+            ],
+            "aarch64-apple-ios": [
+              "std"
+            ],
+            "aarch64-apple-ios-sim": [
+              "std"
+            ],
+            "aarch64-fuchsia": [
+              "std"
+            ],
+            "aarch64-linux-android": [
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "armv7-linux-androideabi": [
+              "std"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "i686-apple-darwin": [
+              "std"
+            ],
+            "i686-linux-android": [
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "std"
+            ],
+            "i686-unknown-freebsd": [
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "std"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std"
+            ],
+            "thumbv7em-none-eabi": [
+              "std"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "std"
+            ],
+            "x86_64-apple-ios": [
+              "std"
+            ],
+            "x86_64-fuchsia": [
+              "std"
+            ],
+            "x86_64-linux-android": [
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-none": [
+              "std"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -6656,12 +7205,9 @@
         ],
         "crate_features": {
           "common": [
-            "bytes",
             "default",
-            "io-util",
             "libc",
             "macros",
-            "memchr",
             "mio",
             "net",
             "num_cpus",
@@ -6672,10 +7218,158 @@
             "socket2",
             "sync",
             "time",
-            "tokio-macros",
-            "windows-sys"
+            "tokio-macros"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-apple-ios": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-apple-ios-sim": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-fuchsia": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-linux-android": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "bytes",
+              "io-util",
+              "memchr",
+              "windows-sys"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "armv7-linux-androideabi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "i686-apple-darwin": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "i686-linux-android": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "i686-pc-windows-msvc": [
+              "bytes",
+              "io-util",
+              "memchr",
+              "windows-sys"
+            ],
+            "i686-unknown-freebsd": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "i686-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "thumbv7em-none-eabi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-apple-darwin": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-apple-ios": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-fuchsia": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-linux-android": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "bytes",
+              "io-util",
+              "memchr",
+              "windows-sys"
+            ],
+            "x86_64-unknown-freebsd": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-unknown-none": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -8171,13 +8865,10 @@
           "common": [
             "Blob",
             "BlobPropertyBag",
-            "Crypto",
-            "Event",
             "EventTarget",
             "File",
             "FormData",
             "Headers",
-            "MessageEvent",
             "ReadableStream",
             "Request",
             "RequestCredentials",
@@ -8186,10 +8877,13 @@
             "Response",
             "ServiceWorkerGlobalScope",
             "Window",
-            "Worker",
             "WorkerGlobalScope"
           ],
-          "selects": {}
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "Crypto"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -8720,7 +9414,6 @@
             "Win32_Networking",
             "Win32_Networking_WinSock",
             "Win32_Security",
-            "Win32_Security_Authorization",
             "Win32_Storage",
             "Win32_Storage_FileSystem",
             "Win32_System",
