@@ -788,8 +788,7 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
-        skip_expanding_rustc_env = False,
-        sandboxed = True):
+        skip_expanding_rustc_env = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -820,7 +819,6 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
-        sandboxed (bool): Whether the action using the constructed arguments is sandboxed
 
     Returns:
         tuple: A tuple of the following items
@@ -967,12 +965,9 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    if sandboxed:
-        if hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot"):
-            if ctx.attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
-                rustc_flags.add("--sysroot", toolchain.sysroot)
-    else:
-        rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
+    if hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot"):
+        if ctx.attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
+            rustc_flags.add("--sysroot", toolchain.sysroot)
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
