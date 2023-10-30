@@ -126,7 +126,6 @@ def rustdoc_compile_action(
         rustdoc = True,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
-        is_test = True,
         # rustdoc tests compile tests outside of the sandbox
         sandboxed = not is_test,
     )

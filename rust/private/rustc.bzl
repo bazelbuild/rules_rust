@@ -967,8 +967,10 @@ def construct_arguments(
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
     if sandboxed:
-        rustc_flags.add("--sysroot", toolchain.sysroot)
-    elif hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot") and getattr(ctx.attr, "_experimental_toolchain_generated_sysroot") == True:
+        if hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot"):
+            if ctx.attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
+                rustc_flags.add("--sysroot", toolchain.sysroot)
+    else:
         rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
 
     # Tell Rustc where to find the standard library (or libcore)

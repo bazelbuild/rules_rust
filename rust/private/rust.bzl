@@ -635,7 +635,7 @@ _common_attrs = {
         default = Label("//:experimental_per_crate_rustc_flag"),
     ),
     "_experimental_toolchain_generated_sysroot": attr.label(
-        default = Label("//rust/settings:experimental_toolchain_generated_sysroot"),
+        default = Label("@rules_rust//rust/settings:experimental_toolchain_generated_sysroot"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
