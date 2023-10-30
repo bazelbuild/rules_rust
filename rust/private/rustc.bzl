@@ -820,6 +820,7 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        sandboxed (bool): Whether the action using the constructed arguments is sandboxed
 
     Returns:
         tuple: A tuple of the following items

@@ -797,13 +797,6 @@ rust_toolchain = rule(
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
             ),
         ),
-        "_experimental_toolchain_generated_sysroot": attr.label(
-            default = Label("//rust/settings:experimental_toolchain_generated_sysroot"),
-            doc = (
-                "Label to a boolean build setting that lets the rule knows wheter to set --sysroot to rustc" +
-                "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_toolchain_generated_sysroot."
-            ),
-        ),
         "_no_std": attr.label(
             default = Label("//:no_std"),
         ),
