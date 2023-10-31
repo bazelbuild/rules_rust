@@ -50,16 +50,16 @@ def _spec(
     return json.encode({
         k: v
         for k, v in {
-            "package": package,
-            "version": version,
             "artifact": artifact,
-            "lib": lib,
+            "branch": branch,
             "default_features": default_features,
             "features": features,
             "git": git,
-            "branch": branch,
-            "tag": tag,
+            "lib": lib,
+            "package": package,
             "rev": rev,
+            "tag": tag,
+            "version": version,
         }.items()
         # The `cargo_toml` crate parses unstable fields to a flattened
         # BTreeMap<String, toml::Value> and toml::Value does not support null,
