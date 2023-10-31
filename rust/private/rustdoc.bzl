@@ -321,13 +321,6 @@ rust_doc = rule(
         "_error_format": attr.label(
             default = Label("//:error_format"),
         ),
-        "_experimental_toolchain_generated_sysroot": attr.label(
-            default = Label("//rust/settings:experimental_toolchain_generated_sysroot"),
-            doc = (
-                "Label to a boolean build setting that lets the rule knows wheter to set --sysroot to rustc" +
-                "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_toolchain_generated_sysroot."
-            ),
-        ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",
             default = Label("@rules_rust//util/process_wrapper"),

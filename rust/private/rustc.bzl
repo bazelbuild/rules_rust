@@ -38,7 +38,6 @@ load(
     "make_static_lib_symlink",
     "relativize",
 )
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 BuildInfo = _BuildInfo
 
@@ -965,10 +964,6 @@ def construct_arguments(
         rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
-
-    if hasattr(attr, "_experimental_toolchain_generated_sysroot"):
-        if attr._experimental_toolchain_generated_sysroot[IncompatibleFlagInfo].enabled == True:
-            rustc_flags.add("--sysroot", toolchain.sysroot)
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
