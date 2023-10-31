@@ -1,8 +1,8 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
-load("//rust:defs.bzl", "rust_common")
 load("//proto/prost:providers.bzl", "ProstProtoInfo")
+load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")

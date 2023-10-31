@@ -20,9 +20,9 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
+load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
 load("//rust/private:common.bzl", "rust_common")
-load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust/private:rustc.bzl", "BuildInfo")
 load(
     "//rust/private:utils.bzl",
