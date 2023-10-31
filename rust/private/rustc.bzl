@@ -965,9 +965,8 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    if hasattr(ctx.attr, "_experimental_toolchain_generated_sysroot"):
-        if ctx.attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
-            rustc_flags.add("--sysroot", toolchain.sysroot)
+    if attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
+        rustc_flags.add("--sysroot", toolchain.sysroot)
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
@@ -1041,6 +1040,9 @@ def construct_arguments(
             crate_info.rustc_env,
             data_paths,
         ))
+
+    # Ensure the sysroot is set for the target platform
+    env["SYSROOT"] = toolchain.sysroot
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
