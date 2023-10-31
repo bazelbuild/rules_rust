@@ -35,7 +35,7 @@ def _spec(
     Args:
         package (str, optional): The explicit name of the package (used when attempting to alias a crate).
         version (str, optional): The exact version of the crate. Cannot be used with `git`.
-        artifact (str, optional): Set to "bin" to pull in a binary crate as an artifact dependency.
+        artifact (str, optional): Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.
         lib (bool, optional): If using `artifact = "bin"`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.
         default_features (bool, optional): Maps to the `default-features` flag.
         features (list, optional): A list of features to use for the crate

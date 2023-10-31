@@ -586,7 +586,7 @@ See [specifying dependencies][sd] in the Cargo book for more details.
 | :------------- | :------------- | :------------- |
 | <a id="crate.spec-package"></a>package |  The explicit name of the package (used when attempting to alias a crate).   |  `None` |
 | <a id="crate.spec-version"></a>version |  The exact version of the crate. Cannot be used with <code>git</code>.   |  `None` |
-| <a id="crate.spec-artifact"></a>artifact |  Set to "bin" to pull in a binary crate as an artifact dependency.   |  `None` |
+| <a id="crate.spec-artifact"></a>artifact |  Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.   |  `None` |
 | <a id="crate.spec-lib"></a>lib |  If using <code>artifact = "bin"</code>, additionally setting <code>lib = True</code> declares a dependency on both the package's library and binary, as opposed to just the binary.   |  `None` |
 | <a id="crate.spec-default_features"></a>default_features |  Maps to the <code>default-features</code> flag.   |  `True` |
 | <a id="crate.spec-features"></a>features |  A list of features to use for the crate   |  `[]` |
