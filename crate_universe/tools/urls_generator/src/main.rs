@@ -85,7 +85,7 @@ fn locate_artifacts(artifacts_dir: &Path, url_prefix: &str) -> Vec<Artifact> {
                 })
                 .collect();
             if artifacts.len() > 1 {
-                panic!("Too many artifacts given for {}", triple)
+                panic!("Too many artifacts given for {triple}")
             }
             artifacts.pop().unwrap()
         })

@@ -6,7 +6,7 @@ use echo_proto::echo::{echo_client::EchoClient, EchoRequest};
 
 fn echo_requests_iter() -> impl Stream<Item = EchoRequest> {
     tokio_stream::iter(1..usize::MAX).map(|i| EchoRequest {
-        message: format!("msg {:02}", i),
+        message: format!("msg {i:02}"),
     })
 }
 
