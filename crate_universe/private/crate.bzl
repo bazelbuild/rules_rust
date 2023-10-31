@@ -18,6 +18,8 @@ def _workspace_member(version, sha256 = None):
 def _spec(
         package = None,
         version = None,
+        artifact = None,
+        lib = None,
         default_features = True,
         features = [],
         git = None,
@@ -33,6 +35,8 @@ def _spec(
     Args:
         package (str, optional): The explicit name of the package (used when attempting to alias a crate).
         version (str, optional): The exact version of the crate. Cannot be used with `git`.
+        artifact (str, optional): Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.
+        lib (bool, optional): If using `artifact = "bin"`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.
         default_features (bool, optional): Maps to the `default-features` flag.
         features (list, optional): A list of features to use for the crate
         git (str, optional): The Git url to use for the crate. Cannot be used with `version`.
@@ -43,16 +47,25 @@ def _spec(
     Returns:
         string: A json encoded string of all inputs
     """
-    return json.encode(struct(
-        package = package,
-        default_features = default_features,
-        features = features,
-        version = version,
-        git = git,
-        branch = branch,
-        tag = tag,
-        rev = rev,
-    ))
+    return json.encode({
+        k: v
+        for k, v in {
+            "artifact": artifact,
+            "branch": branch,
+            "default_features": default_features,
+            "features": features,
+            "git": git,
+            "lib": lib,
+            "package": package,
+            "rev": rev,
+            "tag": tag,
+            "version": version,
+        }.items()
+        # The `cargo_toml` crate parses unstable fields to a flattened
+        # BTreeMap<String, toml::Value> and toml::Value does not support null,
+        # so we must omit null values.
+        if v != None
+    })
 
 def _assert_absolute(label):
     """Ensure a given label is an absolute label
