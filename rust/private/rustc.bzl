@@ -965,8 +965,9 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    if attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
-        rustc_flags.add("--sysroot", toolchain.sysroot)
+    if hasattr(attr, "_experimental_toolchain_generated_sysroot"):
+        if attr._experimental_toolchain_generated_sysroot[BuildSettingInfo].value == True:
+            rustc_flags.add("--sysroot", toolchain.sysroot)
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
