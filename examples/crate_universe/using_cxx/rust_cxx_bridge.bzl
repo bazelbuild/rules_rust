@@ -34,7 +34,7 @@ def rust_cxx_bridge(name, src, deps = []):
             "-o",
             "$(location %s.cc)" % src,
         ],
-        tool = "@cxxbridge-cmd//:cxxbridge-cmd",
+        tool = "@using_cxx//:cxxbridge-cmd__cxxbridge",
     )
 
     cc_library(

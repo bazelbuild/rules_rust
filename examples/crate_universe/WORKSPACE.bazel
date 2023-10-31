@@ -299,6 +299,12 @@ no_cargo_crate_repositories()
 
 crates_repository(
     name = "using_cxx",
+    annotations = {
+        # FIXME: this annotation shouldn't be needed when using `artifact = "bin"`
+        "cxxbridge-cmd": [crate.annotation(
+            gen_binaries = ["cxxbridge"],
+        )],
+    },
     cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -306,6 +312,10 @@ crates_repository(
     lockfile = "//using_cxx:cargo-bazel-lock.json",
     packages = {
         "cxx": crate.spec(
+            version = "1.0.109",
+        ),
+        "cxxbridge-cmd": crate.spec(
+            artifact = "bin",
             version = "1.0.109",
         ),
     },
@@ -320,50 +330,6 @@ load(
 )
 
 using_cxx_crate_repositories()
-
-# The codegen tool needed by cxx.
-http_archive(
-    name = "cxxbridge-cmd",
-    build_file_content = """
-load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@cxxbridge_cmd_deps//:defs.bzl", "aliases", "all_crate_deps")
-
-rust_binary(
-    name = "cxxbridge-cmd",
-    srcs = glob(["src/**/*.rs"]),
-    aliases = aliases(),
-    data = [
-        "src/gen/include/cxx.h",
-    ],
-    edition = "2021",
-    visibility = ["//visibility:public"],
-    deps = all_crate_deps(
-        normal = True,
-    ),
-)
-    """,
-    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
-    strip_prefix = "cxxbridge-cmd-1.0.109",
-    type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
-)
-
-crates_repository(
-    name = "cxxbridge_cmd_deps",
-    cargo_lockfile = "//using_cxx:cxxbridge-cmd.Cargo.lock",
-    # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
-    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//using_cxx:cxxbridge-cmd.Cargo.Bazel.lock",
-    manifests = ["@cxxbridge-cmd//:Cargo.toml"],
-    splicing_config = splicing_config(
-        resolver_version = "2",
-    ),
-)
-
-load("@cxxbridge_cmd_deps//:defs.bzl", cxxbridge_cmd_deps = "crate_repositories")
-
-cxxbridge_cmd_deps()
 
 ###############################################################################
 # V E N D O R   E X T E R N A L
