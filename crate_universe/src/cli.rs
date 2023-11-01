@@ -88,7 +88,10 @@ impl LoggingFormatEvent {
 /// Initialize logging for one of the cli options.
 pub fn init_logging(name: &str) {
     if !EXPECTED_LOGGER_NAMES.contains(&name) {
-        panic!("Unexpected logger name {name}, use of one of {EXPECTED_LOGGER_NAMES:?}",);
+        panic!(
+            "Unexpected logger name {}, use of one of {:?}",
+            name, EXPECTED_LOGGER_NAMES
+        );
     }
 
     // a builder for `FmtSubscriber`.

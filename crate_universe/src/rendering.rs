@@ -184,7 +184,8 @@ impl Renderer {
 
         assert!(
             duplicates.is_empty(),
-            "Found duplicate aliases that must be changed (Check your `extra_aliased_targets`): {duplicates:#?}",
+            "Found duplicate aliases that must be changed (Check your `extra_aliased_targets`): {:#?}",
+            duplicates
         );
 
         if !dependencies.is_empty() {

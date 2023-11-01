@@ -232,13 +232,13 @@ fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result
     }
     let rundir_path = Path::new(rundir);
     if rundir_path.is_absolute() {
-        return Err(format!("rundir must be empty (to run in manifest path) or relative path (relative to exec root), but was {rundir:?}"));
+        return Err(format!("rundir must be empty (to run in manifest path) or relative path (relative to exec root), but was {:?}", rundir));
     }
     if rundir_path
         .components()
         .any(|c| c == std::path::Component::ParentDir)
     {
-        return Err(format!("rundir must not contain .. but was {rundir:?}"));
+        return Err(format!("rundir must not contain .. but was {:?}", rundir));
     }
     Ok(exec_root.join(rundir_path))
 }

@@ -214,7 +214,7 @@ fn write_module(
     if is_rust_module {
         let rust_module_name = escape_keyword(module.name.clone());
         content
-            .write_str(&format!("{indent}pub mod {rust_module_name} {{\n"))
+            .write_str(&format!("{}pub mod {} {{\n", indent, rust_module_name))
             .expect("Failed to write string");
     }
 
@@ -233,7 +233,7 @@ fn write_module(
 
     if is_rust_module {
         content
-            .write_str(&format!("{indent}}}\n"))
+            .write_str(&format!("{}}}\n", indent))
             .expect("Failed to write string");
     }
 }
@@ -537,7 +537,7 @@ impl Args {
                     label = Some(value.to_string());
                 }
                 (arg, value) => {
-                    extra_args.push(format!("{arg}={value}"));
+                    extra_args.push(format!("{}={}", arg, value));
                 }
             }
         };
@@ -549,9 +549,9 @@ impl Args {
             if let Some(path) = arg.strip_prefix('@') {
                 // handle argfile
                 let file = std::fs::File::open(path)
-                    .map_err(|_| format!("could not open argfile: {arg}"))?;
+                    .map_err(|_| format!("could not open argfile: {}", arg))?;
                 for line in std::io::BufReader::new(file).lines() {
-                    handle_arg(line.map_err(|_| format!("could not read argfile: {arg}"))?);
+                    handle_arg(line.map_err(|_| format!("could not read argfile: {}", arg))?);
                 }
             } else {
                 handle_arg(arg);
@@ -559,9 +559,9 @@ impl Args {
         }
 
         for tonic_or_prost_opt in tonic_or_prost_opts {
-            extra_args.push(format!("--prost_opt={tonic_or_prost_opt}"));
+            extra_args.push(format!("--prost_opt={}", tonic_or_prost_opt));
             if is_tonic {
-                extra_args.push(format!("--tonic_opt={tonic_or_prost_opt}"));
+                extra_args.push(format!("--tonic_opt={}", tonic_or_prost_opt));
             }
         }
 
@@ -741,9 +741,9 @@ fn main() {
     cmd.args(
         proto_paths
             .iter()
-            .map(|proto_path| format!("--proto_path={proto_path}")),
+            .map(|proto_path| format!("--proto_path={}", proto_path)),
     );
-    cmd.args(includes.iter().map(|include| format!("-I{include}")));
+    cmd.args(includes.iter().map(|include| format!("-I{}", include)));
     cmd.args(&proto_files);
 
     let status = cmd.status().expect("Failed to spawn protoc process");
@@ -785,7 +785,7 @@ fn main() {
                     let rs_content = fs::read_to_string(&rs_file).expect("Failed to read file.");
                     let tonic_content =
                         fs::read_to_string(tonic_file).expect("Failed to read file.");
-                    fs::write(tonic_file, format!("{rs_content}\n{tonic_content}"))
+                    fs::write(tonic_file, format!("{}\n{}", rs_content, tonic_content))
                         .expect("Failed to write file.");
                     fs::remove_file(&rs_file).unwrap_or_else(|err| {
                         panic!("Failed to remove file: {err:?}: {rs_file:?}")
@@ -820,7 +820,7 @@ fn main() {
                 &package_name
             };
             let file_stem = format!("{}{}", file_stem, if is_tonic { ".tonic" } else { "" });
-            let empty_rs_file = out_dir.join(format!("{file_stem}.rs"));
+            let empty_rs_file = out_dir.join(format!("{}.rs", file_stem));
             fs::write(&empty_rs_file, "").expect("Failed to write file.");
             rust_files.insert(empty_rs_file);
         }
@@ -835,7 +835,7 @@ fn main() {
         package_info_file,
         extern_paths
             .into_iter()
-            .map(|(proto_path, rust_path)| format!(".{proto_path}=::{rust_path}"))
+            .map(|(proto_path, rust_path)| format!(".{}=::{}", proto_path, rust_path))
             .collect::<Vec<_>>()
             .join("\n"),
     )
@@ -1266,7 +1266,10 @@ mod test {
         }
 
         for keyword in &RUST_KEYWORDS {
-            assert_eq!(escape_keyword(keyword.to_string()), format!("r#{keyword}"));
+            assert_eq!(
+                escape_keyword(keyword.to_string()),
+                format!("r#{}", keyword)
+            );
         }
     }
 }
