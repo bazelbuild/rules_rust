@@ -36,12 +36,23 @@ def _toolchain_adds_rustc_flags_impl(ctx):
         "Found exec toolchain flag ({}) in rustc flags: {}".format(EXEC_TOOLCHAIN_FLAG, action.argv),
     )
 
+    found_sysroot = False
+    for arg in action.argv:
+        if arg.startswith("--sysroot") and arg.endswith("test/toolchain/rust_extra_flags_toolchain"):
+            found_sysroot = True
+    asserts.true(
+        env,
+        found_sysroot,
+        "Missing --sysroot flag or --sysroot does not point to correct sysroot directory",
+    )
+
     return analysistest.end(env)
 
 toolchain_adds_rustc_flags_test = analysistest.make(
     _toolchain_adds_rustc_flags_impl,
     config_settings = {
         str(Label("//:extra_rustc_flags")): [CONFIG_FLAG],
+        str(Label("//rust/settings:experimental_toolchain_generated_sysroot")): True,
     },
 )
 
