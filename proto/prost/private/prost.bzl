@@ -1,6 +1,7 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
+load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
@@ -12,16 +13,6 @@ load("//rust/private:utils.bzl", "can_build_metadata")
 RUST_EDITION = "2021"
 
 TOOLCHAIN_TYPE = "@rules_rust//proto/prost:toolchain_type"
-
-ProstProtoInfo = provider(
-    doc = "Rust Prost provider info",
-    fields = {
-        "dep_variant_info": "DepVariantInfo: For the compiled Rust gencode (also covers its " +
-                            "transitive dependencies)",
-        "package_info": "File: A newline delimited file of `--extern_path` values for protoc.",
-        "transitive_dep_infos": "depset[DepVariantInfo]: Transitive dependencies of the compiled crate.",
-    },
-)
 
 def _create_proto_lang_toolchain(ctx, prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
@@ -328,6 +319,7 @@ def _rust_prost_library_impl(ctx):
 
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
+        rust_proto_info,
         rust_common.crate_group_info(
             dep_variant_infos = depset(
                 [dep_variant_info],
