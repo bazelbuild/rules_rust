@@ -1,0 +1,82 @@
+load("@rules_rust//rust:defs.bzl", "rust_stdlib_filegroup")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
+load(":defs.bzl", "toolchain_sysroot", "with_beta_channel")
+
+# Rebuild stdlibs for aarch64-apple-darwin
+# bazel build //toolchain:stdlibs --platforms=//:aarch64-apple-darwin
+with_beta_channel(
+    name = "stdlibs",
+    srcs = ["@stdlibs//:stdlib_sources"],
+)
+
+rust_stdlib_filegroup(
+    name = "rust_stdlibs",
+    srcs = [":sysroot_with_stdlibs"],
+)
+
+# bazel build //toolchain:sysroot_with_stdlibs --platforms=//:aarch64-apple-darwin
+toolchain_sysroot(
+    name = "sysroot_with_stdlibs",
+    srcs = [":stdlibs"],
+    dirname = "sysroot_with_stdlibs",
+    target_triple = select({
+        "//:aarch64-apple-darwin": "aarch64-apple-darwin",
+        "//:wasm32-wasi": "wasm32-wasi",
+    }),
+)
+
+rust_toolchain(
+    name = "toolchain_aarch64-apple-darwin_impl",
+    binary_ext = "",
+    default_edition = "2018",
+    dylib_ext = ".so",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    rust_doc = "@rust_linux_x86_64__aarch64-apple-darwin__beta_tools//:rustdoc",
+    rust_std = ":rust_stdlibs",
+    rustc = "@rust_linux_x86_64__aarch64-apple-darwin__beta_tools//:rustc",
+    staticlib_ext = ".a",
+    stdlib_linkflags = [],
+    target_triple = "aarch64-apple-darwin",
+)
+
+toolchain(
+    name = "toolchain_aarch64-apple-darwin",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_compatible_with = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
+    ],
+    toolchain = ":toolchain_aarch64-apple-darwin_impl",
+    toolchain_type = "@rules_rust//rust:toolchain_type",
+)
+
+rust_toolchain(
+    name = "toolchain_wasm32-wasi_impl",
+    binary_ext = "",
+    default_edition = "2018",
+    dylib_ext = ".so",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    rust_doc = "@rust_linux_x86_64__wasm32-wasi__beta_tools//:rustdoc",
+    rust_std = ":rust_stdlibs",
+    rustc = "@rust_linux_x86_64__wasm32-wasi__beta_tools//:rustc",
+    staticlib_ext = ".a",
+    stdlib_linkflags = [],
+    target_triple = "wasm32-wasi",
+)
+
+toolchain(
+    name = "toolchain_wasm32-wasi",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_compatible_with = [
+        "@platforms//os:wasi",
+        "@platforms//cpu:wasm32",
+    ],
+    toolchain = ":toolchain_wasm32-wasi_impl",
+    toolchain_type = "@rules_rust//rust:toolchain_type",
+)

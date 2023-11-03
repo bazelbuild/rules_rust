@@ -1,0 +1,10 @@
+# new feature
+build --@rules_rust//rust/settings:experimental_toolchain_generated_sysroot=True
+
+# enable toolchain debugging by default
+build --toolchain_resolution_debug='@rules_rust//rust:toolchain_type'
+
+# for toolchain debugging purposes
+build:beta --@rules_rust//rust/toolchain/channel:channel=beta
+build:stable --@rules_rust//rust/toolchain/channel:channel=stable
+build:nightly --@rules_rust//rust/toolchain/channel:channel=nightly

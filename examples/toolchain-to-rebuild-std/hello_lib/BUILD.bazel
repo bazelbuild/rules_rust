@@ -1,0 +1,17 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_library",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+# bazel build //hello_lib:hello_lib --platforms=//:aarch64-apple-darwin
+rust_library(
+    name = "hello_lib",
+    srcs = [
+        "src/greeter.rs",
+        "src/lib.rs",
+    ],
+    crate_features = ["default"],
+    rustc_flags = ["--cap-lints=allow"],
+)

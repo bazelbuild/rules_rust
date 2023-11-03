@@ -1267,6 +1267,8 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
+    # print(ctx.label.name, toolchain.target_flag_value)
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(

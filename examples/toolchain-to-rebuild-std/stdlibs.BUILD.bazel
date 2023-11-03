@@ -1,0 +1,449 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["bin/*"])
+
+# Flags for vendored dependencies.
+COMMON_INTERNAL_CRATE_RUSTC_FLAGS = [
+    "--cap-lints=allow",
+    # Mix in some metadata to distinguish the rlibs of these private vendored
+    # crates from the rlibs of their public counterparts over at third_party/rust.
+    "-Cmetadata=rustc_internal",
+    # Ensure standard rust clients can't accidentally pull in the private crates.
+    # See https://rustc-dev-guide.rust-lang.org/building/bootstrapping.html#-z-force-unstable-if-unmarked.
+    "-Zforce-unstable-if-unmarked",
+]
+
+filegroup(
+    name = "binaries",
+    srcs = glob([
+        "bin/*",
+        "lib/*",
+        "lib64/*",
+    ]),
+)
+
+platform(
+    name = "aarch64-apple-darwin",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "wasm32-wasi",
+    constraint_values = [
+        "@platforms//os:wasi",
+        "@platforms//cpu:wasm32",
+    ],
+)
+
+filegroup(
+    name = "stdlib_sources",
+    srcs = [
+        ":alloc",
+        ":cfg_if",
+        ":compiler_builtins",
+        ":core",
+        ":hashbrown",
+        ":c",
+        ":panic_abort",
+        ":profiler_builtins",
+        ":rustc_demangle",
+        ":std",
+        ":std_detect",
+        ":unwind",
+    ] + select({
+        "@rules_rust//rust/platform:wasm32-wasi": [":wasi"],
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+rust_library(
+    name = "std",
+    srcs = glob([
+        "library/std/src/**/*.rs",
+        "library/backtrace/src/**/*.rs",
+        "library/portable-simd/crates/std_float/src/**/*.rs",
+    ]),
+    compile_data = glob([
+        "library/std/src/**/*.md",
+        "library/std/primitive_docs/*.md",
+        "library/core/src/**/*.md",
+        "library/backtrace/src/**/*.md",
+        "library/portable-simd/crates/std_float/src/**/*.md",
+        "library/stdarch/crates/core_arch/src/**/*.md",
+        "library/stdarch/crates/core_simd/src/**/*.md",
+        "library/portable-simd/crates/core_simd/src/**/*.md",
+        "library/portable-simd/crates/core_simd/src/**/*.md",
+    ]),
+    crate_features = [
+        "default",
+        "std_detect_dlsym_getauxval",
+        "std_detect_file_io",
+        "profiler",
+        "no_std",
+        "const-extern-fn",
+    ],
+    crate_name = "std",
+    rustc_env = {
+        "STD_ENV_ARCH": "wasm32",
+        "RUSTC_BOOTSTRAP": "1",
+    },
+    rustc_flags = [
+        "--cfg=backtrace_in_libstd",
+        "-Zforce-unstable-if-unmarked",
+        "-Cmetadata=rustc_internal",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":alloc",
+        ":cfg_if",
+        ":core",
+        ":compiler_builtins",
+        ":hashbrown",
+        ":c",
+        ":profiler_builtins",
+        ":rustc_demangle",
+        ":std_detect",
+        ":unwind",
+        ":panic_abort",
+    ],
+)
+
+rust_library(
+    name = "hashbrown",
+    srcs = glob([
+        "vendor/hashbrown/src/**/*.rs",
+    ]),
+    compile_data = glob(["vendor/hashbrown/src/**/*.md"]),
+    crate_features = [
+        "alloc",
+        "compiler_builtins",
+        "core",
+        "nightly",
+        "rustc-internal-api",
+        "no_std",
+    ],
+    crate_name = "hashbrown",
+    rustc_flags = [
+        "--cfg=has_extern_crate_alloc",
+    ],
+    deps = [
+        ":alloc",
+        ":compiler_builtins",
+        ":unwind",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "alloc",
+    srcs = glob(["library/alloc/src/**/*.rs"]),
+    compile_data = glob(["library/alloc/src/**/*.md"]),
+    crate_features = ["no_std"],
+    crate_name = "alloc",
+    edition = "2021",
+    deps = [
+        ":compiler_builtins",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "compiler_builtins",
+    srcs = glob([
+        "vendor/compiler_builtins/src/**/*.rs",
+        "vendor/compiler_builtins/libm/**/*.rs",
+    ]),
+    compile_data = glob(["vendor/compiler_builtins/src/**/*.md"]),
+    crate_features = [
+        "mem-unaligned",
+        "compiler-builtins",
+        # "core",
+        # "default",
+        "unstable",
+        "no_std",
+        "no-asm",
+    ],
+    crate_name = "compiler_builtins",
+    edition = "2015",
+    deps = [":core"],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "default_core",
+    srcs = glob([
+        "library/core/src/**/*.rs",
+        "library/stdarch/crates/core_arch/src/**/*.rs",
+        "library/portable-simd/crates/core_simd/src/**/*.rs",
+    ]),
+    compile_data = glob([
+        "library/core/src/**/*.md",
+        "library/core/primitive_docs/*.md",
+        "library/stdarch/crates/core_arch/src/**/*.md",
+        "library/portable-simd/crates/core_simd/src/**/*.md",
+    ]),
+    crate_features = [
+        # "stdsimd",
+        # "no_std",
+    ],
+    crate_name = "core",
+    edition = "2021",
+    rustc_flags = [
+        "--cfg=bootstrap",
+        "--cap-lints=allow",
+        "-Zmacro-backtrace",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "std_detect",
+    srcs = glob(["library/stdarch/crates/std_detect/src/**/*.rs"]),
+    compile_data = glob(["library/stdarch/crates/std_detect/src/**/*.md"]),
+    crate_features = [
+        "std_detect_file_io",
+        "std_detect_dlsym_getauxval",
+        "no_std",
+    ],
+    crate_name = "std_detect",
+    rustc_flags = [
+        "-Cmetadata=rustc_internal_rlibs",
+    ],
+    deps = [
+        ":alloc",
+        ":cfg_if",
+        ":core",
+        ":compiler_builtins",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "cfg_if",
+    srcs = glob(["vendor/cfg-if/src/**/*.rs"]),
+    compile_data = glob(["vendor/cfg_if/src/**/*.md"]),
+    crate_features = [
+        "compiler_builtins",
+        "core",
+        "no_std",
+    ],
+    crate_name = "cfg_if",
+    deps = [
+        ":compiler_builtins",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "panic_abort",
+    srcs = glob(["library/panic_abort/src/**/*.rs"]),
+    compile_data = glob(["library/panic_abort/src/**/*.md"]),
+    crate_features = [
+        "no_std",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+        "-Zforce-unstable-if-unmarked",
+        # Needed to correctly compile this, see https://source.corp.google.com/piper///depot/google3/third_party/unsupported_toolchains/rust/src/nightly/src/bootstrap/bin/rustc.rs;l=92?q=%22panic%22&ss=piper%2FGoogle%2FPiper:google3%2Fthird_party%2Funsupported_toolchains%2Frust%2Fsrc%2Fnightly%2Fsrc%2Fbootstrap%2F
+        "-Cpanic=abort",
+    ],
+    crate_name = "panic_abort",
+    deps = [
+        ":alloc",
+        ":cfg_if",
+        ":compiler_builtins",
+        ":c",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "c",
+    srcs = glob(["vendor/libc/src/**/*.rs"]),
+    compile_data = glob(["vendor/libc/src/**/*.md"]),
+    crate_features = [
+        "align",
+    ],
+    crate_name = "libc",
+    edition = "2015",
+    rustc_flags = [
+        "--cfg=libc_align",
+        "--cfg=libc_core_cvoid",
+        "--cfg=libc_priv_mod_use",
+        "--cfg=libc_const_extern_fn",
+    ],
+    deps = [
+        ":cfg_if",
+        ":compiler_builtins",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "unwind",
+    srcs = glob(["library/unwind/src/**/*.rs"]),
+    compile_data = glob(["library/unwind/src/**/*.md"]),
+    crate_features = [
+        "no_std",
+        "llvm-libunwind",
+    ],
+    crate_name = "unwind",
+    deps = [
+        ":cfg_if",
+        ":compiler_builtins",
+        ":c",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+    rustc_flags = [
+        "-Zforce-unstable-if-unmarked",
+    ],
+)
+
+rust_library(
+    name = "profiler_builtins",
+    srcs = ["library/profiler_builtins/src/lib.rs"],
+    crate_features = [
+        "no_std",
+    ],
+    crate_name = "profiler_builtins",
+    deps = [
+        ":compiler_builtins",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "rustc_demangle",
+    srcs = glob(["vendor/rustc-demangle/src/**/*.rs"]),
+    compile_data = glob(["vendor/rustc-demangle/src/**/*.md"]),
+    crate_features = [
+        "core",
+        "compiler_builtins",
+        "no_std",
+    ],
+    crate_name = "rustc_demangle",
+    crate_root = "vendor/rustc-demangle/src/lib.rs",
+    deps = [
+        ":compiler_builtins",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "panic_unwind",
+    srcs = glob(["library/panic_unwind/src/**/*.rs"]),
+    compile_data = glob(["library/panic_unwind/src/**/*.md"]),
+    crate_features = [
+        "no_std",
+    ],
+    crate_name = "panic_unwind",
+    rustc_flags = [
+        "-Zforce-unstable-if-unmarked",
+    ],
+    deps = [
+        ":alloc",
+        ":cfg_if",
+        ":compiler_builtins",
+        ":c",
+        ":unwind",
+        ":core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "rustc_std_workspace_alloc",
+    crate_name = "rustc_std_workspace_alloc",
+    srcs = ["library/rustc-std-workspace-alloc/lib.rs"],
+    deps = [
+        ":alloc",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "rustc_std_workspace_core",
+    crate_name = "core",
+    srcs = ["library/rustc-std-workspace-core/lib.rs"],
+    deps = [
+        ":default_core",
+    ],
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+)
+
+rust_library(
+    name = "wasi",
+    srcs = glob(["vendor/wasi/**/*.rs"]),
+    crate_features = [
+        "rustc-dep-of-std",
+    ],
+    crate_root = "vendor/wasi/src/lib.rs",
+    edition = "2018",
+    rustc_env = {
+        "RUSTC_BOOTSTRAP": "1",
+    },
+    deps = [
+        ":rustc_std_workspace_alloc",
+        ":compiler_builtins",
+        ":rustc_std_workspace_core",
+    ],
+    version = "0.11.0+wasi-snapshot-preview1",
+)
+
+# rustc_std_workspace_core crate needs to replace core from the perspective of rdep
+# when an upstream depends on rustc_std_workspace_core
+#
+# In this example, libstd for wasi os transitively depends on wasi crate which
+# depends on core (built from rustc-std-workspace-core)
+# See https://github.com/bytecodealliance/wasi/blob/9ec04a7d8ebb1bbb9e3291503425cee1ec38a560/Cargo.toml#L20C55-L27
+# Hence, all transitive deps needs to explicitly depends on rustc_std_workspace_core
+# instead of core to avoid symbol duplications
+alias(
+    name = "core",
+    actual = select({
+        "@rules_rust//rust/platform:wasm32-wasi": ":rustc_std_workspace_core",
+        "//conditions:default": ":default_core",
+    }),
+)

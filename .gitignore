@@ -9,6 +9,7 @@
 /examples/cargo_manifest_dir/external_crate/bazel-*
 /examples/crate_universe/bazel-*
 /examples/crate_universe/*/bazel-*
+/examples/toolchain-to-rebuild-std/bazel-*
 /test/cc_common_link/bazel-*
 /test/cc_common_link/with_global_alloc/bazel-*
 /test/no_std/bazel-*
