@@ -163,8 +163,14 @@ impl<T: Ord + Clone> SelectList<T> {
                     }
                 }
                 None => {
+                    let destination =
+                        if looks_like_bazel_configuration_label(&original_configuration) {
+                            remapped.entry(original_configuration.clone()).or_default()
+                        } else {
+                            &mut unmapped
+                        };
                     for value in values {
-                        unmapped
+                        destination
                             .entry(value)
                             .or_default()
                             .insert(original_configuration.clone());
@@ -458,7 +464,13 @@ impl<T: Ord + Clone> SelectDict<T> {
                 }
                 None => {
                     for (key, value) in entries {
-                        unmapped
+                        let destination =
+                            if looks_like_bazel_configuration_label(&original_configuration) {
+                                remapped.entry(original_configuration.clone()).or_default()
+                            } else {
+                                &mut unmapped
+                            };
+                        destination
                             .entry((key, value))
                             .or_default()
                             .insert(original_configuration.clone());
@@ -599,6 +611,17 @@ impl<T: Ord> Select<T> for SelectDict<T> {
             false => configs.chain(once(None)).collect(),
         }
     }
+}
+
+// We allow users to specify labels as keys to selects, but we need to identify when this is happening
+// because we also allow things like "x86_64-unknown-linux-gnu" as keys, and these technically parse as labels
+// (that parses as "//x86_64-unknown-linux-gnu:x86_64-unknown-linux-gnu").
+//
+// We don't expect any cfg-expressions or target triples to contain //,
+// and all labels _can_ be written in a way that they contain //,
+// so we use the presence of // as an indication something is a label.
+fn looks_like_bazel_configuration_label(configuration: &str) -> bool {
+    configuration.contains("//")
 }
 
 #[cfg(test)]
@@ -790,6 +813,8 @@ mod test {
         select_list.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
         select_list.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
         select_list.insert("dep-d".to_owned(), None);
+        select_list.insert("dep-f".to_owned(), Some("@platforms//os:magic".to_owned()));
+        select_list.insert("dep-g".to_owned(), Some("//another:platform".to_owned()));
 
         let mapping = BTreeMap::from([
             (
@@ -862,11 +887,24 @@ mod test {
             },
             None,
         );
-
         expected.unmapped.insert(WithOriginalConfigurations {
             value: "dep-e".to_owned(),
             original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
         });
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-f".to_owned(),
+                original_configurations: Some(BTreeSet::from(["@platforms//os:magic".to_owned()])),
+            },
+            Some("@platforms//os:magic".to_owned()),
+        );
+        expected.insert(
+            WithOriginalConfigurations {
+                value: "dep-g".to_owned(),
+                original_configurations: Some(BTreeSet::from(["//another:platform".to_owned()])),
+            },
+            Some("//another:platform".to_owned()),
+        );
 
         let select_list = select_list.remap_configurations(&mapping);
         assert_eq!(select_list, expected);
@@ -875,6 +913,12 @@ mod test {
             [
                 "dep-d",
             ] + selects.with_unmapped({
+                "//another:platform": [
+                    "dep-g",  # //another:platform
+                ],
+                "@platforms//os:magic": [
+                    "dep-f",  # @platforms//os:magic
+                ],
                 "aarch64-macos": [
                     "dep-a",  # cfg(macos)
                     "dep-b",  # cfg(macos)
@@ -897,6 +941,200 @@ mod test {
 
         assert_eq!(
             select_list
+                .serialize_starlark(serde_starlark::Serializer)
+                .unwrap(),
+            expected_starlark,
+        );
+    }
+
+    #[test]
+    fn remap_select_dict_configurations() {
+        let mut select_dict = SelectDict::default();
+        select_dict.insert(
+            "dep-a".to_owned(),
+            "a".to_owned(),
+            Some("cfg(macos)".to_owned()),
+        );
+        select_dict.insert(
+            "dep-b".to_owned(),
+            "b".to_owned(),
+            Some("cfg(macos)".to_owned()),
+        );
+        select_dict.insert(
+            "dep-d".to_owned(),
+            "d".to_owned(),
+            Some("cfg(macos)".to_owned()),
+        );
+        select_dict.insert(
+            "dep-a".to_owned(),
+            "a".to_owned(),
+            Some("cfg(x86_64)".to_owned()),
+        );
+        select_dict.insert(
+            "dep-c".to_owned(),
+            "c".to_owned(),
+            Some("cfg(x86_64)".to_owned()),
+        );
+        select_dict.insert(
+            "dep-e".to_owned(),
+            "e".to_owned(),
+            Some("cfg(pdp11)".to_owned()),
+        );
+        select_dict.insert("dep-d".to_owned(), "d".to_owned(), None);
+        select_dict.insert(
+            "dep-f".to_owned(),
+            "f".to_owned(),
+            Some("@platforms//os:magic".to_owned()),
+        );
+        select_dict.insert(
+            "dep-g".to_owned(),
+            "g".to_owned(),
+            Some("//another:platform".to_owned()),
+        );
+
+        let mapping = BTreeMap::from([
+            (
+                "cfg(macos)".to_owned(),
+                BTreeSet::from(["x86_64-macos".to_owned(), "aarch64-macos".to_owned()]),
+            ),
+            (
+                "cfg(x86_64)".to_owned(),
+                BTreeSet::from(["x86_64-linux".to_owned(), "x86_64-macos".to_owned()]),
+            ),
+        ]);
+
+        let mut expected = SelectDict::default();
+        expected.insert(
+            "dep-a".to_string(),
+            WithOriginalConfigurations {
+                value: "a".to_owned(),
+                original_configurations: Some(BTreeSet::from([
+                    "cfg(macos)".to_owned(),
+                    "cfg(x86_64)".to_owned(),
+                ])),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            "dep-b".to_string(),
+            WithOriginalConfigurations {
+                value: "b".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            "dep-c".to_string(),
+            WithOriginalConfigurations {
+                value: "c".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
+            },
+            Some("x86_64-macos".to_owned()),
+        );
+        expected.insert(
+            "dep-a".to_string(),
+            WithOriginalConfigurations {
+                value: "a".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
+            },
+            Some("aarch64-macos".to_owned()),
+        );
+        expected.insert(
+            "dep-b".to_string(),
+            WithOriginalConfigurations {
+                value: "b".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
+            },
+            Some("aarch64-macos".to_owned()),
+        );
+        expected.insert(
+            "dep-a".to_string(),
+            WithOriginalConfigurations {
+                value: "a".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
+            },
+            Some("x86_64-linux".to_owned()),
+        );
+        expected.insert(
+            "dep-c".to_string(),
+            WithOriginalConfigurations {
+                value: "c".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
+            },
+            Some("x86_64-linux".to_owned()),
+        );
+        expected.insert(
+            "dep-d".to_string(),
+            WithOriginalConfigurations {
+                value: "d".to_owned(),
+                original_configurations: None,
+            },
+            None,
+        );
+        expected.unmapped.insert(
+            "dep-e".to_string(),
+            WithOriginalConfigurations {
+                value: "e".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+            },
+        );
+        expected.insert(
+            "dep-f".to_string(),
+            WithOriginalConfigurations {
+                value: "f".to_owned(),
+                original_configurations: Some(BTreeSet::from(["@platforms//os:magic".to_owned()])),
+            },
+            Some("@platforms//os:magic".to_owned()),
+        );
+        expected.insert(
+            "dep-g".to_string(),
+            WithOriginalConfigurations {
+                value: "g".to_owned(),
+                original_configurations: Some(BTreeSet::from(["//another:platform".to_owned()])),
+            },
+            Some("//another:platform".to_owned()),
+        );
+
+        let select_dict = select_dict.remap_configurations(&mapping);
+        assert_eq!(select_dict, expected);
+
+        let expected_starlark = indoc! {r#"
+            selects.with_unmapped({
+                "//another:platform": {
+                    "dep-d": "d",
+                    "dep-g": "g",  # //another:platform
+                },
+                "@platforms//os:magic": {
+                    "dep-d": "d",
+                    "dep-f": "f",  # @platforms//os:magic
+                },
+                "aarch64-macos": {
+                    "dep-a": "a",  # cfg(macos)
+                    "dep-b": "b",  # cfg(macos)
+                    "dep-d": "d",
+                },
+                "x86_64-linux": {
+                    "dep-a": "a",  # cfg(x86_64)
+                    "dep-c": "c",  # cfg(x86_64)
+                    "dep-d": "d",
+                },
+                "x86_64-macos": {
+                    "dep-a": "a",  # cfg(macos), cfg(x86_64)
+                    "dep-b": "b",  # cfg(macos)
+                    "dep-c": "c",  # cfg(x86_64)
+                    "dep-d": "d",
+                },
+                "//conditions:default": {
+                    "dep-d": "d",
+                },
+                selects.NO_MATCHING_PLATFORM_TRIPLES: {
+                    "dep-e": "e",  # cfg(pdp11)
+                },
+            })
+        "#};
+
+        assert_eq!(
+            select_dict
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
