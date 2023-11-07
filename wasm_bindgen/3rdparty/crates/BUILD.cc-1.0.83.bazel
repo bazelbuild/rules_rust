@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "curl_sys",
+    name = "cc",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,16 +28,12 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "openssl-sys",
-        "ssl",
-    ],
-    crate_root = "lib.rs",
+    crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=curl-sys",
+        "crate-name=cc",
         "manual",
         "noclippy",
         "norustfmt",
@@ -76,73 +72,70 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.63+curl-8.1.2",
-    deps = [
-        "@rules_rust_wasm_bindgen__libc-0.2.147//:libc",
-        "@rules_rust_wasm_bindgen__libz-sys-1.1.9//:libz_sys",
-    ] + select({
+    version = "1.0.83",
+    deps = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
+        ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
-        ],
-        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
-        ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
-        ],
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen__winapi-0.3.9//:winapi",  # cfg(windows)
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__openssl-sys-0.9.90//:openssl_sys",  # cfg(all(unix, not(target_os = "macos")))
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),

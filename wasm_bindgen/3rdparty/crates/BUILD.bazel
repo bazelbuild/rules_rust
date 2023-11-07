@@ -38,12 +38,6 @@ alias(
 )
 
 alias(
-    name = "curl",
-    actual = "@rules_rust_wasm_bindgen__curl-0.4.44//:curl",
-    tags = ["manual"],
-)
-
-alias(
     name = "diff",
     actual = "@rules_rust_wasm_bindgen__diff-0.1.13//:diff",
     tags = ["manual"],
@@ -110,6 +104,12 @@ alias(
 )
 
 alias(
+    name = "ureq",
+    actual = "@rules_rust_wasm_bindgen__ureq-2.8.0//:ureq",
+    tags = ["manual"],
+)
+
+alias(
     name = "walrus",
     actual = "@rules_rust_wasm_bindgen__walrus-0.19.0//:walrus",
     tags = ["manual"],
@@ -117,19 +117,19 @@ alias(
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.87//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.88//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli-support",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.87//:wasm_bindgen_cli_support",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.88//:wasm_bindgen_cli_support",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-shared",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.87//:wasm_bindgen_shared",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.88//:wasm_bindgen_shared",
     tags = ["manual"],
 )
 

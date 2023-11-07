@@ -6,8 +6,7 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -15,8 +14,8 @@ package(default_visibility = ["//visibility:public"])
 #     "TODO",  # MIT OR Apache-2.0
 # ])
 
-rust_library(
-    name = "libc",
+rust_proc_macro(
+    name = "wasm_bindgen_macro",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -30,16 +29,14 @@ rust_library(
         ],
     ),
     crate_features = [
-        "default",
-        "extra_traits",
-        "std",
+        "spans",
     ],
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2018",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=libc",
+        "crate-name=wasm-bindgen-macro",
         "manual",
         "noclippy",
         "norustfmt",
@@ -78,50 +75,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.147",
+    version = "0.2.88",
     deps = [
-        "@rules_rust_wasm_bindgen__libc-0.2.147//:build_script_build",
+        "@rules_rust_wasm_bindgen__quote-1.0.29//:quote",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-macro-support-0.2.88//:wasm_bindgen_macro_support",
     ],
-)
-
-cargo_build_script(
-    name = "libc_build_script",
-    srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "default",
-        "extra_traits",
-        "std",
-    ],
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(
-        include = ["**"],
-        exclude = [
-            "**/* *",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    edition = "2015",
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    tags = [
-        "cargo-bazel",
-        "crate-name=libc",
-        "manual",
-        "noclippy",
-        "norustfmt",
-    ],
-    version = "0.2.147",
-    visibility = ["//visibility:private"],
-)
-
-alias(
-    name = "build_script_build",
-    actual = "libc_build_script",
-    tags = ["manual"],
 )

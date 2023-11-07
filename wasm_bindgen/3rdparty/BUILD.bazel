@@ -9,34 +9,12 @@ exports_files([
 crates_vendor(
     name = "crates_vendor",
     annotations = {
-        "curl-sys": [crate.annotation(
-            gen_build_script = False,
-        )],
         "log": [crate.annotation(
             rustc_flags = [
                 "--cfg=atomic_cas",
                 "--cfg=use_std",
             ],
             version = "<5",
-        )],
-        "openssl-sys": [crate.annotation(
-            gen_build_script = False,
-            rustc_flags = [
-                # Vendored openssl is 1.0.2m
-                "--cfg=ossl101",
-                "--cfg=ossl102",
-                "--cfg=ossl102f",
-                "--cfg=ossl102h",
-                "--cfg=ossl110",
-                "--cfg=ossl110f",
-                "--cfg=ossl110g",
-                "--cfg=ossl111",
-                "--cfg=ossl111b",
-                "-l",
-                "dylib=ssl",
-                "-l",
-                "dylib=crypto",
-            ],
         )],
         "proc-macro2": [crate.annotation(
             rustc_flags = ["--cfg=use_proc_macro"],
