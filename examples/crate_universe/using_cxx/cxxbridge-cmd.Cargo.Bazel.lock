@@ -1,5 +1,5 @@
 {
-  "checksum": "25bdd583eed6ec00fc621b2303086dc902bed60668ab39c3779eafaf8d63d598",
+  "checksum": "eb54f772f73d500f7a7d7a9973acc21f1257794bc028cdfe229c2c321e42f961",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -887,5 +887,13 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "clap 4.3.21",
+    "codespan-reporting 0.11.1",
+    "proc-macro2 1.0.66",
+    "quote 1.0.32",
+    "syn 2.0.28"
+  ],
+  "direct_dev_deps": []
 }

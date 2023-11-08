@@ -1108,3 +1108,15 @@ def crate_repositories():
         strip_prefix = "yansi-term-0.1.2",
         build_file = Label("@rules_rust//bindgen/3rdparty/crates:BUILD.yansi-term-0.1.2.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rules_rust_bindgen__bindgen-0.65.1",
+            "rules_rust_bindgen__clang-sys-1.6.1",
+            "rules_rust_bindgen__clap-4.3.3",
+            "rules_rust_bindgen__clap_complete-4.3.1",
+            "rules_rust_bindgen__env_logger-0.10.0",
+        ],
+        root_module_direct_dev_deps = [
+        ],
+    )]

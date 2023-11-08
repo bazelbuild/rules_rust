@@ -3351,3 +3351,37 @@ def crate_repositories():
         strip_prefix = "winnow-0.5.18",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.winnow-0.5.18.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "cui__anyhow-1.0.75",
+            "cui__cargo-lock-9.0.0",
+            "cui__cargo-platform-0.1.4",
+            "cui__cargo_metadata-0.18.1",
+            "cui__cargo_toml-0.17.0",
+            "cui__cfg-expr-0.15.5",
+            "cui__clap-4.3.11",
+            "cui__crates-index-2.2.0",
+            "cui__hex-0.4.3",
+            "cui__indoc-2.0.4",
+            "cui__itertools-0.11.0",
+            "cui__normpath-1.1.1",
+            "cui__pathdiff-0.2.1",
+            "cui__regex-1.10.2",
+            "cui__semver-1.0.20",
+            "cui__serde-1.0.190",
+            "cui__serde_json-1.0.108",
+            "cui__serde_starlark-0.1.14",
+            "cui__sha2-0.10.8",
+            "cui__tempfile-3.8.1",
+            "cui__tera-1.19.1",
+            "cui__textwrap-0.16.0",
+            "cui__toml-0.8.6",
+            "cui__tracing-0.1.40",
+            "cui__tracing-subscriber-0.3.17",
+        ],
+        root_module_direct_dev_deps = [
+            "cui__maplit-1.0.2",
+            "cui__spectral-0.6.0",
+        ],
+    )]

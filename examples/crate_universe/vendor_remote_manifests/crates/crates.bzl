@@ -22,4 +22,6 @@ def crate_repositories():
         defs_module = Label("@examples//vendor_remote_manifests/crates:defs.bzl"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(direct_deps = ["cvm"])]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

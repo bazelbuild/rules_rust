@@ -1,5 +1,5 @@
 {
-  "checksum": "419a06b5c486a7e6058c15f3b86f75436b8f843acee78722493548ef16d0929f",
+  "checksum": "e400334eb64aa9700899688208eef4ed5430161522b2ce810cec30e3aa741419",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1471,5 +1471,11 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "clap 2.34.0",
+    "ferris-says 0.2.1",
+    "rand 0.7.3"
+  ],
+  "direct_dev_deps": []
 }

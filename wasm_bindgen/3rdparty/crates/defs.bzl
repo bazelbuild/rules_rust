@@ -2182,3 +2182,30 @@ def crate_repositories():
         strip_prefix = "windows_x86_64_msvc-0.48.0",
         build_file = Label("@rules_rust//wasm_bindgen/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rules_rust_wasm_bindgen__anyhow-1.0.71",
+            "rules_rust_wasm_bindgen__docopt-1.1.1",
+            "rules_rust_wasm_bindgen__env_logger-0.8.4",
+            "rules_rust_wasm_bindgen__log-0.4.19",
+            "rules_rust_wasm_bindgen__rouille-3.6.2",
+            "rules_rust_wasm_bindgen__serde-1.0.171",
+            "rules_rust_wasm_bindgen__serde_derive-1.0.171",
+            "rules_rust_wasm_bindgen__serde_json-1.0.102",
+            "rules_rust_wasm_bindgen__ureq-2.8.0",
+            "rules_rust_wasm_bindgen__walrus-0.19.0",
+            "rules_rust_wasm_bindgen__wasm-bindgen-0.2.88",
+            "rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.88",
+            "rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.88",
+        ],
+        root_module_direct_dev_deps = [
+            "rules_rust_wasm_bindgen__assert_cmd-1.0.8",
+            "rules_rust_wasm_bindgen__diff-0.1.13",
+            "rules_rust_wasm_bindgen__predicates-1.0.8",
+            "rules_rust_wasm_bindgen__rayon-1.7.0",
+            "rules_rust_wasm_bindgen__tempfile-3.6.0",
+            "rules_rust_wasm_bindgen__wasmparser-0.102.0",
+            "rules_rust_wasm_bindgen__wasmprinter-0.2.60",
+        ],
+    )]

@@ -22,4 +22,6 @@ def crate_repositories():
         defs_module = Label("@rules_rust//wasm_bindgen/3rdparty/crates:defs.bzl"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(direct_deps = ["rules_rust_wasm_bindgen"])]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

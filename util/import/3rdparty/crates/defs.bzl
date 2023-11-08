@@ -581,3 +581,16 @@ def crate_repositories():
         strip_prefix = "wasi-0.11.0+wasi-snapshot-preview1",
         build_file = Label("@rules_rust//util/import/3rdparty/crates:BUILD.wasi-0.11.0+wasi-snapshot-preview1.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rules_rust_util_import__aho-corasick-0.7.15",
+            "rules_rust_util_import__lazy_static-1.4.0",
+            "rules_rust_util_import__proc-macro2-1.0.33",
+            "rules_rust_util_import__quickcheck-1.0.3",
+            "rules_rust_util_import__quote-1.0.10",
+            "rules_rust_util_import__syn-1.0.82",
+        ],
+        root_module_direct_dev_deps = [
+        ],
+    )]

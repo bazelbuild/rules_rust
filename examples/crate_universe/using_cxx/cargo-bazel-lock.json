@@ -1,5 +1,5 @@
 {
-  "checksum": "71f166de405c74377a40b5f7d9494231e9a6137c44cf3f97bc6369c753ff00dc",
+  "checksum": "7d2c6f262e548649999a9b93cfe27919abbb24122d9ccb354fa4191b237418ed",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -676,5 +676,9 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "cxx 1.0.109"
+  ],
+  "direct_dev_deps": []
 }

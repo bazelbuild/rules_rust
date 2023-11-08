@@ -22,4 +22,6 @@ def crate_repositories():
         defs_module = Label("@examples//vendor_external/crates:defs.bzl"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(direct_deps = ["crates_vendor"])]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

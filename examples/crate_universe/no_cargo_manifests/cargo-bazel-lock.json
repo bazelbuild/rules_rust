@@ -1,5 +1,5 @@
 {
-  "checksum": "b998836bf7970bcc626224faf94a098c3dec52b11bc4c3eff98bd1d96223d209",
+  "checksum": "489a3e75c56bf96fa8a092d97fbdec8981c8ee35583e72e151f078d64ff98f5e",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -5093,5 +5093,18 @@
     ],
     "x86_64-uwp-windows-gnu": [],
     "x86_64-uwp-windows-msvc": []
-  }
+  },
+  "direct_deps": [
+    "axum 0.4.8",
+    "hyper 0.14.24",
+    "mime 0.3.16",
+    "serde_json 1.0.93",
+    "socket2 0.4.9",
+    "tokio 1.26.0",
+    "tower 0.4.13",
+    "tower-http 0.2.5",
+    "tracing 0.1.37",
+    "tracing-subscriber 0.3.16"
+  ],
+  "direct_dev_deps": []
 }

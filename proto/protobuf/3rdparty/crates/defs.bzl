@@ -1176,3 +1176,17 @@ def crate_repositories():
         strip_prefix = "ws2_32-sys-0.2.1",
         build_file = Label("@rules_rust//proto/protobuf/3rdparty/crates:BUILD.ws2_32-sys-0.2.1.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rules_rust_proto__grpc-0.6.2",
+            "rules_rust_proto__grpc-compiler-0.6.2",
+            "rules_rust_proto__log-0.4.17",
+            "rules_rust_proto__protobuf-2.8.2",
+            "rules_rust_proto__protobuf-codegen-2.8.2",
+            "rules_rust_proto__tls-api-0.1.22",
+            "rules_rust_proto__tls-api-stub-0.1.22",
+        ],
+        root_module_direct_dev_deps = [
+        ],
+    )]

@@ -984,3 +984,17 @@ def crate_repositories():
         strip_prefix = "windows_x86_64_msvc-0.48.0",
         build_file = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rrra__anyhow-1.0.71",
+            "rrra__clap-4.3.11",
+            "rrra__env_logger-0.10.0",
+            "rrra__itertools-0.11.0",
+            "rrra__log-0.4.19",
+            "rrra__serde-1.0.171",
+            "rrra__serde_json-1.0.102",
+        ],
+        root_module_direct_dev_deps = [
+        ],
+    )]

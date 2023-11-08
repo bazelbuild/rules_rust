@@ -22,4 +22,6 @@ def crate_repositories():
         defs_module = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:defs.bzl"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(direct_deps = ["rrra"])]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

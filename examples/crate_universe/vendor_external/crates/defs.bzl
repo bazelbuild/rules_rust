@@ -918,3 +918,13 @@ def crate_repositories():
         strip_prefix = "winapi-x86_64-pc-windows-gnu-0.4.0",
         build_file = Label("@examples//vendor_external/crates:BUILD.winapi-x86_64-pc-windows-gnu-0.4.0.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "crates_vendor__clap-3.1.5",
+            "crates_vendor__rand-0.8.5",
+        ],
+        root_module_direct_dev_deps = [
+            "crates_vendor__version-sync-0.9.4",
+        ],
+    )]

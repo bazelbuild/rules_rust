@@ -1,5 +1,5 @@
 {
-  "checksum": "6031f97ae62e508313612e60e1ad5c2c18646b1b15226af6126ab39eeae825fa",
+  "checksum": "0aec293ab9e8f03523381774e0d99c40117ad86e3fd6ec54846772e7855853e0",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -10397,5 +10397,16 @@
     ],
     "x86_64-uwp-windows-gnu": [],
     "x86_64-uwp-windows-msvc": []
-  }
+  },
+  "direct_deps": [
+    "anyhow 1.0.69",
+    "md-5 0.9.1",
+    "reqwest 0.11.14",
+    "rustls 0.20.8",
+    "rustls-pemfile 1.0.2"
+  ],
+  "direct_dev_deps": [
+    "hex-literal 0.3.4",
+    "httpmock 0.6.7"
+  ]
 }

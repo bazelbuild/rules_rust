@@ -1591,3 +1591,18 @@ def crate_repositories():
         strip_prefix = "windows_x86_64_msvc-0.48.0",
         build_file = Label("@rules_rust//proto/prost/private/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
+
+    return [struct(
+        direct_deps = [
+            "rules_rust_prost__h2-0.3.19",
+            "rules_rust_prost__prost-0.11.9",
+            "rules_rust_prost__prost-types-0.11.9",
+            "rules_rust_prost__protoc-gen-prost-0.2.2",
+            "rules_rust_prost__protoc-gen-tonic-0.2.2",
+            "rules_rust_prost__tokio-1.28.2",
+            "rules_rust_prost__tokio-stream-0.1.14",
+            "rules_rust_prost__tonic-0.9.2",
+        ],
+        root_module_direct_dev_deps = [
+        ],
+    )]
