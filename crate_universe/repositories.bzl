@@ -19,7 +19,8 @@ def crate_universe_dependencies(rust_version = rust_common.default_version, boot
     if bootstrap:
         cargo_bazel_bootstrap(rust_version = rust_version)
 
-    _vendor_crate_repositories()
+    direct_deps = _vendor_crate_repositories()
 
     crates_vendor_deps()
     cross_installer_deps()
+    return direct_deps
