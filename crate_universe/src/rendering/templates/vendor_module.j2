@@ -22,4 +22,6 @@ def crate_repositories():
         defs_module = Label("{{ crates_module_label(file="defs.bzl") }}"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(direct_deps = ["{{ repository_name }}"])]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

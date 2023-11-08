@@ -326,7 +326,6 @@ _CONDITIONS = {
 
 def crate_repositories():
     """A macro for defining repositories for all generated crates"""
-{%- if context.crates | length %}
 {%- for id, crate in context.crates %}
 {%- if not crate.repository %}{% continue %}{% endif %}
 {%- for repository_type, attrs in crate.repository %}
@@ -339,7 +338,22 @@ def crate_repositories():
 {%- endif %}
 {%- endfor %}
 {%- endfor %}
-{%- else %}
-    pass
-{%- endif %}
+    return [struct(
+        direct_deps = [
+            {%- for id in context.direct_deps %}
+            {%- set crate = context.crates | get(key=id) %}
+            {%- if crate.repository %}
+           "{{ crate_repository(name = crate.name, version = crate.version) }}",
+            {%- endif %}
+            {%- endfor %}
+        ],
+        root_module_direct_dev_deps = [
+             {%- for id in context.direct_dev_deps %}
+             {%- set crate = context.crates | get(key=id) %}
+             {%- if crate.repository %}
+             "{{ crate_repository(name = crate.name, version = crate.version) }}",
+             {%- endif %}
+             {%- endfor %}
+        ]
+    )]
 {%- endif %}
