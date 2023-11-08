@@ -531,7 +531,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "cui__adler-1.0.2",
@@ -3351,3 +3355,33 @@ def crate_repositories():
         strip_prefix = "winnow-0.5.18",
         build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.winnow-0.5.18.bazel"),
     )
+
+    return [
+        struct(repo = "cui__anyhow-1.0.75", is_dev_dep = False),
+        struct(repo = "cui__cargo-lock-9.0.0", is_dev_dep = False),
+        struct(repo = "cui__cargo-platform-0.1.4", is_dev_dep = False),
+        struct(repo = "cui__cargo_metadata-0.18.1", is_dev_dep = False),
+        struct(repo = "cui__cargo_toml-0.17.1", is_dev_dep = False),
+        struct(repo = "cui__cfg-expr-0.15.5", is_dev_dep = False),
+        struct(repo = "cui__clap-4.3.11", is_dev_dep = False),
+        struct(repo = "cui__crates-index-2.2.0", is_dev_dep = False),
+        struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
+        struct(repo = "cui__indoc-2.0.4", is_dev_dep = False),
+        struct(repo = "cui__itertools-0.11.0", is_dev_dep = False),
+        struct(repo = "cui__normpath-1.1.1", is_dev_dep = False),
+        struct(repo = "cui__pathdiff-0.2.1", is_dev_dep = False),
+        struct(repo = "cui__regex-1.10.2", is_dev_dep = False),
+        struct(repo = "cui__semver-1.0.20", is_dev_dep = False),
+        struct(repo = "cui__serde-1.0.190", is_dev_dep = False),
+        struct(repo = "cui__serde_json-1.0.108", is_dev_dep = False),
+        struct(repo = "cui__serde_starlark-0.1.14", is_dev_dep = False),
+        struct(repo = "cui__sha2-0.10.8", is_dev_dep = False),
+        struct(repo = "cui__tempfile-3.8.1", is_dev_dep = False),
+        struct(repo = "cui__tera-1.19.1", is_dev_dep = False),
+        struct(repo = "cui__textwrap-0.16.0", is_dev_dep = False),
+        struct(repo = "cui__toml-0.8.6", is_dev_dep = False),
+        struct(repo = "cui__tracing-0.1.40", is_dev_dep = False),
+        struct(repo = "cui__tracing-subscriber-0.3.17", is_dev_dep = False),
+        struct(repo = "cui__maplit-1.0.2", is_dev_dep = True),
+        struct(repo = "cui__spectral-0.6.0", is_dev_dep = True),
+    ]

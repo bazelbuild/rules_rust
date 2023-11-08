@@ -74,6 +74,6 @@ rust_library(
     }),
     version = "0.21.0",
     deps = [
-        "@crates_vendor_manifests__gimli-0.28.0//:gimli",
+        "@crates_vendor_manifests__gimli-0.28.1//:gimli",
     ],
 )

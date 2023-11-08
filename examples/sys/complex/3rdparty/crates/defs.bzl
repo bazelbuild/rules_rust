@@ -395,7 +395,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "complex_sys__bitflags-1.3.2",
@@ -585,3 +589,7 @@ def crate_repositories():
         strip_prefix = "vcpkg-0.2.15",
         build_file = Label("@examples//sys/complex/3rdparty/crates:BUILD.vcpkg-0.2.15.bazel"),
     )
+
+    return [
+        struct(repo = "complex_sys__git2-0.14.4", is_dev_dep = False),
+    ]
