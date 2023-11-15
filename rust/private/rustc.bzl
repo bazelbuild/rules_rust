@@ -993,7 +993,6 @@ def construct_arguments(
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
                 rpaths = depset()
-
             ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths, rustdoc)
 
             env.update(link_env)
@@ -1672,6 +1671,13 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
         for lib in linker_input.libraries
         if _is_dylib(lib)
     ]
+
+    # TODO: Add conditional check for whether or not to pass libstd.so to linker
+    for file in toolchain.rust_std.to_list():
+        # find libstd-*.so in toolchain's stdlibs
+        if file.basename.startswith("libstd-") and file.basename.endswith(".so"):
+            dylibs.append(file)
+            break
     if not dylibs:
         return depset([])
 
