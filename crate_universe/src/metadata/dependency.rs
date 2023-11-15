@@ -147,9 +147,9 @@ fn is_optional_crate_enabled(
         .filter(|&d| d.kind == kind)
         .filter(|&d| d.target.as_ref() == target)
         .filter(|&d| d.optional)
-        .find(|&d| sanitize_module_name(&d.name) == dep.name)
+        .find(|&d| sanitize_module_name(d.rename.as_ref().unwrap_or(&d.name)) == dep.name)
     {
-        enabled_deps.any(|d| d == toml_dep.name.as_str())
+        enabled_deps.any(|d| d == toml_dep.rename.as_ref().unwrap_or(&toml_dep.name))
     } else {
         true
     }
