@@ -123,6 +123,14 @@ pub mod metadata {
         .unwrap()
     }
 
+    pub fn renamed_optional_deps_enabled() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/crate_renamed_optional_deps_enabled/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub fn common() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
