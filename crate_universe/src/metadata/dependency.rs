@@ -648,6 +648,19 @@ mod test {
     }
 
     #[test]
+    fn renamed_optional_deps_disabled() {
+        let metadata = metadata::renamed_optional_deps_disabled();
+
+        let serde_with = find_metadata_node("serde_with", &metadata);
+        let serde_with_depset = DependencySet::new_for_node(serde_with, &metadata);
+        assert!(!serde_with_depset
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "indexmap" }));
+    }
+
+    #[test]
     fn optional_deps_enabled() {
         let metadata = metadata::optional_deps_enabled();
 
