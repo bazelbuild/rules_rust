@@ -1,5 +1,5 @@
 {
-  "checksum": "a413c48b000eb304c566838c4ab11eed4d8aa682d4ca130300a58028240c9fdb",
+  "checksum": "ba7764fe975cd4b1443497b2b4f2d753ff7aa05936e9b8d5f6378240a4bf81a0",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -581,6 +581,9 @@
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
     ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-linux-gnu"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -597,6 +600,7 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -611,7 +615,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "i686-apple-darwin": [
       "i686-apple-darwin"
@@ -671,6 +676,9 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
     "x86_64-unknown-none": [

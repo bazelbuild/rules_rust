@@ -1,5 +1,5 @@
 {
-  "checksum": "3ea228c74c6897dd56feea25dfd24669949e7a141dae208820d02da3e174a6af",
+  "checksum": "08a590b0ec2d6a1d59d568b6c177bbb9785ae7c42578449c3024e19532c7c166",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -1884,7 +1884,8 @@
     "cfg(all(target_arch = \"x86\", target_env = \"gnu\", not(windows_raw_dylib)))": [],
     "cfg(all(target_arch = \"x86\", target_env = \"msvc\", not(windows_raw_dylib)))": [],
     "cfg(all(target_arch = \"x86_64\", target_env = \"gnu\", not(target_abi = \"llvm\"), not(windows_raw_dylib)))": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(all(target_arch = \"x86_64\", target_env = \"msvc\", not(windows_raw_dylib)))": [
       "x86_64-pc-windows-msvc"
@@ -1897,7 +1898,8 @@
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(not(target_family = \"wasm\"))": [
       "aarch64-apple-darwin",
@@ -1906,7 +1908,8 @@
       "aarch64-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-pc-windows-msvc",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
@@ -1916,7 +1919,8 @@
       "wasm32-unknown-unknown",
       "wasm32-wasi",
       "x86_64-apple-darwin",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"redox\")": [],
@@ -1930,7 +1934,8 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "x86_64-apple-darwin",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(windows)": [
       "x86_64-pc-windows-msvc"
@@ -1949,6 +1954,9 @@
       "x86_64-pc-windows-msvc"
     ],
     "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-linux-gnu"
     ]
   },

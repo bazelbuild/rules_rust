@@ -26,7 +26,7 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")
 
 rules_rust_dependencies()
 
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "render_config", "splicing_config")
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
 load("//bazel/cargo:crates_repository.bzl", CARGO_ANNOTATIONS = "ANNOTATIONS", CARGO_PACKAGES = "PACKAGES")
 
 crates_repository(
@@ -37,9 +37,6 @@ crates_repository(
     generator = "@cargo-bazel//:bin/cargo-bazel",
     lockfile = "//bazel/cargo:cargo-bazel-lock.json",
     packages = CARGO_PACKAGES,
-    render_config = render_config(
-        platforms_template = "@//bazel/cargo/platforms:{triple}",
-    ),
     rust_toolchain_cargo_template = "@nix_rust//:bin/{tool}",
     rust_toolchain_rustc_template = "@nix_rust//:bin/{tool}",
     splicing_config = splicing_config(
@@ -55,6 +52,7 @@ crates_repository(
         "x86_64-apple-darwin",
         "x86_64-pc-windows-msvc",
         "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-nixos-gnu",
     ],
 )
 

@@ -15,3 +15,11 @@ pub fn sanitize_module_name(name: &str) -> String {
 pub fn sanitize_repository_name(name: &str) -> String {
     name.replace('+', "-")
 }
+
+// While Bazel is NixOS aware (via `@platforms//os:nixos`), `rustc`
+// is not, so any target triples for `nixos` get remapped to `linux`
+// for the purposes of determining `cargo metadata`, resolving `cfg`
+// targets, etc.
+pub fn cargo_target(target: &str) -> String {
+    target.replace("nixos", "linux")
+}

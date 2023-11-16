@@ -1,5 +1,5 @@
 {
-  "checksum": "8af6a1723bc1a1891171740bc53ec8909a24d2f71c3d123bb2d0450df2362e2d",
+  "checksum": "f08bc17aa86cf5a2fb6d448f1c86b86d92058eb9e45883db5bde3fc03aa3d7fd",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2095,6 +2095,16 @@
               "std",
               "waker-fn"
             ],
+            "aarch64-unknown-nixos-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
             "arm-unknown-linux-gnueabi": [
               "alloc",
               "default",
@@ -2306,6 +2316,16 @@
               "waker-fn"
             ],
             "x86_64-unknown-linux-gnu": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-nixos-gnu": [
               "alloc",
               "default",
               "fastrand",
@@ -3310,6 +3330,12 @@
               "http2",
               "runtime"
             ],
+            "aarch64-unknown-nixos-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
             "arm-unknown-linux-gnueabi": [
               "client",
               "h2",
@@ -3431,6 +3457,12 @@
               "runtime"
             ],
             "x86_64-unknown-linux-gnu": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-nixos-gnu": [
               "client",
               "h2",
               "http2",
@@ -3674,6 +3706,9 @@
             "aarch64-unknown-linux-gnu": [
               "std"
             ],
+            "aarch64-unknown-nixos-gnu": [
+              "std"
+            ],
             "arm-unknown-linux-gnueabi": [
               "std"
             ],
@@ -3735,6 +3770,9 @@
               "std"
             ],
             "x86_64-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
               "std"
             ],
             "x86_64-unknown-none": [
@@ -7257,6 +7295,11 @@
               "io-util",
               "memchr"
             ],
+            "aarch64-unknown-nixos-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
             "arm-unknown-linux-gnueabi": [
               "bytes",
               "io-util",
@@ -7360,6 +7403,11 @@
               "memchr"
             ],
             "x86_64-unknown-linux-gnu": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-unknown-nixos-gnu": [
               "bytes",
               "io-util",
               "memchr"
@@ -10045,6 +10093,9 @@
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
     ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-linux-gnu"
+    ],
     "aarch64-uwp-windows-msvc": [],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -10066,6 +10117,7 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10081,11 +10133,13 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(any(target_os = \"android\", target_os = \"linux\"))": [
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10094,7 +10148,8 @@
       "powerpc-unknown-linux-gnu",
       "s390x-unknown-linux-gnu",
       "x86_64-linux-android",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(any(target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"illumos\", target_os = \"netbsd\", target_os = \"openbsd\", target_os = \"solaris\"))": [
       "i686-unknown-freebsd",
@@ -10107,6 +10162,7 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10121,7 +10177,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(docsrs)": [],
     "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))": [
@@ -10132,6 +10189,7 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10153,6 +10211,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(target_arch = \"wasm32\"))": [
@@ -10163,6 +10222,7 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10184,6 +10244,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(target_os = \"unknown\"))": [
@@ -10194,6 +10255,7 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10216,6 +10278,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(windows))": [
@@ -10225,6 +10288,7 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10246,6 +10310,7 @@
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(windows_raw_dylib))": [
@@ -10256,6 +10321,7 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10279,6 +10345,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(target_arch = \"wasm32\")": [
@@ -10306,6 +10373,7 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10320,7 +10388,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(windows)": [
       "aarch64-pc-windows-msvc",
@@ -10390,6 +10459,9 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
     "x86_64-unknown-none": [

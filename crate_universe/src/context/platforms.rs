@@ -5,6 +5,7 @@ use cfg_expr::targets::{get_builtin_target_by_triple, TargetInfo};
 use cfg_expr::{Expression, Predicate};
 
 use crate::context::CrateContext;
+use crate::utils::cargo_target;
 use crate::utils::starlark::Select;
 
 /// Walk through all dependencies in a [CrateContext] list for all configuration specific
@@ -44,20 +45,22 @@ pub fn resolve_cfg_platforms(
     // Generate target information for each triple string
     let target_infos = supported_platform_triples
         .iter()
-        .map(|t| match get_builtin_target_by_triple(t) {
-            Some(info) => Ok(info),
-            None => Err(anyhow!(
-                "Invalid platform triple in supported platforms: {}",
-                t
-            )),
-        })
-        .collect::<Result<Vec<&'static TargetInfo>>>()?;
+        .map(
+            |target| match get_builtin_target_by_triple(&cargo_target(target)) {
+                Some(info) => Ok((target, info)),
+                None => Err(anyhow!(
+                    "Invalid platform triple in supported platforms: {}",
+                    target
+                )),
+            },
+        )
+        .collect::<Result<BTreeMap<&String, &'static TargetInfo>>>()?;
 
     // `cfg-expr` does not understand configurations that are simply platform triples
-    // (`x86_64-unknown-linux-gun` vs `cfg(target = "x86_64-unkonwn-linux-gnu")`). So
+    // (`x86_64-unknown-linux-gnu` vs `cfg(target = "x86_64-unkonwn-linux-gnu")`). So
     // in order to parse configurations, the text is renamed for the check but the
     // original is retained for comaptibility with the manifest.
-    let rename = |cfg: &str| -> String { format!("cfg(target = \"{cfg}\")") };
+    let rename = |cfg: &str| -> String { format!("cfg(target = \"{}\")", cargo_target(cfg)) };
     let original_cfgs: BTreeMap<String, String> = configurations
         .iter()
         .filter(|cfg| !cfg.starts_with("cfg("))
@@ -79,17 +82,17 @@ pub fn resolve_cfg_platforms(
 
             let triples = target_infos
                 .iter()
-                .filter(|info| {
+                .filter(|(_, target_info)| {
                     expression.eval(|p| match p {
-                        Predicate::Target(tp) => tp.matches(**info),
+                        Predicate::Target(tp) => tp.matches(**target_info),
                         Predicate::KeyValue { key, val } => {
-                            *key == "target" && val == &info.triple.as_str()
+                            *key == "target" && val == &target_info.triple.as_str()
                         }
                         // For now there is no other kind of matching
                         _ => false,
                     })
                 })
-                .map(|info| info.triple.to_string())
+                .map(|(triple, _)| String::from(*triple))
                 .collect();
 
             // Map any renamed configurations back to their original IDs
@@ -101,7 +104,7 @@ pub fn resolve_cfg_platforms(
             Ok((cfg, triples))
         })
         .chain(supported_platform_triples.iter().filter_map(|triple| {
-            let target = get_builtin_target_by_triple(triple);
+            let target = get_builtin_target_by_triple(&cargo_target(triple));
             target.map(|target| Ok((triple.clone(), [target.triple.to_string()].into())))
         }))
         .collect()

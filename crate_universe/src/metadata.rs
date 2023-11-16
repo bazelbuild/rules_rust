@@ -20,6 +20,7 @@ use tracing::debug;
 
 use crate::config::CrateId;
 use crate::lockfile::Digest;
+use crate::utils::cargo_target;
 use crate::utils::starlark::SelectList;
 
 pub use self::dependency::*;
@@ -487,7 +488,7 @@ impl FeatureGenerator {
                 .arg("--color=never")
                 .arg("--workspace")
                 .arg("--target")
-                .arg(target)
+                .arg(cargo_target(target))
                 .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
