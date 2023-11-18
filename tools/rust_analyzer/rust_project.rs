@@ -208,6 +208,7 @@ pub fn write_rust_project(
     // Render the `rust-project.json` file and replace the exec root
     // placeholders with the path to the local exec root.
     let rust_project_content = serde_json::to_string(rust_project)?
+        .replace("${pwd}", execution_root)
         .replace("__EXEC_ROOT__", execution_root)
         .replace("__OUTPUT_BASE__", output_base);
 
