@@ -20,7 +20,6 @@ load(
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
@@ -214,7 +213,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = "rlib",
             root = lib_rs,

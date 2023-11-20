@@ -15,12 +15,10 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_regi
 rules_rust_dependencies()
 
 rust_register_toolchains(
-    allocator_library = "@test_cc_common_link//:allocator_library",
     edition = "2021",
-    global_allocator_library = "@test_cc_common_link//:global_allocator_library",
     versions = [
-        "nightly/2023-04-20",
-        "1.68.0",
+        "nightly/2023-06-01",
+        "1.70.0",
     ],
 )
 
@@ -43,7 +41,7 @@ crates_repository(
         ),
     },
     # Should match the version represented by the currently registered `rust_toolchain`.
-    rust_version = "nightly/2023-04-20",
+    rust_version = "nightly/2023-06-01",
 )
 
 load(

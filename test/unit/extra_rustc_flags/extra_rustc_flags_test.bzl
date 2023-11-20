@@ -54,7 +54,7 @@ extra_rustc_flags_present_test = analysistest.make(
         ),
     },
     config_settings = {
-        "@//:extra_rustc_flags": [EXTRA_FLAG],
+        str(Label("//:extra_rustc_flags")): [EXTRA_FLAG],
     },
 )
 
@@ -67,8 +67,8 @@ extra_rustc_flag_present_test = analysistest.make(
         ),
     },
     config_settings = {
-        "@//:extra_rustc_flag": [EXTRA_FLAG],
-        "@//:extra_rustc_flags": [],
+        str(Label("//:extra_rustc_flag")): [EXTRA_FLAG],
+        str(Label("//:extra_rustc_flags")): [],
     },
 )
 

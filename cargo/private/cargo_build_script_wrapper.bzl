@@ -10,12 +10,18 @@ load("//rust:defs.bzl", "rust_binary")
 
 def cargo_build_script(
         name,
+        edition = None,
+        crate_name = None,
+        crate_root = None,
+        srcs = [],
         crate_features = [],
         version = None,
         deps = [],
         link_deps = [],
+        proc_macro_deps = [],
         build_script_env = {},
         data = [],
+        compile_data = [],
         tools = [],
         links = None,
         rundir = None,
@@ -23,6 +29,7 @@ def cargo_build_script(
         rustc_flags = [],
         visibility = None,
         tags = None,
+        aliases = None,
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -85,13 +92,19 @@ def cargo_build_script(
     Args:
         name (str): The name for the underlying rule. This should be the name of the package
             being compiled, optionally with a suffix of `_build_script`.
+        edition (str): The rust edition to use for the internal binary crate.
+        crate_name (str): Crate name to use for build script.
+        crate_root (label): The file that will be passed to rustc to be used for building this crate.
+        srcs (list of label): Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The build-dependencies of the crate.
         link_deps (list, optional): The subset of the (normal) dependencies of the crate that have the
             links attribute and therefore provide environment variables to this build script.
+        proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
         build_script_env (dict, optional): Environment variables for build scripts.
         data (list, optional): Files needed by the build script.
+        compile_data (list, optional): Files needed for the compilation of the build script.
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
         rundir (str, optional): A directory to `cd` to before the cargo_build_script is run. This should be a path relative to the exec root.
@@ -103,6 +116,8 @@ def cargo_build_script(
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
+        aliases (dict, optional): Remap crates to a new name or moniker for linkage to this target. \
+            These are other `rust_library` targets and will be presented as the new name given.
         **kwargs: Forwards to the underlying `rust_binary` rule. An exception is the `compatible_with`
             attribute, which shouldn't be forwarded to the `rust_binary`, as the `rust_binary` is only
             built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_scirpt_run`
@@ -122,28 +137,22 @@ def cargo_build_script(
     binary_tags = [tag for tag in tags or []]
     if "manual" not in binary_tags:
         binary_tags.append("manual")
-    build_script_kwargs = {}
-    binary_kwargs = kwargs
-    if "compatible_with" in kwargs:
-        build_script_kwargs["compatible_with"] = kwargs["compatible_with"]
-        binary_kwargs.pop("compatible_with")
-
-    if "toolchains" in kwargs:
-        build_script_kwargs["toolchains"] = kwargs["toolchains"]
-
-    if "features" in kwargs:
-        build_script_kwargs["features"] = kwargs["features"]
 
     rust_binary(
         name = name + "_",
+        crate_name = crate_name,
+        srcs = srcs,
+        crate_root = crate_root,
         crate_features = crate_features,
-        version = version,
         deps = deps,
+        proc_macro_deps = proc_macro_deps,
         data = data,
+        compile_data = compile_data,
         rustc_env = rustc_env,
         rustc_flags = rustc_flags,
+        edition = edition,
         tags = binary_tags,
-        **binary_kwargs
+        aliases = aliases,
     )
     _build_script_run(
         name = name,
@@ -160,5 +169,5 @@ def cargo_build_script(
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
-        **build_script_kwargs
+        **kwargs
     )

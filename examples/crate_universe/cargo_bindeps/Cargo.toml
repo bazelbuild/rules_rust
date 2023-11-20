@@ -1,0 +1,11 @@
+[package]
+name = "cargo_bindeps"
+version = "0.1.0"
+authors = ["UebelAndre <github@uebelandre.com>"]
+edition = "2018"
+
+[lib]
+path = "fake.rs"
+
+[dependencies]
+hyperfine = { version = "1.16.1", artifact = "bin" }

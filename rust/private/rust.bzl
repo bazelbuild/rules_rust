@@ -24,12 +24,16 @@ load(
     "compute_crate_name",
     "crate_root_src",
     "dedent",
+    "determine_lib_name",
     "determine_output_hash",
     "expand_dict_value_locations",
     "find_toolchain",
+    "get_edition",
     "get_import_macro_deps",
     "transform_deps",
+    "transform_sources",
 )
+
 # TODO(marco): Separate each rule into its own file.
 
 def _assert_no_deprecated_attributes(_ctx):
@@ -65,129 +69,6 @@ def _assert_correct_dep_mapping(ctx):
                     type,
                 ),
             )
-
-def _determine_lib_name(name, crate_type, toolchain, lib_hash = None):
-    """See https://github.com/bazelbuild/rules_rust/issues/405
-
-    Args:
-        name (str): The name of the current target
-        crate_type (str): The `crate_type`
-        toolchain (rust_toolchain): The current `rust_toolchain`
-        lib_hash (str, optional): The hashed crate root path
-
-    Returns:
-        str: A unique library name
-    """
-    extension = None
-    prefix = ""
-    if crate_type in ("dylib", "cdylib", "proc-macro"):
-        extension = toolchain.dylib_ext
-    elif crate_type == "staticlib":
-        extension = toolchain.staticlib_ext
-    elif crate_type in ("lib", "rlib"):
-        # All platforms produce 'rlib' here
-        extension = ".rlib"
-        prefix = "lib"
-    elif crate_type == "bin":
-        fail("crate_type of 'bin' was detected in a rust_library. Please compile " +
-             "this crate as a rust_binary instead.")
-
-    if not extension:
-        fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
-              "please file an issue!").format(crate_type))
-
-    prefix = "lib"
-    if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
-        prefix = ""
-    if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
-        prefix = ""
-
-    return "{prefix}{name}{lib_hash}{extension}".format(
-        prefix = prefix,
-        name = name,
-        lib_hash = "-" + lib_hash if lib_hash else "",
-        extension = extension,
-    )
-
-def get_edition(attr, toolchain, label):
-    """Returns the Rust edition from either the current rule's attirbutes or the current `rust_toolchain`
-
-    Args:
-        attr (struct): The current rule's attributes
-        toolchain (rust_toolchain): The `rust_toolchain` for the current target
-        label (Label): The label of the target being built
-
-    Returns:
-        str: The target Rust edition
-    """
-    if getattr(attr, "edition"):
-        return attr.edition
-    elif not toolchain.default_edition:
-        fail("Attribute `edition` is required for {}.".format(label))
-    else:
-        return toolchain.default_edition
-
-def _symlink_for_non_generated_source(ctx, src_file, package_root):
-    """Creates and returns a symlink for non-generated source files.
-
-    This rule uses the full path to the source files and the rule directory to compute
-    the relative paths. This is needed, instead of using `short_path`, because of non-generated
-    source files in external repositories possibly returning relative paths depending on the
-    current version of Bazel.
-
-    Args:
-        ctx (struct): The current rule's context.
-        src_file (File): The source file.
-        package_root (File): The full path to the directory containing the current rule.
-
-    Returns:
-        File: The created symlink if a non-generated file, or the file itself.
-    """
-
-    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
-        src_short_path = paths.relativize(src_file.path, src_file.root.path)
-        src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
-        ctx.actions.symlink(
-            output = src_symlink,
-            target_file = src_file,
-            progress_message = "Creating symlink to source file: {}".format(src_file.path),
-        )
-        return src_symlink
-    else:
-        return src_file
-
-def _transform_sources(ctx, srcs, crate_root):
-    """Creates symlinks of the source files if needed.
-
-    Rustc assumes that the source files are located next to the crate root.
-    In case of a mix between generated and non-generated source files, this
-    we violate this assumption, as part of the sources will be located under
-    bazel-out/... . In order to allow for targets that contain both generated
-    and non-generated source files, we generate symlinks for all non-generated
-    files.
-
-    Args:
-        ctx (struct): The current rule's context.
-        srcs (List[File]): The sources listed in the `srcs` attribute
-        crate_root (File): The file specified in the `crate_root` attribute,
-                           if it exists, otherwise None
-
-    Returns:
-        Tuple(List[File], File): The transformed srcs and crate_root
-    """
-    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
-
-    if not has_generated_sources:
-        return srcs, crate_root
-
-    package_root = paths.dirname(paths.join(ctx.label.workspace_root, ctx.build_file_path))
-    generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
-    generated_root = crate_root
-    if crate_root:
-        generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
-        generated_sources.append(generated_root)
-
-    return generated_sources, generated_root
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -262,10 +143,12 @@ def _rust_library_common(ctx, crate_type):
 
     toolchain = find_toolchain(ctx)
 
+    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
+
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
-    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     # Determine unique hash for this rlib.
     # Note that we don't include a hash for `cdylib` and `staticlib` since they are meant to be consumed externally
@@ -277,15 +160,13 @@ def _rust_library_common(ctx, crate_type):
     else:
         output_hash = determine_output_hash(crate_root, ctx.label)
 
-    crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-    rust_lib_name = _determine_lib_name(
+    rust_lib_name = determine_lib_name(
         crate_name,
         crate_type,
         toolchain,
         output_hash,
     )
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-
     rust_metadata = None
     if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
         rust_metadata = ctx.actions.declare_file(
@@ -300,7 +181,8 @@ def _rust_library_common(ctx, crate_type):
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        output_hash = output_hash,
+        crate_info_dict = dict(
             name = crate_name,
             type = crate_type,
             root = crate_root,
@@ -319,7 +201,6 @@ def _rust_library_common(ctx, crate_type):
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
-        output_hash = output_hash,
     )
 
 def _rust_binary_impl(ctx):
@@ -343,13 +224,13 @@ def _rust_binary_impl(ctx):
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
-    srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     return rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root,
@@ -399,7 +280,7 @@ def _rust_test_impl(ctx):
             ),
         )
 
-        srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
 
         # Optionally join compile data
         if crate.compile_data:
@@ -411,11 +292,18 @@ def _rust_test_impl(ctx):
         else:
             compile_data_targets = depset(ctx.attr.compile_data)
         rustc_env_files = ctx.files.rustc_env_files + crate.rustc_env_files
+
+        # crate.rustc_env is already expanded upstream in rust_library rule implementation
         rustc_env = dict(crate.rustc_env)
-        rustc_env.update(**ctx.attr.rustc_env)
+        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
+        rustc_env.update(expand_dict_value_locations(
+            ctx,
+            ctx.attr.rustc_env,
+            data_paths,
+        ))
 
         # Build the test binary using the dependency's srcs.
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate.name,
             type = crate_type,
             root = crate.root,
@@ -439,7 +327,7 @@ def _rust_test_impl(ctx):
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
             crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
-        srcs, crate_root = _transform_sources(ctx, ctx.files.srcs, crate_root)
+        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
         output_hash = determine_output_hash(crate_root, ctx.label)
         output = ctx.actions.declare_file(
@@ -450,8 +338,15 @@ def _rust_test_impl(ctx):
             ),
         )
 
+        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
+        rustc_env = expand_dict_value_locations(
+            ctx,
+            ctx.attr.rustc_env,
+            data_paths,
+        )
+
         # Target is a standalone crate. Build the test binary as its own crate.
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name),
             type = crate_type,
             root = crate_root,
@@ -461,7 +356,7 @@ def _rust_test_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
-            rustc_env = ctx.attr.rustc_env,
+            rustc_env = rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
             compile_data = depset(ctx.files.compile_data),
@@ -473,8 +368,9 @@ def _rust_test_impl(ctx):
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = crate_info,
+        crate_info_dict = crate_info_dict,
         rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
+        skip_expanding_rustc_env = True,
     )
     data = getattr(ctx.attr, "data", [])
 
@@ -1159,6 +1055,13 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
     # use a fake process wrapper
     new_attr["_process_wrapper"] = attr.label(
         default = None,
+        executable = True,
+        allow_single_file = True,
+        cfg = "exec",
+    )
+
+    new_attr["_bootstrap_process_wrapper"] = attr.label(
+        default = Label("//util/process_wrapper:bootstrap_process_wrapper"),
         executable = True,
         allow_single_file = True,
         cfg = "exec",

@@ -75,9 +75,9 @@ rust_library(
     version = "0.4.3",
     deps = [
         "@cvm__async-stream-0.3.5//:async_stream",
-        "@cvm__bytes-1.4.0//:bytes",
-        "@cvm__futures-core-0.3.28//:futures_core",
-        "@cvm__tokio-1.32.0//:tokio",
+        "@cvm__bytes-1.5.0//:bytes",
+        "@cvm__futures-core-0.3.29//:futures_core",
+        "@cvm__tokio-1.33.0//:tokio",
         "@cvm__tokio-stream-0.1.14//:tokio_stream",
     ],
 )

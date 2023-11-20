@@ -31,6 +31,7 @@ rust_library(
     crate_features = [
         "alloc",
         "std",
+        "unicode",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -78,6 +79,7 @@ rust_library(
     }),
     version = "1.6.0",
     deps = [
-        "@cui__memchr-2.5.0//:memchr",
+        "@cui__memchr-2.6.4//:memchr",
+        "@cui__regex-automata-0.3.3//:regex_automata",
     ],
 )

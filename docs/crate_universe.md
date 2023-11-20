@@ -386,7 +386,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | required |  |
 | <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
 | <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
-| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code>   | String | optional | <code>"1.72.0"</code> |
+| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code>   | String | optional | <code>"1.74.0"</code> |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | <code>""</code> |
 | <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | <code>["aarch64-unknown-linux-gnu", "i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios-sim", "aarch64-apple-ios", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv7em-none-eabi", "thumbv8m.main-none-eabi", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-none"]</code> |
 
@@ -569,7 +569,7 @@ list: A list of labels to generated rust targets (str)
 ## crate.spec
 
 <pre>
-crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
+crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
 </pre>
 
 A constructor for a crate dependency.
@@ -586,6 +586,8 @@ See [specifying dependencies][sd] in the Cargo book for more details.
 | :------------- | :------------- | :------------- |
 | <a id="crate.spec-package"></a>package |  The explicit name of the package (used when attempting to alias a crate).   |  `None` |
 | <a id="crate.spec-version"></a>version |  The exact version of the crate. Cannot be used with <code>git</code>.   |  `None` |
+| <a id="crate.spec-artifact"></a>artifact |  Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.   |  `None` |
+| <a id="crate.spec-lib"></a>lib |  If using <code>artifact = "bin"</code>, additionally setting <code>lib = True</code> declares a dependency on both the package's library and binary, as opposed to just the binary.   |  `None` |
 | <a id="crate.spec-default_features"></a>default_features |  Maps to the <code>default-features</code> flag.   |  `True` |
 | <a id="crate.spec-features"></a>features |  A list of features to use for the crate   |  `[]` |
 | <a id="crate.spec-git"></a>git |  The Git url to use for the crate. Cannot be used with <code>version</code>.   |  `None` |
@@ -637,8 +639,8 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-data"></a>data |  A list of labels to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-data_glob"></a>data_glob |  A list of glob patterns to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-deps"></a>deps |  A list of labels to add to a crate's <code>rust_library::deps</code> attribute.   |  `None` |
-| <a id="crate.annotation-extra_aliased_targets"></a>extra_aliased_targets |  A list of targets to add to the generated aliases in the root crate_universe repository.   |  `{}` |
-| <a id="crate.annotation-gen_binaries"></a>gen_binaries |  As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.   |  `[]` |
+| <a id="crate.annotation-extra_aliased_targets"></a>extra_aliased_targets |  A list of targets to add to the generated aliases in the root crate_universe repository.   |  `None` |
+| <a id="crate.annotation-gen_binaries"></a>gen_binaries |  As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.   |  `None` |
 | <a id="crate.annotation-disable_pipelining"></a>disable_pipelining |  If True, disables pipelining for library targets for this crate.   |  `False` |
 | <a id="crate.annotation-gen_build_script"></a>gen_build_script |  An authorative flag to determine whether or not to produce <code>cargo_build_script</code> targets for the current crate.   |  `None` |
 | <a id="crate.annotation-patch_args"></a>patch_args |  The <code>patch_args</code> attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)   |  `None` |
@@ -728,7 +730,7 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.72.0"` |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.74.0"` |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  `False` |
 
 
@@ -794,7 +796,7 @@ Various settings used to configure Cargo manifest splicing behavior.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"1"` |
+| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"2"` |
 
 **RETURNS**
 

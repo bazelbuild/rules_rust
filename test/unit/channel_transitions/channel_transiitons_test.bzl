@@ -31,7 +31,7 @@ nightly_transition_test = analysistest.make(
     _nightly_transition_test_impl,
     doc = "Test that targets can be forced to use a nightly toolchain",
     config_settings = {
-        "@//rust/toolchain/channel:channel": "nightly",
+        str(Label("//rust/toolchain/channel:channel")): "nightly",
     },
 )
 
@@ -42,7 +42,7 @@ stable_transition_test = analysistest.make(
     _stable_transition_test_impl,
     doc = "Test that targets can be forced to use a stable toolchain",
     config_settings = {
-        "@//rust/toolchain/channel:channel": "stable",
+        str(Label("//rust/toolchain/channel:channel")): "stable",
     },
 )
 

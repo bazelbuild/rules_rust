@@ -1,7 +1,9 @@
 //! Gathering dependencies is the largest part of annotating.
 
 use anyhow::{bail, Result};
-use cargo_metadata::{Metadata as CargoMetadata, Node, NodeDep, Package, PackageId};
+use cargo_metadata::{
+    DependencyKind, Metadata as CargoMetadata, Node, NodeDep, Package, PackageId,
+};
 use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
@@ -47,8 +49,8 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(node, dev, metadata),
-                collect_deps_selectable(node, normal, metadata),
+                collect_deps_selectable(node, dev, metadata, DependencyKind::Normal),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Normal),
             )
         };
 
@@ -59,12 +61,12 @@ impl DependencySet {
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
                 .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
-                .filter(|dep| !is_build_dependency(dep))
+                .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(node, dev, metadata),
-                collect_deps_selectable(node, normal, metadata),
+                collect_deps_selectable(node, dev, metadata, DependencyKind::Development),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Development),
             )
         };
 
@@ -81,8 +83,8 @@ impl DependencySet {
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
 
             (
-                collect_deps_selectable(node, proc_macro, metadata),
-                collect_deps_selectable(node, normal, metadata),
+                collect_deps_selectable(node, proc_macro, metadata, DependencyKind::Build),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Build),
             )
         };
 
@@ -126,6 +128,7 @@ fn is_optional_crate_enabled(
     dep: &NodeDep,
     target: Option<&Platform>,
     metadata: &CargoMetadata,
+    kind: DependencyKind,
 ) -> bool {
     let pkg = &metadata[&parent.id];
 
@@ -141,11 +144,12 @@ fn is_optional_crate_enabled(
     if let Some(toml_dep) = pkg
         .dependencies
         .iter()
+        .filter(|&d| d.kind == kind)
         .filter(|&d| d.target.as_ref() == target)
         .filter(|&d| d.optional)
-        .find(|&d| sanitize_module_name(&d.name) == dep.name)
+        .find(|&d| sanitize_module_name(d.rename.as_ref().unwrap_or(&d.name)) == dep.name)
     {
-        enabled_deps.any(|d| d == toml_dep.name.as_str())
+        enabled_deps.any(|d| d == toml_dep.rename.as_ref().unwrap_or(&toml_dep.name))
     } else {
         true
     }
@@ -155,6 +159,7 @@ fn collect_deps_selectable(
     node: &Node,
     deps: Vec<&NodeDep>,
     metadata: &cargo_metadata::Metadata,
+    kind: DependencyKind,
 ) -> SelectList<Dependency> {
     let mut selectable = SelectList::default();
 
@@ -165,7 +170,7 @@ fn collect_deps_selectable(
         let alias = get_target_alias(&dep.name, dep_pkg);
 
         for kind_info in &dep.dep_kinds {
-            if is_optional_crate_enabled(node, dep, kind_info.target.as_ref(), metadata) {
+            if is_optional_crate_enabled(node, dep, kind_info.target.as_ref(), metadata, kind) {
                 selectable.insert(
                     Dependency {
                         package_id: dep.pkg.clone(),
@@ -605,6 +610,30 @@ mod test {
     }
 
     #[test]
+    fn multi_kind_proc_macro_dep() {
+        let metadata = metadata::multi_kind_proc_macro_dep();
+
+        let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        let lib_deps: Vec<_> = dependencies
+            .proc_macro_deps
+            .get_iter(None)
+            .unwrap()
+            .map(|dep| dep.target_name.clone())
+            .collect();
+        assert_eq!(lib_deps, vec!["paste"]);
+
+        let build_deps: Vec<_> = dependencies
+            .build_proc_macro_deps
+            .get_iter(None)
+            .unwrap()
+            .map(|dep| dep.target_name.clone())
+            .collect();
+        assert_eq!(build_deps, vec!["paste"]);
+    }
+
+    #[test]
     fn optional_deps_disabled() {
         let metadata = metadata::optional_deps_disabled();
 
@@ -616,6 +645,19 @@ mod test {
             .get_iter(None)
             .expect("Iterating over known keys should never panic")
             .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
+    }
+
+    #[test]
+    fn renamed_optional_deps_disabled() {
+        let metadata = metadata::renamed_optional_deps_disabled();
+
+        let serde_with = find_metadata_node("serde_with", &metadata);
+        let serde_with_depset = DependencySet::new_for_node(serde_with, &metadata);
+        assert!(!serde_with_depset
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| { dep.target_name == "indexmap" }));
     }
 
     #[test]
@@ -659,5 +701,42 @@ mod test {
             .get_iter(Some(&"cfg(target_os = \"macos\")".to_string()))
             .expect("Iterating over known keys should never panic")
             .any(|dep| { dep.target_name == "mio" }));
+    }
+
+    #[test]
+    fn optional_deps_disabled_build_dep_enabled() {
+        let metadata = metadata::optional_deps_disabled_build_dep_enabled();
+
+        let node = find_metadata_node("gherkin", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        assert!(!dependencies
+            .normal_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| dep.target_name == "serde"));
+
+        assert!(dependencies
+            .build_deps
+            .get_iter(None)
+            .expect("Iterating over known keys should never panic")
+            .any(|dep| dep.target_name == "serde"));
+    }
+
+    #[test]
+    fn renamed_optional_deps_enabled() {
+        let metadata = metadata::renamed_optional_deps_enabled();
+
+        let p256 = find_metadata_node("p256", &metadata);
+        let p256_depset = DependencySet::new_for_node(p256, &metadata);
+        assert_eq!(
+            p256_depset
+                .normal_deps
+                .get_iter(None)
+                .expect("Iterating over known keys should never panic")
+                .filter(|dep| { dep.target_name == "ecdsa" })
+                .count(),
+            1
+        );
     }
 }

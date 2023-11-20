@@ -109,7 +109,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_wasm_bindgen__cc-1.0.79//:cc",
+        "@rules_rust_wasm_bindgen__cc-1.0.83//:cc",
     ],
 )
 

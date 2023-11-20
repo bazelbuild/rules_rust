@@ -1,0 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+alias(
+    name = "hyperfine",
+    actual = "@crate_index_cargo_bindeps//:hyperfine__hyperfine",
+    tags = ["manual"],
+)
+
+rust_library(
+    name = "bindeps",
+    srcs = glob(["**/*.rs"]),
+    data = [":hyperfine"],
+    edition = "2018",
+    rustc_env = {
+        "HYPERFINE": "$(rootpath :hyperfine)",
+    },
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":bindeps",
+    edition = "2018",
+)

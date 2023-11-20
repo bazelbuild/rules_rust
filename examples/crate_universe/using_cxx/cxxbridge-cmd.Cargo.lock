@@ -46,7 +46,7 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-cmd"
-version = "1.0.105"
+version = "1.0.109"
 dependencies = [
  "clap",
  "codespan-reporting",

@@ -4,7 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":input_from_different_cfg.bzl", "input_from_different_cfg")
 
 write_file(
-    name = "generate_src",
+    name = "gen_src",
     out = "src.rs",
     content = """
 #[cfg(not(generated_file_as_root))]
@@ -22,7 +22,7 @@ pub fn get_forty_two_as_string() -> String {
 )
 
 write_file(
-    name = "generate_src_generated",
+    name = "gen_src_generated",
     out = "src/generated.rs",
     content = """
 mod submodule;
@@ -37,7 +37,7 @@ fn test_foo() {
 )
 
 rust_library(
-    name = "use_generated_src",
+    name = "libgensrc",
     srcs = [
         "lib.rs",
         "submodule/mod.rs",
@@ -48,7 +48,7 @@ rust_library(
 )
 
 rust_library(
-    name = "use_generated_src_with_crate_root_defined",
+    name = "libgensrc_with_crate_root",
     srcs = [
         "lib.rs",
         "submodule/mod.rs",
@@ -61,7 +61,7 @@ rust_library(
 )
 
 rust_library(
-    name = "use_generated_src_as_crate_root",
+    name = "libgensrc_as_crate_root",
     srcs = [
         "lib.rs",
         "lib_for_src.rs",
@@ -74,7 +74,7 @@ rust_library(
 )
 
 rust_library(
-    name = "use_generated_src_with_crate_root_in_subdir",
+    name = "lib_with_crate_root_in_subdir",
     srcs = [
         "src/generated.rs",
         "src/generated/submodule.rs",
@@ -86,7 +86,7 @@ rust_library(
 )
 
 rust_test(
-    name = "use_generated_src_with_crate_root_in_subdir_srcs_test",
+    name = "lib_with_srcs_in_subdir_test",
     srcs = [
         "src/generated.rs",
         "src/generated/submodule.rs",
@@ -97,8 +97,8 @@ rust_test(
 )
 
 rust_test(
-    name = "use_generated_src_with_crate_root_in_subdir_test",
-    crate = "use_generated_src_with_crate_root_in_subdir",
+    name = "lib_with_crate_root_in_subdir_test",
+    crate = "lib_with_crate_root_in_subdir",
     edition = "2018",
     tags = ["norustfmt"],
 )
@@ -117,8 +117,8 @@ rust_library(
 )
 
 rust_test(
-    name = "generated_src_test",
-    crate = ":use_generated_src_with_crate_root_defined",
+    name = "gensrc_test",
+    crate = ":libgensrc_with_crate_root",
     edition = "2018",
     tags = ["norustfmt"],
 )
@@ -144,21 +144,21 @@ filegroup(
 )
 
 rust_library(
-    name = "generated_src_in_different_cfg_as_root",
+    name = "gen_src_in_different_cfg_as_root",
     srcs = [":input_from_different_cfg"],
     edition = "2018",
     tags = ["norustfmt"],
 )
 
 rust_test(
-    name = "generated_src_in_different_cfg_as_root_test",
-    crate = "generated_src_in_different_cfg_as_root",
+    name = "gen_src_in_different_cfg_as_root_test",
+    crate = "gen_src_in_different_cfg_as_root",
     edition = "2018",
     tags = ["norustfmt"],
 )
 
 rust_library(
-    name = "generated_src_in_different_cfg",
+    name = "gen_src_in_different_cfg",
     srcs = [
         "root.rs",
         ":input_from_different_cfg",
@@ -169,8 +169,8 @@ rust_library(
 )
 
 rust_test(
-    name = "generated_src_in_different_cfg_test",
-    crate = "generated_src_in_different_cfg",
+    name = "gen_src_in_different_cfg_test",
+    crate = "gen_src_in_different_cfg",
     edition = "2018",
     tags = ["norustfmt"],
 )
@@ -181,7 +181,7 @@ bool_flag(
 )
 
 rust_test(
-    name = "generated_inputs_external_repo_test",
+    name = "gen_inputs_external_repo_test",
     # This is regression testing a specific failure case for generated files _not_ in the root
     # of an external repository.
     crate = "@generated_inputs_in_external_repo//lib:generated_inputs_external_repo",

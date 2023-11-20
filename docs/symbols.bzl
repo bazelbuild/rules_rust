@@ -3,7 +3,7 @@ to have stardoc generated documentation.
 """
 
 load(
-    "@rules_rust//bindgen:bindgen.bzl",
+    "@rules_rust//bindgen:defs.bzl",
     _rust_bindgen = "rust_bindgen",
     _rust_bindgen_library = "rust_bindgen_library",
     _rust_bindgen_toolchain = "rust_bindgen_toolchain",

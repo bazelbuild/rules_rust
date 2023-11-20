@@ -59,7 +59,7 @@ per_crate_rustc_flag_not_present_test = analysistest.make(_per_crate_rustc_flag_
 per_crate_rustc_flag_not_present_non_matching_test = analysistest.make(
     _per_crate_rustc_flag_not_present_test,
     config_settings = {
-        "@//:experimental_per_crate_rustc_flag": [NON_MATCHING_FLAG],
+        str(Label("//:experimental_per_crate_rustc_flag")): [NON_MATCHING_FLAG],
     },
 )
 
@@ -72,7 +72,7 @@ per_crate_rustc_flag_present_label_test = analysistest.make(
         ),
     },
     config_settings = {
-        "@//:experimental_per_crate_rustc_flag": [MATCHING_LABEL_FLAG],
+        str(Label("//:experimental_per_crate_rustc_flag")): [MATCHING_LABEL_FLAG],
     },
 )
 
@@ -85,7 +85,7 @@ per_crate_rustc_flag_present_execution_path_test = analysistest.make(
         ),
     },
     config_settings = {
-        "@//:experimental_per_crate_rustc_flag": [MATCHING_EXECUTION_PATH_FLAG],
+        str(Label("//:experimental_per_crate_rustc_flag")): [MATCHING_EXECUTION_PATH_FLAG],
     },
 )
 
@@ -93,7 +93,7 @@ per_crate_rustc_flag_invalid_pattern_test = analysistest.make(
     _per_crate_rustc_flag_invalid_pattern_test,
     expect_failure = True,
     config_settings = {
-        "@//:experimental_per_crate_rustc_flag": [INVALID_FLAG],
+        str(Label("//:experimental_per_crate_rustc_flag")): [INVALID_FLAG],
     },
 )
 

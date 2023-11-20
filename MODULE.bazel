@@ -6,12 +6,34 @@ module(
 print("WARNING: The rules_rust Bazel module is still highly experimental and subject to change at any time. Only use it to try out bzlmod for now.")  # buildifier: disable=print
 
 bazel_dep(name = "platforms", version = "0.0.7")
-bazel_dep(name = "rules_cc", version = "0.0.1")
+bazel_dep(name = "rules_cc", version = "0.0.9")
 bazel_dep(name = "bazel_skylib", version = "1.2.0")
-bazel_dep(name = "apple_support", version = "1.3.1")
+bazel_dep(
+    name = "apple_support",
+    version = "1.3.1",
+    repo_name = "build_bazel_apple_support",
+)
 
 internal_deps = use_extension("//rust/private:extensions.bzl", "internal_deps")
 use_repo(
     internal_deps,
     "rules_rust_tinyjson",
 )
+
+rust = use_extension("//rust:extensions.bzl", "rust")
+
+# Allow us to run, for example, "bazel build //tools/runfiles" with bzlmod.
+# Register it as a dev dependency so that we don't force this toolchain on
+# downstream users.
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains(
+    "@rust_toolchains//:all",
+    dev_dependency = True,
+)
+
+use_repo(rust, "rust_host_tools")
+
+cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
+use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")

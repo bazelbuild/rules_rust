@@ -67,72 +67,18 @@ def triple(triple):
         str = triple,
     )
 
-_CPU_ARCH_ERROR_MSG = """\
-Command failed with exit code '{code}': {args}
-----------stdout:
-{stdout}
-----------stderr:
-{stderr}
-"""
-
-def _query_cpu_architecture(repository_ctx, expected_archs, is_windows = False):
-    """Detect the host CPU architecture
+def _validate_cpu_architecture(arch, expected_archs):
+    """Validate the host CPU architecture
 
     Args:
-        repository_ctx (repository_ctx): The repository_rule's context object
+        arch (string): a CPU architecture
         expected_archs (list): A list of expected architecture strings
-        is_windows (bool, optional): If true, the cpu lookup will use the windows method (`wmic` vs `uname`)
-
-    Returns:
-        str: The host's CPU architecture
     """
-    if is_windows:
-        arguments = ["wmic", "os", "get", "osarchitecture"]
-    else:
-        arguments = ["uname", "-m"]
-
-    result = repository_ctx.execute(arguments)
-
-    if result.return_code:
-        fail(_CPU_ARCH_ERROR_MSG.format(
-            code = result.return_code,
-            args = arguments,
-            stdout = result.stdout,
-            stderr = result.stderr,
-        ))
-
-    if is_windows:
-        # Example output:
-        # OSArchitecture
-        # 64-bit
-        #
-        # In some cases windows can return the same but with an uppercase b
-        # OSArchitecture
-        # 64-Bit
-        lines = result.stdout.split("\n")
-        arch = lines[1].strip().lower()
-
-        # Translate 64-bit to a compatible rust platform
-        # https://doc.rust-lang.org/nightly/rustc/platform-support.html
-        if arch.startswith("arm 64-bit"):
-            arch = "aarch64"
-        elif arch == "64-bit":
-            arch = "x86_64"
-    else:
-        arch = result.stdout.strip("\n")
-
-        # Correct the arm architecture for macos
-        if "mac" in repository_ctx.os.name and arch == "arm64":
-            arch = "aarch64"
-
-    if not arch in expected_archs:
-        fail("{} is not a expected cpu architecture {}\n{}".format(
+    if arch not in expected_archs:
+        fail("{} is not a expected cpu architecture {}".format(
             arch,
             expected_archs,
-            result.stdout,
         ))
-
-    return arch
 
 def get_host_triple(repository_ctx, abi = None):
     """Query host information for the appropriate triple to use with load_arbitrary_tool or the crate_universe resolver
@@ -173,21 +119,25 @@ def get_host_triple(repository_ctx, abi = None):
         "windows": ["aarch64", "x86_64"],
     }
 
+    arch = repository_ctx.os.arch
+    if arch == "amd64":
+        arch = "x86_64"
+
     if "linux" in repository_ctx.os.name:
-        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["linux"])
+        _validate_cpu_architecture(arch, supported_architectures["linux"])
         return triple("{}-unknown-linux-{}".format(
-            cpu,
+            arch,
             abi or "gnu",
         ))
 
     if "mac" in repository_ctx.os.name:
-        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["macos"])
-        return triple("{}-apple-darwin".format(cpu))
+        _validate_cpu_architecture(arch, supported_architectures["macos"])
+        return triple("{}-apple-darwin".format(arch))
 
     if "win" in repository_ctx.os.name:
-        cpu = _query_cpu_architecture(repository_ctx, supported_architectures["windows"], True)
+        _validate_cpu_architecture(arch, supported_architectures["windows"])
         return triple("{}-pc-windows-{}".format(
-            cpu,
+            arch,
             abi or "msvc",
         ))
 

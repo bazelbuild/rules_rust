@@ -2,17 +2,10 @@ load("@build_bazel_rules_android//android:rules.bzl", "android_binary", "android
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
-cc_library(
-    name = "allocator_library",
-    srcs = ["allocator_library.cc"],
-    visibility = ["//visibility:public"],
-)
-
 rust_library(
     name = "rust_lib",
     srcs = ["demo.rs"],
     edition = "2018",
-    deps = [":allocator_library"],
 )
 
 cc_library(
@@ -45,9 +38,9 @@ android_binary(
 )
 
 platform(
-    name = "android_aarch64",
+    name = "arm64-v8a",
     constraint_values = [
-        "@platforms//cpu:aarch64",
+        "@platforms//cpu:arm64",
         "@platforms//os:android",
     ],
 )
