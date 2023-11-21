@@ -75,6 +75,22 @@ def _rust_stdlib_filegroup_impl(ctx):
                 print("File partitioned: {}".format(f.basename))
             fail("rust_toolchain couldn't properly partition rlibs in rust_std. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
 
+    std_dylib = None
+    std_a = None
+
+    # TODO: Improve runtime
+    for file in std_files:
+        # find libstd-*.so
+        if file.basename.startswith("libstd-") and file.basename.endswith(".a"):
+            std_a = file
+            break
+
+    for file in rust_std:
+        # find libstd-*.a
+        if file.basename.startswith("libstd-") and file.basename.endswith(".so"):
+            std_dylib = file
+            break
+
     return [
         DefaultInfo(
             files = depset(ctx.files.srcs),
@@ -87,6 +103,8 @@ def _rust_stdlib_filegroup_impl(ctx):
             core_files = core_files,
             between_core_and_std_files = between_core_and_std_files,
             std_files = std_files,
+            std_dylib = std_dylib,
+            std_a = std_a,
             test_files = test_files,
             memchr_files = memchr_files,
             alloc_files = alloc_files,
@@ -237,20 +255,40 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             transitive = [memchr_inputs],
             order = "topological",
         )
-        std_inputs = depset(
-            [
-                _ltl(f, ctx, cc_toolchain, feature_configuration)
-                for f in rust_stdlib_info.std_files
-            ],
-            transitive = [between_core_and_std_inputs],
-            order = "topological",
-        )
+
+        # all stdlibs except for libstd
+        std_deps = [
+            _ltl(f, ctx, cc_toolchain, feature_configuration)
+            for f in rust_stdlib_info.std_files
+            if not (f.basename.startswith("libstd-"))
+        ]
+
+        if True:  # TODO: Check if prefer-dynamic is enabled
+            std_library = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                dynamic_library = rust_stdlib_info.std_dylib,
+            )
+            std_files = depset(
+                [std_library],
+                transitive = [between_core_and_std_inputs],
+                order = "topological",
+            )
+        else:
+            std_library = _ltl(rust_stdlib_info.std_a, ctx, cc_toolchain, feature_configuration)
+            std_files = depset(
+                std_deps + [std_library],
+                transitive = [between_core_and_std_inputs],
+                order = "topological",
+            )
+
         test_inputs = depset(
             [
                 _ltl(f, ctx, cc_toolchain, feature_configuration)
                 for f in rust_stdlib_info.test_files
             ],
-            transitive = [std_inputs],
+            transitive = [std_files],
             order = "topological",
         )
 
