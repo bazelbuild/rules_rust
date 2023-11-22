@@ -51,7 +51,7 @@ alias(
 
 alias(
     name = "cargo_toml",
-    actual = "@cui__cargo_toml-0.17.0//:cargo_toml",
+    actual = "@cui__cargo_toml-0.17.1//:cargo_toml",
     tags = ["manual"],
 )
 
