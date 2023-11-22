@@ -26,6 +26,7 @@ def cargo_build_script(
         links = None,
         rundir = None,
         rustc_env = {},
+        rustc_env_files = [],
         rustc_flags = [],
         visibility = None,
         tags = None,
@@ -113,6 +114,8 @@ def cargo_build_script(
 
             If set to `.`, the cargo build script will run in the exec root.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
+        rustc_env_files (list of label, optional): Files containing additional environment variables to set for rustc
+            when building the build script.
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
@@ -149,6 +152,7 @@ def cargo_build_script(
         data = data,
         compile_data = compile_data,
         rustc_env = rustc_env,
+        rustc_env_files = rustc_env_files,
         rustc_flags = rustc_flags,
         edition = edition,
         tags = binary_tags,
