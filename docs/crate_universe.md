@@ -720,7 +720,7 @@ A macro for defining repositories for all generated crates
 ## crate_universe_dependencies
 
 <pre>
-crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>)
+crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>, <a href="#crate_universe_dependencies-kwargs">kwargs</a>)
 </pre>
 
 Define dependencies of the `cargo-bazel` Rust target
@@ -732,6 +732,7 @@ Define dependencies of the `cargo-bazel` Rust target
 | :------------- | :------------- | :------------- |
 | <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.74.0"` |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  `False` |
+| <a id="crate_universe_dependencies-kwargs"></a>kwargs |  Arguments to pass through to cargo_bazel_bootstrap.   |  none |
 
 
 <a id="render_config"></a>
