@@ -72,7 +72,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.17.0",
+    version = "0.17.1",
     deps = [
         "@cui__serde-1.0.190//:serde",
         "@cui__toml-0.8.6//:toml",

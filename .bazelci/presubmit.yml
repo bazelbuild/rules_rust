@@ -92,10 +92,8 @@ tasks:
     test_targets: *default_linux_targets
     build_flags:
       - "--compilation_mode=opt"
-      - "--@rules_rust//rust/settings:experimental_toolchain_generated_sysroot=True"
     test_flags:
       - "--compilation_mode=opt"
-      - "--@rules_rust//rust/settings:experimental_toolchain_generated_sysroot=True"
   macos_opt:
     name: Opt Mode
     platform: macos

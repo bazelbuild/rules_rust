@@ -29,145 +29,90 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = select({
+    crate_features = [
+        "default",
+        "std",
+    ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "default",
             "extra_traits",
-            "std",
-        ],
-        "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "default",
-            "std",
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "//conditions:default": [],
     }),
@@ -224,145 +169,90 @@ rust_library(
 cargo_build_script(
     name = "libc_build_script",
     srcs = glob(["**/*.rs"]),
-    crate_features = select({
+    crate_features = [
+        "default",
+        "std",
+    ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "default",
             "extra_traits",
-            "std",
-        ],
-        "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "default",
-            "std",
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "default",
             "extra_traits",
-            "std",
         ],
         "//conditions:default": [],
     }),
