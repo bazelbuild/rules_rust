@@ -98,14 +98,17 @@ def _rust_wasm_bindgen_impl(ctx):
         progress_message_label = ctx.file.wasm_file.path
         input_file = ctx.file.wasm_file
 
-    bindgen_wasm_module = ctx.actions.declare_file(ctx.attr.name + "_bg.wasm")
+    bindgen_wasm_module = ctx.actions.declare_file("{0}/{0}_bg.wasm".format(ctx.attr.name))
 
-    js_out = [ctx.actions.declare_file(ctx.attr.name + ".js")]
-    ts_out = [ctx.actions.declare_file(ctx.attr.name + ".d.ts")]
+    js_out = [ctx.actions.declare_file("{0}/{0}.js".format(ctx.attr.name))]
+    ts_out = [ctx.actions.declare_file("{0}/{0}.d.ts".format(ctx.attr.name))]
+
+    if ctx.attr.target == "web" or ctx.attr.target == "bundler":
+        js_out.append(ctx.actions.declare_directory("{0}/snippets".format(ctx.attr.name)))
 
     if ctx.attr.target == "bundler":
-        js_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.js"))
-        ts_out.append(ctx.actions.declare_file(ctx.attr.name + "_bg.wasm.d.ts"))
+        js_out.append(ctx.actions.declare_file("{0}/{0}_bg.js".format(ctx.attr.name)))
+        ts_out.append(ctx.actions.declare_file("{0}/{0}_bg.wasm.d.ts".format(ctx.attr.name)))
 
     outputs = [bindgen_wasm_module] + js_out + ts_out
 
