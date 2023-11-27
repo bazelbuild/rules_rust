@@ -39,13 +39,6 @@ def rust_wasm_bindgen_dependencies():
         patches = [Label("//wasm_bindgen/3rdparty/patches:resolver.patch")],
     )
 
-    maybe(
-        http_archive,
-        name = "rules_nodejs",
-        sha256 = "017e2348bb8431156d5cf89b6f502c2e7fcffc568729f74f89e4a12bd8279e90",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.2/rules_nodejs-core-5.5.2.tar.gz"],
-    )
-
     crate_repositories()
 
 # buildifier: disable=unnamed-macro
