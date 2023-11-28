@@ -207,7 +207,7 @@ def _rust_prost_aspect_impl(target, ctx):
     proto_deps = getattr(ctx.rule.attr, "deps", [])
 
     direct_deps = []
-    transitive_deps = []
+    transitive_deps = [depset(runtime_deps)]
     for proto_dep in proto_deps:
         proto_info = proto_dep[ProstProtoInfo]
 
