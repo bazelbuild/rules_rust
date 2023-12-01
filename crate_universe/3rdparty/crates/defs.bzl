@@ -299,7 +299,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo-lock": "@cui__cargo-lock-9.0.0//:cargo_lock",
             "cargo-platform": "@cui__cargo-platform-0.1.4//:cargo_platform",
             "cargo_metadata": "@cui__cargo_metadata-0.18.1//:cargo_metadata",
-            "cargo_toml": "@cui__cargo_toml-0.17.0//:cargo_toml",
+            "cargo_toml": "@cui__cargo_toml-0.17.1//:cargo_toml",
             "cfg-expr": "@cui__cfg-expr-0.15.5//:cfg_expr",
             "clap": "@cui__clap-4.3.11//:clap",
             "crates-index": "@cui__crates-index-2.2.0//:crates_index",
@@ -784,12 +784,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo_toml-0.17.0",
-        sha256 = "6ca592ad99e6a0fd4b95153406138b997cc26ccd3cd0aecdfd4fbdbf1519bd77",
+        name = "cui__cargo_toml-0.17.1",
+        sha256 = "4d1ece59890e746567b467253aea0adbe8a21784d0b025d8a306f66c391c2957",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.17.0/download"],
-        strip_prefix = "cargo_toml-0.17.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.17.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.17.1/download"],
+        strip_prefix = "cargo_toml-0.17.1",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.17.1.bazel"),
     )
 
     maybe(

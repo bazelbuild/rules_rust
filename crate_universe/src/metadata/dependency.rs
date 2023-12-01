@@ -49,7 +49,7 @@ impl DependencySet {
                 .partition(|dep| is_dev_dependency(dep));
 
             (
-                collect_deps_selectable(node, dev, metadata, DependencyKind::Normal),
+                collect_deps_selectable(node, dev, metadata, DependencyKind::Development),
                 collect_deps_selectable(node, normal, metadata, DependencyKind::Normal),
             )
         };
@@ -66,7 +66,7 @@ impl DependencySet {
 
             (
                 collect_deps_selectable(node, dev, metadata, DependencyKind::Development),
-                collect_deps_selectable(node, normal, metadata, DependencyKind::Development),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Normal),
             )
         };
 

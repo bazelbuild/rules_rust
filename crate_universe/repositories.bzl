@@ -7,17 +7,18 @@ load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories =
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
 
-def crate_universe_dependencies(rust_version = rust_common.default_version, bootstrap = False):
+def crate_universe_dependencies(rust_version = rust_common.default_version, bootstrap = False, **kwargs):
     """Define dependencies of the `cargo-bazel` Rust target
 
     Args:
         rust_version (str, optional): The version of rust to use when generating dependencies.
         bootstrap (bool, optional): If true, a `cargo_bootstrap_repository` target will be generated.
+        **kwargs: Arguments to pass through to cargo_bazel_bootstrap.
     """
     third_party_deps()
 
     if bootstrap:
-        cargo_bazel_bootstrap(rust_version = rust_version)
+        cargo_bazel_bootstrap(rust_version = rust_version, **kwargs)
 
     _vendor_crate_repositories()
 
