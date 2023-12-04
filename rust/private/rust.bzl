@@ -626,10 +626,10 @@ _common_attrs = {
         cfg = "exec",
     ),
     "_is_proc_macro_dep": attr.label(
-        default = Label("//:is_proc_macro_dep"),
+        default = Label("//rust/private:is_proc_macro_dep"),
     ),
     "_is_proc_macro_dep_enabled": attr.label(
-        default = Label("//:is_proc_macro_dep_enabled"),
+        default = Label("//rust/private:is_proc_macro_dep_enabled"),
     ),
     "_per_crate_rustc_flag": attr.label(
         default = Label("//:experimental_per_crate_rustc_flag"),
@@ -876,14 +876,14 @@ rust_shared_library = rule(
 )
 
 def _proc_macro_dep_transition_impl(settings, _attr):
-    if settings["//:is_proc_macro_dep_enabled"]:
-        return {"//:is_proc_macro_dep": True}
+    if settings["//rust/private:is_proc_macro_dep_enabled"]:
+        return {"//rust/private:is_proc_macro_dep": True}
     else:
         return []
 
 _proc_macro_dep_transition = transition(
-    inputs = ["//:is_proc_macro_dep_enabled"],
-    outputs = ["//:is_proc_macro_dep"],
+    inputs = ["//rust/private:is_proc_macro_dep_enabled"],
+    outputs = ["//rust/private:is_proc_macro_dep"],
     implementation = _proc_macro_dep_transition_impl,
 )
 

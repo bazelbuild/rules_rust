@@ -9,8 +9,6 @@ load(
     "extra_exec_rustc_flags",
     "extra_rustc_flag",
     "extra_rustc_flags",
-    "is_proc_macro_dep",
-    "is_proc_macro_dep_enabled",
     "no_std",
     "per_crate_rustc_flag",
 )
@@ -37,24 +35,6 @@ error_format(
 clippy_flags(
     name = "clippy_flags",
     build_setting_default = [],
-    visibility = ["//visibility:public"],
-)
-
-# This setting may be used to identify dependencies of proc-macro-s.
-# This feature is only enabled if `is_proc_macro_dep_enabled` is true.
-# Its value controls the BAZEL_RULES_RUST_IS_PROC_MACRO_DEP environment variable
-# made available to the rustc invocation.
-is_proc_macro_dep(
-    name = "is_proc_macro_dep",
-    build_setting_default = False,
-    visibility = ["//visibility:public"],
-)
-
-# This setting enables the feature to identify dependencies of proc-macro-s,
-# see `is_proc_macro_dep`.
-is_proc_macro_dep_enabled(
-    name = "is_proc_macro_dep_enabled",
-    build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 

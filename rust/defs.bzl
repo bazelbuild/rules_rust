@@ -48,8 +48,6 @@ load(
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
-    _is_proc_macro_dep = "is_proc_macro_dep",
-    _is_proc_macro_dep_enabled = "is_proc_macro_dep_enabled",
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
 )
@@ -122,12 +120,6 @@ extra_exec_rustc_flag = _extra_exec_rustc_flag
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 extra_exec_rustc_flags = _extra_exec_rustc_flags
-# See @rules_rust//rust/private:rustc.bzl for a complete description.
-
-is_proc_macro_dep = _is_proc_macro_dep
-# See @rules_rust//rust/private:rustc.bzl for a complete description.
-
-is_proc_macro_dep_enabled = _is_proc_macro_dep_enabled
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 per_crate_rustc_flag = _per_crate_rustc_flag
