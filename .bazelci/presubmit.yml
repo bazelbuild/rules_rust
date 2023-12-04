@@ -568,6 +568,87 @@ tasks:
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//:no_std=alloc"
+  cc_common_link_panic_abort_ubuntu2004:
+    name: Build via cc_common.link and -Cpanic=abort
+    platform: ubuntu2004
+    working_directory: test/cc_common_link
+    build_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    test_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
+    build_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//:panic_style=abort"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//:panic_style=abort"
+  cc_common_link_with_global_alloc_panic_abort_ubuntu2004:
+    name: Build via cc_common.link using a global allocator and -Cpanic=abort
+    platform: ubuntu2004
+    working_directory: test/cc_common_link/with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:panic_style=abort"
+    test_flags:
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:panic_style=abort"
+  cc_common_link_no_std_panic_abort_ubuntu2004:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking and -Cpanic=abort
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//:panic_style=abort"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//:panic_style=abort"
+  no_std_panic_abort_ubuntu2004:
+    name: Build with no_std + alloc + -Cpanic=abort
+    platform: ubuntu2004
+    working_directory: test/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//:panic_style=abort"
+    test_flags:
+      - "--@rules_rust//rust/toolchain/channel=nightly"
+      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//:panic_style=abort"
+  panic_abort_ubuntu2004:
+    name: Build and test with -Cpanic=abort
+    platform: ubuntu2004
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags:
+      - "--@rules_rust//:panic_style=abort"
+    test_flags:
+      - "--@rules_rust//:panic_style=abort"
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004

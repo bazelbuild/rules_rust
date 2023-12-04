@@ -1,8 +1,8 @@
 """Tests for make variables provided by `rust_toolchain`"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_env_value")
+load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 _RUST_TOOLCHAIN_ENV = {
     "ENV_VAR_CARGO": "$(CARGO)",
@@ -15,6 +15,13 @@ _RUST_TOOLCHAIN_ENV = {
 _RUSTFMT_TOOLCHAIN_ENV = {
     "ENV_VAR_RUSTFMT": "$(RUSTFMT)",
 }
+
+def _mangle_path(path):
+    if not path:
+        return path
+    components = path.split("/")
+    components[1] = "<OUTDIR>"
+    return "/".join(components)
 
 def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
     env = analysistest.begin(ctx)
@@ -45,12 +52,7 @@ def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
         }
 
     for key in env_vars:
-        assert_env_value(
-            env = env,
-            action = action,
-            key = key,
-            value = expected_values[key],
-        )
+        asserts.equals(env, _mangle_path(action.env[key]), _mangle_path(expected_values[key]))
 
     return analysistest.end(env)
 

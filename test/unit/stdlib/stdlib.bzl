@@ -48,14 +48,13 @@ libstd_ordering_test = analysistest.make(_libstd_ordering_test_impl)
 
 def _libstd_panic_test_impl(ctx):
     # The libraries panic_unwind and panic_abort are alternatives.
-    # Check that they don't occur together.
+    # Check that we have one or the other.
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     stdlibs = _stdlibs(tut)
     has_panic_unwind = [lib for lib in stdlibs if "panic_unwind" in lib.basename]
-    if has_panic_unwind:
-        has_panic_abort = [lib for lib in stdlibs if "panic_abort" in lib.basename]
-        asserts.false(env, has_panic_abort)
+    has_panic_abort = [lib for lib in stdlibs if "panic_abort" in lib.basename]
+    asserts.false(env, has_panic_unwind == has_panic_abort)
 
     return analysistest.end(env)
 

@@ -849,3 +849,12 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
         return src_symlink
     else:
         return src_file
+
+def _force_panic_unwind_transition_impl(_settings, _attr):
+    return {"//:panic_style": "unwind"}
+
+force_panic_unwind_transition = transition(
+    implementation = _force_panic_unwind_transition_impl,
+    inputs = [],
+    outputs = ["//:panic_style"],
+)

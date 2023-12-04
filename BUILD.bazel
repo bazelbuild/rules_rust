@@ -32,6 +32,18 @@ error_format(
     visibility = ["//visibility:public"],
 )
 
+# This setting may be changed from the command line to panic immediately upon abort.
+string_flag(
+    name = "panic_style",
+    build_setting_default = "",
+    values = [
+        "abort",
+        "unwind",
+        "",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # This setting may be used to pass extra options to clippy from the command line.
 # It applies across all targets.
 clippy_flags(

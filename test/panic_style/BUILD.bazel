@@ -1,0 +1,53 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+load(":defs.bzl", "with_panic_style_cfg")
+
+rust_binary(
+    name = "try_catch_panic",
+    srcs = ["src/try_catch_panic.rs"],
+    edition = "2018",
+)
+
+# This should always succeed, independent of the flag, because tests should
+# always have -Cpanic=unwind.
+rust_test(
+    name = "test_catch_panic",
+    srcs = ["tests/catch_panic.rs"],
+    edition = "2018",
+)
+
+with_panic_style_cfg(
+    name = "try_catch_panic_with_unwind",
+    srcs = [":try_catch_panic"],
+    panic_style = "unwind",
+)
+
+with_panic_style_cfg(
+    name = "try_catch_panic_with_abort",
+    srcs = [":try_catch_panic"],
+    panic_style = "abort",
+)
+
+rust_test(
+    name = "verify_abort",
+    srcs = ["src/verify_abort.rs"],
+    data = [
+        ":try_catch_panic_with_abort",
+    ],
+    edition = "2018",
+    deps = [
+        "//tools/runfiles",
+        "@libc",
+    ],
+)
+
+rust_test(
+    name = "verify_unwind",
+    srcs = ["src/verify_unwind.rs"],
+    data = [
+        ":try_catch_panic_with_unwind",
+    ],
+    edition = "2018",
+    deps = [
+        "//tools/runfiles",
+    ],
+)

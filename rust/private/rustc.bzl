@@ -657,7 +657,7 @@ def collect_inputs(
         force_depend_on_objects (bool, optional): Forces dependencies of this rule to be objects rather than
             metadata, even for libraries. This is used in rustdoc tests.
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
-	    rust binaries.
+            rust binaries.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -932,6 +932,8 @@ def construct_arguments(
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
+    rustc_flags.add("-Cpanic=" + _get_panic_style(ctx, toolchain))
+
     # Mangle symbols to disambiguate crates with the same name. This could
     # happen only for non-final artifacts where we compute an output_hash,
     # e.g., rust_library.
@@ -1081,6 +1083,15 @@ def construct_arguments(
     )
 
     return args, env
+
+def _get_panic_style(ctx, toolchain):
+    panic_style = toolchain.default_panic_style
+
+    if hasattr(ctx.attr, "_panic_style"):
+        flag_value = ctx.attr._panic_style[BuildSettingInfo].value
+        if flag_value:
+            panic_style = flag_value
+    return panic_style
 
 def rustc_compile_action(
         ctx,
@@ -1473,15 +1484,29 @@ def _is_no_std(ctx, toolchain, crate_info):
     return True
 
 def _get_std_and_alloc_info(ctx, toolchain, crate_info):
+    panic_style = _get_panic_style(ctx, toolchain)
+    if panic_style != "unwind" and panic_style != "abort":
+        fail("Unrecognized panic style: " + panic_style)
+
     if is_exec_configuration(ctx):
-        return toolchain.libstd_and_allocator_ccinfo
+        if panic_style == "unwind":
+            return toolchain.libstd_and_allocator_unwind_ccinfo
+        else:
+            return toolchain.libstd_and_allocator_abort_ccinfo
     if toolchain._experimental_use_global_allocator:
         if _is_no_std(ctx, toolchain, crate_info):
-            return toolchain.nostd_and_global_allocator_cc_info
+            if panic_style == "unwind":
+                return toolchain.nostd_and_global_allocator_unwind_ccinfo
+            else:
+                return toolchain.nostd_and_global_allocator_abort_ccinfo
+        elif panic_style == "unwind":
+            return toolchain.libstd_and_global_allocator_unwind_ccinfo
         else:
-            return toolchain.libstd_and_global_allocator_ccinfo
+            return toolchain.libstd_and_global_allocator_abort_ccinfo
+    elif panic_style == "unwind":
+        return toolchain.libstd_and_allocator_unwind_ccinfo
     else:
-        return toolchain.libstd_and_allocator_ccinfo
+        return toolchain.libstd_and_allocator_abort_ccinfo
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)

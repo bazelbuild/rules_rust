@@ -128,15 +128,15 @@ def _ltl(library, ctx, cc_toolchain, feature_configuration):
         pic_static_library = library,
     )
 
-def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "std"):
+def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std, panic):
     """Make the CcInfo (if possible) for libstd and allocator libraries.
 
     Args:
         ctx (ctx): The rule's context object.
         rust_std: The Rust standard library.
         allocator_library: The target to use for providing allocator functions.
-        std: Standard library flavor. Currently only "std" and "no_std_with_alloc" are supported,
-             accompanied with the default panic behavior.
+        std: Standard library flavor. Currently only "std" and "no_std_with_alloc" are supported.
+        panic: Either "unwind" or "abort" to select which panic implementation to include.
 
 
     Returns:
@@ -188,39 +188,29 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
 
         # The libraries panic_abort and panic_unwind are alternatives.
         # The std by default requires panic_unwind.
-        # Exclude panic_abort if panic_unwind is present.
-        # TODO: Provide a setting to choose between panic_abort and panic_unwind.
+        # Exclude panic_abort if panic_unwind is present, and vice versa.
         filtered_between_core_and_std_files = rust_stdlib_info.between_core_and_std_files
-        has_panic_unwind = [
+        if panic == "abort":
+            panic_filter = "panic_unwind"
+        elif panic == "unwind":
+            panic_filter = "panic_abort"
+        else:
+            fail("Unrecognized panic style: %s" % panic)
+        filtered_between_core_and_std_files = [
             f
             for f in filtered_between_core_and_std_files
-            if "panic_unwind" in f.basename
+            if panic_filter not in f.basename
         ]
-        if has_panic_unwind:
-            filtered_between_core_and_std_files = [
-                f
-                for f in filtered_between_core_and_std_files
-                if "abort" not in f.basename
-            ]
-            core_alloc_and_panic_inputs = depset(
-                [
-                    _ltl(f, ctx, cc_toolchain, feature_configuration)
-                    for f in rust_stdlib_info.panic_files
-                    if "unwind" not in f.basename
-                ],
-                transitive = [core_inputs],
-                order = "topological",
-            )
-        else:
-            core_alloc_and_panic_inputs = depset(
-                [
-                    _ltl(f, ctx, cc_toolchain, feature_configuration)
-                    for f in rust_stdlib_info.panic_files
-                    if "unwind" not in f.basename
-                ],
-                transitive = [core_inputs],
-                order = "topological",
-            )
+        core_alloc_and_panic_inputs = depset(
+            [
+                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                for f in rust_stdlib_info.panic_files
+                if panic_filter not in f.basename
+            ],
+            transitive = [core_inputs],
+            order = "topological",
+        )
+
         memchr_inputs = depset(
             [
                 _ltl(f, ctx, cc_toolchain, feature_configuration)
@@ -454,6 +444,65 @@ def _generate_sysroot(
         sysroot_anchor = sysroot_anchor,
     )
 
+# Most targets default to unwind, but a few default to abort. Can't find a list in the
+# documentation, this list is extracted from rust 1.72.1 via this command:
+#   for f in $(git grep -l PanicStrategy::Abort compiler/rustc_target/src/spec | fgrep -v mod.rs)
+#     do grep -E "\<$(basename -s .rs $f)\>" compiler/rustc_target/src/spec/mod.rs
+#   done
+_DEFAULT_ABORT_TRIPLES = [
+    "aarch64-nintendo-switch-freestanding",
+    "aarch64-unknown-none",
+    "aarch64-unknown-none-softfloat",
+    "armebv7r-none-eabi",
+    "armebv7r-none-eabihf",
+    "armv4t-none-eabi",
+    "armv7a-none-eabi",
+    "armv7a-none-eabihf",
+    "armv7r-none-eabi",
+    "armv7r-none-eabihf",
+    "loongarch64-unknown-none",
+    "loongarch64-unknown-none-softfloat",
+    "mipsel-sony-psx",
+    "mipsel-unknown-none",
+    "msp430-none-elf",
+    "nvptx64-nvidia-cuda",
+    "riscv32i-unknown-none-elf",
+    "riscv32im-unknown-none-elf",
+    "riscv32imac-esp-espidf",
+    "riscv32imac-unknown-none-elf",
+    "riscv32imac-unknown-xous-elf",
+    "riscv32imc-esp-espidf",
+    "riscv32imc-unknown-none-elf",
+    "riscv64gc-unknown-none-elf",
+    "riscv64imac-unknown-none-elf",
+    "thumbv4t-none-eabi",
+    "thumbv7a-pc-windows-msvc",
+    "thumbv7a-uwp-windows-msvc",
+    "x86_64-unknown-l4re-uclibc",
+    "x86_64-unknown-none",
+    "bpfeb-unknown-none",
+    "bpfel-unknown-none",
+    "aarch64-unknown-hermit",
+    "x86_64-unknown-hermit",
+    "x86_64-unknown-l4re-uclibc",
+    "armv5te-none-eabi",
+    "thumbv4t-none-eabi",
+    "thumbv5te-none-eabi",
+    "thumbv6m-none-eabi",
+    "thumbv7em-none-eabi",
+    "thumbv7em-none-eabihf",
+    "thumbv7m-none-eabi",
+    "thumbv8m.base-none-eabi",
+    "thumbv8m.main-none-eabi",
+    "aarch64-unknown-uefi",
+    "i686-unknown-uefi",
+    "x86_64-unknown-uefi",
+    "wasm32-unknown-emscripten",
+    "wasm32-unknown-unknown",
+    "wasm32-wasi",
+    "wasm64-unknown-unknown",
+]
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -610,9 +659,13 @@ def _rust_toolchain_impl(ctx):
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
         exec_triple = exec_triple,
-        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std"),
-        libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std"),
-        nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
+        libstd_and_allocator_unwind_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std", "unwind"),
+        libstd_and_allocator_abort_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std", "abort"),
+        libstd_and_global_allocator_unwind_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std", "unwind"),
+        libstd_and_global_allocator_abort_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std", "abort"),
+        nostd_and_global_allocator_unwind_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc", "unwind"),
+        nostd_and_global_allocator_abort_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc", "abort"),
+        default_panic_style = "abort" if target_triple and target_triple.str in _DEFAULT_ABORT_TRIPLES else "unwind",
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         make_variables = make_variable_info,

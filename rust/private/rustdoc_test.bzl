@@ -17,7 +17,7 @@
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
+load("//rust/private:utils.bzl", "dedent", "find_toolchain", "force_panic_unwind_transition", "transform_deps")
 
 def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
@@ -207,6 +207,9 @@ rust_doc_test = rule(
             """),
             providers = [[CrateInfo], [CcInfo]],
         ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
         "_cc_toolchain": attr.label(
             doc = (
                 "In order to use find_cc_toolchain, your rule has to depend " +
@@ -229,6 +232,7 @@ rust_doc_test = rule(
         ),
     },
     test = True,
+    cfg = force_panic_unwind_transition,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
