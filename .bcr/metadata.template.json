@@ -10,6 +10,11 @@
       "email": "1131704+illicitonion@users.noreply.github.com",
       "github": "illicitonion",
       "name": "Daniel Wagner-Hall"
+    },
+    {
+      "email": "11149636+scentini@users.noreply.github.com",
+      "github": "scentini",
+      "name": "Rosica Dejanovska"
     }
   ],
   "repository": ["github:bazelbuild/rules_rust"],
