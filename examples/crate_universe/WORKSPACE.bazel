@@ -47,6 +47,28 @@ load(
 cargo_aliases_crate_repositories()
 
 ###############################################################################
+# C A R G O   B I N D E P S
+###############################################################################
+
+crates_repository(
+    name = "crate_index_cargo_bindeps",
+    cargo_lockfile = "//cargo_bindeps:Cargo.lock",
+    generate_binaries = True,
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    manifests = ["//cargo_bindeps:Cargo.toml"],
+    rust_version = "nightly",
+)
+
+load(
+    "@crate_index_cargo_bindeps//:defs.bzl",
+    cargo_bindeps_crate_repositories = "crate_repositories",
+)
+
+cargo_bindeps_crate_repositories()
+
+###############################################################################
 # C A R G O   L O C A L
 ###############################################################################
 
@@ -284,7 +306,7 @@ crates_repository(
     lockfile = "//using_cxx:cargo-bazel-lock.json",
     packages = {
         "cxx": crate.spec(
-            version = "1.0.105",
+            version = "1.0.109",
         ),
     },
     splicing_config = splicing_config(
@@ -320,10 +342,10 @@ rust_binary(
     ),
 )
     """,
-    sha256 = "0b3eea393dbcbc1e875302846de4e4f9a31bf2e57ad3657bc83d61d00293b0fe",
-    strip_prefix = "cxxbridge-cmd-1.0.105",
+    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
+    strip_prefix = "cxxbridge-cmd-1.0.109",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.105/download"],
+    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
 )
 
 crates_repository(

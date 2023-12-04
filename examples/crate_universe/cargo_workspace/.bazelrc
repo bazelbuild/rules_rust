@@ -13,6 +13,10 @@ build:strict --output_groups=+rustfmt_checks
 build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:strict --output_groups=+clippy_checks
 
+# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
+# https://github.com/bazelbuild/rules_rust/issues/2181
+common --noenable_bzlmod
+
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc

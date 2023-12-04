@@ -1,0 +1,65 @@
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
+load("@rules_rust//wasm_bindgen/rules_nodejs:defs.bzl", "nodejs_rust_wasm_bindgen")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "hello_world_bin_wasm",
+    srcs = ["//wasm_bindgen:main.rs"],
+    edition = "2018",
+    deps = [
+        "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen",
+    ],
+)
+
+rust_shared_library(
+    name = "hello_world_lib_wasm",
+    srcs = ["//wasm_bindgen:main.rs"],
+    edition = "2018",
+    deps = [
+        "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen",
+    ],
+)
+
+nodejs_rust_wasm_bindgen(
+    name = "hello_world_bundler_wasm_bindgen",
+    wasm_file = ":hello_world_bin_wasm",
+)
+
+nodejs_rust_wasm_bindgen(
+    name = "hello_world_web_wasm_bindgen",
+    target = "web",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+nodejs_rust_wasm_bindgen(
+    name = "hello_world_deno_wasm_bindgen",
+    target = "deno",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+nodejs_rust_wasm_bindgen(
+    name = "hello_world_nomodules_wasm_bindgen",
+    target = "no-modules",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+nodejs_rust_wasm_bindgen(
+    name = "hello_world_nodejs_wasm_bindgen",
+    target = "nodejs",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+nodejs_test(
+    name = "hello_world_wasm_test",
+    args = ["rules_nodejs"],
+    data = [
+        ":hello_world_bundler_wasm_bindgen",
+        ":hello_world_deno_wasm_bindgen",
+        ":hello_world_nodejs_wasm_bindgen",
+        ":hello_world_nomodules_wasm_bindgen",
+        ":hello_world_web_wasm_bindgen",
+    ],
+    entry_point = "//wasm_bindgen:hello_world_wasm_test.js",
+)

@@ -3,18 +3,11 @@ load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
 load("@rules_cc//cc:defs.bzl", "cc_library", "objc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
-cc_library(
-    name = "allocator_library",
-    srcs = ["allocator_library.cc"],
-    tags = ["manual"],
-)
-
 rust_library(
     name = "rust_lib",
     srcs = ["demo.rs"],
     edition = "2018",
     tags = ["manual"],
-    deps = [":allocator_library"],
 )
 
 # TODO: Remove this once rules_rust doesn't support bazel 5.x

@@ -38,6 +38,14 @@ file is used whenever `rustfmt` is run:
 ```text
 build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
 ```
+#[[
+### Tips
+]]#
+
+Any target which uses Bazel generated sources will cause the `@rules_rust//tools/rustfmt` tool to fail with
+``failed to resolve mod `MOD` ``. To avoid failures, [`skip_children = true`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=skip_chil#skip_children)
+is recommended to be set in the workspace's `rustfmt.toml` file which allows rustfmt to run on these targets
+without failing.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt#readme
 [rsg]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md

@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "1.0.2",
     deps = [
-        "@cui__memchr-2.5.0//:memchr",
+        "@cui__memchr-2.6.4//:memchr",
     ],
 )

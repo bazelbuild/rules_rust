@@ -126,6 +126,7 @@ def _clippy_aspect_impl(target, ctx):
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
+        skip_expanding_rustc_env = True,
     )
 
     if crate_info.is_test:
@@ -178,6 +179,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         tools = [toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
+        toolchain = "@rules_rust//rust:toolchain_type",
     )
 
     return [

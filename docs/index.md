@@ -22,8 +22,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    sha256 = "37f40490169dc94013c7566c75c861977a2c02ce5505b7e975da0f7d5f2231c8",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/rules_rust-v0.16.1.tar.gz"],
+    sha256 = "36ab8f9facae745c9c9c1b33d225623d976e78f2cc3f729b7973d8c20934ab95",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.31.0/rules_rust-v0.31.0.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -99,8 +99,8 @@ We test these rules against the latest rolling releases of Bazel, and aim for co
 
 ## Supported platforms
 
-We aim to support Linux, macOS, and Windows.
+We aim to support Linux and macOS.
 
-Windows support is less complete than the other two platforms, but most things work, and we welcome contributions to help improve its support.
+We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.
 
 Windows support for some features requires `--enable_runfiles` to be passed to Bazel, we recommend putting it in your bazelrc. See [Using Bazel on Windows](https://bazel.build/configure/windows) for more Windows-specific recommendations.

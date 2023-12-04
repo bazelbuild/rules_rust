@@ -4,7 +4,7 @@ use crates_index::IndexConfig;
 use hex::ToHex;
 
 pub enum CrateIndexLookup {
-    Git(crates_index::Index),
+    Git(crates_index::GitIndex),
     Http(crates_index::SparseIndex),
 }
 
@@ -42,6 +42,7 @@ impl CrateIndexLookup {
         Ok(source_info)
     }
 
+    #[allow(clippy::result_large_err)]
     fn index_config(&self) -> Result<IndexConfig, crates_index::Error> {
         match self {
             Self::Git(index) => index.index_config(),

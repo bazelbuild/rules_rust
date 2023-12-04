@@ -74,8 +74,8 @@ rust_proc_macro(
     }),
     version = "2.1.0",
     deps = [
-        "//vendor_local_manifests/crates/proc-macro2-1.0.66:proc_macro2",
+        "//vendor_local_manifests/crates/proc-macro2-1.0.69:proc_macro2",
         "//vendor_local_manifests/crates/quote-1.0.33:quote",
-        "//vendor_local_manifests/crates/syn-2.0.31:syn",
+        "//vendor_local_manifests/crates/syn-2.0.39:syn",
     ],
 )

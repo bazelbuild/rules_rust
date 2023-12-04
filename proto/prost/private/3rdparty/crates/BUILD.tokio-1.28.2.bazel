@@ -51,8 +51,18 @@ rust_library(
         "sync",
         "time",
         "tokio-macros",
-        "windows-sys",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "//conditions:default": [],
+    }),
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
@@ -270,8 +280,18 @@ cargo_build_script(
         "sync",
         "time",
         "tokio-macros",
-        "windows-sys",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "windows-sys",
+        ],
+        "//conditions:default": [],
+    }),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(

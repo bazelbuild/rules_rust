@@ -55,4 +55,6 @@ fn main() {
     for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS"] {
         assert!(std::env::var(env_var).is_ok());
     }
+
+    assert_eq!(std::env::var("CARGO_MANIFEST_LINKS").unwrap(), "beep");
 }
