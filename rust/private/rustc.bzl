@@ -1040,6 +1040,8 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
+    if toolchain._experimental_toolchain_generated_sysroot:
+        rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
