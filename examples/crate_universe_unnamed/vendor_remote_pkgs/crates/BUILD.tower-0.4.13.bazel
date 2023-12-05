@@ -93,7 +93,7 @@ rust_library(
         "@crates_vendor_pkgs__futures-util-0.3.29//:futures_util",
         "@crates_vendor_pkgs__pin-project-1.1.3//:pin_project",
         "@crates_vendor_pkgs__pin-project-lite-0.2.13//:pin_project_lite",
-        "@crates_vendor_pkgs__tokio-1.33.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.34.0//:tokio",
         "@crates_vendor_pkgs__tokio-util-0.7.10//:tokio_util",
         "@crates_vendor_pkgs__tower-layer-0.3.2//:tower_layer",
         "@crates_vendor_pkgs__tower-service-0.3.2//:tower_service",

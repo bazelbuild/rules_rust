@@ -711,8 +711,12 @@ list: A list of labels to generated rust targets (str)
 crate_repositories()
 </pre>
 
-A macro for defining repositories for all generated crates
+A macro for defining repositories for all generated crates.
 
+
+**RETURNS**
+
+A list of repos visible to the module through the module extension.
 
 
 <a id="crate_universe_dependencies"></a>

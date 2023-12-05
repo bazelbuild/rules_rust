@@ -86,7 +86,7 @@ rust_library(
         "//vendor_local_pkgs/crates/bytes-1.5.0:bytes",
         "//vendor_local_pkgs/crates/futures-core-0.3.29:futures_core",
         "//vendor_local_pkgs/crates/futures-util-0.3.29:futures_util",
-        "//vendor_local_pkgs/crates/http-0.2.9:http",
+        "//vendor_local_pkgs/crates/http-0.2.11:http",
         "//vendor_local_pkgs/crates/http-body-0.4.5:http_body",
         "//vendor_local_pkgs/crates/http-range-header-0.3.1:http_range_header",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.13:pin_project_lite",

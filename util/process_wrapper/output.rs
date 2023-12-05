@@ -70,14 +70,16 @@ pub(crate) type LineResult = Result<LineOutput, String>;
 /// to write_end.
 pub(crate) fn process_output<F>(
     read_end: &mut dyn Read,
-    write_end: &mut dyn Write,
+    output_write_end: &mut dyn Write,
+    opt_file_write_end: Option<&mut std::fs::File>,
     mut process_line: F,
 ) -> ProcessResult
 where
     F: FnMut(String) -> LineResult,
 {
     let mut reader = io::BufReader::new(read_end);
-    let mut writer = io::LineWriter::new(write_end);
+    let mut output_writer = io::LineWriter::new(output_write_end);
+    let mut file_writer = opt_file_write_end.map(io::LineWriter::new);
     // If there was an error parsing a line failed_on contains the offending line
     // and the error message.
     let mut failed_on: Option<(String, String)> = None;
@@ -87,8 +89,11 @@ where
         if read_bytes == 0 {
             break;
         }
+        if let Some(ref mut file) = file_writer {
+            file.write_all(line.as_bytes())?
+        }
         match process_line(line.clone()) {
-            Ok(LineOutput::Message(to_write)) => writer.write_all(to_write.as_bytes())?,
+            Ok(LineOutput::Message(to_write)) => output_writer.write_all(to_write.as_bytes())?,
             Ok(LineOutput::Skip) => {}
             Ok(LineOutput::Terminate) => return Ok(()),
             Err(msg) => {
@@ -101,8 +106,8 @@ where
     // If we encountered an error processing a line we want to flush the rest of
     // reader into writer and return the error.
     if let Some((line, msg)) = failed_on {
-        writer.write_all(line.as_bytes())?;
-        io::copy(&mut reader, &mut writer)?;
+        output_writer.write_all(line.as_bytes())?;
+        io::copy(&mut reader, &mut output_writer)?;
         return Err(ProcessError::Process(msg));
     }
     Ok(())
@@ -116,7 +121,7 @@ mod test {
     fn test_json_parsing_error() {
         let mut input = io::Cursor::new(b"ok text\nsome more\nerror text");
         let mut output: Vec<u8> = vec![];
-        let result = process_output(&mut input, &mut output, move |line| {
+        let result = process_output(&mut input, &mut output, None, move |line| {
             if line == "ok text\n" {
                 Ok(LineOutput::Skip)
             } else {

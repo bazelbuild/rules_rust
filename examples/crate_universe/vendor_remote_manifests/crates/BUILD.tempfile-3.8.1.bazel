@@ -78,79 +78,79 @@ rust_library(
         "@cvm__fastrand-2.0.1//:fastrand",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cvm__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cvm__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cvm__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cvm__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@cvm__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "//conditions:default": [],
     }),

@@ -74,6 +74,6 @@ rust_library(
     }),
     version = "0.21.0",
     deps = [
-        "@cvm__gimli-0.28.0//:gimli",
+        "@cvm__gimli-0.28.1//:gimli",
     ],
 )

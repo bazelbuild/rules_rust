@@ -80,6 +80,6 @@ rust_library(
     deps = [
         "//vendor_local_manifests/crates/futures-core-0.3.29:futures_core",
         "//vendor_local_manifests/crates/pin-project-lite-0.2.13:pin_project_lite",
-        "//vendor_local_manifests/crates/tokio-1.33.0:tokio",
+        "//vendor_local_manifests/crates/tokio-1.34.0:tokio",
     ],
 )

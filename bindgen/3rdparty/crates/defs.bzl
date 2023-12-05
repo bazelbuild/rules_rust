@@ -418,7 +418,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "rules_rust_bindgen__aho-corasick-1.0.2",
@@ -1108,3 +1112,11 @@ def crate_repositories():
         strip_prefix = "yansi-term-0.1.2",
         build_file = Label("@rules_rust//bindgen/3rdparty/crates:BUILD.yansi-term-0.1.2.bazel"),
     )
+
+    return [
+        struct(repo = "rules_rust_bindgen__bindgen-0.65.1", is_dev_dep = False),
+        struct(repo = "rules_rust_bindgen__clang-sys-1.6.1", is_dev_dep = False),
+        struct(repo = "rules_rust_bindgen__clap-4.3.3", is_dev_dep = False),
+        struct(repo = "rules_rust_bindgen__clap_complete-4.3.1", is_dev_dep = False),
+        struct(repo = "rules_rust_bindgen__env_logger-0.10.0", is_dev_dep = False),
+    ]

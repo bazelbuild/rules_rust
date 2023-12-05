@@ -100,6 +100,19 @@ fn main() -> Result<(), ProcessWrapperError> {
         "unable to get child stderr".to_string(),
     ))?;
 
+    let mut output_file: Option<std::fs::File> = if let Some(output_file_name) = opts.output_file {
+        Some(
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(output_file_name)
+                .map_err(|e| ProcessWrapperError(format!("Unable to open output_file: {}", e)))?,
+        )
+    } else {
+        None
+    };
+
     let mut was_killed = false;
     let result = if let Some(format) = opts.rustc_output_format {
         let quit_on_rmeta = opts.rustc_quit_on_rmeta;
@@ -107,13 +120,18 @@ fn main() -> Result<(), ProcessWrapperError> {
         // that we emitted a metadata file.
         let mut me = false;
         let metadata_emitted = &mut me;
-        let result = process_output(&mut child_stderr, stderr.as_mut(), move |line| {
-            if quit_on_rmeta {
-                rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
-            } else {
-                rustc::process_json(line, format)
-            }
-        });
+        let result = process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| {
+                if quit_on_rmeta {
+                    rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+                } else {
+                    rustc::process_json(line, format)
+                }
+            },
+        );
         if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
             // We can safely ignore the Result from kill() as we don't care if the process already terminated.
@@ -123,9 +141,12 @@ fn main() -> Result<(), ProcessWrapperError> {
         result
     } else {
         // Process output normally by forwarding stderr
-        process_output(&mut child_stderr, stderr.as_mut(), move |line| {
-            Ok(LineOutput::Message(line))
-        })
+        process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| Ok(LineOutput::Message(line)),
+        )
     };
     result.map_err(|e| ProcessWrapperError(format!("failed to process stderr: {}", e)))?;
 

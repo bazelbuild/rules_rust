@@ -74,6 +74,13 @@ impl<T: Ord> SelectList<T> {
         }
     }
 
+    /// Iterates through all potential values of the select.
+    pub fn iter_all_branches(&self) -> impl Iterator<Item = &T> {
+        self.common
+            .iter()
+            .chain(self.selects.values().flat_map(|value| value.iter()))
+    }
+
     /// Determine whether or not the select should be serialized
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
