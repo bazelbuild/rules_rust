@@ -78,79 +78,79 @@ rust_library(
         "@crates_vendor_manifests__fastrand-2.0.1//:fastrand",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@crates_vendor_manifests__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@crates_vendor_manifests__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@crates_vendor_manifests__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@crates_vendor_manifests__rustix-0.38.21//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@crates_vendor_manifests__rustix-0.38.26//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "//conditions:default": [],
     }),

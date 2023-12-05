@@ -410,7 +410,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "rules_rust_proto__autocfg-1.1.0",
@@ -1176,3 +1180,13 @@ def crate_repositories():
         strip_prefix = "ws2_32-sys-0.2.1",
         build_file = Label("@rules_rust//proto/protobuf/3rdparty/crates:BUILD.ws2_32-sys-0.2.1.bazel"),
     )
+
+    return [
+        struct(repo = "rules_rust_proto__grpc-0.6.2", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__grpc-compiler-0.6.2", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__log-0.4.17", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__protobuf-2.8.2", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__protobuf-codegen-2.8.2", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__tls-api-0.1.22", is_dev_dep = False),
+        struct(repo = "rules_rust_proto__tls-api-stub-0.1.22", is_dev_dep = False),
+    ]

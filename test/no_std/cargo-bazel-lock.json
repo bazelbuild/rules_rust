@@ -1,5 +1,5 @@
 {
-  "checksum": "970e5fc7baecdb77b539dc6cbc9c0781af62abc57a9f62229433d427d825b830",
+  "checksum": "485bd28d75b35e8ac17e78b5a70e585aaa1914549af6551d829030d93a3c6086",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -164,5 +164,9 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "libc_alloc 1.0.4"
+  ],
+  "direct_dev_deps": []
 }

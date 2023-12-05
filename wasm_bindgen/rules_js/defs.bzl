@@ -1,6 +1,6 @@
 """Rust WASM-bindgen rules for interfacing with aspect-build/rules_js"""
 
-load("@aspect_rules_js//js:providers.bzl", "JsInfo")
+load("@aspect_rules_js//js:providers.bzl", "js_info")
 load("//wasm_bindgen/private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
 
 def _js_rust_wasm_bindgen_impl(ctx):
@@ -23,7 +23,7 @@ def _js_rust_wasm_bindgen_impl(ctx):
             files = depset([info.wasm], transitive = [info.js, info.ts]),
         ),
         info,
-        JsInfo(
+        js_info(
             declarations = declarations,
             sources = es5_sources,
             transitive_declarations = declarations,

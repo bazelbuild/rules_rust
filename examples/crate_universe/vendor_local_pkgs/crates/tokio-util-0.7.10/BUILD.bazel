@@ -31,6 +31,7 @@ rust_library(
     crate_features = [
         "codec",
         "default",
+        "io",
         "tracing",
     ],
     crate_root = "src/lib.rs",
@@ -83,7 +84,7 @@ rust_library(
         "//vendor_local_pkgs/crates/futures-core-0.3.29:futures_core",
         "//vendor_local_pkgs/crates/futures-sink-0.3.29:futures_sink",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.13:pin_project_lite",
-        "//vendor_local_pkgs/crates/tokio-1.33.0:tokio",
+        "//vendor_local_pkgs/crates/tokio-1.34.0:tokio",
         "//vendor_local_pkgs/crates/tracing-0.1.40:tracing",
     ],
 )

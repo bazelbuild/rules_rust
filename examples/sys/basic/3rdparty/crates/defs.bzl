@@ -394,7 +394,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "basic_sys__bzip2-0.3.3",
@@ -444,3 +448,7 @@ def crate_repositories():
         strip_prefix = "pkg-config-0.3.26",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.pkg-config-0.3.26.bazel"),
     )
+
+    return [
+        struct(repo = "basic_sys__bzip2-0.3.3", is_dev_dep = False),
+    ]
