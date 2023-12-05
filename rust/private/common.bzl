@@ -71,3 +71,9 @@ rust_common = struct(
     crate_group_info = CrateGroupInfo,
     default_version = DEFAULT_RUST_VERSION,
 )
+
+COMMON_PROVIDERS = [
+    CrateInfo,
+    DepInfo,
+    DefaultInfo,
+]

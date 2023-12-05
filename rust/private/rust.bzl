@@ -15,7 +15,7 @@
 """Rust rule implementations"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
@@ -760,15 +760,9 @@ _rust_test_attrs = dict({
     "_use_grep_includes": attr.bool(default = True),
 }.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
 
-_common_providers = [
-    rust_common.crate_info,
-    rust_common.dep_info,
-    DefaultInfo,
-]
-
 rust_library = rule(
     implementation = _rust_library_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs.items() + {
         "disable_pipelining": attr.bool(
             default = False,
@@ -961,7 +955,7 @@ _proc_macro_dep_transition = transition(
 
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     # Start by copying the common attributes, then override the `deps` attribute
     # to apply `_proc_macro_dep_transition`. To add this transition we additionally
     # need to declare `_allowlist_function_transition`, see
@@ -1048,7 +1042,7 @@ _rust_binary_transition = transition(
 
 rust_binary = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs.items() + _rust_binary_attrs.items() + {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
@@ -1192,7 +1186,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items() + {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
@@ -1215,7 +1209,7 @@ rust_binary_without_process_wrapper = rule(
 
 rust_library_without_process_wrapper = rule(
     implementation = _rust_library_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
@@ -1243,7 +1237,7 @@ _rust_test_transition = transition(
 
 rust_test = rule(
     implementation = _rust_test_impl,
-    provides = _common_providers,
+    provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs.items() + _rust_test_attrs.items() + {
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",

@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, GenBinaries};
+use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
@@ -325,6 +325,10 @@ pub struct CrateContext {
     /// Extra targets that should be aliased.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub extra_aliased_targets: BTreeMap<String, String>,
+
+    /// Transition rule to use instead of `alias`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias_rule: Option<AliasRule>,
 }
 
 impl CrateContext {
@@ -481,6 +485,7 @@ impl CrateContext {
             additive_build_file_content: None,
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::new(),
+            alias_rule: None,
         }
         .with_overrides(extras)
     }
@@ -627,6 +632,11 @@ impl CrateContext {
             // Extra aliased targets
             if let Some(extra) = &crate_extra.extra_aliased_targets {
                 self.extra_aliased_targets.append(&mut extra.clone());
+            }
+
+            // Transition alias
+            if let Some(alias_rule) = &crate_extra.alias_rule {
+                self.alias_rule.get_or_insert(alias_rule.clone());
             }
 
             // Git shallow_since
