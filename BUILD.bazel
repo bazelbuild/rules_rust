@@ -16,7 +16,10 @@ load(
     "rustc_output_diagnostics",
 )
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "MODULE.bazel",
+])
 
 bzl_library(
     name = "bzl_lib",
