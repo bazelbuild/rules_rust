@@ -1,5 +1,5 @@
 {
-  "checksum": "4cbc87344cc810a7618d14d2f4db42363de079de6aad760b2f9c1a1602888475",
+  "checksum": "d524965f3c82a9ba5869461107d333dab07636169f3033d4ec6ae2b686bdb6cd",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -555,5 +555,9 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "nix 0.26.2"
+  ],
+  "direct_dev_deps": []
 }

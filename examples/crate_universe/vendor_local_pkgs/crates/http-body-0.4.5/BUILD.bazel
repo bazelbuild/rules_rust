@@ -75,7 +75,7 @@ rust_library(
     version = "0.4.5",
     deps = [
         "//vendor_local_pkgs/crates/bytes-1.5.0:bytes",
-        "//vendor_local_pkgs/crates/http-0.2.9:http",
+        "//vendor_local_pkgs/crates/http-0.2.11:http",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.13:pin_project_lite",
     ],
 )

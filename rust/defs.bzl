@@ -50,6 +50,7 @@ load(
     _extra_rustc_flags = "extra_rustc_flags",
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
+    _rustc_output_diagnostics = "rustc_output_diagnostics",
 )
 load(
     "//rust/private:rustdoc.bzl",
@@ -106,6 +107,9 @@ rust_clippy = _rust_clippy
 
 capture_clippy_output = _capture_clippy_output
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+rustc_output_diagnostics = _rustc_output_diagnostics
+# See @rules_rust//rust/private:rustc.bzl for a complete description.
 
 error_format = _error_format
 # See @rules_rust//rust/private:rustc.bzl for a complete description.

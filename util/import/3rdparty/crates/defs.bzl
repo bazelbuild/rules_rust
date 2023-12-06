@@ -401,7 +401,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "rules_rust_util_import__aho-corasick-0.7.15",
@@ -581,3 +585,12 @@ def crate_repositories():
         strip_prefix = "wasi-0.11.0+wasi-snapshot-preview1",
         build_file = Label("@rules_rust//util/import/3rdparty/crates:BUILD.wasi-0.11.0+wasi-snapshot-preview1.bazel"),
     )
+
+    return [
+        struct(repo = "rules_rust_util_import__aho-corasick-0.7.15", is_dev_dep = False),
+        struct(repo = "rules_rust_util_import__lazy_static-1.4.0", is_dev_dep = False),
+        struct(repo = "rules_rust_util_import__proc-macro2-1.0.33", is_dev_dep = False),
+        struct(repo = "rules_rust_util_import__quickcheck-1.0.3", is_dev_dep = False),
+        struct(repo = "rules_rust_util_import__quote-1.0.10", is_dev_dep = False),
+        struct(repo = "rules_rust_util_import__syn-1.0.82", is_dev_dep = False),
+    ]

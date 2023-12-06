@@ -298,11 +298,11 @@ _NORMAL_DEPENDENCIES = {
             "mime": "//vendor_local_pkgs/crates/mime-0.3.17:mime",
             "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.108:serde_json",
             "socket2": "//vendor_local_pkgs/crates/socket2-0.4.10:socket2",
-            "tokio": "//vendor_local_pkgs/crates/tokio-1.33.0:tokio",
+            "tokio": "//vendor_local_pkgs/crates/tokio-1.34.0:tokio",
             "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
             "tower-http": "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
             "tracing": "//vendor_local_pkgs/crates/tracing-0.1.40:tracing",
-            "tracing-subscriber": "//vendor_local_pkgs/crates/tracing-subscriber-0.3.17:tracing_subscriber",
+            "tracing-subscriber": "//vendor_local_pkgs/crates/tracing-subscriber-0.3.18:tracing_subscriber",
         },
     },
 }

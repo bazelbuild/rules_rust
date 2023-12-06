@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
 load("@rules_rust//wasm_bindgen/rules_js:defs.bzl", "js_rust_wasm_bindgen")
@@ -58,14 +58,33 @@ js_rust_wasm_bindgen(
     wasm_file = ":hello_world_lib_wasm",
 )
 
+_WASM_DATA = [
+    ":hello_world_bundler_wasm_bindgen",
+    ":hello_world_deno_wasm_bindgen",
+    ":hello_world_nodejs_wasm_bindgen",
+    ":hello_world_nomodules_wasm_bindgen",
+    ":hello_world_web_wasm_bindgen",
+]
+
 js_test(
-    name = "hello_world_wasm_test",
-    data = [
-        ":hello_world_bundler_wasm_bindgen",
-        ":hello_world_deno_wasm_bindgen",
-        ":hello_world_nodejs_wasm_bindgen",
-        ":hello_world_nomodules_wasm_bindgen",
-        ":hello_world_web_wasm_bindgen",
-    ],
+    name = "hello_world_wasm_direct_test",
+    data = _WASM_DATA,
     entry_point = ":hello_world_wasm_test.js",
+)
+
+js_library(
+    name = "hello_world_wasm_lib",
+    srcs = [
+        ":hello_world_wasm_test.js",
+    ],
+    data = _WASM_DATA,
+    deps = [],
+)
+
+js_test(
+    name = "hello_world_wasm_lib_test",
+    data = [
+        ":hello_world_wasm_lib",
+    ],
+    entry_point = ":hello_world_wasm_lib",
 )

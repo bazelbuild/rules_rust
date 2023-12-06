@@ -24,7 +24,7 @@ CrateInfo = provider(
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
-        "metadata": "File: The rmeta file produced for this crate. It is optional.",
+        "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -32,6 +32,8 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
+        "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
+        "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": (
             "str: The type of this crate " +
@@ -91,6 +93,16 @@ DepVariantInfo = provider(
         "crate_group_info": "CrateGroupInfo: The CrateGroupInfo of a Rust crate group dependency",
         "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
         "dep_info": "DepInfo: The DepInfo of a Rust dependency",
+    },
+)
+
+RustcOutputDiagnosticsInfo = provider(
+    doc = (
+        "Save json diagnostics from rustc. Json diagnostics are able to be " +
+        "consumed by tools such as rust-analyzer to provide IDE integration"
+    ),
+    fields = {
+        "rustc_output_diagnostics": "bool: Whether or not to output diagnostics",
     },
 )
 

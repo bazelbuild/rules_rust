@@ -71,13 +71,9 @@ pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResul
         .parse()
         .map_err(|_| "error parsing rustc output as json".to_owned())?;
     Ok(match parsed.try_into() {
-        Ok(RustcMessage::Message(msg)) => match error_format {
-            // If the output should be json, we just forward the messages as-is
-            // using `line`.
-            ErrorFormat::Json => LineOutput::Message(line),
-            // Otherwise we return the rendered field.
-            _ => LineOutput::Message(msg),
-        },
+        Ok(RustcMessage::Message(rendered)) => {
+            output_based_on_error_format(line, rendered, error_format)
+        }
         _ => LineOutput::Skip,
     })
 }
@@ -87,7 +83,8 @@ pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResul
 /// is emitted so the compiler can be terminated.
 /// This is used to implement pipelining in rules_rust, please see
 /// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199
-/// Retuns an errors if parsing json fails.
+/// Retuns an error if parsing json fails.
+/// TODO: pass a function to handle the emit event and merge with process_json
 pub(crate) fn stop_on_rmeta_completion(
     line: String,
     error_format: ErrorFormat,
@@ -101,13 +98,23 @@ pub(crate) fn stop_on_rmeta_completion(
             *kill = true;
             LineOutput::Terminate
         }
-        Ok(RustcMessage::Message(msg)) => match error_format {
-            // If the output should be json, we just forward the messages as-is
-            // using `line`.
-            ErrorFormat::Json => LineOutput::Message(line),
-            // Otherwise we return the rendered field.
-            _ => LineOutput::Message(msg),
-        },
+        Ok(RustcMessage::Message(rendered)) => {
+            output_based_on_error_format(line, rendered, error_format)
+        }
         _ => LineOutput::Skip,
     })
+}
+
+fn output_based_on_error_format(
+    line: String,
+    rendered: String,
+    error_format: ErrorFormat,
+) -> LineOutput {
+    match error_format {
+        // If the output should be json, we just forward the messages as-is
+        // using `line`.
+        ErrorFormat::Json => LineOutput::Message(line),
+        // Otherwise we return the rendered field.
+        ErrorFormat::Rendered => LineOutput::Message(rendered),
+    }
 }

@@ -452,7 +452,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "rules_rust_wasm_bindgen__adler-1.0.2",
@@ -2182,3 +2186,26 @@ def crate_repositories():
         strip_prefix = "windows_x86_64_msvc-0.48.0",
         build_file = Label("@rules_rust//wasm_bindgen/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
+
+    return [
+        struct(repo = "rules_rust_wasm_bindgen__anyhow-1.0.71", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__docopt-1.1.1", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__env_logger-0.8.4", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__log-0.4.19", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__rouille-3.6.2", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__serde-1.0.171", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__serde_derive-1.0.171", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__serde_json-1.0.102", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__ureq-2.8.0", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__walrus-0.19.0", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__wasm-bindgen-0.2.88", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.88", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.88", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen__assert_cmd-1.0.8", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__diff-0.1.13", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__predicates-1.0.8", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__rayon-1.7.0", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__tempfile-3.6.0", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__wasmparser-0.102.0", is_dev_dep = True),
+        struct(repo = "rules_rust_wasm_bindgen__wasmprinter-0.2.60", is_dev_dep = True),
+    ]

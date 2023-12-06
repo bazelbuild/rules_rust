@@ -1,5 +1,5 @@
 {
-  "checksum": "993746eb81ec5942f85f28cfd6e0e4e89c39d84cd9f5529a4dd8af5ae07c0424",
+  "checksum": "ac983a457ce50cdc796949fd79a2398374482cca4c3af51ceadcdcca1d01a46e",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2549,5 +2549,15 @@
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "log 0.3.9",
+    "log 0.4.14",
+    "names 0.12.1-dev",
+    "names 0.13.0",
+    "value-bag 1.0.0-alpha.7"
+  ],
+  "direct_dev_deps": [
+    "env_logger 0.9.3"
+  ]
 }

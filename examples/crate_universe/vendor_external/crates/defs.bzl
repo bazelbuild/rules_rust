@@ -408,7 +408,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "crates_vendor__atty-0.2.14",
@@ -918,3 +922,9 @@ def crate_repositories():
         strip_prefix = "winapi-x86_64-pc-windows-gnu-0.4.0",
         build_file = Label("@examples//vendor_external/crates:BUILD.winapi-x86_64-pc-windows-gnu-0.4.0.bazel"),
     )
+
+    return [
+        struct(repo = "crates_vendor__clap-3.1.5", is_dev_dep = False),
+        struct(repo = "crates_vendor__rand-0.8.5", is_dev_dep = False),
+        struct(repo = "crates_vendor__version-sync-0.9.4", is_dev_dep = True),
+    ]

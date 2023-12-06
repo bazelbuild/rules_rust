@@ -293,7 +293,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_local_manifests": {
         _COMMON_CONDITION: {
-            "tokio": "//vendor_local_manifests/crates/tokio-1.33.0:tokio",
+            "tokio": "//vendor_local_manifests/crates/tokio-1.34.0:tokio",
         },
     },
 }

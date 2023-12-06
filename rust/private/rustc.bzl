@@ -23,7 +23,7 @@ load(
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", _BuildInfo = "BuildInfo")
+load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
@@ -929,6 +929,10 @@ def construct_arguments(
     if build_metadata:
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+        if crate_info.rustc_rmeta_output:
+            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+    elif crate_info.rustc_output:
+        process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -1112,9 +1116,9 @@ def rustc_compile_action(
     """
     crate_info = rust_common.create_crate_info(**crate_info_dict)
 
-    build_metadata = None
-    if "metadata" in crate_info_dict:
-        build_metadata = crate_info_dict["metadata"]
+    build_metadata = crate_info_dict.get("metadata", None)
+    rustc_output = crate_info_dict.get("rustc_output", None)
+    rustc_rmeta_output = crate_info_dict.get("rustc_rmeta_output", None)
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -1193,7 +1197,7 @@ def rustc_compile_action(
         build_flags_files = build_flags_files,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
-        use_json_output = bool(build_metadata),
+        use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
     )
 
@@ -1256,6 +1260,8 @@ def rustc_compile_action(
 
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
+    if rustc_output:
+        action_outputs.append(rustc_output)
 
     # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
     # types that benefit from having debug information in a separate file.
@@ -1290,7 +1296,7 @@ def rustc_compile_action(
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs,
-                outputs = [build_metadata],
+                outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
@@ -1456,12 +1462,24 @@ def rustc_compile_action(
 
     if toolchain.target_arch != "wasm32":
         providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+
+    output_group_info = {}
+
     if pdb_file:
-        providers.append(OutputGroupInfo(pdb_file = depset([pdb_file])))
+        output_group_info["pdb_file"] = depset([pdb_file])
     if dsym_folder:
-        providers.append(OutputGroupInfo(dsym_folder = depset([dsym_folder])))
+        output_group_info["dsym_folder"] = depset([dsym_folder])
     if build_metadata:
-        providers.append(OutputGroupInfo(build_metadata = depset([build_metadata])))
+        output_group_info["build_metadata"] = depset([build_metadata])
+    if build_metadata:
+        output_group_info["build_metadata"] = depset([build_metadata])
+        if rustc_rmeta_output:
+            output_group_info["rustc_rmeta_output"] = depset([rustc_rmeta_output])
+    if rustc_output:
+        output_group_info["rustc_output"] = depset([rustc_output])
+
+    if output_group_info:
+        providers.append(OutputGroupInfo(**output_group_info))
 
     return providers
 
@@ -2044,6 +2062,31 @@ error_format = rule(
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
+)
+
+def _rustc_output_diagnostics_impl(ctx):
+    """Implementation of the `rustc_output_diagnostics` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the RustcOutputDiagnosticsInfo provider
+    """
+    return [RustcOutputDiagnosticsInfo(
+        rustc_output_diagnostics = ctx.build_setting_value,
+    )]
+
+rustc_output_diagnostics = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//:rustc_output_diagnostics` " +
+        "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
+        "These are accessible via the " +
+        "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
+        "You can find these using `bazel cquery`"
+    ),
+    implementation = _rustc_output_diagnostics_impl,
+    build_setting = config.bool(flag = True),
 )
 
 def _extra_rustc_flags_impl(ctx):
