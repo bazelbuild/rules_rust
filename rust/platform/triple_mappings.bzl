@@ -102,12 +102,12 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "netbsd": None,
     "nixos": "nixos",
     "none": "none",
+    "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
     "unknown": None,
     "wasi": None,
     "windows": "windows",
-    "nto": "qnx",
 }
 
 _SYSTEM_TO_BINARY_EXT = {

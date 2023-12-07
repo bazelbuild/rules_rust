@@ -89,6 +89,6 @@ def declare_config_settings():
             ":darwin",
             ":freebsd",
             ":linux",
-            ":qnx",
+            ":nto",
         ],
     )
