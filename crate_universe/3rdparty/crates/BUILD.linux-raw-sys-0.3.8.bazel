@@ -45,6 +45,9 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "errno",
         ],
+        "@rules_rust//rust/platform:powerpc64le-unknown-linux-gnu": [
+            "errno",
+        ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "errno",
         ],

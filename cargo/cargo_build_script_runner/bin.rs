@@ -31,6 +31,8 @@ fn run_buildrs() -> Result<(), String> {
     // relative to themselves, to fail.
     let exec_root = env::current_dir().expect("Failed to get current directory");
     let manifest_dir_env = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR was not set");
+    let link_search_prefix =
+        env::var("CARGO_LINKSEARCH_PREFIX").expect("CARGO_LINKSEARCH_PREFIX was not set");
     let rustc_env = env::var("RUSTC").expect("RUSTC was not set");
     let manifest_dir = exec_root.join(manifest_dir_env);
     let rustc = exec_root.join(&rustc_env);
@@ -187,8 +189,11 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags,
         link_flags,
         link_search_paths,
-    } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
-
+    } = BuildScriptOutput::outputs_to_flags(
+        &buildrs_outputs,
+        &exec_root.to_string_lossy(),
+        &link_search_prefix,
+    );
     write(&compile_flags_file, compile_flags.as_bytes())
         .unwrap_or_else(|_| panic!("Unable to write file {:?}", compile_flags_file));
     write(&link_flags_file, link_flags.as_bytes())

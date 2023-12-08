@@ -15,6 +15,7 @@ _SUPPORTED_CPU_ARCH = [
     "armv7",
     "i686",
     "powerpc",
+    "powerpc64le",
     "s390x",
     "x86_64",
     "riscv32",

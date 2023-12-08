@@ -176,7 +176,11 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a flagfile.
-    pub fn outputs_to_flags(outputs: &[BuildScriptOutput], exec_root: &str) -> CompileAndLinkFlags {
+    pub fn outputs_to_flags(
+        outputs: &[BuildScriptOutput],
+        exec_root: &str,
+        link_search_prefix: &str,
+    ) -> CompileAndLinkFlags {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
         let mut link_search_paths = Vec::new();
@@ -187,7 +191,13 @@ impl BuildScriptOutput {
                 BuildScriptOutput::Flags(e) => compile_flags.push(e.to_owned()),
                 BuildScriptOutput::LinkArg(e) => compile_flags.push(format!("-Clink-arg={e}")),
                 BuildScriptOutput::LinkLib(e) => link_flags.push(format!("-l{e}")),
-                BuildScriptOutput::LinkSearch(e) => link_search_paths.push(format!("-L{e}")),
+                BuildScriptOutput::LinkSearch(e) => {
+                    link_search_paths.push(if link_search_prefix.is_empty() {
+                        format!("-L{e}")
+                    } else {
+                        format!("-L{}/{e}", link_search_prefix)
+                    })
+                }
                 _ => {}
             }
         }
@@ -286,7 +296,7 @@ cargo:rustc-env=no_trailing_newline=true",
             "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", ""),
             CompileAndLinkFlags {
                 // -Lblah was output as a rustc-flags, so even though it probably _should_ be a link
                 // flag, we don't treat it like one.
