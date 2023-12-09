@@ -135,6 +135,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "termios",
         ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "termios",
+        ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "termios",
         ],
@@ -180,6 +183,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "termios",
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "termios",
+        ],
         "//conditions:default": [],
     }),
     crate_root = "src/lib.rs",
@@ -200,6 +206,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -223,6 +230,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -257,6 +265,9 @@ rust_library(
             "@cui__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@cui__linux-raw-sys-0.4.10//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
             "@cui__linux-raw-sys-0.4.10//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
@@ -352,6 +363,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@cui__linux-raw-sys-0.4.10//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "@cui__linux-raw-sys-0.4.10//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))
+        ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
             "@cui__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))
             "@cui__libc-0.2.149//:libc",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))
@@ -386,6 +400,9 @@ cargo_build_script(
             "termios",
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "termios",
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
             "termios",
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
@@ -431,6 +448,9 @@ cargo_build_script(
             "termios",
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "termios",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
             "termios",
         ],
         "//conditions:default": [],
