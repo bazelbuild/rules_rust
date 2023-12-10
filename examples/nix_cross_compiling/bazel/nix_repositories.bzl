@@ -201,12 +201,6 @@ rust_stdlib_filegroup(
 )
 """
 
-_CARGO_BAZEL_BUILD_FILE_CONTENT = """
-package(default_visibility = ["//visibility:public"])
-
-exports_files(["bin/cargo-bazel"])
-"""
-
 def nix_repositories():
     nixpkgs_flake_package(
         name = "nix_config",
@@ -222,12 +216,4 @@ def nix_repositories():
         nix_flake_lock_file = "//nix:flake.lock",
         package = "bazel.rust",
         build_file_content = _RUST_BUILD_FILE_CONTENT,
-    )
-
-    nixpkgs_flake_package(
-        name = "cargo-bazel",
-        nix_flake_file = "@rules_rust//crate_universe:flake.nix",
-        nix_flake_lock_file = "@rules_rust//crate_universe:flake.lock",
-        package = "cargo-bazel",
-        build_file_content = _CARGO_BAZEL_BUILD_FILE_CONTENT,
     )

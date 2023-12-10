@@ -16,50 +16,6 @@ load("//bazel:nix_repositories.bzl", "nix_repositories")
 
 nix_repositories()
 
-# Rust
-local_repository(
-    name = "rules_rust",
-    path = "../..",
-)
-
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")
-
-rules_rust_dependencies()
-
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
-load("//bazel/cargo:crates_repository.bzl", CARGO_ANNOTATIONS = "ANNOTATIONS", CARGO_PACKAGES = "PACKAGES")
-
-crates_repository(
-    name = "crate_index",
-    annotations = CARGO_ANNOTATIONS,
-    cargo_lockfile = "//bazel/cargo:Cargo.lock",
-    generate_build_scripts = False,
-    generator = "@cargo-bazel//:bin/cargo-bazel",
-    lockfile = "//bazel/cargo:cargo-bazel-lock.json",
-    packages = CARGO_PACKAGES,
-    rust_toolchain_cargo_template = "@nix_rust//:bin/{tool}",
-    rust_toolchain_rustc_template = "@nix_rust//:bin/{tool}",
-    splicing_config = splicing_config(
-        resolver_version = "2",
-    ),
-    supported_platform_triples = [
-        "aarch64-apple-darwin",
-        "aarch64-apple-ios",
-        "aarch64-linux-android",
-        "aarch64-unknown-linux-gnu",
-        "wasm32-unknown-unknown",
-        "wasm32-wasi",
-        "x86_64-apple-darwin",
-        "x86_64-pc-windows-msvc",
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-nixos-gnu",
-    ],
-)
-
-load("@crate_index//:defs.bzl", "crate_repositories")
-
-crate_repositories()
-
 # Toolchains
 register_toolchains(
     "//bazel/toolchains/cc/aarch64-apple-darwin:toolchain",
@@ -83,3 +39,53 @@ register_toolchains(
     "//bazel/toolchains/rust/x86_64-unknown-linux-gnu:toolchain",
     "//bazel/toolchains/rust/x86_64-unknown-nixos-gnu:toolchain",
 )
+
+# Rust
+local_repository(
+    name = "rules_rust",
+    path = "../..",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2021",
+)
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
+load("//bazel/cargo:crates_repository.bzl", CARGO_ANNOTATIONS = "ANNOTATIONS", CARGO_PACKAGES = "PACKAGES")
+
+crates_repository(
+    name = "crate_index",
+    annotations = CARGO_ANNOTATIONS,
+    cargo_lockfile = "//bazel/cargo:Cargo.lock",
+    generate_build_scripts = False,
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//bazel/cargo:cargo-bazel-lock.json",
+    packages = CARGO_PACKAGES,
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-apple-ios",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+        "wasm32-wasi",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-nixos-gnu",
+    ],
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
