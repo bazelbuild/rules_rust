@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.32.0",
+    version = "0.33.0",
 )
 
 print("WARNING: The rules_rust Bazel module is still highly experimental and subject to change at any time. Only use it to try out bzlmod for now.")  # buildifier: disable=print
