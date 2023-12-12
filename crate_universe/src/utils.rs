@@ -1,6 +1,7 @@
 //! Common utilities
 
 pub mod starlark;
+pub mod target_triple;
 
 pub const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
 
@@ -14,12 +15,4 @@ pub fn sanitize_module_name(name: &str) -> String {
 /// [RepositoryName.java](https://github.com/bazelbuild/bazel/blob/4.0.0/src/main/java/com/google/devtools/build/lib/cmdline/RepositoryName.java#L42)
 pub fn sanitize_repository_name(name: &str) -> String {
     name.replace('+', "-")
-}
-
-// While Bazel is NixOS aware (via `@platforms//os:nixos`), `rustc`
-// is not, so any target triples for `nixos` get remapped to `linux`
-// for the purposes of determining `cargo metadata`, resolving `cfg`
-// targets, etc.
-pub fn cargo_target(target: &str) -> String {
-    target.replace("nixos", "linux")
 }

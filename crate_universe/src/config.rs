@@ -15,6 +15,8 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
+use crate::utils::target_triple::TargetTriple;
+
 /// Representations of different kinds of crate vendoring into workspaces.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -632,7 +634,7 @@ pub struct Config {
 
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub supported_platform_triples: BTreeSet<String>,
+    pub supported_platform_triples: BTreeSet<TargetTriple>,
 }
 
 impl Config {

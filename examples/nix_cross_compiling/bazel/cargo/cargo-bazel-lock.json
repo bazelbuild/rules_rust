@@ -1,5 +1,5 @@
 {
-  "checksum": "08a590b0ec2d6a1d59d568b6c177bbb9785ae7c42578449c3024e19532c7c166",
+  "checksum": "6f1a1015d47aa1124c5d5c8e0b1b137113407b532348213646ed5331ed31f033",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -1954,10 +1954,8 @@
       "x86_64-pc-windows-msvc"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
-    ],
-    "x86_64-unknown-nixos-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ]
   },
   "direct_deps": [

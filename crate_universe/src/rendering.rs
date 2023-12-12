@@ -22,6 +22,7 @@ use crate::utils::starlark::{
     Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
     Starlark, TargetCompatibleWith,
 };
+use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
 
 // Configuration remapper used to convert from cfg expressions like "cfg(unix)"
@@ -30,7 +31,7 @@ pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub struct Renderer {
     config: RenderConfig,
-    supported_platform_triples: BTreeSet<String>,
+    supported_platform_triples: BTreeSet<TargetTriple>,
     generate_target_compatible_with: bool,
     engine: TemplateEngine,
 }
@@ -38,7 +39,7 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(
         config: RenderConfig,
-        supported_platform_triples: BTreeSet<String>,
+        supported_platform_triples: BTreeSet<TargetTriple>,
         generate_target_compatible_with: bool,
     ) -> Self {
         let engine = TemplateEngine::new(&config);
@@ -75,15 +76,15 @@ impl Renderer {
         context
             .conditions
             .iter()
-            .map(|(cfg, triples)| {
+            .map(|(cfg, target_triples)| {
                 (
                     cfg.clone(),
-                    triples
+                    target_triples
                         .iter()
-                        .map(|triple| {
+                        .map(|target_triple| {
                             render_platform_constraint_label(
                                 &self.config.platforms_template,
-                                triple,
+                                target_triple,
                             )
                         })
                         .collect(),
@@ -373,7 +374,10 @@ impl Renderer {
             ),
             crate_features: SelectList::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
-                    render_platform_constraint_label(&self.config.platforms_template, &triple)
+                    render_platform_constraint_label(
+                        &self.config.platforms_template,
+                        &TargetTriple::from_bazel(triple),
+                    )
                 }),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
@@ -531,7 +535,10 @@ impl Renderer {
             ),
             crate_features: SelectList::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
-                    render_platform_constraint_label(&self.config.platforms_template, &triple)
+                    render_platform_constraint_label(
+                        &self.config.platforms_template,
+                        &TargetTriple::from_bazel(triple),
+                    )
                 }),
             crate_root: target.crate_root.clone(),
             data: make_data(
@@ -574,10 +581,10 @@ impl Renderer {
                 TargetCompatibleWith::new(
                     self.supported_platform_triples
                         .iter()
-                        .map(|triple| {
+                        .map(|target_triple| {
                             render_platform_constraint_label(
                                 &self.config.platforms_template,
-                                triple,
+                                target_triple,
                             )
                         })
                         .collect(),
@@ -747,8 +754,8 @@ pub fn render_module_label(template: &str, name: &str) -> Result<Label> {
 }
 
 /// Render the Bazel label of a platform triple
-fn render_platform_constraint_label(template: &str, triple: &str) -> String {
-    template.replace("{triple}", triple)
+fn render_platform_constraint_label(template: &str, target_triple: &TargetTriple) -> String {
+    template.replace("{triple}", &target_triple.to_bazel())
 }
 
 fn render_build_file_template(template: &str, name: &str, version: &str) -> Result<Label> {
@@ -814,30 +821,30 @@ mod test {
         }
     }
 
-    fn mock_supported_platform_triples() -> BTreeSet<String> {
+    fn mock_supported_platform_triples() -> BTreeSet<TargetTriple> {
         BTreeSet::from([
-            "aarch64-apple-darwin".to_owned(),
-            "aarch64-apple-ios".to_owned(),
-            "aarch64-linux-android".to_owned(),
-            "aarch64-pc-windows-msvc".to_owned(),
-            "aarch64-unknown-linux-gnu".to_owned(),
-            "arm-unknown-linux-gnueabi".to_owned(),
-            "armv7-unknown-linux-gnueabi".to_owned(),
-            "i686-apple-darwin".to_owned(),
-            "i686-linux-android".to_owned(),
-            "i686-pc-windows-msvc".to_owned(),
-            "i686-unknown-freebsd".to_owned(),
-            "i686-unknown-linux-gnu".to_owned(),
-            "powerpc-unknown-linux-gnu".to_owned(),
-            "s390x-unknown-linux-gnu".to_owned(),
-            "wasm32-unknown-unknown".to_owned(),
-            "wasm32-wasi".to_owned(),
-            "x86_64-apple-darwin".to_owned(),
-            "x86_64-apple-ios".to_owned(),
-            "x86_64-linux-android".to_owned(),
-            "x86_64-pc-windows-msvc".to_owned(),
-            "x86_64-unknown-freebsd".to_owned(),
-            "x86_64-unknown-linux-gnu".to_owned(),
+            TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
+            TargetTriple::from_bazel("aarch64-apple-ios".to_owned()),
+            TargetTriple::from_bazel("aarch64-linux-android".to_owned()),
+            TargetTriple::from_bazel("aarch64-pc-windows-msvc".to_owned()),
+            TargetTriple::from_bazel("aarch64-unknown-linux-gnu".to_owned()),
+            TargetTriple::from_bazel("arm-unknown-linux-gnueabi".to_owned()),
+            TargetTriple::from_bazel("armv7-unknown-linux-gnueabi".to_owned()),
+            TargetTriple::from_bazel("i686-apple-darwin".to_owned()),
+            TargetTriple::from_bazel("i686-linux-android".to_owned()),
+            TargetTriple::from_bazel("i686-pc-windows-msvc".to_owned()),
+            TargetTriple::from_bazel("i686-unknown-freebsd".to_owned()),
+            TargetTriple::from_bazel("i686-unknown-linux-gnu".to_owned()),
+            TargetTriple::from_bazel("powerpc-unknown-linux-gnu".to_owned()),
+            TargetTriple::from_bazel("s390x-unknown-linux-gnu".to_owned()),
+            TargetTriple::from_bazel("wasm32-unknown-unknown".to_owned()),
+            TargetTriple::from_bazel("wasm32-wasi".to_owned()),
+            TargetTriple::from_bazel("x86_64-apple-darwin".to_owned()),
+            TargetTriple::from_bazel("x86_64-apple-ios".to_owned()),
+            TargetTriple::from_bazel("x86_64-linux-android".to_owned()),
+            TargetTriple::from_bazel("x86_64-pc-windows-msvc".to_owned()),
+            TargetTriple::from_bazel("x86_64-unknown-freebsd".to_owned()),
+            TargetTriple::from_bazel("x86_64-unknown-linux-gnu".to_owned()),
         ])
     }
 

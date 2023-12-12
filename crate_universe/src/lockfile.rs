@@ -189,6 +189,7 @@ impl PartialEq<String> for Digest {
 mod test {
     use crate::config::{CrateAnnotations, CrateId};
     use crate::splicing::cargo_config::{AdditionalRegistry, CargoConfig, Registry};
+    use crate::utils::target_triple::TargetTriple;
 
     use super::*;
 
@@ -230,15 +231,15 @@ mod test {
             )]),
             cargo_config: None,
             supported_platform_triples: BTreeSet::from([
-                "aarch64-apple-darwin".to_owned(),
-                "aarch64-unknown-linux-gnu".to_owned(),
-                "aarch64-pc-windows-msvc".to_owned(),
-                "wasm32-unknown-unknown".to_owned(),
-                "wasm32-wasi".to_owned(),
-                "x86_64-apple-darwin".to_owned(),
-                "x86_64-pc-windows-msvc".to_owned(),
-                "x86_64-unknown-freebsd".to_owned(),
-                "x86_64-unknown-linux-gnu".to_owned(),
+                TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
+                TargetTriple::from_bazel("aarch64-unknown-linux-gnu".to_owned()),
+                TargetTriple::from_bazel("aarch64-pc-windows-msvc".to_owned()),
+                TargetTriple::from_bazel("wasm32-unknown-unknown".to_owned()),
+                TargetTriple::from_bazel("wasm32-wasi".to_owned()),
+                TargetTriple::from_bazel("x86_64-apple-darwin".to_owned()),
+                TargetTriple::from_bazel("x86_64-pc-windows-msvc".to_owned()),
+                TargetTriple::from_bazel("x86_64-unknown-freebsd".to_owned()),
+                TargetTriple::from_bazel("x86_64-unknown-linux-gnu".to_owned()),
             ]),
             ..Config::default()
         };

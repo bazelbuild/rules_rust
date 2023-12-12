@@ -20,8 +20,8 @@ use tracing::debug;
 
 use crate::config::CrateId;
 use crate::lockfile::Digest;
-use crate::utils::cargo_target;
 use crate::utils::starlark::SelectList;
+use crate::utils::target_triple::TargetTriple;
 
 pub use self::dependency::*;
 pub use self::metadata_annotation::*;
@@ -458,7 +458,7 @@ impl FeatureGenerator {
     pub fn generate(
         &self,
         manifest_path: &Path,
-        platform_triples: &BTreeSet<String>,
+        target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
         debug!(
             "Generating features for manifest {}",
@@ -466,9 +466,9 @@ impl FeatureGenerator {
         );
 
         let manifest_dir = manifest_path.parent().unwrap();
-        let mut target_to_child = BTreeMap::new();
-        debug!("Spawning processes for {:?}", platform_triples);
-        for target in platform_triples {
+        let mut target_triple_to_child = BTreeMap::new();
+        debug!("Spawning processes for {:?}", target_triples);
+        for target_triple in target_triples {
             // We use `cargo tree` here because `cargo metadata` doesn't report
             // back target-specific features (enabled with `resolver = "2"`).
             // This is unfortunately a bit of a hack. See:
@@ -488,7 +488,7 @@ impl FeatureGenerator {
                 .arg("--color=never")
                 .arg("--workspace")
                 .arg("--target")
-                .arg(cargo_target(target))
+                .arg(target_triple.to_cargo())
                 .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
@@ -496,20 +496,21 @@ impl FeatureGenerator {
                 .with_context(|| {
                     format!(
                         "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target,
+                        target_triple,
                         manifest_path.display()
                     )
                 })?;
-            target_to_child.insert(target, output);
+            target_triple_to_child.insert(target_triple, output);
         }
-        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
-        for (target, child) in target_to_child.into_iter() {
+        let mut crate_features =
+            BTreeMap::<CrateId, BTreeMap<TargetTriple, BTreeSet<String>>>::new();
+        for (target_triple, child) in target_triple_to_child.into_iter() {
             let output = child
                 .wait_with_output()
                 .with_context(|| {
                     format!(
                         "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target,
+                        target_triple,
                         manifest_path.display()
                     )
                 })?;
@@ -518,7 +519,7 @@ impl FeatureGenerator {
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));
                 bail!(format!("Failed to run cargo tree: {}", output.status))
             }
-            debug!("Process complete for {}", target);
+            debug!("Process complete for {}", target_triple);
             for (crate_id, features) in
                 parse_features_from_cargo_tree_output(output.stdout.lines())?
             {
@@ -526,7 +527,7 @@ impl FeatureGenerator {
                 crate_features
                     .entry(crate_id)
                     .or_default()
-                    .insert(target.to_owned(), features);
+                    .insert(target_triple.clone(), features);
             }
         }
         let mut result = BTreeMap::<CrateId, SelectList<String>>::new();
@@ -542,10 +543,10 @@ impl FeatureGenerator {
                 )
                 .unwrap_or_default();
             let mut select_list = SelectList::default();
-            for (target, fs) in features {
+            for (target_triple, fs) in features {
                 if fs != common {
                     for f in fs {
-                        select_list.insert(f, Some(target.clone()));
+                        select_list.insert(f, Some(target_triple.to_bazel()));
                     }
                 }
             }

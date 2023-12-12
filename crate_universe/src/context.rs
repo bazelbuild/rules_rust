@@ -16,6 +16,7 @@ use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
 use crate::utils::starlark::{Select, SelectList};
+use crate::utils::target_triple::TargetTriple;
 
 pub use self::crate_context::*;
 
@@ -37,7 +38,7 @@ pub struct Context {
     pub workspace_members: BTreeMap<CrateId, String>,
 
     /// A mapping of `cfg` flags to platform triples supporting the configuration
-    pub conditions: BTreeMap<String, BTreeSet<String>>,
+    pub conditions: BTreeMap<String, BTreeSet<TargetTriple>>,
 
     /// A list of crates visible to any bazel module.
     pub direct_deps: BTreeSet<CrateId>,
