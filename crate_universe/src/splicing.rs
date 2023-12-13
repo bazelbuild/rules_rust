@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
+use cargo_lock::package::SourceKind;
 use cargo_toml::Manifest;
 use serde::{Deserialize, Serialize};
 
@@ -279,9 +280,12 @@ impl WorkspaceMetadata {
             .collect();
 
         // Collect a unique set of index urls
-        let index_urls: BTreeSet<String> = pkg_sources
+        let index_urls: BTreeSet<(SourceKind, String)> = pkg_sources
             .iter()
-            .map(|pkg| pkg.source.as_ref().unwrap().url().to_string())
+            .map(|pkg| {
+                let source = pkg.source.as_ref().unwrap();
+                (source.kind().clone(), source.url().to_string())
+            })
             .collect();
 
         // Load the cargo config
@@ -303,7 +307,7 @@ impl WorkspaceMetadata {
         // Load each index for easy access
         let crate_indexes = index_urls
             .into_iter()
-            .map(|url| {
+            .map(|(source_kind, url)| {
                 // Ensure the correct registry is mapped based on the give Cargo config.
                 let index_url = if let Some(config) = &cargo_config {
                     config.resolve_replacement_url(&url)?
@@ -316,25 +320,38 @@ impl WorkspaceMetadata {
                     CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
                         "sparse+https://index.crates.io/",
                     )?)
-                } else if index_url.starts_with("sparse+https://") {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url(index_url)?)
                 } else {
-                    let index = {
-                        // Load the index for the current url
-                        let index =
-                            crates_index::GitIndex::from_url(index_url).with_context(|| {
-                                format!("Failed to load index for url: {index_url}")
-                            })?;
+                    match source_kind {
+                        SourceKind::Registry => {
+                            let index = {
+                                // Load the index for the current url
+                                let index = crates_index::GitIndex::from_url(index_url)
+                                    .with_context(|| {
+                                        format!("Failed to load index for url: {index_url}")
+                                    })?;
 
-                        // Ensure each index has a valid index config
-                        index.index_config().with_context(|| {
-                            format!("`config.json` not found in index: {index_url}")
-                        })?;
+                                // Ensure each index has a valid index config
+                                index.index_config().with_context(|| {
+                                    format!("`config.json` not found in index: {index_url}")
+                                })?;
 
-                        index
-                    };
-
-                    CrateIndexLookup::Git(index)
+                                index
+                            };
+                            CrateIndexLookup::Git(index)
+                        }
+                        SourceKind::SparseRegistry => {
+                            CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
+                                format!("sparse+{}", index_url).as_str(),
+                            )?)
+                        }
+                        unknown => {
+                            return Err(anyhow!(
+                                "'{:?}' crate index type is not supported (caused by '{}')",
+                                &unknown,
+                                url
+                            ));
+                        }
+                    }
                 };
                 Ok((url, index))
             })

@@ -49,7 +49,11 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-unknown-none",
 ]
 
-SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
+SUPPORTED_T3_PLATFORM_TRIPLES = [
+    "aarch64-unknown-nto-qnx710",
+]
+
+SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES + SUPPORTED_T3_PLATFORM_TRIPLES
 
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
@@ -98,6 +102,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "netbsd": None,
     "nixos": "nixos",
     "none": "none",
+    "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
     "unknown": None,
@@ -117,6 +122,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "linux": "",
     "nixos": "",
     "none": "",
+    "nto": "",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
@@ -137,6 +143,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "linux": ".a",
     "nixos": ".a",
     "none": ".a",
+    "nto": ".a",
     "unknown": "",
     "wasi": "",
     "windows": ".lib",
@@ -154,6 +161,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "linux": ".so",
     "nixos": ".so",
     "none": ".so",
+    "nto": ".a",
     "unknown": ".wasm",
     "wasi": ".wasm",
     "windows": ".dll",
@@ -196,6 +204,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "netbsd": ["-lpthread", "-lrt"],
     "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.
     "none": [],
+    "nto": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
     "unknown": [],

@@ -28,6 +28,7 @@ _SUPPORTED_SYSTEMS = [
     "ios",
     "linux",
     "windows",
+    "nto",
 ]
 
 # buildifier: disable=unnamed-macro
@@ -88,5 +89,6 @@ def declare_config_settings():
             ":darwin",
             ":freebsd",
             ":linux",
+            ":nto",
         ],
     )
