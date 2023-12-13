@@ -52,6 +52,10 @@ local_repository(
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 EOF
+  # See github.com/bazelbuild/rules_rust/issues/2317.
+  echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
+  # To make things easier to repro, pin this to the same version as rules_rust.
+  cp .bazelversion "${new_workspace}/.bazelversion"
 
   # Drop the 'norustfmt' tags
   if [ "$(uname)" == "Darwin" ]; then
