@@ -29,6 +29,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "aarch64-fuchsia",
     "aarch64-linux-android",
     "aarch64-pc-windows-msvc",
+    "aarch64-unknown-uefi",
     "arm-unknown-linux-gnueabi",
     "armv7-linux-androideabi",
     "armv7-unknown-linux-gnueabi",
@@ -47,6 +48,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-linux-android",
     "x86_64-unknown-freebsd",
     "x86_64-unknown-none",
+    "x86_64-unknown-uefi",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
@@ -100,6 +102,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "none": "none",
     "openbsd": "openbsd",
     "solaris": None,
+    "uefi": "uefi",
     "unknown": None,
     "wasi": None,
     "windows": "windows",
@@ -117,6 +120,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "linux": "",
     "nixos": "",
     "none": "",
+    "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
@@ -137,6 +141,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "linux": ".a",
     "nixos": ".a",
     "none": ".a",
+    "uefi": ".lib",
     "unknown": "",
     "wasi": "",
     "windows": ".lib",
@@ -154,6 +159,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "linux": ".so",
     "nixos": ".so",
     "none": ".so",
+    "uefi": "", # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
     "wasi": ".wasm",
     "windows": ".dll",
@@ -198,6 +204,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "none": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
+    "uefi": [],
     "unknown": [],
     "uwp": ["ws2_32.lib"],
     "wasi": [],
