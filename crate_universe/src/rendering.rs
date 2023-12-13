@@ -32,21 +32,15 @@ pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 pub struct Renderer {
     config: RenderConfig,
     supported_platform_triples: BTreeSet<TargetTriple>,
-    generate_target_compatible_with: bool,
     engine: TemplateEngine,
 }
 
 impl Renderer {
-    pub fn new(
-        config: RenderConfig,
-        supported_platform_triples: BTreeSet<TargetTriple>,
-        generate_target_compatible_with: bool,
-    ) -> Self {
+    pub fn new(config: RenderConfig, supported_platform_triples: BTreeSet<TargetTriple>) -> Self {
         let engine = TemplateEngine::new(&config);
         Self {
             config,
             supported_platform_triples,
-            generate_target_compatible_with,
             engine,
         }
     }
@@ -577,7 +571,7 @@ impl Renderer {
                 tags.insert(format!("crate-name={}", krate.name));
                 tags
             },
-            target_compatible_with: self.generate_target_compatible_with.then(|| {
+            target_compatible_with: self.config.generate_target_compatible_with.then(|| {
                 TargetCompatibleWith::new(
                     self.supported_platform_triples
                         .iter()
@@ -862,11 +856,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -893,11 +883,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -927,11 +913,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -960,11 +942,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -990,11 +968,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1023,11 +997,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1047,11 +1017,7 @@ mod test {
             Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
         let context = Context::new(annotations).unwrap();
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
@@ -1074,11 +1040,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
@@ -1104,7 +1066,6 @@ mod test {
         let renderer = Renderer::new(
             mock_render_config(Some(VendorMode::Remote)),
             mock_supported_platform_triples(),
-            true,
         );
         let output = renderer.render(&context).unwrap();
 
@@ -1133,7 +1094,6 @@ mod test {
         let renderer = Renderer::new(
             mock_render_config(Some(VendorMode::Local)),
             mock_supported_platform_triples(),
-            true,
         );
         let output = renderer.render(&context).unwrap();
 
@@ -1175,7 +1135,6 @@ mod test {
         let renderer = Renderer::new(
             mock_render_config(Some(VendorMode::Local)),
             mock_supported_platform_triples(),
-            true,
         );
         let output = renderer.render(&context).unwrap();
 
@@ -1217,7 +1176,7 @@ mod test {
         let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
         let context = Context::new(annotations).unwrap();
 
-        let renderer = Renderer::new(config.rendering, config.supported_platform_triples, true);
+        let renderer = Renderer::new(config.rendering, config.supported_platform_triples);
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1266,11 +1225,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output
@@ -1305,11 +1260,7 @@ mod test {
             },
         );
 
-        let renderer = Renderer::new(
-            mock_render_config(None),
-            mock_supported_platform_triples(),
-            true,
-        );
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
 
         let build_file_content = output

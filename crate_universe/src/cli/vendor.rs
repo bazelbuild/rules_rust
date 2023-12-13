@@ -174,7 +174,6 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     let outputs = Renderer::new(
         config.rendering.clone(),
         config.supported_platform_triples.clone(),
-        config.generate_target_compatible_with,
     )
     .render(&context)?;
 

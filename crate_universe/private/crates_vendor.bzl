@@ -32,6 +32,9 @@ call {bin} {args} %@%
 
 CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
 
+def _default_render_config():
+    return json.decode(render_config())
+
 def _runfiles_path(file, is_windows):
     if is_windows:
         runtime_pwd_var = "%RUNTIME_PWD%"
@@ -153,7 +156,7 @@ def _write_config_file(ctx):
             repository_name = ctx.attr.repository_name,
             output_pkg = _get_output_package(ctx),
             workspace_name = workspace_name,
-            rendering_config = dict(json.decode(ctx.attr.render_config)) if ctx.attr.render_config else None,
+            render_config = dict(json.decode(ctx.attr.render_config)) if ctx.attr.render_config else None,
         ),
     )
 
@@ -173,7 +176,7 @@ def generate_config_file(
         repository_name,
         output_pkg,
         workspace_name,
-        rendering_config):
+        render_config):
     """Writes the rendering config to cargo-bazel-config.json.
 
     Args:
@@ -182,21 +185,20 @@ def generate_config_file(
         annotations: Any annotations provided.
         generate_binaries (bool): Whether to generate binaries for the crates.
         generate_build_scripts (bool): Whether to generate BUILD.bazel files.
-        generate_target_compatible_with (bool): Whether to generate
-            `target_compatible_with` annotations on generated BUILD files.
+        generate_target_compatible_with (bool): DEPRECATED: Moved to `render_config`.
         supported_platform_triples (str): The platform triples to support in
             the generated BUILD.bazel files.
         repository_name (str): The name of the repository to generate.
         output_pkg: The path to the package containing the build files.
         workspace_name (str): The name of the workspace.
-        rendering_config: The rendering config to use.
+        render_config: The render config to use.
 
     Returns:
         file: The cargo-bazel-config.json written.
     """
-    default_render_config = json.decode(render_config())
-    if rendering_config == None:
-        rendering_config = default_render_config
+    default_render_config = _default_render_config()
+    if render_config == None:
+        render_config = default_render_config
 
     if mode == "local":
         build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel"
@@ -205,7 +207,7 @@ def generate_config_file(
         )
     else:
         build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
-        crate_label_template = rendering_config["crate_label_template"]
+        crate_label_template = render_config["crate_label_template"]
 
     updates = {
         "build_file_template": build_file_base_template.format(
@@ -221,17 +223,17 @@ def generate_config_file(
     }
 
     for key in updates:
-        if rendering_config[key] != default_render_config[key]:
+        if render_config[key] != default_render_config[key]:
             fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
                 key,
                 ctx.label,
             ))
 
-    rendering_config.update(updates)
+    render_config.update(updates)
 
     # Allow users to override the regen command.
-    if "regen_command" not in rendering_config or not rendering_config["regen_command"]:
-        rendering_config.update({"regen_command": "bazel run {}".format(ctx.label)})
+    if "regen_command" not in render_config or not render_config["regen_command"]:
+        render_config.update({"regen_command": "bazel run {}".format(ctx.label)})
 
     config_data = compile_config(
         crate_annotations = annotations,
@@ -239,7 +241,7 @@ def generate_config_file(
         generate_build_scripts = generate_build_scripts,
         generate_target_compatible_with = generate_target_compatible_with,
         cargo_config = None,
-        render_config = rendering_config,
+        render_config = render_config,
         supported_platform_triples = supported_platform_triples,
         repository_name = repository_name or ctx.label.name,
     )
@@ -383,10 +385,7 @@ CRATES_VENDOR_ATTRS = {
         default = True,
     ),
     "generate_target_compatible_with": attr.bool(
-        doc = (
-            "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` " +
-            "being targeted that isn't declared in `supported_platform_triples."
-        ),
+        doc = "DEPRECATED: Moved to `render_config`.",
         default = True,
     ),
     "manifests": attr.label_list(

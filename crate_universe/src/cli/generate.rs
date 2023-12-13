@@ -73,12 +73,8 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             let context = Context::try_from_path(lockfile)?;
 
             // Render build files
-            let outputs = Renderer::new(
-                config.rendering,
-                config.supported_platform_triples,
-                config.generate_target_compatible_with,
-            )
-            .render(&context)?;
+            let outputs = Renderer::new(config.rendering, config.supported_platform_triples)
+                .render(&context)?;
 
             // Write the outputs to disk
             write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
@@ -116,7 +112,6 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     let outputs = Renderer::new(
         config.rendering.clone(),
         config.supported_platform_triples.clone(),
-        config.generate_target_compatible_with,
     )
     .render(&context)?;
 
