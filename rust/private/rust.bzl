@@ -579,7 +579,7 @@ _common_attrs = {
             The order that these files will be processed is unspecified, so
             multiple definitions of a particular variable are discouraged.
 
-            Note that the variables here are subject to 
+            Note that the variables here are subject to
             [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status)
             stamping should the `stamp` attribute be enabled. Stamp variables
             should be wrapped in brackets in order to be resolved. E.g.
@@ -592,7 +592,7 @@ _common_attrs = {
             List of compiler flags passed to `rustc`.
 
             These strings are subject to Make variable expansion for predefined
-            source/output path variables like `$location`, `$execpath`, and 
+            source/output path variables like `$location`, `$execpath`, and
             `$rootpath`. This expansion is useful if you wish to pass a generated
             file of arguments to rustc: `@$(location //package:target)`.
         """),
@@ -746,7 +746,7 @@ _rust_test_attrs = dict({
         mandatory = False,
         default = True,
         doc = dedent("""\
-            Whether to use `libtest`. For targets using this flag, individual tests can be run by using the 
+            Whether to use `libtest`. For targets using this flag, individual tests can be run by using the
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
@@ -846,11 +846,35 @@ rust_library = rule(
         """),
 )
 
+def _rust_static_library_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+    }
+
+_rust_static_library_transition = transition(
+    implementation = _rust_static_library_transition_impl,
+    inputs = [
+        "//command_line_option:platforms",
+    ],
+    outputs = [
+        "//command_line_option:platforms",
+    ],
+)
+
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    attrs = dict(_common_attrs.items()),
+    attrs = dict(_common_attrs.items() + {
+        "platform": attr.label(
+            doc = "Optional platform to transition the static library to.",
+            default = None,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    }.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = _rust_static_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -869,15 +893,36 @@ rust_static_library = rule(
         """),
 )
 
+def _rust_shared_library_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+    }
+
+_rust_shared_library_transition = transition(
+    implementation = _rust_shared_library_transition_impl,
+    inputs = [
+        "//command_line_option:platforms",
+    ],
+    outputs = [
+        "//command_line_option:platforms",
+    ],
+)
+
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = dict(
-        _common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
-            "_use_grep_includes": attr.bool(default = True),
-        }.items(),
-    ),
+    attrs = dict(_common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
+        "platform": attr.label(
+            doc = "Optional platform to transition the shared library to.",
+            default = None,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+        "_use_grep_includes": attr.bool(default = True),
+    }.items()),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = _rust_shared_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -920,11 +965,11 @@ rust_proc_macro = rule(
         _allowlist_function_transition = attr.label(default = Label("//tools/allowlists/function_transition_allowlist")),
         deps = attr.label_list(
             doc = dedent("""\
-            List of other libraries to be linked to this library target.
+                List of other libraries to be linked to this library target.
 
-            These can be either other `rust_library` targets or `cc_library` targets if
-            linking a native library.
-        """),
+                These can be either other `rust_library` targets or `cc_library` targets if
+                linking a native library.
+            """),
             cfg = _proc_macro_dep_transition,
         ),
     ),
@@ -937,7 +982,7 @@ rust_proc_macro = rule(
     incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Builds a Rust proc-macro crate.
-        """),
+    """),
 )
 
 _rust_binary_attrs = dict({
@@ -980,13 +1025,37 @@ _rust_binary_attrs = dict({
     "_use_grep_includes": attr.bool(default = True),
 }.items() + _experimental_use_cc_common_link_attrs.items())
 
+def _rust_binary_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+    }
+
+_rust_binary_transition = transition(
+    implementation = _rust_binary_transition_impl,
+    inputs = [
+        "//command_line_option:platforms",
+    ],
+    outputs = [
+        "//command_line_option:platforms",
+    ],
+)
+
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items()),
+    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items() + {
+        "platform": attr.label(
+            doc = "Optional platform to transition the binary to.",
+            default = None,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    }.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1118,10 +1187,19 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = _common_providers,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items()),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items() + {
+        "platform": attr.label(
+            doc = "Optional platform to transition the binary to.",
+            default = None,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    }.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1142,14 +1220,37 @@ rust_library_without_process_wrapper = rule(
     incompatible_use_toolchain_transition = True,
 )
 
+def _rust_test_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+    }
+
+_rust_test_transition = transition(
+    implementation = _rust_test_transition_impl,
+    inputs = [
+        "//command_line_option:platforms",
+    ],
+    outputs = [
+        "//command_line_option:platforms",
+    ],
+)
+
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = _common_providers,
-    attrs = dict(_common_attrs.items() +
-                 _rust_test_attrs.items()),
+    attrs = dict(_common_attrs.items() + _rust_test_attrs.items() + {
+        "platform": attr.label(
+            doc = "Optional platform to transition the test to.",
+            default = None,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    }.items()),
     executable = True,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
+    cfg = _rust_test_transition,
     test = True,
     toolchains = [
         str(Label("//rust:toolchain_type")),
