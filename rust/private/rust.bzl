@@ -231,7 +231,7 @@ def _rust_binary_impl(ctx):
         crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
-    return rustc_compile_action(
+    providers = rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -254,6 +254,16 @@ def _rust_binary_impl(ctx):
             owner = ctx.label,
         ),
     )
+
+    providers.append(RunEnvironmentInfo(
+        environment = expand_dict_value_locations(
+            ctx,
+            ctx.attr.env,
+            ctx.attr.data,
+        ),
+    ))
+
+    return providers
 
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule.
@@ -939,6 +949,18 @@ _rust_binary_attrs = dict({
             for WebAssembly targets (//rust/platform:wasi and //rust/platform:wasm).
         """),
         default = "bin",
+    ),
+    "env": attr.string_dict(
+        mandatory = False,
+        doc = dedent("""\
+            Specifies additional environment variables to set when the target is executed by bazel run.
+            Values are subject to `$(rootpath)`, `$(execpath)`, location, and
+            ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+
+            Execpath returns absolute path, and in order to be able to construct the absolute path we
+            need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
+            more complicated debugger attachment.
+        """),
     ),
     "linker_script": attr.label(
         doc = dedent("""\
