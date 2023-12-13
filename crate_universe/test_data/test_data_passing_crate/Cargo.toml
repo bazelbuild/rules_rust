@@ -4,3 +4,4 @@ description = "Used by https://github.com/bazelbuild/rules_rust to test cargo em
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/bazelbuild/rules_rust"
+license = "Apache-2.0"
