@@ -1,5 +1,5 @@
 {
-  "checksum": "8947ab0ce7f87829a4a747930b9517028bc5cf3b1592ba141583f3d9f04dbf54",
+  "checksum": "7adb2463b751251a899a56c519c74188caf10765a25cd99fe349c8709eb6d999",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -4877,10 +4877,11 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
     ],
-    "aarch64-unknown-nixos-gnu": [
-      "aarch64-unknown-linux-gnu"
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
     ],
     "aarch64-uwp-windows-msvc": [],
     "arm-unknown-linux-gnueabi": [
@@ -4903,6 +4904,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -4935,6 +4937,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -4968,6 +4971,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -5012,6 +5016,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -5097,10 +5102,8 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
-    ],
-    "x86_64-unknown-nixos-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"

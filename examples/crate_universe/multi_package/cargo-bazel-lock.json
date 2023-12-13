@@ -1,5 +1,5 @@
 {
-  "checksum": "f08bc17aa86cf5a2fb6d448f1c86b86d92058eb9e45883db5bde3fc03aa3d7fd",
+  "checksum": "6c8a085aa21fc003dd59b18bb981acd1655385020bed10a5e44fda0056dea53b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2105,6 +2105,16 @@
               "std",
               "waker-fn"
             ],
+            "aarch64-unknown-nto-qnx710": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
             "arm-unknown-linux-gnueabi": [
               "alloc",
               "default",
@@ -3336,6 +3346,12 @@
               "http2",
               "runtime"
             ],
+            "aarch64-unknown-nto-qnx710": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
             "arm-unknown-linux-gnueabi": [
               "client",
               "h2",
@@ -3707,6 +3723,9 @@
               "std"
             ],
             "aarch64-unknown-nixos-gnu": [
+              "std"
+            ],
+            "aarch64-unknown-nto-qnx710": [
               "std"
             ],
             "arm-unknown-linux-gnueabi": [
@@ -7300,6 +7319,11 @@
               "io-util",
               "memchr"
             ],
+            "aarch64-unknown-nto-qnx710": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
             "arm-unknown-linux-gnueabi": [
               "bytes",
               "io-util",
@@ -10091,10 +10115,11 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
     ],
-    "aarch64-unknown-nixos-gnu": [
-      "aarch64-unknown-linux-gnu"
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
     ],
     "aarch64-uwp-windows-msvc": [],
     "arm-unknown-linux-gnueabi": [
@@ -10163,6 +10188,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10190,6 +10216,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10223,6 +10250,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10256,6 +10284,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10289,6 +10318,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10322,6 +10352,7 @@
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10374,6 +10405,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -10459,10 +10491,8 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
-    ],
-    "x86_64-unknown-nixos-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
