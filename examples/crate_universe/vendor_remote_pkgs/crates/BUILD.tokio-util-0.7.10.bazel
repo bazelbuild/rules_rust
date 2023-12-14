@@ -31,6 +31,7 @@ rust_library(
     crate_features = [
         "codec",
         "default",
+        "io",
         "tracing",
     ],
     crate_root = "src/lib.rs",
@@ -51,6 +52,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -74,6 +77,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -83,7 +87,7 @@ rust_library(
         "@crates_vendor_pkgs__futures-core-0.3.29//:futures_core",
         "@crates_vendor_pkgs__futures-sink-0.3.29//:futures_sink",
         "@crates_vendor_pkgs__pin-project-lite-0.2.13//:pin_project_lite",
-        "@crates_vendor_pkgs__tokio-1.33.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.35.0//:tokio",
         "@crates_vendor_pkgs__tracing-0.1.40//:tracing",
     ],
 )
