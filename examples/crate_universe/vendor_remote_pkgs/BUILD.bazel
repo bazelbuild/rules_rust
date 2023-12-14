@@ -75,7 +75,6 @@ rust_binary(
 
 rust_test(
     name = "unit_test",
-    srcs = glob(["**/*.rs"]),
     crate = ":vendor_remote",
     edition = "2018",
 )
