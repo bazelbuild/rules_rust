@@ -71,6 +71,11 @@ pub struct RenderConfig {
     /// In general, this should be be unset to allow the macros to do auto-detection in the analysis phase.
     pub default_package_name: Option<String>,
 
+    /// Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This
+    /// catches a `target_triple`being targeted that isn't declared in `supported_platform_triples`.
+    #[serde(default = "default_generate_target_compatible_with")]
+    pub generate_target_compatible_with: bool,
+
     /// The pattern to use for platform constraints.
     /// Eg. `@rules_rust//rust/platform:{triple}`.
     #[serde(default = "default_platforms_template")]
@@ -95,6 +100,7 @@ impl Default for RenderConfig {
             crates_module_template: default_crates_module_template(),
             crate_repository_template: default_crate_repository_template(),
             default_package_name: Option::default(),
+            generate_target_compatible_with: default_generate_target_compatible_with(),
             platforms_template: default_platforms_template(),
             regen_command: String::default(),
             vendor_mode: Option::default(),
@@ -120,6 +126,10 @@ fn default_crate_repository_template() -> String {
 
 fn default_platforms_template() -> String {
     "@rules_rust//rust/platform:{triple}".to_owned()
+}
+
+fn default_generate_target_compatible_with() -> bool {
+    true
 }
 
 /// A representation of some Git identifier used to represent the "revision" or "pin" of a checkout.
@@ -615,13 +625,6 @@ pub struct Config {
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
-    /// A set of platform triples to use in generated select statements
-    #[serde(
-        default = "default_generate_target_compatible_with",
-        skip_serializing_if = "skip_generate_target_compatible_with"
-    )]
-    pub generate_target_compatible_with: bool,
-
     /// Additional settings to apply to generated crates
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub annotations: BTreeMap<CrateId, CrateAnnotations>,
@@ -642,13 +645,6 @@ impl Config {
         let data = fs::read_to_string(path)?;
         Ok(serde_json::from_str(&data)?)
     }
-}
-
-fn default_generate_target_compatible_with() -> bool {
-    true
-}
-fn skip_generate_target_compatible_with(value: &bool) -> bool {
-    *value
 }
 
 #[cfg(test)]
