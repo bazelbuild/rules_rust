@@ -590,13 +590,14 @@ impl Renderer {
                 .clone()
                 .remap_configurations(platforms),
             rustc_flags: {
-                let mut rustc_flags = krate.common_attrs.rustc_flags.clone();
+                let mut rustc_flags = SelectList::default();
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                rustc_flags.insert(0, "--cap-lints=allow".to_owned());
-                rustc_flags
+                rustc_flags.insert("--cap-lints=allow".to_owned(), None);
+                rustc_flags.extend_select_list(krate.common_attrs.rustc_flags.clone());
+                rustc_flags.remap_configurations(platforms)
             },
             srcs: target.srcs.clone(),
             tags: {

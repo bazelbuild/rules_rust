@@ -5,6 +5,7 @@ mod label;
 mod select;
 mod select_dict;
 mod select_list;
+mod select_value;
 mod serialize;
 mod target_compatible_with;
 
@@ -18,6 +19,7 @@ pub use label::*;
 pub use select::*;
 pub use select_dict::*;
 pub use select_list::*;
+pub use select_value::*;
 pub use target_compatible_with::*;
 
 pub type SelectStringList = SelectList<String>;
@@ -117,8 +119,11 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rundir: Option<String>,
+    #[serde(
+        skip_serializing_if = "SelectValue::is_empty",
+        serialize_with = "SelectValue::serialize_starlark"
+    )]
+    pub rundir: SelectValue<WithOriginalConfigurations<String>>,
     #[serde(
         skip_serializing_if = "SelectDict::is_empty",
         serialize_with = "SelectDict::serialize_starlark"
@@ -242,8 +247,11 @@ pub struct CommonAttrs {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(
+        skip_serializing_if = "SelectList::is_empty",
+        serialize_with = "SelectList::serialize_starlark"
+    )]
+    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,

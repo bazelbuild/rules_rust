@@ -53,6 +53,17 @@ impl<T: Ord> SelectDict<T> {
         }
     }
 
+    pub fn extend_select_dict(&mut self, other: Self) {
+        for (key, value) in other.common {
+            self.insert(key, value, None);
+        }
+        for (cfg, entries) in other.selects {
+            for (key, value) in entries {
+                self.insert(key, value, Some(cfg.clone()));
+            }
+        }
+    }
+
     pub fn extend(&mut self, entries: BTreeMap<String, T>, configuration: Option<String>) {
         for (key, value) in entries {
             self.insert(key, value, configuration.clone());
@@ -61,6 +72,28 @@ impl<T: Ord> SelectDict<T> {
 
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
+    }
+}
+
+impl<T: Ord> From<BTreeMap<String, T>> for SelectDict<T> {
+    fn from(common: BTreeMap<String, T>) -> Self {
+        Self {
+            common: common,
+            selects: BTreeMap::new(),
+            unmapped: BTreeMap::new(),
+        }
+    }
+}
+
+impl<T: Ord> From<(BTreeMap<String, T>, BTreeMap<String, BTreeMap<String, T>>)> for SelectDict<T> {
+    fn from(
+        (common, selects): (BTreeMap<String, T>, BTreeMap<String, BTreeMap<String, T>>),
+    ) -> Self {
+        Self {
+            common: common,
+            selects: selects,
+            unmapped: BTreeMap::new(),
+        }
     }
 }
 
@@ -208,7 +241,7 @@ impl<T: Ord + Serialize> SelectDict<T> {
         //             "common-key": "common-value",
         //             "plat-key": "plat-value",  # cfg(whatever)
         //         },
-        //         "//conditions:default": [],
+        //         "//conditions:default": {},
         //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
         //             "unmapped-key": "unmapped-value",  # cfg(obscure)
         //         },

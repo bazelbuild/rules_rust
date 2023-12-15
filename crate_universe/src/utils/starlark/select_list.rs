@@ -55,6 +55,17 @@ impl<T: Ord> SelectList<T> {
         }
     }
 
+    pub fn extend_select_list(&mut self, other: Self) {
+        for value in other.common {
+            self.insert(value, None);
+        }
+        for (cfg, values) in other.selects {
+            for value in values {
+                self.insert(value, Some(cfg.clone()));
+            }
+        }
+    }
+
     // TODO: This should probably be added to the [Select] trait
     pub fn get_iter(&self, config: Option<&String>) -> Option<btree_set::Iter<T>> {
         match config {
@@ -78,6 +89,26 @@ impl<T: Ord> SelectList<T> {
             common: self.common,
             selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
             unmapped: self.unmapped,
+        }
+    }
+}
+
+impl<T: Ord> From<BTreeSet<T>> for SelectList<T> {
+    fn from(common: BTreeSet<T>) -> Self {
+        Self {
+            common: common,
+            selects: BTreeMap::new(),
+            unmapped: BTreeSet::new(),
+        }
+    }
+}
+
+impl<T: Ord> From<(BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)> for SelectList<T> {
+    fn from((common, selects): (BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)) -> Self {
+        Self {
+            common: common,
+            selects: selects,
+            unmapped: BTreeSet::new(),
         }
     }
 }
