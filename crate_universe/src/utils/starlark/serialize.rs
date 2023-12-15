@@ -2,9 +2,7 @@ use serde::ser::{SerializeSeq, SerializeStruct, SerializeTupleStruct, Serializer
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE, ONELINE};
 
-use super::{
-    Data, ExportsFiles, Load, Package, RustBinary, RustLibrary, RustProcMacro, SelectList,
-};
+use super::{Data, ExportsFiles, Load, Package, RustBinary, RustLibrary, RustProcMacro, SelectSet};
 
 // For structs that contain #[serde(flatten)], a quirk of how Serde processes
 // that attribute is that they get serialized as a map, not struct. In Starlark
@@ -53,12 +51,12 @@ where
     }
 }
 
-// TODO: This can go away after SelectList's derived Serialize impl (used by
+// TODO: This can go away after SelectSet's derived Serialize impl (used by
 // tera) goes away and `serialize_starlark` becomes its real Serialize impl.
 #[derive(Serialize)]
 #[serde(transparent)]
-pub struct SelectListWrapper<'a, T: Ord + Serialize>(
-    #[serde(serialize_with = "SelectList::serialize_starlark")] &'a SelectList<T>,
+pub struct SelectSetWrapper<'a, T: Ord + Serialize>(
+    #[serde(serialize_with = "SelectSet::serialize_starlark")] &'a SelectSet<T>,
 );
 
 impl Serialize for Load {
@@ -118,7 +116,7 @@ impl Serialize for Data {
             plus.serialize_field(&self.glob)?;
         }
         if !self.select.is_empty() || self.glob.is_empty() {
-            plus.serialize_field(&SelectListWrapper(&self.select))?;
+            plus.serialize_field(&SelectSetWrapper(&self.select))?;
         }
         plus.end()
     }

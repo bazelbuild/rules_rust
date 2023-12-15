@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Glob, SelectDict, SelectList, SelectMap, SelectValue};
+use crate::utils::starlark::{Glob, SelectDict, SelectMap, SelectSet, SelectValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub struct CrateDependency {
@@ -66,7 +66,7 @@ pub enum CrateFeatures {
     LegacySet(BTreeSet<String>),
 
     /// Map from target triplet to set of features.
-    SelectList(SelectList<String>),
+    SelectList(SelectSet<String>),
 }
 
 impl Default for CrateFeatures {
@@ -75,11 +75,11 @@ impl Default for CrateFeatures {
     }
 }
 
-impl From<&CrateFeatures> for SelectList<String> {
+impl From<&CrateFeatures> for SelectSet<String> {
     fn from(value: &CrateFeatures) -> Self {
         match value {
             CrateFeatures::LegacySet(s) => {
-                let mut sl = SelectList::default();
+                let mut sl = SelectSet::default();
                 for v in s {
                     sl.insert(v.clone(), None);
                 }
@@ -104,8 +104,8 @@ impl CrateFeatures {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct CommonAttributes {
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub compile_data: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub compile_data: SelectSet<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub compile_data_glob: BTreeSet<String>,
@@ -113,40 +113,40 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "CrateFeatures::is_empty")]
     pub crate_features: CrateFeatures,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub data: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub data: SelectSet<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub deps: SelectSet<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub extra_deps: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps_dev: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub deps_dev: SelectSet<CrateDependency>,
 
     pub edition: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub proc_macro_deps: SelectSet<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_proc_macro_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub extra_proc_macro_deps: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps_dev: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub proc_macro_deps_dev: SelectSet<CrateDependency>,
 
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub rustc_env: SelectDict<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub rustc_env_files: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub rustc_env_files: SelectSet<String>,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rustc_flags: Vec<String>,
@@ -188,20 +188,20 @@ impl Default for CommonAttributes {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct BuildScriptAttributes {
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub compile_data: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub compile_data: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub data: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub data: SelectSet<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub deps: SelectSet<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub extra_deps: SelectSet<String>,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -220,11 +220,11 @@ pub struct BuildScriptAttributes {
     // in which either all of the deps are in crate dependencies, or just the
     // normal dependencies. This could be handled a special rule, or just using
     // a `filegroup`.
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub link_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub link_deps: SelectSet<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_link_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub extra_link_deps: SelectSet<String>,
 
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub build_script_env: SelectDict<String>,
@@ -232,11 +232,11 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectValue::is_empty")]
     pub rundir: SelectValue<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_proc_macro_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub extra_proc_macro_deps: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub proc_macro_deps: SelectSet<CrateDependency>,
 
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub rustc_env: SelectDict<String>,
@@ -244,11 +244,11 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rustc_flags: Vec<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub rustc_env_files: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub rustc_env_files: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub tools: SelectList<String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub tools: SelectSet<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
@@ -337,7 +337,7 @@ impl CrateContext {
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
         extras: &BTreeMap<CrateId, PairedExtras>,
-        features: &BTreeMap<CrateId, SelectList<String>>,
+        features: &BTreeMap<CrateId, SelectSet<String>>,
         include_binaries: bool,
         include_build_scripts: bool,
     ) -> Self {
@@ -374,7 +374,7 @@ impl CrateContext {
             crate_features: CrateFeatures::SelectList(
                 features
                     .get(&current_crate_id)
-                    .map_or_else(SelectList::default, |f| f.clone()),
+                    .map_or_else(SelectSet::default, |f| f.clone()),
             ),
             deps,
             deps_dev,
@@ -501,21 +501,21 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.deps {
                 self.common_attrs
                     .extra_deps
-                    .extend_select_list(extra.clone());
+                    .extend_select_set(extra.clone());
             }
 
             // Proc macro deps
             if let Some(extra) = &crate_extra.proc_macro_deps {
                 self.common_attrs
                     .extra_proc_macro_deps
-                    .extend_select_list(extra.clone());
+                    .extend_select_set(extra.clone());
             }
 
             // Compile data
             if let Some(extra) = &crate_extra.compile_data {
                 self.common_attrs
                     .compile_data
-                    .extend_select_list(extra.clone());
+                    .extend_select_set(extra.clone());
             }
 
             // Compile data glob
@@ -527,13 +527,13 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.crate_features {
                 match &mut self.common_attrs.crate_features {
                     CrateFeatures::LegacySet(s) => s.extend(extra.get_iter(None).unwrap().cloned()),
-                    CrateFeatures::SelectList(sl) => sl.extend_select_list(extra.clone()),
+                    CrateFeatures::SelectList(sl) => sl.extend_select_set(extra.clone()),
                 }
             }
 
             // Data
             if let Some(extra) = &crate_extra.data {
-                self.common_attrs.data.extend_select_list(extra.clone());
+                self.common_attrs.data.extend_select_set(extra.clone());
             }
 
             // Data glob
@@ -562,31 +562,29 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.rustc_env_files {
                 self.common_attrs
                     .rustc_env_files
-                    .extend_select_list(extra.clone());
+                    .extend_select_set(extra.clone());
             }
 
             // Build script Attributes
             if let Some(attrs) = &mut self.build_script_attrs {
                 // Deps
                 if let Some(extra) = &crate_extra.build_script_deps {
-                    attrs.extra_deps.extend_select_list(extra.clone());
+                    attrs.extra_deps.extend_select_set(extra.clone());
                 }
 
                 // Proc macro deps
                 if let Some(extra) = &crate_extra.build_script_proc_macro_deps {
-                    attrs
-                        .extra_proc_macro_deps
-                        .extend_select_list(extra.clone());
+                    attrs.extra_proc_macro_deps.extend_select_set(extra.clone());
                 }
 
                 // Data
                 if let Some(extra) = &crate_extra.build_script_data {
-                    attrs.data.extend_select_list(extra.clone());
+                    attrs.data.extend_select_set(extra.clone());
                 }
 
                 // Tools
                 if let Some(extra) = &crate_extra.build_script_tools {
-                    attrs.tools.extend_select_list(extra.clone());
+                    attrs.tools.extend_select_set(extra.clone());
                 }
 
                 // Toolchains

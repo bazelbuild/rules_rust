@@ -19,7 +19,7 @@ use crate::rendering::template_engine::TemplateEngine;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
+    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectMap, SelectSet,
     SelectValue, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
@@ -379,8 +379,8 @@ impl Renderer {
         target: &TargetAttributes,
     ) -> Result<CargoBuildScript> {
         let empty_set = BTreeSet::<String>::new();
-        let empty_list = SelectList::<String>::default();
-        let empty_deps = SelectList::<CrateDependency>::default();
+        let empty_list = SelectSet::<String>::default();
+        let empty_deps = SelectSet::<CrateDependency>::default();
         let attrs = krate.build_script_attrs.as_ref();
 
         Ok(CargoBuildScript {
@@ -403,7 +403,7 @@ impl Renderer {
                 &empty_set,
                 attrs.map_or(&empty_list, |attrs| &attrs.compile_data),
             ),
-            crate_features: SelectList::from(&krate.common_attrs.crate_features)
+            crate_features: SelectSet::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
                     render_platform_constraint_label(
                         &self.config.platforms_template,
@@ -445,7 +445,7 @@ impl Renderer {
                 .map_or_else(SelectDict::default, |attrs| attrs.rustc_env.clone())
                 .remap_configurations(platforms),
             rustc_env_files: attrs
-                .map_or_else(SelectList::default, |attrs| attrs.rustc_env_files.clone())
+                .map_or_else(SelectSet::default, |attrs| attrs.rustc_env_files.clone())
                 .remap_configurations(platforms),
             rustc_flags: {
                 let mut rustc_flags = Vec::new();
@@ -470,7 +470,7 @@ impl Renderer {
                 tags
             },
             tools: attrs
-                .map_or_else(SelectList::default, |attrs| attrs.tools.clone())
+                .map_or_else(SelectSet::default, |attrs| attrs.tools.clone())
                 .remap_configurations(platforms),
             toolchains: attrs.map_or_else(BTreeSet::new, |attrs| attrs.toolchains.clone()),
             version: krate.common_attrs.version.clone(),
@@ -568,7 +568,7 @@ impl Renderer {
                 &krate.common_attrs.compile_data_glob,
                 &krate.common_attrs.compile_data,
             ),
-            crate_features: SelectList::from(&krate.common_attrs.crate_features)
+            crate_features: SelectSet::from(&krate.common_attrs.crate_features)
                 .map_configuration_names(|triple| {
                     render_platform_constraint_label(
                         &self.config.platforms_template,
@@ -670,13 +670,13 @@ impl Renderer {
 
     fn make_deps(
         &self,
-        deps: &SelectList<CrateDependency>,
-        extra_deps: &SelectList<String>,
-    ) -> SelectList<String> {
+        deps: &SelectSet<CrateDependency>,
+        extra_deps: &SelectSet<String>,
+    ) -> SelectSet<String> {
         let mut deps = deps
             .clone()
             .map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target));
-        deps.extend_select_list(extra_deps.clone());
+        deps.extend_select_set(extra_deps.clone());
         deps
     }
 
@@ -802,7 +802,7 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
     )
 }
 
-fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList<String>) -> Data {
+fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectSet<String>) -> Data {
     const COMMON_GLOB_EXCLUDES: &[&str] = &[
         "**/* *",
         "BUILD.bazel",
@@ -838,7 +838,7 @@ mod test {
     };
     use crate::metadata::Annotations;
     use crate::test;
-    use crate::utils::starlark::SelectList;
+    use crate::utils::starlark::SelectSet;
 
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
@@ -1285,7 +1285,7 @@ mod test {
     fn crate_features_by_target() {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
-        let mut features = SelectList::default();
+        let mut features = SelectSet::default();
         features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
         features.insert("bar".to_owned(), None);
         context.crates.insert(

@@ -13,7 +13,7 @@ use crate::rendering::{
     render_module_label, Platforms,
 };
 use crate::utils::sanitize_repository_name;
-use crate::utils::starlark::SelectList;
+use crate::utils::starlark::SelectSet;
 
 pub struct TemplateEngine {
     engine: Tera,
@@ -100,7 +100,7 @@ impl TemplateEngine {
         );
 
         let mut context = tera::Context::new();
-        context.insert("default_select_list", &SelectList::<String>::default());
+        context.insert("default_select_list", &SelectSet::<String>::default());
         context.insert("repository_name", &render_config.repository_name);
         context.insert("vendor_mode", &render_config.vendor_mode);
         context.insert("regen_command", &render_config.regen_command);

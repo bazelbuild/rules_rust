@@ -15,7 +15,7 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
-use crate::utils::starlark::{SelectDict, SelectList, SelectValue};
+use crate::utils::starlark::{SelectDict, SelectSet, SelectValue};
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -160,14 +160,6 @@ impl From<GitReference> for Commitish {
         }
     }
 }
-/// A value which may either be a plain String, or a dict of platform triples
-/// (or other cfg expressions understood by `crate::context::platforms::resolve_cfg_platforms`) to Strings.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(untagged)]
-pub enum StringOrSelect {
-    Value(String),
-    Select(BTreeMap<String, String>),
-}
 
 /// Information representing deterministic identifiers for some remote asset.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -234,23 +226,23 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub deps: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub deps: Option<SelectSet<String>>,
 
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub proc_macro_deps: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub proc_macro_deps: Option<SelectSet<String>>,
 
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub crate_features: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub crate_features: Option<SelectSet<String>>,
 
     /// Additional data to pass to  the target's
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub data: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub data: Option<SelectSet<String>>,
 
     /// An optional glob pattern to set on the
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
@@ -258,8 +250,8 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub compile_data: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub compile_data: Option<SelectSet<String>>,
 
     /// An optional glob pattern to set on the
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
@@ -275,33 +267,32 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to  the target's
     /// [rustc_env_files](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env_files) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub rustc_env_files: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub rustc_env_files: Option<SelectSet<String>>,
 
     /// Additional data to pass to the target's
     /// [rustc_flags](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_flags) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub rustc_flags: Option<SelectList<String>>,
+    pub rustc_flags: Option<Vec<String>>,
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub build_script_deps: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub build_script_deps: Option<SelectSet<String>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub build_script_proc_macro_deps: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub build_script_proc_macro_deps: Option<SelectSet<String>>,
 
     /// Additional data to pass to a build script's
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-data) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub build_script_data: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub build_script_data: Option<SelectSet<String>>,
 
     /// Additional data to pass to a build script's
     /// [tools](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-tools) attribute.
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub build_script_tools: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub build_script_tools: Option<SelectSet<String>>,
 
     /// An optional glob pattern to set on the
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env) attribute.
@@ -382,21 +373,21 @@ impl Add for CrateAnnotations {
         let output = CrateAnnotations {
             gen_binaries: self.gen_binaries.or(rhs.gen_binaries),
             gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
-            deps: joined_extra_member!(self.deps, rhs.deps, SelectList::default, SelectList::extend_select_list),
-            proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, SelectList::default, SelectList::extend_select_list),
-            crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, SelectList::default, SelectList::extend_select_list),
-            data: joined_extra_member!(self.data, rhs.data, SelectList::default, SelectList::extend_select_list),
+            deps: joined_extra_member!(self.deps, rhs.deps, SelectSet::default, SelectSet::extend_select_set),
+            proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, SelectSet::default, SelectSet::extend_select_set),
+            crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, SelectSet::default, SelectSet::extend_select_set),
+            data: joined_extra_member!(self.data, rhs.data, SelectSet::default, SelectSet::extend_select_set),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
-            compile_data: joined_extra_member!(self.compile_data, rhs.compile_data, SelectList::default, SelectList::extend_select_list),
+            compile_data: joined_extra_member!(self.compile_data, rhs.compile_data, SelectSet::default, SelectSet::extend_select_set),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
             rustc_env: joined_extra_member!(self.rustc_env, rhs.rustc_env, SelectDict::default, SelectDict::extend_select_dict),
-            rustc_env_files: joined_extra_member!(self.rustc_env_files, rhs.rustc_env_files, SelectList::default, SelectList::extend_select_list),
-            rustc_flags: joined_extra_member!(self.rustc_flags, rhs.rustc_flags, SelectList::default, SelectList::extend_select_list),
-            build_script_deps: joined_extra_member!(self.build_script_deps, rhs.build_script_deps, SelectList::default, SelectList::extend_select_list),
-            build_script_proc_macro_deps: joined_extra_member!(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps, SelectList::default, SelectList::extend_select_list),
-            build_script_data: joined_extra_member!(self.build_script_data, rhs.build_script_data, SelectList::default, SelectList::extend_select_list),
-            build_script_tools: joined_extra_member!(self.build_script_tools, rhs.build_script_tools, SelectList::default, SelectList::extend_select_list),
+            rustc_env_files: joined_extra_member!(self.rustc_env_files, rhs.rustc_env_files, SelectSet::default, SelectSet::extend_select_set),
+            rustc_flags: joined_extra_member!(self.rustc_flags, rhs.rustc_flags, Vec::new, Vec::extend),
+            build_script_deps: joined_extra_member!(self.build_script_deps, rhs.build_script_deps, SelectSet::default, SelectSet::extend_select_set),
+            build_script_proc_macro_deps: joined_extra_member!(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps, SelectSet::default, SelectSet::extend_select_set),
+            build_script_data: joined_extra_member!(self.build_script_data, rhs.build_script_data, SelectSet::default, SelectSet::extend_select_set),
+            build_script_tools: joined_extra_member!(self.build_script_tools, rhs.build_script_tools, SelectSet::default, SelectSet::extend_select_set),
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: joined_extra_member!(self.build_script_env, rhs.build_script_env, SelectDict::default, SelectDict::extend_select_dict),
             build_script_rustc_env: joined_extra_member!(self.build_script_rustc_env, rhs.build_script_rustc_env, SelectDict::default, SelectDict::extend_select_dict),
@@ -440,20 +431,19 @@ impl Sum for CrateAnnotations {
 #[derive(Debug, Deserialize)]
 pub struct AnnotationsProvidedByPackage {
     pub gen_build_script: Option<bool>,
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub data: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub data: Option<SelectSet<String>>,
     pub data_glob: Option<BTreeSet<String>>,
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub deps: Option<SelectList<String>>,
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub compile_data: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub deps: Option<SelectSet<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub compile_data: Option<SelectSet<String>>,
     pub compile_data_glob: Option<BTreeSet<String>>,
     #[serde(deserialize_with = "deserialize_select_dict")]
     pub rustc_env: Option<SelectDict<String>>,
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub rustc_env_files: Option<SelectList<String>>,
-    #[serde(deserialize_with = "deserialize_select_list")]
-    pub rustc_flags: Option<SelectList<String>>,
+    #[serde(deserialize_with = "deserialize_select_set")]
+    pub rustc_env_files: Option<SelectSet<String>>,
+    pub rustc_flags: Option<Vec<String>>,
     #[serde(deserialize_with = "deserialize_select_dict")]
     pub build_script_env: Option<SelectDict<String>>,
     #[serde(deserialize_with = "deserialize_select_dict")]
@@ -739,9 +729,9 @@ where
     }
 }
 
-fn deserialize_select_list<'de, D, T: Ord + Deserialize<'de>>(
+fn deserialize_select_set<'de, D, T: Ord + Deserialize<'de>>(
     deserializer: D,
-) -> Result<Option<SelectList<T>>, D::Error>
+) -> Result<Option<SelectSet<T>>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -757,8 +747,8 @@ where
 
     let either = Option::<Either<T>>::deserialize(deserializer)?;
     match either {
-        Some(Either::Values(common)) => Ok(Some(SelectList::from(common))),
-        Some(Either::Select { common, selects }) => Ok(Some(SelectList::from((common, selects)))),
+        Some(Either::Values(common)) => Ok(Some(SelectSet::from(common))),
+        Some(Either::Select { common, selects }) => Ok(Some(SelectSet::from((common, selects)))),
         None => Ok(None),
     }
 }

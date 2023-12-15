@@ -12,7 +12,7 @@ use crate::utils::starlark::{
 };
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
-pub struct SelectList<T: Ord> {
+pub struct SelectSet<T: Ord> {
     // Invariant: any T in `common` is not anywhere in `selects`.
     common: BTreeSet<T>,
     // Invariant: none of the sets are empty.
@@ -25,7 +25,7 @@ pub struct SelectList<T: Ord> {
     unmapped: BTreeSet<T>,
 }
 
-impl<T: Ord> Default for SelectList<T> {
+impl<T: Ord> Default for SelectSet<T> {
     fn default() -> Self {
         Self {
             common: BTreeSet::new(),
@@ -35,7 +35,7 @@ impl<T: Ord> Default for SelectList<T> {
     }
 }
 
-impl<T: Ord> SelectList<T> {
+impl<T: Ord> SelectSet<T> {
     // TODO: This should probably be added to the [Select] trait
     pub fn insert(&mut self, value: T, configuration: Option<String>) {
         match configuration {
@@ -54,7 +54,7 @@ impl<T: Ord> SelectList<T> {
         }
     }
 
-    pub fn extend_select_list(&mut self, other: Self) {
+    pub fn extend_select_set(&mut self, other: Self) {
         for value in other.common {
             self.insert(value, None);
         }
@@ -92,7 +92,7 @@ impl<T: Ord> SelectList<T> {
     }
 }
 
-impl<T: Ord> From<BTreeSet<T>> for SelectList<T> {
+impl<T: Ord> From<BTreeSet<T>> for SelectSet<T> {
     fn from(common: BTreeSet<T>) -> Self {
         Self {
             common: common,
@@ -102,7 +102,7 @@ impl<T: Ord> From<BTreeSet<T>> for SelectList<T> {
     }
 }
 
-impl<T: Ord> From<(BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)> for SelectList<T> {
+impl<T: Ord> From<(BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)> for SelectSet<T> {
     fn from((common, selects): (BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)) -> Self {
         Self {
             common: common,
@@ -112,14 +112,14 @@ impl<T: Ord> From<(BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)> for SelectList<T
     }
 }
 
-impl<T: Ord + Clone> SelectList<T> {
-    /// Generates a new SelectList re-keyed by the given configuration mapping.
-    /// This mapping maps from configurations in the current SelectList to sets of
-    /// configurations in the new SelectList.
+impl<T: Ord + Clone> SelectSet<T> {
+    /// Generates a new SelectSet re-keyed by the given configuration mapping.
+    /// This mapping maps from configurations in the current SelectSet to sets of
+    /// configurations in the new SelectSet.
     pub fn remap_configurations(
         self,
         mapping: &BTreeMap<String, BTreeSet<String>>,
-    ) -> SelectList<WithOriginalConfigurations<T>> {
+    ) -> SelectSet<WithOriginalConfigurations<T>> {
         // Map new configuration -> value -> old configurations.
         let mut remapped: BTreeMap<String, BTreeMap<T, BTreeSet<String>>> = BTreeMap::new();
         // Map value -> old configurations.
@@ -156,7 +156,7 @@ impl<T: Ord + Clone> SelectList<T> {
             }
         }
 
-        SelectList {
+        SelectSet {
             common: self
                 .common
                 .into_iter()
@@ -195,9 +195,9 @@ impl<T: Ord + Clone> SelectList<T> {
     }
 }
 
-// TODO: after removing the remaining tera template usages of SelectList, this
+// TODO: after removing the remaining tera template usages of SelectSet, this
 // inherent method should become the Serialize impl.
-impl<T: Ord> SelectList<T> {
+impl<T: Ord> SelectSet<T> {
     pub fn serialize_starlark<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         T: Serialize,
@@ -239,7 +239,7 @@ impl<T: Ord> SelectList<T> {
         }
 
         if !self.selects.is_empty() || !self.unmapped.is_empty() {
-            struct SelectInner<'a, T: Ord>(&'a SelectList<T>);
+            struct SelectInner<'a, T: Ord>(&'a SelectSet<T>);
 
             impl<'a, T> Serialize for SelectInner<'a, T>
             where
@@ -277,7 +277,7 @@ impl<T: Ord> SelectList<T> {
     }
 }
 
-impl<T: Ord> Select<T> for SelectList<T> {
+impl<T: Ord> Select<T> for SelectSet<T> {
     fn configurations(&self) -> BTreeSet<Option<&String>> {
         let configs = self.selects.keys().map(Some);
         match self.common.is_empty() {
@@ -287,8 +287,8 @@ impl<T: Ord> Select<T> for SelectList<T> {
     }
 }
 
-impl<T: Ord, U: Ord> SelectMap<T, U> for SelectList<T> {
-    type Mapped = SelectList<U>;
+impl<T: Ord, U: Ord> SelectMap<T, U> for SelectSet<T> {
+    type Mapped = SelectSet<U>;
 
     fn map<F: Copy + Fn(T) -> U>(self, func: F) -> Self::Mapped {
         let common: BTreeSet<U> = self.common.into_iter().map(func).collect();
@@ -308,7 +308,7 @@ impl<T: Ord, U: Ord> SelectMap<T, U> for SelectList<T> {
                 }
             })
             .collect();
-        SelectList {
+        SelectSet {
             common,
             selects,
             unmapped: self.unmapped.into_iter().map(func).collect(),
@@ -323,15 +323,15 @@ mod test {
     use indoc::indoc;
 
     #[test]
-    fn empty_select_list() {
-        let select_list: SelectList<String> = SelectList::default();
+    fn empty_select_set() {
+        let select_set: SelectSet<String> = SelectSet::default();
 
         let expected_starlark = indoc! {r#"
             []
         "#};
 
         assert_eq!(
-            select_list
+            select_set
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -339,9 +339,9 @@ mod test {
     }
 
     #[test]
-    fn no_platform_specific_select_list() {
-        let mut select_list = SelectList::default();
-        select_list.insert("Hello".to_owned(), None);
+    fn no_platform_specific_select_set() {
+        let mut select_set = SelectSet::default();
+        select_set.insert("Hello".to_owned(), None);
 
         let expected_starlark = indoc! {r#"
             [
@@ -350,7 +350,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_list
+            select_set
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -358,9 +358,9 @@ mod test {
     }
 
     #[test]
-    fn only_platform_specific_select_list() {
-        let mut select_list = SelectList::default();
-        select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
+    fn only_platform_specific_select_set() {
+        let mut select_set = SelectSet::default();
+        select_set.insert("Hello".to_owned(), Some("platform".to_owned()));
 
         let expected_starlark = indoc! {r#"
             select({
@@ -372,7 +372,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_list
+            select_set
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -380,10 +380,10 @@ mod test {
     }
 
     #[test]
-    fn mixed_select_list() {
-        let mut select_list = SelectList::default();
-        select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
-        select_list.insert("Goodbye".to_owned(), None);
+    fn mixed_select_set() {
+        let mut select_set = SelectSet::default();
+        select_set.insert("Hello".to_owned(), Some("platform".to_owned()));
+        select_set.insert("Goodbye".to_owned(), None);
 
         let expected_starlark = indoc! {r#"
             [
@@ -397,7 +397,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_list
+            select_set
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -405,17 +405,17 @@ mod test {
     }
 
     #[test]
-    fn remap_select_list_configurations() {
-        let mut select_list = SelectList::default();
-        select_list.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
-        select_list.insert("dep-b".to_owned(), Some("cfg(macos)".to_owned()));
-        select_list.insert("dep-d".to_owned(), Some("cfg(macos)".to_owned()));
-        select_list.insert("dep-a".to_owned(), Some("cfg(x86_64)".to_owned()));
-        select_list.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
-        select_list.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
-        select_list.insert("dep-d".to_owned(), None);
-        select_list.insert("dep-f".to_owned(), Some("@platforms//os:magic".to_owned()));
-        select_list.insert("dep-g".to_owned(), Some("//another:platform".to_owned()));
+    fn remap_select_set_configurations() {
+        let mut select_set = SelectSet::default();
+        select_set.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
+        select_set.insert("dep-b".to_owned(), Some("cfg(macos)".to_owned()));
+        select_set.insert("dep-d".to_owned(), Some("cfg(macos)".to_owned()));
+        select_set.insert("dep-a".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select_set.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select_set.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
+        select_set.insert("dep-d".to_owned(), None);
+        select_set.insert("dep-f".to_owned(), Some("@platforms//os:magic".to_owned()));
+        select_set.insert("dep-g".to_owned(), Some("//another:platform".to_owned()));
 
         let mapping = BTreeMap::from([
             (
@@ -428,7 +428,7 @@ mod test {
             ),
         ]);
 
-        let mut expected = SelectList::default();
+        let mut expected = SelectSet::default();
         expected.insert(
             WithOriginalConfigurations {
                 value: "dep-a".to_owned(),
@@ -507,8 +507,8 @@ mod test {
             Some("//another:platform".to_owned()),
         );
 
-        let select_list = select_list.remap_configurations(&mapping);
-        assert_eq!(select_list, expected);
+        let select_set = select_set.remap_configurations(&mapping);
+        assert_eq!(select_set, expected);
 
         let expected_starlark = indoc! {r#"
             [
@@ -541,7 +541,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_list
+            select_set
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,

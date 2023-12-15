@@ -4,7 +4,7 @@ mod glob;
 mod label;
 mod select;
 mod select_dict;
-mod select_list;
+mod select_set;
 mod select_value;
 mod serialize;
 mod target_compatible_with;
@@ -18,7 +18,7 @@ pub use glob::*;
 pub use label::*;
 pub use select::*;
 pub use select_dict::*;
-pub use select_list::*;
+pub use select_set::*;
 pub use select_value::*;
 pub use target_compatible_with::*;
 
@@ -87,35 +87,35 @@ pub struct CargoBuildScript {
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub crate_features: SelectList<String>,
+    pub crate_features: SelectSet<String>,
     pub crate_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub data: Data,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    pub deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub link_deps: SelectList<WithOriginalConfigurations<String>>,
+    pub link_deps: SelectSet<WithOriginalConfigurations<String>>,
     pub edition: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    pub proc_macro_deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
         skip_serializing_if = "SelectValue::is_empty",
         serialize_with = "SelectValue::serialize_starlark"
@@ -127,20 +127,20 @@ pub struct CargoBuildScript {
     )]
     pub rustc_env: SelectDict<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
+    pub rustc_env_files: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rustc_flags: Vec<String>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub tools: SelectList<WithOriginalConfigurations<String>>,
+    pub tools: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub toolchains: Set<String>,
     pub version: String,
@@ -151,15 +151,15 @@ pub struct CargoBuildScript {
 pub struct RustProcMacro {
     pub name: String,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    pub deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    pub proc_macro_deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
         skip_serializing_if = "SelectDict::is_empty",
         serialize_with = "SelectDict::serialize_starlark"
@@ -173,15 +173,15 @@ pub struct RustProcMacro {
 pub struct RustLibrary {
     pub name: String,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    pub deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    pub proc_macro_deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
         skip_serializing_if = "SelectDict::is_empty",
         serialize_with = "SelectDict::serialize_starlark"
@@ -197,15 +197,15 @@ pub struct RustLibrary {
 pub struct RustBinary {
     pub name: String,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub deps: SelectList<WithOriginalConfigurations<String>>,
+    pub deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub proc_macro_deps: SelectList<WithOriginalConfigurations<String>>,
+    pub proc_macro_deps: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(
         skip_serializing_if = "SelectDict::is_empty",
         serialize_with = "SelectDict::serialize_starlark"
@@ -220,10 +220,10 @@ pub struct CommonAttrs {
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub crate_features: SelectList<String>,
+    pub crate_features: SelectSet<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
@@ -237,10 +237,10 @@ pub struct CommonAttrs {
     )]
     pub rustc_env: SelectDict<WithOriginalConfigurations<String>>,
     #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
+        skip_serializing_if = "SelectSet::is_empty",
+        serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
+    pub rustc_env_files: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rustc_flags: Vec<String>,
     pub srcs: Glob,
@@ -253,7 +253,7 @@ pub struct CommonAttrs {
 
 pub struct Data {
     pub glob: Glob,
-    pub select: SelectList<WithOriginalConfigurations<String>>,
+    pub select: SelectSet<WithOriginalConfigurations<String>>,
 }
 
 impl Package {

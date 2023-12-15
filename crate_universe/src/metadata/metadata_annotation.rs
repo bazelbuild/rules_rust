@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::DependencySet;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
-use crate::utils::starlark::SelectList;
+use crate::utils::starlark::SelectSet;
 
 pub type CargoMetadata = cargo_metadata::Metadata;
 pub type CargoLockfile = cargo_lock::Lockfile;
@@ -362,7 +362,7 @@ pub struct Annotations {
     pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
-    pub features: BTreeMap<CrateId, SelectList<String>>,
+    pub features: BTreeMap<CrateId, SelectSet<String>>,
 }
 
 impl Annotations {

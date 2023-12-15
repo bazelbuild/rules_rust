@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::CrateId;
 use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator};
 use crate::utils;
-use crate::utils::starlark::{Label, SelectList};
+use crate::utils::starlark::{Label, SelectSet};
 
 use self::cargo_config::CargoConfig;
 use self::crate_index_lookup::CrateIndexLookup;
@@ -174,7 +174,7 @@ pub struct WorkspaceMetadata {
     ///
     /// We store this here because it's computed during the splicing phase via
     /// calls to "cargo tree" which need the full spliced workspace.
-    pub features: BTreeMap<CrateId, SelectList<String>>,
+    pub features: BTreeMap<CrateId, SelectSet<String>>,
 }
 
 impl TryFrom<toml::Value> for WorkspaceMetadata {
@@ -254,7 +254,7 @@ impl WorkspaceMetadata {
     pub fn write_registry_urls_and_feature_map(
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,
-        features: BTreeMap<CrateId, SelectList<String>>,
+        features: BTreeMap<CrateId, SelectSet<String>>,
         input_manifest_path: &Path,
         output_manifest_path: &Path,
     ) -> Result<()> {

@@ -120,7 +120,7 @@ mod test {
     use crate::config::CrateId;
     use crate::context::crate_context::CrateDependency;
     use crate::context::CommonAttributes;
-    use crate::utils::starlark::SelectList;
+    use crate::utils::starlark::SelectSet;
 
     use super::*;
 
@@ -134,7 +134,7 @@ mod test {
 
     #[test]
     fn resolve_no_targeted() {
-        let mut deps = SelectList::default();
+        let mut deps = SelectSet::default();
         deps.insert(
             CrateDependency {
                 id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
@@ -180,7 +180,7 @@ mod test {
     }
 
     fn mock_resolve_context(configuration: String) -> CrateContext {
-        let mut deps = SelectList::default();
+        let mut deps = SelectSet::default();
         deps.insert(
             CrateDependency {
                 id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
@@ -254,7 +254,7 @@ mod test {
     #[test]
     fn resolve_platforms() {
         let configuration = r#"x86_64-unknown-linux-gnu"#.to_owned();
-        let mut deps = SelectList::default();
+        let mut deps = SelectSet::default();
         deps.insert(
             CrateDependency {
                 id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
@@ -308,7 +308,7 @@ mod test {
     #[test]
     fn resolve_unsupported_targeted() {
         let configuration = r#"cfg(target = "x86_64-unknown-unknown")"#.to_owned();
-        let mut deps = SelectList::default();
+        let mut deps = SelectSet::default();
         deps.insert(
             CrateDependency {
                 id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
