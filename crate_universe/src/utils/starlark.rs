@@ -3,6 +3,8 @@
 mod glob;
 mod label;
 mod select;
+mod select_dict;
+mod select_list;
 mod serialize;
 mod target_compatible_with;
 
@@ -14,6 +16,8 @@ use serde_starlark::{Error as StarlarkError, FunctionCall};
 pub use glob::*;
 pub use label::*;
 pub use select::*;
+pub use select_dict::*;
+pub use select_list::*;
 pub use target_compatible_with::*;
 
 pub type SelectStringList = SelectList<String>;
