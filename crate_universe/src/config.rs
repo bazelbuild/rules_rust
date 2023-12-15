@@ -15,7 +15,7 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
-use crate::utils::starlark::{SelectDict, SelectSet, SelectValue};
+use crate::utils::starlark::{SelectDict, SelectList, SelectSet, SelectValue};
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -272,7 +272,8 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to the target's
     /// [rustc_flags](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_flags) attribute.
-    pub rustc_flags: Option<Vec<String>>,
+    #[serde(deserialize_with = "deserialize_select_list")]
+    pub rustc_flags: Option<SelectList<String>>,
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
@@ -383,7 +384,7 @@ impl Add for CrateAnnotations {
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
             rustc_env: joined_extra_member!(self.rustc_env, rhs.rustc_env, SelectDict::default, SelectDict::extend_select_dict),
             rustc_env_files: joined_extra_member!(self.rustc_env_files, rhs.rustc_env_files, SelectSet::default, SelectSet::extend_select_set),
-            rustc_flags: joined_extra_member!(self.rustc_flags, rhs.rustc_flags, Vec::new, Vec::extend),
+            rustc_flags: joined_extra_member!(self.rustc_flags, rhs.rustc_flags, SelectList::default, SelectList::extend_select_list),
             build_script_deps: joined_extra_member!(self.build_script_deps, rhs.build_script_deps, SelectSet::default, SelectSet::extend_select_set),
             build_script_proc_macro_deps: joined_extra_member!(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps, SelectSet::default, SelectSet::extend_select_set),
             build_script_data: joined_extra_member!(self.build_script_data, rhs.build_script_data, SelectSet::default, SelectSet::extend_select_set),
@@ -443,7 +444,8 @@ pub struct AnnotationsProvidedByPackage {
     pub rustc_env: Option<SelectDict<String>>,
     #[serde(deserialize_with = "deserialize_select_set")]
     pub rustc_env_files: Option<SelectSet<String>>,
-    pub rustc_flags: Option<Vec<String>>,
+    #[serde(deserialize_with = "deserialize_select_list")]
+    pub rustc_flags: Option<SelectList<String>>,
     #[serde(deserialize_with = "deserialize_select_dict")]
     pub build_script_env: Option<SelectDict<String>>,
     #[serde(deserialize_with = "deserialize_select_dict")]
@@ -725,6 +727,30 @@ where
     match either {
         Some(Either::Value(value)) => Ok(Some(SelectValue::from(value))),
         Some(Either::Select { selects }) => Ok(Some(SelectValue::from(selects))),
+        None => Ok(None),
+    }
+}
+
+fn deserialize_select_list<'de, D, T: Ord + Deserialize<'de>>(
+    deserializer: D,
+) -> Result<Option<SelectList<T>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Debug, Deserialize)]
+    #[serde(untagged)]
+    enum Either<T: Ord> {
+        Values(Vec<T>),
+        Select {
+            common: Vec<T>,
+            selects: BTreeMap<String, Vec<T>>,
+        },
+    }
+
+    let either = Option::<Either<T>>::deserialize(deserializer)?;
+    match either {
+        Some(Either::Values(common)) => Ok(Some(SelectList::from(common))),
+        Some(Either::Select { common, selects }) => Ok(Some(SelectList::from((common, selects)))),
         None => Ok(None),
     }
 }

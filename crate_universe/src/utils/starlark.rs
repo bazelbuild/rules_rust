@@ -4,6 +4,7 @@ mod glob;
 mod label;
 mod select;
 mod select_dict;
+mod select_list;
 mod select_set;
 mod select_value;
 mod serialize;
@@ -18,6 +19,7 @@ pub use glob::*;
 pub use label::*;
 pub use select::*;
 pub use select_dict::*;
+pub use select_list::*;
 pub use select_set::*;
 pub use select_value::*;
 pub use target_compatible_with::*;
@@ -131,8 +133,8 @@ pub struct CargoBuildScript {
         serialize_with = "SelectSet::serialize_starlark"
     )]
     pub rustc_env_files: SelectSet<WithOriginalConfigurations<String>>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
@@ -241,8 +243,8 @@ pub struct CommonAttrs {
         serialize_with = "SelectSet::serialize_starlark"
     )]
     pub rustc_env_files: SelectSet<WithOriginalConfigurations<String>>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,

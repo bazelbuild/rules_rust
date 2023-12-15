@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Glob, SelectDict, SelectMap, SelectSet, SelectValue};
+use crate::utils::starlark::{Glob, SelectDict, SelectList, SelectMap, SelectSet, SelectValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub struct CrateDependency {
@@ -148,8 +148,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub rustc_env_files: SelectSet<String>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub rustc_flags: SelectList<String>,
 
     pub version: String,
 
@@ -241,8 +241,8 @@ pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub rustc_env: SelectDict<String>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub rustc_flags: SelectList<String>,
 
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub rustc_env_files: SelectSet<String>,
@@ -548,7 +548,9 @@ impl CrateContext {
 
             // Rustc flags
             if let Some(extra) = &crate_extra.rustc_flags {
-                self.common_attrs.rustc_flags.extend(extra.iter().cloned());
+                self.common_attrs
+                    .rustc_flags
+                    .extend_select_list(extra.clone());
             }
 
             // Rustc env

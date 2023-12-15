@@ -19,8 +19,8 @@ use crate::rendering::template_engine::TemplateEngine;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectMap, SelectSet,
-    SelectValue, Starlark, TargetCompatibleWith,
+    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
+    SelectSet, SelectValue, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
@@ -448,16 +448,16 @@ impl Renderer {
                 .map_or_else(SelectSet::default, |attrs| attrs.rustc_env_files.clone())
                 .remap_configurations(platforms),
             rustc_flags: {
-                let mut rustc_flags = Vec::new();
+                let mut rustc_flags = SelectList::default();
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                rustc_flags.push("--cap-lints=allow".to_owned());
+                rustc_flags.insert("--cap-lints=allow".to_owned(), None);
                 if let Some(attrs) = attrs {
-                    rustc_flags.extend(attrs.rustc_flags.iter().cloned());
+                    rustc_flags.extend_select_list(attrs.rustc_flags.clone());
                 }
-                rustc_flags
+                rustc_flags.remap_configurations(platforms)
             },
             srcs: target.srcs.clone(),
             tags: {
@@ -594,14 +594,14 @@ impl Renderer {
                 .clone()
                 .remap_configurations(platforms),
             rustc_flags: {
-                let mut rustc_flags = Vec::new();
+                let mut rustc_flags = SelectList::default();
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                rustc_flags.push("--cap-lints=allow".to_owned());
-                rustc_flags.extend(krate.common_attrs.rustc_flags.iter().cloned());
-                rustc_flags
+                rustc_flags.insert("--cap-lints=allow".to_owned(), None);
+                rustc_flags.extend_select_list(krate.common_attrs.rustc_flags.clone());
+                rustc_flags.remap_configurations(platforms)
             },
             srcs: target.srcs.clone(),
             tags: {
