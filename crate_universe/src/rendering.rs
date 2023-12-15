@@ -16,12 +16,12 @@ use crate::config::{AliasRule, RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::{Context, TargetAttributes};
 use crate::rendering::template_engine::TemplateEngine;
-use crate::select::{Select as Select2, SelectCommon};
+use crate::select::{Select, SelectCommon};
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
-    SelectSet, SelectValue, Starlark, TargetCompatibleWith, WithOriginalConfigurations,
+    Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList, SelectSet,
+    SelectValue, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
@@ -405,7 +405,7 @@ impl Renderer {
                     .unwrap_or_default(),
             ),
             crate_features: SelectSet::new(
-                Select2::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
+                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
                 platforms,
             ),
             crate_name: utils::sanitize_module_name(&target.crate_name),
@@ -472,8 +472,8 @@ impl Renderer {
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                Select2::merge(
-                    Select2::from(Vec::from(["--cap-lints=allow".to_owned()])),
+                Select::merge(
+                    Select::from(Vec::from(["--cap-lints=allow".to_owned()])),
                     attrs
                         .map(|attrs| attrs.rustc_flags.clone())
                         .unwrap_or_default(),
@@ -598,7 +598,7 @@ impl Renderer {
                 krate.common_attrs.compile_data.clone(),
             ),
             crate_features: SelectSet::new(
-                Select2::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
+                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
                 platforms,
             ),
             crate_root: target.crate_root.clone(),
@@ -616,8 +616,8 @@ impl Renderer {
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                Select2::merge(
-                    Select2::from(Vec::from(["--cap-lints=allow".to_owned()])),
+                Select::merge(
+                    Select::from(Vec::from(["--cap-lints=allow".to_owned()])),
                     krate.common_attrs.rustc_flags.clone(),
                 ),
                 platforms,
@@ -655,7 +655,7 @@ impl Renderer {
         krate: &CrateContext,
         build: bool,
         include_dev: bool,
-    ) -> Select2<BTreeMap<String, String>> {
+    ) -> Select<BTreeMap<String, String>> {
         let mut dependency_selects = Vec::new();
         if build {
             if let Some(build_script_attrs) = &krate.build_script_attrs {
@@ -671,7 +671,7 @@ impl Renderer {
             }
         }
 
-        let mut aliases: Select2<BTreeMap<String, String>> = Select2::default();
+        let mut aliases: Select<BTreeMap<String, String>> = Select::default();
         for dependency_select in dependency_selects.iter() {
             for dependency in dependency_select.common().iter() {
                 if let Some(alias) = &dependency.alias {
@@ -701,10 +701,10 @@ impl Renderer {
 
     fn make_deps(
         &self,
-        deps: Select2<BTreeSet<CrateDependency>>,
-        extra_deps: Select2<BTreeSet<String>>,
-    ) -> Select2<BTreeSet<String>> {
-        Select2::merge(
+        deps: Select<BTreeSet<CrateDependency>>,
+        extra_deps: Select<BTreeSet<String>>,
+    ) -> Select<BTreeSet<String>> {
+        Select::merge(
             deps.map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target)),
             extra_deps,
         )
@@ -835,7 +835,7 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
 fn make_data(
     platforms: &Platforms,
     glob: BTreeSet<String>,
-    select: Select2<BTreeSet<String>>,
+    select: Select<BTreeSet<String>>,
 ) -> Data {
     const COMMON_GLOB_EXCLUDES: &[&str] = &[
         "**/* *",
@@ -1200,7 +1200,7 @@ mod test {
                 version: crate_id.version,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
-                    rustc_flags: Select2::from(rustc_flags.clone()),
+                    rustc_flags: Select::from(rustc_flags.clone()),
                     ..CommonAttributes::default()
                 },
                 ..CrateContext::default()
@@ -1328,7 +1328,7 @@ mod test {
             ..Context::default()
         };
         let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
-        let mut features: Select2<BTreeSet<String>> = Select2::default();
+        let mut features: Select<BTreeSet<String>> = Select::default();
         features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
         features.insert("bar".to_owned(), None);
         context.crates.insert(

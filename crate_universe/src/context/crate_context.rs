@@ -9,7 +9,7 @@ use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
 use crate::select::{Select, SelectCommon};
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Glob, SelectMap};
+use crate::utils::starlark::Glob;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub struct CrateDependency {

@@ -1,143 +1,47 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Debug;
-use std::iter::once;
-use std::slice::Iter;
 
 use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::Select as Select2;
+use crate::select::Select;
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
-    looks_like_bazel_configuration_label, NoMatchingPlatformTriples, Select, SelectMap,
-    WithOriginalConfigurations,
+    looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SelectList<T> {
     // Invariant: any T in `common` is not anywhere in `selects`.
-    common: Vec<T>,
+    common: Vec<WithOriginalConfigurations<T>>,
     // Invariant: none of the sets are empty.
-    selects: BTreeMap<String, Vec<T>>,
+    selects: BTreeMap<String, Vec<WithOriginalConfigurations<T>>>,
     // Elements that used to be in `selects` before the most recent
     // `remap_configurations` operation, but whose old configuration did not get
     // mapped to any new configuration. They could be ignored, but are preserved
     // here to generate comments that help the user understand what happened.
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
-    unmapped: Vec<T>,
-}
-
-impl<T> Default for SelectList<T> {
-    fn default() -> Self {
-        Self {
-            common: Vec::new(),
-            selects: BTreeMap::new(),
-            unmapped: Vec::new(),
-        }
-    }
-}
-
-impl<T> SelectList<T> {
-    // TODO: This should probably be added to the [Select] trait
-    pub fn insert(&mut self, value: T, configuration: Option<String>) {
-        match configuration {
-            None => self.common.push(value),
-            Some(cfg) => self.selects.entry(cfg).or_default().push(value),
-        }
-    }
-
-    pub fn extend_select_list(&mut self, other: Self) {
-        for value in other.common {
-            self.insert(value, None);
-        }
-        for (cfg, values) in other.selects {
-            for value in values {
-                self.insert(value, Some(cfg.clone()));
-            }
-        }
-    }
-
-    // TODO: This should probably be added to the [Select] trait
-    pub fn get_iter(&self, config: Option<&String>) -> Option<Iter<T>> {
-        match config {
-            Some(conf) => self.selects.get(conf).map(|set| set.iter()),
-            None => Some(self.common.iter()),
-        }
-    }
-
-    /// Determine whether or not the select should be serialized
-    pub fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
-    }
-
-    /// Maps configuration names by `f`. This function must be injective
-    /// (that is `a != b --> f(a) != f(b)`).
-    pub fn map_configuration_names<F>(self, mut f: F) -> Self
-    where
-        F: FnMut(String) -> String,
-    {
-        Self {
-            common: self.common,
-            selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
-            unmapped: self.unmapped,
-        }
-    }
+    unmapped: Vec<WithOriginalConfigurations<T>>,
 }
 
 impl<T> SelectList<T>
 where
-    T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: Debug + Clone + Serialize,
 {
-    pub fn new(
-        select: Select2<Vec<T>>,
-        platforms: &BTreeMap<String, BTreeSet<String>>,
-    ) -> SelectList<WithOriginalConfigurations<T>> {
+    /// Re-keys the provided Select by the given configuration mapping.
+    /// This mapping maps from configurations in the input Select to sets of
+    /// configurations in the output SelectList.
+    pub fn new(select: Select<Vec<T>>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
         let (common, selects) = select.into_parts();
-        Self {
-            common: common,
-            selects: selects,
-            unmapped: Default::default(),
-        }
-        .remap_configurations(platforms)
-    }
-}
 
-impl<T: Ord> From<Vec<T>> for SelectList<T> {
-    fn from(common: Vec<T>) -> Self {
-        Self {
-            common: common,
-            selects: BTreeMap::new(),
-            unmapped: Vec::new(),
-        }
-    }
-}
-
-impl<T: Ord> From<(Vec<T>, BTreeMap<String, Vec<T>>)> for SelectList<T> {
-    fn from((common, selects): (Vec<T>, BTreeMap<String, Vec<T>>)) -> Self {
-        Self {
-            common: common,
-            selects: selects,
-            unmapped: Vec::new(),
-        }
-    }
-}
-
-impl<T: Clone> SelectList<T> {
-    /// Generates a new SelectList re-keyed by the given configuration mapping.
-    /// This mapping maps from configurations in the current SelectList to sets of
-    /// configurations in the new SelectList.
-    pub fn remap_configurations(
-        self,
-        mapping: &BTreeMap<String, BTreeSet<String>>,
-    ) -> SelectList<WithOriginalConfigurations<T>> {
         // Map new configuration -> value -> old configurations.
         let mut remapped: BTreeMap<String, Vec<(T, String)>> = BTreeMap::new();
         // Map value -> old configurations.
         let mut unmapped: Vec<(T, String)> = Vec::new();
 
-        for (original_configuration, values) in self.selects {
-            match mapping.get(&original_configuration) {
+        for (original_configuration, values) in selects {
+            match platforms.get(&original_configuration) {
                 Some(configurations) => {
                     for configuration in configurations {
                         for value in &values {
@@ -162,9 +66,8 @@ impl<T: Clone> SelectList<T> {
             }
         }
 
-        SelectList {
-            common: self
-                .common
+        Self {
+            common: common
                 .into_iter()
                 .map(|value| WithOriginalConfigurations {
                     value,
@@ -200,6 +103,11 @@ impl<T: Clone> SelectList<T> {
                 )
                 .collect(),
         }
+    }
+
+    /// Determine whether or not the select should be serialized
+    pub fn is_empty(&self) -> bool {
+        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }
 
@@ -247,7 +155,7 @@ impl<T: Ord> SelectList<T> {
         }
 
         if !self.selects.is_empty() || !self.unmapped.is_empty() {
-            struct SelectInner<'a, T: Ord>(&'a SelectList<T>);
+            struct SelectInner<'a, T>(&'a SelectList<T>);
 
             impl<'a, T> Serialize for SelectInner<'a, T>
             where
@@ -285,34 +193,6 @@ impl<T: Ord> SelectList<T> {
     }
 }
 
-impl<T: Ord> Select<T> for SelectList<T> {
-    fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(once(None)).collect(),
-        }
-    }
-}
-
-impl<T: Ord, U: Ord> SelectMap<T, U> for SelectList<T> {
-    type Mapped = SelectList<U>;
-
-    fn map<F: Copy + Fn(T) -> U>(self, func: F) -> Self::Mapped {
-        let common: Vec<U> = self.common.into_iter().map(func).collect();
-        let selects: BTreeMap<String, Vec<U>> = self
-            .selects
-            .into_iter()
-            .map(|(key, set)| (key, set.into_iter().map(func).collect()))
-            .collect();
-        SelectList {
-            common,
-            selects,
-            unmapped: self.unmapped.into_iter().map(func).collect(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -321,14 +201,15 @@ mod test {
 
     #[test]
     fn empty_select_list() {
-        let empty_select_list: SelectList<String> = SelectList::default();
+        let select_list: SelectList<String> =
+            SelectList::new(Default::default(), &Default::default());
 
         let expected_starlark = indoc! {r#"
             []
         "#};
 
         assert_eq!(
-            empty_select_list
+            select_list
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -337,8 +218,10 @@ mod test {
 
     #[test]
     fn no_platform_specific_empty_select_list() {
-        let mut empty_select_list = SelectList::default();
-        empty_select_list.insert("Hello".to_owned(), None);
+        let mut select: Select<Vec<String>> = Select::default();
+        select.insert("Hello".to_owned(), None);
+
+        let select_list = SelectList::new(select, &Default::default());
 
         let expected_starlark = indoc! {r#"
             [
@@ -347,7 +230,7 @@ mod test {
         "#};
 
         assert_eq!(
-            empty_select_list
+            select_list
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -356,20 +239,27 @@ mod test {
 
     #[test]
     fn only_platform_specific_empty_select_list() {
-        let mut empty_select_list = SelectList::default();
-        empty_select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
+        let mut select: Select<Vec<String>> = Select::default();
+        select.insert("Hello".to_owned(), Some("platform".to_owned()));
+
+        let platforms = BTreeMap::from([(
+            "platform".to_owned(),
+            BTreeSet::from(["platform".to_owned()]),
+        )]);
+
+        let select_list = SelectList::new(select, &platforms);
 
         let expected_starlark = indoc! {r#"
             select({
                 "platform": [
-                    "Hello",
+                    "Hello",  # platform
                 ],
                 "//conditions:default": [],
             })
         "#};
 
         assert_eq!(
-            empty_select_list
+            select_list
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -378,23 +268,30 @@ mod test {
 
     #[test]
     fn mixed_empty_select_list() {
-        let mut empty_select_list = SelectList::default();
-        empty_select_list.insert("Hello".to_owned(), Some("platform".to_owned()));
-        empty_select_list.insert("Goodbye".to_owned(), None);
+        let mut select: Select<Vec<String>> = Select::default();
+        select.insert("Hello".to_owned(), Some("platform".to_owned()));
+        select.insert("Goodbye".to_owned(), None);
+
+        let platforms = BTreeMap::from([(
+            "platform".to_owned(),
+            BTreeSet::from(["platform".to_owned()]),
+        )]);
+
+        let select_list = SelectList::new(select, &platforms);
 
         let expected_starlark = indoc! {r#"
             [
                 "Goodbye",
             ] + select({
                 "platform": [
-                    "Hello",
+                    "Hello",  # platform
                 ],
                 "//conditions:default": [],
             })
         "#};
 
         assert_eq!(
-            empty_select_list
+            select_list
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,
@@ -403,18 +300,18 @@ mod test {
 
     #[test]
     fn remap_empty_select_list_configurations() {
-        let mut empty_select_list = SelectList::default();
-        empty_select_list.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
-        empty_select_list.insert("dep-b".to_owned(), Some("cfg(macos)".to_owned()));
-        empty_select_list.insert("dep-d".to_owned(), Some("cfg(macos)".to_owned()));
-        empty_select_list.insert("dep-a".to_owned(), Some("cfg(x86_64)".to_owned()));
-        empty_select_list.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
-        empty_select_list.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
-        empty_select_list.insert("dep-d".to_owned(), None);
-        empty_select_list.insert("dep-f".to_owned(), Some("@platforms//os:magic".to_owned()));
-        empty_select_list.insert("dep-g".to_owned(), Some("//another:platform".to_owned()));
+        let mut select: Select<Vec<String>> = Select::default();
+        select.insert("dep-a".to_owned(), Some("cfg(macos)".to_owned()));
+        select.insert("dep-b".to_owned(), Some("cfg(macos)".to_owned()));
+        select.insert("dep-d".to_owned(), Some("cfg(macos)".to_owned()));
+        select.insert("dep-a".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select.insert("dep-c".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select.insert("dep-e".to_owned(), Some("cfg(pdp11)".to_owned()));
+        select.insert("dep-d".to_owned(), None);
+        select.insert("dep-f".to_owned(), Some("@platforms//os:magic".to_owned()));
+        select.insert("dep-g".to_owned(), Some("//another:platform".to_owned()));
 
-        let mapping = BTreeMap::from([
+        let platforms = BTreeMap::from([
             (
                 "cfg(macos)".to_owned(),
                 BTreeSet::from(["x86_64-macos".to_owned(), "aarch64-macos".to_owned()]),
@@ -425,105 +322,115 @@ mod test {
             ),
         ]);
 
-        let mut expected = SelectList::default();
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-b".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-c".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-b".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-linux".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-c".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-linux".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
+        let select_list = SelectList::new(select, &platforms);
+
+        let expected = SelectList {
+            common: Vec::from([WithOriginalConfigurations {
                 value: "dep-d".to_owned(),
                 original_configurations: None,
-            },
-            None,
-        );
-        expected.unmapped.push(WithOriginalConfigurations {
-            value: "dep-e".to_owned(),
-            original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
-        });
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-f".to_owned(),
-                original_configurations: Some(BTreeSet::from(["@platforms//os:magic".to_owned()])),
-            },
-            Some("@platforms//os:magic".to_owned()),
-        );
-        expected.insert(
-            WithOriginalConfigurations {
-                value: "dep-g".to_owned(),
-                original_configurations: Some(BTreeSet::from(["//another:platform".to_owned()])),
-            },
-            Some("//another:platform".to_owned()),
-        );
+            }]),
+            selects: BTreeMap::from([
+                (
+                    "x86_64-macos".to_owned(),
+                    Vec::from([
+                        WithOriginalConfigurations {
+                            value: "dep-a".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-b".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-d".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-a".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "cfg(x86_64)".to_owned()
+                            ])),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-c".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "cfg(x86_64)".to_owned()
+                            ])),
+                        },
+                    ]),
+                ),
+                (
+                    "aarch64-macos".to_owned(),
+                    Vec::from([
+                        WithOriginalConfigurations {
+                            value: "dep-a".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-b".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-d".to_owned(),
+                            original_configurations: Some(BTreeSet::from(
+                                ["cfg(macos)".to_owned()],
+                            )),
+                        },
+                    ]),
+                ),
+                (
+                    "x86_64-linux".to_owned(),
+                    Vec::from([
+                        WithOriginalConfigurations {
+                            value: "dep-a".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "cfg(x86_64)".to_owned()
+                            ])),
+                        },
+                        WithOriginalConfigurations {
+                            value: "dep-c".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "cfg(x86_64)".to_owned()
+                            ])),
+                        },
+                    ]),
+                ),
+                (
+                    "@platforms//os:magic".to_owned(),
+                    Vec::from([WithOriginalConfigurations {
+                        value: "dep-f".to_owned(),
+                        original_configurations: Some(BTreeSet::from([
+                            "@platforms//os:magic".to_owned()
+                        ])),
+                    }]),
+                ),
+                (
+                    "//another:platform".to_owned(),
+                    Vec::from([WithOriginalConfigurations {
+                        value: "dep-g".to_owned(),
+                        original_configurations: Some(BTreeSet::from([
+                            "//another:platform".to_owned()
+                        ])),
+                    }]),
+                ),
+            ]),
+            unmapped: Vec::from([WithOriginalConfigurations {
+                value: "dep-e".to_owned(),
+                original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+            }]),
+        };
 
-        let empty_select_list = empty_select_list.remap_configurations(&mapping);
-        assert_eq!(empty_select_list, expected);
+        assert_eq!(select_list, expected);
 
         let expected_starlark = indoc! {r#"
             [
@@ -559,7 +466,7 @@ mod test {
         "#};
 
         assert_eq!(
-            empty_select_list
+            select_list
                 .serialize_starlark(serde_starlark::Serializer)
                 .unwrap(),
             expected_starlark,

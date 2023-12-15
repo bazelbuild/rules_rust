@@ -8,9 +8,8 @@ use cargo_metadata::{
 use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
-use crate::select::Select as Select2;
+use crate::select::Select;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Select, SelectSet};
 
 /// A representation of a crate dependency
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -28,13 +27,13 @@ pub struct Dependency {
 /// A collection of [Dependency]s sorted by dependency kind.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DependencySet {
-    pub normal_deps: Select2<BTreeSet<Dependency>>,
-    pub normal_dev_deps: Select2<BTreeSet<Dependency>>,
-    pub proc_macro_deps: Select2<BTreeSet<Dependency>>,
-    pub proc_macro_dev_deps: Select2<BTreeSet<Dependency>>,
-    pub build_deps: Select2<BTreeSet<Dependency>>,
-    pub build_link_deps: Select2<BTreeSet<Dependency>>,
-    pub build_proc_macro_deps: Select2<BTreeSet<Dependency>>,
+    pub normal_deps: Select<BTreeSet<Dependency>>,
+    pub normal_dev_deps: Select<BTreeSet<Dependency>>,
+    pub proc_macro_deps: Select<BTreeSet<Dependency>>,
+    pub proc_macro_dev_deps: Select<BTreeSet<Dependency>>,
+    pub build_deps: Select<BTreeSet<Dependency>>,
+    pub build_link_deps: Select<BTreeSet<Dependency>>,
+    pub build_proc_macro_deps: Select<BTreeSet<Dependency>>,
 }
 
 impl DependencySet {
@@ -98,7 +97,7 @@ impl DependencySet {
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
         // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
-        let mut build_link_deps: Select2<BTreeSet<Dependency>> = Select2::default();
+        let mut build_link_deps: Select<BTreeSet<Dependency>> = Select::default();
         for dependency in normal_deps
             .common()
             .iter()
@@ -167,8 +166,8 @@ fn collect_deps_selectable(
     deps: Vec<&NodeDep>,
     metadata: &cargo_metadata::Metadata,
     kind: DependencyKind,
-) -> Select2<BTreeSet<Dependency>> {
-    let mut select: Select2<BTreeSet<Dependency>> = Select2::default();
+) -> Select<BTreeSet<Dependency>> {
+    let mut select: Select<BTreeSet<Dependency>> = Select::default();
 
     for dep in deps.into_iter() {
         let dep_pkg = &metadata[&dep.pkg];

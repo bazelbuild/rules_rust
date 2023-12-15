@@ -1,132 +1,50 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Debug;
-use std::iter::once;
 
-use serde::de::DeserializeOwned;
 use serde::ser::{SerializeMap, Serializer};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::Select as Select2;
+use crate::select::Select;
 use crate::utils::starlark::{
-    looks_like_bazel_configuration_label, NoMatchingPlatformTriples, Select,
-    WithOriginalConfigurations,
+    looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SelectDict<T: Ord> {
     // Invariant: keys in this map are not in any of the inner maps of `selects`.
-    common: BTreeMap<String, T>,
+    common: BTreeMap<String, WithOriginalConfigurations<T>>,
     // Invariant: none of the inner maps are empty.
-    selects: BTreeMap<String, BTreeMap<String, T>>,
+    selects: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>>,
     // Elements that used to be in `selects` before the most recent
     // `remap_configurations` operation, but whose old configuration did not get
     // mapped to any new configuration. They could be ignored, but are preserved
     // here to generate comments that help the user understand what happened.
     #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "BTreeMap::new")]
-    unmapped: BTreeMap<String, T>,
-}
-
-impl<T: Ord> Default for SelectDict<T> {
-    fn default() -> Self {
-        Self {
-            common: BTreeMap::new(),
-            selects: BTreeMap::new(),
-            unmapped: BTreeMap::new(),
-        }
-    }
-}
-
-impl<T: Ord> SelectDict<T> {
-    pub fn insert(&mut self, key: String, value: T, configuration: Option<String>) {
-        match configuration {
-            None => {
-                self.selects.retain(|_, map| {
-                    map.remove(&key);
-                    !map.is_empty()
-                });
-                self.common.insert(key, value);
-            }
-            Some(cfg) => {
-                if !self.common.contains_key(&key) {
-                    self.selects.entry(cfg).or_default().insert(key, value);
-                }
-            }
-        }
-    }
-
-    pub fn extend_select_dict(&mut self, other: Self) {
-        for (key, value) in other.common {
-            self.insert(key, value, None);
-        }
-        for (cfg, entries) in other.selects {
-            for (key, value) in entries {
-                self.insert(key, value, Some(cfg.clone()));
-            }
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
-    }
+    unmapped: BTreeMap<String, WithOriginalConfigurations<T>>,
 }
 
 impl<T> SelectDict<T>
 where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize,
 {
+    /// Re-keys the provided Select by the given configuration mapping.
+    /// This mapping maps from configurations in the input Select to sets
+    /// of configurations in the output SelectDict.
     pub fn new(
-        select: Select2<BTreeMap<String, T>>,
+        select: Select<BTreeMap<String, T>>,
         platforms: &BTreeMap<String, BTreeSet<String>>,
-    ) -> SelectDict<WithOriginalConfigurations<T>> {
-        let (common, selects) = select.into_parts();
-        Self {
-            common: common,
-            selects: selects,
-            unmapped: Default::default(),
-        }
-        .remap_configurations(platforms)
-    }
-}
-
-impl<T: Ord> From<BTreeMap<String, T>> for SelectDict<T> {
-    fn from(common: BTreeMap<String, T>) -> Self {
-        Self {
-            common: common,
-            selects: BTreeMap::new(),
-            unmapped: BTreeMap::new(),
-        }
-    }
-}
-
-impl<T: Ord> From<(BTreeMap<String, T>, BTreeMap<String, BTreeMap<String, T>>)> for SelectDict<T> {
-    fn from(
-        (common, selects): (BTreeMap<String, T>, BTreeMap<String, BTreeMap<String, T>>),
     ) -> Self {
-        Self {
-            common: common,
-            selects: selects,
-            unmapped: BTreeMap::new(),
-        }
-    }
-}
+        let (common, selects) = select.into_parts();
 
-impl<T: Ord + Clone> SelectDict<T> {
-    /// Generates a new SelectDict re-keyed by the given configuration mapping.
-    /// This mapping maps from configurations in the current SelectDict to sets
-    /// of configurations in the new SelectDict.
-    pub fn remap_configurations(
-        self,
-        mapping: &BTreeMap<String, BTreeSet<String>>,
-    ) -> SelectDict<WithOriginalConfigurations<T>> {
         // Map new configuration -> entry -> old configurations.
         let mut remapped: BTreeMap<String, BTreeMap<(String, T), BTreeSet<String>>> =
             BTreeMap::new();
         // Map entry -> old configurations.
         let mut unmapped: BTreeMap<(String, T), BTreeSet<String>> = BTreeMap::new();
 
-        for (original_configuration, entries) in self.selects {
-            match mapping.get(&original_configuration) {
+        for (original_configuration, entries) in selects {
+            match platforms.get(&original_configuration) {
                 Some(configurations) => {
                     for configuration in configurations {
                         for (key, value) in &entries {
@@ -156,9 +74,8 @@ impl<T: Ord + Clone> SelectDict<T> {
             }
         }
 
-        SelectDict {
-            common: self
-                .common
+        Self {
+            common: common
                 .into_iter()
                 .map(|(key, value)| {
                     (
@@ -203,6 +120,10 @@ impl<T: Ord + Clone> SelectDict<T> {
                 })
                 .collect(),
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }
 
@@ -280,16 +201,6 @@ impl<T: Ord + Serialize> SelectDict<T> {
     }
 }
 
-impl<T: Ord> Select<T> for SelectDict<T> {
-    fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(once(None)).collect(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -298,7 +209,8 @@ mod test {
 
     #[test]
     fn empty_select_dict() {
-        let select_dict: SelectDict<String> = SelectDict::default();
+        let select_dict: SelectDict<String> =
+            SelectDict::new(Default::default(), &Default::default());
 
         let expected_starlark = indoc! {r#"
             {}
@@ -314,8 +226,10 @@ mod test {
 
     #[test]
     fn no_platform_specific_select_dict() {
-        let mut select_dict = SelectDict::default();
-        select_dict.insert("Greeting".to_owned(), "Hello".to_owned(), None);
+        let mut select: Select<BTreeMap<String, String>> = Select::default();
+        select.insert("Greeting".to_owned(), "Hello".to_owned(), None);
+
+        let select_dict = SelectDict::new(select, &Default::default());
 
         let expected_starlark = indoc! {r#"
             {
@@ -333,17 +247,24 @@ mod test {
 
     #[test]
     fn only_platform_specific_select_dict() {
-        let mut select_dict = SelectDict::default();
-        select_dict.insert(
+        let mut select: Select<BTreeMap<String, String>> = Select::default();
+        select.insert(
             "Greeting".to_owned(),
             "Hello".to_owned(),
             Some("platform".to_owned()),
         );
 
+        let platforms = BTreeMap::from([(
+            "platform".to_owned(),
+            BTreeSet::from(["platform".to_owned()]),
+        )]);
+
+        let select_dict = SelectDict::new(select, &platforms);
+
         let expected_starlark = indoc! {r#"
             select({
                 "platform": {
-                    "Greeting": "Hello",
+                    "Greeting": "Hello",  # platform
                 },
                 "//conditions:default": {},
             })
@@ -359,18 +280,25 @@ mod test {
 
     #[test]
     fn mixed_select_dict() {
-        let mut select_dict = SelectDict::default();
-        select_dict.insert(
+        let mut select: Select<BTreeMap<String, String>> = Select::default();
+        select.insert(
             "Greeting".to_owned(),
             "Hello".to_owned(),
             Some("platform".to_owned()),
         );
-        select_dict.insert("Message".to_owned(), "Goodbye".to_owned(), None);
+        select.insert("Message".to_owned(), "Goodbye".to_owned(), None);
+
+        let platforms = BTreeMap::from([(
+            "platform".to_owned(),
+            BTreeSet::from(["platform".to_owned()]),
+        )]);
+
+        let select_dict = SelectDict::new(select, &platforms);
 
         let expected_starlark = indoc! {r#"
             select({
                 "platform": {
-                    "Greeting": "Hello",
+                    "Greeting": "Hello",  # platform
                     "Message": "Goodbye",
                 },
                 "//conditions:default": {
@@ -389,50 +317,50 @@ mod test {
 
     #[test]
     fn remap_select_dict_configurations() {
-        let mut select_dict = SelectDict::default();
-        select_dict.insert(
+        let mut select: Select<BTreeMap<String, String>> = Select::default();
+        select.insert(
             "dep-a".to_owned(),
             "a".to_owned(),
             Some("cfg(macos)".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-b".to_owned(),
             "b".to_owned(),
             Some("cfg(macos)".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-d".to_owned(),
             "d".to_owned(),
             Some("cfg(macos)".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-a".to_owned(),
             "a".to_owned(),
             Some("cfg(x86_64)".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-c".to_owned(),
             "c".to_owned(),
             Some("cfg(x86_64)".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-e".to_owned(),
             "e".to_owned(),
             Some("cfg(pdp11)".to_owned()),
         );
-        select_dict.insert("dep-d".to_owned(), "d".to_owned(), None);
-        select_dict.insert(
+        select.insert("dep-d".to_owned(), "d".to_owned(), None);
+        select.insert(
             "dep-f".to_owned(),
             "f".to_owned(),
             Some("@platforms//os:magic".to_owned()),
         );
-        select_dict.insert(
+        select.insert(
             "dep-g".to_owned(),
             "g".to_owned(),
             Some("//another:platform".to_owned()),
         );
 
-        let mapping = BTreeMap::from([
+        let platforms = BTreeMap::from([
             (
                 "cfg(macos)".to_owned(),
                 BTreeSet::from(["x86_64-macos".to_owned(), "aarch64-macos".to_owned()]),
@@ -443,99 +371,130 @@ mod test {
             ),
         ]);
 
-        let mut expected = SelectDict::default();
-        expected.insert(
-            "dep-a".to_string(),
-            WithOriginalConfigurations {
-                value: "a".to_owned(),
-                original_configurations: Some(BTreeSet::from([
-                    "cfg(macos)".to_owned(),
-                    "cfg(x86_64)".to_owned(),
-                ])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            "dep-b".to_string(),
-            WithOriginalConfigurations {
-                value: "b".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            "dep-c".to_string(),
-            WithOriginalConfigurations {
-                value: "c".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-macos".to_owned()),
-        );
-        expected.insert(
-            "dep-a".to_string(),
-            WithOriginalConfigurations {
-                value: "a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-        expected.insert(
-            "dep-b".to_string(),
-            WithOriginalConfigurations {
-                value: "b".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
-            },
-            Some("aarch64-macos".to_owned()),
-        );
-        expected.insert(
-            "dep-a".to_string(),
-            WithOriginalConfigurations {
-                value: "a".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-linux".to_owned()),
-        );
-        expected.insert(
-            "dep-c".to_string(),
-            WithOriginalConfigurations {
-                value: "c".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
-            },
-            Some("x86_64-linux".to_owned()),
-        );
-        expected.insert(
-            "dep-d".to_string(),
-            WithOriginalConfigurations {
-                value: "d".to_owned(),
-                original_configurations: None,
-            },
-            None,
-        );
-        expected.unmapped.insert(
-            "dep-e".to_string(),
-            WithOriginalConfigurations {
-                value: "e".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
-            },
-        );
-        expected.insert(
-            "dep-f".to_string(),
-            WithOriginalConfigurations {
-                value: "f".to_owned(),
-                original_configurations: Some(BTreeSet::from(["@platforms//os:magic".to_owned()])),
-            },
-            Some("@platforms//os:magic".to_owned()),
-        );
-        expected.insert(
-            "dep-g".to_string(),
-            WithOriginalConfigurations {
-                value: "g".to_owned(),
-                original_configurations: Some(BTreeSet::from(["//another:platform".to_owned()])),
-            },
-            Some("//another:platform".to_owned()),
-        );
+        let select_dict = SelectDict::new(select, &platforms);
 
-        let select_dict = select_dict.remap_configurations(&mapping);
+        let expected = SelectDict {
+            common: BTreeMap::from([(
+                "dep-d".to_string(),
+                WithOriginalConfigurations {
+                    value: "d".to_owned(),
+                    original_configurations: None,
+                },
+            )]),
+            selects: BTreeMap::from([
+                (
+                    "x86_64-macos".to_owned(),
+                    BTreeMap::from([
+                        (
+                            "dep-a".to_string(),
+                            WithOriginalConfigurations {
+                                value: "a".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(macos)".to_owned(),
+                                    "cfg(x86_64)".to_owned(),
+                                ])),
+                            },
+                        ),
+                        (
+                            "dep-b".to_string(),
+                            WithOriginalConfigurations {
+                                value: "b".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(macos)".to_owned()
+                                ])),
+                            },
+                        ),
+                        (
+                            "dep-c".to_string(),
+                            WithOriginalConfigurations {
+                                value: "c".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(x86_64)".to_owned()
+                                ])),
+                            },
+                        ),
+                    ]),
+                ),
+                (
+                    "aarch64-macos".to_owned(),
+                    BTreeMap::from([
+                        (
+                            "dep-a".to_string(),
+                            WithOriginalConfigurations {
+                                value: "a".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(macos)".to_owned()
+                                ])),
+                            },
+                        ),
+                        (
+                            "dep-b".to_string(),
+                            WithOriginalConfigurations {
+                                value: "b".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(macos)".to_owned()
+                                ])),
+                            },
+                        ),
+                    ]),
+                ),
+                (
+                    "x86_64-linux".to_owned(),
+                    BTreeMap::from([
+                        (
+                            "dep-a".to_string(),
+                            WithOriginalConfigurations {
+                                value: "a".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(x86_64)".to_owned()
+                                ])),
+                            },
+                        ),
+                        (
+                            "dep-c".to_string(),
+                            WithOriginalConfigurations {
+                                value: "c".to_owned(),
+                                original_configurations: Some(BTreeSet::from([
+                                    "cfg(x86_64)".to_owned()
+                                ])),
+                            },
+                        ),
+                    ]),
+                ),
+                (
+                    "@platforms//os:magic".to_owned(),
+                    BTreeMap::from([(
+                        "dep-f".to_string(),
+                        WithOriginalConfigurations {
+                            value: "f".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "@platforms//os:magic".to_owned()
+                            ])),
+                        },
+                    )]),
+                ),
+                (
+                    "//another:platform".to_owned(),
+                    BTreeMap::from([(
+                        "dep-g".to_string(),
+                        WithOriginalConfigurations {
+                            value: "g".to_owned(),
+                            original_configurations: Some(BTreeSet::from([
+                                "//another:platform".to_owned()
+                            ])),
+                        },
+                    )]),
+                ),
+            ]),
+            unmapped: BTreeMap::from([(
+                "dep-e".to_string(),
+                WithOriginalConfigurations {
+                    value: "e".to_owned(),
+                    original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+                },
+            )]),
+        };
+
         assert_eq!(select_dict, expected);
 
         let expected_starlark = indoc! {r#"
