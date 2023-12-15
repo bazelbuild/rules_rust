@@ -5,14 +5,17 @@ use serde::ser::{SerializeMap, Serializer};
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::Select;
+use crate::select::{Select, SelectableScalar};
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectValue<T> {
+pub struct SelectValue<T>
+where
+    T: SelectableScalar,
+{
     common: Option<T>,
     selects: BTreeMap<String, WithOriginalConfigurations<T>>,
     // Element that used to be in `selects` before the most recent
@@ -22,23 +25,21 @@ pub struct SelectValue<T> {
     unmapped: Vec<WithOriginalConfigurations<T>>,
 }
 
-// impl<T> SelectValue<T>
-// where
-//     T: Clone,
-impl SelectValue<String> {
+impl<T> SelectValue<T>
+where
+    T: SelectableScalar,
+{
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
     /// configurations in the output SelectValue.
-    // fn new(select: Select<T>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
-    pub fn new(select: Select<String>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
+    pub fn new(select: Select<T>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
         let (common, selects) = select.into_parts();
 
         // Map new configuration -> value -> old configurations.
         // let mut remapped: BTreeMap<String, (T, BTreeSet<String>)> = BTreeMap::new();
-        let mut remapped: BTreeMap<String, (String, BTreeSet<String>)> = BTreeMap::new();
+        let mut remapped: BTreeMap<String, (T, BTreeSet<String>)> = BTreeMap::new();
         // Map value -> old configurations.
-        // let mut unmapped: BTreeMap<T, BTreeSet<String>> = BTreeMap::new();
-        let mut unmapped: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        let mut unmapped: BTreeMap<T, BTreeSet<String>> = BTreeMap::new();
 
         for (original_configuration, value) in selects {
             match platforms.get(&original_configuration) {
@@ -67,10 +68,7 @@ impl SelectValue<String> {
         }
 
         Self {
-            common: match !common.is_empty() {
-                true => Some(common),
-                false => None,
-            },
+            common,
             selects: remapped
                 .into_iter()
                 .map(|(new_configuration, (value, original_configurations))| {
@@ -94,16 +92,17 @@ impl SelectValue<String> {
                 .collect(),
         }
     }
-}
 
-impl SelectValue<String> {
     /// Determine whether or not the select should be serialized
     pub fn is_empty(&self) -> bool {
         self.common.is_none() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }
 
-impl<T: Ord + Serialize> Serialize for SelectValue<T> {
+impl<T> Serialize for SelectValue<T>
+where
+    T: SelectableScalar,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -132,11 +131,13 @@ impl<T: Ord + Serialize> Serialize for SelectValue<T> {
             return self.common.as_ref().unwrap().serialize(serializer);
         }
 
-        struct SelectInner<'a, T>(&'a SelectValue<T>);
+        struct SelectInner<'a, T>(&'a SelectValue<T>)
+        where
+            T: SelectableScalar;
 
         impl<'a, T> Serialize for SelectInner<'a, T>
         where
-            T: Serialize,
+            T: SelectableScalar,
         {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where

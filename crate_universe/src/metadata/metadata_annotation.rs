@@ -567,7 +567,7 @@ mod test {
     fn defaults_from_package_metadata() {
         let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
         let annotations = CrateAnnotations {
-            rustc_env: Some(Select::from(BTreeMap::from([(
+            rustc_env: Some(Select::from_value(BTreeMap::from([(
                 "BAR".to_owned(),
                 "bar is set".to_owned(),
             )]))),

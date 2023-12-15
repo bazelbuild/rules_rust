@@ -5,14 +5,17 @@ use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::Select;
+use crate::select::{Select, SelectableValue};
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectSet<T: Ord> {
+pub struct SelectSet<T>
+where
+    T: SelectableValue,
+{
     // Invariant: any T in `common` is not anywhere in `selects`.
     common: BTreeSet<T>,
     // Invariant: none of the sets are empty.
@@ -26,7 +29,7 @@ pub struct SelectSet<T: Ord> {
 
 impl<T> SelectSet<T>
 where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize,
+    T: SelectableValue,
 {
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
@@ -110,7 +113,10 @@ where
     }
 }
 
-impl<T: Ord + Serialize> Serialize for SelectSet<T> {
+impl<T> Serialize for SelectSet<T>
+where
+    T: SelectableValue,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -151,11 +157,13 @@ impl<T: Ord + Serialize> Serialize for SelectSet<T> {
         }
 
         if !self.selects.is_empty() || !self.unmapped.is_empty() {
-            struct SelectInner<'a, T: Ord>(&'a SelectSet<T>);
+            struct SelectInner<'a, T: Ord>(&'a SelectSet<T>)
+            where
+                T: SelectableValue;
 
             impl<'a, T> Serialize for SelectInner<'a, T>
             where
-                T: Ord + Serialize,
+                T: SelectableValue,
             {
                 fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                 where

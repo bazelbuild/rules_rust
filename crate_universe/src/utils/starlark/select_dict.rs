@@ -5,13 +5,16 @@ use serde::ser::{SerializeMap, Serializer};
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::Select;
+use crate::select::{Select, SelectableValue};
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectDict<T: Ord> {
+pub struct SelectDict<T>
+where
+    T: SelectableValue,
+{
     // Invariant: keys in this map are not in any of the inner maps of `selects`.
     common: BTreeMap<String, T>,
     // Invariant: none of the inner maps are empty.
@@ -25,7 +28,7 @@ pub struct SelectDict<T: Ord> {
 
 impl<T> SelectDict<T>
 where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize,
+    T: SelectableValue,
 {
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets
@@ -115,7 +118,10 @@ where
     }
 }
 
-impl<T: Ord + Serialize> Serialize for SelectDict<T> {
+impl<T> Serialize for SelectDict<T>
+where
+    T: SelectableValue,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -152,11 +158,13 @@ impl<T: Ord + Serialize> Serialize for SelectDict<T> {
             return self.common.serialize(serializer);
         }
 
-        struct SelectInner<'a, T: Ord>(&'a SelectDict<T>);
+        struct SelectInner<'a, T>(&'a SelectDict<T>)
+        where
+            T: SelectableValue;
 
         impl<'a, T> Serialize for SelectInner<'a, T>
         where
-            T: Ord + Serialize,
+            T: SelectableValue,
         {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where

@@ -15,7 +15,7 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
-use crate::select::{Select, SelectCommon};
+use crate::select::Select;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -763,7 +763,7 @@ mod test {
             .unwrap();
         assert_eq!(
             annotation.crate_features,
-            Some(Select::from(BTreeSet::from(["small_rng".to_owned()])))
+            Some(Select::from_value(BTreeSet::from(["small_rng".to_owned()])))
         );
 
         // Global settings

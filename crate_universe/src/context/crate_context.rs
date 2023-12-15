@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
-use crate::select::{Select, SelectCommon};
+use crate::select::Select;
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::Glob;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
     /// The [CrateId] of the dependency
     pub id: CrateId,
@@ -79,7 +79,7 @@ impl Default for CrateFeatures {
 impl From<&CrateFeatures> for Select<BTreeSet<String>> {
     fn from(value: &CrateFeatures) -> Self {
         match value {
-            CrateFeatures::LegacySet(s) => Select::from(s.clone()),
+            CrateFeatures::LegacySet(s) => Select::from_value(s.clone()),
             CrateFeatures::SelectSet(sl) => sl.clone(),
         }
     }
@@ -367,9 +367,7 @@ impl CrateContext {
         // Gather all "common" attributes
         let mut common_attrs = CommonAttributes {
             crate_features: CrateFeatures::SelectSet(
-                features
-                    .get(&current_crate_id)
-                    .map_or_else(Select::default, |f| f.clone()),
+                features.get(&current_crate_id).cloned().unwrap_or_default(),
             ),
             deps,
             deps_dev,

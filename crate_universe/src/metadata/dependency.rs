@@ -12,7 +12,7 @@ use crate::select::Select;
 use crate::utils::sanitize_module_name;
 
 /// A representation of a crate dependency
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Dependency {
     /// The PackageId of the target
     pub package_id: PackageId,

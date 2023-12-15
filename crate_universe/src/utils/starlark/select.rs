@@ -5,21 +5,6 @@ use serde::ser::Serializer;
 use serde::Serialize;
 use serde_starlark::LineComment;
 
-pub trait SelectMap<T, U> {
-    // A selectable should also implement a `map` function allowing one type of selectable
-    // to be mutated into another. However, the approach I'm looking for requires GAT
-    // (Generic Associated Types) which are not yet stable.
-    // https://github.com/rust-lang/rust/issues/44265
-    type Mapped;
-    fn map<F: Copy + Fn(T) -> U>(self, func: F) -> Self::Mapped;
-}
-
-pub trait Select<T> {
-    /// Gather a list of all conditions currently set on the selectable. A conditional
-    /// would be the key of the select statement.
-    fn configurations(&self) -> BTreeSet<Option<&String>>;
-}
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct WithOriginalConfigurations<T> {
     pub value: T,

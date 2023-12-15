@@ -3,150 +3,261 @@ use std::fmt::Debug;
 
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
-pub struct Select<T> {
-    common: T,
-    selects: BTreeMap<String, T>,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Select<T>
+where
+    T: Selectable,
+{
+    common: T::CommonType,
+    selects: BTreeMap<String, T::SelectsType>,
 }
 
-pub trait SelectCommon {
-    fn is_empty(&self) -> bool;
+pub trait Selectable
+where
+    Self: SelectableValue,
+{
+    type ItemType: SelectableValue;
+    type CommonType: SelectableValue + Default;
+    type SelectsType: SelectableValue;
 
-    fn merge(lhs: Self, rhs: Self) -> Self;
+    fn is_empty(this: &Select<Self>) -> bool;
+    fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>);
+
+    fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self>;
 }
+
+// Replace with `trait_alias` once stabilized.
+// https://github.com/rust-lang/rust/issues/41517
+pub trait SelectableValue
+where
+    Self: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+{
+}
+
+impl<T> SelectableValue for T where
+    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned
+{
+}
+
+pub trait SelectableScalar
+where
+    Self: SelectableValue,
+{
+}
+
+impl SelectableScalar for String {}
+impl SelectableScalar for bool {}
+impl SelectableScalar for i64 {}
 
 // General
-impl<T> Select<T> {
-    pub fn common(&self) -> &T {
-        &self.common
-    }
-
-    pub fn selects(&self) -> &BTreeMap<String, T> {
-        &self.selects
-    }
-
-    pub fn into_parts(self) -> (T, BTreeMap<String, T>) {
-        (self.common, self.selects)
-    }
-}
-
-impl<T> From<T> for Select<T>
+impl<T> Select<T>
 where
-    T: Debug + Default + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: Selectable,
 {
-    fn from(common: T) -> Self {
+    pub fn new() -> Self {
         Self {
-            common,
+            common: Default::default(),
             selects: BTreeMap::new(),
         }
     }
+
+    pub fn from_value(value: T::CommonType) -> Self {
+        Self {
+            common: value,
+            selects: BTreeMap::new(),
+        }
+    }
+
+    pub fn common(&self) -> &T::CommonType {
+        &self.common
+    }
+
+    pub fn selects(&self) -> &BTreeMap<String, T::SelectsType> {
+        &self.selects
+    }
+
+    pub fn is_empty(&self) -> bool {
+        T::is_empty(&self)
+    }
+
+    pub fn into_parts(self) -> (T::CommonType, BTreeMap<String, T::SelectsType>) {
+        (self.common, self.selects)
+    }
+
+    pub fn configurations(&self) -> impl Iterator<Item = &String> {
+        self.selects.keys()
+    }
+
+    pub fn insert(&mut self, value: T::ItemType, configuration: Option<String>) {
+        T::insert(self, value, configuration);
+    }
+
+    pub fn merge(lhs: Self, rhs: Self) -> Self {
+        T::merge(lhs, rhs)
+    }
 }
 
-impl<T> From<(T, BTreeMap<String, T>)> for Select<T>
+impl<T> Default for Select<T>
 where
-    T: Debug + Default + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: Selectable,
 {
-    fn from((common, selects): (T, BTreeMap<String, T>)) -> Self {
-        Self { common, selects }
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl<'de, T> Deserialize<'de> for Select<T>
 where
-    T: Debug + Default + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: Selectable,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Select<T>, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[derive(Debug, Deserialize)]
         #[serde(untagged)]
-        enum Either<T> {
+        enum Either<T>
+        where
+            T: Selectable,
+        {
             Select {
-                common: T,
-                selects: BTreeMap<String, T>,
+                common: T::CommonType,
+                selects: BTreeMap<String, T::SelectsType>,
             },
-            Value(T),
+            Value(T::CommonType),
         }
 
-        let either = Either::deserialize(deserializer)?;
+        let either = Either::<T>::deserialize(deserializer)?;
         match either {
-            Either::Select { common, selects } => Ok(Select::from((common, selects))),
-            Either::Value(common) => Ok(Select::from(common)),
+            Either::Select { common, selects } => Ok(Self { common, selects }),
+            Either::Value(common) => Ok(Self {
+                common,
+                selects: BTreeMap::new(),
+            }),
         }
     }
 }
 
-// String
-impl Select<String> {
-    pub fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(std::iter::once(None)).collect(),
-        }
+// Scalar
+impl<T> Selectable for T
+where
+    T: SelectableScalar,
+{
+    type ItemType = T;
+    type CommonType = Option<T>;
+    type SelectsType = T;
+
+    fn is_empty(this: &Select<Self>) -> bool {
+        this.common.is_none() && this.selects.is_empty()
     }
 
-    pub fn set(&mut self, value: String, configuration: Option<String>) {
+    fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
         match configuration {
             None => {
-                self.common = value;
+                this.common = Some(value);
+                this.selects.retain(|_, value| {
+                    this.common
+                        .as_ref()
+                        .map(|common| value != common)
+                        .unwrap_or(true)
+                });
             }
             Some(configuration) => {
-                self.selects.insert(configuration, value);
+                if Some(&value) != this.common.as_ref() {
+                    this.selects.insert(configuration, value);
+                }
             }
         }
     }
-}
 
-impl SelectCommon for Select<String> {
-    fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
-    }
+    fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self> {
+        let mut result: Select<Self> = Select::new();
 
-    fn merge(lhs: Self, rhs: Self) -> Self {
-        let mut result = Self::default();
-        if !lhs.common.is_empty() {
-            result.common = lhs.common;
+        if let Some(value) = lhs.common {
+            result.common = Some(value);
         }
-        if !rhs.common.is_empty() {
-            result.common = rhs.common;
+        if let Some(value) = rhs.common {
+            result.common = Some(value);
         }
-        for (configuration, value) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            *entry = value;
+
+        for (configuration, value) in lhs.selects.into_iter().filter(|(_, value)| {
+            result
+                .common
+                .as_ref()
+                .map(|common| value != common)
+                .unwrap_or(true)
+        }) {
+            result.selects.insert(configuration, value);
         }
-        for (configuration, value) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            *entry = value;
+        for (configuration, value) in rhs.selects.into_iter().filter(|(_, value)| {
+            result
+                .common
+                .as_ref()
+                .map(|common| value != common)
+                .unwrap_or(true)
+        }) {
+            result.selects.insert(configuration, value);
         }
+
         result
     }
 }
 
 // Vec<T>
+impl<T> Selectable for Vec<T>
+where
+    T: SelectableValue,
+{
+    type ItemType = T;
+    type CommonType = Vec<T>;
+    type SelectsType = Vec<T>;
+
+    fn is_empty(this: &Select<Self>) -> bool {
+        this.common.is_empty() && this.selects.is_empty()
+    }
+
+    fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
+        match configuration {
+            None => this.common.push(value),
+            Some(configuration) => this.selects.entry(configuration).or_default().push(value),
+        }
+    }
+
+    fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self> {
+        let mut result: Select<Self> = Select::new();
+
+        for value in lhs.common.into_iter() {
+            result.common.push(value);
+        }
+        for value in rhs.common.into_iter() {
+            result.common.push(value);
+        }
+
+        for (configuration, values) in lhs.selects.into_iter() {
+            let entry = result.selects.entry(configuration).or_default();
+            for value in values.into_iter() {
+                entry.push(value);
+            }
+        }
+        for (configuration, values) in rhs.selects.into_iter() {
+            let entry = result.selects.entry(configuration).or_default();
+            for value in values.into_iter() {
+                entry.push(value);
+            }
+        }
+        result.selects.retain(|_, values| !values.is_empty());
+
+        result
+    }
+}
+
 impl<T> Select<Vec<T>>
 where
-    T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: SelectableValue,
 {
-    pub fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(std::iter::once(None)).collect(),
-        }
-    }
-
-    pub fn insert(&mut self, value: T, configuration: Option<String>) {
-        match configuration {
-            None => self.common.push(value),
-            Some(configuration) => self.selects.entry(configuration).or_default().push(value),
-        }
-    }
-
     pub fn map<U, F>(self, func: F) -> Select<Vec<U>>
     where
-        U: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+        U: SelectableValue,
         F: Copy + FnMut(T) -> U,
     {
         Select {
@@ -162,52 +273,74 @@ where
     }
 }
 
-impl<T> SelectCommon for Select<Vec<T>>
+// BTreeSet<T>
+impl<T> Selectable for BTreeSet<T>
 where
-    T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+    T: SelectableValue,
 {
-    fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
+    type ItemType = T;
+    type CommonType = BTreeSet<T>;
+    type SelectsType = BTreeSet<T>;
+
+    fn is_empty(this: &Select<Self>) -> bool {
+        this.common.is_empty() && this.selects.is_empty()
     }
 
-    fn merge(lhs: Self, rhs: Self) -> Self {
-        let mut result = Self::default();
+    fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
+        match configuration {
+            None => {
+                this.selects.retain(|_, set| {
+                    set.remove(&value);
+                    !set.is_empty()
+                });
+                this.common.insert(value);
+            }
+            Some(configuration) => {
+                if !this.common.contains(&value) {
+                    this.selects.entry(configuration).or_default().insert(value);
+                }
+            }
+        }
+    }
+
+    fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self> {
+        let mut result: Select<Self> = Select::new();
+
         for value in lhs.common.into_iter() {
-            result.common.push(value);
+            result.common.insert(value);
         }
         for value in rhs.common.into_iter() {
-            result.common.push(value);
+            result.common.insert(value);
         }
+
         for (configuration, values) in lhs.selects.into_iter() {
             let entry = result.selects.entry(configuration).or_default();
-            for value in values.into_iter() {
-                entry.push(value);
+            for value in values
+                .into_iter()
+                .filter(|value| !result.common.contains(value))
+            {
+                entry.insert(value);
             }
         }
         for (configuration, values) in rhs.selects.into_iter() {
             let entry = result.selects.entry(configuration).or_default();
-            for value in values.into_iter() {
-                entry.push(value);
+            for value in values
+                .into_iter()
+                .filter(|value| !result.common.contains(value))
+            {
+                entry.insert(value);
             }
         }
         result.selects.retain(|_, values| !values.is_empty());
+
         result
     }
 }
 
-// BTreeSet<T>
 impl<T> Select<BTreeSet<T>>
 where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+    T: SelectableValue,
 {
-    pub fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(std::iter::once(None)).collect(),
-        }
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = (Option<&String>, &T)> {
         Iterator::chain(
             self.common.iter().map(|value| (None, value)),
@@ -224,26 +357,9 @@ where
         )
     }
 
-    pub fn insert(&mut self, value: T, configuration: Option<String>) {
-        match configuration {
-            None => {
-                self.selects.retain(|_, set| {
-                    set.remove(&value);
-                    !set.is_empty()
-                });
-                self.common.insert(value);
-            }
-            Some(configuration) => {
-                if !self.common.contains(&value) {
-                    self.selects.entry(configuration).or_default().insert(value);
-                }
-            }
-        }
-    }
-
     pub fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
     where
-        U: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+        U: SelectableValue,
         F: Copy + FnMut(T) -> U,
     {
         Select {
@@ -259,70 +375,35 @@ where
     }
 }
 
-impl<T> SelectCommon for Select<BTreeSet<T>>
-where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
-{
-    fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
-    }
-
-    fn merge(lhs: Self, rhs: Self) -> Self {
-        let mut result = Self::default();
-        for value in lhs.common.into_iter() {
-            result.common.insert(value);
-        }
-        for value in rhs.common.into_iter() {
-            result.common.insert(value);
-        }
-        for (configuration, values) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for value in values
-                .into_iter()
-                .filter(|value| !result.common.contains(value))
-            {
-                entry.insert(value);
-            }
-        }
-        for (configuration, values) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for value in values
-                .into_iter()
-                .filter(|value| !result.common.contains(value))
-            {
-                entry.insert(value);
-            }
-        }
-        result.selects.retain(|_, values| !values.is_empty());
-        result
-    }
-}
-
 // BTreeMap<String, T>
-impl<T> Select<BTreeMap<String, T>>
+impl<T> Selectable for BTreeMap<String, T>
 where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+    T: SelectableValue,
 {
-    pub fn configurations(&self) -> BTreeSet<Option<&String>> {
-        let configs = self.selects.keys().map(Some);
-        match self.common.is_empty() {
-            true => configs.collect(),
-            false => configs.chain(std::iter::once(None)).collect(),
-        }
+    type ItemType = (String, T);
+    type CommonType = BTreeMap<String, T>;
+    type SelectsType = BTreeMap<String, T>;
+
+    fn is_empty(this: &Select<Self>) -> bool {
+        this.common.is_empty() && this.selects.is_empty()
     }
 
-    pub fn insert(&mut self, key: String, value: T, configuration: Option<String>) {
+    fn insert(
+        this: &mut Select<Self>,
+        (key, value): Self::ItemType,
+        configuration: Option<String>,
+    ) {
         match configuration {
             None => {
-                self.selects.retain(|_, map| {
+                this.selects.retain(|_, map| {
                     map.remove(&key);
                     !map.is_empty()
                 });
-                self.common.insert(key, value);
+                this.common.insert(key, value);
             }
             Some(configuration) => {
-                if !self.common.contains_key(&key) {
-                    self.selects
+                if !this.common.contains_key(&key) {
+                    this.selects
                         .entry(configuration)
                         .or_default()
                         .insert(key, value);
@@ -331,9 +412,47 @@ where
         }
     }
 
+    fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self> {
+        let mut result: Select<Self> = Select::new();
+
+        for (key, value) in lhs.common.into_iter() {
+            result.common.insert(key, value);
+        }
+        for (key, value) in rhs.common.into_iter() {
+            result.common.insert(key, value);
+        }
+
+        for (configuration, entries) in lhs.selects.into_iter() {
+            let entry = result.selects.entry(configuration).or_default();
+            for (key, value) in entries
+                .into_iter()
+                .filter(|(key, _)| !result.common.contains_key(key))
+            {
+                entry.insert(key, value);
+            }
+        }
+        for (configuration, entries) in rhs.selects.into_iter() {
+            let entry = result.selects.entry(configuration).or_default();
+            for (key, value) in entries
+                .into_iter()
+                .filter(|(key, _)| !result.common.contains_key(key))
+            {
+                entry.insert(key, value);
+            }
+        }
+        result.selects.retain(|_, values| !values.is_empty());
+
+        result
+    }
+}
+
+impl<T> Select<BTreeMap<String, T>>
+where
+    T: SelectableValue,
+{
     pub fn map<U, F>(self, mut func: F) -> Select<BTreeMap<String, U>>
     where
-        U: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+        U: SelectableValue,
         F: Copy + FnMut(T) -> U,
     {
         Select {
@@ -356,44 +475,5 @@ where
                 })
                 .collect(),
         }
-    }
-}
-
-impl<T> SelectCommon for Select<BTreeMap<String, T>>
-where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
-{
-    fn is_empty(&self) -> bool {
-        self.common.is_empty() && self.selects.is_empty()
-    }
-
-    fn merge(lhs: Self, rhs: Self) -> Self {
-        let mut result = Self::default();
-        for (key, value) in lhs.common.into_iter() {
-            result.common.insert(key, value);
-        }
-        for (key, value) in rhs.common.into_iter() {
-            result.common.insert(key, value);
-        }
-        for (configuration, entries) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for (key, value) in entries
-                .into_iter()
-                .filter(|(key, _)| !result.common.contains_key(key))
-            {
-                entry.insert(key, value);
-            }
-        }
-        for (configuration, entries) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for (key, value) in entries
-                .into_iter()
-                .filter(|(key, _)| !result.common.contains_key(key))
-            {
-                entry.insert(key, value);
-            }
-        }
-        result.selects.retain(|_, values| !values.is_empty());
-        result
     }
 }

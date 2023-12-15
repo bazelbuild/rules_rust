@@ -19,24 +19,20 @@ pub fn resolve_cfg_platforms(
         .iter()
         .flat_map(|ctx| {
             let attr = &ctx.common_attrs;
-            attr.deps
-                .configurations()
-                .into_iter()
-                .chain(attr.deps_dev.configurations())
-                .chain(attr.proc_macro_deps.configurations())
-                .chain(attr.proc_macro_deps_dev.configurations())
-                // Chain the build dependencies if some are defined
-                .chain(if let Some(attr) = &ctx.build_script_attrs {
-                    attr.deps
-                        .configurations()
-                        .into_iter()
-                        .chain(attr.proc_macro_deps.configurations())
-                        .collect::<BTreeSet<Option<&String>>>()
-                        .into_iter()
-                } else {
-                    BTreeSet::new().into_iter()
-                })
-                .flatten()
+            let mut configurations = BTreeSet::new();
+
+            configurations.extend(attr.deps.configurations());
+            configurations.extend(attr.deps_dev.configurations());
+            configurations.extend(attr.proc_macro_deps.configurations());
+            configurations.extend(attr.proc_macro_deps_dev.configurations());
+
+            // Chain the build dependencies if some are defined
+            if let Some(attr) = &ctx.build_script_attrs {
+                configurations.extend(attr.deps.configurations());
+                configurations.extend(attr.proc_macro_deps.configurations());
+            }
+
+            configurations
         })
         .cloned()
         .collect();

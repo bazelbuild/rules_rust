@@ -16,7 +16,7 @@ use crate::config::{AliasRule, RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::{Context, TargetAttributes};
 use crate::rendering::template_engine::TemplateEngine;
-use crate::select::{Select, SelectCommon};
+use crate::select::Select;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
@@ -473,7 +473,7 @@ impl Renderer {
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
                 Select::merge(
-                    Select::from(Vec::from(["--cap-lints=allow".to_owned()])),
+                    Select::from_value(Vec::from(["--cap-lints=allow".to_owned()])),
                     attrs
                         .map(|attrs| attrs.rustc_flags.clone())
                         .unwrap_or_default(),
@@ -617,7 +617,7 @@ impl Renderer {
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
                 Select::merge(
-                    Select::from(Vec::from(["--cap-lints=allow".to_owned()])),
+                    Select::from_value(Vec::from(["--cap-lints=allow".to_owned()])),
                     krate.common_attrs.rustc_flags.clone(),
                 ),
                 platforms,
@@ -680,7 +680,7 @@ impl Renderer {
                         &dependency.id.version,
                         &dependency.target,
                     );
-                    aliases.insert(label, alias.clone(), None);
+                    aliases.insert((label, alias.clone()), None);
                 }
             }
             for (configuration, dependencies) in dependency_select.selects().iter() {
@@ -691,7 +691,7 @@ impl Renderer {
                             &dependency.id.version,
                             &dependency.target,
                         );
-                        aliases.insert(label, alias.clone(), Some(configuration.clone()));
+                        aliases.insert((label, alias.clone()), Some(configuration.clone()));
                     }
                 }
             }
@@ -1199,7 +1199,7 @@ mod test {
                 version: crate_id.version,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
-                    rustc_flags: Select::from(rustc_flags.clone()),
+                    rustc_flags: Select::from_value(rustc_flags.clone()),
                     ..CommonAttributes::default()
                 },
                 ..CrateContext::default()
