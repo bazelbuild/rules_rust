@@ -543,10 +543,10 @@ impl FeatureGenerator {
                 )
                 .unwrap_or_default();
             let mut select: Select<BTreeSet<String>> = Select::default();
-            for (target, fs) in features {
+            for (target_triple, fs) in features {
                 if fs != common {
                     for f in fs {
-                        select.insert(f, Some(target.clone()));
+                        select.insert(f, Some(target_triple.to_bazel()));
                     }
                 }
             }

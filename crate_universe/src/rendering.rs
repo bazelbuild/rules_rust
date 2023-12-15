@@ -1322,7 +1322,7 @@ mod test {
         let mut context = Context {
             conditions: mock_supported_platform_triples()
                 .iter()
-                .map(|platform| (platform.clone(), BTreeSet::from([platform.clone()])))
+                .map(|platform| (platform.to_bazel(), BTreeSet::from([platform.clone()])))
                 .collect(),
             ..Context::default()
         };
