@@ -10,7 +10,7 @@ use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SelectDict<T: Ord> {
     // Invariant: keys in this map are not in any of the inner maps of `selects`.
     common: BTreeMap<String, T>,
@@ -20,7 +20,6 @@ pub struct SelectDict<T: Ord> {
     // `remap_configurations` operation, but whose old configuration did not get
     // mapped to any new configuration. They could be ignored, but are preserved
     // here to generate comments that help the user understand what happened.
-    #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "BTreeMap::new")]
     unmapped: BTreeMap<String, WithOriginalConfigurations<T>>,
 }
 

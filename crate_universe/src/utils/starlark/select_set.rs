@@ -11,7 +11,7 @@ use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SelectSet<T: Ord> {
     // Invariant: any T in `common` is not anywhere in `selects`.
     common: BTreeSet<T>,
@@ -21,7 +21,6 @@ pub struct SelectSet<T: Ord> {
     // `remap_configurations` operation, but whose old configuration did not get
     // mapped to any new configuration. They could be ignored, but are preserved
     // here to generate comments that help the user understand what happened.
-    #[serde(skip_serializing_if = "BTreeSet::is_empty", default = "BTreeSet::new")]
     unmapped: BTreeSet<WithOriginalConfigurations<T>>,
 }
 

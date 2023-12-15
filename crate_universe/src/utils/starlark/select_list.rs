@@ -11,7 +11,7 @@ use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SelectList<T> {
     // Invariant: any T in `common` is not anywhere in `selects`.
     common: Vec<T>,
@@ -21,7 +21,6 @@ pub struct SelectList<T> {
     // `remap_configurations` operation, but whose old configuration did not get
     // mapped to any new configuration. They could be ignored, but are preserved
     // here to generate comments that help the user understand what happened.
-    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
     unmapped: Vec<WithOriginalConfigurations<T>>,
 }
 
