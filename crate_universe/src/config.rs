@@ -1,7 +1,5 @@
 //! A module for configuration information
 
-pub mod select;
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::AsRef;
 use std::iter::Sum;
@@ -17,7 +15,7 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
-use crate::config::select::{Select, SelectValue};
+use crate::select::{Select, SelectCommon};
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -349,22 +347,21 @@ macro_rules! joined_extra_member {
     };
 }
 
+macro_rules! select_merge {
+    ($lhs:expr, $rhs:expr) => {
+        match ($lhs, $rhs) {
+            (Some(lhs), Some(rhs)) => Some(Select::merge(lhs, rhs)),
+            (Some(lhs), None) => Some(lhs),
+            (None, Some(rhs)) => Some(rhs),
+            (None, None) => None,
+        }
+    };
+}
+
 impl Add for CrateAnnotations {
     type Output = CrateAnnotations;
 
     fn add(self, rhs: Self) -> Self::Output {
-        fn merge<T>(lhs: Option<Select<T>>, rhs: Option<Select<T>>) -> Option<Select<T>>
-        where
-            T: SelectValue,
-        {
-            match (lhs, rhs) {
-                (Some(lhs), Some(rhs)) => Some(Select::merge(lhs, rhs)),
-                (Some(lhs), None) => Some(lhs),
-                (None, Some(rhs)) => Some(rhs),
-                (None, None) => None,
-            }
-        }
-
         let concat_string = |lhs: &mut String, rhs: String| {
             *lhs = format!("{lhs}{rhs}");
         };
@@ -373,24 +370,24 @@ impl Add for CrateAnnotations {
         let output = CrateAnnotations {
             gen_binaries: self.gen_binaries.or(rhs.gen_binaries),
             gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
-            deps: merge(self.deps, rhs.deps),
-            proc_macro_deps: merge(self.proc_macro_deps, rhs.proc_macro_deps),
-            crate_features: merge(self.crate_features, rhs.crate_features),
-            data: merge(self.data, rhs.data),
+            deps: select_merge!(self.deps, rhs.deps),
+            proc_macro_deps: select_merge!(self.proc_macro_deps, rhs.proc_macro_deps),
+            crate_features: select_merge!(self.crate_features, rhs.crate_features),
+            data: select_merge!(self.data, rhs.data),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
-            compile_data: merge(self.compile_data, rhs.compile_data),
+            compile_data: select_merge!(self.compile_data, rhs.compile_data),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
-            rustc_env: merge(self.rustc_env, rhs.rustc_env),
-            rustc_env_files: merge(self.rustc_env_files, rhs.rustc_env_files),
-            rustc_flags: merge(self.rustc_flags, rhs.rustc_flags),
-            build_script_deps: merge(self.build_script_deps, rhs.build_script_deps),
-            build_script_proc_macro_deps: merge(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps),
-            build_script_data: merge(self.build_script_data, rhs.build_script_data),
-            build_script_tools: merge(self.build_script_tools, rhs.build_script_tools),
+            rustc_env: select_merge!(self.rustc_env, rhs.rustc_env),
+            rustc_env_files: select_merge!(self.rustc_env_files, rhs.rustc_env_files),
+            rustc_flags: select_merge!(self.rustc_flags, rhs.rustc_flags),
+            build_script_deps: select_merge!(self.build_script_deps, rhs.build_script_deps),
+            build_script_proc_macro_deps: select_merge!(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps),
+            build_script_data: select_merge!(self.build_script_data, rhs.build_script_data),
+            build_script_tools: select_merge!(self.build_script_tools, rhs.build_script_tools),
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
-            build_script_env: merge(self.build_script_env, rhs.build_script_env),
-            build_script_rustc_env: merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
+            build_script_env: select_merge!(self.build_script_env, rhs.build_script_env),
+            build_script_rustc_env: select_merge!(self.build_script_rustc_env, rhs.build_script_rustc_env),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),

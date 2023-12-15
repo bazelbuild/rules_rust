@@ -5,6 +5,7 @@ use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
 
+use crate::select::Select as Select2;
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, Select,
@@ -96,11 +97,22 @@ impl<T: Ord> SelectValue<T> {
 }
 
 impl SelectValue<String> {
-    pub fn extend_select(&mut self, other: &crate::config::select::Select<String>) {
-        self.set(other.common.clone(), None);
-        for (cfg, value) in other.selects.iter() {
-            self.set(value.clone(), Some(cfg.clone()));
+    pub fn new(
+        select: Select2<String>,
+        platforms: &BTreeMap<String, BTreeSet<String>>,
+    ) -> SelectValue<WithOriginalConfigurations<String>> {
+        let (common, selects) = select.into_parts();
+        if !selects.is_empty() {
+            SelectValue::Select {
+                selects: selects,
+                unmapped: Default::default(),
+            }
+        } else if !common.is_empty() {
+            SelectValue::Value(common)
+        } else {
+            SelectValue::Empty
         }
+        .remap_configurations(platforms)
     }
 }
 

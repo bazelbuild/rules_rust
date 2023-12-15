@@ -7,6 +7,7 @@ use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
 
+use crate::select::Select as Select2;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, Select,
     WithOriginalConfigurations,
@@ -74,15 +75,17 @@ impl<T> SelectDict<T>
 where
     T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
 {
-    pub fn extend_select(&mut self, other: &crate::config::select::Select<BTreeMap<String, T>>) {
-        for (key, value) in other.common.iter() {
-            self.insert(key.clone(), value.clone(), None);
+    pub fn new(
+        select: Select2<BTreeMap<String, T>>,
+        platforms: &BTreeMap<String, BTreeSet<String>>,
+    ) -> SelectDict<WithOriginalConfigurations<T>> {
+        let (common, selects) = select.into_parts();
+        Self {
+            common: common,
+            selects: selects,
+            unmapped: Default::default(),
         }
-        for (cfg, entries) in other.selects.iter() {
-            for (key, value) in entries.iter() {
-                self.insert(key.clone(), value.clone(), Some(cfg.clone()));
-            }
-        }
+        .remap_configurations(platforms)
     }
 }
 

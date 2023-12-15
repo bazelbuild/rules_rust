@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::DependencySet;
+use crate::select::Select;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
-use crate::utils::starlark::SelectSet;
 
 pub type CargoMetadata = cargo_metadata::Metadata;
 pub type CargoLockfile = cargo_lock::Lockfile;
@@ -362,7 +362,7 @@ pub struct Annotations {
     pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
-    pub features: BTreeMap<CrateId, SelectSet<String>>,
+    pub features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl Annotations {
@@ -568,11 +568,10 @@ mod test {
     fn defaults_from_package_metadata() {
         let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
         let annotations = CrateAnnotations {
-            rustc_env: Some({
-                let mut rustc_env = SelectDict::default();
-                rustc_env.insert("BAR".to_owned(), "bar is set".to_owned(), None);
-                rustc_env
-            }),
+            rustc_env: Some(Select::from(BTreeMap::from([(
+                "BAR".to_owned(),
+                "bar is set".to_owned(),
+            )]))),
             ..CrateAnnotations::default()
         };
 

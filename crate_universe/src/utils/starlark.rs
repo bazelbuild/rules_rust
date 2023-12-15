@@ -92,7 +92,7 @@ pub struct CargoBuildScript {
         skip_serializing_if = "SelectSet::is_empty",
         serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub crate_features: SelectSet<String>,
+    pub crate_features: SelectSet<WithOriginalConfigurations<String>>,
     pub crate_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
@@ -225,7 +225,7 @@ pub struct CommonAttrs {
         skip_serializing_if = "SelectSet::is_empty",
         serialize_with = "SelectSet::serialize_starlark"
     )]
-    pub crate_features: SelectSet<String>,
+    pub crate_features: SelectSet<WithOriginalConfigurations<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crate_root: Option<String>,
     #[serde(skip_serializing_if = "Data::is_empty")]

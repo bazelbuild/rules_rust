@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::iter::once;
 use std::slice::Iter;
 
@@ -8,6 +7,7 @@ use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
 
+use crate::select::Select as Select2;
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, Select, SelectMap,
@@ -89,15 +89,17 @@ impl<T> SelectList<T>
 where
     T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
 {
-    pub fn extend_select(&mut self, other: &crate::config::select::Select<Vec<T>>) {
-        for value in other.common.iter() {
-            self.insert(value.clone(), None);
+    pub fn new(
+        select: Select2<Vec<T>>,
+        platforms: &BTreeMap<String, BTreeSet<String>>,
+    ) -> SelectList<WithOriginalConfigurations<T>> {
+        let (common, selects) = select.into_parts();
+        Self {
+            common: common,
+            selects: selects,
+            unmapped: Default::default(),
         }
-        for (cfg, values) in other.selects.iter() {
-            for value in values.iter() {
-                self.insert(value.clone(), Some(cfg.clone()));
-            }
-        }
+        .remap_configurations(platforms)
     }
 }
 
@@ -121,7 +123,7 @@ impl<T: Ord> From<(Vec<T>, BTreeMap<String, Vec<T>>)> for SelectList<T> {
     }
 }
 
-impl<T: Ord + Clone + Hash> SelectList<T> {
+impl<T: Clone> SelectList<T> {
     /// Generates a new SelectList re-keyed by the given configuration mapping.
     /// This mapping maps from configurations in the current SelectList to sets of
     /// configurations in the new SelectList.
