@@ -499,23 +499,17 @@ impl CrateContext {
 
             // Deps
             if let Some(extra) = &crate_extra.deps {
-                self.common_attrs
-                    .extra_deps
-                    .extend_select_set(extra.clone());
+                self.common_attrs.extra_deps.extend_select(extra);
             }
 
             // Proc macro deps
             if let Some(extra) = &crate_extra.proc_macro_deps {
-                self.common_attrs
-                    .extra_proc_macro_deps
-                    .extend_select_set(extra.clone());
+                self.common_attrs.extra_proc_macro_deps.extend_select(extra);
             }
 
             // Compile data
             if let Some(extra) = &crate_extra.compile_data {
-                self.common_attrs
-                    .compile_data
-                    .extend_select_set(extra.clone());
+                self.common_attrs.compile_data.extend_select(extra);
             }
 
             // Compile data glob
@@ -526,14 +520,14 @@ impl CrateContext {
             // Crate features
             if let Some(extra) = &crate_extra.crate_features {
                 match &mut self.common_attrs.crate_features {
-                    CrateFeatures::LegacySet(s) => s.extend(extra.get_iter(None).unwrap().cloned()),
-                    CrateFeatures::SelectList(sl) => sl.extend_select_set(extra.clone()),
+                    CrateFeatures::LegacySet(s) => s.extend(extra.common.iter().cloned()),
+                    CrateFeatures::SelectList(sl) => sl.extend_select(extra),
                 }
             }
 
             // Data
             if let Some(extra) = &crate_extra.data {
-                self.common_attrs.data.extend_select_set(extra.clone());
+                self.common_attrs.data.extend_select(extra);
             }
 
             // Data glob
@@ -548,45 +542,39 @@ impl CrateContext {
 
             // Rustc flags
             if let Some(extra) = &crate_extra.rustc_flags {
-                self.common_attrs
-                    .rustc_flags
-                    .extend_select_list(extra.clone());
+                self.common_attrs.rustc_flags.extend_select(extra);
             }
 
             // Rustc env
             if let Some(extra) = &crate_extra.rustc_env {
-                self.common_attrs
-                    .rustc_env
-                    .extend_select_dict(extra.clone());
+                self.common_attrs.rustc_env.extend_select(extra);
             }
 
             // Rustc env files
             if let Some(extra) = &crate_extra.rustc_env_files {
-                self.common_attrs
-                    .rustc_env_files
-                    .extend_select_set(extra.clone());
+                self.common_attrs.rustc_env_files.extend_select(extra);
             }
 
             // Build script Attributes
             if let Some(attrs) = &mut self.build_script_attrs {
                 // Deps
                 if let Some(extra) = &crate_extra.build_script_deps {
-                    attrs.extra_deps.extend_select_set(extra.clone());
+                    attrs.extra_deps.extend_select(extra);
                 }
 
                 // Proc macro deps
                 if let Some(extra) = &crate_extra.build_script_proc_macro_deps {
-                    attrs.extra_proc_macro_deps.extend_select_set(extra.clone());
+                    attrs.extra_proc_macro_deps.extend_select(extra);
                 }
 
                 // Data
                 if let Some(extra) = &crate_extra.build_script_data {
-                    attrs.data.extend_select_set(extra.clone());
+                    attrs.data.extend_select(extra);
                 }
 
                 // Tools
                 if let Some(extra) = &crate_extra.build_script_tools {
-                    attrs.tools.extend_select_set(extra.clone());
+                    attrs.tools.extend_select(extra);
                 }
 
                 // Toolchains
@@ -603,16 +591,16 @@ impl CrateContext {
 
                 // Rustc env
                 if let Some(extra) = &crate_extra.build_script_rustc_env {
-                    attrs.rustc_env.extend_select_dict(extra.clone());
+                    attrs.rustc_env.extend_select(extra);
                 }
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs.build_script_env.extend_select_dict(extra.clone())
+                    attrs.build_script_env.extend_select(extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
-                    attrs.rundir.extend_select_value(rundir.clone());
+                    attrs.rundir.extend_select(rundir);
                 }
             }
 

@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Debug;
 use std::iter::once;
 
+use serde::de::DeserializeOwned;
 use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
@@ -65,6 +67,22 @@ impl<T: Ord> SelectDict<T> {
 
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
+    }
+}
+
+impl<T> SelectDict<T>
+where
+    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+{
+    pub fn extend_select(&mut self, other: &crate::config::select::Select<BTreeMap<String, T>>) {
+        for (key, value) in other.common.iter() {
+            self.insert(key.clone(), value.clone(), None);
+        }
+        for (cfg, entries) in other.selects.iter() {
+            for (key, value) in entries.iter() {
+                self.insert(key.clone(), value.clone(), Some(cfg.clone()));
+            }
+        }
     }
 }
 

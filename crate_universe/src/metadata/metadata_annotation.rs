@@ -337,7 +337,7 @@ impl LockfileAnnotation {
 }
 
 /// A pairing of a crate's package identifier to its annotations.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct PairedExtras {
     /// The crate's package identifier
     pub package_id: cargo_metadata::PackageId,
@@ -347,7 +347,7 @@ pub struct PairedExtras {
 }
 
 /// A collection of data which has been processed for optimal use in generating Bazel targets.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Annotations {
     /// Annotated Cargo metadata
     pub metadata: MetadataAnnotation,

@@ -1,10 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::once;
 use std::slice::Iter;
 
 use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
 
 use crate::utils::starlark::serialize::MultilineArray;
@@ -80,6 +81,22 @@ impl<T> SelectList<T> {
             common: self.common,
             selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
             unmapped: self.unmapped,
+        }
+    }
+}
+
+impl<T> SelectList<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
+{
+    pub fn extend_select(&mut self, other: &crate::config::select::Select<Vec<T>>) {
+        for value in other.common.iter() {
+            self.insert(value.clone(), None);
+        }
+        for (cfg, values) in other.selects.iter() {
+            for value in values.iter() {
+                self.insert(value.clone(), Some(cfg.clone()));
+            }
         }
     }
 }

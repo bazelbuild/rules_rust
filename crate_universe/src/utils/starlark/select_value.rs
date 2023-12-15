@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Debug;
 
 use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
@@ -90,6 +91,15 @@ impl<T: Ord> SelectValue<T> {
                 selects: selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
                 unmapped: unmapped,
             },
+        }
+    }
+}
+
+impl SelectValue<String> {
+    pub fn extend_select(&mut self, other: &crate::config::select::Select<String>) {
+        self.set(other.common.clone(), None);
+        for (cfg, value) in other.selects.iter() {
+            self.set(value.clone(), Some(cfg.clone()));
         }
     }
 }

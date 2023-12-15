@@ -1,6 +1,8 @@
 use std::collections::{btree_set, BTreeMap, BTreeSet};
+use std::fmt::Debug;
 use std::iter::once;
 
+use serde::de::DeserializeOwned;
 use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
@@ -88,6 +90,22 @@ impl<T: Ord> SelectSet<T> {
             common: self.common,
             selects: self.selects.into_iter().map(|(k, v)| (f(k), v)).collect(),
             unmapped: self.unmapped,
+        }
+    }
+}
+
+impl<T> SelectSet<T>
+where
+    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+{
+    pub fn extend_select(&mut self, other: &crate::config::select::Select<BTreeSet<T>>) {
+        for value in other.common.iter() {
+            self.insert(value.clone(), None);
+        }
+        for (cfg, values) in other.selects.iter() {
+            for value in values.iter() {
+                self.insert(value.clone(), Some(cfg.clone()));
+            }
         }
     }
 }

@@ -211,47 +211,19 @@ def _annotation(
         ),
     ))
 
-def _select_value(selects):
-    """A Starlark SelectValue value for `crate.annotation()`.
-
-    Args:
-        selects (dict): An optional dict of `target_triple` to values.
-    Returns:
-        struct: A struct representing the Starlark SelectValue.
-    """
-    return struct(
-        selects = selects,
-    )
-
-def _select_list(
+def _select(
         common = None,
         selects = None):
-    """A Starlark SelectList value for `crate.annotation()`.
+    """A Starlark Select value for `crate.annotation()`.
 
     Args:
-        common (list, optional): An optional list of values that apply to all configurations.
-        selects (dict, optional): An optional dict of `target_triple` to lists of values.
+        common (list, optional): An optional value that applies to all configurations.
+        selects (dict, optional): An optional dict of `target_triple` to values.
     Returns:
-        struct: A struct representing the Starlark SelectList.
+        struct: A struct representing the Starlark Select.
     """
     return struct(
         common = common or [],
-        selects = selects or {},
-    )
-
-def _select_dict(
-        common = None,
-        selects = None):
-    """A Starlark SelectDict value for `crate.annotation()`.
-
-    Args:
-        common (dict, optional): An optional dict of values that apply to all configurations.
-        selects (dict, optional): An optional dict of `target_triple` to dict of values.
-    Returns:
-        struct: A struct representing the Starlark SelectDict.
-    """
-    return struct(
-        common = common or {},
         selects = selects or {},
     )
 
@@ -259,7 +231,5 @@ crate = struct(
     spec = _spec,
     annotation = _annotation,
     workspace_member = _workspace_member,
-    select_value = _select_value,
-    select_list = _select_list,
-    select_dict = _select_dict,
+    select = _select,
 )
