@@ -189,8 +189,8 @@ pub enum Checksumish {
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub enum AliasRule {
     #[default]
-    #[serde(rename = "default")]
-    Default,
+    #[serde(rename = "alias")]
+    Alias,
     #[serde(rename = "dbg")]
     Dbg,
     #[serde(rename = "fastbuild")]
@@ -204,7 +204,7 @@ pub enum AliasRule {
 impl AliasRule {
     pub fn bzl(&self) -> Option<String> {
         match self {
-            AliasRule::Default => None,
+            AliasRule::Alias => None,
             AliasRule::Dbg | AliasRule::Fastbuild | AliasRule::Opt => {
                 Some("//:alias_rules.bzl".to_owned())
             }
@@ -214,7 +214,7 @@ impl AliasRule {
 
     pub fn rule(&self) -> String {
         match self {
-            AliasRule::Default => "alias".to_owned(),
+            AliasRule::Alias => "alias".to_owned(),
             AliasRule::Dbg => "transition_alias_dbg".to_owned(),
             AliasRule::Fastbuild => "transition_alias_fastbuild".to_owned(),
             AliasRule::Opt => "transition_alias_opt".to_owned(),

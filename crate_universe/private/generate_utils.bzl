@@ -85,7 +85,7 @@ def render_config(
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
-        default_alias_rule = "default",
+        default_alias_rule = "alias",
         default_package_name = None,
         generate_target_compatible_with = True,
         platforms_template = "@rules_rust//rust/platform:{triple}",
@@ -115,7 +115,7 @@ def render_config(
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
         default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
-            are 'default', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string
+            are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string
             representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'.
             See '@crate_index//:alias_rules.bzl' for an example.
         default_package_name (str, optional): The default package name to use in the rendered macros. This affects the

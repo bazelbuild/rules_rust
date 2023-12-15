@@ -24,7 +24,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "rend
 ###############################################################################
 
 crates_repository(
-    name = "alias_rule_global_default_annotation_none",
+    name = "alias_rule_global_alias_annotation_none",
     annotations = {
         "test_data_passing_crate": [crate.annotation(
             alias_rule = None,
@@ -34,26 +34,26 @@ crates_repository(
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//alias_rule:cargo-bazel-lock_global_default_annotation_none.json",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_none.json",
     packages = {
         "test_data_passing_crate": crate.spec(
             version = "0.1.0",
         ),
     },
     render_config = render_config(
-        default_alias_rule = "default",
+        default_alias_rule = "alias",
     ),
 )
 
 load(
-    "@alias_rule_global_default_annotation_none//:defs.bzl",
-    alias_rule_global_default_annotation_none_crate_repositories = "crate_repositories",
+    "@alias_rule_global_alias_annotation_none//:defs.bzl",
+    alias_rule_global_alias_annotation_none_crate_repositories = "crate_repositories",
 )
 
-alias_rule_global_default_annotation_none_crate_repositories()
+alias_rule_global_alias_annotation_none_crate_repositories()
 
 crates_repository(
-    name = "alias_rule_global_default_annotation_opt",
+    name = "alias_rule_global_alias_annotation_opt",
     annotations = {
         "test_data_passing_crate": [crate.annotation(
             alias_rule = "opt",
@@ -63,23 +63,23 @@ crates_repository(
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//alias_rule:cargo-bazel-lock_global_default_annotation_opt.json",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_opt.json",
     packages = {
         "test_data_passing_crate": crate.spec(
             version = "0.1.0",
         ),
     },
     render_config = render_config(
-        default_alias_rule = "default",
+        default_alias_rule = "alias",
     ),
 )
 
 load(
-    "@alias_rule_global_default_annotation_opt//:defs.bzl",
-    alias_rule_global_default_annotation_opt_crate_repositories = "crate_repositories",
+    "@alias_rule_global_alias_annotation_opt//:defs.bzl",
+    alias_rule_global_alias_annotation_opt_crate_repositories = "crate_repositories",
 )
 
-alias_rule_global_default_annotation_opt_crate_repositories()
+alias_rule_global_alias_annotation_opt_crate_repositories()
 
 crates_repository(
     name = "alias_rule_global_opt_annotation_none",
@@ -111,17 +111,17 @@ load(
 alias_rule_global_opt_annotation_none_crate_repositories()
 
 crates_repository(
-    name = "alias_rule_global_opt_annotation_default",
+    name = "alias_rule_global_opt_annotation_alias",
     annotations = {
         "test_data_passing_crate": [crate.annotation(
-            alias_rule = "default",
+            alias_rule = "alias",
         )],
     },
     cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_default.json",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_alias.json",
     packages = {
         "test_data_passing_crate": crate.spec(
             version = "0.1.0",
@@ -133,11 +133,11 @@ crates_repository(
 )
 
 load(
-    "@alias_rule_global_opt_annotation_default//:defs.bzl",
-    alias_rule_global_opt_annotation_default_crate_repositories = "crate_repositories",
+    "@alias_rule_global_opt_annotation_alias//:defs.bzl",
+    alias_rule_global_opt_annotation_alias_crate_repositories = "crate_repositories",
 )
 
-alias_rule_global_opt_annotation_default_crate_repositories()
+alias_rule_global_opt_annotation_alias_crate_repositories()
 
 crates_repository(
     name = "alias_rule_global_opt_annotation_dbg",

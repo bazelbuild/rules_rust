@@ -1,5 +1,5 @@
 {
-  "checksum": "19c1ffefd9765331fb596c8b0ba3e5f1b906079a19bd861f1cac6441013c2e81",
+  "checksum": "3e7b2116f548d5af4c44284bf219c1fa06195a2952813a4b5b66a5d017024ddd",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -87,7 +87,7 @@
         ]
       },
       "license": "Apache-2.0",
-      "alias_rule": "opt"
+      "alias_rule": "alias"
     }
   },
   "binary_crates": [],

@@ -141,7 +141,7 @@ def parse_alias_rule(value):
     if value == None:
         return None
 
-    if value == "default" or value == "dbg" or value == "fastbuild" or value == "opt":
+    if value == "alias" or value == "dbg" or value == "fastbuild" or value == "opt":
         return value
 
     if value.count(":") != 2:
