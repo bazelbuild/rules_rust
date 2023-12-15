@@ -115,10 +115,8 @@ where
     }
 }
 
-// TODO: after removing the remaining tera template usages of SelectDict, this
-// inherent method should become the Serialize impl.
-impl<T: Ord + Serialize> SelectDict<T> {
-    pub fn serialize_starlark<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+impl<T: Ord + Serialize> Serialize for SelectDict<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -220,9 +218,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_dict
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_dict.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -241,9 +237,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_dict
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_dict.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -274,9 +268,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_dict
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_dict.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -311,9 +303,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_dict
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_dict.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -518,9 +508,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_dict
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_dict.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }

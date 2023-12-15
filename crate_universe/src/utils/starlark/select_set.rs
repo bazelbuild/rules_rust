@@ -110,12 +110,9 @@ where
     }
 }
 
-// TODO: after removing the remaining tera template usages of SelectSet, this
-// inherent method should become the Serialize impl.
-impl<T: Ord> SelectSet<T> {
-    pub fn serialize_starlark<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+impl<T: Ord + Serialize> Serialize for SelectSet<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        T: Serialize,
         S: Serializer,
     {
         // Output looks like:
@@ -207,9 +204,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_set
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_set.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -228,9 +223,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_set
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_set.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -257,9 +250,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_set
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_set.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -289,9 +280,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_set
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_set.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
@@ -427,9 +416,7 @@ mod test {
         "#};
 
         assert_eq!(
-            select_set
-                .serialize_starlark(serde_starlark::Serializer)
-                .unwrap(),
+            select_set.serialize(serde_starlark::Serializer).unwrap(),
             expected_starlark,
         );
     }
