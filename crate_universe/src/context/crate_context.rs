@@ -6,11 +6,9 @@ use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
-use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
+use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{
-    Glob, SelectList, SelectMap, SelectStringDict, SelectStringList, SelectValue,
-};
+use crate::utils::starlark::{Glob, SelectDict, SelectList, SelectMap, SelectValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub struct CrateDependency {
@@ -106,8 +104,8 @@ impl CrateFeatures {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct CommonAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub compile_data: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub compile_data: SelectList<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub compile_data_glob: BTreeSet<String>,
@@ -115,8 +113,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "CrateFeatures::is_empty")]
     pub crate_features: CrateFeatures,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub data: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub data: SelectList<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
@@ -144,14 +142,14 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps_dev: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub rustc_env: SelectStringDict,
-
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_env_files: SelectStringList,
+    #[serde(skip_serializing_if = "SelectDict::is_empty")]
+    pub rustc_env: SelectDict<String>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub rustc_flags: SelectList<String>,
+    pub rustc_env_files: SelectList<String>,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
 
     pub version: String,
 
@@ -190,11 +188,11 @@ impl Default for CommonAttributes {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct BuildScriptAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub compile_data: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub compile_data: SelectList<String>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub data: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub data: SelectList<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
@@ -203,7 +201,7 @@ pub struct BuildScriptAttributes {
     pub deps: SelectList<CrateDependency>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_deps: SelectStringList,
+    pub extra_deps: SelectList<String>,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -226,31 +224,31 @@ pub struct BuildScriptAttributes {
     pub link_deps: SelectList<CrateDependency>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_link_deps: SelectStringList,
+    pub extra_link_deps: SelectList<String>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub build_script_env: SelectStringDict,
+    #[serde(skip_serializing_if = "SelectDict::is_empty")]
+    pub build_script_env: SelectDict<String>,
 
     #[serde(skip_serializing_if = "SelectValue::is_empty")]
     pub rundir: SelectValue<String>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_proc_macro_deps: SelectStringList,
+    pub extra_proc_macro_deps: SelectList<String>,
 
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub proc_macro_deps: SelectList<CrateDependency>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub rustc_env: SelectStringDict,
+    #[serde(skip_serializing_if = "SelectDict::is_empty")]
+    pub rustc_env: SelectDict<String>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_flags: SelectStringList,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_env_files: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub rustc_env_files: SelectList<String>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub tools: SelectStringList,
+    #[serde(skip_serializing_if = "SelectList::is_empty")]
+    pub tools: SelectList<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
@@ -338,7 +336,7 @@ impl CrateContext {
         annotation: &CrateAnnotation,
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
-        extras: &BTreeMap<CrateId, PairredExtras>,
+        extras: &BTreeMap<CrateId, PairedExtras>,
         features: &BTreeMap<CrateId, SelectList<String>>,
         include_binaries: bool,
         include_build_scripts: bool,
@@ -492,7 +490,7 @@ impl CrateContext {
         .with_overrides(extras)
     }
 
-    fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairredExtras>) -> Self {
+    fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairedExtras>) -> Self {
         let id = CrateId::new(self.name.clone(), self.version.clone());
 
         // Insert all overrides/extras
@@ -550,9 +548,7 @@ impl CrateContext {
 
             // Rustc flags
             if let Some(extra) = &crate_extra.rustc_flags {
-                self.common_attrs
-                    .rustc_flags
-                    .extend_select_list(extra.clone());
+                self.common_attrs.rustc_flags.extend(extra.iter().cloned());
             }
 
             // Rustc env
@@ -677,7 +673,7 @@ impl CrateContext {
     /// Determine whether or not a crate __should__ include a build script
     /// (build.rs) if it happens to have one.
     fn crate_includes_build_script(
-        package_extra: Option<(&CrateId, &PairredExtras)>,
+        package_extra: Option<(&CrateId, &PairedExtras)>,
         default_generate_build_script: bool,
     ) -> bool {
         // If the crate has extra settings, which explicitly set `gen_build_script`, always use
@@ -766,11 +762,6 @@ impl CrateContext {
     }
 }
 
-fn clone_tuple<V1: Clone, V2: Clone>(t: (&V1, &V2)) -> (V1, V2) {
-    let (v1, v2) = t;
-    (v1.clone(), v2.clone())
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -831,7 +822,7 @@ mod test {
         let mut pairred_extras = BTreeMap::new();
         pairred_extras.insert(
             CrateId::new("common".to_owned(), "0.1.0".to_owned()),
-            PairredExtras {
+            PairedExtras {
                 package_id,
                 crate_extra: CrateAnnotations {
                     gen_binaries: Some(GenBinaries::All),

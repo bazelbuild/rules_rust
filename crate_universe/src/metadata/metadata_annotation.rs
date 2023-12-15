@@ -338,7 +338,7 @@ impl LockfileAnnotation {
 
 /// A pairing of a crate's package identifier to its annotations.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PairredExtras {
+pub struct PairedExtras {
     /// The crate's package identifier
     pub package_id: cargo_metadata::PackageId,
 
@@ -359,7 +359,7 @@ pub struct Annotations {
     pub config: Config,
 
     /// Pairred crate annotations
-    pub pairred_extras: BTreeMap<CrateId, PairredExtras>,
+    pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
     pub features: BTreeMap<CrateId, SelectList<String>>,
@@ -404,7 +404,7 @@ impl Annotations {
                 } else {
                     Some((
                         CrateId::new(pkg.name.clone(), pkg.version.to_string()),
-                        PairredExtras {
+                        PairedExtras {
                             package_id: pkg_id.clone(),
                             crate_extra,
                         },
@@ -471,6 +471,7 @@ mod test {
     use super::*;
 
     use crate::test::*;
+    use crate::utils::starlark::SelectDict;
 
     #[test]
     fn test_cargo_meta_pkg_to_locked_pkg() {
@@ -568,8 +569,8 @@ mod test {
         let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
         let annotations = CrateAnnotations {
             rustc_env: Some({
-                let mut rustc_env = BTreeMap::new();
-                rustc_env.insert("BAR".to_owned(), "bar is set".to_owned());
+                let mut rustc_env = SelectDict::default();
+                rustc_env.insert("BAR".to_owned(), "bar is set".to_owned(), None);
                 rustc_env
             }),
             ..CrateAnnotations::default()

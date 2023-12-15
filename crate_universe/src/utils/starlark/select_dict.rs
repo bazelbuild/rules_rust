@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::iter::once;
 
-use crate::config::StringOrSelect;
 use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
@@ -64,12 +63,6 @@ impl<T: Ord> SelectDict<T> {
         }
     }
 
-    pub fn extend(&mut self, entries: BTreeMap<String, T>, configuration: Option<String>) {
-        for (key, value) in entries {
-            self.insert(key, value, configuration.clone());
-        }
-    }
-
     pub fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
@@ -93,26 +86,6 @@ impl<T: Ord> From<(BTreeMap<String, T>, BTreeMap<String, BTreeMap<String, T>>)> 
             common: common,
             selects: selects,
             unmapped: BTreeMap::new(),
-        }
-    }
-}
-
-impl SelectDict<String> {
-    pub fn extend_from_string_or_select<Iter: Iterator<Item = (String, StringOrSelect)>>(
-        &mut self,
-        values: Iter,
-    ) {
-        for (key, value) in values {
-            match value {
-                StringOrSelect::Value(value) => {
-                    self.insert(key, value, None);
-                }
-                StringOrSelect::Select(select) => {
-                    for (select_key, value) in select {
-                        self.insert(key.clone(), value, Some(select_key));
-                    }
-                }
-            }
         }
     }
 }

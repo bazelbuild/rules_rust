@@ -123,7 +123,7 @@ impl<T: Clone + Ord> SelectValue<T> {
                 value,
                 original_configurations: None,
             }),
-            SelectValue::Select { selects, unmapped } => {
+            SelectValue::Select { selects, .. } => {
                 // Map new configuration -> value -> old configurations.
                 let mut remapped: BTreeMap<String, (T, BTreeSet<String>)> = BTreeMap::new();
                 // Map value -> old configurations.

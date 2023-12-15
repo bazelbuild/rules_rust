@@ -1,7 +1,6 @@
 use std::collections::{btree_set, BTreeMap, BTreeSet};
 use std::iter::once;
 
-use crate::config::StringOrSelect;
 use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use serde_starlark::{FunctionCall, MULTILINE};
@@ -110,42 +109,6 @@ impl<T: Ord> From<(BTreeSet<T>, BTreeMap<String, BTreeSet<T>>)> for SelectList<T
             selects: selects,
             unmapped: BTreeSet::new(),
         }
-    }
-}
-
-impl SelectList<String> {
-    pub fn extend<Iter: Iterator<Item = StringOrSelect>>(&mut self, values: Iter) {
-        for value in values {
-            match value {
-                StringOrSelect::Value(value) => {
-                    self.insert(value, None);
-                }
-                StringOrSelect::Select(select) => {
-                    for (select_key, value) in select {
-                        self.insert(value.clone(), Some(select_key.clone()));
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl IntoIterator for &SelectList<String> {
-    type Item = StringOrSelect;
-    type IntoIter = <Vec<StringOrSelect> as IntoIterator>::IntoIter;
-    fn into_iter(self) -> Self::IntoIter {
-        let mut all_values = Vec::with_capacity(self.common.len() + self.selects.len());
-        for value in &self.common {
-            all_values.push(StringOrSelect::Value(value.clone()))
-        }
-        for (key, values) in &self.selects {
-            for value in values {
-                let mut map = BTreeMap::new();
-                map.insert(key.clone(), value.clone());
-                all_values.push(StringOrSelect::Select(map))
-            }
-        }
-        all_values.into_iter()
     }
 }
 

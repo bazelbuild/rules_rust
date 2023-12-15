@@ -22,9 +22,6 @@ pub use select_list::*;
 pub use select_value::*;
 pub use target_compatible_with::*;
 
-pub type SelectStringList = SelectList<String>;
-pub type SelectStringDict = SelectDict<String>;
-
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum Starlark {
@@ -134,11 +131,8 @@ pub struct CargoBuildScript {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
-    #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
-    )]
-    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
@@ -247,11 +241,8 @@ pub struct CommonAttrs {
         serialize_with = "SelectList::serialize_starlark"
     )]
     pub rustc_env_files: SelectList<WithOriginalConfigurations<String>>,
-    #[serde(
-        skip_serializing_if = "SelectList::is_empty",
-        serialize_with = "SelectList::serialize_starlark"
-    )]
-    pub rustc_flags: SelectList<WithOriginalConfigurations<String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rustc_flags: Vec<String>,
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
