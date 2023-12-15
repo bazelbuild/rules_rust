@@ -211,20 +211,19 @@ def _annotation(
         ),
     ))
 
-def _select(
-        common = None,
-        selects = None):
-    """A Starlark Select value for `crate.annotation()`.
+def _select(common, selects):
+    """A Starlark Select for `crate.annotation()`.
 
     Args:
-        common (list, optional): An optional value that applies to all configurations.
-        selects (dict, optional): An optional dict of `target_triple` to values.
+        common: A value that applies to all configurations.
+        selects (dict): A dict of `target_triple` to values.
+
     Returns:
         struct: A struct representing the Starlark Select.
     """
     return struct(
-        common = common or [],
-        selects = selects or {},
+        common = common,
+        selects = selects,
     )
 
 crate = struct(
