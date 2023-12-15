@@ -98,11 +98,10 @@ pub fn resolve_cfg_platforms(
             Ok((cfg, triples))
         })
         .collect::<Result<BTreeMap<String, BTreeSet<TargetTriple>>>>()?;
+    // Insert identity relationships.
     for target_triple in supported_platform_triples.iter() {
-        let target = get_builtin_target_by_triple(&target_triple.to_cargo())
-            .expect("TargetTriple has already been validated by `cargo tree` invocation");
         conditions
-            .entry(target.triple.to_string())
+            .entry(target_triple.to_bazel())
             .or_default()
             .insert(target_triple.clone());
     }
