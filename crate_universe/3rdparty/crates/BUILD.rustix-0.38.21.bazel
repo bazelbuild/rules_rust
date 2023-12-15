@@ -121,82 +121,84 @@ rust_library(
         "use-libc-auxv",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "termios",
+            "termios",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "termios",
+            "termios",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "termios",
+            "termios",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "termios",
+            "termios",  # aarch64-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "termios",
+            "termios",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "termios",
+            "termios",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "termios",
+            "termios",  # aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "termios",
+            "termios",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "termios",
+            "termios",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "termios",
+            "termios",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "termios",
+            "termios",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "termios",
+            "termios",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "termios",
+            "termios",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "termios",
+            "termios",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "termios",
+            "termios",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "termios",
+            "termios",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "termios",
+            "termios",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "termios",
+            "termios",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "termios",
+            "termios",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "termios",
+            "termios",  # x86_64-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "termios",
+            "termios",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "termios",
+            "termios",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "termios",
+            "termios",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "termios",
+            "termios",  # x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
     crate_root = "src/lib.rs",
     edition = "2021",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=rustix",
@@ -396,76 +398,76 @@ cargo_build_script(
         "use-libc-auxv",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "termios",
+            "termios",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "termios",
+            "termios",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "termios",
+            "termios",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "termios",
+            "termios",  # aarch64-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "termios",
+            "termios",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "termios",
+            "termios",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "termios",
+            "termios",  # aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "termios",
+            "termios",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "termios",
+            "termios",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "termios",
+            "termios",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "termios",
+            "termios",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "termios",
+            "termios",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "termios",
+            "termios",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "termios",
+            "termios",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "termios",
+            "termios",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "termios",
+            "termios",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "termios",
+            "termios",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "termios",
+            "termios",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "termios",
+            "termios",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "termios",
+            "termios",  # x86_64-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "termios",
+            "termios",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "termios",
+            "termios",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "termios",
+            "termios",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "termios",
+            "termios",  # x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

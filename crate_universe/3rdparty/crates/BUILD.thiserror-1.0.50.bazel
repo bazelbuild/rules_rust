@@ -34,7 +34,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__thiserror-impl-1.0.50//:thiserror_impl",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=thiserror",

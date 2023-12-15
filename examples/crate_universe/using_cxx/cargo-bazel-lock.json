@@ -1,5 +1,5 @@
 {
-  "checksum": "be163b1c4dd6e1307748e3d15a7bb22d5fc7c1dd9b6871d933daa17a01b5b7bc",
+  "checksum": "92e12514e0936f5040ece6d204e571b91ed2a8935e8ac18b9fca1ea6edbf4aba",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -579,7 +579,9 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ],
+    "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nto-qnx710": [
@@ -678,7 +680,9 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [

@@ -36,7 +36,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__maybe-async-0.2.7//:maybe_async",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=gix-protocol",

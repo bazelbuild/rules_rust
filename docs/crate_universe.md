@@ -681,6 +681,29 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
+<a id="crate.select"></a>
+
+## crate.select
+
+<pre>
+crate.select(<a href="#crate.select-common">common</a>, <a href="#crate.select-selects">selects</a>)
+</pre>
+
+A Starlark Select for `crate.annotation()`.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="crate.select-common"></a>common |  A value that applies to all configurations.   |  none |
+| <a id="crate.select-selects"></a>selects |  A dict of <code>target_triple</code> to values.   |  none |
+
+**RETURNS**
+
+struct: A struct representing the Starlark Select.
+
+
 <a id="crate_deps"></a>
 
 ## crate_deps

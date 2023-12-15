@@ -1,5 +1,5 @@
 {
-  "checksum": "7fd3c50d0e8f2eaf8c770b1c3b9f809a2bbe14e80510f5be550225047411b2d3",
+  "checksum": "09992ecfc1397626dd084674d5056f8cca3915c62ca21fec813d3500ed9cbe5b",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1294,7 +1294,9 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ],
+    "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nto-qnx710": [
@@ -1479,7 +1481,9 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [

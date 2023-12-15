@@ -1,5 +1,5 @@
 {
-  "checksum": "9e2d4514efd2e5ad2d36c1e1538d34034c5266e1475c2b19d58562179c46d6fc",
+  "checksum": "286b1a7ad39bc0b435eb37a613f934c3e5f7686f24c08cfb0832aaa52fb37b50",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -806,7 +806,9 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ],
+    "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nto-qnx710": [
@@ -886,7 +888,9 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [

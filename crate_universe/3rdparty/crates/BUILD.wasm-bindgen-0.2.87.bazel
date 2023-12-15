@@ -34,7 +34,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__wasm-bindgen-macro-0.2.87//:wasm_bindgen_macro",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=wasm-bindgen",
