@@ -362,7 +362,7 @@ pub struct Annotations {
     pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
-    pub features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
+    pub crate_features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl Annotations {
@@ -421,7 +421,7 @@ impl Annotations {
             );
         }
 
-        let features = metadata_annotation.workspace_metadata.features.clone();
+        let crate_features = metadata_annotation.workspace_metadata.features.clone();
 
         // Annotate metadata
         Ok(Annotations {
@@ -429,7 +429,7 @@ impl Annotations {
             lockfile: lockfile_annotation,
             config,
             pairred_extras,
-            features,
+            crate_features,
         })
     }
 }

@@ -59,41 +59,6 @@ pub enum Rule {
     BuildScript(TargetAttributes),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum CrateFeatures {
-    // Not populated going forward. This just exists for backward compatiblity
-    // with old lock files.
-    LegacySet(BTreeSet<String>),
-
-    /// Map from target triplet to set of features.
-    SelectSet(Select<BTreeSet<String>>),
-}
-
-impl Default for CrateFeatures {
-    fn default() -> Self {
-        CrateFeatures::SelectSet(Default::default())
-    }
-}
-
-impl From<&CrateFeatures> for Select<BTreeSet<String>> {
-    fn from(value: &CrateFeatures) -> Self {
-        match value {
-            CrateFeatures::LegacySet(s) => Select::from_value(s.clone()),
-            CrateFeatures::SelectSet(sl) => sl.clone(),
-        }
-    }
-}
-
-impl CrateFeatures {
-    pub fn is_empty(&self) -> bool {
-        match self {
-            CrateFeatures::LegacySet(s) => s.is_empty(),
-            CrateFeatures::SelectSet(sl) => sl.is_empty(),
-        }
-    }
-}
-
 /// A set of attributes common to most `rust_library`, `rust_proc_macro`, and other
 /// [core rules of `rules_rust`](https://bazelbuild.github.io/rules_rust/defs.html).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -105,8 +70,8 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub compile_data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "CrateFeatures::is_empty")]
-    pub crate_features: CrateFeatures,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub crate_features: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub data: Select<BTreeSet<String>>,
@@ -332,7 +297,7 @@ impl CrateContext {
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
         extras: &BTreeMap<CrateId, PairedExtras>,
-        features: &BTreeMap<CrateId, Select<BTreeSet<String>>>,
+        crate_features: &BTreeMap<CrateId, Select<BTreeSet<String>>>,
         include_binaries: bool,
         include_build_scripts: bool,
     ) -> Self {
@@ -366,9 +331,11 @@ impl CrateContext {
 
         // Gather all "common" attributes
         let mut common_attrs = CommonAttributes {
-            crate_features: CrateFeatures::SelectSet(
-                features.get(&current_crate_id).cloned().unwrap_or_default(),
-            ),
+            crate_features: crate_features
+                .get(&current_crate_id)
+                .cloned()
+                .unwrap_or_default(),
+
             deps,
             deps_dev,
             edition: package.edition.as_str().to_string(),
@@ -515,16 +482,8 @@ impl CrateContext {
 
             // Crate features
             if let Some(extra) = &crate_extra.crate_features {
-                match &mut self.common_attrs.crate_features {
-                    CrateFeatures::LegacySet(s) => s.extend(
-                        extra
-                            .items()
-                            .into_iter()
-                            .filter(|(configuration, _)| configuration.is_none())
-                            .map(|(_, value)| value),
-                    ),
-                    CrateFeatures::SelectSet(sl) => *sl = Select::merge(sl.clone(), extra.clone()),
-                }
+                self.common_attrs.crate_features =
+                    Select::merge(self.common_attrs.crate_features, extra.clone());
             }
 
             // Data
@@ -786,7 +745,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.features,
+            &annotations.crate_features,
             include_binaries,
             include_build_scripts,
         );
@@ -832,7 +791,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &pairred_extras,
-            &annotations.features,
+            &annotations.crate_features,
             include_binaries,
             include_build_scripts,
         );
@@ -895,7 +854,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.features,
+            &annotations.crate_features,
             include_binaries,
             include_build_scripts,
         );
@@ -940,7 +899,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.features,
+            &annotations.crate_features,
             include_binaries,
             include_build_scripts,
         );
@@ -975,7 +934,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.features,
+            &annotations.crate_features,
             include_binaries,
             include_build_scripts,
         );

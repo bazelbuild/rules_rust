@@ -404,10 +404,7 @@ impl Renderer {
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
             ),
-            crate_features: SelectSet::new(
-                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
-                platforms,
-            ),
+            crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
             data: make_data(
@@ -597,10 +594,7 @@ impl Renderer {
                 krate.common_attrs.compile_data_glob.clone(),
                 krate.common_attrs.compile_data.clone(),
             ),
-            crate_features: SelectSet::new(
-                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
-                platforms,
-            ),
+            crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_root: target.crate_root.clone(),
             data: make_data(
                 platforms,
@@ -855,9 +849,7 @@ mod test {
 
     use crate::config::{Config, CrateId, VendorMode};
     use crate::context::crate_context::{CrateContext, Rule};
-    use crate::context::{
-        BuildScriptAttributes, CommonAttributes, Context, CrateFeatures, TargetAttributes,
-    };
+    use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
     use crate::metadata::Annotations;
     use crate::test;
 
@@ -1268,44 +1260,6 @@ mod test {
     }
 
     #[test]
-    fn legacy_crate_features() {
-        let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
-        context.crates.insert(
-            crate_id.clone(),
-            CrateContext {
-                name: crate_id.name,
-                version: crate_id.version,
-                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                common_attrs: CommonAttributes {
-                    crate_features: CrateFeatures::LegacySet(BTreeSet::from([
-                        "foo".to_owned(),
-                        "bar".to_owned(),
-                    ])),
-                    ..CommonAttributes::default()
-                },
-                ..CrateContext::default()
-            },
-        );
-
-        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
-
-        let build_file_content = output
-            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
-            .unwrap();
-        let expected = indoc! {r#"
-            crate_features = [
-                "bar",
-                "foo",
-            ],
-        "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
-    }
-
-    #[test]
     fn crate_features_by_target() {
         let mut context = Context {
             conditions: mock_supported_platform_triples()
@@ -1315,9 +1269,9 @@ mod test {
             ..Context::default()
         };
         let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
-        let mut features: Select<BTreeSet<String>> = Select::default();
-        features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
-        features.insert("bar".to_owned(), None);
+        let mut crate_features: Select<BTreeSet<String>> = Select::default();
+        crate_features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
+        crate_features.insert("bar".to_owned(), None);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1325,7 +1279,7 @@ mod test {
                 version: crate_id.version,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
-                    crate_features: CrateFeatures::SelectSet(features),
+                    crate_features,
                     ..CommonAttributes::default()
                 },
                 ..CrateContext::default()

@@ -65,7 +65,7 @@ impl Context {
                     &annotations.metadata.packages,
                     &annotations.lockfile.crates,
                     &annotations.pairred_extras,
-                    &annotations.features,
+                    &annotations.crate_features,
                     annotations.config.generate_binaries,
                     annotations.config.generate_build_scripts,
                 );
