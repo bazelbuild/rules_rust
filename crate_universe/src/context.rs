@@ -192,7 +192,7 @@ impl Context {
     }
 
     /// Create a set of all direct dependencies of workspace member crates.
-    pub fn workspace_member_deps(&self) -> BTreeSet<&CrateDependency> {
+    pub fn workspace_member_deps(&self) -> BTreeSet<CrateDependency> {
         self.workspace_members
             .keys()
             .map(move |id| &self.crates[id])

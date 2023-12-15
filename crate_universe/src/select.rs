@@ -23,6 +23,9 @@ where
     fn is_empty(this: &Select<Self>) -> bool;
     fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>);
 
+    fn items(this: &Select<Self>) -> Vec<(Option<String>, Self::ItemType)>;
+    fn values(this: &Select<Self>) -> Vec<Self::ItemType>;
+
     fn merge(lhs: Select<Self>, rhs: Select<Self>) -> Select<Self>;
 }
 
@@ -77,19 +80,28 @@ where
     }
 
     pub fn is_empty(&self) -> bool {
-        T::is_empty(&self)
+        T::is_empty(self)
     }
 
-    pub fn into_parts(self) -> (T::CommonType, BTreeMap<String, T::SelectsType>) {
-        (self.common, self.selects)
+    pub fn configurations(&self) -> Vec<String> {
+        self.selects.keys().cloned().collect()
     }
 
-    pub fn configurations(&self) -> impl Iterator<Item = &String> {
-        self.selects.keys()
+    #[allow(dead_code)] // Should we keep this?
+    pub fn items(&self) -> Vec<(Option<String>, T::ItemType)> {
+        T::items(self)
+    }
+
+    pub fn values(&self) -> Vec<T::ItemType> {
+        T::values(self)
     }
 
     pub fn insert(&mut self, value: T::ItemType, configuration: Option<String>) {
         T::insert(self, value, configuration);
+    }
+
+    pub fn into_parts(self) -> (T::CommonType, BTreeMap<String, T::SelectsType>) {
+        (self.common, self.selects)
     }
 
     pub fn merge(lhs: Self, rhs: Self) -> Self {
@@ -144,11 +156,33 @@ where
     T: SelectableScalar,
 {
     type ItemType = T;
-    type CommonType = Option<T>;
-    type SelectsType = T;
+    type CommonType = Option<Self::ItemType>;
+    type SelectsType = Self::ItemType;
 
     fn is_empty(this: &Select<Self>) -> bool {
         this.common.is_none() && this.selects.is_empty()
+    }
+
+    fn items(this: &Select<Self>) -> Vec<(Option<String>, Self::ItemType)> {
+        let mut result = Vec::new();
+        if let Some(value) = this.common.as_ref() {
+            result.push((None, value.clone()));
+        }
+        result.extend(
+            this.selects
+                .iter()
+                .map(|(configuration, value)| (Some(configuration.clone()), value.clone())),
+        );
+        result
+    }
+
+    fn values(this: &Select<Self>) -> Vec<Self::ItemType> {
+        let mut result = Vec::new();
+        if let Some(value) = this.common.as_ref() {
+            result.push(value.clone());
+        }
+        result.extend(this.selects.values().cloned());
+        result
     }
 
     fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
@@ -203,6 +237,27 @@ where
     }
 }
 
+impl<T> Select<T>
+where
+    T: SelectableScalar,
+{
+    #[allow(dead_code)]
+    pub fn map<U, F>(self, mut func: F) -> Select<U>
+    where
+        U: SelectableScalar,
+        F: Copy + FnMut(T) -> U,
+    {
+        Select {
+            common: self.common.map(func),
+            selects: self
+                .selects
+                .into_iter()
+                .map(|(configuration, value)| (configuration, func(value)))
+                .collect(),
+        }
+    }
+}
+
 // Vec<T>
 impl<T> Selectable for Vec<T>
 where
@@ -214,6 +269,28 @@ where
 
     fn is_empty(this: &Select<Self>) -> bool {
         this.common.is_empty() && this.selects.is_empty()
+    }
+
+    fn items(this: &Select<Self>) -> Vec<(Option<String>, Self::ItemType)> {
+        let mut result = Vec::new();
+        result.extend(this.common.iter().map(|value| (None, value.clone())));
+        result.extend(this.selects.iter().flat_map(|(configuration, values)| {
+            values
+                .iter()
+                .map(|value| (Some(configuration.clone()), value.clone()))
+        }));
+        result
+    }
+
+    fn values(this: &Select<Self>) -> Vec<Self::ItemType> {
+        let mut result = Vec::new();
+        result.extend(this.common.iter().cloned());
+        result.extend(
+            this.selects
+                .values()
+                .flat_map(|values| values.iter().cloned()),
+        );
+        result
     }
 
     fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
@@ -255,6 +332,7 @@ impl<T> Select<Vec<T>>
 where
     T: SelectableValue,
 {
+    #[allow(dead_code)]
     pub fn map<U, F>(self, func: F) -> Select<Vec<U>>
     where
         U: SelectableValue,
@@ -284,6 +362,28 @@ where
 
     fn is_empty(this: &Select<Self>) -> bool {
         this.common.is_empty() && this.selects.is_empty()
+    }
+
+    fn items(this: &Select<Self>) -> Vec<(Option<String>, Self::ItemType)> {
+        let mut result = Vec::new();
+        result.extend(this.common.iter().map(|value| (None, value.clone())));
+        result.extend(this.selects.iter().flat_map(|(configuration, values)| {
+            values
+                .iter()
+                .map(|value| (Some(configuration.clone()), value.clone()))
+        }));
+        result
+    }
+
+    fn values(this: &Select<Self>) -> Vec<Self::ItemType> {
+        let mut result = Vec::new();
+        result.extend(this.common.iter().cloned());
+        result.extend(
+            this.selects
+                .values()
+                .flat_map(|values| values.iter().cloned()),
+        );
+        result
     }
 
     fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
@@ -341,22 +441,6 @@ impl<T> Select<BTreeSet<T>>
 where
     T: SelectableValue,
 {
-    pub fn iter(&self) -> impl Iterator<Item = (Option<&String>, &T)> {
-        Iterator::chain(
-            self.common.iter().map(|value| (None, value)),
-            self.selects.iter().flat_map(|(configuration, values)| {
-                values.iter().map(move |value| (Some(configuration), value))
-            }),
-        )
-    }
-
-    pub fn values(&self) -> impl Iterator<Item = &T> {
-        Iterator::chain(
-            self.common.iter(),
-            self.selects.values().flat_map(|values| values.iter()),
-        )
-    }
-
     pub fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
     where
         U: SelectableValue,
@@ -386,6 +470,36 @@ where
 
     fn is_empty(this: &Select<Self>) -> bool {
         this.common.is_empty() && this.selects.is_empty()
+    }
+
+    fn items(this: &Select<Self>) -> Vec<(Option<String>, Self::ItemType)> {
+        let mut result = Vec::new();
+        result.extend(
+            this.common
+                .iter()
+                .map(|(key, value)| (None, (key.clone(), value.clone()))),
+        );
+        result.extend(this.selects.iter().flat_map(|(configuration, values)| {
+            values
+                .iter()
+                .map(|(key, value)| (Some(configuration.clone()), (key.clone(), value.clone())))
+        }));
+        result
+    }
+
+    fn values(this: &Select<Self>) -> Vec<Self::ItemType> {
+        let mut result = Vec::new();
+        result.extend(
+            this.common
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone())),
+        );
+        result.extend(this.selects.values().flat_map(|values| {
+            values
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone()))
+        }));
+        result
     }
 
     fn insert(
@@ -450,6 +564,7 @@ impl<T> Select<BTreeMap<String, T>>
 where
     T: SelectableValue,
 {
+    #[allow(dead_code)]
     pub fn map<U, F>(self, mut func: F) -> Select<BTreeMap<String, U>>
     where
         U: SelectableValue,

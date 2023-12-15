@@ -296,8 +296,6 @@ fn get_target_alias(target_name: &str, package: &Package) -> Option<String> {
 mod test {
     use std::collections::BTreeSet;
 
-    use crate::select::SelectCommon;
-
     use super::*;
 
     use crate::test::*;
@@ -473,7 +471,8 @@ mod test {
         let build_deps: BTreeSet<String> = libssh2_depset
             .build_deps
             .values()
-            .map(|dep| dep.package_id.repr.clone())
+            .into_iter()
+            .map(|dep| dep.package_id.repr)
             .collect();
 
         assert_eq!(
@@ -490,6 +489,7 @@ mod test {
         let normal_deps: BTreeSet<String> = libssh2_depset
             .normal_deps
             .values()
+            .into_iter()
             .map(|dep| dep.package_id.to_string())
             .collect();
 
@@ -571,9 +571,10 @@ mod test {
 
         let libc_cfgs: BTreeSet<Option<String>> = dependencies
             .normal_deps
-            .iter()
+            .items()
+            .into_iter()
             .filter(|(_, dep)| dep.target_name == "libc")
-            .map(|(configuration, _)| configuration.cloned())
+            .map(|(configuration, _)| configuration)
             .collect();
 
         assert_eq!(

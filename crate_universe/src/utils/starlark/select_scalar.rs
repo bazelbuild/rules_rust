@@ -194,7 +194,7 @@ mod test {
     #[test]
     fn no_platform_specific_select_value() {
         let mut select: Select<String> = Select::default();
-        select.set("Hello".to_owned(), None);
+        select.insert("Hello".to_owned(), None);
 
         let select_value = SelectScalar::new(select, &Default::default());
 
@@ -211,7 +211,7 @@ mod test {
     #[test]
     fn only_platform_specific_select_value() {
         let mut select: Select<String> = Select::default();
-        select.set("Hello".to_owned(), Some("platform".to_owned()));
+        select.insert("Hello".to_owned(), Some("platform".to_owned()));
 
         let platforms = BTreeMap::from([(
             "platform".to_owned(),
@@ -235,8 +235,8 @@ mod test {
     #[test]
     fn mixed_select_value() {
         let mut select: Select<String> = Select::default();
-        select.set("Hello".to_owned(), Some("platform".to_owned()));
-        select.set("Goodbye".to_owned(), None);
+        select.insert("Hello".to_owned(), Some("platform".to_owned()));
+        select.insert("Goodbye".to_owned(), None);
 
         let platforms = BTreeMap::from([(
             "platform".to_owned(),
@@ -261,11 +261,11 @@ mod test {
     #[test]
     fn remap_select_value_configurations() {
         let mut select: Select<String> = Select::default();
-        select.set("a".to_owned(), Some("cfg(macos)".to_owned()));
-        select.set("a".to_owned(), Some("cfg(x86_64)".to_owned()));
-        select.set("e".to_owned(), Some("cfg(pdp11)".to_owned()));
-        select.set("f".to_owned(), Some("@platforms//os:magic".to_owned()));
-        select.set("g".to_owned(), Some("//another:platform".to_owned()));
+        select.insert("a".to_owned(), Some("cfg(macos)".to_owned()));
+        select.insert("a".to_owned(), Some("cfg(x86_64)".to_owned()));
+        select.insert("e".to_owned(), Some("cfg(pdp11)".to_owned()));
+        select.insert("f".to_owned(), Some("@platforms//os:magic".to_owned()));
+        select.insert("g".to_owned(), Some("//another:platform".to_owned()));
 
         let platforms = BTreeMap::from([
             (

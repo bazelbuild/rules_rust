@@ -80,7 +80,7 @@ pub struct CargoBuildScript {
     pub aliases: SelectDict<String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub build_script_env: SelectDict<String>,
-    // #[serde(skip_serializing_if = "Data::is_empty")]
+    #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub crate_features: SelectSet<String>,

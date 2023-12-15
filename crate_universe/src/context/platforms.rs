@@ -34,7 +34,6 @@ pub fn resolve_cfg_platforms(
 
             configurations
         })
-        .cloned()
         .collect();
 
     // Generate target information for each triple string

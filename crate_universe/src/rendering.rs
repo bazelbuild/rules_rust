@@ -186,7 +186,7 @@ impl Renderer {
                 dependencies.push(Alias {
                     rule: alias_rule.rule(),
                     // If duplicates exist, include version to disambiguate them.
-                    name: if context.has_duplicate_workspace_member_dep(dep) {
+                    name: if context.has_duplicate_workspace_member_dep(&dep) {
                         format!("{}-{}", rename, krate.version)
                     } else {
                         rename.clone()

@@ -234,7 +234,7 @@ mod test {
     #[test]
     fn no_platform_specific_select_dict() {
         let mut select: Select<BTreeMap<String, String>> = Select::default();
-        select.insert("Greeting".to_owned(), "Hello".to_owned(), None);
+        select.insert(("Greeting".to_owned(), "Hello".to_owned()), None);
 
         let select_dict = SelectDict::new(select, &Default::default());
 
@@ -254,8 +254,7 @@ mod test {
     fn only_platform_specific_select_dict() {
         let mut select: Select<BTreeMap<String, String>> = Select::default();
         select.insert(
-            "Greeting".to_owned(),
-            "Hello".to_owned(),
+            ("Greeting".to_owned(), "Hello".to_owned()),
             Some("platform".to_owned()),
         );
 
@@ -285,11 +284,10 @@ mod test {
     fn mixed_select_dict() {
         let mut select: Select<BTreeMap<String, String>> = Select::default();
         select.insert(
-            "Greeting".to_owned(),
-            "Hello".to_owned(),
+            ("Greeting".to_owned(), "Hello".to_owned()),
             Some("platform".to_owned()),
         );
-        select.insert("Message".to_owned(), "Goodbye".to_owned(), None);
+        select.insert(("Message".to_owned(), "Goodbye".to_owned()), None);
 
         let platforms = BTreeMap::from([(
             "platform".to_owned(),
@@ -320,44 +318,36 @@ mod test {
     fn remap_select_dict_configurations() {
         let mut select: Select<BTreeMap<String, String>> = Select::default();
         select.insert(
-            "dep-a".to_owned(),
-            "a".to_owned(),
+            ("dep-a".to_owned(), "a".to_owned()),
             Some("cfg(macos)".to_owned()),
         );
         select.insert(
-            "dep-b".to_owned(),
-            "b".to_owned(),
+            ("dep-b".to_owned(), "b".to_owned()),
             Some("cfg(macos)".to_owned()),
         );
         select.insert(
-            "dep-d".to_owned(),
-            "d".to_owned(),
+            ("dep-d".to_owned(), "d".to_owned()),
             Some("cfg(macos)".to_owned()),
         );
         select.insert(
-            "dep-a".to_owned(),
-            "a".to_owned(),
+            ("dep-a".to_owned(), "a".to_owned()),
             Some("cfg(x86_64)".to_owned()),
         );
         select.insert(
-            "dep-c".to_owned(),
-            "c".to_owned(),
+            ("dep-c".to_owned(), "c".to_owned()),
             Some("cfg(x86_64)".to_owned()),
         );
         select.insert(
-            "dep-e".to_owned(),
-            "e".to_owned(),
+            ("dep-e".to_owned(), "e".to_owned()),
             Some("cfg(pdp11)".to_owned()),
         );
-        select.insert("dep-d".to_owned(), "d".to_owned(), None);
+        select.insert(("dep-d".to_owned(), "d".to_owned()), None);
         select.insert(
-            "dep-f".to_owned(),
-            "f".to_owned(),
+            ("dep-f".to_owned(), "f".to_owned()),
             Some("@platforms//os:magic".to_owned()),
         );
         select.insert(
-            "dep-g".to_owned(),
-            "g".to_owned(),
+            ("dep-g".to_owned(), "g".to_owned()),
             Some("//another:platform".to_owned()),
         );
 
