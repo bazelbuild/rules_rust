@@ -36,7 +36,7 @@ where
 {
     fn from(common: T) -> Self {
         Self {
-            common: common,
+            common,
             selects: BTreeMap::new(),
         }
     }
@@ -47,10 +47,7 @@ where
     T: Debug + Default + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
 {
     fn from((common, selects): (T, BTreeMap<String, T>)) -> Self {
-        Self {
-            common: common,
-            selects: selects,
-        }
+        Self { common, selects }
     }
 }
 

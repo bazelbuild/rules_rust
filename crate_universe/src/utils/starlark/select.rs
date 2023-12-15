@@ -23,7 +23,7 @@ pub trait Select<T> {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct WithOriginalConfigurations<T> {
     pub value: T,
-    pub original_configurations: Option<BTreeSet<String>>,
+    pub original_configurations: BTreeSet<String>,
 }
 
 #[derive(Serialize)]
@@ -38,13 +38,9 @@ where
     where
         S: Serializer,
     {
-        if let Some(original_configurations) = &self.original_configurations {
-            let comment =
-                Vec::from_iter(original_configurations.iter().map(String::as_str)).join(", ");
-            LineComment::new(&self.value, &comment).serialize(serializer)
-        } else {
-            self.value.serialize(serializer)
-        }
+        let comment =
+            Vec::from_iter(self.original_configurations.iter().map(String::as_str)).join(", ");
+        LineComment::new(&self.value, &comment).serialize(serializer)
     }
 }
 

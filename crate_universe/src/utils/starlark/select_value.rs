@@ -13,7 +13,7 @@ use crate::utils::starlark::{
 
 #[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SelectValue<T> {
-    common: Option<WithOriginalConfigurations<T>>,
+    common: Option<T>,
     selects: BTreeMap<String, WithOriginalConfigurations<T>>,
     // Element that used to be in `selects` before the most recent
     // `remap_configurations` operation, but whose old configuration did not get
@@ -69,10 +69,7 @@ impl SelectValue<String> {
 
         Self {
             common: match !common.is_empty() {
-                true => Some(WithOriginalConfigurations {
-                    value: common,
-                    original_configurations: None,
-                }),
+                true => Some(common),
                 false => None,
             },
             selects: remapped
@@ -82,7 +79,7 @@ impl SelectValue<String> {
                         new_configuration,
                         WithOriginalConfigurations {
                             value,
-                            original_configurations: Some(original_configurations),
+                            original_configurations,
                         },
                     )
                 })
@@ -92,7 +89,7 @@ impl SelectValue<String> {
                 .map(
                     |(value, original_configurations)| WithOriginalConfigurations {
                         value,
-                        original_configurations: Some(original_configurations),
+                        original_configurations,
                     },
                 )
                 .collect(),
@@ -103,7 +100,7 @@ impl SelectValue<String> {
 impl SelectValue<String> {
     /// Determine whether or not the select should be serialized
     pub fn is_empty(&self) -> bool {
-        self.common.is_some() && self.selects.is_empty() && self.unmapped.is_empty()
+        self.common.is_none() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }
 
@@ -301,48 +298,46 @@ mod test {
                     "x86_64-macos".to_owned(),
                     WithOriginalConfigurations {
                         value: "a".to_owned(),
-                        original_configurations: Some(BTreeSet::from([
+                        original_configurations: BTreeSet::from([
                             "cfg(macos)".to_owned(),
                             "cfg(x86_64)".to_owned(),
-                        ])),
+                        ]),
                     },
                 ),
                 (
                     "aarch64-macos".to_owned(),
                     WithOriginalConfigurations {
                         value: "a".to_owned(),
-                        original_configurations: Some(BTreeSet::from(["cfg(macos)".to_owned()])),
+                        original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                     },
                 ),
                 (
                     "x86_64-linux".to_owned(),
                     WithOriginalConfigurations {
                         value: "a".to_owned(),
-                        original_configurations: Some(BTreeSet::from(["cfg(x86_64)".to_owned()])),
+                        original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                     },
                 ),
                 (
                     "@platforms//os:magic".to_owned(),
                     WithOriginalConfigurations {
                         value: "f".to_owned(),
-                        original_configurations: Some(BTreeSet::from([
-                            "@platforms//os:magic".to_owned()
-                        ])),
+                        original_configurations: BTreeSet::from(
+                            ["@platforms//os:magic".to_owned()],
+                        ),
                     },
                 ),
                 (
                     "//another:platform".to_owned(),
                     WithOriginalConfigurations {
                         value: "g".to_owned(),
-                        original_configurations: Some(BTreeSet::from([
-                            "//another:platform".to_owned()
-                        ])),
+                        original_configurations: BTreeSet::from(["//another:platform".to_owned()]),
                     },
                 ),
             ]),
             unmapped: Vec::from([WithOriginalConfigurations {
                 value: "e".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+                original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
             }]),
         };
 

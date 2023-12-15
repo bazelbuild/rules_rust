@@ -13,7 +13,7 @@ use crate::utils::starlark::{
 #[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SelectDict<T: Ord> {
     // Invariant: keys in this map are not in any of the inner maps of `selects`.
-    common: BTreeMap<String, WithOriginalConfigurations<T>>,
+    common: BTreeMap<String, T>,
     // Invariant: none of the inner maps are empty.
     selects: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>>,
     // Elements that used to be in `selects` before the most recent
@@ -75,18 +75,7 @@ where
         }
 
         Self {
-            common: common
-                .into_iter()
-                .map(|(key, value)| {
-                    (
-                        key,
-                        WithOriginalConfigurations {
-                            value,
-                            original_configurations: None,
-                        },
-                    )
-                })
-                .collect(),
+            common,
             selects: remapped
                 .into_iter()
                 .map(|(new_configuration, entry_to_original_configuration)| {
@@ -99,7 +88,7 @@ where
                                     key,
                                     WithOriginalConfigurations {
                                         value,
-                                        original_configurations: Some(original_configurations),
+                                        original_configurations,
                                     },
                                 )
                             })
@@ -114,7 +103,7 @@ where
                         key,
                         WithOriginalConfigurations {
                             value,
-                            original_configurations: Some(original_configurations),
+                            original_configurations,
                         },
                     )
                 })
@@ -177,11 +166,26 @@ impl<T: Ord + Serialize> SelectDict<T> {
                 S: Serializer,
             {
                 let mut map = serializer.serialize_map(Some(MULTILINE))?;
-                for (cfg, value) in &self.0.selects {
+                for (configuration, dict) in &self.0.selects {
+                    #[derive(Serialize)]
+                    #[serde(untagged)]
+                    enum Either<'a, T> {
+                        Common(&'a T),
+                        Selects(&'a WithOriginalConfigurations<T>),
+                    }
+
                     let mut combined = BTreeMap::new();
-                    combined.extend(&self.0.common);
-                    combined.extend(value);
-                    map.serialize_entry(cfg, &combined)?;
+                    combined.extend(
+                        self.0
+                            .common
+                            .iter()
+                            .map(|(key, value)| (key, Either::Common(value))),
+                    );
+                    combined.extend(
+                        dict.iter()
+                            .map(|(key, value)| (key, Either::Selects(value))),
+                    );
+                    map.serialize_entry(configuration, &combined)?;
                 }
                 map.serialize_entry("//conditions:default", &self.0.common)?;
                 if !self.0.unmapped.is_empty() {
@@ -374,13 +378,7 @@ mod test {
         let select_dict = SelectDict::new(select, &platforms);
 
         let expected = SelectDict {
-            common: BTreeMap::from([(
-                "dep-d".to_string(),
-                WithOriginalConfigurations {
-                    value: "d".to_owned(),
-                    original_configurations: None,
-                },
-            )]),
+            common: BTreeMap::from([("dep-d".to_string(), "d".to_owned())]),
             selects: BTreeMap::from([
                 (
                     "x86_64-macos".to_owned(),
@@ -389,28 +387,24 @@ mod test {
                             "dep-a".to_string(),
                             WithOriginalConfigurations {
                                 value: "a".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
+                                original_configurations: BTreeSet::from([
                                     "cfg(macos)".to_owned(),
                                     "cfg(x86_64)".to_owned(),
-                                ])),
+                                ]),
                             },
                         ),
                         (
                             "dep-b".to_string(),
                             WithOriginalConfigurations {
                                 value: "b".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(macos)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                             },
                         ),
                         (
                             "dep-c".to_string(),
                             WithOriginalConfigurations {
                                 value: "c".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(x86_64)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                             },
                         ),
                     ]),
@@ -422,18 +416,14 @@ mod test {
                             "dep-a".to_string(),
                             WithOriginalConfigurations {
                                 value: "a".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(macos)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                             },
                         ),
                         (
                             "dep-b".to_string(),
                             WithOriginalConfigurations {
                                 value: "b".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(macos)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                             },
                         ),
                     ]),
@@ -445,18 +435,14 @@ mod test {
                             "dep-a".to_string(),
                             WithOriginalConfigurations {
                                 value: "a".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(x86_64)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                             },
                         ),
                         (
                             "dep-c".to_string(),
                             WithOriginalConfigurations {
                                 value: "c".to_owned(),
-                                original_configurations: Some(BTreeSet::from([
-                                    "cfg(x86_64)".to_owned()
-                                ])),
+                                original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                             },
                         ),
                     ]),
@@ -467,9 +453,9 @@ mod test {
                         "dep-f".to_string(),
                         WithOriginalConfigurations {
                             value: "f".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
+                            original_configurations: BTreeSet::from([
                                 "@platforms//os:magic".to_owned()
-                            ])),
+                            ]),
                         },
                     )]),
                 ),
@@ -479,9 +465,9 @@ mod test {
                         "dep-g".to_string(),
                         WithOriginalConfigurations {
                             value: "g".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
+                            original_configurations: BTreeSet::from([
                                 "//another:platform".to_owned()
-                            ])),
+                            ]),
                         },
                     )]),
                 ),
@@ -490,7 +476,7 @@ mod test {
                 "dep-e".to_string(),
                 WithOriginalConfigurations {
                     value: "e".to_owned(),
-                    original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+                    original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
                 },
             )]),
         };

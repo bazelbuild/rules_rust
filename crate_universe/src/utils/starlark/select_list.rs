@@ -14,7 +14,7 @@ use crate::utils::starlark::{
 #[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SelectList<T> {
     // Invariant: any T in `common` is not anywhere in `selects`.
-    common: Vec<WithOriginalConfigurations<T>>,
+    common: Vec<T>,
     // Invariant: none of the sets are empty.
     selects: BTreeMap<String, Vec<WithOriginalConfigurations<T>>>,
     // Elements that used to be in `selects` before the most recent
@@ -67,13 +67,7 @@ where
         }
 
         Self {
-            common: common
-                .into_iter()
-                .map(|value| WithOriginalConfigurations {
-                    value,
-                    original_configurations: None,
-                })
-                .collect(),
+            common,
             selects: remapped
                 .into_iter()
                 .map(|(new_configuration, value_to_original_configuration)| {
@@ -84,9 +78,9 @@ where
                             .map(
                                 |(value, original_configuration)| WithOriginalConfigurations {
                                     value,
-                                    original_configurations: Some(BTreeSet::from([
+                                    original_configurations: BTreeSet::from([
                                         original_configuration,
-                                    ])),
+                                    ]),
                                 },
                             )
                             .collect(),
@@ -98,7 +92,7 @@ where
                 .map(
                     |(value, original_configuration)| WithOriginalConfigurations {
                         value,
-                        original_configurations: Some(BTreeSet::from([original_configuration])),
+                        original_configurations: BTreeSet::from([original_configuration]),
                     },
                 )
                 .collect(),
@@ -325,43 +319,30 @@ mod test {
         let select_list = SelectList::new(select, &platforms);
 
         let expected = SelectList {
-            common: Vec::from([WithOriginalConfigurations {
-                value: "dep-d".to_owned(),
-                original_configurations: None,
-            }]),
+            common: Vec::from(["dep-d".to_owned()]),
             selects: BTreeMap::from([
                 (
                     "x86_64-macos".to_owned(),
                     Vec::from([
                         WithOriginalConfigurations {
                             value: "dep-a".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-b".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-d".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-a".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
-                                "cfg(x86_64)".to_owned()
-                            ])),
+                            original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-c".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
-                                "cfg(x86_64)".to_owned()
-                            ])),
+                            original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                         },
                     ]),
                 ),
@@ -370,21 +351,15 @@ mod test {
                     Vec::from([
                         WithOriginalConfigurations {
                             value: "dep-a".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-b".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-d".to_owned(),
-                            original_configurations: Some(BTreeSet::from(
-                                ["cfg(macos)".to_owned()],
-                            )),
+                            original_configurations: BTreeSet::from(["cfg(macos)".to_owned()]),
                         },
                     ]),
                 ),
@@ -393,15 +368,11 @@ mod test {
                     Vec::from([
                         WithOriginalConfigurations {
                             value: "dep-a".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
-                                "cfg(x86_64)".to_owned()
-                            ])),
+                            original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                         },
                         WithOriginalConfigurations {
                             value: "dep-c".to_owned(),
-                            original_configurations: Some(BTreeSet::from([
-                                "cfg(x86_64)".to_owned()
-                            ])),
+                            original_configurations: BTreeSet::from(["cfg(x86_64)".to_owned()]),
                         },
                     ]),
                 ),
@@ -409,24 +380,22 @@ mod test {
                     "@platforms//os:magic".to_owned(),
                     Vec::from([WithOriginalConfigurations {
                         value: "dep-f".to_owned(),
-                        original_configurations: Some(BTreeSet::from([
-                            "@platforms//os:magic".to_owned()
-                        ])),
+                        original_configurations: BTreeSet::from(
+                            ["@platforms//os:magic".to_owned()],
+                        ),
                     }]),
                 ),
                 (
                     "//another:platform".to_owned(),
                     Vec::from([WithOriginalConfigurations {
                         value: "dep-g".to_owned(),
-                        original_configurations: Some(BTreeSet::from([
-                            "//another:platform".to_owned()
-                        ])),
+                        original_configurations: BTreeSet::from(["//another:platform".to_owned()]),
                     }]),
                 ),
             ]),
             unmapped: Vec::from([WithOriginalConfigurations {
                 value: "dep-e".to_owned(),
-                original_configurations: Some(BTreeSet::from(["cfg(pdp11)".to_owned()])),
+                original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
             }]),
         };
 

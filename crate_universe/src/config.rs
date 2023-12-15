@@ -856,7 +856,7 @@ mod test {
             .unwrap();
         assert_eq!(
             annotation.crate_features,
-            Some(BTreeSet::from(["small_rng".to_owned()]))
+            Some(Select::from(BTreeSet::from(["small_rng".to_owned()])))
         );
 
         // Global settings

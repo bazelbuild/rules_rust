@@ -471,7 +471,6 @@ mod test {
     use super::*;
 
     use crate::test::*;
-    use crate::utils::starlark::SelectDict;
 
     #[test]
     fn test_cargo_meta_pkg_to_locked_pkg() {

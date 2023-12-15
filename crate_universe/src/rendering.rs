@@ -872,7 +872,6 @@ mod test {
     };
     use crate::metadata::Annotations;
     use crate::test;
-    use crate::utils::starlark::SelectSet;
 
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
