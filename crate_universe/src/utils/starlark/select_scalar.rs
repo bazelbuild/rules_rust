@@ -12,7 +12,7 @@ use crate::utils::starlark::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectValue<T>
+pub struct SelectScalar<T>
 where
     T: SelectableScalar,
 {
@@ -25,13 +25,13 @@ where
     unmapped: Vec<WithOriginalConfigurations<T>>,
 }
 
-impl<T> SelectValue<T>
+impl<T> SelectScalar<T>
 where
     T: SelectableScalar,
 {
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
-    /// configurations in the output SelectValue.
+    /// configurations in the output SelectScalar.
     pub fn new(select: Select<T>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
         let (common, selects) = select.into_parts();
 
@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<T> Serialize for SelectValue<T>
+impl<T> Serialize for SelectScalar<T>
 where
     T: SelectableScalar,
 {
@@ -131,7 +131,7 @@ where
             return self.common.as_ref().unwrap().serialize(serializer);
         }
 
-        struct SelectInner<'a, T>(&'a SelectValue<T>)
+        struct SelectInner<'a, T>(&'a SelectScalar<T>)
         where
             T: SelectableScalar;
 
@@ -178,8 +178,8 @@ mod test {
 
     #[test]
     fn empty_select_value() {
-        let select_value: SelectValue<String> =
-            SelectValue::new(Default::default(), &Default::default());
+        let select_value: SelectScalar<String> =
+            SelectScalar::new(Default::default(), &Default::default());
 
         let expected_starlark = indoc! {r#"
             select({})
@@ -196,7 +196,7 @@ mod test {
         let mut select: Select<String> = Select::default();
         select.set("Hello".to_owned(), None);
 
-        let select_value = SelectValue::new(select, &Default::default());
+        let select_value = SelectScalar::new(select, &Default::default());
 
         let expected_starlark = indoc! {r#"
             "Hello"
@@ -218,7 +218,7 @@ mod test {
             BTreeSet::from(["platform".to_owned()]),
         )]);
 
-        let select_value = SelectValue::new(select, &platforms);
+        let select_value = SelectScalar::new(select, &platforms);
 
         let expected_starlark = indoc! {r#"
             select({
@@ -243,7 +243,7 @@ mod test {
             BTreeSet::from(["platform".to_owned()]),
         )]);
 
-        let select_value = SelectValue::new(select, &platforms);
+        let select_value = SelectScalar::new(select, &platforms);
 
         let expected_starlark = indoc! {r#"
             select({
@@ -278,9 +278,9 @@ mod test {
             ),
         ]);
 
-        let select_value = SelectValue::new(select, &platforms);
+        let select_value = SelectScalar::new(select, &platforms);
 
-        let expected = SelectValue {
+        let expected = SelectScalar {
             common: None,
             selects: BTreeMap::from([
                 (

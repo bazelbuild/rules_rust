@@ -5,8 +5,8 @@ mod label;
 mod select;
 mod select_dict;
 mod select_list;
+mod select_scalar;
 mod select_set;
-mod select_value;
 mod serialize;
 mod target_compatible_with;
 
@@ -20,8 +20,8 @@ pub use label::*;
 pub use select::*;
 pub use select_dict::*;
 pub use select_list::*;
+pub use select_scalar::*;
 pub use select_set::*;
-pub use select_value::*;
 pub use target_compatible_with::*;
 
 #[derive(Serialize)]
@@ -100,8 +100,8 @@ pub struct CargoBuildScript {
     pub links: Option<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub proc_macro_deps: SelectSet<String>,
-    #[serde(skip_serializing_if = "SelectValue::is_empty")]
-    pub rundir: SelectValue<String>,
+    #[serde(skip_serializing_if = "SelectScalar::is_empty")]
+    pub rundir: SelectScalar<String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub rustc_env: SelectDict<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
