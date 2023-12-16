@@ -2,6 +2,8 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 # Disabled targets need the user to supply a sysroot in `flake.nix` first.
 
+# Explicit filegroup as globbed `//...` will skip targets without an error if
+# `cargo-bazel` doesn't generate a target for a given platform.
 build_test(
     name = "nix_cross_compiling",
     targets = [

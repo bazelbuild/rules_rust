@@ -7,7 +7,7 @@ rust_toolchain(
     cargo = "@nix_rust//:cargo",
     clippy_driver = "@nix_rust//:clippy_driver",
     default_edition = "2021",
-    dylib_ext = ".so",
+    dylib_ext = ".dylib",
     env = {
         "SDKROOT": SDK_UNIVERSAL_APPLE_IOS,
     },
