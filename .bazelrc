@@ -19,6 +19,11 @@ coverage --combined_report=lcov
 # Avoid fully cached builds reporting no coverage and failing CI
 # https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
 coverage --experimental_fetch_all_coverage_outputs
+coverage --experimental_split_coverage_postprocessing
+coverage --remote_download_toplevel
+coverage --test_env=VERBOSE_COVERAGE=1
+coverage --test_env=RUST_BACKTRACE=1
+coverage --test_output=errors
 
 # Required for some of the tests
 # https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
