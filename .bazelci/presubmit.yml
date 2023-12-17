@@ -56,15 +56,8 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets:
-      - "--"
-      - "//..."
-    test_targets:
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-      - "-//test/conflicting_deps:conflicting_deps_test"
-      # TODO: This test does not work on RBE
-      - "-//test/versioned_dylib:versioned_dylib_test"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -126,14 +119,9 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets:
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-      - "-//test/conflicting_deps:conflicting_deps_test"
-      # TODO: This test does not work on RBE
-      - "-//test/versioned_dylib:versioned_dylib_test"
     build_flags: *aspects_flags
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
   rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
@@ -141,12 +129,7 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
-    test_targets:
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-      - "-//test/conflicting_deps:conflicting_deps_test"
-      # TODO: This test does not work on RBE
-      - "-//test/versioned_dylib:versioned_dylib_test"
+    test_targets: *default_linux_targets
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"

@@ -43,19 +43,19 @@ build --incompatible_disallow_empty_glob=true
 build --nolegacy_external_runfiles
 
 ###############################################################################
-## Custom user flags
-##
-## This should always be the last thing in the `.bazelrc` file to ensure
-## consistent behavior when setting flags in that file as `.bazelrc` files are
-## evaluated top to bottom.
-###############################################################################
-
-###############################################################################
 ## Bzlmod
 ###############################################################################
 
 # TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
 # https://github.com/bazelbuild/rules_rust/issues/2181
 common --noenable_bzlmod
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
 
 try-import %workspace%/user.bazelrc
