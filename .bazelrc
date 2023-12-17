@@ -5,6 +5,16 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
+# Skip building runfiles links for faster builds.
+build --nobuild_runfile_links
+
+# TODO: Coverage errors are not reported
+coverage --test_output=errors
+
+# Enable more verbose logging
+coverage --test_env=VERBOSE_COVERAGE=1
+coverage --test_env=RUST_BACKTRACE=1
+
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
 
