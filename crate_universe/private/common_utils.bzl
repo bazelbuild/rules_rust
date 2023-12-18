@@ -128,3 +128,33 @@ def cargo_environ(repository_ctx):
         })
 
     return env
+
+def parse_alias_rule(value):
+    """Attempts to parse an `AliasRule` from supplied string.
+
+    Args:
+        value (str): String value to be parsed.
+
+    Returns:
+        value: A Rust compatible `AliasRule`.
+    """
+    if value == None:
+        return None
+
+    if value == "alias" or value == "dbg" or value == "fastbuild" or value == "opt":
+        return value
+
+    if value.count(":") != 2:
+        fail("Invalid custom value for `alias_rule`.\n{}\nValues must be in the format '<label to .bzl>:<rule>'.".format(value))
+
+    split = value.rsplit(":", 1)
+    bzl = Label(split[0])
+    rule = split[1]
+
+    if rule == "alias":
+        fail("Custom value rule cannot be named `alias`.\n{}".format(value))
+
+    return struct(
+        bzl = str(bzl),
+        rule = rule,
+    )

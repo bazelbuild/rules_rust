@@ -9,7 +9,7 @@ mod target_compatible_with;
 use std::collections::BTreeSet as Set;
 
 use serde::{Serialize, Serializer};
-use serde_starlark::Error as StarlarkError;
+use serde_starlark::{Error as StarlarkError, FunctionCall};
 
 pub use glob::*;
 pub use label::*;
@@ -60,9 +60,8 @@ pub struct Filegroup {
     pub srcs: Glob,
 }
 
-#[derive(Serialize)]
-#[serde(rename = "alias")]
 pub struct Alias {
+    pub rule: String,
     pub name: String,
     pub actual: String,
     pub tags: Set<String>,
@@ -244,23 +243,9 @@ pub struct CommonAttrs {
     pub srcs: Glob,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
-    #[serde(
-        serialize_with = "serialize_target_compatible_with",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target_compatible_with: Option<TargetCompatibleWith>,
     pub version: String,
-}
-
-fn serialize_target_compatible_with<S>(
-    value: &Option<TargetCompatibleWith>,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    // SAFETY: Option::is_none causes serialization to get skipped.
-    value.as_ref().unwrap().serialize_starlark(serializer)
 }
 
 pub struct Data {
@@ -273,6 +258,41 @@ impl Package {
         let mut default_visibility = Set::new();
         default_visibility.insert("//visibility:public".to_owned());
         Package { default_visibility }
+    }
+}
+
+impl Serialize for Alias {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Output looks like:
+        //
+        //     rule(
+        //         name = "name",
+        //         actual = "actual",
+        //         tags = [
+        //            "tag1",
+        //            "tag2",
+        //         ],
+        //     )
+
+        #[derive(Serialize)]
+        struct AliasInner<'a> {
+            pub name: &'a String,
+            pub actual: &'a String,
+            pub tags: &'a Set<String>,
+        }
+
+        FunctionCall::new(
+            &self.rule,
+            AliasInner {
+                name: &self.name,
+                actual: &self.actual,
+                tags: &self.tags,
+            },
+        )
+        .serialize(serializer)
     }
 }
 

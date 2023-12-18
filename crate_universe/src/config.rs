@@ -67,6 +67,10 @@ pub struct RenderConfig {
     #[serde(default = "default_crate_repository_template")]
     pub crate_repository_template: String,
 
+    /// Default alias rule to use for packages.  Can be overridden by annotations.
+    #[serde(default)]
+    pub default_alias_rule: AliasRule,
+
     /// The default of the `package_name` parameter to use for the module macros like `all_crate_deps`.
     /// In general, this should be be unset to allow the macros to do auto-detection in the analysis phase.
     pub default_package_name: Option<String>,
@@ -99,6 +103,7 @@ impl Default for RenderConfig {
             crate_label_template: default_crate_label_template(),
             crates_module_template: default_crates_module_template(),
             crate_repository_template: default_crate_repository_template(),
+            default_alias_rule: AliasRule::default(),
             default_package_name: Option::default(),
             generate_target_compatible_with: default_generate_target_compatible_with(),
             platforms_template: default_platforms_template(),
@@ -179,6 +184,43 @@ pub enum Checksumish {
         /// 1).
         shallow_since: Option<String>,
     },
+}
+
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+pub enum AliasRule {
+    #[default]
+    #[serde(rename = "alias")]
+    Alias,
+    #[serde(rename = "dbg")]
+    Dbg,
+    #[serde(rename = "fastbuild")]
+    Fastbuild,
+    #[serde(rename = "opt")]
+    Opt,
+    #[serde(untagged)]
+    Custom { bzl: String, rule: String },
+}
+
+impl AliasRule {
+    pub fn bzl(&self) -> Option<String> {
+        match self {
+            AliasRule::Alias => None,
+            AliasRule::Dbg | AliasRule::Fastbuild | AliasRule::Opt => {
+                Some("//:alias_rules.bzl".to_owned())
+            }
+            AliasRule::Custom { bzl, .. } => Some(bzl.clone()),
+        }
+    }
+
+    pub fn rule(&self) -> String {
+        match self {
+            AliasRule::Alias => "alias".to_owned(),
+            AliasRule::Dbg => "transition_alias_dbg".to_owned(),
+            AliasRule::Fastbuild => "transition_alias_fastbuild".to_owned(),
+            AliasRule::Opt => "transition_alias_opt".to_owned(),
+            AliasRule::Custom { rule, .. } => rule.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq)]
@@ -288,6 +330,9 @@ pub struct CrateAnnotations {
 
     /// Extra targets the should be aliased during rendering.
     pub extra_aliased_targets: Option<BTreeMap<String, String>>,
+
+    /// Transition rule to use instead of `native.alias()`.
+    pub alias_rule: Option<AliasRule>,
 }
 
 macro_rules! joined_extra_member {
@@ -347,6 +392,7 @@ impl Add for CrateAnnotations {
             patch_tool: self.patch_tool.or(rhs.patch_tool),
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
             extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, BTreeMap::new, BTreeMap::extend),
+            alias_rule: self.alias_rule.or(rhs.alias_rule),
         };
 
         output

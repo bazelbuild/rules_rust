@@ -1,0 +1,43 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "global_alias_annotation_none",
+    srcs = ["src/fastbuild.rs"],
+    deps = ["@alias_rule_global_alias_annotation_none//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_alias_annotation_opt",
+    srcs = ["src/opt.rs"],
+    deps = ["@alias_rule_global_alias_annotation_opt//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_opt_annotation_none",
+    srcs = ["src/opt.rs"],
+    deps = ["@alias_rule_global_opt_annotation_none//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_opt_annotation_alias",
+    srcs = ["src/fastbuild.rs"],
+    deps = ["@alias_rule_global_opt_annotation_alias//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_opt_annotation_dbg",
+    srcs = ["src/dbg.rs"],
+    deps = ["@alias_rule_global_opt_annotation_dbg//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_dbg_annotation_fastbuild",
+    srcs = ["src/fastbuild.rs"],
+    deps = ["@alias_rule_global_dbg_annotation_fastbuild//:test_data_passing_crate"],
+)
+
+rust_test(
+    name = "global_custom_annotation_none",
+    srcs = ["src/fastbuild.rs"],
+    deps = ["@alias_rule_global_custom_annotation_none//:test_data_passing_crate"],
+)

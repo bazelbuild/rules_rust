@@ -211,7 +211,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("379610c3d0f58778cb066f51da66894f10d0e7ea903e4621c61534b4d1344e6f".to_owned()),
+            Digest("9fcd91ea8e2f7ded4c17895b41ae83b4d6c903f101911aea8bb5282135837b19".to_owned()),
             digest,
         );
     }
@@ -256,7 +256,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("c4d5c9def86c1af758a29f144d8d9ab66b1c762d36f878d1e7f9b6e09782c512".to_owned()),
+            Digest("2b0c255dfcd33196867b604db956aaec0f4aab344941535968e4617c346e44f4".to_owned()),
             digest,
         );
     }
@@ -287,7 +287,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("ab158c3dd56e1771bfaed167c661f9c6c33f1effdf6d870f80640384ad1bffaf".to_owned()),
+            Digest("b1cee7093144f3c5ed4c8b1b9a25df40da997f1b9da2d46ecfda88c67307f66d".to_owned()),
             digest,
         );
     }
@@ -336,7 +336,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("b707269f173b2f78ae500317f9ae54df3c05c88972531c277045d0eb756fc681".to_owned()),
+            Digest("487524c404739b42956cff78e5f26779902f28a61bbb3380f6210f79d1c7fceb".to_owned()),
             digest,
         );
     }

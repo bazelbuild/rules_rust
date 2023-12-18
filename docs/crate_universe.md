@@ -605,13 +605,13 @@ string: A json encoded string of all inputs
 ## crate.annotation
 
 <pre>
-crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>,
-                 <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
-                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>,
-                 <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>, <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>,
-                 <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>, <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>,
-                 <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
-                 <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
+crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
+                 <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>,
+                 <a href="#crate.annotation-build_script_env">build_script_env</a>, <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>,
+                 <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>, <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>,
+                 <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>,
+                 <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>,
+                 <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -624,6 +624,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-version"></a>version |  The version or semver-conditions to match with a crate. The wildcard <code>*</code> matches any version, including prerelease versions.   |  `"*"` |
 | <a id="crate.annotation-additive_build_file"></a>additive_build_file |  A file containing extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-additive_build_file_content"></a>additive_build_file_content |  Extra contents to write to the bottom of generated BUILD files.   |  `None` |
+| <a id="crate.annotation-alias_rule"></a>alias_rule |  Alias rule to use instead of <code>native.alias()</code>.  Overrides [render_config](#render_config)'s 'default_alias_rule'.   |  `None` |
 | <a id="crate.annotation-build_script_data"></a>build_script_data |  A list of labels to add to a crate's <code>cargo_build_script::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_tools"></a>build_script_tools |  A list of labels to add to a crate's <code>cargo_build_script::tools</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_data_glob"></a>build_script_data_glob |  A list of glob patterns to add to a crate's <code>cargo_build_script::data</code> attribute.   |  `None` |
@@ -750,8 +751,8 @@ list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
 
 <pre>
 render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
-              <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_package_name">default_package_name</a>, <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>,
-              <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>)
+              <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
+              <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>)
 </pre>
 
 Various settings used to configure rendered outputs
@@ -778,6 +779,7 @@ can be found below where the supported keys for each template can be found in th
 | <a id="render_config-crate_label_template"></a>crate_label_template |  The base template to use for crate labels. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>].   |  `"@{repository}__{name}-{version}//:{target}"` |
 | <a id="render_config-crate_repository_template"></a>crate_repository_template |  The base template to use for Crate label repository names. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>].   |  `"{repository}__{name}-{version}"` |
 | <a id="render_config-crates_module_template"></a>crates_module_template |  The pattern to use for the <code>defs.bzl</code> and <code>BUILD.bazel</code> file names used for the crates module. The available format keys are [<code>{file}</code>].   |  `"//:{file}"` |
+| <a id="render_config-default_alias_rule"></a>default_alias_rule |  Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's <code>compilation_mode</code>)  or a string representing a rule in the form '&lt;label to .bzl&gt;:&lt;rule&gt;' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.   |  `"alias"` |
 | <a id="render_config-default_package_name"></a>default_package_name |  The default package name to use in the rendered macros. This affects the auto package detection of things like <code>all_crate_deps</code>.   |  `None` |
 | <a id="render_config-generate_target_compatible_with"></a>generate_target_compatible_with |  Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code>being targeted that isn't declared in <code>supported_platform_triples</code>.   |  `True` |
 | <a id="render_config-platforms_template"></a>platforms_template |  The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [<code>{triple}</code>].   |  `"@rules_rust//rust/platform:{triple}"` |

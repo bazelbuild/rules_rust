@@ -1,6 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute", "parse_alias_rule")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -85,6 +85,7 @@ def render_config(
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
+        default_alias_rule = "alias",
         default_package_name = None,
         generate_target_compatible_with = True,
         platforms_template = "@rules_rust//rust/platform:{triple}",
@@ -113,6 +114,10 @@ def render_config(
             available format keys are [`{repository}`, `{name}`, `{version}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
+        default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
+            are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string
+            representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'.
+            See '@crate_index//:alias_rules.bzl' for an example.
         default_package_name (str, optional): The default package name to use in the rendered macros. This affects the
             auto package detection of things like `all_crate_deps`.
         generate_target_compatible_with (bool, optional):  Whether to generate `target_compatible_with` annotations on
@@ -132,6 +137,7 @@ def render_config(
         crate_label_template = crate_label_template,
         crate_repository_template = crate_repository_template,
         crates_module_template = crates_module_template,
+        default_alias_rule = parse_alias_rule(default_alias_rule),
         default_package_name = default_package_name,
         generate_target_compatible_with = generate_target_compatible_with,
         platforms_template = platforms_template,
