@@ -1,3 +1,6 @@
+# Testing
+build --noenable_runfiles
+
 ###############################################################################
 ## Bazel Configuration Flags
 ##
@@ -6,7 +9,7 @@
 ###############################################################################
 
 # Skip building runfiles links for faster builds.
-build --nobuild_runfile_links
+# build --nobuild_runfile_links
 
 # TODO: Coverage errors are not reported
 coverage --test_output=errors

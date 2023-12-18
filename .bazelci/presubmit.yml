@@ -48,8 +48,8 @@ split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_she
   - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
 tasks:
   ubuntu2004:
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    # build_targets: *default_linux_targets
+    # test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   rbe_ubuntu2004:
