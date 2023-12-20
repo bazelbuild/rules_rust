@@ -18,16 +18,17 @@ single_rust_channel_targets: &single_rust_channel_targets
 default_targets: &default_targets
   - "--"
   - "//..."
-bzlmod_presubmit_test_targets: &bzlmod_presubmit_test_targets
-  - "//bzlmod:hello_world_test"
 default_linux_targets: &default_linux_targets
-  << : *default_targets
-  << : *bzlmod_presubmit_test_targets
+  - "--" 
+  - "//..."
+  - "//bzlmod:hello_world_test"
 default_macos_targets: &default_macos_targets
-  << : *default_targets
-  << : *bzlmod_presubmit_test_targets
+  - "--" 
+  - "//..."
+  - "//bzlmod:hello_world_test"
 default_linux_targets_rbe: &default_linux_targets_rbe
-  << : *default_targets
+  - "--" 
+  - "//..."
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
