@@ -153,4 +153,9 @@ bazel_binaries.download(
     current = True,
     version = "7.0.0",
 )
-use_repo(bazel_binaries, "bazel_binaries")
+use_repo(
+    bazel_binaries,
+    "bazel_binaries",
+    "bazel_binaries_bazelisk",
+    "build_bazel_bazel_7_0_0",
+)

@@ -46,3 +46,9 @@ alias(
     actual = "current_rustfmt_toolchain",
     deprecation = "Instead use `@rules_rust//rust/toolchain:current_rustfmt_toolchain",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -14,3 +14,9 @@ filegroup(
     name = "bzl_srcs",
     srcs = glob(["*.bzl"]),
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -38,3 +38,12 @@ bzl_library(
     ],
     visibility = ["//util/import:__pkg__"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "*",
+        "crates/**",
+    ]),
+    visibility = ["//:__subpackages__"],
+)

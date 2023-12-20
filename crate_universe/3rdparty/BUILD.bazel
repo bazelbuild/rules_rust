@@ -31,3 +31,9 @@ filegroup(
         "//crate_universe/3rdparty/crates:defs.bzl",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)

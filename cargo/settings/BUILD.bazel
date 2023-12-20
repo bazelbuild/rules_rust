@@ -8,3 +8,9 @@ bool_flag(
     name = "experimental_symlink_execroot",
     build_setting_default = False,
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

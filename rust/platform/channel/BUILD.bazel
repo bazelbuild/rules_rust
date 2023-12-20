@@ -20,3 +20,9 @@ constraint_value(
     name = "stable",
     constraint_setting = ":channel",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -30,3 +30,9 @@ rust_doc(
     name = "runfiles_doc",
     crate = ":runfiles",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

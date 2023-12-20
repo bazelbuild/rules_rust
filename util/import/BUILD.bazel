@@ -77,3 +77,9 @@ cc_binary(
     name = "fake_import_macro_impl",
     srcs = ["fake_import_macro_impl.cc"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -58,3 +58,12 @@ bzl_library(
     ],
     visibility = ["//proto/protobuf:__pkg__"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "*",
+        "crates/**",
+    ]),
+    visibility = ["//:__subpackages__"],
+)

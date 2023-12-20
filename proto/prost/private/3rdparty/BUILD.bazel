@@ -60,3 +60,12 @@ bzl_library(
     ],
     visibility = ["//proto/prost/private:__pkg__"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "*",
+        "crates/**",
+    ]),
+    visibility = ["//:__subpackages__"],
+)

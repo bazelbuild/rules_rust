@@ -7,3 +7,9 @@ bzl_library(
     srcs = glob(["**/*.bzl"]),
     deps = ["//cargo/private:bzl_lib"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
