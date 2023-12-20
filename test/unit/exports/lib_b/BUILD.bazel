@@ -8,3 +8,9 @@ rust_library(
     edition = "2018",
     deps = ["//test/unit/exports/lib_a"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)

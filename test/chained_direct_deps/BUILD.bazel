@@ -45,3 +45,9 @@ rust_doc_test(
     name = "mod3_doc_test",
     crate = ":mod3",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

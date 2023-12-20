@@ -55,3 +55,9 @@ rust_test(
     edition = "2021",
     deps = [":test_exec_root_access.build.feature_disabled"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

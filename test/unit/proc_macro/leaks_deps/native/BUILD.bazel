@@ -6,3 +6,9 @@ cc_library(
     name = "native",
     srcs = ["native.cc"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

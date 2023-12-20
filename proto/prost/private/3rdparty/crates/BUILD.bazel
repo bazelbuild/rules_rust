@@ -85,3 +85,9 @@ alias(
     actual = "@rules_rust_prost__protoc-gen-tonic-0.2.2//:protoc-gen-tonic__bin",
     tags = ["manual"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

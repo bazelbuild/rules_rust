@@ -3,3 +3,9 @@ load(":extra_rustc_flags_test.bzl", "extra_rustc_flags_test_suite")
 extra_rustc_flags_test_suite(
     name = "extra_rustc_flags_test_suite",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

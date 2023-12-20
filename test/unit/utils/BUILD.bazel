@@ -1,3 +1,9 @@
 load(":utils_test.bzl", "utils_test_suite")
 
 utils_test_suite(name = "utils_tests")
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -54,3 +54,9 @@ alias(
     actual = "@rules_rust_bindgen__env_logger-0.10.0//:env_logger",
     tags = ["manual"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

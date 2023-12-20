@@ -28,3 +28,9 @@ rust_binary(
         ":dll_user",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

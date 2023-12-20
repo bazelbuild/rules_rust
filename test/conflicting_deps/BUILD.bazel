@@ -15,3 +15,9 @@ rust_test(
     name = "conflicting_deps_test",
     crate = ":conflicting_deps",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

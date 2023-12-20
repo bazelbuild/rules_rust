@@ -3,3 +3,9 @@ load(":compile_data_test.bzl", "compile_data_test_suite")
 compile_data_test_suite(
     name = "compile_data_test_suite",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

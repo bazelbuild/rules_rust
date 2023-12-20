@@ -31,3 +31,9 @@ rust_test(
     data = ["src/manifest_dir_file.txt"],
     edition = "2018",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

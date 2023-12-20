@@ -78,3 +78,9 @@ build_test(
         ":lib_no_exec_with_singular_extra_build_flags",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

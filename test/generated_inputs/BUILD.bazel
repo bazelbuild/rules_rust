@@ -187,3 +187,9 @@ rust_test(
     crate = "@generated_inputs_in_external_repo//lib:generated_inputs_external_repo",
     edition = "2021",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

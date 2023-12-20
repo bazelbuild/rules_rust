@@ -34,3 +34,9 @@ rust_test(
     edition = "2018",
     deps = [":tools_exec_build_rs"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

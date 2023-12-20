@@ -14,3 +14,9 @@ rust_library(
     edition = "2018",
     deps = ["//test/unit/proc_macro/leaks_deps/native"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

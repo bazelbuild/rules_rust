@@ -7,3 +7,9 @@ rust_library(
     srcs = ["src/lib.rs"],
     edition = "2018",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)

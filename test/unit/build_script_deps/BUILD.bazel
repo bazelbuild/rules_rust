@@ -3,3 +3,9 @@ load(":build_script_deps.bzl", "build_script_test_suite")
 build_script_test_suite(
     name = "build_script_test_suite",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

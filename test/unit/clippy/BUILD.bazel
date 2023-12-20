@@ -3,3 +3,9 @@ load(":clippy_test.bzl", "clippy_test_suite")
 clippy_test_suite(
     name = "clippy_test_suite",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

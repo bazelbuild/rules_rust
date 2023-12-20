@@ -29,3 +29,9 @@ rust_test(
     name = "consume_build_script",
     crate = ":test_lib",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

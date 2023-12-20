@@ -11,3 +11,12 @@ proc_macro_test_suite(
 proc_macro_does_not_leak_deps_test_suite(
     name = "proc_macro_does_not_leak_deps_test_suite",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "*",
+        "leaks_deps/lib/**",
+    ]),
+    visibility = ["//:__subpackages__"],
+)

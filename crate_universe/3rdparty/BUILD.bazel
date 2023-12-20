@@ -34,6 +34,6 @@ filegroup(
 
 filegroup(
     name = "all_files",
-    srcs = glob(["**"]),
+    srcs = glob(["*"]),
     visibility = ["//:__subpackages__"],
 )

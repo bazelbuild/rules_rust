@@ -27,3 +27,12 @@ rust_test(
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "*",
+        "src/**",
+    ]),
+    visibility = ["//:__subpackages__"],
+)
