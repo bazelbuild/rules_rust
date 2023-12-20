@@ -14,6 +14,7 @@
 /test/no_std/bazel-*
 /docs/bazel-*
 user.bazelrc
+MODULE.bazel.lock
 
 # rustfmt
 *.rs.bk
@@ -33,3 +34,4 @@ bazelci.py
 
 # rust-analyzer
 rust-project.json
+
