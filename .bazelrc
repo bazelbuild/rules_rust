@@ -5,6 +5,14 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
+# These are workspaces that are tested using rules_bazel_integration_test. The
+# files need to be found by the parent workspace for packaging, but we do not
+# want the child workspace packages to be evaluated by the parent workspace.
+# To update these lines, execute 
+# `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
+build --deleted_packages=bzlmod/hello_world
+query --deleted_packages=bzlmod/hello_world
+
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
 
@@ -48,7 +56,7 @@ build --nolegacy_external_runfiles
 
 # TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
 # https://github.com/bazelbuild/rules_rust/issues/2181
-common --noenable_bzlmod
+# common --noenable_bzlmod
 
 ###############################################################################
 ## Custom user flags
