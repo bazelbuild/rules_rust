@@ -15,9 +15,6 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "//..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
-default_targets: &default_targets
-  - "--"
-  - "//..."
 default_linux_targets: &default_linux_targets
   - "--" 
   - "//..."
