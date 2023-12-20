@@ -15,14 +15,19 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "//..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
+default_targets: &default_targets
+  - "--"
+  - "//..."
+bzlmod_presubmit_test_targets: &bzlmod_presubmit_test_targets
+  - "//bzlmod:hello_world_test"
 default_linux_targets: &default_linux_targets
-  - "--"
-  - "//..."
-  - "//bzlmod:hello_world_test"
+  << : *default_targets
+  << : *bzlmod_presubmit_test_targets
 default_macos_targets: &default_macos_targets
-  - "--"
-  - "//..."
-  - "//bzlmod:hello_world_test"
+  << : *default_targets
+  << : *bzlmod_presubmit_test_targets
+default_linux_targets_rbe: &default_linux_targets_rbe
+  << : *default_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
@@ -58,8 +63,8 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_linux_targets_rbe
+    test_targets: *default_linux_targets_rbe
   macos:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -122,16 +127,16 @@ tasks:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_flags: *aspects_flags
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_linux_targets_rbe
+    test_targets: *default_linux_targets_rbe
   rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_linux_targets_rbe
+    test_targets: *default_linux_targets_rbe
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
