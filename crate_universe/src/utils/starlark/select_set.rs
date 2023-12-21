@@ -20,10 +20,9 @@ where
     common: BTreeSet<T>,
     // Invariant: none of the sets are empty.
     selects: BTreeMap<String, BTreeSet<WithOriginalConfigurations<T>>>,
-    // Elements that used to be in `selects` before the most recent
-    // `remap_configurations` operation, but whose old configuration did not get
-    // mapped to any new configuration. They could be ignored, but are preserved
-    // here to generate comments that help the user understand what happened.
+    // Elements from the `Select` whose configuration did not get mapped to any
+    // new configuration. They could be ignored, but are preserved here to
+    // generate comments that help the user understand what happened.
     unmapped: BTreeSet<WithOriginalConfigurations<T>>,
 }
 

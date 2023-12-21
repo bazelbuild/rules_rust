@@ -59,7 +59,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            common: Default::default(),
+            common: T::CommonType::default(),
             selects: BTreeMap::new(),
         }
     }
@@ -75,11 +75,10 @@ where
         T::is_empty(self)
     }
 
-    pub fn configurations(&self) -> Vec<String> {
+    pub fn configurations(&self) -> BTreeSet<String> {
         self.selects.keys().cloned().collect()
     }
 
-    #[allow(dead_code)] // Should we keep this?
     pub fn items(&self) -> Vec<(Option<String>, T::ItemType)> {
         T::items(self)
     }
@@ -180,13 +179,9 @@ where
     fn insert(this: &mut Select<Self>, value: Self::ItemType, configuration: Option<String>) {
         match configuration {
             None => {
+                this.selects
+                    .retain(|_, existing_value| existing_value != &value);
                 this.common = Some(value);
-                this.selects.retain(|_, value| {
-                    this.common
-                        .as_ref()
-                        .map(|common| value != common)
-                        .unwrap_or(true)
-                });
             }
             Some(configuration) => {
                 if Some(&value) != this.common.as_ref() {
@@ -200,29 +195,17 @@ where
         let mut result: Select<Self> = Select::new();
 
         if let Some(value) = lhs.common {
-            result.common = Some(value);
+            result.insert(value, None);
         }
         if let Some(value) = rhs.common {
-            result.common = Some(value);
+            result.insert(value, None);
         }
 
-        for (configuration, value) in lhs.selects.into_iter().filter(|(_, value)| {
-            result
-                .common
-                .as_ref()
-                .map(|common| value != common)
-                .unwrap_or(true)
-        }) {
-            result.selects.insert(configuration, value);
+        for (configuration, value) in lhs.selects.into_iter() {
+            result.insert(value, Some(configuration));
         }
-        for (configuration, value) in rhs.selects.into_iter().filter(|(_, value)| {
-            result
-                .common
-                .as_ref()
-                .map(|common| value != common)
-                .unwrap_or(true)
-        }) {
-            result.selects.insert(configuration, value);
+        for (configuration, value) in rhs.selects.into_iter() {
+            result.insert(value, Some(configuration));
         }
 
         result
@@ -296,25 +279,22 @@ where
         let mut result: Select<Self> = Select::new();
 
         for value in lhs.common.into_iter() {
-            result.common.push(value);
+            result.insert(value, None);
         }
         for value in rhs.common.into_iter() {
-            result.common.push(value);
+            result.insert(value, None);
         }
 
         for (configuration, values) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
             for value in values.into_iter() {
-                entry.push(value);
+                result.insert(value, Some(configuration.clone()));
             }
         }
         for (configuration, values) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
             for value in values.into_iter() {
-                entry.push(value);
+                result.insert(value, Some(configuration.clone()));
             }
         }
-        result.selects.retain(|_, values| !values.is_empty());
 
         result
     }
@@ -399,31 +379,22 @@ where
         let mut result: Select<Self> = Select::new();
 
         for value in lhs.common.into_iter() {
-            result.common.insert(value);
+            result.insert(value, None);
         }
         for value in rhs.common.into_iter() {
-            result.common.insert(value);
+            result.insert(value, None);
         }
 
         for (configuration, values) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for value in values
-                .into_iter()
-                .filter(|value| !result.common.contains(value))
-            {
-                entry.insert(value);
+            for value in values {
+                result.insert(value, Some(configuration.clone()));
             }
         }
         for (configuration, values) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for value in values
-                .into_iter()
-                .filter(|value| !result.common.contains(value))
-            {
-                entry.insert(value);
+            for value in values {
+                result.insert(value, Some(configuration.clone()));
             }
         }
-        result.selects.retain(|_, values| !values.is_empty());
 
         result
     }
@@ -522,31 +493,22 @@ where
         let mut result: Select<Self> = Select::new();
 
         for (key, value) in lhs.common.into_iter() {
-            result.common.insert(key, value);
+            result.insert((key, value), None);
         }
         for (key, value) in rhs.common.into_iter() {
-            result.common.insert(key, value);
+            result.insert((key, value), None);
         }
 
         for (configuration, entries) in lhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for (key, value) in entries
-                .into_iter()
-                .filter(|(key, _)| !result.common.contains_key(key))
-            {
-                entry.insert(key, value);
+            for (key, value) in entries {
+                result.insert((key, value), Some(configuration.clone()));
             }
         }
         for (configuration, entries) in rhs.selects.into_iter() {
-            let entry = result.selects.entry(configuration).or_default();
-            for (key, value) in entries
-                .into_iter()
-                .filter(|(key, _)| !result.common.contains_key(key))
-            {
-                entry.insert(key, value);
+            for (key, value) in entries {
+                result.insert((key, value), Some(configuration.clone()));
             }
         }
-        result.selects.retain(|_, values| !values.is_empty());
 
         result
     }

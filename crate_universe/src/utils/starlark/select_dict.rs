@@ -19,10 +19,9 @@ where
     common: BTreeMap<String, T>,
     // Invariant: none of the inner maps are empty.
     selects: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>>,
-    // Elements that used to be in `selects` before the most recent
-    // `remap_configurations` operation, but whose old configuration did not get
-    // mapped to any new configuration. They could be ignored, but are preserved
-    // here to generate comments that help the user understand what happened.
+    // Elements from the `Select` whose configuration did not get mapped to any
+    // new configuration. They could be ignored, but are preserved here to
+    // generate comments that help the user understand what happened.
     unmapped: BTreeMap<String, WithOriginalConfigurations<T>>,
 }
 
@@ -138,7 +137,9 @@ where
         //             "common-key": "common-value",
         //             "plat-key": "plat-value",  # cfg(whatever)
         //         },
-        //         "//conditions:default": {},
+        //         "//conditions:default": {
+        //             "common-key": "common-value",
+        //         },
         //     })
         //
         // If there are unmapped entries, we include them like this:
@@ -148,7 +149,9 @@ where
         //             "common-key": "common-value",
         //             "plat-key": "plat-value",  # cfg(whatever)
         //         },
-        //         "//conditions:default": {},
+        //         "//conditions:default": {
+        //             "common-key": "common-value",
+        //         },
         //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
         //             "unmapped-key": "unmapped-value",  # cfg(obscure)
         //         },
