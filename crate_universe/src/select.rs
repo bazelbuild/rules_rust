@@ -212,27 +212,6 @@ where
     }
 }
 
-impl<T> Select<T>
-where
-    T: SelectableScalar,
-{
-    #[allow(dead_code)]
-    pub fn map<U, F>(self, mut func: F) -> Select<U>
-    where
-        U: SelectableScalar,
-        F: Copy + FnMut(T) -> U,
-    {
-        Select {
-            common: self.common.map(func),
-            selects: self
-                .selects
-                .into_iter()
-                .map(|(configuration, value)| (configuration, func(value)))
-                .collect(),
-        }
-    }
-}
-
 // Vec<T>
 impl<T> Selectable for Vec<T>
 where
@@ -297,29 +276,6 @@ where
         }
 
         result
-    }
-}
-
-impl<T> Select<Vec<T>>
-where
-    T: SelectableValue,
-{
-    #[allow(dead_code)]
-    pub fn map<U, F>(self, func: F) -> Select<Vec<U>>
-    where
-        U: SelectableValue,
-        F: Copy + FnMut(T) -> U,
-    {
-        Select {
-            common: self.common.into_iter().map(func).collect(),
-            selects: self
-                .selects
-                .into_iter()
-                .map(|(configuration, values)| {
-                    (configuration, values.into_iter().map(func).collect())
-                })
-                .collect(),
-        }
     }
 }
 
@@ -511,38 +467,5 @@ where
         }
 
         result
-    }
-}
-
-impl<T> Select<BTreeMap<String, T>>
-where
-    T: SelectableValue,
-{
-    #[allow(dead_code)]
-    pub fn map<U, F>(self, mut func: F) -> Select<BTreeMap<String, U>>
-    where
-        U: SelectableValue,
-        F: Copy + FnMut(T) -> U,
-    {
-        Select {
-            common: self
-                .common
-                .into_iter()
-                .map(|(key, value)| (key, func(value)))
-                .collect(),
-            selects: self
-                .selects
-                .into_iter()
-                .map(|(configuration, entries)| {
-                    (
-                        configuration,
-                        entries
-                            .into_iter()
-                            .map(|(key, value)| (key, func(value)))
-                            .collect(),
-                    )
-                })
-                .collect(),
-        }
     }
 }
