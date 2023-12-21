@@ -18,7 +18,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
 
-WASM_BINDGEN_VERSION = "0.2.88"
+WASM_BINDGEN_VERSION = "0.2.89"
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_dependencies():
@@ -37,7 +37,7 @@ def rust_wasm_bindgen_dependencies():
     maybe(
         http_archive,
         name = "rules_rust_wasm_bindgen_cli",
-        sha256 = "582e4aa3209a6eb1b5b654fedf6e81fc0ce1a3c1d3e646d40ee8fa34109a6eeb",
+        sha256 = "539d7d1fd32b3dd6810cfd099d6ca8a91e567c5ecd14c9b7387856ab871f5c0d",
         urls = ["https://crates.io/api/v1/crates/wasm-bindgen-cli/{}/download".format(WASM_BINDGEN_VERSION)],
         type = "tar.gz",
         strip_prefix = "wasm-bindgen-cli-{}".format(WASM_BINDGEN_VERSION),

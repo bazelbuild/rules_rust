@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT
+#     "TODO",  # Apache-2.0 WITH LLVM-exception
 # ])
 
 rust_library(
-    name = "difference",
+    name = "wasm_encoder",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,15 +28,12 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "default",
-    ],
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2021",
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=difference",
+        "crate-name=wasm-encoder",
         "manual",
         "noclippy",
         "norustfmt",
@@ -78,5 +75,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.0.0",
+    version = "0.29.0",
+    deps = [
+        "@rules_rust_wasm_bindgen__leb128-0.2.5//:leb128",
+    ],
 )
