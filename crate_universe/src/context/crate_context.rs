@@ -516,7 +516,13 @@ impl CrateContext {
             // Crate features
             if let Some(extra) = &crate_extra.crate_features {
                 match &mut self.common_attrs.crate_features {
-                    CrateFeatures::LegacySet(s) => s.extend(extra.common().iter().cloned()),
+                    CrateFeatures::LegacySet(s) => s.extend(
+                        extra
+                            .items()
+                            .into_iter()
+                            .filter(|(configuration, _)| configuration.is_none())
+                            .map(|(_, value)| value),
+                    ),
                     CrateFeatures::SelectSet(sl) => *sl = Select::merge(sl.clone(), extra.clone()),
                 }
             }

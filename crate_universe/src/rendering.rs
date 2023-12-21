@@ -673,26 +673,14 @@ impl Renderer {
 
         let mut aliases: Select<BTreeMap<String, String>> = Select::default();
         for dependency_select in dependency_selects.iter() {
-            for dependency in dependency_select.common().iter() {
+            for (configuration, dependency) in dependency_select.items().into_iter() {
                 if let Some(alias) = &dependency.alias {
                     let label = self.crate_label(
                         &dependency.id.name,
                         &dependency.id.version,
                         &dependency.target,
                     );
-                    aliases.insert((label, alias.clone()), None);
-                }
-            }
-            for (configuration, dependencies) in dependency_select.selects().iter() {
-                for dependency in dependencies.iter() {
-                    if let Some(alias) = &dependency.alias {
-                        let label = self.crate_label(
-                            &dependency.id.name,
-                            &dependency.id.version,
-                            &dependency.target,
-                        );
-                        aliases.insert((label, alias.clone()), Some(configuration.clone()));
-                    }
+                    aliases.insert((label, alias.clone()), configuration.clone());
                 }
             }
         }

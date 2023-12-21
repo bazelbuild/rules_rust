@@ -98,22 +98,13 @@ impl DependencySet {
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
         // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
         let mut build_link_deps: Select<BTreeSet<Dependency>> = Select::default();
-        for dependency in normal_deps
-            .common()
-            .iter()
-            // Add any normal dependency to build dependencies that are associated `*-sys` crates
-            .filter(|dependency| metadata[&dependency.package_id].links.is_some())
+        for (configuration, dependency) in normal_deps
+            .items()
+            .into_iter()
+            .filter(|(_, dependency)| metadata[&dependency.package_id].links.is_some())
         {
-            build_link_deps.insert(dependency.clone(), None);
-        }
-        for (configuration, dependencies) in normal_deps.selects().iter() {
-            for dependency in dependencies
-                .iter()
-                // Add any normal dependency to build dependencies that are associated `*-sys` crates
-                .filter(|dependency| metadata[&dependency.package_id].links.is_some())
-            {
-                build_link_deps.insert(dependency.clone(), Some(configuration.clone()));
-            }
+            // Add any normal dependency to build dependencies that are associated `*-sys` crates
+            build_link_deps.insert(dependency.clone(), configuration.clone());
         }
 
         Self {
@@ -444,15 +435,25 @@ mod test {
 
         let dependencies = DependencySet::new_for_node(openssl_node, &metadata);
 
-        let normal_sys_crate = dependencies.normal_deps.common().iter().find(|dep| {
-            let pkg = &metadata[&dep.package_id];
-            pkg.name == "openssl-sys"
-        });
+        let normal_sys_crate =
+            dependencies
+                .normal_deps
+                .items()
+                .into_iter()
+                .find(|(configuration, dep)| {
+                    let pkg = &metadata[&dep.package_id];
+                    configuration.is_none() && pkg.name == "openssl-sys"
+                });
 
-        let link_dep_sys_crate = dependencies.build_link_deps.common().iter().find(|dep| {
-            let pkg = &metadata[&dep.package_id];
-            pkg.name == "openssl-sys"
-        });
+        let link_dep_sys_crate =
+            dependencies
+                .build_link_deps
+                .items()
+                .into_iter()
+                .find(|(configuration, dep)| {
+                    let pkg = &metadata[&dep.package_id];
+                    configuration.is_none() && pkg.name == "openssl-sys"
+                });
 
         // sys crates like `openssl-sys` should always be dependencies of any
         // crate which matches it's name minus the `-sys` suffix
@@ -516,19 +517,18 @@ mod test {
         let aliases_node = find_metadata_node("aliases", &metadata);
         let dependencies = DependencySet::new_for_node(aliases_node, &metadata);
 
-        let aliases: Vec<&Dependency> = dependencies
+        let aliases: Vec<Dependency> = dependencies
             .normal_deps
-            .common()
-            .iter()
-            .filter(|dep| dep.alias.is_some())
+            .items()
+            .into_iter()
+            .filter(|(configuration, dep)| configuration.is_none() && dep.alias.is_some())
+            .map(|(_, dep)| dep)
             .collect();
 
         assert_eq!(aliases.len(), 2);
 
-        let expected: BTreeSet<String> = aliases
-            .into_iter()
-            .map(|dep| dep.alias.as_ref().unwrap().clone())
-            .collect();
+        let expected: BTreeSet<String> =
+            aliases.into_iter().map(|dep| dep.alias.unwrap()).collect();
 
         assert_eq!(
             expected,
@@ -543,16 +543,19 @@ mod test {
         let node = find_metadata_node("crate-types", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let rlib_deps: Vec<&Dependency> = dependencies
+        let rlib_deps: Vec<Dependency> = dependencies
             .normal_deps
-            .common()
-            .iter()
-            .filter(|dep| {
+            .items()
+            .into_iter()
+            .filter(|(configuration, dep)| {
                 let pkg = &metadata[&dep.package_id];
-                pkg.targets
-                    .iter()
-                    .any(|t| t.crate_types.contains(&"rlib".to_owned()))
+                configuration.is_none()
+                    && pkg
+                        .targets
+                        .iter()
+                        .any(|t| t.crate_types.contains(&"rlib".to_owned()))
             })
+            .map(|(_, dep)| dep)
             .collect();
 
         // Currently the only expected __explicitly__ "rlib" target in this metadata is `sysinfo`.
@@ -596,17 +599,17 @@ mod test {
 
         let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
-            .common()
-            .iter()
-            .map(|dep| dep.target_name.clone())
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
             .collect();
         assert_eq!(lib_deps, vec!["paste"]);
 
         let build_deps: Vec<_> = dependencies
             .build_proc_macro_deps
-            .common()
-            .iter()
-            .map(|dep| dep.target_name.clone())
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
             .collect();
         assert_eq!(build_deps, vec!["paste"]);
     }
@@ -620,9 +623,10 @@ mod test {
 
         assert!(!dependencies
             .normal_deps
-            .common()
+            .items()
             .iter()
-            .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
+            .any(|(configuration, dep)| configuration.is_none()
+                && (dep.target_name == "is-terminal" || dep.target_name == "termcolor")));
     }
 
     #[test]
@@ -633,9 +637,9 @@ mod test {
         let serde_with_depset = DependencySet::new_for_node(serde_with, &metadata);
         assert!(!serde_with_depset
             .normal_deps
-            .common()
+            .items()
             .iter()
-            .any(|dep| { dep.target_name == "indexmap" }));
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "indexmap"));
     }
 
     #[test]
@@ -647,11 +651,10 @@ mod test {
         assert_eq!(
             clap_depset
                 .normal_deps
-                .common()
+                .items()
                 .iter()
-                .filter(|dep| {
-                    dep.target_name == "is-terminal" || dep.target_name == "termcolor"
-                })
+                .filter(|(configuration, dep)| configuration.is_none()
+                    && (dep.target_name == "is-terminal" || dep.target_name == "termcolor"))
                 .count(),
             2
         );
@@ -662,27 +665,27 @@ mod test {
         // mio is not present in the common list of dependencies
         assert!(!notify_depset
             .normal_deps
-            .common()
+            .items()
             .iter()
-            .any(|dep| { dep.target_name == "mio" }));
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "mio"));
 
         // mio is a dependency on linux
         assert!(notify_depset
             .normal_deps
-            .selects()
-            .get("cfg(target_os = \"linux\")")
-            .expect("Iterating over known keys should never panic")
+            .items()
             .iter()
-            .any(|dep| { dep.target_name == "mio" }));
+            .any(|(configuration, dep)| configuration.as_deref()
+                == Some("cfg(target_os = \"linux\")")
+                && dep.target_name == "mio"));
 
         // mio is marked optional=true on macos
         assert!(!notify_depset
             .normal_deps
-            .selects()
-            .get("cfg(target_os = \"macos\")")
-            .expect("Iterating over known keys should never panic")
+            .items()
             .iter()
-            .any(|dep| { dep.target_name == "mio" }));
+            .any(|(configuration, dep)| configuration.as_deref()
+                == Some("cfg(target_os = \"macos\")")
+                && dep.target_name == "mio"));
     }
 
     #[test]
@@ -694,15 +697,15 @@ mod test {
 
         assert!(!dependencies
             .normal_deps
-            .common()
+            .items()
             .iter()
-            .any(|dep| dep.target_name == "serde"));
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "serde"));
 
         assert!(dependencies
             .build_deps
-            .common()
+            .items()
             .iter()
-            .any(|dep| dep.target_name == "serde"));
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "serde"));
     }
 
     #[test]
@@ -714,9 +717,9 @@ mod test {
         assert_eq!(
             p256_depset
                 .normal_deps
-                .common()
+                .items()
                 .iter()
-                .filter(|dep| { dep.target_name == "ecdsa" })
+                .filter(|(configuration, dep)| configuration.is_none() && dep.target_name == "ecdsa")
                 .count(),
             1
         );

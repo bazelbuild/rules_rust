@@ -71,14 +71,6 @@ where
         }
     }
 
-    pub fn common(&self) -> &T::CommonType {
-        &self.common
-    }
-
-    pub fn selects(&self) -> &BTreeMap<String, T::SelectsType> {
-        &self.selects
-    }
-
     pub fn is_empty(&self) -> bool {
         T::is_empty(self)
     }
