@@ -457,7 +457,7 @@ def is_exec_configuration(ctx):
     """
 
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
-    return ctx.genfiles_dir.path.find("-exec-") != -1
+    return ctx.genfiles_dir.path.find("-exec") != -1
 
 def transform_deps(deps):
     """Transforms a [Target] into [DepVariantInfo].
