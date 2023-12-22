@@ -133,7 +133,6 @@ use_repo(rust, "rust_toolchains")
 
 register_toolchains(
     "@rust_toolchains//:all",
-    dev_dependency = True,
 )
 
 use_repo(rust, "rust_host_tools")
