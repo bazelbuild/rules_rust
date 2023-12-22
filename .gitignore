@@ -5,6 +5,7 @@
 
 # bazel
 /bazel-*
+/bzlmod/hello_world/bazel-*
 /examples/bazel-*
 /examples/cargo_manifest_dir/external_crate/bazel-*
 /examples/crate_universe/bazel-*
