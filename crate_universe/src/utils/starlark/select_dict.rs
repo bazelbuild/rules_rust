@@ -22,7 +22,7 @@ where
     // Elements from the `Select` whose configuration did not get mapped to any
     // new configuration. They could be ignored, but are preserved here to
     // generate comments that help the user understand what happened.
-    unmapped: BTreeMap<String, WithOriginalConfigurations<T>>,
+    unmapped: BTreeMap<String, BTreeMap<String, T>>,
 }
 
 impl<T> SelectDict<T>
@@ -38,11 +38,11 @@ where
     ) -> Self {
         let (common, selects) = select.into_parts();
 
-        // Map new configuration -> entry -> old configurations.
-        let mut remapped: BTreeMap<String, BTreeMap<(String, T), BTreeSet<String>>> =
+        // Map new configuration -> WithOriginalConfigurations(value, old configurations).
+        let mut remapped: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>> =
             BTreeMap::new();
-        // Map entry -> old configurations.
-        let mut unmapped: BTreeMap<(String, T), BTreeSet<String>> = BTreeMap::new();
+        // Map unknown configuration -> value.
+        let mut unmapped: BTreeMap<String, BTreeMap<String, T>> = BTreeMap::new();
 
         for (original_configuration, entries) in selects {
             match platforms.get(&original_configuration) {
@@ -52,24 +52,35 @@ where
                             remapped
                                 .entry(configuration.clone())
                                 .or_default()
-                                .entry((key.clone(), value.clone()))
-                                .or_default()
+                                .entry(key.clone())
+                                .or_insert_with(|| WithOriginalConfigurations {
+                                    value: value.clone(),
+                                    original_configurations: BTreeSet::new(),
+                                })
+                                .original_configurations
                                 .insert(original_configuration.clone());
                         }
                     }
                 }
                 None => {
                     for (key, value) in entries {
-                        let destination =
-                            if looks_like_bazel_configuration_label(&original_configuration) {
-                                remapped.entry(original_configuration.clone()).or_default()
-                            } else {
-                                &mut unmapped
-                            };
-                        destination
-                            .entry((key, value))
-                            .or_default()
-                            .insert(original_configuration.clone());
+                        if looks_like_bazel_configuration_label(&original_configuration) {
+                            remapped
+                                .entry(original_configuration.clone())
+                                .or_default()
+                                .entry(key)
+                                .or_insert_with(|| WithOriginalConfigurations {
+                                    value: value.clone(),
+                                    original_configurations: BTreeSet::new(),
+                                })
+                                .original_configurations
+                                .insert(original_configuration.clone());
+                        } else {
+                            unmapped
+                                .entry(original_configuration.clone())
+                                .or_default()
+                                .insert(key, value);
+                        };
                     }
                 }
             }
@@ -77,38 +88,8 @@ where
 
         Self {
             common,
-            selects: remapped
-                .into_iter()
-                .map(|(new_configuration, entry_to_original_configuration)| {
-                    (
-                        new_configuration,
-                        entry_to_original_configuration
-                            .into_iter()
-                            .map(|((key, value), original_configurations)| {
-                                (
-                                    key,
-                                    WithOriginalConfigurations {
-                                        value,
-                                        original_configurations,
-                                    },
-                                )
-                            })
-                            .collect(),
-                    )
-                })
-                .collect(),
-            unmapped: unmapped
-                .into_iter()
-                .map(|((key, value), original_configurations)| {
-                    (
-                        key,
-                        WithOriginalConfigurations {
-                            value,
-                            original_configurations,
-                        },
-                    )
-                })
-                .collect(),
+            selects: remapped,
+            unmapped,
         }
     }
 
@@ -153,7 +134,9 @@ where
         //             "common-key": "common-value",
         //         },
         //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
-        //             "unmapped-key": "unmapped-value",  # cfg(obscure)
+        //             "cfg(obscure): {
+        //                 "unmapped-key": "unmapped-value",
+        //             },
         //         },
         //     })
 
@@ -197,7 +180,30 @@ where
                 }
                 map.serialize_entry("//conditions:default", &self.0.common)?;
                 if !self.0.unmapped.is_empty() {
-                    map.serialize_entry(&NoMatchingPlatformTriples, &self.0.unmapped)?;
+                    struct SelectUnmapped<'a, T>(&'a BTreeMap<String, BTreeMap<String, T>>)
+                    where
+                        T: SelectableValue;
+
+                    impl<'a, T> Serialize for SelectUnmapped<'a, T>
+                    where
+                        T: SelectableValue,
+                    {
+                        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                        where
+                            S: Serializer,
+                        {
+                            let mut map = serializer.serialize_map(Some(MULTILINE))?;
+                            for (cfg, dict) in self.0.iter() {
+                                map.serialize_entry(cfg, dict)?;
+                            }
+                            map.end()
+                        }
+                    }
+
+                    map.serialize_entry(
+                        &NoMatchingPlatformTriples,
+                        &SelectUnmapped(&self.0.unmapped),
+                    )?;
                 }
                 map.end()
             }
@@ -463,11 +469,8 @@ mod test {
                 ),
             ]),
             unmapped: BTreeMap::from([(
-                "dep-e".to_string(),
-                WithOriginalConfigurations {
-                    value: "e".to_owned(),
-                    original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
-                },
+                "cfg(pdp11)".to_owned(),
+                BTreeMap::from([("dep-e".to_string(), "e".to_owned())]),
             )]),
         };
 
@@ -503,7 +506,9 @@ mod test {
                     "dep-d": "d",
                 },
                 selects.NO_MATCHING_PLATFORM_TRIPLES: {
-                    "dep-e": "e",  # cfg(pdp11)
+                    "cfg(pdp11)": {
+                        "dep-e": "e",
+                    },
                 },
             })
         "#};

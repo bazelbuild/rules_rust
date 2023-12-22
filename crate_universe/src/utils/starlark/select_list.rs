@@ -16,14 +16,12 @@ pub struct SelectList<T>
 where
     T: SelectableValue,
 {
-    // Invariant: any T in `common` is not anywhere in `selects`.
     common: Vec<T>,
-    // Invariant: none of the sets are empty.
     selects: BTreeMap<String, Vec<WithOriginalConfigurations<T>>>,
     // Elements from the `Select` whose configuration did not get mapped to any
     // new configuration. They could be ignored, but are preserved here to
     // generate comments that help the user understand what happened.
-    unmapped: Vec<WithOriginalConfigurations<T>>,
+    unmapped: BTreeMap<String, Vec<T>>,
 }
 
 impl<T> SelectList<T>
@@ -36,32 +34,43 @@ where
     pub fn new(select: Select<Vec<T>>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
         let (common, selects) = select.into_parts();
 
-        // Map new configuration -> value -> old configurations.
-        let mut remapped: BTreeMap<String, Vec<(T, String)>> = BTreeMap::new();
-        // Map value -> old configurations.
-        let mut unmapped: Vec<(T, String)> = Vec::new();
+        // Map new configuration -> WithOriginalConfigurations(value, old configuration).
+        let mut remapped: BTreeMap<String, Vec<WithOriginalConfigurations<T>>> = BTreeMap::new();
+        // Map unknown configuration -> value.
+        let mut unmapped: BTreeMap<String, Vec<T>> = BTreeMap::new();
 
         for (original_configuration, values) in selects {
             match platforms.get(&original_configuration) {
                 Some(configurations) => {
                     for configuration in configurations {
                         for value in &values {
-                            remapped
-                                .entry(configuration.clone())
-                                .or_default()
-                                .push((value.clone(), original_configuration.clone()));
+                            remapped.entry(configuration.clone()).or_default().push(
+                                WithOriginalConfigurations {
+                                    value: value.clone(),
+                                    original_configurations: BTreeSet::from([
+                                        original_configuration.clone(),
+                                    ]),
+                                },
+                            );
                         }
                     }
                 }
                 None => {
-                    let destination =
-                        if looks_like_bazel_configuration_label(&original_configuration) {
-                            remapped.entry(original_configuration.clone()).or_default()
-                        } else {
-                            &mut unmapped
-                        };
-                    for value in values {
-                        destination.push((value, original_configuration.clone()));
+                    if looks_like_bazel_configuration_label(&original_configuration) {
+                        remapped
+                            .entry(original_configuration.clone())
+                            .or_default()
+                            .extend(values.into_iter().map(|value| WithOriginalConfigurations {
+                                value,
+                                original_configurations: BTreeSet::from([
+                                    original_configuration.clone(),
+                                ]),
+                            }));
+                    } else {
+                        unmapped
+                            .entry(original_configuration.clone())
+                            .or_default()
+                            .extend(values.into_iter());
                     }
                 }
             }
@@ -69,34 +78,8 @@ where
 
         Self {
             common,
-            selects: remapped
-                .into_iter()
-                .map(|(new_configuration, value_to_original_configuration)| {
-                    (
-                        new_configuration,
-                        value_to_original_configuration
-                            .into_iter()
-                            .map(
-                                |(value, original_configuration)| WithOriginalConfigurations {
-                                    value,
-                                    original_configurations: BTreeSet::from([
-                                        original_configuration,
-                                    ]),
-                                },
-                            )
-                            .collect(),
-                    )
-                })
-                .collect(),
-            unmapped: unmapped
-                .into_iter()
-                .map(
-                    |(value, original_configuration)| WithOriginalConfigurations {
-                        value,
-                        original_configurations: BTreeSet::from([original_configuration]),
-                    },
-                )
-                .collect(),
+            selects: remapped,
+            unmapped,
         }
     }
 
@@ -138,9 +121,11 @@ where
         //             "value...",  # cfg(whatever)
         //         ],
         //         "//conditions:default": [],
-        //         selects.NO_MATCHING_PLATFORM_TRIPLES: [
-        //             "value...",  # cfg(obscure)
-        //         ],
+        //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
+        //             "cfg(obscure)": [
+        //                 "value...",
+        //             ],
+        //         },
         //     })
 
         let mut plus = serializer.serialize_tuple_struct("+", MULTILINE)?;
@@ -163,14 +148,34 @@ where
                     S: Serializer,
                 {
                     let mut map = serializer.serialize_map(Some(MULTILINE))?;
-                    for (cfg, value) in &self.0.selects {
-                        map.serialize_entry(cfg, &MultilineArray(value))?;
+                    for (cfg, values) in self.0.selects.iter() {
+                        map.serialize_entry(cfg, &MultilineArray(values))?;
                     }
                     map.serialize_entry("//conditions:default", &[] as &[T])?;
                     if !self.0.unmapped.is_empty() {
+                        struct SelectUnmapped<'a, T>(&'a BTreeMap<String, Vec<T>>)
+                        where
+                            T: SelectableValue;
+
+                        impl<'a, T> Serialize for SelectUnmapped<'a, T>
+                        where
+                            T: SelectableValue,
+                        {
+                            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                            where
+                                S: Serializer,
+                            {
+                                let mut map = serializer.serialize_map(Some(MULTILINE))?;
+                                for (cfg, values) in self.0.iter() {
+                                    map.serialize_entry(cfg, &MultilineArray(values))?;
+                                }
+                                map.end()
+                            }
+                        }
+
                         map.serialize_entry(
                             &NoMatchingPlatformTriples,
-                            &MultilineArray(&self.0.unmapped),
+                            &SelectUnmapped(&self.0.unmapped),
                         )?;
                     }
                     map.end()
@@ -388,10 +393,7 @@ mod test {
                     }]),
                 ),
             ]),
-            unmapped: Vec::from([WithOriginalConfigurations {
-                value: "dep-e".to_owned(),
-                original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
-            }]),
+            unmapped: BTreeMap::from([("cfg(pdp11)".to_owned(), Vec::from(["dep-e".to_owned()]))]),
         };
 
         assert_eq!(select_list, expected);
@@ -423,9 +425,11 @@ mod test {
                     "dep-c",  # cfg(x86_64)
                 ],
                 "//conditions:default": [],
-                selects.NO_MATCHING_PLATFORM_TRIPLES: [
-                    "dep-e",  # cfg(pdp11)
-                ],
+                selects.NO_MATCHING_PLATFORM_TRIPLES: {
+                    "cfg(pdp11)": [
+                        "dep-e",
+                    ],
+                },
             })
         "#};
 

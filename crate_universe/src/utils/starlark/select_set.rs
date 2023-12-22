@@ -5,7 +5,7 @@ use serde::ser::{SerializeMap, SerializeTupleStruct, Serializer};
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::{Select, SelectableValue};
+use crate::select::{Select, SelectableOrderedValue};
 use crate::utils::starlark::serialize::MultilineArray;
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
@@ -14,7 +14,7 @@ use crate::utils::starlark::{
 #[derive(Debug, PartialEq, Eq)]
 pub struct SelectSet<T>
 where
-    T: SelectableValue,
+    T: SelectableOrderedValue,
 {
     // Invariant: any T in `common` is not anywhere in `selects`.
     common: BTreeSet<T>,
@@ -23,12 +23,12 @@ where
     // Elements from the `Select` whose configuration did not get mapped to any
     // new configuration. They could be ignored, but are preserved here to
     // generate comments that help the user understand what happened.
-    unmapped: BTreeSet<WithOriginalConfigurations<T>>,
+    unmapped: BTreeMap<String, BTreeSet<T>>,
 }
 
 impl<T> SelectSet<T>
 where
-    T: SelectableValue,
+    T: SelectableOrderedValue,
 {
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
@@ -41,8 +41,8 @@ where
 
         // Map new configuration -> value -> old configurations.
         let mut remapped: BTreeMap<String, BTreeMap<T, BTreeSet<String>>> = BTreeMap::new();
-        // Map value -> old configurations.
-        let mut unmapped: BTreeMap<T, BTreeSet<String>> = BTreeMap::new();
+        // Map unknown configuration -> value.
+        let mut unmapped: BTreeMap<String, BTreeSet<T>> = BTreeMap::new();
 
         for (original_configuration, values) in selects {
             match platforms.get(&original_configuration) {
@@ -59,18 +59,21 @@ where
                     }
                 }
                 None => {
-                    let destination =
-                        if looks_like_bazel_configuration_label(&original_configuration) {
-                            remapped.entry(original_configuration.clone()).or_default()
-                        } else {
-                            &mut unmapped
-                        };
-                    for value in values {
-                        destination
-                            .entry(value)
+                    if looks_like_bazel_configuration_label(&original_configuration) {
+                        let destination =
+                            remapped.entry(original_configuration.clone()).or_default();
+                        for value in values {
+                            destination
+                                .entry(value)
+                                .or_default()
+                                .insert(original_configuration.clone());
+                        }
+                    } else {
+                        unmapped
+                            .entry(original_configuration.clone())
                             .or_default()
-                            .insert(original_configuration.clone());
-                    }
+                            .extend(values.into_iter());
+                    };
                 }
             }
         }
@@ -94,15 +97,7 @@ where
                     )
                 })
                 .collect(),
-            unmapped: unmapped
-                .into_iter()
-                .map(
-                    |(value, original_configurations)| WithOriginalConfigurations {
-                        value,
-                        original_configurations,
-                    },
-                )
-                .collect(),
+            unmapped,
         }
     }
 
@@ -114,7 +109,7 @@ where
 
 impl<T> Serialize for SelectSet<T>
 where
-    T: SelectableValue,
+    T: SelectableOrderedValue,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -144,9 +139,11 @@ where
         //             "value...",  # cfg(whatever)
         //         ],
         //         "//conditions:default": [],
-        //         selects.NO_MATCHING_PLATFORM_TRIPLES: [
-        //             "value...",  # cfg(obscure)
-        //         ],
+        //         selects.NO_MATCHING_PLATFORM_TRIPLES: {
+        //             "cfg(obscure)": [
+        //                 "value...",
+        //             ],
+        //         },
         //     })
 
         let mut plus = serializer.serialize_tuple_struct("+", MULTILINE)?;
@@ -158,11 +155,11 @@ where
         if !self.selects.is_empty() || !self.unmapped.is_empty() {
             struct SelectInner<'a, T: Ord>(&'a SelectSet<T>)
             where
-                T: SelectableValue;
+                T: SelectableOrderedValue;
 
             impl<'a, T> Serialize for SelectInner<'a, T>
             where
-                T: SelectableValue,
+                T: SelectableOrderedValue,
             {
                 fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                 where
@@ -174,9 +171,29 @@ where
                     }
                     map.serialize_entry("//conditions:default", &[] as &[T])?;
                     if !self.0.unmapped.is_empty() {
+                        struct SelectUnmapped<'a, T>(&'a BTreeMap<String, BTreeSet<T>>)
+                        where
+                            T: SelectableOrderedValue;
+
+                        impl<'a, T> Serialize for SelectUnmapped<'a, T>
+                        where
+                            T: SelectableOrderedValue,
+                        {
+                            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                            where
+                                S: Serializer,
+                            {
+                                let mut map = serializer.serialize_map(Some(MULTILINE))?;
+                                for (cfg, values) in self.0.iter() {
+                                    map.serialize_entry(cfg, &MultilineArray(values))?;
+                                }
+                                map.end()
+                            }
+                        }
+
                         map.serialize_entry(
                             &NoMatchingPlatformTriples,
-                            &MultilineArray(&self.0.unmapped),
+                            &SelectUnmapped(&self.0.unmapped),
                         )?;
                     }
                     map.end()
@@ -384,10 +401,10 @@ mod test {
                     }]),
                 ),
             ]),
-            unmapped: BTreeSet::from([WithOriginalConfigurations {
-                value: "dep-e".to_owned(),
-                original_configurations: BTreeSet::from(["cfg(pdp11)".to_owned()]),
-            }]),
+            unmapped: BTreeMap::from([(
+                "cfg(pdp11)".to_owned(),
+                BTreeSet::from(["dep-e".to_owned()]),
+            )]),
         };
 
         assert_eq!(select_set, expected);
@@ -416,9 +433,11 @@ mod test {
                     "dep-c",  # cfg(x86_64)
                 ],
                 "//conditions:default": [],
-                selects.NO_MATCHING_PLATFORM_TRIPLES: [
-                    "dep-e",  # cfg(pdp11)
-                ],
+                selects.NO_MATCHING_PLATFORM_TRIPLES: {
+                    "cfg(pdp11)": [
+                        "dep-e",
+                    ],
+                },
             })
         "#};
 

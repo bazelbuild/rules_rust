@@ -33,14 +33,21 @@ where
 // https://github.com/rust-lang/rust/issues/41517
 pub trait SelectableValue
 where
-    Self: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned,
+    Self: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned,
 {
 }
 
-impl<T> SelectableValue for T where
-    T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Serialize + DeserializeOwned
+impl<T> SelectableValue for T where T: Debug + Clone + PartialEq + Eq + Serialize + DeserializeOwned {}
+
+// Replace with `trait_alias` once stabilized.
+// https://github.com/rust-lang/rust/issues/41517
+pub trait SelectableOrderedValue
+where
+    Self: SelectableValue + PartialOrd + Ord,
 {
 }
+
+impl<T> SelectableOrderedValue for T where T: SelectableValue + PartialOrd + Ord {}
 
 pub trait SelectableScalar
 where
@@ -282,7 +289,7 @@ where
 // BTreeSet<T>
 impl<T> Selectable for BTreeSet<T>
 where
-    T: SelectableValue,
+    T: SelectableOrderedValue,
 {
     type ItemType = T;
     type CommonType = BTreeSet<T>;
@@ -358,11 +365,11 @@ where
 
 impl<T> Select<BTreeSet<T>>
 where
-    T: SelectableValue,
+    T: SelectableOrderedValue,
 {
     pub fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
     where
-        U: SelectableValue,
+        U: SelectableOrderedValue,
         F: Copy + FnMut(T) -> U,
     {
         Select {
