@@ -179,3 +179,12 @@ rbe_preconfig(
     name = "buildkite_config",
     toolchain = "ubuntu1804-bazel-java11",
 )
+
+load("@build_bazel_apple_support//crosstool:setup.bzl", "apple_cc_configure")
+
+# As of Bazel 7, Bazel's bundled cc_toolchain only supports using CommandLineTools and not a full Xcode.
+# This manifests itself if you try to use anything which requires access to $DEVELOPER_DIR, such as our bindgen example which non-hermetically tries to read libc++ headers from the system.
+# On CI (and for some of our contributors), we have a full Xcode install, so this fails.
+# We register the apple_support cc_toolchain here because it supports both CommandLineTools and full Xcodes.
+# See https://github.com/bazelbuild/rules_rust/issues/2207 and https://github.com/bazelbuild/bazel/issues/20638
+apple_cc_configure()
