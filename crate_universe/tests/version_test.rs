@@ -12,7 +12,7 @@ fn test_cargo_and_bazel_versions() {
         let file = File::open(cargo_path).expect("Failed to load Cargo.toml file");
         BufReader::new(file)
             .lines()
-            .flatten()
+            .map_while(Result::ok)
             .find(|line| line.contains("version = "))
             .map(|line| {
                 line.trim()
@@ -29,7 +29,7 @@ fn test_cargo_and_bazel_versions() {
         let file = File::open(bazel_path).expect("Failed to load versions.bzl file");
         BufReader::new(file)
             .lines()
-            .flatten()
+            .map_while(Result::ok)
             .find(|line| line.contains("VERSION = "))
             .map(|line| {
                 line.trim()
