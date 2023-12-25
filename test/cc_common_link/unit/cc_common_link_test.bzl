@@ -36,8 +36,13 @@ def _use_cc_common_link_on_target_impl(ctx):
 use_cc_common_link_on_target = rule(
     implementation = _use_cc_common_link_on_target_impl,
     attrs = {
-        "target": attr.label(cfg = use_cc_common_link_transition, aspects = [collect_dep_actions_aspect]),
-        "_allowlist_function_transition": attr.label(default = "@bazel_tools//tools/allowlists/function_transition_allowlist"),
+        "target": attr.label(
+            cfg = use_cc_common_link_transition,
+            aspects = [collect_dep_actions_aspect],
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
+        ),
     },
 )
 
