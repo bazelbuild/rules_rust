@@ -266,6 +266,22 @@ def _rust_binary_impl(ctx):
 
     return providers
 
+def get_rust_test_flags(attr):
+    """Determine the desired rustc flags for test targets.
+
+    Args:
+        attr (dict): Attributes of a rule
+
+    Returns:
+        List: A list of test flags
+    """
+    if getattr(attr, "use_libtest_harness", True):
+        rust_flags = ["--test"]
+    else:
+        rust_flags = ["--cfg", "test"]
+
+    return rust_flags
+
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule.
 
@@ -394,7 +410,7 @@ def _rust_test_impl(ctx):
         attr = ctx.attr,
         toolchain = toolchain,
         crate_info_dict = crate_info_dict,
-        rust_flags = ["--test"] if ctx.attr.use_libtest_harness else ["--cfg", "test"],
+        rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
     data = getattr(ctx.attr, "data", [])
@@ -486,6 +502,56 @@ def _stamp_attribute(default_value):
         default = default_value,
         values = [1, 0, -1],
     )
+
+# Internal attributes core to Rustc actions.
+RUSTC_ATTRS = {
+    "_cc_toolchain": attr.label(
+        doc = (
+            "In order to use find_cc_toolchain, your rule has to depend " +
+            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
+            "docs for details."
+        ),
+        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+    ),
+    "_error_format": attr.label(
+        default = Label("//:error_format"),
+    ),
+    "_extra_exec_rustc_flag": attr.label(
+        default = Label("//:extra_exec_rustc_flag"),
+    ),
+    "_extra_exec_rustc_flags": attr.label(
+        default = Label("//:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_flag": attr.label(
+        default = Label("//:extra_rustc_flag"),
+    ),
+    "_extra_rustc_flags": attr.label(
+        default = Label("//:extra_rustc_flags"),
+    ),
+    "_import_macro_dep": attr.label(
+        default = Label("//util/import"),
+        cfg = "exec",
+    ),
+    "_is_proc_macro_dep": attr.label(
+        default = Label("//rust/private:is_proc_macro_dep"),
+    ),
+    "_is_proc_macro_dep_enabled": attr.label(
+        default = Label("//rust/private:is_proc_macro_dep_enabled"),
+    ),
+    "_per_crate_rustc_flag": attr.label(
+        default = Label("//:experimental_per_crate_rustc_flag"),
+    ),
+    "_process_wrapper": attr.label(
+        doc = "A process wrapper for running rustc on all platforms.",
+        default = Label("//util/process_wrapper"),
+        executable = True,
+        allow_single_file = True,
+        cfg = "exec",
+    ),
+    "_rustc_output_diagnostics": attr.label(
+        default = Label("//:rustc_output_diagnostics"),
+    ),
+}
 
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
@@ -618,62 +684,18 @@ _common_attrs = {
         """),
         allow_files = [".rs"],
     ),
-    "stamp": _stamp_attribute(default_value = 0),
+    "stamp": _stamp_attribute(
+        default_value = 0,
+    ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
-    ),
-    "_cc_toolchain": attr.label(
-        doc = (
-            "In order to use find_cc_toolchain, your rule has to depend " +
-            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
-            "docs for details."
-        ),
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-    ),
-    "_error_format": attr.label(
-        default = Label("//:error_format"),
-    ),
-    "_extra_exec_rustc_flag": attr.label(
-        default = Label("//:extra_exec_rustc_flag"),
-    ),
-    "_extra_exec_rustc_flags": attr.label(
-        default = Label("//:extra_exec_rustc_flags"),
-    ),
-    "_extra_rustc_flag": attr.label(
-        default = Label("//:extra_rustc_flag"),
-    ),
-    "_extra_rustc_flags": attr.label(
-        default = Label("//:extra_rustc_flags"),
-    ),
-    "_import_macro_dep": attr.label(
-        default = Label("//util/import"),
-        cfg = "exec",
-    ),
-    "_is_proc_macro_dep": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep"),
-    ),
-    "_is_proc_macro_dep_enabled": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep_enabled"),
-    ),
-    "_per_crate_rustc_flag": attr.label(
-        default = Label("//:experimental_per_crate_rustc_flag"),
-    ),
-    "_process_wrapper": attr.label(
-        doc = "A process wrapper for running rustc on all platforms.",
-        default = Label("//util/process_wrapper"),
-        executable = True,
-        allow_single_file = True,
-        cfg = "exec",
-    ),
-    "_rustc_output_diagnostics": attr.label(
-        default = Label("//:rustc_output_diagnostics"),
     ),
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
     ),
-}
+} | RUSTC_ATTRS
 
 _coverage_attrs = {
     "_collect_cc_coverage": attr.label(

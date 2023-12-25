@@ -15,6 +15,7 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "//..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
+  - "-//test/unpretty/..."
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
@@ -169,6 +170,13 @@ tasks:
     test_targets: *default_windows_targets
     soft_fail: yes
     bazel: "rolling"
+  ubuntu2004_unpretty:
+    name: Unpretty
+    platform: ubuntu2004
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags:
+      - "--config=unpretty"
   ubuntu2004_bzlmod_only:
     name: With bzlmod
     platform: ubuntu2004

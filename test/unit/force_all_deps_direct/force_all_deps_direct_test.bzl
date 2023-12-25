@@ -36,7 +36,10 @@ def _force_all_deps_direct_test():
     generator(
         name = "generate",
         deps = [":direct"],
-        tags = ["noclippy"],
+        tags = [
+            "no-clippy",
+            "no-unpretty",
+        ],
     )
 
     force_all_deps_direct_test(
