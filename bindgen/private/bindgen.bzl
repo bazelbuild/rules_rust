@@ -14,6 +14,11 @@
 
 """Rust Bindgen rules"""
 
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_COMPILE_ACTION_NAME",
+)
+load("@rules_cc//cc:defs.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_library")
 
 # buildifier: disable=bzl-visibility
@@ -69,7 +74,7 @@ def rust_bindgen_library(
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
         clang_flags = clang_flags or [],
-        tags = tags,
+        tags = ["manual"],
     )
 
     rust_library(
@@ -81,8 +86,6 @@ def rust_bindgen_library(
     )
 
 def _rust_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
-
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
     header = ctx.file.header
@@ -101,9 +104,6 @@ def _rust_bindgen_impl(ctx):
 
     # libclang should only have 1 output file
     libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
-    include_directories = cc_lib[CcInfo].compilation_context.includes.to_list()
-    quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes.to_list()
-    system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     env = {
         "CLANG_PATH": clang_bin.path,
@@ -129,25 +129,51 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Clang Arguments
     args.add("--")
-    args.add_all(include_directories, before_each = "-I")
-    args.add_all(quote_include_directories, before_each = "-iquote")
-    args.add_all(system_include_directories, before_each = "-isystem")
-    args.add_all(ctx.attr.clang_flags)
 
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
+    compile_variables = cc_common.create_compile_variables(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        include_directories = cc_lib[CcInfo].compilation_context.includes,
+        quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
+        system_include_directories = cc_lib[CcInfo].compilation_context.system_includes,
+        user_compile_flags = ctx.attr.clang_flags,
+    )
+    compile_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+
+    # Bindgen forcibly uses clang.
+    # It's possible that the selected cc_toolchain isn't clang, and may specify flags which clang doesn't recognise.
+    # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
+    # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
+    # We can add extra flags here as needed.
+    flags_known_to_clang = ("-I", "-iquote", "-isystem", "--sysroot")
+    open_arg = False
+    for arg in compile_flags:
+        if open_arg:
+            args.add(arg)
+            open_arg = False
+            continue
+
+        # The cc_toolchain merged these flags into its returned flags - don't strip these out.
+        if arg in ctx.attr.clang_flags:
+            args.add(arg)
+            continue
+
+        if not arg.startswith(flags_known_to_clang):
+            continue
+
+        args.add(arg)
+
+        if arg in flags_known_to_clang:
+            open_arg = True
+            continue
+
     _, _, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
-
-    # Allow sysroots configured by the toolchain to be added to Clang arguments.
-    if "no-rust-bindgen-cc-sysroot" not in ctx.features:
-        if cc_toolchain.sysroot:
-            tools = depset(transitive = [tools, cc_toolchain.all_files])
-            sysroot_args = ["--sysroot", cc_toolchain.sysroot]
-            for arg in ctx.attr.clang_flags:
-                if arg.startswith("--sysroot"):
-                    sysroot_args = []
-                    break
-            args.add_all(sysroot_args)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
     # DYLD_LIBRARY_PATH is LD_LIBRARY_PATH on macOS.
@@ -184,6 +210,7 @@ rust_bindgen = rule(
         "cc_lib": attr.label(
             doc = "The cc_library that contains the `.h` file. This is used to find the transitive includes.",
             providers = [CcInfo],
+            mandatory = True,
         ),
         "clang_flags": attr.string_list(
             doc = "Flags to pass directly to the clang executable.",
@@ -191,6 +218,7 @@ rust_bindgen = rule(
         "header": attr.label(
             doc = "The `.h` file to generate bindings for.",
             allow_single_file = True,
+            mandatory = True,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
