@@ -963,7 +963,9 @@ rust_proc_macro = rule(
     # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
     attrs = dict(
         _common_attrs.items(),
-        _allowlist_function_transition = attr.label(default = Label("//tools/allowlists/function_transition_allowlist")),
+        _allowlist_function_transition = attr.label(
+            default = Label("//tools/allowlists/function_transition_allowlist"),
+        ),
         deps = attr.label_list(
             doc = dedent("""\
                 List of other libraries to be linked to this library target.
