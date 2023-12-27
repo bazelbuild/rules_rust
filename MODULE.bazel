@@ -124,10 +124,6 @@ use_repo(
 )
 
 rust = use_extension("//rust:extensions.bzl", "rust")
-
-# Allow us to run, for example, "bazel build //tools/runfiles" with bzlmod.
-# Register it as a dev dependency so that we don't force this toolchain on
-# downstream users.
 rust.toolchain(edition = "2021")
 use_repo(rust, "rust_toolchains")
 
