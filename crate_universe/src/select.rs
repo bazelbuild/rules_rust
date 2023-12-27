@@ -385,14 +385,15 @@ where
     }
 }
 
-// BTreeMap<String, T>
-impl<T> Selectable for BTreeMap<String, T>
+// BTreeMap<U, T>
+impl<U, T> Selectable for BTreeMap<U, T>
 where
+    U: SelectableOrderedValue,
     T: SelectableValue,
 {
-    type ItemType = (String, T);
-    type CommonType = BTreeMap<String, T>;
-    type SelectsType = BTreeMap<String, T>;
+    type ItemType = (U, T);
+    type CommonType = BTreeMap<U, T>;
+    type SelectsType = BTreeMap<U, T>;
 
     fn is_empty(this: &Select<Self>) -> bool {
         this.common.is_empty() && this.selects.is_empty()

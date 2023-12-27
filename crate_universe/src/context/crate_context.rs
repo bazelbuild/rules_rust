@@ -9,7 +9,7 @@ use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
 use crate::select::Select;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::Glob;
+use crate::utils::starlark::{Glob, Label};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
@@ -65,7 +65,7 @@ pub enum Rule {
 #[serde(default)]
 pub struct CommonAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub compile_data: Select<BTreeSet<String>>,
+    pub compile_data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub compile_data_glob: BTreeSet<String>,
@@ -74,7 +74,7 @@ pub struct CommonAttributes {
     pub crate_features: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub data: Select<BTreeSet<String>>,
+    pub data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
@@ -83,7 +83,7 @@ pub struct CommonAttributes {
     pub deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_deps: Select<BTreeSet<String>>,
+    pub extra_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub deps_dev: Select<BTreeSet<CrateDependency>>,
@@ -97,7 +97,7 @@ pub struct CommonAttributes {
     pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_proc_macro_deps: Select<BTreeSet<String>>,
+    pub extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
@@ -149,10 +149,10 @@ impl Default for CommonAttributes {
 #[serde(default)]
 pub struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub compile_data: Select<BTreeSet<String>>,
+    pub compile_data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub data: Select<BTreeSet<String>>,
+    pub data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
@@ -161,7 +161,7 @@ pub struct BuildScriptAttributes {
     pub deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_deps: Select<BTreeSet<String>>,
+    pub extra_deps: Select<BTreeSet<Label>>,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -184,7 +184,7 @@ pub struct BuildScriptAttributes {
     pub link_deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_link_deps: Select<BTreeSet<String>>,
+    pub extra_link_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub build_script_env: Select<BTreeMap<String, String>>,
@@ -193,7 +193,7 @@ pub struct BuildScriptAttributes {
     pub rundir: Select<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_proc_macro_deps: Select<BTreeSet<String>>,
+    pub extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
@@ -208,13 +208,13 @@ pub struct BuildScriptAttributes {
     pub rustc_env_files: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub tools: Select<BTreeSet<String>>,
+    pub tools: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub toolchains: BTreeSet<String>,
+    pub toolchains: BTreeSet<Label>,
 }
 
 impl Default for BuildScriptAttributes {
