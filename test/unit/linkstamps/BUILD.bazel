@@ -2,9 +2,3 @@ load(":linkstamps_test.bzl", "linkstamps_test_suite")
 
 ############################ UNIT TESTS #############################
 linkstamps_test_suite(name = "linkstamps_test_suite")
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

@@ -79,9 +79,3 @@ alias(
     actual = "@rules_rust_proto__protobuf-codegen-2.8.2//:protoc-gen-rust__bin",
     tags = ["manual"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

@@ -31,10 +31,6 @@ bazel_dep(
     version = "21.7",
     repo_name = "com_google_protobuf",
 )
-bazel_dep(
-    name = "rules_bazel_integration_test",
-    version = "0.20.0",
-)
 
 internal_deps = use_extension("//rust/private:extensions.bzl", "internal_deps")
 use_repo(
@@ -143,19 +139,3 @@ use_repo(rust, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
 use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
-
-# rules_bazel_integration_test Configuration
-bazel_binaries = use_extension(
-    "@rules_bazel_integration_test//:extensions.bzl",
-    "bazel_binaries",
-)
-bazel_binaries.download(
-    current = True,
-    version = "7.0.0",
-)
-use_repo(
-    bazel_binaries,
-    "bazel_binaries",
-    "bazel_binaries_bazelisk",
-    "build_bazel_bazel_7_0_0",
-)

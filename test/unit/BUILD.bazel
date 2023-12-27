@@ -3,9 +3,3 @@ package(default_visibility = ["//visibility:public"])
 exports_files([
     "common.bzl",
 ])
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

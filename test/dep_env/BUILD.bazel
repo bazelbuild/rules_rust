@@ -114,9 +114,3 @@ genrule(
     outs = ["set_dep_dir.env"],
     cmd = "echo DEP_DIR=\\$${pwd}/$(execpath dep_dir) > $@",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

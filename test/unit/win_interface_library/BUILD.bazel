@@ -2,9 +2,3 @@ load(":win_interface_library_analysis_test.bzl", "win_interface_library_analysis
 
 ############################ UNIT TESTS #############################
 win_interface_library_analysis_test_suite(name = "win_interface_library_analysis_test_suite")
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

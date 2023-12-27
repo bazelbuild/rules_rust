@@ -3,9 +3,3 @@ load(":toolchain_make_variables_test.bzl", "toolchain_make_variable_test_suite")
 toolchain_make_variable_test_suite(
     name = "toolchain_make_variable_test_suite",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

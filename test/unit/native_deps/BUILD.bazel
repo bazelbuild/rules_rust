@@ -5,9 +5,3 @@ load(":native_deps_test.bzl", "native_deps_test_suite")
 native_deps_test_suite(name = "native_deps_test_suite")
 
 native_action_inputs_test_suite(name = "native_action_inputs_test_suite")
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

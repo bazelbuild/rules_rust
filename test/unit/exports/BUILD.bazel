@@ -3,9 +3,3 @@ load(":exports_test.bzl", "exports_test_suite")
 exports_test_suite(
     name = "exports_test_suite",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

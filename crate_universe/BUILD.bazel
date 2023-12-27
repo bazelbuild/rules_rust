@@ -160,12 +160,3 @@ rust_doc_test(
     name = "rustdoc_test",
     crate = ":cargo_bazel",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(
-        ["**"],
-        exclude = ["tools/**"],
-    ),
-    visibility = ["//:__subpackages__"],
-)

@@ -3,9 +3,3 @@ load(":is_proc_macro_dep_test.bzl", "is_proc_macro_dep_test_suite")
 is_proc_macro_dep_test_suite(
     name = "is_proc_macro_dep_test_suite",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

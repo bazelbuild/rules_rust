@@ -62,9 +62,3 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

@@ -76,28 +76,6 @@ http_archive(
     url = "https://github.com/bazelbuild/continuous-integration/releases/download/rules-1.0.0/bazelci_rules-1.0.0.tar.gz",
 )
 
-http_archive(
-    name = "rules_bazel_integration_test",
-    sha256 = "6e65d497c68f5794349bfa004369e144063686ce1ebd0227717cd23285be45ef",
-    urls = [
-        "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.20.0/rules_bazel_integration_test.v0.20.0.tar.gz",
-    ],
-)
-
-load("@rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
-
-bazel_integration_test_rules_dependencies()
-
-load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
-
-bazel_starlib_dependencies()
-
-bazel_skylib_workspace()
-
-load("@rules_bazel_integration_test//bazel_integration_test:defs.bzl", "bazel_binaries")
-
-bazel_binaries(versions = ["7.0.0"])
-
 # To run with RBE on Bazel CI, uncomment the following lines.
 #
 # load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")

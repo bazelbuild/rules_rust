@@ -2,9 +2,3 @@ load(":linker_inputs_propagation_test.bzl", "linker_inputs_propagation_test_suit
 
 ############################ UNIT TESTS #############################
 linker_inputs_propagation_test_suite(name = "linker_inputs_propagation_test_suite")
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

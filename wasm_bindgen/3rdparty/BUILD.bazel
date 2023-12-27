@@ -59,9 +59,3 @@ bzl_library(
     ],
     visibility = ["//wasm_bindgen:__pkg__"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

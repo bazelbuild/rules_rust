@@ -40,9 +40,3 @@ rule_test(
     }),
     rule = "//test/rust:hello_world",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

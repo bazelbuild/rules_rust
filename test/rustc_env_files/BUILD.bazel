@@ -40,9 +40,3 @@ rust_test(
     name = "hello_env_crate_test",
     crate = ":hello_env_crate",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

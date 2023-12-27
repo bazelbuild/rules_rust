@@ -19,9 +19,3 @@ pub fn greeting() {
 rustfmt_integration_test_suite(
     name = "rustfmt_integration_test_suite",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

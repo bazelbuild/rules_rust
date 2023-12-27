@@ -14,9 +14,3 @@ rust_test(
     name = "label_test",
     crate = ":label",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

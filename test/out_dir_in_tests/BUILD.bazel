@@ -33,9 +33,3 @@ rust_test_suite(
     edition = "2018",
     deps = [":build_script"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["**"]),
-    visibility = ["//:__subpackages__"],
-)

@@ -48,9 +48,3 @@ rust_test(
     crate = ":mod3",
     edition = "2018",
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

@@ -2,9 +2,3 @@ load(":transitive_link_search_paths_test.bzl", "transitive_link_search_paths_tes
 
 ############################ UNIT TESTS #############################
 transitive_link_search_paths_test_suite(name = "transitive_link_search_paths_test_suite")
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

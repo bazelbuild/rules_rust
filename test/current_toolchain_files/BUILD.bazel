@@ -34,9 +34,3 @@ _FILES = {
     )
     for tool, (kind, pattern) in _FILES.items()
 ]
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

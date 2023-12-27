@@ -144,9 +144,3 @@ alias(
     actual = "@rules_rust_wasm_bindgen__wasmprinter-0.2.60//:wasmprinter",
     tags = ["manual"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)

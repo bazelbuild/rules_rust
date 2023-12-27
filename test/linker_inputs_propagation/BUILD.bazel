@@ -153,9 +153,3 @@ cc_test(
     ],
     deps = [":staticlib_uses_shared_foo"],
 )
-
-filegroup(
-    name = "all_files",
-    srcs = glob(["*"]),
-    visibility = ["//:__subpackages__"],
-)
