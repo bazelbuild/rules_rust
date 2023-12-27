@@ -44,7 +44,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__clap_derive-4.3.2//:clap_derive",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=clap",

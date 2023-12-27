@@ -41,7 +41,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__time-macros-0.2.15//:time_macros",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=time",

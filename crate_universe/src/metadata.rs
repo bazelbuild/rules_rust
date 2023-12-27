@@ -20,7 +20,7 @@ use tracing::debug;
 
 use crate::config::CrateId;
 use crate::lockfile::Digest;
-use crate::utils::starlark::SelectList;
+use crate::select::Select;
 use crate::utils::target_triple::TargetTriple;
 
 pub use self::dependency::*;
@@ -459,7 +459,7 @@ impl FeatureGenerator {
         &self,
         manifest_path: &Path,
         target_triples: &BTreeSet<TargetTriple>,
-    ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
+    ) -> Result<BTreeMap<CrateId, Select<BTreeSet<String>>>> {
         debug!(
             "Generating features for manifest {}",
             manifest_path.display()
@@ -530,7 +530,7 @@ impl FeatureGenerator {
                     .insert(target_triple.clone(), features);
             }
         }
-        let mut result = BTreeMap::<CrateId, SelectList<String>>::new();
+        let mut result = BTreeMap::<CrateId, Select<BTreeSet<String>>>::new();
         for (crate_id, features) in crate_features.into_iter() {
             let common = features
                 .iter()
@@ -542,18 +542,18 @@ impl FeatureGenerator {
                     },
                 )
                 .unwrap_or_default();
-            let mut select_list = SelectList::default();
+            let mut select: Select<BTreeSet<String>> = Select::default();
             for (target_triple, fs) in features {
                 if fs != common {
                     for f in fs {
-                        select_list.insert(f, Some(target_triple.to_bazel()));
+                        select.insert(f, Some(target_triple.to_bazel()));
                     }
                 }
             }
             for f in common {
-                select_list.insert(f, None);
+                select.insert(f, None);
             }
-            result.insert(crate_id, select_list);
+            result.insert(crate_id, select);
         }
         Ok(result)
     }

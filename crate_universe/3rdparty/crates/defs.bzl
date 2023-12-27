@@ -460,7 +460,8 @@ _CONDITIONS = {
     "aarch64-linux-android": ["@rules_rust//rust/platform:aarch64-linux-android"],
     "aarch64-pc-windows-gnullvm": [],
     "aarch64-pc-windows-msvc": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
-    "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
+    "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu"],
+    "aarch64-unknown-nixos-gnu": ["@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
     "aarch64-unknown-nto-qnx710": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
     "arm-unknown-linux-gnueabi": ["@rules_rust//rust/platform:arm-unknown-linux-gnueabi"],
     "armv7-linux-androideabi": ["@rules_rust//rust/platform:armv7-linux-androideabi"],
@@ -525,7 +526,8 @@ _CONDITIONS = {
     "x86_64-pc-windows-gnullvm": [],
     "x86_64-pc-windows-msvc": ["@rules_rust//rust/platform:x86_64-pc-windows-msvc"],
     "x86_64-unknown-freebsd": ["@rules_rust//rust/platform:x86_64-unknown-freebsd"],
-    "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
+    "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu"],
+    "x86_64-unknown-nixos-gnu": ["@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "x86_64-unknown-none": ["@rules_rust//rust/platform:x86_64-unknown-none"],
 }
 
@@ -1719,12 +1721,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__hashbrown-0.14.0",
-        sha256 = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a",
+        name = "cui__hashbrown-0.14.3",
+        sha256 = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/hashbrown/0.14.0/download"],
-        strip_prefix = "hashbrown-0.14.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.hashbrown-0.14.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/hashbrown/0.14.3/download"],
+        strip_prefix = "hashbrown-0.14.3",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.hashbrown-0.14.3.bazel"),
     )
 
     maybe(
@@ -1819,12 +1821,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__indexmap-2.0.0",
-        sha256 = "d5477fe2230a79769d8dc68e0eabf5437907c0457a5614a9e8dddb67f65eb65d",
+        name = "cui__indexmap-2.1.0",
+        sha256 = "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/indexmap/2.0.0/download"],
-        strip_prefix = "indexmap-2.0.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indexmap-2.0.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/indexmap/2.1.0/download"],
+        strip_prefix = "indexmap-2.1.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.indexmap-2.1.0.bazel"),
     )
 
     maybe(

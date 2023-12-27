@@ -2,6 +2,9 @@
 
 # Each source file is tracked as a target so the `cargo_bootstrap_repository`
 # rule will know to automatically rebuild if any of the sources changed.
+
+# Run 'bazel run //crate_universe/private:srcs_module.install' to regenerate.
+
 CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/cli.rs"),
     Label("//crate_universe:src/cli/generate.rs"),
@@ -27,6 +30,8 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/rendering/templates/partials/module/repo_git.j2"),
     Label("//crate_universe:src/rendering/templates/partials/module/repo_http.j2"),
     Label("//crate_universe:src/rendering/templates/vendor_module.j2"),
+    Label("//crate_universe:src/rendering/verbatim/alias_rules.bzl"),
+    Label("//crate_universe:src/select.rs"),
     Label("//crate_universe:src/splicing.rs"),
     Label("//crate_universe:src/splicing/cargo_config.rs"),
     Label("//crate_universe:src/splicing/crate_index_lookup.rs"),
@@ -37,6 +42,10 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/utils/starlark/glob.rs"),
     Label("//crate_universe:src/utils/starlark/label.rs"),
     Label("//crate_universe:src/utils/starlark/select.rs"),
+    Label("//crate_universe:src/utils/starlark/select_dict.rs"),
+    Label("//crate_universe:src/utils/starlark/select_list.rs"),
+    Label("//crate_universe:src/utils/starlark/select_scalar.rs"),
+    Label("//crate_universe:src/utils/starlark/select_set.rs"),
     Label("//crate_universe:src/utils/starlark/serialize.rs"),
     Label("//crate_universe:src/utils/starlark/target_compatible_with.rs"),
     Label("//crate_universe:src/utils/target_triple.rs"),

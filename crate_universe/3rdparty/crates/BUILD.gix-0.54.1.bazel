@@ -45,7 +45,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__gix-macros-0.1.0//:gix_macros",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=gix",

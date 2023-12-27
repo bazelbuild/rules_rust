@@ -15,14 +15,14 @@ use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
-use crate::utils::starlark::{Select, SelectList};
+use crate::select::Select;
 use crate::utils::target_triple::TargetTriple;
 
 pub use self::crate_context::*;
 
 /// A struct containing information about a Cargo dependency graph in an easily to consume
 /// format for rendering reproducible Bazel targets.
-#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Context {
     /// The collective checksum of all inputs to the context
     pub checksum: Option<Digest>,
@@ -117,8 +117,9 @@ impl Context {
             })
             .collect::<Result<BTreeMap<CrateId, String>>>()?;
 
-        let add_crate_ids = |crates: &mut BTreeSet<CrateId>, deps: &SelectList<Dependency>| {
-            for dep in deps.iter_all_branches() {
+        let add_crate_ids = |crates: &mut BTreeSet<CrateId>,
+                             deps: &Select<BTreeSet<Dependency>>| {
+            for dep in deps.values() {
                 crates.insert(CrateId::from(
                     &annotations.metadata.packages[&dep.package_id],
                 ));
@@ -191,7 +192,7 @@ impl Context {
     }
 
     /// Create a set of all direct dependencies of workspace member crates.
-    pub fn workspace_member_deps(&self) -> BTreeSet<&CrateDependency> {
+    pub fn workspace_member_deps(&self) -> BTreeSet<CrateDependency> {
         self.workspace_members
             .keys()
             .map(move |id| &self.crates[id])
@@ -202,11 +203,7 @@ impl Context {
                     &ctx.common_attrs.proc_macro_deps,
                     &ctx.common_attrs.proc_macro_deps_dev,
                 ])
-                .flat_map(|deps| {
-                    deps.configurations().into_iter().flat_map(move |conf| {
-                        deps.get_iter(conf).expect("Lookup should be guaranteed")
-                    })
-                })
+                .flat_map(|deps| deps.values())
             })
             .collect()
     }

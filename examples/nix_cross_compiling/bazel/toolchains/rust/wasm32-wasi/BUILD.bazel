@@ -6,7 +6,7 @@ rust_toolchain(
     cargo = "@nix_rust//:cargo",
     clippy_driver = "@nix_rust//:clippy_driver",
     default_edition = "2021",
-    dylib_ext = ".so",
+    dylib_ext = ".wasm",
     env = {},
     exec_triple = "x86_64-unknown-nixos-gnu",
     extra_exec_rustc_flags = [],

@@ -1,5 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("//rust/private:unpretty.bzl", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
 package(default_visibility = ["//visibility:public"])
@@ -7,6 +8,25 @@ package(default_visibility = ["//visibility:public"])
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+)
+
+rust_unpretty_flag(
+    name = "unpretty",
+    build_setting_default = [
+        "ast-tree,expanded",
+        "ast-tree",
+        "expanded,hygiene",
+        "expanded,identified",
+        "expanded",
+        "hir-tree",
+        "hir,identified",
+        "hir,typed",
+        "hir",
+        "identified",
+        "mir-cfg",
+        "mir",
+        "normal",
+    ],
 )
 
 # A flag controlling whether to rename first-party crates such that their names

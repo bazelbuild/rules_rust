@@ -1,5 +1,5 @@
 {
-  "checksum": "840078351355a8fa3f3ae7e68a1a95f2aba18a2066232ec90da77a55490caf58",
+  "checksum": "c69d213252a2f281d34882d236d483496d7c43e73f7131241a4a2ebe8217be26",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -468,22 +468,29 @@
           "selects": {}
         },
         "edition": "2015",
-        "rustc_flags": [
-          "--cfg=freebsd11",
-          "--cfg=libc_priv_mod_use",
-          "--cfg=libc_union",
-          "--cfg=libc_const_size_of",
-          "--cfg=libc_align",
-          "--cfg=libc_int128",
-          "--cfg=libc_core_cvoid",
-          "--cfg=libc_packedN",
-          "--cfg=libc_cfg_target_vendor",
-          "--cfg=libc_non_exhaustive",
-          "--cfg=libc_long_array",
-          "--cfg=libc_ptr_addr_of",
-          "--cfg=libc_underscore_const_names",
-          "--cfg=libc_const_extern_fn"
-        ],
+        "rustc_flags": {
+          "common": [
+            "--cfg=freebsd11",
+            "--cfg=libc_priv_mod_use",
+            "--cfg=libc_union",
+            "--cfg=libc_const_size_of",
+            "--cfg=libc_align",
+            "--cfg=libc_int128",
+            "--cfg=libc_core_cvoid",
+            "--cfg=libc_packedN",
+            "--cfg=libc_cfg_target_vendor",
+            "--cfg=libc_non_exhaustive",
+            "--cfg=libc_long_array",
+            "--cfg=libc_ptr_addr_of",
+            "--cfg=libc_underscore_const_names",
+            "--cfg=libc_const_extern_fn"
+          ],
+          "selects": {
+            "x86_64-unknown-nixos-gnu": [
+              "--cfg=fake_nioxs_feature"
+            ]
+          }
+        },
         "version": "0.2.150"
       },
       "license": "MIT OR Apache-2.0"
@@ -937,12 +944,15 @@
           "selects": {}
         },
         "edition": "2021",
-        "rustc_flags": [
-          "--cfg=proc_macro_span",
-          "--cfg=span_locations",
-          "--cfg=use_proc_macro",
-          "--cfg=wrap_proc_macro"
-        ],
+        "rustc_flags": {
+          "common": [
+            "--cfg=proc_macro_span",
+            "--cfg=span_locations",
+            "--cfg=use_proc_macro",
+            "--cfg=wrap_proc_macro"
+          ],
+          "selects": {}
+        },
         "version": "1.0.69"
       },
       "license": "MIT OR Apache-2.0"
@@ -1954,7 +1964,9 @@
       "x86_64-pc-windows-msvc"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"
     ]
   },

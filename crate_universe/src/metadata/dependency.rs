@@ -1,4 +1,5 @@
 //! Gathering dependencies is the largest part of annotating.
+use std::collections::BTreeSet;
 
 use anyhow::{bail, Result};
 use cargo_metadata::{
@@ -7,11 +8,11 @@ use cargo_metadata::{
 use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
+use crate::select::Select;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Select, SelectList};
 
 /// A representation of a crate dependency
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Dependency {
     /// The PackageId of the target
     pub package_id: PackageId,
@@ -26,13 +27,13 @@ pub struct Dependency {
 /// A collection of [Dependency]s sorted by dependency kind.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DependencySet {
-    pub normal_deps: SelectList<Dependency>,
-    pub normal_dev_deps: SelectList<Dependency>,
-    pub proc_macro_deps: SelectList<Dependency>,
-    pub proc_macro_dev_deps: SelectList<Dependency>,
-    pub build_deps: SelectList<Dependency>,
-    pub build_link_deps: SelectList<Dependency>,
-    pub build_proc_macro_deps: SelectList<Dependency>,
+    pub normal_deps: Select<BTreeSet<Dependency>>,
+    pub normal_dev_deps: Select<BTreeSet<Dependency>>,
+    pub proc_macro_deps: Select<BTreeSet<Dependency>>,
+    pub proc_macro_dev_deps: Select<BTreeSet<Dependency>>,
+    pub build_deps: Select<BTreeSet<Dependency>>,
+    pub build_link_deps: Select<BTreeSet<Dependency>>,
+    pub build_proc_macro_deps: Select<BTreeSet<Dependency>>,
 }
 
 impl DependencySet {
@@ -96,19 +97,15 @@ impl DependencySet {
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
         // https://doc.rust-lang.org/cargo/reference/build-scripts.html#-sys-packages
         // https://doc.rust-lang.org/cargo/reference/build-script-examples.html#using-another-sys-crate
-        let mut build_link_deps = SelectList::<Dependency>::default();
-        normal_deps.configurations().into_iter().for_each(|config| {
-            normal_deps
-                .get_iter(config)
-                // Iterating over known key should be safe
-                .unwrap()
-                // Add any normal dependency to build dependencies that are associated `*-sys` crates
-                .for_each(|dep| {
-                    if metadata[&dep.package_id].links.is_some() {
-                        build_link_deps.insert(dep.clone(), config.cloned())
-                    }
-                });
-        });
+        let mut build_link_deps: Select<BTreeSet<Dependency>> = Select::default();
+        for (configuration, dependency) in normal_deps
+            .items()
+            .into_iter()
+            .filter(|(_, dependency)| metadata[&dependency.package_id].links.is_some())
+        {
+            // Add any normal dependency to build dependencies that are associated `*-sys` crates
+            build_link_deps.insert(dependency.clone(), configuration.clone());
+        }
 
         Self {
             normal_deps,
@@ -160,8 +157,8 @@ fn collect_deps_selectable(
     deps: Vec<&NodeDep>,
     metadata: &cargo_metadata::Metadata,
     kind: DependencyKind,
-) -> SelectList<Dependency> {
-    let mut selectable = SelectList::default();
+) -> Select<BTreeSet<Dependency>> {
+    let mut select: Select<BTreeSet<Dependency>> = Select::default();
 
     for dep in deps.into_iter() {
         let dep_pkg = &metadata[&dep.pkg];
@@ -171,12 +168,13 @@ fn collect_deps_selectable(
 
         for kind_info in &dep.dep_kinds {
             if is_optional_crate_enabled(node, dep, kind_info.target.as_ref(), metadata, kind) {
-                selectable.insert(
-                    Dependency {
-                        package_id: dep.pkg.clone(),
-                        target_name: target_name.clone(),
-                        alias: alias.clone(),
-                    },
+                let dependency = Dependency {
+                    package_id: dep.pkg.clone(),
+                    target_name: target_name.clone(),
+                    alias: alias.clone(),
+                };
+                select.insert(
+                    dependency,
                     kind_info
                         .target
                         .as_ref()
@@ -186,7 +184,7 @@ fn collect_deps_selectable(
         }
     }
 
-    selectable
+    select
 }
 
 fn is_lib_package(package: &Package) -> bool {
@@ -437,23 +435,25 @@ mod test {
 
         let dependencies = DependencySet::new_for_node(openssl_node, &metadata);
 
-        let normal_sys_crate = dependencies
-            .normal_deps
-            .get_iter(None)
-            .unwrap()
-            .find(|dep| {
-                let pkg = &metadata[&dep.package_id];
-                pkg.name == "openssl-sys"
-            });
+        let normal_sys_crate =
+            dependencies
+                .normal_deps
+                .items()
+                .into_iter()
+                .find(|(configuration, dep)| {
+                    let pkg = &metadata[&dep.package_id];
+                    configuration.is_none() && pkg.name == "openssl-sys"
+                });
 
-        let link_dep_sys_crate = dependencies
-            .build_link_deps
-            .get_iter(None)
-            .unwrap()
-            .find(|dep| {
-                let pkg = &metadata[&dep.package_id];
-                pkg.name == "openssl-sys"
-            });
+        let link_dep_sys_crate =
+            dependencies
+                .build_link_deps
+                .items()
+                .into_iter()
+                .find(|(configuration, dep)| {
+                    let pkg = &metadata[&dep.package_id];
+                    configuration.is_none() && pkg.name == "openssl-sys"
+                });
 
         // sys crates like `openssl-sys` should always be dependencies of any
         // crate which matches it's name minus the `-sys` suffix
@@ -471,16 +471,9 @@ mod test {
         // Collect build dependencies into a set
         let build_deps: BTreeSet<String> = libssh2_depset
             .build_deps
-            .configurations()
+            .values()
             .into_iter()
-            .flat_map(|conf| {
-                libssh2_depset
-                    .build_deps
-                    .get_iter(conf)
-                    .unwrap()
-                    .map(|dep| dep.package_id.repr.clone())
-                    .collect::<Vec<String>>()
-            })
+            .map(|dep| dep.package_id.repr)
             .collect();
 
         assert_eq!(
@@ -496,16 +489,9 @@ mod test {
         // Collect normal dependencies into a set
         let normal_deps: BTreeSet<String> = libssh2_depset
             .normal_deps
-            .configurations()
+            .values()
             .into_iter()
-            .flat_map(|conf| {
-                libssh2_depset
-                    .normal_deps
-                    .get_iter(conf)
-                    .unwrap()
-                    .map(|dep| dep.package_id.to_string())
-                    .collect::<Vec<String>>()
-            })
+            .map(|dep| dep.package_id.to_string())
             .collect();
 
         assert_eq!(
@@ -531,19 +517,18 @@ mod test {
         let aliases_node = find_metadata_node("aliases", &metadata);
         let dependencies = DependencySet::new_for_node(aliases_node, &metadata);
 
-        let aliases: Vec<&Dependency> = dependencies
+        let aliases: Vec<Dependency> = dependencies
             .normal_deps
-            .get_iter(None)
-            .unwrap()
-            .filter(|dep| dep.alias.is_some())
+            .items()
+            .into_iter()
+            .filter(|(configuration, dep)| configuration.is_none() && dep.alias.is_some())
+            .map(|(_, dep)| dep)
             .collect();
 
         assert_eq!(aliases.len(), 2);
 
-        let expected: BTreeSet<String> = aliases
-            .into_iter()
-            .map(|dep| dep.alias.as_ref().unwrap().clone())
-            .collect();
+        let expected: BTreeSet<String> =
+            aliases.into_iter().map(|dep| dep.alias.unwrap()).collect();
 
         assert_eq!(
             expected,
@@ -558,16 +543,19 @@ mod test {
         let node = find_metadata_node("crate-types", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let rlib_deps: Vec<&Dependency> = dependencies
+        let rlib_deps: Vec<Dependency> = dependencies
             .normal_deps
-            .get_iter(None)
-            .unwrap()
-            .filter(|dep| {
+            .items()
+            .into_iter()
+            .filter(|(configuration, dep)| {
                 let pkg = &metadata[&dep.package_id];
-                pkg.targets
-                    .iter()
-                    .any(|t| t.crate_types.contains(&"rlib".to_owned()))
+                configuration.is_none()
+                    && pkg
+                        .targets
+                        .iter()
+                        .any(|t| t.crate_types.contains(&"rlib".to_owned()))
             })
+            .map(|(_, dep)| dep)
             .collect();
 
         // Currently the only expected __explicitly__ "rlib" target in this metadata is `sysinfo`.
@@ -584,26 +572,19 @@ mod test {
         let node = find_metadata_node("cpufeatures", &metadata);
         let dependencies = DependencySet::new_for_node(node, &metadata);
 
-        let libc_cfgs: BTreeSet<String> = dependencies
+        let libc_cfgs: BTreeSet<Option<String>> = dependencies
             .normal_deps
-            .configurations()
+            .items()
             .into_iter()
-            .flat_map(|conf| {
-                dependencies
-                    .normal_deps
-                    .get_iter(conf)
-                    .expect("Iterating over known keys should never panic")
-                    .filter(|dep| dep.target_name == "libc")
-                    .map(move |_| conf.cloned())
-            })
-            .flatten()
+            .filter(|(_, dep)| dep.target_name == "libc")
+            .map(|(configuration, _)| configuration)
             .collect();
 
         assert_eq!(
             BTreeSet::from([
-                "aarch64-linux-android".to_owned(),
-                "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))".to_owned(),
-                "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))".to_owned(),
+                Some("aarch64-linux-android".to_owned()),
+                Some("cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))".to_owned()),
+                Some("cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))".to_owned()),
             ]),
             libc_cfgs,
         );
@@ -618,17 +599,17 @@ mod test {
 
         let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
-            .get_iter(None)
-            .unwrap()
-            .map(|dep| dep.target_name.clone())
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
             .collect();
         assert_eq!(lib_deps, vec!["paste"]);
 
         let build_deps: Vec<_> = dependencies
             .build_proc_macro_deps
-            .get_iter(None)
-            .unwrap()
-            .map(|dep| dep.target_name.clone())
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
             .collect();
         assert_eq!(build_deps, vec!["paste"]);
     }
@@ -642,9 +623,10 @@ mod test {
 
         assert!(!dependencies
             .normal_deps
-            .get_iter(None)
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| { dep.target_name == "is-terminal" || dep.target_name == "termcolor" }));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.is_none()
+                && (dep.target_name == "is-terminal" || dep.target_name == "termcolor")));
     }
 
     #[test]
@@ -655,9 +637,9 @@ mod test {
         let serde_with_depset = DependencySet::new_for_node(serde_with, &metadata);
         assert!(!serde_with_depset
             .normal_deps
-            .get_iter(None)
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| { dep.target_name == "indexmap" }));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "indexmap"));
     }
 
     #[test]
@@ -669,11 +651,10 @@ mod test {
         assert_eq!(
             clap_depset
                 .normal_deps
-                .get_iter(None)
-                .expect("Iterating over known keys should never panic")
-                .filter(|dep| {
-                    dep.target_name == "is-terminal" || dep.target_name == "termcolor"
-                })
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| configuration.is_none()
+                    && (dep.target_name == "is-terminal" || dep.target_name == "termcolor"))
                 .count(),
             2
         );
@@ -684,23 +665,27 @@ mod test {
         // mio is not present in the common list of dependencies
         assert!(!notify_depset
             .normal_deps
-            .get_iter(None)
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| { dep.target_name == "mio" }));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "mio"));
 
         // mio is a dependency on linux
         assert!(notify_depset
             .normal_deps
-            .get_iter(Some(&"cfg(target_os = \"linux\")".to_string()))
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| { dep.target_name == "mio" }));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.as_deref()
+                == Some("cfg(target_os = \"linux\")")
+                && dep.target_name == "mio"));
 
         // mio is marked optional=true on macos
         assert!(!notify_depset
             .normal_deps
-            .get_iter(Some(&"cfg(target_os = \"macos\")".to_string()))
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| { dep.target_name == "mio" }));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.as_deref()
+                == Some("cfg(target_os = \"macos\")")
+                && dep.target_name == "mio"));
     }
 
     #[test]
@@ -712,15 +697,15 @@ mod test {
 
         assert!(!dependencies
             .normal_deps
-            .get_iter(None)
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| dep.target_name == "serde"));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "serde"));
 
         assert!(dependencies
             .build_deps
-            .get_iter(None)
-            .expect("Iterating over known keys should never panic")
-            .any(|dep| dep.target_name == "serde"));
+            .items()
+            .iter()
+            .any(|(configuration, dep)| configuration.is_none() && dep.target_name == "serde"));
     }
 
     #[test]
@@ -732,9 +717,9 @@ mod test {
         assert_eq!(
             p256_depset
                 .normal_deps
-                .get_iter(None)
-                .expect("Iterating over known keys should never panic")
-                .filter(|dep| { dep.target_name == "ecdsa" })
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| configuration.is_none() && dep.target_name == "ecdsa")
                 .count(),
             1
         );

@@ -39,7 +39,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__tracing-attributes-0.1.27//:tracing_attributes",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tracing",

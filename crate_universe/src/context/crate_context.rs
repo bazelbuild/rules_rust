@@ -6,11 +6,12 @@ use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
-use crate::metadata::{CrateAnnotation, Dependency, PairredExtras, SourceAnnotation};
+use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
+use crate::select::Select;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{Glob, SelectList, SelectMap, SelectStringDict, SelectStringList};
+use crate::utils::starlark::Glob;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
     /// The [CrateId] of the dependency
     pub id: CrateId,
@@ -58,7 +59,7 @@ pub enum Rule {
     BuildScript(TargetAttributes),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CrateFeatures {
     // Not populated going forward. This just exists for backward compatiblity
@@ -66,26 +67,20 @@ pub enum CrateFeatures {
     LegacySet(BTreeSet<String>),
 
     /// Map from target triplet to set of features.
-    SelectList(SelectList<String>),
+    SelectSet(Select<BTreeSet<String>>),
 }
 
 impl Default for CrateFeatures {
     fn default() -> Self {
-        CrateFeatures::SelectList(Default::default())
+        CrateFeatures::SelectSet(Default::default())
     }
 }
 
-impl From<&CrateFeatures> for SelectList<String> {
+impl From<&CrateFeatures> for Select<BTreeSet<String>> {
     fn from(value: &CrateFeatures) -> Self {
         match value {
-            CrateFeatures::LegacySet(s) => {
-                let mut sl = SelectList::default();
-                for v in s {
-                    sl.insert(v.clone(), None);
-                }
-                sl
-            }
-            CrateFeatures::SelectList(sl) => sl.clone(),
+            CrateFeatures::LegacySet(s) => Select::from_value(s.clone()),
+            CrateFeatures::SelectSet(sl) => sl.clone(),
         }
     }
 }
@@ -94,18 +89,18 @@ impl CrateFeatures {
     pub fn is_empty(&self) -> bool {
         match self {
             CrateFeatures::LegacySet(s) => s.is_empty(),
-            CrateFeatures::SelectList(sl) => sl.is_empty(),
+            CrateFeatures::SelectSet(sl) => sl.is_empty(),
         }
     }
 }
 
 /// A set of attributes common to most `rust_library`, `rust_proc_macro`, and other
 /// [core rules of `rules_rust`](https://bazelbuild.github.io/rules_rust/defs.html).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CommonAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub compile_data: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub compile_data: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub compile_data_glob: BTreeSet<String>,
@@ -113,43 +108,43 @@ pub struct CommonAttributes {
     #[serde(skip_serializing_if = "CrateFeatures::is_empty")]
     pub crate_features: CrateFeatures,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub data: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub data: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub deps: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub extra_deps: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps_dev: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub deps_dev: Select<BTreeSet<CrateDependency>>,
 
     pub edition: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_proc_macro_deps: SelectList<String>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub extra_proc_macro_deps: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps_dev: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub rustc_env: SelectStringDict,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_env: Select<BTreeMap<String, String>>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_env_files: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_env_files: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub rustc_flags: Vec<String>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_flags: Select<Vec<String>>,
 
     pub version: String,
 
@@ -185,23 +180,23 @@ impl Default for CommonAttributes {
 
 // Build script attributes. See
 // https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct BuildScriptAttributes {
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub compile_data: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub compile_data: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub data: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub data: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub deps: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_deps: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub extra_deps: Select<BTreeSet<String>>,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -220,35 +215,35 @@ pub struct BuildScriptAttributes {
     // in which either all of the deps are in crate dependencies, or just the
     // normal dependencies. This could be handled a special rule, or just using
     // a `filegroup`.
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub link_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub link_deps: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_link_deps: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub extra_link_deps: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub build_script_env: SelectStringDict,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub build_script_env: Select<BTreeMap<String, String>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rundir: Option<String>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rundir: Select<String>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub extra_proc_macro_deps: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub extra_proc_macro_deps: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectList::is_empty")]
-    pub proc_macro_deps: SelectList<CrateDependency>,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
 
-    #[serde(skip_serializing_if = "SelectStringDict::is_empty")]
-    pub rustc_env: SelectStringDict,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_env: Select<BTreeMap<String, String>>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_flags: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_flags: Select<Vec<String>>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub rustc_env_files: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub rustc_env_files: Select<BTreeSet<String>>,
 
-    #[serde(skip_serializing_if = "SelectStringList::is_empty")]
-    pub tools: SelectStringList,
+    #[serde(skip_serializing_if = "Select::is_empty")]
+    pub tools: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
@@ -282,7 +277,7 @@ impl Default for BuildScriptAttributes {
     }
 }
 
-#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CrateContext {
     /// The package name of the current crate
@@ -336,8 +331,8 @@ impl CrateContext {
         annotation: &CrateAnnotation,
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
-        extras: &BTreeMap<CrateId, PairredExtras>,
-        features: &BTreeMap<CrateId, SelectList<String>>,
+        extras: &BTreeMap<CrateId, PairedExtras>,
+        features: &BTreeMap<CrateId, Select<BTreeSet<String>>>,
         include_binaries: bool,
         include_build_scripts: bool,
     ) -> Self {
@@ -371,10 +366,8 @@ impl CrateContext {
 
         // Gather all "common" attributes
         let mut common_attrs = CommonAttributes {
-            crate_features: CrateFeatures::SelectList(
-                features
-                    .get(&current_crate_id)
-                    .map_or_else(SelectList::default, |f| f.clone()),
+            crate_features: CrateFeatures::SelectSet(
+                features.get(&current_crate_id).cloned().unwrap_or_default(),
             ),
             deps,
             deps_dev,
@@ -490,30 +483,29 @@ impl CrateContext {
         .with_overrides(extras)
     }
 
-    fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairredExtras>) -> Self {
+    fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairedExtras>) -> Self {
         let id = CrateId::new(self.name.clone(), self.version.clone());
 
         // Insert all overrides/extras
-        if let Some(pairred_override) = extras.get(&id) {
-            let crate_extra = &pairred_override.crate_extra;
+        if let Some(paired_override) = extras.get(&id) {
+            let crate_extra = &paired_override.crate_extra;
 
             // Deps
             if let Some(extra) = &crate_extra.deps {
-                self.common_attrs.extra_deps.extend(extra.iter().cloned());
+                self.common_attrs.extra_deps =
+                    Select::merge(self.common_attrs.extra_deps, extra.clone());
             }
 
             // Proc macro deps
             if let Some(extra) = &crate_extra.proc_macro_deps {
-                self.common_attrs
-                    .extra_proc_macro_deps
-                    .extend(extra.iter().cloned());
+                self.common_attrs.extra_proc_macro_deps =
+                    Select::merge(self.common_attrs.extra_proc_macro_deps, extra.clone());
             }
 
             // Compile data
             if let Some(extra) = &crate_extra.compile_data {
-                for data in extra.iter() {
-                    self.common_attrs.compile_data.insert(data.clone(), None);
-                }
+                self.common_attrs.compile_data =
+                    Select::merge(self.common_attrs.compile_data, extra.clone());
             }
 
             // Compile data glob
@@ -524,20 +516,20 @@ impl CrateContext {
             // Crate features
             if let Some(extra) = &crate_extra.crate_features {
                 match &mut self.common_attrs.crate_features {
-                    CrateFeatures::LegacySet(s) => s.append(&mut extra.clone()),
-                    CrateFeatures::SelectList(sl) => {
-                        for data in extra.iter() {
-                            sl.insert(data.clone(), None);
-                        }
-                    }
+                    CrateFeatures::LegacySet(s) => s.extend(
+                        extra
+                            .items()
+                            .into_iter()
+                            .filter(|(configuration, _)| configuration.is_none())
+                            .map(|(_, value)| value),
+                    ),
+                    CrateFeatures::SelectSet(sl) => *sl = Select::merge(sl.clone(), extra.clone()),
                 }
             }
 
             // Data
             if let Some(extra) = &crate_extra.data {
-                for data in extra.iter() {
-                    self.common_attrs.data.insert(data.clone(), None);
-                }
+                self.common_attrs.data = Select::merge(self.common_attrs.data, extra.clone());
             }
 
             // Data glob
@@ -552,48 +544,48 @@ impl CrateContext {
 
             // Rustc flags
             if let Some(extra) = &crate_extra.rustc_flags {
-                self.common_attrs.rustc_flags.append(&mut extra.clone());
+                self.common_attrs.rustc_flags =
+                    Select::merge(self.common_attrs.rustc_flags, extra.clone());
             }
 
             // Rustc env
             if let Some(extra) = &crate_extra.rustc_env {
-                self.common_attrs.rustc_env.extend(extra.clone(), None);
+                self.common_attrs.rustc_env =
+                    Select::merge(self.common_attrs.rustc_env, extra.clone());
             }
 
             // Rustc env files
             if let Some(extra) = &crate_extra.rustc_env_files {
-                for data in extra.iter() {
-                    self.common_attrs.rustc_env_files.insert(data.clone(), None);
-                }
+                self.common_attrs.rustc_env_files =
+                    Select::merge(self.common_attrs.rustc_env_files, extra.clone());
             }
 
             // Build script Attributes
             if let Some(attrs) = &mut self.build_script_attrs {
                 // Deps
                 if let Some(extra) = &crate_extra.build_script_deps {
-                    attrs.extra_deps.extend(extra.iter().cloned())
+                    attrs.extra_deps = Select::merge(attrs.extra_deps.clone(), extra.clone());
                 }
 
                 // Proc macro deps
                 if let Some(extra) = &crate_extra.build_script_proc_macro_deps {
-                    attrs.extra_proc_macro_deps.extend(extra.iter().cloned());
+                    attrs.extra_proc_macro_deps =
+                        Select::merge(attrs.extra_proc_macro_deps.clone(), extra.clone());
                 }
 
                 // Data
                 if let Some(extra) = &crate_extra.build_script_data {
-                    attrs.data.extend(extra.iter().cloned());
+                    attrs.data = Select::merge(attrs.data.clone(), extra.clone());
                 }
 
                 // Tools
                 if let Some(extra) = &crate_extra.build_script_tools {
-                    attrs.tools.extend(extra.iter().cloned());
+                    attrs.tools = Select::merge(attrs.tools.clone(), extra.clone());
                 }
 
                 // Toolchains
                 if let Some(extra) = &crate_extra.build_script_toolchains {
-                    for data in extra {
-                        attrs.toolchains.insert(data.clone());
-                    }
+                    attrs.toolchains.extend(extra.iter().cloned());
                 }
 
                 // Data glob
@@ -603,20 +595,17 @@ impl CrateContext {
 
                 // Rustc env
                 if let Some(extra) = &crate_extra.build_script_rustc_env {
-                    attrs
-                        .rustc_env
-                        .extend_from_string_or_select(extra.iter().map(clone_tuple));
+                    attrs.rustc_env = Select::merge(attrs.rustc_env.clone(), extra.clone());
                 }
 
                 // Build script env
                 if let Some(extra) = &crate_extra.build_script_env {
-                    attrs
-                        .build_script_env
-                        .extend_from_string_or_select(extra.iter().map(clone_tuple))
+                    attrs.build_script_env =
+                        Select::merge(attrs.build_script_env.clone(), extra.clone());
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
-                    attrs.rundir = Some(rundir.clone());
+                    attrs.rundir = Select::merge(attrs.rundir.clone(), rundir.clone());
                 }
             }
 
@@ -677,7 +666,7 @@ impl CrateContext {
     /// Determine whether or not a crate __should__ include a build script
     /// (build.rs) if it happens to have one.
     fn crate_includes_build_script(
-        package_extra: Option<(&CrateId, &PairredExtras)>,
+        package_extra: Option<(&CrateId, &PairedExtras)>,
         default_generate_build_script: bool,
     ) -> bool {
         // If the crate has extra settings, which explicitly set `gen_build_script`, always use
@@ -766,11 +755,6 @@ impl CrateContext {
     }
 }
 
-fn clone_tuple<V1: Clone, V2: Clone>(t: (&V1, &V2)) -> (V1, V2) {
-    let (v1, v2) = t;
-    (v1.clone(), v2.clone())
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -831,7 +815,7 @@ mod test {
         let mut pairred_extras = BTreeMap::new();
         pairred_extras.insert(
             CrateId::new("common".to_owned(), "0.1.0".to_owned()),
-            PairredExtras {
+            PairedExtras {
                 package_id,
                 crate_extra: CrateAnnotations {
                     gen_binaries: Some(GenBinaries::All),

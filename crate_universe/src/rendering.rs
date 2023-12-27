@@ -16,11 +16,12 @@ use crate::config::{AliasRule, RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::{Context, TargetAttributes};
 use crate::rendering::template_engine::TemplateEngine;
+use crate::select::Select;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
     self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, Select, SelectDict, SelectList, SelectMap,
-    Starlark, TargetCompatibleWith,
+    Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList, SelectScalar,
+    SelectSet, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
@@ -185,7 +186,7 @@ impl Renderer {
                 dependencies.push(Alias {
                     rule: alias_rule.rule(),
                     // If duplicates exist, include version to disambiguate them.
-                    name: if context.has_duplicate_workspace_member_dep(dep) {
+                    name: if context.has_duplicate_workspace_member_dep(&dep) {
                         format!("{}-{}", rename, krate.version)
                     } else {
                         rename.clone()
@@ -378,9 +379,6 @@ impl Renderer {
         krate: &CrateContext,
         target: &TargetAttributes,
     ) -> Result<CargoBuildScript> {
-        let empty_set = BTreeSet::<String>::new();
-        let empty_list = SelectList::<String>::default();
-        let empty_deps = SelectList::<CrateDependency>::default();
         let attrs = krate.build_script_attrs.as_ref();
 
         Ok(CargoBuildScript {
@@ -392,69 +390,96 @@ impl Renderer {
             //
             // Do not change this name to "cargo_build_script".
             name: format!("{}_build_script", krate.name),
-            aliases: self
-                .make_aliases(krate, true, false)
-                .remap_configurations(platforms),
-            build_script_env: attrs
-                .map_or_else(SelectDict::default, |attrs| attrs.build_script_env.clone())
-                .remap_configurations(platforms),
+            aliases: SelectDict::new(self.make_aliases(krate, true, false), platforms),
+            build_script_env: SelectDict::new(
+                attrs
+                    .map(|attrs| attrs.build_script_env.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
             compile_data: make_data(
                 platforms,
-                &empty_set,
-                attrs.map_or(&empty_list, |attrs| &attrs.compile_data),
+                Default::default(),
+                attrs
+                    .map(|attrs| attrs.compile_data.clone())
+                    .unwrap_or_default(),
             ),
-            crate_features: SelectList::from(&krate.common_attrs.crate_features)
-                .map_configuration_names(|triple| {
-                    render_platform_constraint_label(
-                        &self.config.platforms_template,
-                        &TargetTriple::from_bazel(triple),
-                    )
-                }),
+            crate_features: SelectSet::new(
+                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
+                platforms,
+            ),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
             data: make_data(
                 platforms,
-                attrs.map_or(&empty_set, |attrs| &attrs.data_glob),
-                attrs.map_or(&empty_list, |attrs| &attrs.data),
+                attrs
+                    .map(|attrs| attrs.data_glob.clone())
+                    .unwrap_or_default(),
+                attrs.map(|attrs| attrs.data.clone()).unwrap_or_default(),
             ),
-            deps: self
-                .make_deps(
-                    attrs.map_or(&empty_deps, |attrs| &attrs.deps),
-                    attrs.map_or(&empty_list, |attrs| &attrs.extra_deps),
-                )
-                .remap_configurations(platforms),
-            link_deps: self
-                .make_deps(
-                    attrs.map_or(&empty_deps, |attrs| &attrs.link_deps),
-                    attrs.map_or(&empty_list, |attrs| &attrs.extra_link_deps),
-                )
-                .remap_configurations(platforms),
+            deps: SelectSet::new(
+                self.make_deps(
+                    attrs.map(|attrs| attrs.deps.clone()).unwrap_or_default(),
+                    attrs
+                        .map(|attrs| attrs.extra_deps.clone())
+                        .unwrap_or_default(),
+                ),
+                platforms,
+            ),
+            link_deps: SelectSet::new(
+                self.make_deps(
+                    attrs
+                        .map(|attrs| attrs.link_deps.clone())
+                        .unwrap_or_default(),
+                    attrs
+                        .map(|attrs| attrs.extra_link_deps.clone())
+                        .unwrap_or_default(),
+                ),
+                platforms,
+            ),
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
-            proc_macro_deps: self
-                .make_deps(
-                    attrs.map_or(&empty_deps, |attrs| &attrs.proc_macro_deps),
-                    attrs.map_or(&empty_list, |attrs| &attrs.extra_proc_macro_deps),
-                )
-                .remap_configurations(platforms),
-            rundir: attrs.and_then(|attrs| attrs.rundir.clone()),
-            rustc_env: attrs
-                .map_or_else(SelectDict::default, |attrs| attrs.rustc_env.clone())
-                .remap_configurations(platforms),
-            rustc_env_files: attrs
-                .map_or_else(SelectList::default, |attrs| attrs.rustc_env_files.clone())
-                .remap_configurations(platforms),
-            rustc_flags: {
-                let mut rustc_flags =
-                    attrs.map_or_else(SelectList::default, |attrs| attrs.rustc_flags.clone());
+            proc_macro_deps: SelectSet::new(
+                self.make_deps(
+                    attrs
+                        .map(|attrs| attrs.proc_macro_deps.clone())
+                        .unwrap_or_default(),
+                    attrs
+                        .map(|attrs| attrs.extra_proc_macro_deps.clone())
+                        .unwrap_or_default(),
+                ),
+                platforms,
+            ),
+            rundir: SelectScalar::new(
+                attrs.map(|attrs| attrs.rundir.clone()).unwrap_or_default(),
+                platforms,
+            ),
+            rustc_env: SelectDict::new(
+                attrs
+                    .map(|attrs| attrs.rustc_env.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
+            rustc_env_files: SelectSet::new(
+                attrs
+                    .map(|attrs| attrs.rustc_env_files.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
+            rustc_flags: SelectList::new(
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                rustc_flags.insert("--cap-lints=allow".to_owned(), None);
-                rustc_flags.remap_configurations(platforms)
-            },
+                Select::merge(
+                    Select::from_value(Vec::from(["--cap-lints=allow".to_owned()])),
+                    attrs
+                        .map(|attrs| attrs.rustc_flags.clone())
+                        .unwrap_or_default(),
+                ),
+                platforms,
+            ),
             srcs: target.srcs.clone(),
             tags: {
                 let mut tags = BTreeSet::from_iter(krate.common_attrs.tags.iter().cloned());
@@ -465,9 +490,10 @@ impl Renderer {
                 tags.insert(format!("crate-name={}", krate.name));
                 tags
             },
-            tools: attrs
-                .map_or_else(SelectList::default, |attrs| attrs.tools.clone())
-                .remap_configurations(platforms),
+            tools: SelectSet::new(
+                attrs.map(|attrs| attrs.tools.clone()).unwrap_or_default(),
+                platforms,
+            ),
             toolchains: attrs.map_or_else(BTreeSet::new, |attrs| attrs.toolchains.clone()),
             version: krate.common_attrs.version.clone(),
             visibility: BTreeSet::from(["//visibility:private".to_owned()]),
@@ -482,18 +508,21 @@ impl Renderer {
     ) -> Result<RustProcMacro> {
         Ok(RustProcMacro {
             name: target.crate_name.clone(),
-            deps: self
-                .make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps)
-                .remap_configurations(platforms),
-            proc_macro_deps: self
-                .make_deps(
-                    &krate.common_attrs.proc_macro_deps,
-                    &krate.common_attrs.extra_proc_macro_deps,
-                )
-                .remap_configurations(platforms),
-            aliases: self
-                .make_aliases(krate, false, false)
-                .remap_configurations(platforms),
+            deps: SelectSet::new(
+                self.make_deps(
+                    krate.common_attrs.deps.clone(),
+                    krate.common_attrs.extra_deps.clone(),
+                ),
+                platforms,
+            ),
+            proc_macro_deps: SelectSet::new(
+                self.make_deps(
+                    krate.common_attrs.proc_macro_deps.clone(),
+                    krate.common_attrs.extra_proc_macro_deps.clone(),
+                ),
+                platforms,
+            ),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
     }
@@ -506,18 +535,21 @@ impl Renderer {
     ) -> Result<RustLibrary> {
         Ok(RustLibrary {
             name: target.crate_name.clone(),
-            deps: self
-                .make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps)
-                .remap_configurations(platforms),
-            proc_macro_deps: self
-                .make_deps(
-                    &krate.common_attrs.proc_macro_deps,
-                    &krate.common_attrs.extra_proc_macro_deps,
-                )
-                .remap_configurations(platforms),
-            aliases: self
-                .make_aliases(krate, false, false)
-                .remap_configurations(platforms),
+            deps: SelectSet::new(
+                self.make_deps(
+                    krate.common_attrs.deps.clone(),
+                    krate.common_attrs.extra_deps.clone(),
+                ),
+                platforms,
+            ),
+            proc_macro_deps: SelectSet::new(
+                self.make_deps(
+                    krate.common_attrs.proc_macro_deps.clone(),
+                    krate.common_attrs.extra_proc_macro_deps.clone(),
+                ),
+                platforms,
+            ),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
             disable_pipelining: krate.disable_pipelining,
         })
@@ -532,22 +564,23 @@ impl Renderer {
         Ok(RustBinary {
             name: format!("{}__bin", target.crate_name),
             deps: {
-                let mut deps =
-                    self.make_deps(&krate.common_attrs.deps, &krate.common_attrs.extra_deps);
+                let mut deps = self.make_deps(
+                    krate.common_attrs.deps.clone(),
+                    krate.common_attrs.extra_deps.clone(),
+                );
                 if let Some(library_target_name) = &krate.library_target_name {
                     deps.insert(format!(":{library_target_name}"), None);
                 }
-                deps.remap_configurations(platforms)
+                SelectSet::new(deps, platforms)
             },
-            proc_macro_deps: self
-                .make_deps(
-                    &krate.common_attrs.proc_macro_deps,
-                    &krate.common_attrs.extra_proc_macro_deps,
-                )
-                .remap_configurations(platforms),
-            aliases: self
-                .make_aliases(krate, false, false)
-                .remap_configurations(platforms),
+            proc_macro_deps: SelectSet::new(
+                self.make_deps(
+                    krate.common_attrs.proc_macro_deps.clone(),
+                    krate.common_attrs.extra_proc_macro_deps.clone(),
+                ),
+                platforms,
+            ),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
     }
@@ -561,43 +594,34 @@ impl Renderer {
         Ok(CommonAttrs {
             compile_data: make_data(
                 platforms,
-                &krate.common_attrs.compile_data_glob,
-                &krate.common_attrs.compile_data,
+                krate.common_attrs.compile_data_glob.clone(),
+                krate.common_attrs.compile_data.clone(),
             ),
-            crate_features: SelectList::from(&krate.common_attrs.crate_features)
-                .map_configuration_names(|triple| {
-                    render_platform_constraint_label(
-                        &self.config.platforms_template,
-                        &TargetTriple::from_bazel(triple),
-                    )
-                }),
+            crate_features: SelectSet::new(
+                Select::<BTreeSet<String>>::from(&krate.common_attrs.crate_features),
+                platforms,
+            ),
             crate_root: target.crate_root.clone(),
             data: make_data(
                 platforms,
-                &krate.common_attrs.data_glob,
-                &krate.common_attrs.data,
+                krate.common_attrs.data_glob.clone(),
+                krate.common_attrs.data.clone(),
             ),
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
-            rustc_env: krate
-                .common_attrs
-                .rustc_env
-                .clone()
-                .remap_configurations(platforms),
-            rustc_env_files: krate
-                .common_attrs
-                .rustc_env_files
-                .clone()
-                .remap_configurations(platforms),
-            rustc_flags: {
-                let mut rustc_flags = krate.common_attrs.rustc_flags.clone();
+            rustc_env: SelectDict::new(krate.common_attrs.rustc_env.clone(), platforms),
+            rustc_env_files: SelectSet::new(krate.common_attrs.rustc_env_files.clone(), platforms),
+            rustc_flags: SelectList::new(
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
                 // flag here silences warnings. For more details see:
                 // https://doc.rust-lang.org/rustc/lints/levels.html
-                rustc_flags.insert(0, "--cap-lints=allow".to_owned());
-                rustc_flags
-            },
+                Select::merge(
+                    Select::from_value(Vec::from(["--cap-lints=allow".to_owned()])),
+                    krate.common_attrs.rustc_flags.clone(),
+                ),
+                platforms,
+            ),
             srcs: target.srcs.clone(),
             tags: {
                 let mut tags = BTreeSet::from_iter(krate.common_attrs.tags.iter().cloned());
@@ -631,33 +655,33 @@ impl Renderer {
         krate: &CrateContext,
         build: bool,
         include_dev: bool,
-    ) -> SelectDict<String> {
-        let mut dep_lists = Vec::new();
+    ) -> Select<BTreeMap<String, String>> {
+        let mut dependency_selects = Vec::new();
         if build {
             if let Some(build_script_attrs) = &krate.build_script_attrs {
-                dep_lists.push(&build_script_attrs.deps);
-                dep_lists.push(&build_script_attrs.proc_macro_deps);
+                dependency_selects.push(&build_script_attrs.deps);
+                dependency_selects.push(&build_script_attrs.proc_macro_deps);
             }
         } else {
-            dep_lists.push(&krate.common_attrs.deps);
-            dep_lists.push(&krate.common_attrs.proc_macro_deps);
+            dependency_selects.push(&krate.common_attrs.deps);
+            dependency_selects.push(&krate.common_attrs.proc_macro_deps);
             if include_dev {
-                dep_lists.push(&krate.common_attrs.deps_dev);
-                dep_lists.push(&krate.common_attrs.proc_macro_deps_dev);
+                dependency_selects.push(&krate.common_attrs.deps_dev);
+                dependency_selects.push(&krate.common_attrs.proc_macro_deps_dev);
             }
         }
 
-        let mut aliases = SelectDict::default();
-        for (dep, conf) in dep_lists.into_iter().flat_map(|deps| {
-            deps.configurations().into_iter().flat_map(move |conf| {
-                deps.get_iter(conf)
-                    .expect("Iterating over known keys should never panic")
-                    .map(move |dep| (dep, conf))
-            })
-        }) {
-            if let Some(alias) = &dep.alias {
-                let label = self.crate_label(&dep.id.name, &dep.id.version, &dep.target);
-                aliases.insert(label, alias.clone(), conf.cloned());
+        let mut aliases: Select<BTreeMap<String, String>> = Select::default();
+        for dependency_select in dependency_selects.iter() {
+            for (configuration, dependency) in dependency_select.items().into_iter() {
+                if let Some(alias) = &dependency.alias {
+                    let label = self.crate_label(
+                        &dependency.id.name,
+                        &dependency.id.version,
+                        &dependency.target,
+                    );
+                    aliases.insert((label, alias.clone()), configuration.clone());
+                }
             }
         }
         aliases
@@ -665,14 +689,13 @@ impl Renderer {
 
     fn make_deps(
         &self,
-        deps: &SelectList<CrateDependency>,
-        extra_deps: &SelectList<String>,
-    ) -> SelectList<String> {
-        let mut deps = deps
-            .clone()
-            .map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target));
-        deps.extend(extra_deps.into_iter());
-        deps
+        deps: Select<BTreeSet<CrateDependency>>,
+        extra_deps: Select<BTreeSet<String>>,
+    ) -> Select<BTreeSet<String>> {
+        Select::merge(
+            deps.map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target)),
+            extra_deps,
+        )
     }
 
     fn render_vendor_support_files(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
@@ -797,7 +820,11 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
     )
 }
 
-fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList<String>) -> Data {
+fn make_data(
+    platforms: &Platforms,
+    glob: BTreeSet<String>,
+    select: Select<BTreeSet<String>>,
+) -> Data {
     const COMMON_GLOB_EXCLUDES: &[&str] = &[
         "**/* *",
         "BUILD.bazel",
@@ -809,13 +836,13 @@ fn make_data(platforms: &Platforms, glob: &BTreeSet<String>, select: &SelectList
 
     Data {
         glob: Glob {
-            include: glob.clone(),
+            include: glob,
             exclude: COMMON_GLOB_EXCLUDES
                 .iter()
                 .map(|&glob| glob.to_owned())
                 .collect(),
         },
-        select: select.clone().remap_configurations(platforms),
+        select: SelectSet::new(select, platforms),
     }
 }
 
@@ -833,7 +860,6 @@ mod test {
     };
     use crate::metadata::Annotations;
     use crate::test;
-    use crate::utils::starlark::SelectList;
 
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
@@ -1161,7 +1187,7 @@ mod test {
                 version: crate_id.version,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
-                    rustc_flags: rustc_flags.clone(),
+                    rustc_flags: Select::from_value(rustc_flags.clone()),
                     ..CommonAttributes::default()
                 },
                 ..CrateContext::default()
@@ -1268,19 +1294,28 @@ mod test {
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
             .unwrap();
-        assert!(build_file_content.replace(' ', "").contains(
-            &r#"crate_features = [
-    "bar",
-    "foo",
-],"#
+        let expected = indoc! {r#"
+            crate_features = [
+                "bar",
+                "foo",
+            ],
+        "#};
+        assert!(build_file_content
             .replace(' ', "")
-        ));
+            .contains(&expected.replace(' ', "")));
     }
+
     #[test]
     fn crate_features_by_target() {
-        let mut context = Context::default();
+        let mut context = Context {
+            conditions: mock_supported_platform_triples()
+                .iter()
+                .map(|platform| (platform.to_bazel(), BTreeSet::from([platform.clone()])))
+                .collect(),
+            ..Context::default()
+        };
         let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
-        let mut features = SelectList::default();
+        let mut features: Select<BTreeSet<String>> = Select::default();
         features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
         features.insert("bar".to_owned(), None);
         context.crates.insert(
@@ -1290,7 +1325,7 @@ mod test {
                 version: crate_id.version,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 common_attrs: CommonAttributes {
-                    crate_features: CrateFeatures::SelectList(features),
+                    crate_features: CrateFeatures::SelectSet(features),
                     ..CommonAttributes::default()
                 },
                 ..CrateContext::default()
@@ -1303,16 +1338,19 @@ mod test {
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
             .unwrap();
-        assert!(build_file_content.replace(' ', "").contains(
-            &r#"crate_features = [
-        "bar",
-    ] + select({
-    "@rules_rust//rust/platform:aarch64-apple-darwin": [
-        "foo",
-    ],
-    "//conditions:default": [],
-}),"#
-                .replace(' ', "")
-        ));
+        dbg!(build_file_content);
+        let expected = indoc! {r#"
+            crate_features = [
+                "bar",
+            ] + select({
+                "@rules_rust//rust/platform:aarch64-apple-darwin": [
+                    "foo",  # aarch64-apple-darwin
+                ],
+                "//conditions:default": [],
+            }),
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
     }
 }

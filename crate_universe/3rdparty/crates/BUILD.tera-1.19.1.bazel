@@ -44,7 +44,9 @@ rust_library(
     proc_macro_deps = [
         "@cui__pest_derive-2.7.0//:pest_derive",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tera",

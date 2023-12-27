@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::DependencySet;
+use crate::select::Select;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
-use crate::utils::starlark::SelectList;
 
 pub type CargoMetadata = cargo_metadata::Metadata;
 pub type CargoLockfile = cargo_lock::Lockfile;
@@ -337,8 +337,8 @@ impl LockfileAnnotation {
 }
 
 /// A pairing of a crate's package identifier to its annotations.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PairredExtras {
+#[derive(Debug)]
+pub struct PairedExtras {
     /// The crate's package identifier
     pub package_id: cargo_metadata::PackageId,
 
@@ -347,7 +347,7 @@ pub struct PairredExtras {
 }
 
 /// A collection of data which has been processed for optimal use in generating Bazel targets.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Annotations {
     /// Annotated Cargo metadata
     pub metadata: MetadataAnnotation,
@@ -359,10 +359,10 @@ pub struct Annotations {
     pub config: Config,
 
     /// Pairred crate annotations
-    pub pairred_extras: BTreeMap<CrateId, PairredExtras>,
+    pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
-    pub features: BTreeMap<CrateId, SelectList<String>>,
+    pub features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl Annotations {
@@ -404,7 +404,7 @@ impl Annotations {
                 } else {
                     Some((
                         CrateId::new(pkg.name.clone(), pkg.version.to_string()),
-                        PairredExtras {
+                        PairedExtras {
                             package_id: pkg_id.clone(),
                             crate_extra,
                         },
@@ -567,11 +567,10 @@ mod test {
     fn defaults_from_package_metadata() {
         let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
         let annotations = CrateAnnotations {
-            rustc_env: Some({
-                let mut rustc_env = BTreeMap::new();
-                rustc_env.insert("BAR".to_owned(), "bar is set".to_owned());
-                rustc_env
-            }),
+            rustc_env: Some(Select::from_value(BTreeMap::from([(
+                "BAR".to_owned(),
+                "bar is set".to_owned(),
+            )]))),
             ..CrateAnnotations::default()
         };
 

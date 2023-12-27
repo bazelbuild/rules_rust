@@ -139,7 +139,7 @@ def _annotation(
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
             attribute.
-        crate_features (list, optional): A list of strings to add to a crate's `rust_library::crate_features`
+        crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
@@ -211,8 +211,24 @@ def _annotation(
         ),
     ))
 
+def _select(common, selects):
+    """A Starlark Select for `crate.annotation()`.
+
+    Args:
+        common: A value that applies to all configurations.
+        selects (dict): A dict of `target_triple` to values.
+
+    Returns:
+        struct: A struct representing the Starlark Select.
+    """
+    return struct(
+        common = common,
+        selects = selects,
+    )
+
 crate = struct(
     spec = _spec,
     annotation = _annotation,
     workspace_member = _workspace_member,
+    select = _select,
 )

@@ -65,6 +65,11 @@ load(
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
 )
+load(
+    "//rust/private:unpretty.bzl",
+    _rust_unpretty = "rust_unpretty",
+    _rust_unpretty_aspect = "rust_unpretty_aspect",
+)
 
 rust_library = _rust_library
 # See @rules_rust//rust/private:rust.bzl for a complete description.
@@ -110,6 +115,12 @@ capture_clippy_output = _capture_clippy_output
 
 rustc_output_diagnostics = _rustc_output_diagnostics
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+rust_unpretty_aspect = _rust_unpretty_aspect
+# See @rules_rust//rust/private:unpretty.bzl for a complete description.
+
+rust_unpretty = _rust_unpretty
+# See @rules_rust//rust/private:unpretty.bzl for a complete description.
 
 error_format = _error_format
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
