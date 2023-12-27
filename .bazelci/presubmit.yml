@@ -18,11 +18,9 @@ single_rust_channel_targets: &single_rust_channel_targets
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
-  - "//bzlmod:hello_world_test"
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
-  - "//bzlmod:hello_world_test"
 default_linux_targets_rbe: &default_linux_targets_rbe
   - "--"
   - "//..."
@@ -628,6 +626,18 @@ tasks:
       # that would otherwise be quietly skipped due to `target_compatible_with`.
       - "//:nix_cross_compiling"
     test_targets:
+      - "//..."
+  ubuntu2004_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: ubuntu2004
+    working_directory: bzlmod/hello_world
+    build_targets:
+      - "//..."
+  macos_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: macos
+    working_directory: bzlmod/hello_world
+    build_targets:
       - "//..."
 
 buildifier:
