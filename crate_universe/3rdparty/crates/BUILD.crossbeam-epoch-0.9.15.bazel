@@ -132,6 +132,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "crossbeam-epoch_build_script",
+    actual = ":crossbeam-epoch_build_script",
     tags = ["manual"],
 )

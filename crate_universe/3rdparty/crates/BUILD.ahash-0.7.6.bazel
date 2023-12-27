@@ -245,6 +245,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "ahash_build_script",
+    actual = ":ahash_build_script",
     tags = ["manual"],
 )

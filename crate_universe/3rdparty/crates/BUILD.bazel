@@ -32,6 +32,12 @@ alias(
 )
 
 alias(
+    name = "camino",
+    actual = "@cui__camino-1.1.6//:camino",
+    tags = ["manual"],
+)
+
+alias(
     name = "cargo-lock",
     actual = "@cui__cargo-lock-9.0.0//:cargo_lock",
     tags = ["manual"],

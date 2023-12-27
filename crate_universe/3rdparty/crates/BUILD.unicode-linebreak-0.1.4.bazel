@@ -121,6 +121,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "unicode-linebreak_build_script",
+    actual = ":unicode-linebreak_build_script",
     tags = ["manual"],
 )

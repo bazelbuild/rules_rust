@@ -130,6 +130,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "chrono-tz_build_script",
+    actual = ":chrono-tz_build_script",
     tags = ["manual"],
 )
