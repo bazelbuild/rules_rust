@@ -13,7 +13,7 @@
     "compatibilityMode": "ERROR"
   },
   "localOverrideHashes": {
-    "rules_rust": "3831a1c2a94daa5f3685ea218149e7499f6e88f4316ec170bed8b464df65fd64",
+    "rules_rust": "46413972cece4b20fb5656067952f1aa26dc3dea3cd7ced45861938ad6b9ce4a",
     "bazel_tools": "922ea6752dc9105de5af957f7a99a6933c0a6a712d23df6aad16a9c399f7e787"
   },
   "moduleDepGraph": {
@@ -134,6 +134,11 @@
           },
           "imports": {
             "bazelci_rules": "bazelci_rules",
+            "cargo_bazel.buildifier-darwin-amd64": "cargo_bazel.buildifier-darwin-amd64",
+            "cargo_bazel.buildifier-darwin-arm64": "cargo_bazel.buildifier-darwin-arm64",
+            "cargo_bazel.buildifier-linux-amd64": "cargo_bazel.buildifier-linux-amd64",
+            "cargo_bazel.buildifier-linux-arm64": "cargo_bazel.buildifier-linux-arm64",
+            "cargo_bazel.buildifier-windows-amd64.exe": "cargo_bazel.buildifier-windows-amd64.exe",
             "com_google_googleapis": "com_google_googleapis",
             "cui": "cui",
             "cui__anyhow-1.0.75": "cui__anyhow-1.0.75",
@@ -231,7 +236,7 @@
           "usingModule": "rules_rust@_",
           "location": {
             "file": "@@rules_rust~override//:MODULE.bazel",
-            "line": 126,
+            "line": 131,
             "column": 21
           },
           "imports": {
@@ -248,7 +253,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@rules_rust~override//:MODULE.bazel",
-                "line": 127,
+                "line": 132,
                 "column": 15
               }
             }
@@ -262,7 +267,7 @@
           "usingModule": "rules_rust@_",
           "location": {
             "file": "@@rules_rust~override//:MODULE.bazel",
-            "line": 136,
+            "line": 141,
             "column": 38
           },
           "imports": {
@@ -1141,6 +1146,36 @@
     }
   },
   "moduleExtensions": {
+    "//third-party:extension.bzl%crate_repositories": {
+      "general": {
+        "bzlTransitiveDigest": "h+EgWIdBdYqBoJlr08ojwlKjxPHMq62+94fSqI/BrHM=",
+        "accumulatedFileDigests": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "vendor__anyhow-1.0.77": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "_main~crate_repositories~vendor__anyhow-1.0.77",
+              "sha256": "c9d19de80eff169429ac1e9f48fffb163916b448a44e8e046186232046d9e1f9",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/anyhow/1.0.77/download"
+              ],
+              "strip_prefix": "anyhow-1.0.77",
+              "build_file": "@@//third-party/crates:BUILD.anyhow-1.0.77.bazel"
+            }
+          }
+        },
+        "moduleExtensionMetadata": {
+          "explicitRootModuleDirectDeps": [
+            "vendor__anyhow-1.0.77"
+          ],
+          "explicitRootModuleDirectDevDeps": [],
+          "useAllRepos": "NO"
+        }
+      }
+    },
     "@@apple_support~1.11.1//crosstool:setup.bzl%apple_cc_configure_extension": {
       "general": {
         "bzlTransitiveDigest": "FOTImXZOLQw+EqKi3u13A1a5Wff22EtyCed2Cz1AiW0=",
@@ -4530,7 +4565,7 @@
     },
     "@@rules_rust~override//rust/private:extensions.bzl%internal_deps": {
       "general": {
-        "bzlTransitiveDigest": "dRu2IOjE6Wh+2eQW0If/9xyEW3+xzumGB6i3j+iUsVY=",
+        "bzlTransitiveDigest": "CcrD930EzKrQnLUXEhQBEpTrllV1UmgtGVgRXo5lrFc=",
         "accumulatedFileDigests": {},
         "envVariables": {},
         "generatedRepoSpecs": {
@@ -6152,6 +6187,20 @@
               "build_file": "@@rules_rust~override//wasm_bindgen/3rdparty/crates:BUILD.termcolor-1.2.0.bazel"
             }
           },
+          "rules_rust_bindgen__bitflags-2.4.1": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__bitflags-2.4.1",
+              "sha256": "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/bitflags/2.4.1/download"
+              ],
+              "strip_prefix": "bitflags-2.4.1",
+              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.bitflags-2.4.1.bazel"
+            }
+          },
           "rrra__regex-syntax-0.7.4": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -6360,20 +6409,6 @@
               ],
               "strip_prefix": "termcolor-1.2.0",
               "build_file": "@@rules_rust~override//tools/rust_analyzer/3rdparty/crates:BUILD.termcolor-1.2.0.bazel"
-            }
-          },
-          "rules_rust_bindgen__prettyplease-0.2.6": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__prettyplease-0.2.6",
-              "sha256": "3b69d39aab54d069e7f2fe8cb970493e7834601ca2d8c65fd7bbd183578080d1",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/prettyplease/0.2.6/download"
-              ],
-              "strip_prefix": "prettyplease-0.2.6",
-              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.prettyplease-0.2.6.bazel"
             }
           },
           "rules_rust_wasm_bindgen__errno-0.3.1": {
@@ -6947,20 +6982,6 @@
               "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.lazycell-1.3.0.bazel"
             }
           },
-          "cui__indexmap-2.0.0": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~cui__indexmap-2.0.0",
-              "sha256": "d5477fe2230a79769d8dc68e0eabf5437907c0457a5614a9e8dddb67f65eb65d",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/indexmap/2.0.0/download"
-              ],
-              "strip_prefix": "indexmap-2.0.0",
-              "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.indexmap-2.0.0.bazel"
-            }
-          },
           "cui__tracing-subscriber-0.3.17": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -7147,20 +7168,6 @@
               ],
               "strip_prefix": "regex-syntax-0.8.2",
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.regex-syntax-0.8.2.bazel"
-            }
-          },
-          "rules_rust_bindgen__bindgen-0.65.1": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__bindgen-0.65.1",
-              "sha256": "cfdf7b466f9a4903edc73f95d6d2bcd5baf8ae620638762244d3f60143643cc5",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/bindgen/0.65.1/download"
-              ],
-              "strip_prefix": "bindgen-0.65.1",
-              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.bindgen-0.65.1.bazel"
             }
           },
           "rules_rust_util_import__proc-macro2-1.0.33": {
@@ -8461,20 +8468,6 @@
               ],
               "strip_prefix": "crates-index-2.2.0",
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.crates-index-2.2.0.bazel"
-            }
-          },
-          "rules_rust_bindgen__either-1.8.1": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__either-1.8.1",
-              "sha256": "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/either/1.8.1/download"
-              ],
-              "strip_prefix": "either-1.8.1",
-              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.either-1.8.1.bazel"
             }
           },
           "cui__windows_x86_64_msvc-0.48.0": {
@@ -9839,6 +9832,20 @@
               "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.anstyle-parse-0.2.0.bazel"
             }
           },
+          "rules_rust_bindgen__bindgen-0.69.1": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__bindgen-0.69.1",
+              "sha256": "9ffcebc3849946a7170a05992aac39da343a90676ab392c51a4280981d6379c2",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/bindgen/0.69.1/download"
+              ],
+              "strip_prefix": "bindgen-0.69.1",
+              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.bindgen-0.69.1.bazel"
+            }
+          },
           "cui__version_check-0.9.4": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -10722,20 +10729,6 @@
               "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.minimal-lexical-0.2.1.bazel"
             }
           },
-          "cui__hashbrown-0.14.0": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~cui__hashbrown-0.14.0",
-              "sha256": "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/hashbrown/0.14.0/download"
-              ],
-              "strip_prefix": "hashbrown-0.14.0",
-              "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.hashbrown-0.14.0.bazel"
-            }
-          },
           "rules_rust_prost__tokio-io-timeout-1.2.0": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -11224,6 +11217,20 @@
               ],
               "strip_prefix": "tera-1.19.1",
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.tera-1.19.1.bazel"
+            }
+          },
+          "rules_rust_bindgen__bindgen-cli-0.69.1": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__bindgen-cli-0.69.1",
+              "integrity": "sha256-iFZe4JEQqZ54KZiX+/7VA7mqAwZThu6MGBl/yvIotQE=",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/bindgen-cli/0.69.1/download"
+              ],
+              "strip_prefix": "bindgen-cli-0.69.1",
+              "build_file": "@@rules_rust~override//bindgen/3rdparty:BUILD.bindgen-cli.bazel"
             }
           },
           "rules_rust_wasm_bindgen__tempfile-3.6.0": {
@@ -12353,20 +12360,6 @@
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.pest_derive-2.7.0.bazel"
             }
           },
-          "rules_rust_bindgen__which-4.4.0": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__which-4.4.0",
-              "sha256": "2441c784c52b289a054b7201fc93253e288f094e2f4be9058343127c4226a269",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/which/4.4.0/download"
-              ],
-              "strip_prefix": "which-4.4.0",
-              "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.which-4.4.0.bazel"
-            }
-          },
           "rules_rust_prost__once_cell-1.18.0": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -12645,6 +12638,20 @@
               ],
               "strip_prefix": "clap_lex-0.5.0",
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.clap_lex-0.5.0.bazel"
+            }
+          },
+          "cui__indexmap-2.1.0": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "rules_rust~override~internal_deps~cui__indexmap-2.1.0",
+              "sha256": "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/indexmap/2.1.0/download"
+              ],
+              "strip_prefix": "indexmap-2.1.0",
+              "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.indexmap-2.1.0.bazel"
             }
           },
           "cui__hex-0.4.3": {
@@ -13955,20 +13962,6 @@
               "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.uluru-3.0.0.bazel"
             }
           },
-          "rules_rust_bindgen__bindgen-cli-0.65.1": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_archive",
-            "attributes": {
-              "name": "rules_rust~override~internal_deps~rules_rust_bindgen__bindgen-cli-0.65.1",
-              "sha256": "33373a4e0ec8b6fa2654e0c941ad16631b0d564cfd20e7e4b3db4c5b28f4a237",
-              "type": "tar.gz",
-              "urls": [
-                "https://crates.io/api/v1/crates/bindgen-cli/0.65.1/download"
-              ],
-              "strip_prefix": "bindgen-cli-0.65.1",
-              "build_file": "@@rules_rust~override//bindgen/3rdparty:BUILD.bindgen-cli.bazel"
-            }
-          },
           "rules_rust_wasm_bindgen__syn-1.0.109": {
             "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
             "ruleClassName": "http_archive",
@@ -14191,6 +14184,20 @@
               ],
               "strip_prefix": "regex-1.8.4",
               "build_file": "@@rules_rust~override//bindgen/3rdparty/crates:BUILD.regex-1.8.4.bazel"
+            }
+          },
+          "cui__hashbrown-0.14.3": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "name": "rules_rust~override~internal_deps~cui__hashbrown-0.14.3",
+              "sha256": "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604",
+              "type": "tar.gz",
+              "urls": [
+                "https://crates.io/api/v1/crates/hashbrown/0.14.3/download"
+              ],
+              "strip_prefix": "hashbrown-0.14.3",
+              "build_file": "@@rules_rust~override//crate_universe/3rdparty/crates:BUILD.hashbrown-0.14.3.bazel"
             }
           },
           "cui__crypto-common-0.1.6": {
@@ -14853,6 +14860,11 @@
             "cui__tracing-subscriber-0.3.17",
             "cui__maplit-1.0.2",
             "cui__spectral-0.6.0",
+            "cargo_bazel.buildifier-darwin-amd64",
+            "cargo_bazel.buildifier-darwin-arm64",
+            "cargo_bazel.buildifier-linux-amd64",
+            "cargo_bazel.buildifier-linux-arm64",
+            "cargo_bazel.buildifier-windows-amd64.exe",
             "rules_rust_prost__heck",
             "rules_rust_prost",
             "rules_rust_prost__h2-0.3.19",
@@ -14864,8 +14876,8 @@
             "rules_rust_prost__tokio-stream-0.1.14",
             "rules_rust_prost__tonic-0.9.2",
             "llvm-raw",
-            "rules_rust_bindgen__bindgen-cli-0.65.1",
-            "rules_rust_bindgen__bindgen-0.65.1",
+            "rules_rust_bindgen__bindgen-cli-0.69.1",
+            "rules_rust_bindgen__bindgen-0.69.1",
             "rules_rust_bindgen__clang-sys-1.6.1",
             "rules_rust_bindgen__clap-4.3.3",
             "rules_rust_bindgen__clap_complete-4.3.1",
