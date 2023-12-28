@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 3,
-  "moduleFileHash": "34ab3f299849c0575b783f9bd16f5124b9f6691b7aef9ca0edaa1b9026c48335",
+  "moduleFileHash": "18fff0d372a7aa4e8f583cf6cc61bcc945764f46140955ab964dbfcbb5c996fb",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -33,7 +33,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 16,
+            "line": 15,
             "column": 21
           },
           "imports": {
@@ -49,7 +49,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 17,
+                "line": 16,
                 "column": 15
               }
             }
@@ -63,7 +63,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 25,
+            "line": 24,
             "column": 35
           },
           "imports": {
@@ -1865,8 +1865,8 @@
       }
     },
     "@@rules_rust~override//rust:extensions.bzl%rust": {
-      "general": {
-        "bzlTransitiveDigest": "R2CiJ5ahHMS1/86U+3gJRVKVIomtvtVHJ+riHqYvGSY=",
+      "os:osx,arch:aarch64": {
+        "bzlTransitiveDigest": "5HgJ90b9X3/T5h6QQw6xxwQbk3zXqFnUkyNGDCXibpE=",
         "accumulatedFileDigests": {},
         "envVariables": {},
         "generatedRepoSpecs": {
@@ -2579,8 +2579,8 @@
             "ruleClassName": "rust_toolchain_tools_repository",
             "attributes": {
               "name": "rules_rust~override~rust~rust_host_tools",
-              "exec_triple": "x86_64-unknown-linux-gnu",
-              "target_triple": "x86_64-unknown-linux-gnu",
+              "exec_triple": "aarch64-apple-darwin",
+              "target_triple": "aarch64-apple-darwin",
               "allocator_library": "@rules_rust//ffi/cc/allocator_library",
               "dev_components": false,
               "edition": "2021",

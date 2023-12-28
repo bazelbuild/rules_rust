@@ -134,4 +134,6 @@ rust = module_extension(
         "host_tools": _RUST_HOST_TOOLS_TAG,
         "toolchain": _RUST_TOOLCHAIN_TAG,
     },
+    arch_dependent = True,
+    os_dependent = True,
 )
