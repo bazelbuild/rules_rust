@@ -1,3 +1,4 @@
+load("@rules_rust//bindgen:repositories.bzl", "BINDGEN_VERSION")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -32,11 +33,11 @@ rust_binary(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.65.1",
+    version = BINDGEN_VERSION,
     # This list is produced by adding the contents of https://github.com/rust-lang/rust-bindgen/blob/main/bindgen-cli/Cargo.toml
     # to `@rules_rust//bindgen/3rdparty:crates_vendor`, rendering dependencies, and updating the deps
     deps = [
-        "@rules_rust_bindgen__bindgen-0.65.1//:bindgen",
+        "@rules_rust_bindgen__bindgen-{}//:bindgen".format(BINDGEN_VERSION),
         "@rules_rust_bindgen__clap-4.3.3//:clap",
         "@rules_rust_bindgen__clap_complete-4.3.1//:clap_complete",
         "@rules_rust_bindgen__env_logger-0.10.0//:env_logger",
