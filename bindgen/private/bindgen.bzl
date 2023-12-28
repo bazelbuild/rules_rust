@@ -258,7 +258,9 @@ def _rust_bindgen_impl(ctx):
                 _get_libs_for_static_executable(libclang),
             ] + ([
                 _get_libs_for_static_executable(libstdcxx),
-            ] if libstdcxx else []),
+            ] if libstdcxx else []) + [
+                cc_toolchain.all_files,
+            ],
         ),
         outputs = [output],
         mnemonic = "RustBindgen",
