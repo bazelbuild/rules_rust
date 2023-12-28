@@ -7,5 +7,7 @@ bcr_test_module:
       working_directory: examples/bzlmod/hello_world
       name: "Run test module"
       platform: ${{ platform }}
+      run_targets:
+        - "//third-party:vendor"
       test_targets:
         - "//..."
