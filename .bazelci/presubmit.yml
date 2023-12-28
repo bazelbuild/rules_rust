@@ -630,12 +630,16 @@ tasks:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
     working_directory: examples/bzlmod/hello_world
+    run_targets:
+      - "//third-party:vendor"
     test_targets:
       - "//..."
   macos_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: macos
     working_directory: examples/bzlmod/hello_world
+    run_targets:
+      - "//third-party:vendor"
     test_targets:
       - "//..."
 
