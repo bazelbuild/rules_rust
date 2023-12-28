@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
+load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
 cc_library(
