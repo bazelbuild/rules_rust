@@ -16,7 +16,7 @@ sh_test(
     name = "hello_world_test",
     srcs = ["hello_world_test.sh"],
     args = [
-        "$(rootpath :hello_world)",
+        "$(rlocationpath :hello_world)",
     ],
     data = [
         ":hello_world",
