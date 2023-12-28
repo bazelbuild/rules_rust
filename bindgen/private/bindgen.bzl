@@ -269,7 +269,8 @@ def _rust_bindgen_impl(ctx):
     )
 
     if ctx.attr.leak_symbols:
-        print("WARN: ctx.attr.leak_symbols is set to True for {} - please file an issue at https://github.com/bazelbuild/rules_rust/issues explaining why this was necessary, as this support will be removed soon.".format(ctx.label))
+        # buildifier: disable=print
+        print("WARN: rust_bindgen.leak_symbols is set to True for {} - please file an issue at https://github.com/bazelbuild/rules_rust/issues explaining why this was necessary, as this support will be removed soon.".format(ctx.label))
         providers = [cc_common.merge_cc_infos(
             direct_cc_infos = [cc_lib[CcInfo]],
         )]
