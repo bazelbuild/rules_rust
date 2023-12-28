@@ -374,12 +374,6 @@ tasks:
       - "//..."
     build_flags: *aspects_flags
     soft_fail: yes
-  ubuntu2004_examples_bzlmod:
-    name: Bzlmod Examples
-    platform: ubuntu2004
-    working_directory: examples/bzlmod/hello_world
-    build_targets:
-      - "//..."
   rbe_ubuntu2004_examples:
     name: Examples
     platform: rbe_ubuntu2004
@@ -635,13 +629,13 @@ tasks:
   ubuntu2004_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
-    working_directory: bzlmod/hello_world
+    working_directory: examples/bzlmod/hello_world
     build_targets:
       - "//..."
   macos_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: macos
-    working_directory: bzlmod/hello_world
+    working_directory: examples/bzlmod/hello_world
     build_targets:
       - "//..."
 

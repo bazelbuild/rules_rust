@@ -11,3 +11,17 @@ rust_doc(
     name = "hello_world_doc",
     crate = ":hello_world",
 )
+
+sh_test(
+    name = "hello_world_test",
+    srcs = ["hello_world_test.sh"],
+    args = [
+        "$(rootpath :hello_world)",
+    ],
+    data = [
+        ":hello_world",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)

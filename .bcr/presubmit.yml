@@ -4,7 +4,7 @@ bcr_test_module:
     platform: ["macos", "ubuntu2004"]
   tasks:
     run_tests:
-      working_directory: bzlmod/hello_world
+      working_directory: examples/bzlmod/hello_world
       name: "Run test module"
       platform: ${{ platform }}
       test_targets:
