@@ -5,6 +5,9 @@ package(default_visibility = ["//visibility:public"])
 rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
+    deps = [
+        "//third-party/crates:anyhow",
+    ],
 )
 
 rust_doc(

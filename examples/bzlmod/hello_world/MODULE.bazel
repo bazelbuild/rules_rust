@@ -5,6 +5,7 @@ module(
     version = "0.0.0",
 )
 
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
 bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
@@ -19,3 +20,6 @@ use_repo(
 )
 
 register_toolchains("@rust_toolchains//:all")
+
+crate_repositories = use_extension("//third-party:extension.bzl", "crate_repositories")
+use_repo(crate_repositories, "vendor__anyhow-1.0.77")
