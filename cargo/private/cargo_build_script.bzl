@@ -4,16 +4,25 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "C_COMPILE_ACTION_NAME")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//cargo:features.bzl", "SYMLINK_EXEC_ROOT_FEATURE")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "get_compilation_mode_opts", "get_linker_and_args")
+load(
+    "//rust/private:rustc.bzl",
+    "get_compilation_mode_opts",
+    "get_linker_and_args",
+)
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "dedent", "expand_dict_value_locations", "find_cc_toolchain", "find_toolchain", _name_to_crate_name = "name_to_crate_name")
-load(":features.bzl", "feature_enabled")
+load(
+    "//rust/private:utils.bzl",
+    "dedent",
+    "expand_dict_value_locations",
+    "find_cc_toolchain",
+    "find_toolchain",
+    _name_to_crate_name = "name_to_crate_name",
+)
 
 # Reexport for cargo_build_script_wrapper.bzl
 name_to_crate_name = _name_to_crate_name
@@ -69,6 +78,29 @@ def _pwd_flags(args):
         else:
             res.append(arg)
     return res
+
+def _feature_enabled(ctx, feature_name, default = False):
+    """Check if a feature is enabled.
+
+    If the feature is explicitly enabled or disabled, return accordingly.
+
+    In the case where the feature is not explicitly enabled or disabled, return the default value.
+
+    Args:
+        ctx: The context object.
+        feature_name: The name of the feature.
+        default: The default value to return if the feature is not explicitly enabled or disabled.
+
+    Returns:
+        Boolean defining whether the feature is enabled.
+    """
+    if feature_name in ctx.disabled_features:
+        return False
+
+    if feature_name in ctx.features:
+        return True
+
+    return default
 
 def _cargo_build_script_impl(ctx):
     """The implementation for the `cargo_build_script` rule.
@@ -244,7 +276,7 @@ def _cargo_build_script_impl(ctx):
             build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
-                                    feature_enabled(ctx, SYMLINK_EXEC_ROOT_FEATURE)
+                                    _feature_enabled(ctx, "symlink-exec-root")
 
     if experimental_symlink_execroot:
         env["RULES_RUST_SYMLINK_EXEC_ROOT"] = "1"
