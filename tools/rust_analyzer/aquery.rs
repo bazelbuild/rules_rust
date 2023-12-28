@@ -79,6 +79,7 @@ pub fn get_crate_specs(
         .current_dir(workspace)
         .arg("aquery")
         .arg("--include_aspects")
+        .arg("--include_artifacts")
         .arg(format!(
             "--aspects={rules_rust_name}//rust:defs.bzl%rust_analyzer_aspect"
         ))
