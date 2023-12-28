@@ -25,7 +25,6 @@ def crate_universe_dependencies(rust_version = rust_common.default_version, boot
         cargo_bazel_bootstrap(rust_version = rust_version, **kwargs)
 
     direct_deps = _vendor_crate_repositories()
-
-    crates_vendor_deps()
+    direct_deps.extend(crates_vendor_deps())
     cross_installer_deps()
     return direct_deps
