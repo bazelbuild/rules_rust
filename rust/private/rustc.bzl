@@ -320,7 +320,8 @@ def collect_deps(
                      "only one is allowed in the dependencies")
             build_info = dep_build_info
             transitive_build_infos.append(depset([build_info]))
-            transitive_link_search_paths.append(depset([build_info.link_search_paths]))
+            if build_info.link_search_paths:
+                transitive_link_search_paths.append(depset([build_info.link_search_paths]))
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
@@ -698,9 +699,16 @@ def collect_inputs(
     if _depend_on_metadata(crate_info, force_depend_on_objects):
         transitive_crate_outputs = dep_info.transitive_metadata_outputs
 
+    build_info_inputs = []
+    if build_info:
+        if build_info.rustc_env:
+            build_info_inputs.append(build_info.rustc_env)
+        if build_info.flags:
+            build_info_inputs.append(build_info.flags)
+
     nolinkstamp_compile_inputs = depset(
         getattr(files, "data", []) +
-        ([build_info.rustc_env, build_info.flags] if build_info else []) +
+        build_info_inputs +
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
         transitive = [
@@ -1645,6 +1653,7 @@ def _create_extra_input_args(build_info, dep_info):
             - (depset[File]): All direct and transitive build flag files from the current build info.
     """
     input_files = []
+    input_depsets = []
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -1653,15 +1662,19 @@ def _create_extra_input_args(build_info, dep_info):
     build_flags_files = []
 
     if build_info:
-        out_dir = build_info.out_dir.path
+        if build_info.out_dir:
+            out_dir = build_info.out_dir.path
+            input_files.append(build_info.out_dir)
         build_env_file = build_info.rustc_env
-        build_flags_files.append(build_info.flags)
-        build_flags_files.append(build_info.link_flags)
-        input_files.append(build_info.out_dir)
-        input_files.append(build_info.link_flags)
+        if build_info.flags:
+            build_flags_files.append(build_info.flags)
+        if build_info.link_flags:
+            build_flags_files.append(build_info.link_flags)
+            input_files.append(build_info.link_flags)
+        input_depsets.append(build_info.compile_data)
 
     return (
-        depset(input_files, transitive = [dep_info.link_search_path_files]),
+        depset(input_files, transitive = [dep_info.link_search_path_files] + input_depsets),
         out_dir,
         build_env_file,
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),

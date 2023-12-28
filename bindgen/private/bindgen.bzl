@@ -20,6 +20,7 @@ load(
 )
 load("@rules_cc//cc:defs.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_library")
+load("//rust:rust_common.bzl", "BuildInfo")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "get_linker_and_args")
@@ -64,9 +65,15 @@ def rust_bindgen_library(
     if "tags" in kwargs:
         kwargs.pop("tags")
 
+    sub_tags = tags + ([] if "manual" in tags else ["manual"])
+
     deps = kwargs.get("deps") or []
     if "deps" in kwargs:
         kwargs.pop("deps")
+
+    bindgen_kwargs = {}
+    if "leak_symbols" in kwargs:
+        bindgen_kwargs.update({"leak_symbols": kwargs.pop("leak_symbols")})
 
     rust_bindgen(
         name = name + "__bindgen",
@@ -74,15 +81,76 @@ def rust_bindgen_library(
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
         clang_flags = clang_flags or [],
-        tags = ["manual"],
+        tags = sub_tags,
+        **bindgen_kwargs
     )
+
+    for custom_tag in ["__bindgen", "no-clippy", "no-rustfmt"]:
+        tags = tags + ([] if custom_tag in tags else [custom_tag])
 
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        tags = tags + ["__bindgen", "noclippy"],
-        deps = deps + [cc_lib],
+        deps = deps + [name + "__bindgen"],
+        tags = tags,
         **kwargs
+    )
+
+def _generate_cc_link_build_info(ctx, cc_lib):
+    """Produce the eqivilant cargo_build_script providers for use in linking the library.
+
+    Args:
+        ctx (ctx): The rule's context object
+        cc_lib (Target): The `rust_bindgen.cc_lib` target.
+
+    Returns:
+        The `BuildInfo` provider.
+    """
+    compile_data = []
+    linker_flags = []
+    linker_search_paths = []
+
+    for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
+        for lib in linker_input.libraries:
+            if lib.static_library:
+                linker_flags.append("-lstatic={}".format(lib.static_library.owner.name))
+                linker_search_paths.append(lib.static_library.dirname)
+                compile_data.append(lib.static_library)
+            elif lib.pic_static_library:
+                linker_flags.append("-lstatic={}".format(lib.pic_static_library.owner.name))
+                linker_search_paths.append(lib.pic_static_library.dirname)
+                compile_data.append(lib.pic_static_library)
+
+        linker_flags.extend(linker_input.user_link_flags)
+
+    if not compile_data:
+        fail("No static libraries found in {}".format(
+            cc_lib.label,
+        ))
+
+    link_flags = ctx.actions.declare_file("{}.link_flags".format(ctx.label.name))
+    ctx.actions.write(
+        output = link_flags,
+        content = "\n".join(linker_flags),
+    )
+
+    link_search_paths = ctx.actions.declare_file("{}.link_search_paths".format(ctx.label.name))
+    ctx.actions.write(
+        output = link_search_paths,
+        content = "\n".join([
+            "-Lnative=${{pwd}}/{}".format(path)
+            for path in depset(linker_search_paths).to_list()
+        ]),
+    )
+
+    return BuildInfo(
+        compile_data = depset(compile_data),
+        dep_env = None,
+        flags = None,
+        link_flags = link_flags,
+        link_search_paths = link_search_paths,
+        out_dir = None,
+        rustc_env = None,
     )
 
 def _rust_bindgen_impl(ctx):
@@ -200,6 +268,21 @@ def _rust_bindgen_impl(ctx):
         tools = tools,
     )
 
+    if ctx.attr.leak_symbols:
+        # buildifier: disable=print
+        print("WARN: rust_bindgen.leak_symbols is set to True for {} - please file an issue at https://github.com/bazelbuild/rules_rust/issues explaining why this was necessary, as this support will be removed soon.".format(ctx.label))
+        providers = [cc_common.merge_cc_infos(
+            direct_cc_infos = [cc_lib[CcInfo]],
+        )]
+    else:
+        providers = [_generate_cc_link_build_info(ctx, cc_lib)]
+
+    return providers + [
+        OutputGroupInfo(
+            bindgen_bindings = depset([output]),
+        ),
+    ]
+
 rust_bindgen = rule(
     doc = "Generates a rust source file from a cc_library and a header.",
     implementation = _rust_bindgen_impl,
@@ -219,6 +302,13 @@ rust_bindgen = rule(
             doc = "The `.h` file to generate bindings for.",
             allow_single_file = True,
             mandatory = True,
+        ),
+        "leak_symbols": attr.bool(
+            doc = (
+                "If True, `cc_lib` will be exposed and linked into all downstream consumers of the target vs. the " +
+                "`rust_library` directly consuming it."
+            ),
+            default = False,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
