@@ -87,7 +87,7 @@ alias(
 
 alias(
     name = "itertools",
-    actual = "@cui__itertools-0.11.0//:itertools",
+    actual = "@cui__itertools-0.12.0//:itertools",
     tags = ["manual"],
 )
 
