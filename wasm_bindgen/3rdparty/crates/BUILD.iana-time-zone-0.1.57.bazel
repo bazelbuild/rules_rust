@@ -49,6 +49,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -72,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -106,11 +109,11 @@ rust_library(
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
             "@rules_rust_wasm_bindgen__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
-            "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.88//:wasm_bindgen",  # cfg(target_arch = "wasm32")
+            "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.89//:wasm_bindgen",  # cfg(target_arch = "wasm32")
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
             "@rules_rust_wasm_bindgen__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
-            "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.88//:wasm_bindgen",  # cfg(target_arch = "wasm32")
+            "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.89//:wasm_bindgen",  # cfg(target_arch = "wasm32")
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rules_rust_wasm_bindgen__core-foundation-sys-0.8.4//:core_foundation_sys",  # cfg(any(target_os = "macos", target_os = "ios"))
