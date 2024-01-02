@@ -187,7 +187,6 @@ rust_analyzer_aspect = aspect(
     attr_aspects = ["deps", "proc_macro_deps", "crate", "actual", "proto"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain_type"))],
-    incompatible_use_toolchain_transition = True,
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
@@ -293,7 +292,6 @@ rust_analyzer_toolchain = rule(
             mandatory = True,
         ),
     },
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_analyzer_detect_sysroot_impl(ctx):
@@ -342,7 +340,6 @@ rust_analyzer_detect_sysroot = rule(
         "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rust_analyzer:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Detect the sysroot and store in a file for use by the gen_rust_project tool.
     """),

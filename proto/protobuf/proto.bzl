@@ -331,9 +331,6 @@ rust_proto_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
-    # the version of Bazel that issue was closed on as the min supported version
-    incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s.
 
@@ -427,9 +424,6 @@ rust_grpc_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    # TODO: Remove once (bazelbuild/bazel#11584) is closed and the rules use
-    # the version of Bazel that issue was closed on as the min supported version
-    incompatible_use_toolchain_transition = True,
     doc = """\
 Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 

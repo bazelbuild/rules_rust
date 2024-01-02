@@ -397,7 +397,6 @@ cargo_build_script = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _merge_env_dict(prefix_dict, suffix_dict):

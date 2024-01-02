@@ -309,7 +309,6 @@ rust_prost_aspect = aspect(
         "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rustfmt:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_prost_library_impl(ctx):

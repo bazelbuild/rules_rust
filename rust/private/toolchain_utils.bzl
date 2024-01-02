@@ -75,7 +75,6 @@ toolchain_files = rule(
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _current_rust_toolchain_impl(ctx):
@@ -95,5 +94,4 @@ current_rust_toolchain = rule(
     toolchains = [
         str(Label("@rules_rust//rust:toolchain_type")),
     ],
-    incompatible_use_toolchain_transition = True,
 )

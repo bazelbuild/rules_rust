@@ -48,5 +48,4 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm_bindge
     toolchains = [
         str(Label("//wasm_bindgen:toolchain_type")),
     ],
-    incompatible_use_toolchain_transition = True,
 )

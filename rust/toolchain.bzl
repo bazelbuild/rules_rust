@@ -826,7 +826,6 @@ rust_toolchain = rule(
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = """Declares a Rust toolchain for use.
 
 This is for declaring a custom toolchain, eg. for configuring a particular version of rust or supporting a new platform.

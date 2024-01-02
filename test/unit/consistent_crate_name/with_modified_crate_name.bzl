@@ -76,6 +76,5 @@ with_modified_crate_name = rule(
         "@rules_rust//rust:toolchain_type",
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )
