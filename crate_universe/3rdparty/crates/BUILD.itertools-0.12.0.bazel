@@ -82,7 +82,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.0",
+    version = "0.12.0",
     deps = [
         "@cui__either-1.9.0//:either",
     ],
