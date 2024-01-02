@@ -304,7 +304,7 @@ _NORMAL_DEPENDENCIES = {
             "clap": "@cui__clap-4.3.11//:clap",
             "crates-index": "@cui__crates-index-2.2.0//:crates_index",
             "hex": "@cui__hex-0.4.3//:hex",
-            "itertools": "@cui__itertools-0.11.0//:itertools",
+            "itertools": "@cui__itertools-0.12.0//:itertools",
             "normpath": "@cui__normpath-1.1.1//:normpath",
             "pathdiff": "@cui__pathdiff-0.2.1//:pathdiff",
             "regex": "@cui__regex-1.10.2//:regex",
@@ -1861,12 +1861,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__itertools-0.11.0",
-        sha256 = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57",
+        name = "cui__itertools-0.12.0",
+        sha256 = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/itertools/0.11.0/download"],
-        strip_prefix = "itertools-0.11.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.itertools-0.11.0.bazel"),
+        urls = ["https://crates.io/api/v1/crates/itertools/0.12.0/download"],
+        strip_prefix = "itertools-0.12.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.itertools-0.12.0.bazel"),
     )
 
     maybe(
@@ -2501,12 +2501,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__rustc-serialize-0.3.24",
-        sha256 = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda",
+        name = "cui__rustc-serialize-0.3.25",
+        sha256 = "fe834bc780604f4674073badbad26d7219cadfb4a2275802db12cbae17498401",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/rustc-serialize/0.3.24/download"],
-        strip_prefix = "rustc-serialize-0.3.24",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.rustc-serialize-0.3.24.bazel"),
+        urls = ["https://crates.io/api/v1/crates/rustc-serialize/0.3.25/download"],
+        strip_prefix = "rustc-serialize-0.3.25",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.rustc-serialize-0.3.25.bazel"),
     )
 
     maybe(
@@ -3370,7 +3370,7 @@ def crate_repositories():
         struct(repo = "cui__crates-index-2.2.0", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
         struct(repo = "cui__indoc-2.0.4", is_dev_dep = False),
-        struct(repo = "cui__itertools-0.11.0", is_dev_dep = False),
+        struct(repo = "cui__itertools-0.12.0", is_dev_dep = False),
         struct(repo = "cui__normpath-1.1.1", is_dev_dep = False),
         struct(repo = "cui__pathdiff-0.2.1", is_dev_dep = False),
         struct(repo = "cui__regex-1.10.2", is_dev_dep = False),

@@ -87,6 +87,6 @@ rust_library(
         "@cui__num-integer-0.1.45//:num_integer",
         "@cui__num-traits-0.2.15//:num_traits",
         "@cui__rand-0.4.6//:rand",
-        "@cui__rustc-serialize-0.3.24//:rustc_serialize",
+        "@cui__rustc-serialize-0.3.25//:rustc_serialize",
     ],
 )
