@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "wasm_bindgen_wasm_interpreter",
+    name = "wasm_bindgen_threads_xform",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -33,7 +33,7 @@ rust_library(
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-wasm-interpreter",
+        "crate-name=wasm-bindgen-threads-xform",
         "manual",
         "noclippy",
         "norustfmt",
@@ -46,6 +46,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -69,14 +71,14 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.88",
+    version = "0.2.89",
     deps = [
         "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen__walrus-0.19.0//:walrus",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-wasm-conventions-0.2.88//:wasm_bindgen_wasm_conventions",
+        "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-wasm-conventions-0.2.89//:wasm_bindgen_wasm_conventions",
     ],
 )

@@ -11,11 +11,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 # licenses([
-#     "TODO",  # MIT/Apache-2.0
+#     "TODO",  # MIT OR Apache-2.0
 # ])
 
 rust_library(
-    name = "walrus",
+    name = "wasm_bindgen_multi_value_xform",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -28,19 +28,12 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "parallel",
-        "rayon",
-    ],
     crate_root = "src/lib.rs",
     edition = "2018",
-    proc_macro_deps = [
-        "@rules_rust_wasm_bindgen__walrus-macro-0.19.0//:walrus_macro",
-    ],
     rustc_flags = ["--cap-lints=allow"],
     tags = [
         "cargo-bazel",
-        "crate-name=walrus",
+        "crate-name=wasm-bindgen-multi-value-xform",
         "manual",
         "noclippy",
         "norustfmt",
@@ -53,6 +46,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -76,16 +71,13 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.19.0",
+    version = "0.2.89",
     deps = [
         "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen__id-arena-2.2.1//:id_arena",
-        "@rules_rust_wasm_bindgen__leb128-0.2.5//:leb128",
-        "@rules_rust_wasm_bindgen__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen__rayon-1.7.0//:rayon",
-        "@rules_rust_wasm_bindgen__wasmparser-0.77.1//:wasmparser",
+        "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
     ],
 )
