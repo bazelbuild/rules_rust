@@ -23,7 +23,10 @@ rust_binary(
         name = "hello_world_{}_doc".format(target),
         crate = ":hello_world_{}".format(target),
     )
-    for target in ["transient", "vendored"]
+    for target in [
+        "transient",
+        "vendored",
+    ]
 ]
 
 [
@@ -40,5 +43,8 @@ rust_binary(
             "@bazel_tools//tools/bash/runfiles",
         ],
     )
-    for target in ["transient", "vendored"]
+    for target in [
+        "transient",
+        "vendored",
+    ]
 ]
