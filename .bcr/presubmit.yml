@@ -1,0 +1,13 @@
+bcr_test_module:
+  module_path: ""
+  matrix:
+    platform: ["macos", "ubuntu2004"]
+  tasks:
+    run_tests:
+      working_directory: examples/bzlmod/hello_world
+      name: "Run test module"
+      platform: ${{ platform }}
+      run_targets:
+        - "//third-party:vendor"
+      test_targets:
+        - "//..."

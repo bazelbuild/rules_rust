@@ -1,7 +1,5 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
-load("//rust:defs.bzl", "rust_common")
-
 # buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
@@ -35,7 +33,7 @@ def _with_modified_crate_name_impl(ctx):
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = crate_type,
             root = crate_root,
@@ -78,6 +76,5 @@ with_modified_crate_name = rule(
         "@rules_rust//rust:toolchain_type",
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )

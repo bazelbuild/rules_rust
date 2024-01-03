@@ -1,155 +1,115 @@
 {
+    "metadata": null,
     "packages": [
         {
-            "name": "bitflags",
-            "version": "1.3.2",
-            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT/Apache-2.0",
-            "license_file": null,
-            "description": "A macro to generate structures which behave like bitflags.\n",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "no-std"
+            ],
+            "default_run": null,
             "dependencies": [
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "compiler_builtins",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.1.2",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "rustc-std-workspace-core",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0.0",
-                    "kind": null,
-                    "rename": "core",
                     "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": "core",
+                    "req": "^1.0.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "rustversion",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "serde",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "serde_derive",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "serde_json",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "trybuild",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.0",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "walkdir",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^2.3",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
                     "target": null,
-                    "registry": null
-                }
-            ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "bitflags",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/src/lib.rs",
-                    "edition": "2018",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
+                    "uses_default_features": true
                 },
                 {
-                    "kind": [
-                        "test"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "compile",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/tests/compile.rs",
-                    "edition": "2018",
-                    "doc": false,
-                    "doctest": false,
-                    "test": true
-                },
-                {
-                    "kind": [
-                        "test"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "basic",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/tests/basic.rs",
-                    "edition": "2018",
-                    "doc": false,
-                    "doctest": false,
-                    "test": true
+                    "features": [],
+                    "kind": "dev",
+                    "name": "walkdir",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^2.3",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
                 }
             ],
+            "description": "A macro to generate structures which behave like bitflags.\n",
+            "documentation": "https://docs.rs/bitflags",
+            "edition": "2018",
             "features": {
                 "compiler_builtins": [
                     "dep:compiler_builtins"
@@ -164,7 +124,18 @@
                     "compiler_builtins"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/bitflags-1.3.2/Cargo.toml",
+            "homepage": "https://github.com/bitflags/bitflags",
+            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "keywords": [
+                "bit",
+                "bitmask",
+                "bitflags",
+                "flags"
+            ],
+            "license": "MIT/Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/bitflags-1.3.2/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -174,1220 +145,301 @@
                     }
                 }
             },
+            "name": "bitflags",
             "publish": null,
-            "authors": [
-                "The Rust Project Developers"
-            ],
-            "categories": [
-                "no-std"
-            ],
-            "keywords": [
-                "bit",
-                "bitmask",
-                "bitflags",
-                "flags"
-            ],
             "readme": "README.md",
             "repository": "https://github.com/bitflags/bitflags",
-            "homepage": "https://github.com/bitflags/bitflags",
-            "documentation": "https://docs.rs/bitflags",
-            "edition": "2018",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "bitflags",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/bitflags-1.3.2/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "compile",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/bitflags-1.3.2/tests/compile.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "basic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/bitflags-1.3.2/tests/basic.rs",
+                    "test": true
+                }
+            ],
+            "version": "1.3.2"
         },
         {
-            "name": "clap",
-            "version": "4.1.1",
-            "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT OR Apache-2.0",
-            "license_file": null,
-            "description": "A simple to use, efficient, and full-featured Command Line Argument Parser",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "authors": [],
+            "categories": [
+                "command-line-interface"
+            ],
+            "default_run": null,
             "dependencies": [
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "backtrace",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.3",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "bitflags",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.2",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "clap_derive",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "=4.1.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "clap_lex",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.3.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "is-terminal",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.4.1",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "once_cell",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.12.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "strsim",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.10",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "termcolor",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.1.1",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "terminal_size",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.2.1",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "unicase",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^2.6",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "unicode-width",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.1.9",
-                    "kind": null,
-                    "rename": null,
                     "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.1.9",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "humantime",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^2",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "rustversion",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "shlex",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.1.0",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "snapbox",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^0.4",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "static_assertions",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.1.0",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": "dev",
                     "name": "trybuild",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.0.73",
-                    "kind": "dev",
-                    "rename": null,
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.73",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
-                    "name": "trycmd",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.14.9",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": false,
                     "features": [
                         "color-auto",
                         "diff",
                         "examples"
                     ],
-                    "target": null,
-                    "registry": null
-                },
-                {
-                    "name": "unic-emoji-char",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^0.9.0",
                     "kind": "dev",
-                    "rename": null,
+                    "name": "trycmd",
                     "optional": false,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.14.9",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "unic-emoji-char",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.9.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
                 }
             ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "clap",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/src/lib.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                },
-                {
-                    "kind": [
-                        "bin"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "stdio-fixture",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/src/bin/stdio-fixture.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": false,
-                    "test": true
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "demo",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/demo.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "cargo-example",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/cargo-example.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "cargo-example-derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/cargo-example-derive.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "escaped-positional",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/escaped-positional.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "escaped-positional-derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/escaped-positional-derive.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "find",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/find.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "git-derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/git-derive.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "typed-derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/typed-derive.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "busybox",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/multicall-busybox.rs",
-                    "edition": "2021",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "hostname",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/multicall-hostname.rs",
-                    "edition": "2021",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "repl",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/repl.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "help"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "01_quick",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/01_quick.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_apps",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/02_apps.rs",
-                    "edition": "2021",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_crate",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/02_crate.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_app_settings",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/02_app_settings.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_01_flag_bool",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_01_flag_bool.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_01_flag_count",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_01_flag_count.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_02_option",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_02_option.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_02_option_mult",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_02_option_mult.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_03_positional",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_03_positional.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_03_positional_mult",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_03_positional_mult.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_04_subcommands",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_04_subcommands.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_05_default_values",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/03_05_default_values.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_01_possible",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_01_possible.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_01_enum",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_01_enum.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_02_parse",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_02_parse.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_02_validate",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_02_validate.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_03_relations",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_03_relations.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_04_custom",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/04_04_custom.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "05_01_assert",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_builder/05_01_assert.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "cargo"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": true
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "01_quick_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/01_quick.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_apps_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/02_apps.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_crate_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/02_crate.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "02_app_settings_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/02_app_settings.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_01_flag_bool_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_01_flag_bool.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_01_flag_count_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_01_flag_count.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_02_option_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_02_option.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_02_option_mult_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_02_option_mult.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_03_positional_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_03_positional.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_03_positional_mult_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_03_positional_mult.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_04_subcommands_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_04_subcommands.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_04_subcommands_alt_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_04_subcommands_alt.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "03_05_default_values_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/03_05_default_values.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_01_enum_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/04_01_enum.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_02_parse_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/04_02_parse.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_02_validate_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/04_02_validate.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_03_relations_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/04_03_relations.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "04_04_custom_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/04_04_custom.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "05_01_assert_derive",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/tutorial_derive/05_01_assert.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": true
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "interop_augment_args",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/derive_ref/augment_args.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "interop_augment_subcommands",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/derive_ref/augment_subcommands.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "interop_hand_subcommand",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/derive_ref/hand_subcommand.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "interop_flatten_hand_args",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/derive_ref/flatten_hand_args.rs",
-                    "edition": "2021",
-                    "required-features": [
-                        "derive"
-                    ],
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "pacman",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/pacman.rs",
-                    "edition": "2021",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                },
-                {
-                    "kind": [
-                        "example"
-                    ],
-                    "crate_types": [
-                        "bin"
-                    ],
-                    "name": "git",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/examples/git.rs",
-                    "edition": "2021",
-                    "doc": false,
-                    "doctest": false,
-                    "test": false
-                }
-            ],
+            "description": "A simple to use, efficient, and full-featured Command Line Argument Parser",
+            "documentation": null,
+            "edition": "2021",
             "features": {
                 "cargo": [
                     "dep:once_cell"
@@ -1449,7 +501,19 @@
                     "dep:terminal_size"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap-4.1.1/Cargo.toml",
+            "homepage": null,
+            "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "keywords": [
+                "argument",
+                "cli",
+                "arg",
+                "parser",
+                "parse"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -1472,8 +536,6 @@
                     ]
                 },
                 "release": {
-                    "shared-version": true,
-                    "tag-name": "v{{version}}",
                     "pre-release-replacements": [
                         {
                             "file": "CHANGELOG.md",
@@ -1505,14 +567,997 @@
                             "replace": "<!-- next-url -->\n[Unreleased]: https://github.com/clap-rs/clap/compare/{{tag_name}}...HEAD",
                             "search": "<!-- next-url -->"
                         }
-                    ]
+                    ],
+                    "shared-version": true,
+                    "tag-name": "v{{version}}"
                 }
             },
+            "name": "clap",
             "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/clap-rs/clap",
+            "rust_version": "1.64.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "clap",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": true,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "bin"
+                    ],
+                    "name": "stdio-fixture",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/src/bin/stdio-fixture.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "demo",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/demo.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "cargo-example",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/cargo-example.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "cargo-example-derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/cargo-example-derive.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "escaped-positional",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/escaped-positional.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "escaped-positional-derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/escaped-positional-derive.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "find",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/find.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "git-derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/git-derive.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "typed-derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/typed-derive.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "busybox",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/multicall-busybox.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "hostname",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/multicall-hostname.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "repl",
+                    "required-features": [
+                        "help"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/repl.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "01_quick",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/01_quick.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_apps",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/02_apps.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_crate",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/02_crate.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_app_settings",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/02_app_settings.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_01_flag_bool",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_01_flag_bool.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_01_flag_count",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_01_flag_count.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_02_option",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_02_option.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_02_option_mult",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_02_option_mult.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_03_positional",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_03_positional.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_03_positional_mult",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_03_positional_mult.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_04_subcommands",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_04_subcommands.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_05_default_values",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/03_05_default_values.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_01_possible",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_01_possible.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_01_enum",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_01_enum.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_02_parse",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_02_parse.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_02_validate",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_02_validate.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_03_relations",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_03_relations.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_04_custom",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/04_04_custom.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "05_01_assert",
+                    "required-features": [
+                        "cargo"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_builder/05_01_assert.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "01_quick_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/01_quick.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_apps_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/02_apps.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_crate_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/02_crate.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "02_app_settings_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/02_app_settings.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_01_flag_bool_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_01_flag_bool.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_01_flag_count_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_01_flag_count.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_02_option_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_02_option.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_02_option_mult_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_02_option_mult.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_03_positional_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_03_positional.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_03_positional_mult_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_03_positional_mult.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_04_subcommands_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_04_subcommands.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_04_subcommands_alt_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_04_subcommands_alt.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "03_05_default_values_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/03_05_default_values.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_01_enum_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/04_01_enum.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_02_parse_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/04_02_parse.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_02_validate_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/04_02_validate.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_03_relations_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/04_03_relations.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "04_04_custom_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/04_04_custom.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "05_01_assert_derive",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/tutorial_derive/05_01_assert.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "interop_augment_args",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/derive_ref/augment_args.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "interop_augment_subcommands",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/derive_ref/augment_subcommands.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "interop_hand_subcommand",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/derive_ref/hand_subcommand.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "interop_flatten_hand_args",
+                    "required-features": [
+                        "derive"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/derive_ref/flatten_hand_args.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "pacman",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/pacman.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "git",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap-4.1.1/examples/git.rs",
+                    "test": false
+                }
+            ],
+            "version": "4.1.1"
+        },
+        {
             "authors": [],
             "categories": [
                 "command-line-interface"
             ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [
+                        "raw_os_str"
+                    ],
+                    "kind": null,
+                    "name": "os_str_bytes",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^6.0.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                }
+            ],
+            "description": "Minimal, flexible command line parser",
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
+            "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
             "keywords": [
                 "argument",
                 "cli",
@@ -1520,57 +1565,10 @@
                 "parser",
                 "parse"
             ],
-            "readme": "README.md",
-            "repository": "https://github.com/clap-rs/clap",
-            "homepage": null,
-            "documentation": null,
-            "edition": "2021",
-            "links": null,
-            "default_run": null,
-            "rust_version": "1.64.0"
-        },
-        {
-            "name": "clap_lex",
-            "version": "0.3.3",
-            "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
             "license": "MIT OR Apache-2.0",
             "license_file": null,
-            "description": "Minimal, flexible command line parser",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
-            "dependencies": [
-                {
-                    "name": "os_str_bytes",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^6.0.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": false,
-                    "features": [
-                        "raw_os_str"
-                    ],
-                    "target": null,
-                    "registry": null
-                }
-            ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "clap_lex",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_lex-0.3.3/src/lib.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
-            "features": {},
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/clap_lex-0.3.3/Cargo.toml",
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap_lex-0.3.3/Cargo.toml",
             "metadata": {
                 "release": {
                     "pre-release-replacements": [
@@ -1614,155 +1612,149 @@
                     ]
                 }
             },
+            "name": "clap_lex",
             "publish": null,
-            "authors": [],
-            "categories": [
-                "command-line-interface"
-            ],
-            "keywords": [
-                "argument",
-                "cli",
-                "arg",
-                "parser",
-                "parse"
-            ],
             "readme": "README.md",
             "repository": "https://github.com/clap-rs/clap/tree/master/clap_lex",
-            "homepage": null,
-            "documentation": null,
-            "edition": "2021",
-            "links": null,
-            "default_run": null,
-            "rust_version": "1.64.0"
-        },
-        {
-            "name": "crate-with-optional-deps",
-            "version": "0.1.0",
-            "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)",
-            "license": null,
-            "license_file": null,
-            "description": null,
-            "source": null,
-            "dependencies": [
-                {
-                    "name": "clap",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "=4.1.1",
-                    "kind": null,
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": false,
-                    "features": [],
-                    "target": null,
-                    "registry": null
-                }
-            ],
+            "rust_version": "1.64.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
             "targets": [
                 {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
                     "kind": [
                         "lib"
                     ],
+                    "name": "clap_lex",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/clap_lex-0.3.3/src/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.3.3"
+        },
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "clap",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "=4.1.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                }
+            ],
+            "description": null,
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
+            "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/crate_optional_deps_disabled/Cargo.toml",
+            "metadata": null,
+            "name": "crate-with-optional-deps",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
                     "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
                         "lib"
                     ],
                     "name": "crate-with-optional-deps",
                     "src_path": "{TEMP_DIR}/crate_optional_deps_disabled/lib.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": true,
                     "test": true
                 }
             ],
-            "features": {},
-            "manifest_path": "{TEMP_DIR}/crate_optional_deps_disabled/Cargo.toml",
-            "metadata": null,
-            "publish": null,
-            "authors": [],
-            "categories": [],
-            "keywords": [],
-            "readme": null,
-            "repository": null,
-            "homepage": null,
-            "documentation": null,
-            "edition": "2021",
-            "links": null,
-            "default_run": null,
-            "rust_version": null
+            "version": "0.1.0"
         },
         {
-            "name": "os_str_bytes",
-            "version": "6.5.0",
-            "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
-            "license": "MIT OR Apache-2.0",
-            "license_file": null,
-            "description": "Convert between byte sequences and platform-native strings\n",
-            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "authors": [
+                "dylni"
+            ],
+            "categories": [
+                "command-line-interface",
+                "development-tools::ffi",
+                "encoding",
+                "os",
+                "rust-patterns"
+            ],
+            "default_run": null,
             "dependencies": [
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "memchr",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^2.4",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "print_bytes",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
                     "req": "^1.0",
-                    "kind": null,
-                    "rename": null,
-                    "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
+                    "features": [],
+                    "kind": null,
                     "name": "uniquote",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^3.0",
-                    "kind": null,
-                    "rename": null,
                     "optional": true,
-                    "uses_default_features": true,
-                    "features": [],
+                    "registry": null,
+                    "rename": null,
+                    "req": "^3.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 },
                 {
-                    "name": "fastrand",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index",
-                    "req": "^1.8",
-                    "kind": "dev",
-                    "rename": null,
-                    "optional": false,
-                    "uses_default_features": true,
                     "features": [],
+                    "kind": "dev",
+                    "name": "fastrand",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.8",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": null,
-                    "registry": null
+                    "uses_default_features": true
                 }
             ],
-            "targets": [
-                {
-                    "kind": [
-                        "lib"
-                    ],
-                    "crate_types": [
-                        "lib"
-                    ],
-                    "name": "os_str_bytes",
-                    "src_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.5.0/src/lib.rs",
-                    "edition": "2021",
-                    "doc": true,
-                    "doctest": true,
-                    "test": true
-                }
-            ],
+            "description": "Convert between byte sequences and platform-native strings\n",
+            "documentation": null,
+            "edition": "2021",
             "features": {
                 "checked_conversions": [],
                 "default": [
@@ -1780,7 +1772,19 @@
                     "dep:uniquote"
                 ]
             },
-            "manifest_path": "{CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.5.0/Cargo.toml",
+            "homepage": null,
+            "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "keywords": [
+                "bytes",
+                "osstr",
+                "osstring",
+                "path",
+                "windows"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/os_str_bytes-6.5.0/Cargo.toml",
             "metadata": {
                 "docs": {
                     "rs": {
@@ -1796,128 +1800,127 @@
                     }
                 }
             },
+            "name": "os_str_bytes",
             "publish": null,
-            "authors": [
-                "dylni"
-            ],
-            "categories": [
-                "command-line-interface",
-                "development-tools::ffi",
-                "encoding",
-                "os",
-                "rust-patterns"
-            ],
-            "keywords": [
-                "bytes",
-                "osstr",
-                "osstring",
-                "path",
-                "windows"
-            ],
             "readme": "README.md",
             "repository": "https://github.com/dylni/os_str_bytes",
-            "homepage": null,
-            "documentation": null,
-            "edition": "2021",
-            "links": null,
-            "default_run": null,
-            "rust_version": "1.57.0"
+            "rust_version": "1.57.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "os_str_bytes",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/os_str_bytes-6.5.0/src/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "6.5.0"
         }
-    ],
-    "workspace_members": [
-        "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
     ],
     "resolve": {
         "nodes": [
             {
-                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [],
                 "deps": [],
                 "features": [
                     "default"
-                ]
+                ],
+                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
             },
             {
-                "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
                     "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
-                        "name": "bitflags",
-                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
                                 "target": null
                             }
-                        ]
+                        ],
+                        "name": "bitflags",
+                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
                     },
                     {
-                        "name": "clap_lex",
-                        "pkg": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
                                 "target": null
                             }
-                        ]
+                        ],
+                        "name": "clap_lex",
+                        "pkg": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
                     }
                 ],
-                "features": []
+                "features": [],
+                "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
             },
             {
-                "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [
                     "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
-                        "name": "os_str_bytes",
-                        "pkg": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
                                 "target": null
                             }
-                        ]
+                        ],
+                        "name": "os_str_bytes",
+                        "pkg": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
                     }
                 ],
-                "features": []
+                "features": [],
+                "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
             },
             {
-                "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)",
                 "dependencies": [
                     "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
                 ],
                 "deps": [
                     {
-                        "name": "clap",
-                        "pkg": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
                         "dep_kinds": [
                             {
                                 "kind": null,
                                 "target": null
                             }
-                        ]
+                        ],
+                        "name": "clap",
+                        "pkg": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
                     }
                 ],
-                "features": []
+                "features": [],
+                "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
             },
             {
-                "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
                 "dependencies": [],
                 "deps": [],
                 "features": [
                     "raw_os_str"
-                ]
+                ],
+                "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
             }
         ],
         "root": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
     },
     "target_directory": "{TEMP_DIR}/crate_optional_deps_disabled/target",
     "version": 1,
-    "workspace_root": "{TEMP_DIR}/crate_optional_deps_disabled",
-    "metadata": null
+    "workspace_default_members": [
+        "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+    ],
+    "workspace_members": [
+        "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+    ],
+    "workspace_root": "{TEMP_DIR}/crate_optional_deps_disabled"
 }

@@ -29,6 +29,9 @@ def rustfmt_integration_test_suite(name, **kwargs):
 
     tests = []
     for variant, rust_rule in _VARIANTS.items():
+        #
+        # Test edition 2018
+        #
         rust_rule(
             name = "{}_formatted_2018".format(variant),
             srcs = ["srcs/2018/formatted.rs"],
@@ -53,6 +56,9 @@ def rustfmt_integration_test_suite(name, **kwargs):
             targets = [":{}_unformatted_2018".format(variant)],
         )
 
+        #
+        # Test edition 2015
+        #
         rust_rule(
             name = "{}_formatted_2015".format(variant),
             srcs = ["srcs/2015/formatted.rs"],
@@ -77,11 +83,30 @@ def rustfmt_integration_test_suite(name, **kwargs):
             targets = [":{}_unformatted_2015".format(variant)],
         )
 
+        #
+        # Test targets with generated sources
+        #
+        rust_rule(
+            name = "{}_generated".format(variant),
+            srcs = [
+                "srcs/generated/lib.rs",
+                "srcs/generated/generated.rs",
+            ],
+            crate_root = "srcs/generated/lib.rs",
+            edition = "2021",
+        )
+
+        rustfmt_test(
+            name = "{}_generated_test".format(variant),
+            targets = [":{}_generated".format(variant)],
+        )
+
         tests.extend([
             "{}_formatted_2015_test".format(variant),
             "{}_formatted_2018_test".format(variant),
             "{}_unformatted_2015_test".format(variant),
             "{}_unformatted_2018_test".format(variant),
+            "{}_generated_test".format(variant),
         ])
 
     native.test_suite(
@@ -93,4 +118,5 @@ def rustfmt_integration_test_suite(name, **kwargs):
     native.sh_binary(
         name = "{}.test_runner".format(name),
         srcs = ["rustfmt_failure_test.sh"],
+        testonly = True,
     )

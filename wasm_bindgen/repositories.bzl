@@ -18,19 +18,26 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//wasm_bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
 
-WASM_BINDGEN_VERSION = "0.2.87"
+WASM_BINDGEN_VERSION = "0.2.89"
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_dependencies():
     """Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
 
     [wb]: https://github.com/rustwasm/wasm-bindgen
+
+    Returns:
+        list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+        defined by this macro.
     """
 
+    direct_deps = [
+        struct(repo = "rules_rust_wasm_bindgen_cli", is_dev_dep = False),
+    ]
     maybe(
         http_archive,
         name = "rules_rust_wasm_bindgen_cli",
-        sha256 = "4cb569120f98a3fe025b8f2c460dd2df4d46519da4524c55a83aa376af3545e3",
+        sha256 = "539d7d1fd32b3dd6810cfd099d6ca8a91e567c5ecd14c9b7387856ab871f5c0d",
         urls = ["https://crates.io/api/v1/crates/wasm-bindgen-cli/{}/download".format(WASM_BINDGEN_VERSION)],
         type = "tar.gz",
         strip_prefix = "wasm-bindgen-cli-{}".format(WASM_BINDGEN_VERSION),
@@ -39,14 +46,8 @@ def rust_wasm_bindgen_dependencies():
         patches = [Label("//wasm_bindgen/3rdparty/patches:resolver.patch")],
     )
 
-    maybe(
-        http_archive,
-        name = "rules_nodejs",
-        sha256 = "017e2348bb8431156d5cf89b6f502c2e7fcffc568729f74f89e4a12bd8279e90",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.2/rules_nodejs-core-5.5.2.tar.gz"],
-    )
-
-    crate_repositories()
+    direct_deps.extend(crate_repositories())
+    return direct_deps
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_register_toolchains(register_toolchains = True):

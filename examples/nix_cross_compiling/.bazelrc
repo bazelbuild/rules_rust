@@ -1,0 +1,15 @@
+# Sensible Defaults
+build --sandbox_default_allow_network=false
+build --incompatible_strict_action_env
+build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build --incompatible_enable_cc_toolchain_resolution=true
+
+# Require Platform Transitions
+## This works by setting the targte platform to an invalid platform
+## and each `x_binary()` and `x_library()` rule unfortunately needs
+## to tag itself with `platform_missing` to get excluded from glob
+## builds like `build //...` but still have a way to include them
+## by removing the filter line for things like Rust Analyzer.
+build --host_platform=//bazel/platforms:host
+build --platforms=//bazel/platforms:missing
+build --build_tag_filters=-platform_missing

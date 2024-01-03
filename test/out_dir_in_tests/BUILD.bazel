@@ -30,9 +30,6 @@ rust_doc_test(
 rust_test_suite(
     name = "suite",
     srcs = glob(["tests/**"]),
-    # Add the 'crate' argument, which will be passed as a kwarg
-    # to the underlying rust_test rules. This will make OUT_DIR
-    # available when compiling integration tests.
-    crate = ":demo_lib",
     edition = "2018",
+    deps = [":build_script"],
 )

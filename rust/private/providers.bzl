@@ -24,7 +24,7 @@ CrateInfo = provider(
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
-        "metadata": "File: The rmeta file produced for this crate. It is optional.",
+        "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -32,6 +32,8 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
+        "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
+        "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": (
             "str: The type of this crate " +
@@ -70,12 +72,13 @@ CrateGroupInfo = provider(
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
-        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
-        "flags": "File: file containing additional flags to pass to rustc",
-        "link_flags": "File: file containing flags to pass to the linker",
-        "link_search_paths": "File: file containing search paths to pass to the linker",
-        "out_dir": "File: directory containing the result of a build script",
-        "rustc_env": "File: file containing additional environment variables to set for rustc.",
+        "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
+        "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
+        "flags": "Optional[File]: file containing additional flags to pass to rustc",
+        "link_flags": "Optional[File]: file containing flags to pass to the linker",
+        "link_search_paths": "Optional[File]: file containing search paths to pass to the linker",
+        "out_dir": "Optional[File]: directory containing the result of a build script",
+        "rustc_env": "Optional[File]: file containing additional environment variables to set for rustc.",
     },
 )
 
@@ -91,6 +94,16 @@ DepVariantInfo = provider(
         "crate_group_info": "CrateGroupInfo: The CrateGroupInfo of a Rust crate group dependency",
         "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
         "dep_info": "DepInfo: The DepInfo of a Rust dependency",
+    },
+)
+
+RustcOutputDiagnosticsInfo = provider(
+    doc = (
+        "Save json diagnostics from rustc. Json diagnostics are able to be " +
+        "consumed by tools such as rust-analyzer to provide IDE integration"
+    ),
+    fields = {
+        "rustc_output_diagnostics": "bool: Whether or not to output diagnostics",
     },
 )
 

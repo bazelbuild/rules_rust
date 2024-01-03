@@ -1,5 +1,5 @@
 {
-  "checksum": "c1f1a6f4e385c34b24fba8b5f9cbf6ff89dc26aa85f4054d46b06e4a6efff068",
+  "checksum": "f4eb48db9ec90a1a1fa55a50398d39045b98dadd0fe3500bafb2d6afb8b3329b",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -42,13 +42,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxx 1.0.104": {
+    "cxx 1.0.109": {
       "name": "cxx",
-      "version": "1.0.104",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxx/1.0.104/download",
-          "sha256": "ba1ba0a82363c553ecb7b4cd58ba6e1c017baef8e3cca4e7d66ca17879201144"
+          "url": "https://crates.io/api/v1/crates/cxx/1.0.109/download",
+          "sha256": "c390c123d671cc547244943ecad81bdaab756c6ea332d9ca9c1f48d952a24895"
         }
       },
       "targets": [
@@ -84,31 +84,37 @@
           ],
           "selects": {}
         },
+        "extra_deps": {
+          "common": [
+            ":cxx_cc"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
         "proc_macro_deps": {
           "common": [
             {
-              "id": "cxxbridge-macro 1.0.104",
+              "id": "cxxbridge-macro 1.0.109",
               "target": "cxxbridge_macro"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.104"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0",
-      "additive_build_file_content": "\n# This file is included in the BUILD for the cxx crate, to export its header\n# file for C++ code to depend on.\ncc_library(\n    name = \"cxx_cc\",\n    visibility = [\"//visibility:public\"],\n    hdrs = [\"include/cxx.h\"],\n    srcs = [\"src/cxx.cc\"],\n    includes = [\"include\"],\n    linkstatic = True,\n)\n",
+      "additive_build_file_content": "cc_library(\n    name = \"cxx_cc\",\n    srcs = [\"src/cxx.cc\"],\n    hdrs = [\"include/cxx.h\"],\n    include_prefix = \"rust\",\n    includes = [\"include\"],\n    linkstatic = True,\n    strip_include_prefix = \"include\",\n    visibility = [\"//visibility:public\"],\n)\n",
       "extra_aliased_targets": {
         "cxx_cc": "cxx_cc"
       }
     },
-    "cxxbridge-flags 1.0.104": {
+    "cxxbridge-flags 1.0.109": {
       "name": "cxxbridge-flags",
-      "version": "1.0.104",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.104/download",
-          "sha256": "409667bbb937bae87f7cfa91ca29e1415bb92d415371e3344b5269c10d90d595"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.109/download",
+          "sha256": "94415827ecfea0f0c74c8cad7d1a86ddb3f05354d6a6ddeda0adee5e875d2939"
         }
       },
       "targets": [
@@ -134,17 +140,17 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.104"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxxbridge-macro 1.0.104": {
+    "cxxbridge-macro 1.0.109": {
       "name": "cxxbridge-macro",
-      "version": "1.0.104",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.104/download",
-          "sha256": "5fb2a9757fb085d6d97856b28d4f049141ca4a61a64c697f4426433b5f6caa1f"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.109/download",
+          "sha256": "e33dbbe9f5621c9247f97ec14213b04f350bff4b6cebefe834c60055db266ecf"
         }
       },
       "targets": [
@@ -181,7 +187,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.104"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -208,7 +214,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx 1.0.104",
+              "id": "cxx 1.0.109",
               "target": "cxx"
             }
           ],
@@ -554,6 +560,42 @@
     "direct-cargo-bazel-deps 0.0.1": ""
   },
   "conditions": {
+    "aarch64-apple-darwin": [
+      "aarch64-apple-darwin"
+    ],
+    "aarch64-apple-ios": [
+      "aarch64-apple-ios"
+    ],
+    "aarch64-apple-ios-sim": [
+      "aarch64-apple-ios-sim"
+    ],
+    "aarch64-fuchsia": [
+      "aarch64-fuchsia"
+    ],
+    "aarch64-linux-android": [
+      "aarch64-linux-android"
+    ],
+    "aarch64-pc-windows-msvc": [
+      "aarch64-pc-windows-msvc"
+    ],
+    "aarch64-unknown-linux-gnu": [
+      "aarch64-unknown-linux-gnu"
+    ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
+    ],
+    "arm-unknown-linux-gnueabi": [
+      "arm-unknown-linux-gnueabi"
+    ],
+    "armv7-linux-androideabi": [
+      "armv7-linux-androideabi"
+    ],
+    "armv7-unknown-linux-gnueabi": [
+      "armv7-unknown-linux-gnueabi"
+    ],
     "cfg(unix)": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
@@ -561,6 +603,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -575,7 +619,78 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
+    ],
+    "i686-apple-darwin": [
+      "i686-apple-darwin"
+    ],
+    "i686-linux-android": [
+      "i686-linux-android"
+    ],
+    "i686-pc-windows-msvc": [
+      "i686-pc-windows-msvc"
+    ],
+    "i686-unknown-freebsd": [
+      "i686-unknown-freebsd"
+    ],
+    "i686-unknown-linux-gnu": [
+      "i686-unknown-linux-gnu"
+    ],
+    "powerpc-unknown-linux-gnu": [
+      "powerpc-unknown-linux-gnu"
+    ],
+    "riscv32imc-unknown-none-elf": [
+      "riscv32imc-unknown-none-elf"
+    ],
+    "riscv64gc-unknown-none-elf": [
+      "riscv64gc-unknown-none-elf"
+    ],
+    "s390x-unknown-linux-gnu": [
+      "s390x-unknown-linux-gnu"
+    ],
+    "thumbv7em-none-eabi": [
+      "thumbv7em-none-eabi"
+    ],
+    "thumbv8m.main-none-eabi": [
+      "thumbv8m.main-none-eabi"
+    ],
+    "wasm32-unknown-unknown": [
+      "wasm32-unknown-unknown"
+    ],
+    "wasm32-wasi": [
+      "wasm32-wasi"
+    ],
+    "x86_64-apple-darwin": [
+      "x86_64-apple-darwin"
+    ],
+    "x86_64-apple-ios": [
+      "x86_64-apple-ios"
+    ],
+    "x86_64-fuchsia": [
+      "x86_64-fuchsia"
+    ],
+    "x86_64-linux-android": [
+      "x86_64-linux-android"
+    ],
+    "x86_64-pc-windows-msvc": [
+      "x86_64-pc-windows-msvc"
+    ],
+    "x86_64-unknown-freebsd": [
+      "x86_64-unknown-freebsd"
+    ],
+    "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
+      "x86_64-unknown-nixos-gnu"
+    ],
+    "x86_64-unknown-none": [
+      "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "cxx 1.0.109"
+  ],
+  "direct_dev_deps": []
 }

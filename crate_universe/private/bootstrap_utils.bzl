@@ -5,6 +5,9 @@ _SRCS_TEMPLATE = """\
 
 # Each source file is tracked as a target so the `cargo_bootstrap_repository`
 # rule will know to automatically rebuild if any of the sources changed.
+
+# Run 'bazel run //crate_universe/private:srcs_module.install' to regenerate.
+
 CARGO_BAZEL_SRCS = [
     {srcs}
 ]
@@ -44,7 +47,7 @@ _srcs_module = rule(
 )
 
 _INSTALLER_TEMPLATE = """\
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 cp -f "{path}" "${{BUILD_WORKSPACE_DIRECTORY}}/{dest}"
 """

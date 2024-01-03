@@ -6,6 +6,12 @@ mod splice;
 mod vendor;
 
 use clap::Parser;
+use tracing::{Level, Subscriber};
+use tracing_subscriber::fmt::format::{Format, Full};
+use tracing_subscriber::fmt::time::SystemTime;
+use tracing_subscriber::fmt::{FormatEvent, FormatFields};
+use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::FmtSubscriber;
 
 pub use self::generate::GenerateOptions;
 pub use self::query::QueryOptions;
@@ -43,4 +49,63 @@ pub type Result<T> = anyhow::Result<T>;
 
 pub fn parse_args() -> Options {
     Options::parse()
+}
+
+const EXPECTED_LOGGER_NAMES: [&str; 4] = ["Generate", "Splice", "Query", "Vendor"];
+
+/// A wrapper for the tracing-subscriber default [FormatEvent]
+/// that prepends the name of the active CLI option.
+struct LoggingFormatEvent {
+    name: String,
+    base: Format<Full, SystemTime>,
+}
+
+impl<S, N> FormatEvent<S, N> for LoggingFormatEvent
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+    N: for<'a> FormatFields<'a> + 'static,
+{
+    fn format_event(
+        &self,
+        ctx: &tracing_subscriber::fmt::FmtContext<'_, S, N>,
+        mut writer: tracing_subscriber::fmt::format::Writer<'_>,
+        event: &tracing::Event<'_>,
+    ) -> std::fmt::Result {
+        write!(writer, "{} ", self.name)?;
+        self.base.format_event(ctx, writer, event)
+    }
+}
+
+impl LoggingFormatEvent {
+    fn new(name: &str) -> Self {
+        Self {
+            name: name.to_owned(),
+            base: Format::default(),
+        }
+    }
+}
+
+/// Initialize logging for one of the cli options.
+pub fn init_logging(name: &str) {
+    if !EXPECTED_LOGGER_NAMES.contains(&name) {
+        panic!(
+            "Unexpected logger name {}, use of one of {:?}",
+            name, EXPECTED_LOGGER_NAMES
+        );
+    }
+
+    // a builder for `FmtSubscriber`.
+    let subscriber = FmtSubscriber::builder()
+        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+        // will be written to stdout.
+        .with_max_level(
+            std::env::var("CARGO_BAZEL_DEBUG")
+                .map(|_| Level::DEBUG)
+                .unwrap_or(Level::INFO),
+        )
+        .event_format(LoggingFormatEvent::new(name))
+        // completes the builder.
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }

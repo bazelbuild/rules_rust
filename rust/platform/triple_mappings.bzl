@@ -5,12 +5,14 @@ load("//rust/platform:triple.bzl", "triple")
 # All T1 Platforms should be supported, but aren't, see inline notes.
 SUPPORTED_T1_PLATFORM_TRIPLES = [
     "aarch64-unknown-linux-gnu",
+    "aarch64-unknown-nixos-gnu",  # Same as `aarch64-unknown-linux-gnu` but with `@platforms//os:nixos`.
     "i686-apple-darwin",
     "i686-pc-windows-msvc",
     "i686-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "x86_64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-nixos-gnu",  # Same as `x86_64-unknown-linux-gnu` but with `@platforms//os:nixos`.
     # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
     # and others using existing @platforms// config_values
     #
@@ -47,7 +49,11 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-unknown-none",
 ]
 
-SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
+SUPPORTED_T3_PLATFORM_TRIPLES = [
+    "aarch64-unknown-nto-qnx710",
+]
+
+SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES + SUPPORTED_T3_PLATFORM_TRIPLES
 
 # CPUs that map to a "@platforms//cpu entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
@@ -94,7 +100,9 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "linux": "linux",
     "nacl": None,
     "netbsd": None,
+    "nixos": "nixos",
     "none": "none",
+    "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
     "unknown": None,
@@ -112,7 +120,9 @@ _SYSTEM_TO_BINARY_EXT = {
     "fuchsia": "",
     "ios": "",
     "linux": "",
+    "nixos": "",
     "none": "",
+    "nto": "",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
@@ -131,7 +141,9 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "fuchsia": ".a",
     "ios": ".a",
     "linux": ".a",
+    "nixos": ".a",
     "none": ".a",
+    "nto": ".a",
     "unknown": "",
     "wasi": "",
     "windows": ".lib",
@@ -147,7 +159,9 @@ _SYSTEM_TO_DYLIB_EXT = {
     "fuchsia": ".so",
     "ios": ".dylib",
     "linux": ".so",
+    "nixos": ".so",
     "none": ".so",
+    "nto": ".a",
     "unknown": ".wasm",
     "wasi": ".wasm",
     "windows": ".dll",
@@ -188,7 +202,9 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "linux": ["-ldl", "-lpthread"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
+    "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.
     "none": [],
+    "nto": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
     "unknown": [],
@@ -332,7 +348,7 @@ def triple_to_constraint_set(target_triple):
     if target_triple == "wasm32-unknown-unknown":
         return [
             "@platforms//cpu:wasm32",
-            "@rules_rust//rust/platform/os:unknown",
+            "@platforms//os:none",
         ]
 
     triple_struct = triple(target_triple)

@@ -75,6 +75,14 @@ pub mod metadata {
         .unwrap()
     }
 
+    pub fn multi_kind_proc_macro_dep() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/multi_kind_proc_macro_dep/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub fn no_deps() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -91,10 +99,34 @@ pub mod metadata {
         .unwrap()
     }
 
+    pub fn renamed_optional_deps_disabled() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/crate_renamed_optional_deps_disabled/metadata.json"
+        )))
+        .unwrap()
+    }
+
+    pub fn optional_deps_disabled_build_dep_enabled() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/crate_optional_deps_disabled_build_dep_enabled/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub fn optional_deps_enabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_optional_deps_enabled/metadata.json"
+        )))
+        .unwrap()
+    }
+
+    pub fn renamed_optional_deps_enabled() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/crate_renamed_optional_deps_enabled/metadata.json"
         )))
         .unwrap()
     }
@@ -111,6 +143,14 @@ pub mod metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/git_repos/metadata.json"
+        )))
+        .unwrap()
+    }
+
+    pub fn has_package_metadata() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/has_package_metadata/metadata.json"
         )))
         .unwrap()
     }
@@ -171,6 +211,14 @@ pub mod lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/git_repos/Cargo.lock"
+        )))
+        .unwrap()
+    }
+
+    pub fn has_package_metadata() -> cargo_lock::Lockfile {
+        cargo_lock::Lockfile::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/has_package_metadata/Cargo.lock"
         )))
         .unwrap()
     }

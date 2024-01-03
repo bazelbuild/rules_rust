@@ -1,5 +1,7 @@
 """Macros used for represeting crates or annotations for existing crates"""
 
+load(":common_utils.bzl", "parse_alias_rule")
+
 def _workspace_member(version, sha256 = None):
     """Define information for extra workspace members
 
@@ -18,6 +20,8 @@ def _workspace_member(version, sha256 = None):
 def _spec(
         package = None,
         version = None,
+        artifact = None,
+        lib = None,
         default_features = True,
         features = [],
         git = None,
@@ -33,6 +37,8 @@ def _spec(
     Args:
         package (str, optional): The explicit name of the package (used when attempting to alias a crate).
         version (str, optional): The exact version of the crate. Cannot be used with `git`.
+        artifact (str, optional): Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.
+        lib (bool, optional): If using `artifact = "bin"`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.
         default_features (bool, optional): Maps to the `default-features` flag.
         features (list, optional): A list of features to use for the crate
         git (str, optional): The Git url to use for the crate. Cannot be used with `version`.
@@ -43,16 +49,25 @@ def _spec(
     Returns:
         string: A json encoded string of all inputs
     """
-    return json.encode(struct(
-        package = package,
-        default_features = default_features,
-        features = features,
-        version = version,
-        git = git,
-        branch = branch,
-        tag = tag,
-        rev = rev,
-    ))
+    return json.encode({
+        k: v
+        for k, v in {
+            "artifact": artifact,
+            "branch": branch,
+            "default_features": default_features,
+            "features": features,
+            "git": git,
+            "lib": lib,
+            "package": package,
+            "rev": rev,
+            "tag": tag,
+            "version": version,
+        }.items()
+        # The `cargo_toml` crate parses unstable fields to a flattened
+        # BTreeMap<String, toml::Value> and toml::Value does not support null,
+        # so we must omit null values.
+        if v != None
+    })
 
 def _assert_absolute(label):
     """Ensure a given label is an absolute label
@@ -70,12 +85,14 @@ def _annotation(
         version = "*",
         additive_build_file = None,
         additive_build_file_content = None,
+        alias_rule = None,
         build_script_data = None,
         build_script_tools = None,
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
         build_script_proc_macro_deps = None,
+        build_script_rundir = None,
         build_script_rustc_env = None,
         build_script_toolchains = None,
         compile_data = None,
@@ -84,8 +101,8 @@ def _annotation(
         data = None,
         data_glob = None,
         deps = None,
-        extra_aliased_targets = {},
-        gen_binaries = [],
+        extra_aliased_targets = None,
+        gen_binaries = None,
         disable_pipelining = False,
         gen_build_script = None,
         patch_args = None,
@@ -104,6 +121,8 @@ def _annotation(
         additive_build_file_content (str, optional): Extra contents to write to the bottom of generated BUILD files.
         additive_build_file (str, optional): A file containing extra contents to write to the bottom of
             generated BUILD files.
+        alias_rule (str, optional): Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s
+            'default_alias_rule'.
         build_script_data (list, optional): A list of labels to add to a crate's `cargo_build_script::data` attribute.
         build_script_tools (list, optional): A list of labels to add to a crate's `cargo_build_script::tools` attribute.
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
@@ -113,13 +132,14 @@ def _annotation(
             `cargo_build_script::env` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
+        build_script_rundir (str, optional): An override for the build script's rundir attribute.
         build_script_rustc_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
         build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
             attribute.
-        crate_features (list, optional): A list of strings to add to a crate's `rust_library::crate_features`
+        crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
@@ -160,12 +180,14 @@ def _annotation(
         struct(
             additive_build_file = additive_build_file,
             additive_build_file_content = additive_build_file_content,
+            alias_rule = parse_alias_rule(alias_rule),
             build_script_data = build_script_data,
             build_script_tools = build_script_tools,
             build_script_data_glob = build_script_data_glob,
             build_script_deps = build_script_deps,
             build_script_env = build_script_env,
             build_script_proc_macro_deps = build_script_proc_macro_deps,
+            build_script_rundir = build_script_rundir,
             build_script_rustc_env = build_script_rustc_env,
             build_script_toolchains = build_script_toolchains,
             compile_data = compile_data,
@@ -189,8 +211,24 @@ def _annotation(
         ),
     ))
 
+def _select(common, selects):
+    """A Starlark Select for `crate.annotation()`.
+
+    Args:
+        common: A value that applies to all configurations.
+        selects (dict): A dict of `target_triple` to values.
+
+    Returns:
+        struct: A struct representing the Starlark Select.
+    """
+    return struct(
+        common = common,
+        selects = selects,
+    )
+
 crate = struct(
     spec = _spec,
     annotation = _annotation,
     workspace_member = _workspace_member,
+    select = _select,
 )

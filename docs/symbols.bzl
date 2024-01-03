@@ -3,7 +3,7 @@ to have stardoc generated documentation.
 """
 
 load(
-    "@rules_rust//bindgen:bindgen.bzl",
+    "@rules_rust//bindgen:defs.bzl",
     _rust_bindgen = "rust_bindgen",
     _rust_bindgen_library = "rust_bindgen_library",
     _rust_bindgen_toolchain = "rust_bindgen_toolchain",
@@ -111,14 +111,15 @@ load(
     _incompatible_flag = "incompatible_flag",
 )
 load(
+    "@rules_rust//wasm_bindgen:defs.bzl",
+    _RustWasmBindgenInfo = "RustWasmBindgenInfo",
+    _rust_wasm_bindgen = "rust_wasm_bindgen",
+    _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
+)
+load(
     "@rules_rust//wasm_bindgen:repositories.bzl",
     _rust_wasm_bindgen_dependencies = "rust_wasm_bindgen_dependencies",
     _rust_wasm_bindgen_register_toolchains = "rust_wasm_bindgen_register_toolchains",
-)
-load(
-    "@rules_rust//wasm_bindgen:wasm_bindgen.bzl",
-    _rust_wasm_bindgen = "rust_wasm_bindgen",
-    _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 
 rust_binary = _rust_binary
@@ -161,6 +162,7 @@ rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_dependencies = _rust_wasm_bindgen_dependencies
 rust_wasm_bindgen_register_toolchains = _rust_wasm_bindgen_register_toolchains
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
+RustWasmBindgenInfo = _RustWasmBindgenInfo
 
 rules_rust_dependencies = _rules_rust_dependencies
 rust_register_toolchains = _rust_register_toolchains

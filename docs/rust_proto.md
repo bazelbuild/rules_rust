@@ -139,7 +139,7 @@ rust_prost_toolchain(
 
 toolchain(
     name = "prost_toolchain",
-    toolchain = "default_prost_toolchain_impl",
+    toolchain = "prost_toolchain_impl",
     toolchain_type = "@rules_rust//proto/prost:toolchain_type",
 )
 ```
@@ -377,11 +377,22 @@ rust_binary(
 ## rust_prost_dependencies
 
 <pre>
-rust_prost_dependencies()
+rust_prost_dependencies(<a href="#rust_prost_dependencies-bzlmod">bzlmod</a>)
 </pre>
 
+Declares repositories needed for prost.
+
+**PARAMETERS**
 
 
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_prost_dependencies-bzlmod"></a>bzlmod |  Whether bzlmod is enabled.   |  `False` |
+
+**RETURNS**
+
+list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+  defined by this macro.
 
 
 <a id="rust_prost_library"></a>

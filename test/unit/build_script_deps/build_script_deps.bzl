@@ -1,7 +1,7 @@
 """Analysis tests for cargo_build_script."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//cargo:cargo_build_script.bzl", "cargo_build_script")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_library")
 
 DepActionsInfo = provider(

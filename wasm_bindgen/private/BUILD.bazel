@@ -4,6 +4,7 @@ bzl_library(
     name = "bzl_lib",
     srcs = [
         "transitions.bzl",
+        "wasm_bindgen.bzl",
     ],
     visibility = ["//wasm_bindgen:__pkg__"],
 )

@@ -36,6 +36,14 @@ build:rustfmt --output_groups=+rustfmt_checks
 build:clippy --aspects=//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
 
+# Enable unpretty for all targets in the workspace
+build:unpretty --aspects=//rust:defs.bzl%rust_unpretty_aspect
+build:unpretty --output_groups=+rust_unpretty
+
+# `unpretty` requires the nightly toolchain. See tracking issue:
+# https://github.com/rust-lang/rust/issues/43364
+build:unpretty --//rust/toolchain/channel=nightly
+
 ###############################################################################
 ## Incompatibility flags
 ###############################################################################
@@ -45,6 +53,14 @@ build --incompatible_disallow_empty_glob=true
 
 # https://github.com/bazelbuild/bazel/issues/12821
 build --nolegacy_external_runfiles
+
+###############################################################################
+## Bzlmod
+###############################################################################
+
+# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
+# https://github.com/bazelbuild/rules_rust/issues/2181
+common --noenable_bzlmod
 
 ###############################################################################
 ## Custom user flags

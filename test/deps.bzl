@@ -2,6 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//test/generated_inputs:external_repo.bzl", "generated_inputs_in_external_repo")
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
 load("//test/unit/toolchain:toolchain_test_utils.bzl", "rules_rust_toolchain_test_target_json_repository")
 
@@ -24,9 +25,15 @@ rust_library(
 """
 
 def rules_rust_test_deps():
-    """Load dependencies for rules_rust tests"""
+    """Load dependencies for rules_rust tests
 
-    load_arbitrary_tool_test()
+    Returns:
+        list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+        defined by this macro.
+    """
+
+    direct_deps = load_arbitrary_tool_test()
+    direct_deps.extend(generated_inputs_in_external_repo())
 
     maybe(
         http_archive,
@@ -55,3 +62,11 @@ def rules_rust_test_deps():
         strip_prefix = "googleapis-18becb1d1426feb7399db144d7beeb3284f1ccb0",
         sha256 = "b8c487191eb942361af905e40172644eab490190e717c3d09bf83e87f3994fff",
     )
+
+    direct_deps.extend([
+        struct(repo = "libc", is_dev_dep = True),
+        struct(repo = "rules_rust_toolchain_test_target_json", is_dev_dep = True),
+        struct(repo = "com_google_googleapis", is_dev_dep = True),
+    ])
+
+    return direct_deps

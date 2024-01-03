@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     println!("Hello, world!");
+    Ok(())
 }

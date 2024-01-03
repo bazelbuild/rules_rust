@@ -373,7 +373,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
 | <a id="crates_repository-cargo_lockfile"></a>cargo_lockfile |  The path used to store the <code>crates_repository</code> specific [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. In the case that your <code>crates_repository</code> corresponds directly with an existing <code>Cargo.toml</code> file which has a paired <code>Cargo.lock</code> file, that <code>Cargo.lock</code> file should be used here, which will keep the versions used by cargo and bazel in sync.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="crates_repository-generate_binaries"></a>generate_binaries |  Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.   | Boolean | optional | <code>False</code> |
 | <a id="crates_repository-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | <code>True</code> |
-| <a id="crates_repository-generate_target_compatible_with"></a>generate_target_compatible_with |  Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code> being targeted that isn't declared in <code>supported_platform_triples.   | Boolean | optional | <code>True</code> |
+| <a id="crates_repository-generate_target_compatible_with"></a>generate_target_compatible_with |  DEPRECATED: Moved to <code>render_config</code>.   | Boolean | optional | <code>True</code> |
 | <a id="crates_repository-generator"></a>generator |  The absolute label of a generator. Eg. <code>@cargo_bazel_bootstrap//:cargo-bazel</code>. This is typically used when bootstrapping   | String | optional | <code>""</code> |
 | <a id="crates_repository-generator_sha256s"></a>generator_sha256s |  Dictionary of <code>host_triple</code> -&gt; <code>sha256</code> for a <code>cargo-bazel</code> binary.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
 | <a id="crates_repository-generator_urls"></a>generator_urls |  URL template from which to download the <code>cargo-bazel</code> binary. <code>{host_triple}</code> and will be filled in according to the host platform.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
@@ -386,9 +386,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
 | <a id="crates_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | required |  |
 | <a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
 | <a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
-| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code>   | String | optional | <code>"1.71.0"</code> |
+| <a id="crates_repository-rust_version"></a>rust_version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code>   | String | optional | <code>"1.75.0"</code> |
 | <a id="crates_repository-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | <code>""</code> |
-| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | <code>["aarch64-unknown-linux-gnu", "i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios-sim", "aarch64-apple-ios", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv7em-none-eabi", "thumbv8m.main-none-eabi", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-none"]</code> |
+| <a id="crates_repository-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | <code>["aarch64-unknown-linux-gnu", "aarch64-unknown-nixos-gnu", "i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "x86_64-unknown-nixos-gnu", "aarch64-apple-darwin", "aarch64-apple-ios-sim", "aarch64-apple-ios", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv7em-none-eabi", "thumbv8m.main-none-eabi", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-none", "aarch64-unknown-nto-qnx710"]</code> |
 
 
 <a id="crates_vendor"></a>
@@ -488,14 +488,14 @@ call against the generated workspace. The following table describes how to contr
 | <a id="crates_vendor-cargo_lockfile"></a>cargo_lockfile |  The path to an existing <code>Cargo.lock</code> file   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="crates_vendor-generate_binaries"></a>generate_binaries |  Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.   | Boolean | optional | <code>False</code> |
 | <a id="crates_vendor-generate_build_scripts"></a>generate_build_scripts |  Whether or not to generate [cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default.   | Boolean | optional | <code>True</code> |
-| <a id="crates_vendor-generate_target_compatible_with"></a>generate_target_compatible_with |  Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code> being targeted that isn't declared in <code>supported_platform_triples.   | Boolean | optional | <code>True</code> |
+| <a id="crates_vendor-generate_target_compatible_with"></a>generate_target_compatible_with |  DEPRECATED: Moved to <code>render_config</code>.   | Boolean | optional | <code>True</code> |
 | <a id="crates_vendor-manifests"></a>manifests |  A list of Cargo manifests (<code>Cargo.toml</code> files).   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
 | <a id="crates_vendor-mode"></a>mode |  Flags determining how crates should be vendored. <code>local</code> is where crate source and BUILD files are written to the repository. <code>remote</code> is where only BUILD files are written and repository rules used to fetch source code.   | String | optional | <code>"remote"</code> |
 | <a id="crates_vendor-packages"></a>packages |  A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
 | <a id="crates_vendor-render_config"></a>render_config |  The configuration flags to use for rendering. Use <code>//crate_universe:defs.bzl\%render_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | <code>""</code> |
 | <a id="crates_vendor-repository_name"></a>repository_name |  The name of the repository to generate for <code>remote</code> vendor modes. If unset, the label name will be used   | String | optional | <code>""</code> |
 | <a id="crates_vendor-splicing_config"></a>splicing_config |  The configuration flags to use for splicing Cargo maniests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.   | String | optional | <code>""</code> |
-| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | <code>["aarch64-unknown-linux-gnu", "i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "aarch64-apple-ios-sim", "aarch64-apple-ios", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv7em-none-eabi", "thumbv8m.main-none-eabi", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-none"]</code> |
+| <a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples |  A set of all platform triples to consider when generating dependencies.   | List of strings | optional | <code>["aarch64-unknown-linux-gnu", "aarch64-unknown-nixos-gnu", "i686-apple-darwin", "i686-pc-windows-msvc", "i686-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "x86_64-unknown-nixos-gnu", "aarch64-apple-darwin", "aarch64-apple-ios-sim", "aarch64-apple-ios", "aarch64-fuchsia", "aarch64-linux-android", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-linux-android", "i686-unknown-freebsd", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv7em-none-eabi", "thumbv8m.main-none-eabi", "wasm32-unknown-unknown", "wasm32-wasi", "x86_64-apple-ios", "x86_64-fuchsia", "x86_64-linux-android", "x86_64-unknown-freebsd", "x86_64-unknown-none", "aarch64-unknown-nto-qnx710"]</code> |
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional | <code>"crates"</code> |
 
 
@@ -569,7 +569,7 @@ list: A list of labels to generated rust targets (str)
 ## crate.spec
 
 <pre>
-crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
+crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
 </pre>
 
 A constructor for a crate dependency.
@@ -586,6 +586,8 @@ See [specifying dependencies][sd] in the Cargo book for more details.
 | :------------- | :------------- | :------------- |
 | <a id="crate.spec-package"></a>package |  The explicit name of the package (used when attempting to alias a crate).   |  `None` |
 | <a id="crate.spec-version"></a>version |  The exact version of the crate. Cannot be used with <code>git</code>.   |  `None` |
+| <a id="crate.spec-artifact"></a>artifact |  Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.   |  `None` |
+| <a id="crate.spec-lib"></a>lib |  If using <code>artifact = "bin"</code>, additionally setting <code>lib = True</code> declares a dependency on both the package's library and binary, as opposed to just the binary.   |  `None` |
 | <a id="crate.spec-default_features"></a>default_features |  Maps to the <code>default-features</code> flag.   |  `True` |
 | <a id="crate.spec-features"></a>features |  A list of features to use for the crate   |  `[]` |
 | <a id="crate.spec-git"></a>git |  The Git url to use for the crate. Cannot be used with <code>version</code>.   |  `None` |
@@ -603,13 +605,13 @@ string: A json encoded string of all inputs
 ## crate.annotation
 
 <pre>
-crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>,
-                 <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
-                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
-                 <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>,
-                 <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>, <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>,
-                 <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>,
-                 <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
+crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
+                 <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>,
+                 <a href="#crate.annotation-build_script_env">build_script_env</a>, <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>,
+                 <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>, <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>,
+                 <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>,
+                 <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>,
+                 <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -622,12 +624,14 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-version"></a>version |  The version or semver-conditions to match with a crate. The wildcard <code>*</code> matches any version, including prerelease versions.   |  `"*"` |
 | <a id="crate.annotation-additive_build_file"></a>additive_build_file |  A file containing extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-additive_build_file_content"></a>additive_build_file_content |  Extra contents to write to the bottom of generated BUILD files.   |  `None` |
+| <a id="crate.annotation-alias_rule"></a>alias_rule |  Alias rule to use instead of <code>native.alias()</code>.  Overrides [render_config](#render_config)'s 'default_alias_rule'.   |  `None` |
 | <a id="crate.annotation-build_script_data"></a>build_script_data |  A list of labels to add to a crate's <code>cargo_build_script::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_tools"></a>build_script_tools |  A list of labels to add to a crate's <code>cargo_build_script::tools</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_data_glob"></a>build_script_data_glob |  A list of glob patterns to add to a crate's <code>cargo_build_script::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_deps"></a>build_script_deps |  A list of labels to add to a crate's <code>cargo_build_script::deps</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_env"></a>build_script_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_proc_macro_deps"></a>build_script_proc_macro_deps |  A list of labels to add to a crate's <code>cargo_build_script::proc_macro_deps</code> attribute.   |  `None` |
+| <a id="crate.annotation-build_script_rundir"></a>build_script_rundir |  An override for the build script's rundir attribute.   |  `None` |
 | <a id="crate.annotation-build_script_rustc_env"></a>build_script_rustc_env |  Additional environment variables to set on a crate's <code>cargo_build_script::env</code> attribute.   |  `None` |
 | <a id="crate.annotation-build_script_toolchains"></a>build_script_toolchains |  A list of labels to set on a crates's <code>cargo_build_script::toolchains</code> attribute.   |  `None` |
 | <a id="crate.annotation-compile_data"></a>compile_data |  A list of labels to add to a crate's <code>rust_library::compile_data</code> attribute.   |  `None` |
@@ -636,8 +640,8 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-data"></a>data |  A list of labels to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-data_glob"></a>data_glob |  A list of glob patterns to add to a crate's <code>rust_library::data</code> attribute.   |  `None` |
 | <a id="crate.annotation-deps"></a>deps |  A list of labels to add to a crate's <code>rust_library::deps</code> attribute.   |  `None` |
-| <a id="crate.annotation-extra_aliased_targets"></a>extra_aliased_targets |  A list of targets to add to the generated aliases in the root crate_universe repository.   |  `{}` |
-| <a id="crate.annotation-gen_binaries"></a>gen_binaries |  As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.   |  `[]` |
+| <a id="crate.annotation-extra_aliased_targets"></a>extra_aliased_targets |  A list of targets to add to the generated aliases in the root crate_universe repository.   |  `None` |
+| <a id="crate.annotation-gen_binaries"></a>gen_binaries |  As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.   |  `None` |
 | <a id="crate.annotation-disable_pipelining"></a>disable_pipelining |  If True, disables pipelining for library targets for this crate.   |  `False` |
 | <a id="crate.annotation-gen_build_script"></a>gen_build_script |  An authorative flag to determine whether or not to produce <code>cargo_build_script</code> targets for the current crate.   |  `None` |
 | <a id="crate.annotation-patch_args"></a>patch_args |  The <code>patch_args</code> attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)   |  `None` |
@@ -677,6 +681,29 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
+<a id="crate.select"></a>
+
+## crate.select
+
+<pre>
+crate.select(<a href="#crate.select-common">common</a>, <a href="#crate.select-selects">selects</a>)
+</pre>
+
+A Starlark Select for `crate.annotation()`.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="crate.select-common"></a>common |  A value that applies to all configurations.   |  none |
+| <a id="crate.select-selects"></a>selects |  A dict of <code>target_triple</code> to values.   |  none |
+
+**RETURNS**
+
+struct: A struct representing the Starlark Select.
+
+
 <a id="crate_deps"></a>
 
 ## crate_deps
@@ -708,8 +735,12 @@ list: A list of labels to generated rust targets (str)
 crate_repositories()
 </pre>
 
-A macro for defining repositories for all generated crates
+A macro for defining repositories for all generated crates.
 
+
+**RETURNS**
+
+A list of repos visible to the module through the module extension.
 
 
 <a id="crate_universe_dependencies"></a>
@@ -717,7 +748,7 @@ A macro for defining repositories for all generated crates
 ## crate_universe_dependencies
 
 <pre>
-crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>)
+crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>, <a href="#crate_universe_dependencies-kwargs">kwargs</a>)
 </pre>
 
 Define dependencies of the `cargo-bazel` Rust target
@@ -727,8 +758,14 @@ Define dependencies of the `cargo-bazel` Rust target
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.71.0"` |
+| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.75.0"` |
 | <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a <code>cargo_bootstrap_repository</code> target will be generated.   |  `False` |
+| <a id="crate_universe_dependencies-kwargs"></a>kwargs |  Arguments to pass through to cargo_bazel_bootstrap.   |  none |
+
+**RETURNS**
+
+list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+  defined by this macro.
 
 
 <a id="render_config"></a>
@@ -737,8 +774,8 @@ Define dependencies of the `cargo-bazel` Rust target
 
 <pre>
 render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
-              <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_package_name">default_package_name</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>,
-              <a href="#render_config-vendor_mode">vendor_mode</a>)
+              <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
+              <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>)
 </pre>
 
 Various settings used to configure rendered outputs
@@ -765,7 +802,9 @@ can be found below where the supported keys for each template can be found in th
 | <a id="render_config-crate_label_template"></a>crate_label_template |  The base template to use for crate labels. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>].   |  `"@{repository}__{name}-{version}//:{target}"` |
 | <a id="render_config-crate_repository_template"></a>crate_repository_template |  The base template to use for Crate label repository names. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>].   |  `"{repository}__{name}-{version}"` |
 | <a id="render_config-crates_module_template"></a>crates_module_template |  The pattern to use for the <code>defs.bzl</code> and <code>BUILD.bazel</code> file names used for the crates module. The available format keys are [<code>{file}</code>].   |  `"//:{file}"` |
+| <a id="render_config-default_alias_rule"></a>default_alias_rule |  Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's <code>compilation_mode</code>)  or a string representing a rule in the form '&lt;label to .bzl&gt;:&lt;rule&gt;' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.   |  `"alias"` |
 | <a id="render_config-default_package_name"></a>default_package_name |  The default package name to use in the rendered macros. This affects the auto package detection of things like <code>all_crate_deps</code>.   |  `None` |
+| <a id="render_config-generate_target_compatible_with"></a>generate_target_compatible_with |  Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code>being targeted that isn't declared in <code>supported_platform_triples</code>.   |  `True` |
 | <a id="render_config-platforms_template"></a>platforms_template |  The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [<code>{triple}</code>].   |  `"@rules_rust//rust/platform:{triple}"` |
 | <a id="render_config-regen_command"></a>regen_command |  An optional command to demonstrate how generated files should be regenerated.   |  `None` |
 | <a id="render_config-vendor_mode"></a>vendor_mode |  An optional configuration for rendirng content to be rendered into repositories.   |  `None` |
@@ -793,7 +832,7 @@ Various settings used to configure Cargo manifest splicing behavior.
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"1"` |
+| <a id="splicing_config-resolver_version"></a>resolver_version |  The [resolver version][rv] to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.   |  `"2"` |
 
 **RETURNS**
 

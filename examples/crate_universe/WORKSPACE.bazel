@@ -17,7 +17,214 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "splicing_config")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "render_config", "splicing_config")
+
+###############################################################################
+# A L I A S   R U L E
+###############################################################################
+
+crates_repository(
+    name = "alias_rule_global_alias_annotation_none",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = None,
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_none.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "alias",
+    ),
+)
+
+load(
+    "@alias_rule_global_alias_annotation_none//:defs.bzl",
+    alias_rule_global_alias_annotation_none_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_alias_annotation_none_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_alias_annotation_opt",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = "opt",
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_opt.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "alias",
+    ),
+)
+
+load(
+    "@alias_rule_global_alias_annotation_opt//:defs.bzl",
+    alias_rule_global_alias_annotation_opt_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_alias_annotation_opt_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_opt_annotation_none",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = None,
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_none.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "opt",
+    ),
+)
+
+load(
+    "@alias_rule_global_opt_annotation_none//:defs.bzl",
+    alias_rule_global_opt_annotation_none_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_opt_annotation_none_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_opt_annotation_alias",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = "alias",
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_alias.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "opt",
+    ),
+)
+
+load(
+    "@alias_rule_global_opt_annotation_alias//:defs.bzl",
+    alias_rule_global_opt_annotation_alias_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_opt_annotation_alias_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_opt_annotation_dbg",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = "dbg",
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_dbg.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "opt",
+    ),
+)
+
+load(
+    "@alias_rule_global_opt_annotation_dbg//:defs.bzl",
+    alias_rule_global_opt_annotation_dbg_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_opt_annotation_dbg_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_dbg_annotation_fastbuild",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = "fastbuild",
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_dbg_annotation_fastbuild.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "dbg",
+    ),
+)
+
+load(
+    "@alias_rule_global_dbg_annotation_fastbuild//:defs.bzl",
+    alias_rule_global_dbg_annotation_fastbuild_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_dbg_annotation_fastbuild_crate_repositories()
+
+crates_repository(
+    name = "alias_rule_global_custom_annotation_none",
+    annotations = {
+        "test_data_passing_crate": [crate.annotation(
+            alias_rule = None,
+        )],
+    },
+    cargo_lockfile = "//alias_rule:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_custom_annotation_none.json",
+    packages = {
+        "test_data_passing_crate": crate.spec(
+            version = "0.1.0",
+        ),
+    },
+    render_config = render_config(
+        default_alias_rule = "@//alias_rule:alias_rules.bzl:alias_rule",
+    ),
+)
+
+load(
+    "@alias_rule_global_custom_annotation_none//:defs.bzl",
+    alias_rule_global_custom_annotation_none_crate_repositories = "crate_repositories",
+)
+
+alias_rule_global_custom_annotation_none_crate_repositories()
 
 ###############################################################################
 # C A R G O   A L I A S E S
@@ -45,6 +252,28 @@ load(
 )
 
 cargo_aliases_crate_repositories()
+
+###############################################################################
+# C A R G O   B I N D E P S
+###############################################################################
+
+crates_repository(
+    name = "crate_index_cargo_bindeps",
+    cargo_lockfile = "//cargo_bindeps:Cargo.lock",
+    generate_binaries = True,
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    manifests = ["//cargo_bindeps:Cargo.toml"],
+    rust_version = "nightly",
+)
+
+load(
+    "@crate_index_cargo_bindeps//:defs.bzl",
+    cargo_bindeps_crate_repositories = "crate_repositories",
+)
+
+cargo_bindeps_crate_repositories()
 
 ###############################################################################
 # C A R G O   L O C A L
@@ -277,27 +506,6 @@ no_cargo_crate_repositories()
 
 crates_repository(
     name = "using_cxx",
-    annotations = {
-        # CXX provides a header file that should be used in C++ sources that depend on cxx.
-        "cxx": [
-            crate.annotation(
-                additive_build_file_content = """
-                # This file is included in the BUILD for the cxx crate, to export its header
-                # file for C++ code to depend on.
-                cc_library(
-                    name = "cxx_cc",
-                    visibility = ["//visibility:public"],
-                    hdrs = ["include/cxx.h"],
-                    srcs = ["src/cxx.cc"],
-                    includes = ["include"],
-                    linkstatic = True,
-                )
-            """,
-                extra_aliased_targets = {"cxx_cc": "cxx_cc"},
-                gen_build_script = False,
-            ),
-        ],
-    },
     cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -305,7 +513,7 @@ crates_repository(
     lockfile = "//using_cxx:cargo-bazel-lock.json",
     packages = {
         "cxx": crate.spec(
-            version = "1.0.0",
+            version = "1.0.109",
         ),
     },
     splicing_config = splicing_config(
@@ -341,10 +549,10 @@ rust_binary(
     ),
 )
     """,
-    sha256 = "df13eece12ed9e7bd4fb071a6af4c44421bb9024d339d029f5333bcdaca00000",
-    strip_prefix = "cxxbridge-cmd-1.0.100",
+    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
+    strip_prefix = "cxxbridge-cmd-1.0.109",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.100/download"],
+    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
 )
 
 crates_repository(

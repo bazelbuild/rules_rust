@@ -1,9 +1,10 @@
 //! The cli entrypoint for the `generate` subcommand
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context as AnyhowContext, Result};
+use cargo_lock::Lockfile;
 use clap::Parser;
 
 use crate::config::Config;
@@ -73,12 +74,8 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             let context = Context::try_from_path(lockfile)?;
 
             // Render build files
-            let outputs = Renderer::new(
-                config.rendering,
-                config.supported_platform_triples,
-                config.generate_target_compatible_with,
-            )
-            .render(&context)?;
+            let outputs = Renderer::new(config.rendering, config.supported_platform_triples)
+                .render(&context)?;
 
             // Write the outputs to disk
             write_outputs(outputs, &opt.repository_dir, opt.dry_run)?;
@@ -116,7 +113,6 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     let outputs = Renderer::new(
         config.rendering.clone(),
         config.supported_platform_triples.clone(),
-        config.generate_target_compatible_with,
     )
     .render(&context)?;
 
@@ -133,8 +129,21 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
 
-    // Write the updated Cargo.lock file
-    fs::write(&opt.cargo_lockfile, cargo_lockfile.to_string())
+    update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile)?;
+
+    Ok(())
+}
+
+fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
+    let old_contents = fs::read_to_string(path).ok();
+    let new_contents = cargo_lockfile.to_string();
+
+    // Don't overwrite identical contents because timestamp changes may invalidate repo rules.
+    if old_contents.as_ref() == Some(&new_contents) {
+        return Ok(());
+    }
+
+    fs::write(path, new_contents)
         .context("Failed to write Cargo.lock file back to the workspace.")?;
 
     Ok(())

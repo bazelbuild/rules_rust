@@ -12,8 +12,8 @@ use crate::rendering::{
     render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
     render_module_label, Platforms,
 };
+use crate::select::Select;
 use crate::utils::sanitize_repository_name;
-use crate::utils::starlark::SelectStringList;
 
 pub struct TemplateEngine {
     engine: Tera,
@@ -100,7 +100,7 @@ impl TemplateEngine {
         );
 
         let mut context = tera::Context::new();
-        context.insert("default_select_list", &SelectStringList::default());
+        context.insert("default_select_list", &Select::<String>::default());
         context.insert("repository_name", &render_config.repository_name);
         context.insert("vendor_mode", &render_config.vendor_mode);
         context.insert("regen_command", &render_config.regen_command);

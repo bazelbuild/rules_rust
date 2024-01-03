@@ -46,6 +46,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -69,6 +71,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -95,6 +98,12 @@ rust_library(
             "@rules_rust_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
@@ -161,6 +170,9 @@ rust_library(
             "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
             "@rules_rust_bindgen__rustix-0.37.20//:rustix",  # cfg(not(any(windows, target_os = "hermit", target_os = "unknown")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
