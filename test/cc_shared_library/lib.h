@@ -1,3 +1,9 @@
 #include <stdint.h>
 
-int32_t foo();
+#ifdef _WIN32
+#define DllExport __declspec(dllexport)
+#else
+#define DllExport
+#endif
+
+DllExport int32_t foo();
