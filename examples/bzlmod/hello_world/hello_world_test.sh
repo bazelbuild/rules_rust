@@ -23,18 +23,13 @@ fail() {
 
 # MARK - Args
 
-if [[ "$#" -ne 2 ]]; then
-  fail "Usage: $0 /path/to/hello_world_transient /path/to/hello_world_vendored"
+if [[ "$#" -ne 1 ]]; then
+  fail "Usage: $0 /path/to/hello_world"
 fi
-HELLO_WORLD_TRANSIENT="$(rlocation "$1")"
-HELLO_WORLD_VENDORED="$(rlocation "$2")"
+HELLO_WORLD="$(rlocation "$1")"
 
 # MARK - Test
 
-OUTPUT="$("${HELLO_WORLD_TRANSIENT}")"
-[[ "${OUTPUT}" == "Hello, world!" ]] ||
-  fail 'Expected "Hello, world!", but was' "${OUTPUT}"
-
-OUTPUT="$("${HELLO_WORLD_VENDORED}")"
+OUTPUT="$("${HELLO_WORLD}")"
 [[ "${OUTPUT}" == "Hello, world!" ]] ||
   fail 'Expected "Hello, world!", but was' "${OUTPUT}"
