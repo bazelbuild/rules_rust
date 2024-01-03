@@ -2,7 +2,6 @@
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//crate_universe:defs.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
 load("//crate_universe/private:generate_utils.bzl", "render_config")
 load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner")
