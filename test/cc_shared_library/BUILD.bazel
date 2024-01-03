@@ -25,5 +25,6 @@ cc_test(
     name = "test",
     srcs = ["main.c"],
     dynamic_deps = [":shared"],
+    linkstatic = True,
     deps = [":c_lib"],
 )
