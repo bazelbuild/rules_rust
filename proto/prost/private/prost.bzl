@@ -5,6 +5,9 @@ load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "RUSTC_ATTRS")
+
+# buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
@@ -254,44 +257,14 @@ rust_prost_aspect = aspect(
     implementation = _rust_prost_aspect_impl,
     attr_aspects = ["deps"],
     attrs = {
-        "_cc_toolchain": attr.label(
-            doc = (
-                "In order to use find_cc_toolchain, your rule has to depend " +
-                "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
-                "docs for details."
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_collect_cc_coverage": attr.label(
             default = Label("//util:collect_coverage"),
             executable = True,
             cfg = "exec",
         ),
-        "_error_format": attr.label(
-            default = Label("//:error_format"),
-        ),
-        "_extra_exec_rustc_flag": attr.label(
-            default = Label("//:extra_exec_rustc_flag"),
-        ),
-        "_extra_exec_rustc_flags": attr.label(
-            default = Label("//:extra_exec_rustc_flags"),
-        ),
-        "_extra_rustc_flag": attr.label(
-            default = Label("//:extra_rustc_flag"),
-        ),
-        "_extra_rustc_flags": attr.label(
-            default = Label("//:extra_rustc_flags"),
-        ),
         "_grep_includes": attr.label(
             allow_single_file = True,
             default = Label("@bazel_tools//tools/cpp:grep-includes"),
-            cfg = "exec",
-        ),
-        "_process_wrapper": attr.label(
-            doc = "A process wrapper for running rustc on all platforms.",
-            default = Label("//util/process_wrapper"),
-            executable = True,
-            allow_single_file = True,
             cfg = "exec",
         ),
         "_prost_process_wrapper": attr.label(
@@ -300,7 +273,7 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//proto/prost/private:protoc_wrapper"),
         ),
-    },
+    } | RUSTC_ATTRS,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
