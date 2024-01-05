@@ -534,7 +534,7 @@ def rust_toolchain_repository(
         opt_level (dict, optional): Optimization level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
 
@@ -673,7 +673,7 @@ def rust_analyzer_toolchain_repository(
         iso_date (str, optional): The date of the tool.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
 
@@ -792,7 +792,7 @@ def rustfmt_toolchain_repository(
         channel (str, optional): The channel value to with which to constrain the toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_repositories](#rust_repositories) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
 
