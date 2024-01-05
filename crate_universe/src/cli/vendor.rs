@@ -182,9 +182,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // First ensure vendoring and rendering happen in a clean directory
     let vendor_dir_label = render_module_label(&config.rendering.crates_module_template, "BUILD")?;
-    let vendor_dir = opt
-        .workspace_dir
-        .join(vendor_dir_label.package.unwrap_or_default());
+    let vendor_dir = opt.workspace_dir.join(vendor_dir_label.package().unwrap());
     if vendor_dir.exists() {
         fs::remove_dir_all(&vendor_dir)
             .with_context(|| format!("Failed to delete {}", vendor_dir.display()))?;

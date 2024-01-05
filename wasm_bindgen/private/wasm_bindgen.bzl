@@ -96,7 +96,7 @@ def _rust_wasm_bindgen_impl(ctx):
 
     return [
         DefaultInfo(
-            files = depset(transitive = [info.js, info.ts]),
+            files = depset([info.wasm], transitive = [info.js, info.ts]),
         ),
         info,
     ]

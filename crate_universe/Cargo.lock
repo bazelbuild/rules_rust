@@ -183,6 +183,7 @@ name = "cargo-bazel"
 version = "0.10.0"
 dependencies = [
  "anyhow",
+ "camino",
  "cargo-lock",
  "cargo-platform",
  "cargo_metadata",

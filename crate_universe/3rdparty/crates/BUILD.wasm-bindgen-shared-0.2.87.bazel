@@ -118,6 +118,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "wasm-bindgen-shared_build_script",
+    actual = ":wasm-bindgen-shared_build_script",
     tags = ["manual"],
 )

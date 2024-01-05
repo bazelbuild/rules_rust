@@ -335,7 +335,7 @@ impl Renderer {
                     starlark.push(Starlark::Alias(Alias {
                         rule: AliasRule::default().rule(),
                         name: target.crate_name.clone(),
-                        actual: format!("{}_build_script", krate.name),
+                        actual: Label::from_str(&format!(":{}_build_script", krate.name)).unwrap(),
                         tags: BTreeSet::from(["manual".to_owned()]),
                     }));
                 }
@@ -566,7 +566,10 @@ impl Renderer {
                     krate.common_attrs.extra_deps.clone(),
                 );
                 if let Some(library_target_name) = &krate.library_target_name {
-                    deps.insert(format!(":{library_target_name}"), None);
+                    deps.insert(
+                        Label::from_str(&format!(":{library_target_name}")).unwrap(),
+                        None,
+                    );
                 }
                 SelectSet::new(deps, platforms)
             },
@@ -649,7 +652,7 @@ impl Renderer {
         krate: &CrateContext,
         build: bool,
         include_dev: bool,
-    ) -> Select<BTreeMap<String, String>> {
+    ) -> Select<BTreeMap<Label, String>> {
         let mut dependency_selects = Vec::new();
         if build {
             if let Some(build_script_attrs) = &krate.build_script_attrs {
@@ -665,7 +668,7 @@ impl Renderer {
             }
         }
 
-        let mut aliases: Select<BTreeMap<String, String>> = Select::default();
+        let mut aliases: Select<BTreeMap<Label, String>> = Select::default();
         for dependency_select in dependency_selects.iter() {
             for (configuration, dependency) in dependency_select.items().into_iter() {
                 if let Some(alias) = &dependency.alias {
@@ -684,8 +687,8 @@ impl Renderer {
     fn make_deps(
         &self,
         deps: Select<BTreeSet<CrateDependency>>,
-        extra_deps: Select<BTreeSet<String>>,
-    ) -> Select<BTreeSet<String>> {
+        extra_deps: Select<BTreeSet<Label>>,
+    ) -> Select<BTreeSet<Label>> {
         Select::merge(
             deps.map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target)),
             extra_deps,
@@ -706,20 +709,23 @@ impl Renderer {
     }
 
     fn label_to_path(label: &Label) -> PathBuf {
-        match &label.package {
-            Some(package) => PathBuf::from(format!("{}/{}", package, label.target)),
-            None => PathBuf::from(&label.target),
+        match &label.package() {
+            Some(package) if !package.is_empty() => {
+                PathBuf::from(format!("{}/{}", package, label.target()))
+            }
+            Some(_) | None => PathBuf::from(label.target()),
         }
     }
 
-    fn crate_label(&self, name: &str, version: &str, target: &str) -> String {
-        sanitize_repository_name(&render_crate_bazel_label(
+    fn crate_label(&self, name: &str, version: &str, target: &str) -> Label {
+        Label::from_str(&sanitize_repository_name(&render_crate_bazel_label(
             &self.config.crate_label_template,
             &self.config.repository_name,
             name,
             version,
             target,
-        ))
+        )))
+        .unwrap()
     }
 }
 
@@ -817,7 +823,7 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
 fn make_data(
     platforms: &Platforms,
     glob: BTreeSet<String>,
-    select: Select<BTreeSet<String>>,
+    select: Select<BTreeSet<Label>>,
 ) -> Data {
     const COMMON_GLOB_EXCLUDES: &[&str] = &[
         "**/* *",
@@ -1292,7 +1298,6 @@ mod test {
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
             .unwrap();
-        dbg!(build_file_content);
         let expected = indoc! {r#"
             crate_features = [
                 "bar",

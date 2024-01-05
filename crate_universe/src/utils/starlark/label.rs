@@ -3,73 +3,180 @@ use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
+use camino::Utf8Path;
 use regex::Regex;
 use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
 
-// Note that this type assumes there's no such thing as a relative label;
-// `:foo` is assumed to be relative to the repo root, and parses out to equivalent to `//:foo`.
-#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Label {
-    pub repository: Option<String>,
-    pub package: Option<String>,
-    pub target: String,
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum Label {
+    Relative {
+        target: String,
+    },
+    Absolute {
+        repository: Repository,
+        package: String,
+        target: String,
+    },
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum Repository {
+    Canonical(String), // stringifies to `@@self.0` where `self.0` may be empty
+    Explicit(String),  // stringifies to `@self.0` where `self.0` may be empty
+    Local,             // stringifies to the empty string
+}
+
+impl Label {
+    #[cfg(test)]
+    pub fn is_absolute(&self) -> bool {
+        match self {
+            Label::Relative { .. } => false,
+            Label::Absolute { .. } => true,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn repository(&self) -> Option<&Repository> {
+        match self {
+            Label::Relative { .. } => None,
+            Label::Absolute { repository, .. } => Some(repository),
+        }
+    }
+
+    pub fn package(&self) -> Option<&str> {
+        match self {
+            Label::Relative { .. } => None,
+            Label::Absolute { package, .. } => Some(package.as_str()),
+        }
+    }
+
+    pub fn target(&self) -> &str {
+        match self {
+            Label::Relative { target } => target.as_str(),
+            Label::Absolute { target, .. } => target.as_str(),
+        }
+    }
 }
 
 impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@@?[\w\d\-_\.]*)?/{0,2}([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
+        let re = Regex::new(r"^(@@?[\w\d\-_\.]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
         let cap = re
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {s}"))?;
 
-        let repository = cap
-            .get(1)
-            .map(|m| m.as_str().trim_start_matches('@').to_owned());
+        let (repository, is_absolute) = match (cap.get(1), cap.get(2).is_some()) {
+            (Some(repository), is_absolute) => match *repository.as_str().as_bytes() {
+                [b'@', b'@', ..] => (
+                    Some(Repository::Canonical(repository.as_str()[2..].to_owned())),
+                    is_absolute,
+                ),
+                [b'@', ..] => (
+                    Some(Repository::Explicit(repository.as_str()[1..].to_owned())),
+                    is_absolute,
+                ),
+                _ => bail!("Invalid Label: {}", s),
+            },
+            (None, true) => (Some(Repository::Local), true),
+            (None, false) => (None, false),
+        };
 
-        let package = cap.get(2).map(|m| m.as_str().to_owned());
-        let mut target = cap.get(4).map(|m| m.as_str().to_owned());
+        let package = cap.get(3).map(|package| package.as_str().to_owned());
 
-        if target.is_none() {
-            if let Some(pkg) = &package {
-                target = Some(pkg.clone());
-            } else if let Some(repo) = &repository {
-                target = Some(repo.clone())
-            } else {
-                bail!("The label is missing a label")
-            }
+        let target = cap.get(5).map(|target| target.as_str().to_owned());
+
+        match repository {
+            None => match (package, target) {
+                // Relative
+                (None, Some(target)) => Ok(Label::Relative { target }),
+
+                // Relative (Implicit Target which regex identifies as Package)
+                (Some(package), None) => Ok(Label::Relative { target: package }),
+
+                // Invalid (Empty)
+                (None, None) => bail!("Invalid Label: {}", s),
+
+                // Invalid (Relative Package + Target)
+                (Some(_), Some(_)) => bail!("Invalid Label: {}", s),
+            },
+            Some(repository) => match (is_absolute, package, target) {
+                // Absolute (Full)
+                (true, Some(package), Some(target)) => Ok(Label::Absolute {
+                    repository,
+                    package,
+                    target,
+                }),
+
+                // Absolute (Repository)
+                (_, None, None) => match &repository {
+                    Repository::Canonical(target) | Repository::Explicit(target) => {
+                        let target = match target.is_empty() {
+                            false => target.clone(),
+                            true => bail!("Invalid Label: {}", s),
+                        };
+                        Ok(Label::Absolute {
+                            repository,
+                            package: String::new(),
+                            target,
+                        })
+                    }
+                    Repository::Local => bail!("Invalid Label: {}", s),
+                },
+
+                // Absolute (Package)
+                (true, Some(package), None) => {
+                    let target = Utf8Path::new(&package)
+                        .file_name()
+                        .with_context(|| format!("Invalid Label: {}", s))?
+                        .to_owned();
+                    Ok(Label::Absolute {
+                        repository,
+                        package,
+                        target,
+                    })
+                }
+
+                // Absolute (Target)
+                (true, None, Some(target)) => Ok(Label::Absolute {
+                    repository,
+                    package: String::new(),
+                    target,
+                }),
+
+                // Invalid (Relative Repository + Package + Target)
+                (false, Some(_), Some(_)) => bail!("Invalid Label: {}", s),
+
+                // Invalid (Relative Repository + Package)
+                (false, Some(_), None) => bail!("Invalid Label: {}", s),
+
+                // Invalid (Relative Repository + Target)
+                (false, None, Some(_)) => bail!("Invalid Label: {}", s),
+            },
         }
-
-        // The target should be set at this point
-        let target = target.unwrap();
-
-        Ok(Self {
-            repository,
-            package,
-            target,
-        })
     }
 }
 
 impl Display for Label {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Add the repository
-        if let Some(repo) = &self.repository {
-            write!(f, "@{repo}")?;
+        match self {
+            Label::Relative { target } => write!(f, ":{}", target),
+            Label::Absolute {
+                repository,
+                package,
+                target,
+            } => match repository {
+                Repository::Canonical(repository) => {
+                    write!(f, "@@{repository}//{package}:{target}")
+                }
+                Repository::Explicit(repository) => {
+                    write!(f, "@{repository}//{package}:{target}")
+                }
+                Repository::Local => write!(f, "//{package}:{target}"),
+            },
         }
-
-        write!(f, "//")?;
-
-        // Add the package
-        if let Some(pkg) = &self.package {
-            write!(f, "{pkg}")?;
-        }
-
-        write!(f, ":{}", self.target)?;
-
-        Ok(())
     }
 }
 
@@ -104,14 +211,14 @@ impl Label {
                 }
 
                 let package = if package_path.components().count() > 0 {
-                    Some(path_to_label_part(&package_path)?)
+                    path_to_label_part(&package_path)?
                 } else {
-                    None
+                    String::new()
                 };
                 let target = path_to_label_part(target)?;
 
-                Ok(Label {
-                    repository: None,
+                Ok(Label::Absolute {
+                    repository: Repository::Local,
                     package,
                     target,
                 })
@@ -193,66 +300,153 @@ mod test {
     use tempfile::tempdir;
 
     #[test]
-    fn full_label_bzlmod() {
-        let label = Label::from_str("@@repo//package/sub_package:target").unwrap();
-        assert_eq!(label.to_string(), "@repo//package/sub_package:target");
-        assert_eq!(label.repository.unwrap(), "repo");
-        assert_eq!(label.package.unwrap(), "package/sub_package");
-        assert_eq!(label.target, "target");
+    fn relative() {
+        let label = Label::from_str(":target").unwrap();
+        assert_eq!(label.to_string(), ":target");
+        assert!(!label.is_absolute());
+        assert_eq!(label.repository(), None);
+        assert_eq!(label.package(), None);
+        assert_eq!(label.target(), "target");
     }
 
     #[test]
-    fn full_label() {
-        let label = Label::from_str("@repo//package/sub_package:target").unwrap();
-        assert_eq!(label.to_string(), "@repo//package/sub_package:target");
-        assert_eq!(label.repository.unwrap(), "repo");
-        assert_eq!(label.package.unwrap(), "package/sub_package");
-        assert_eq!(label.target, "target");
+    fn relative_implicit() {
+        let label = Label::from_str("target").unwrap();
+        assert_eq!(label.to_string(), ":target");
+        assert!(!label.is_absolute());
+        assert_eq!(label.repository(), None);
+        assert_eq!(label.package(), None);
+        assert_eq!(label.target(), "target");
     }
 
     #[test]
-    fn no_repository() {
-        let label = Label::from_str("//package:target").unwrap();
-        assert_eq!(label.to_string(), "//package:target");
-        assert_eq!(label.repository, None);
-        assert_eq!(label.package.unwrap(), "package");
-        assert_eq!(label.target, "target");
+    fn absolute_full() {
+        let label = Label::from_str("@repo//package:target").unwrap();
+        assert_eq!(label.to_string(), "@repo//package:target");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some("package"));
+        assert_eq!(label.target(), "target");
     }
 
     #[test]
-    fn no_slashes() {
-        let label = Label::from_str("package:target").unwrap();
-        assert_eq!(label.to_string(), "//package:target");
-        assert_eq!(label.repository, None);
-        assert_eq!(label.package.unwrap(), "package");
-        assert_eq!(label.target, "target");
+    fn absolute_repository() {
+        let label = Label::from_str("@repo").unwrap();
+        assert_eq!(label.to_string(), "@repo//:repo");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some(""));
+        assert_eq!(label.target(), "repo");
     }
 
     #[test]
-    fn root_label() {
-        let label = Label::from_str("@repo//:target").unwrap();
-        assert_eq!(label.to_string(), "@repo//:target");
-        assert_eq!(label.repository.unwrap(), "repo");
-        assert_eq!(label.package, None);
-        assert_eq!(label.target, "target");
+    fn absolute_package() {
+        let label = Label::from_str("//package").unwrap();
+        assert_eq!(label.to_string(), "//package:package");
+        assert!(label.is_absolute());
+        assert_eq!(label.repository(), Some(&Repository::Local));
+        assert_eq!(label.package(), Some("package"));
+        assert_eq!(label.target(), "package");
+
+        let label = Label::from_str("//package/subpackage").unwrap();
+        assert_eq!(label.to_string(), "//package/subpackage:subpackage");
+        assert!(label.is_absolute());
+        assert_eq!(label.repository(), Some(&Repository::Local));
+        assert_eq!(label.package(), Some("package/subpackage"));
+        assert_eq!(label.target(), "subpackage");
     }
 
     #[test]
-    fn root_label_no_repository() {
+    fn absolute_target() {
         let label = Label::from_str("//:target").unwrap();
         assert_eq!(label.to_string(), "//:target");
-        assert_eq!(label.repository, None);
-        assert_eq!(label.package, None);
-        assert_eq!(label.target, "target");
+        assert!(label.is_absolute());
+        assert_eq!(label.repository(), Some(&Repository::Local));
+        assert_eq!(label.package(), Some(""));
+        assert_eq!(label.target(), "target");
     }
 
     #[test]
-    fn root_label_no_slashes() {
-        let label = Label::from_str(":target").unwrap();
-        assert_eq!(label.to_string(), "//:target");
-        assert_eq!(label.repository, None);
-        assert_eq!(label.package, None);
-        assert_eq!(label.target, "target");
+    fn absolute_repository_package() {
+        let label = Label::from_str("@repo//package").unwrap();
+        assert_eq!(label.to_string(), "@repo//package:package");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some("package"));
+        assert_eq!(label.target(), "package");
+    }
+
+    #[test]
+    fn absolute_repository_target() {
+        let label = Label::from_str("@repo//:target").unwrap();
+        assert_eq!(label.to_string(), "@repo//:target");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some(""));
+        assert_eq!(label.target(), "target");
+    }
+
+    #[test]
+    fn absolute_package_target() {
+        let label = Label::from_str("//package:target").unwrap();
+        assert_eq!(label.to_string(), "//package:target");
+        assert!(label.is_absolute());
+        assert_eq!(label.repository(), Some(&Repository::Local));
+        assert_eq!(label.package(), Some("package"));
+        assert_eq!(label.target(), "target");
+    }
+
+    #[test]
+    fn invalid_empty() {
+        Label::from_str("").unwrap_err();
+        Label::from_str("@").unwrap_err();
+        Label::from_str("//").unwrap_err();
+        Label::from_str(":").unwrap_err();
+    }
+
+    #[test]
+    fn invalid_relative_repository_package_target() {
+        Label::from_str("@repo/package:target").unwrap_err();
+    }
+
+    #[test]
+    fn invalid_relative_repository_package() {
+        Label::from_str("@repo/package").unwrap_err();
+    }
+
+    #[test]
+    fn invalid_relative_repository_target() {
+        Label::from_str("@repo:target").unwrap_err();
+    }
+
+    #[test]
+    fn invalid_relative_package_target() {
+        Label::from_str("package:target").unwrap_err();
+    }
+
+    #[test]
+    fn full_label_bzlmod() {
+        let label = Label::from_str("@@repo//package/sub_package:target").unwrap();
+        assert_eq!(label.to_string(), "@@repo//package/sub_package:target");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Canonical(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some("package/sub_package"));
+        assert_eq!(label.target(), "target");
     }
 
     #[test]
@@ -262,37 +456,39 @@ mod test {
             label.to_string(),
             "@repo//package/sub_package:subdir/target"
         );
-        assert_eq!(label.repository.unwrap(), "repo");
-        assert_eq!(label.package.unwrap(), "package/sub_package");
-        assert_eq!(label.target, "subdir/target");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some("package/sub_package"));
+        assert_eq!(label.target(), "subdir/target");
     }
 
     #[test]
     fn label_contains_plus() {
         let label = Label::from_str("@repo//vendor/wasi-0.11.0+wasi-snapshot-preview1:BUILD.bazel")
             .unwrap();
-        assert_eq!(label.repository.unwrap(), "repo");
+        assert!(label.is_absolute());
         assert_eq!(
-            label.package.unwrap(),
-            "vendor/wasi-0.11.0+wasi-snapshot-preview1"
+            label.repository(),
+            Some(&Repository::Explicit(String::from("repo")))
         );
-        assert_eq!(label.target, "BUILD.bazel");
+        assert_eq!(
+            label.package(),
+            Some("vendor/wasi-0.11.0+wasi-snapshot-preview1")
+        );
+        assert_eq!(label.target(), "BUILD.bazel");
     }
 
     #[test]
     fn invalid_double_colon() {
-        assert!(Label::from_str("::target").is_err());
+        Label::from_str("::target").unwrap_err();
     }
 
     #[test]
     fn invalid_triple_at() {
-        assert!(Label::from_str("@@@repo//pkg:target").is_err());
-    }
-
-    #[test]
-    #[ignore = "This currently fails. The Label parsing logic needs to be updated"]
-    fn invalid_no_double_slash() {
-        assert!(Label::from_str("@repo:target").is_err());
+        Label::from_str("@@@repo//pkg:target").unwrap_err();
     }
 
     #[test]
@@ -309,9 +505,14 @@ mod test {
             File::create(&actual_file).unwrap();
         }
         let label = Label::from_absolute_path(&actual_file).unwrap();
-        assert_eq!(label.repository, None);
-        assert_eq!(label.package.unwrap(), "parent/child");
-        assert_eq!(label.target, "grandchild/greatgrandchild")
+        assert_eq!(
+            label.to_string(),
+            "//parent/child:grandchild/greatgrandchild"
+        );
+        assert!(label.is_absolute());
+        assert_eq!(label.repository(), Some(&Repository::Local));
+        assert_eq!(label.package(), Some("parent/child"));
+        assert_eq!(label.target(), "grandchild/greatgrandchild");
     }
 
     #[test]

@@ -181,35 +181,43 @@ def _annotation(
             additive_build_file = additive_build_file,
             additive_build_file_content = additive_build_file_content,
             alias_rule = parse_alias_rule(alias_rule),
-            build_script_data = build_script_data,
-            build_script_tools = build_script_tools,
+            build_script_data = _stringify_list(build_script_data),
+            build_script_tools = _stringify_list(build_script_tools),
             build_script_data_glob = build_script_data_glob,
-            build_script_deps = build_script_deps,
+            build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
-            build_script_proc_macro_deps = build_script_proc_macro_deps,
+            build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
             build_script_rundir = build_script_rundir,
             build_script_rustc_env = build_script_rustc_env,
-            build_script_toolchains = build_script_toolchains,
-            compile_data = compile_data,
+            build_script_toolchains = _stringify_list(build_script_toolchains),
+            compile_data = _stringify_list(compile_data),
             compile_data_glob = compile_data_glob,
             crate_features = crate_features,
-            data = data,
+            data = _stringify_list(data),
             data_glob = data_glob,
-            deps = deps,
+            deps = _stringify_list(deps),
             extra_aliased_targets = extra_aliased_targets,
             gen_binaries = gen_binaries,
             disable_pipelining = disable_pipelining,
             gen_build_script = gen_build_script,
             patch_args = patch_args,
             patch_tool = patch_tool,
-            patches = patches,
-            proc_macro_deps = proc_macro_deps,
+            patches = _stringify_list(patches),
+            proc_macro_deps = _stringify_list(proc_macro_deps),
             rustc_env = rustc_env,
-            rustc_env_files = rustc_env_files,
+            rustc_env_files = _stringify_list(rustc_env_files),
             rustc_flags = rustc_flags,
             shallow_since = shallow_since,
         ),
     ))
+
+# In bzlmod, attributes of type `attr.label_list` end up as `Label`s not `str`,
+# and the `json` module doesn't know how to serialize `Label`s,
+# so we proactively convert them to strings before serializing.
+def _stringify_list(values):
+    if not values:
+        return values
+    return [str(x) for x in values]
 
 def _select(common, selects):
     """A Starlark Select for `crate.annotation()`.

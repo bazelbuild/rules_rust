@@ -212,20 +212,20 @@ impl WorkspaceMetadata {
     ) -> Result<Self> {
         let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
-            .filter_map(|(original_manifest, cargo_pkg_name)| {
+            .filter_map(|(original_manifest, cargo_package_name)| {
                 let label = match splicing_manifest.manifests.get(*original_manifest) {
                     Some(v) => v,
                     None => return None,
                 };
 
-                let package = match &label.package {
-                    Some(pkg) => PathBuf::from(pkg),
-                    None => return None,
+                let package = match label.package() {
+                    Some(package) if !package.is_empty() => PathBuf::from(package),
+                    Some(_) | None => return None,
                 };
 
                 let prefix = package.to_string_lossy().to_string();
 
-                Some((cargo_pkg_name.clone(), prefix))
+                Some((cargo_package_name.clone(), prefix))
             })
             .collect();
 

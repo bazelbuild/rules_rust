@@ -68,7 +68,7 @@ pub struct Filegroup {
 pub struct Alias {
     pub rule: String,
     pub name: String,
-    pub actual: String,
+    pub actual: Label,
     pub tags: Set<String>,
 }
 
@@ -77,9 +77,9 @@ pub struct Alias {
 pub struct CargoBuildScript {
     pub name: String,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub aliases: SelectDict<String>,
+    pub aliases: SelectDict<Label, String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub build_script_env: SelectDict<String>,
+    pub build_script_env: SelectDict<String, String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub compile_data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
@@ -90,20 +90,20 @@ pub struct CargoBuildScript {
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub deps: SelectSet<String>,
+    pub deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub link_deps: SelectSet<String>,
+    pub link_deps: SelectSet<Label>,
     pub edition: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub proc_macro_deps: SelectSet<String>,
+    pub proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectScalar::is_empty")]
     pub rundir: SelectScalar<String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub rustc_env: SelectDict<String>,
+    pub rustc_env: SelectDict<String, String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub rustc_env_files: SelectSet<String>,
     #[serde(skip_serializing_if = "SelectList::is_empty")]
@@ -112,9 +112,9 @@ pub struct CargoBuildScript {
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub tags: Set<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub tools: SelectSet<String>,
+    pub tools: SelectSet<Label>,
     #[serde(skip_serializing_if = "Set::is_empty")]
-    pub toolchains: Set<String>,
+    pub toolchains: Set<Label>,
     pub version: String,
     pub visibility: Set<String>,
 }
@@ -123,11 +123,11 @@ pub struct CargoBuildScript {
 pub struct RustProcMacro {
     pub name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub deps: SelectSet<String>,
+    pub deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub proc_macro_deps: SelectSet<String>,
+    pub proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub aliases: SelectDict<String>,
+    pub aliases: SelectDict<Label, String>,
     #[serde(flatten)]
     pub common: CommonAttrs,
 }
@@ -136,11 +136,11 @@ pub struct RustProcMacro {
 pub struct RustLibrary {
     pub name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub deps: SelectSet<String>,
+    pub deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub proc_macro_deps: SelectSet<String>,
+    pub proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub aliases: SelectDict<String>,
+    pub aliases: SelectDict<Label, String>,
     #[serde(flatten)]
     pub common: CommonAttrs,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
@@ -151,11 +151,11 @@ pub struct RustLibrary {
 pub struct RustBinary {
     pub name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub deps: SelectSet<String>,
+    pub deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub proc_macro_deps: SelectSet<String>,
+    pub proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub aliases: SelectDict<String>,
+    pub aliases: SelectDict<Label, String>,
     #[serde(flatten)]
     pub common: CommonAttrs,
 }
@@ -174,7 +174,7 @@ pub struct CommonAttrs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker_script: Option<String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
-    pub rustc_env: SelectDict<String>,
+    pub rustc_env: SelectDict<String, String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub rustc_env_files: SelectSet<String>,
     #[serde(skip_serializing_if = "SelectList::is_empty")]
@@ -189,7 +189,7 @@ pub struct CommonAttrs {
 
 pub struct Data {
     pub glob: Glob,
-    pub select: SelectSet<String>,
+    pub select: SelectSet<Label>,
 }
 
 impl Package {
@@ -219,7 +219,7 @@ impl Serialize for Alias {
         #[derive(Serialize)]
         struct AliasInner<'a> {
             pub name: &'a String,
-            pub actual: &'a String,
+            pub actual: &'a Label,
             pub tags: &'a Set<String>,
         }
 

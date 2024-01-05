@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
 
 package(default_visibility = ["//visibility:public"])
@@ -48,3 +49,10 @@ rust_binary(
         "vendored",
     ]
 ]
+
+build_test(
+    name = "gen_rust_project",
+    targets = [
+        "@rules_rust//tools/rust_analyzer:gen_rust_project",
+    ],
+)

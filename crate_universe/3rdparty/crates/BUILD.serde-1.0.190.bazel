@@ -134,6 +134,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "serde_build_script",
+    actual = ":serde_build_script",
     tags = ["manual"],
 )

@@ -296,6 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
             "anyhow": "@cui__anyhow-1.0.75//:anyhow",
+            "camino": "@cui__camino-1.1.6//:camino",
             "cargo-lock": "@cui__cargo-lock-9.0.0//:cargo_lock",
             "cargo-platform": "@cui__cargo-platform-0.1.4//:cargo_platform",
             "cargo_metadata": "@cui__cargo_metadata-0.18.1//:cargo_metadata",
@@ -3361,6 +3362,7 @@ def crate_repositories():
 
     return [
         struct(repo = "cui__anyhow-1.0.75", is_dev_dep = False),
+        struct(repo = "cui__camino-1.1.6", is_dev_dep = False),
         struct(repo = "cui__cargo-lock-9.0.0", is_dev_dep = False),
         struct(repo = "cui__cargo-platform-0.1.4", is_dev_dep = False),
         struct(repo = "cui__cargo_metadata-0.18.1", is_dev_dep = False),

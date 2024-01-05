@@ -5,44 +5,46 @@ use serde::ser::{SerializeMap, Serializer};
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
-use crate::select::{Select, SelectableValue};
+use crate::select::{Select, SelectableOrderedValue, SelectableValue};
 use crate::utils::starlark::{
     looks_like_bazel_configuration_label, NoMatchingPlatformTriples, WithOriginalConfigurations,
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectDict<T>
+pub struct SelectDict<U, T>
 where
+    U: SelectableOrderedValue,
     T: SelectableValue,
 {
     // Invariant: keys in this map are not in any of the inner maps of `selects`.
-    common: BTreeMap<String, T>,
+    common: BTreeMap<U, T>,
     // Invariant: none of the inner maps are empty.
-    selects: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>>,
+    selects: BTreeMap<String, BTreeMap<U, WithOriginalConfigurations<T>>>,
     // Elements from the `Select` whose configuration did not get mapped to any
     // new configuration. They could be ignored, but are preserved here to
     // generate comments that help the user understand what happened.
-    unmapped: BTreeMap<String, BTreeMap<String, T>>,
+    unmapped: BTreeMap<String, BTreeMap<U, T>>,
 }
 
-impl<T> SelectDict<T>
+impl<U, T> SelectDict<U, T>
 where
+    U: SelectableOrderedValue,
     T: SelectableValue,
 {
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets
     /// of configurations in the output SelectDict.
     pub fn new(
-        select: Select<BTreeMap<String, T>>,
+        select: Select<BTreeMap<U, T>>,
         platforms: &BTreeMap<String, BTreeSet<String>>,
     ) -> Self {
         let (common, selects) = select.into_parts();
 
         // Map new configuration -> WithOriginalConfigurations(value, old configurations).
-        let mut remapped: BTreeMap<String, BTreeMap<String, WithOriginalConfigurations<T>>> =
+        let mut remapped: BTreeMap<String, BTreeMap<U, WithOriginalConfigurations<T>>> =
             BTreeMap::new();
         // Map unknown configuration -> value.
-        let mut unmapped: BTreeMap<String, BTreeMap<String, T>> = BTreeMap::new();
+        let mut unmapped: BTreeMap<String, BTreeMap<U, T>> = BTreeMap::new();
 
         for (original_configuration, entries) in selects {
             match platforms.get(&original_configuration) {
@@ -98,8 +100,9 @@ where
     }
 }
 
-impl<T> Serialize for SelectDict<T>
+impl<U, T> Serialize for SelectDict<U, T>
 where
+    U: SelectableOrderedValue,
     T: SelectableValue,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -144,12 +147,14 @@ where
             return self.common.serialize(serializer);
         }
 
-        struct SelectInner<'a, T>(&'a SelectDict<T>)
+        struct SelectInner<'a, U, T>(&'a SelectDict<U, T>)
         where
+            U: SelectableOrderedValue,
             T: SelectableValue;
 
-        impl<'a, T> Serialize for SelectInner<'a, T>
+        impl<'a, U, T> Serialize for SelectInner<'a, U, T>
         where
+            U: SelectableOrderedValue,
             T: SelectableValue,
         {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -180,12 +185,14 @@ where
                 }
                 map.serialize_entry("//conditions:default", &self.0.common)?;
                 if !self.0.unmapped.is_empty() {
-                    struct SelectUnmapped<'a, T>(&'a BTreeMap<String, BTreeMap<String, T>>)
+                    struct SelectUnmapped<'a, U, T>(&'a BTreeMap<String, BTreeMap<U, T>>)
                     where
+                        U: SelectableOrderedValue,
                         T: SelectableValue;
 
-                    impl<'a, T> Serialize for SelectUnmapped<'a, T>
+                    impl<'a, U, T> Serialize for SelectUnmapped<'a, U, T>
                     where
+                        U: SelectableOrderedValue,
                         T: SelectableValue,
                     {
                         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -227,7 +234,7 @@ mod test {
 
     #[test]
     fn empty_select_dict() {
-        let select_dict: SelectDict<String> =
+        let select_dict: SelectDict<String, String> =
             SelectDict::new(Default::default(), &Default::default());
 
         let expected_starlark = indoc! {r#"
