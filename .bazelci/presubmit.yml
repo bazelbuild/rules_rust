@@ -53,6 +53,8 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
   rbe_ubuntu2004:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel

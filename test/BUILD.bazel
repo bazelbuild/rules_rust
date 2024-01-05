@@ -1,0 +1,4 @@
+sh_binary(
+    name = "query_test_binary",
+    srcs = ["query_test_binary.sh"],
+)
