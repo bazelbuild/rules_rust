@@ -40,6 +40,17 @@ crate.from_cargo(
     manifests = ["//third-party:Cargo.toml"],
 )
 use_repo(crate, "crates")
+crate.annotation(
+    additive_build_file = "//:anyhow.BUILD.bazel",
+    crate = "anyhow",
+    # Defined in additive_build_file.
+    data = [":cargo_toml"],
+    # Optional, you probably don't need this. Defaults to all from_cargo
+    # invocations in this module.
+    repositories = ["crates"],
+    # Optional, you probably don't need this, defaults to "*".
+    version = "*",
+)
 
 # Option 2: Vendored crates
 crate_repositories = use_extension("//third-party:extension.bzl", "crate_repositories")

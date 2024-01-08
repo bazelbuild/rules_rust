@@ -76,11 +76,12 @@ def _assert_absolute(label):
         label (Label): The label to check
     """
     label_str = str(label)
-    if not label.startswith("@"):
+    if not label_str.startswith("@"):
         fail("The labels must be absolute. Please update '{}'".format(
             label_str,
         ))
 
+# This should be kept in sync crate_universe/extension.bzl.
 def _annotation(
         version = "*",
         additive_build_file = None,
@@ -178,7 +179,7 @@ def _annotation(
     return json.encode((
         version,
         struct(
-            additive_build_file = additive_build_file,
+            additive_build_file = _stringify_label(additive_build_file),
             additive_build_file_content = additive_build_file_content,
             alias_rule = parse_alias_rule(alias_rule),
             build_script_data = _stringify_list(build_script_data),
@@ -210,6 +211,11 @@ def _annotation(
             shallow_since = shallow_since,
         ),
     ))
+
+def _stringify_label(value):
+    if not value:
+        return value
+    return str(value)
 
 # In bzlmod, attributes of type `attr.label_list` end up as `Label`s not `str`,
 # and the `json` module doesn't know how to serialize `Label`s,
