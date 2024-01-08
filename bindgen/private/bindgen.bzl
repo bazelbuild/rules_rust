@@ -46,6 +46,7 @@ def rust_bindgen_library(
         header,
         cc_lib,
         bindgen_flags = None,
+        bindgen_features = None,
         clang_flags = None,
         **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library.
@@ -57,6 +58,7 @@ def rust_bindgen_library(
         header (str): The label of the .h file to generate bindings for.
         cc_lib (str): The label of the cc_library that contains the .h file. This is used to find the transitive includes.
         bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
+        bindgen_features (list, optional): The `features` attribute for the `rust_bindgen` target.
         clang_flags (list, optional): Flags to pass directly to the clang executable.
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
@@ -80,6 +82,7 @@ def rust_bindgen_library(
         header = header,
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
+        features = bindgen_features,
         clang_flags = clang_flags or [],
         tags = sub_tags,
         **bindgen_kwargs
@@ -168,7 +171,10 @@ def _rust_bindgen_impl(ctx):
     libstdcxx = toolchain.libstdcxx
 
     output = ctx.outputs.out
-    tools = depset([clang_bin])
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
+
+    tools = depset([clang_bin], transitive = [cc_toolchain.all_files])
 
     # libclang should only have 1 output file
     libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
@@ -198,7 +204,6 @@ def _rust_bindgen_impl(ctx):
     # Configure Clang Arguments
     args.add("--")
 
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
     compile_variables = cc_common.create_compile_variables(
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
@@ -218,7 +223,7 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    flags_known_to_clang = ("-I", "-iquote", "-isystem", "--sysroot")
+    flags_known_to_clang = ("-I", "-iquote", "-isystem", "--sysroot", "--gcc-toolchain")
     open_arg = False
     for arg in compile_flags:
         if open_arg:
@@ -258,9 +263,7 @@ def _rust_bindgen_impl(ctx):
                 _get_libs_for_static_executable(libclang),
             ] + ([
                 _get_libs_for_static_executable(libstdcxx),
-            ] if libstdcxx else []) + [
-                cc_toolchain.all_files,
-            ],
+            ] if libstdcxx else []),
         ),
         outputs = [output],
         mnemonic = "RustBindgen",
@@ -381,6 +384,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             doc = "The label of a `clang` executable.",
             executable = True,
             cfg = "exec",
+            allow_files = True,
         ),
         "default_rustfmt": attr.bool(
             doc = "If set, `rust_bindgen` targets will always format generated sources with `rustfmt`.",
@@ -391,12 +395,14 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
             cfg = "exec",
             providers = [CcInfo],
+            allow_files = True,
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             mandatory = False,
+            allow_files = True,
         ),
     },
 )
