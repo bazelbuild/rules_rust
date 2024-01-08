@@ -16,9 +16,9 @@ load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "ge
 _relative_label_list = attr.string_list
 
 _OPT_BOOL_VALUES = {
+    "auto": None,
     "off": False,
     "on": True,
-    "auto": None,
 }
 
 def optional_bool(doc):
