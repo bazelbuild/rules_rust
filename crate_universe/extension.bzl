@@ -8,6 +8,8 @@ load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "gener
 load("//crate_universe/private:generate_utils.bzl", "render_config")
 load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner")
 
+# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
+#
 # If I were to write ":foo", with attr.label_list, it would evaluate to
 # "@@//:foo". However, for a tag such as deps, ":foo" should refer to
 # "@@rules_rust~crates~<crate>//:foo".
