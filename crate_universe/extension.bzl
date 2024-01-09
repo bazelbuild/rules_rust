@@ -279,7 +279,7 @@ _annotation = tag_class(
             default = "auto",
         ),
         patch_args = attr.string_list(doc = "The `patch_args` attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)"),
-        patch_tool = attr.string_list(doc = "The `patch_tool` attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)"),
+        patch_tool = attr.string(doc = "The `patch_tool` attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)"),
         patches = attr.label_list(doc = "The `patches` attribute of a Bazel repository rule. See [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)"),
         proc_macro_deps = _relative_label_list(doc = "A list of labels to add to a crate's `rust_library::proc_macro_deps` attribute."),
         rustc_env = attr.string_dict(doc = "Additional variables to set on a crate's `rust_library::rustc_env` attribute."),
