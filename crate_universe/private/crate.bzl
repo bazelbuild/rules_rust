@@ -154,7 +154,7 @@ def _annotation(
             `cargo_build_script` targets for the current crate.
         patch_args (list, optional): The `patch_args` attribute of a Bazel repository rule. See
             [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)
-        patch_tool (list, optional): The `patch_tool` attribute of a Bazel repository rule. See
+        patch_tool (string, optional): The `patch_tool` attribute of a Bazel repository rule. See
             [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)
         patches (list, optional): The `patches` attribute of a Bazel repository rule. See
             [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)
