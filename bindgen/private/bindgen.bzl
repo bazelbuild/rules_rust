@@ -124,7 +124,9 @@ def _generate_cc_link_build_info(ctx, cc_lib):
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
 
-        linker_flags.extend(linker_input.user_link_flags)
+        if linker_input.user_link_flags:
+            linker_flags.append("-C")
+            linker_flags.append("link-args={}".format(" ".join(linker_input.user_link_flags)))
 
     if not compile_data:
         fail("No static libraries found in {}".format(
