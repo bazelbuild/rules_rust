@@ -26,7 +26,7 @@ load("//rust:rust_common.bzl", "BuildInfo")
 load("//rust/private:rustc.bzl", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_cc_toolchain", "get_preferred_artifact")
+load("//rust/private:utils.bzl", "find_cc_toolchain", "get_lib_name_default", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -116,11 +116,11 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
         for lib in linker_input.libraries:
             if lib.static_library:
-                linker_flags.append("-lstatic={}".format(lib.static_library.owner.name))
+                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.static_library)))
                 linker_search_paths.append(lib.static_library.dirname)
                 compile_data.append(lib.static_library)
             elif lib.pic_static_library:
-                linker_flags.append("-lstatic={}".format(lib.pic_static_library.owner.name))
+                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
 
