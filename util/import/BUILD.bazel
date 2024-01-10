@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+load("//rust:defs.bzl", "rust_proc_macro")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:transitions.bzl", "alias_with_import_macro_bootstrapping_mode")
