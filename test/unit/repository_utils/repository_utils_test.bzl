@@ -94,7 +94,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Release version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        "6a30ffca17a244ad6bfb1d257572155f4e2b08d3ca2d852c2fc7420e264c6baa",
+        "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8",
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
@@ -108,7 +108,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Values in //rust:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
-        "6a30ffca17a244ad6bfb1d257572155f4e2b08d3ca2d852c2fc7420e264c6baa",
+        "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8",
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
@@ -122,7 +122,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Nightly version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        "187f7248dea1c0328e3fb26bb35ad7ba4df901cc34c1c6255260276de8fe3360",
+        "ea01d3cd6c6729cd8ebb55a7702eda2347451e304b58807361e020065a579d96",
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",

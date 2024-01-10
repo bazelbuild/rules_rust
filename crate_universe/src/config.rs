@@ -16,6 +16,7 @@ use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
 use crate::select::{Select, Selectable};
+use crate::utils::starlark::Label;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
@@ -226,11 +227,11 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
-    pub deps: Option<Select<BTreeSet<String>>>,
+    pub deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
-    pub proc_macro_deps: Option<Select<BTreeSet<String>>>,
+    pub proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
@@ -238,7 +239,7 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to  the target's
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
-    pub data: Option<Select<BTreeSet<String>>>,
+    pub data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
@@ -246,7 +247,7 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
-    pub compile_data: Option<Select<BTreeSet<String>>>,
+    pub compile_data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
@@ -269,19 +270,19 @@ pub struct CrateAnnotations {
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
-    pub build_script_deps: Option<Select<BTreeSet<String>>>,
+    pub build_script_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
-    pub build_script_proc_macro_deps: Option<Select<BTreeSet<String>>>,
+    pub build_script_proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-data) attribute.
-    pub build_script_data: Option<Select<BTreeSet<String>>>,
+    pub build_script_data: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [tools](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-tools) attribute.
-    pub build_script_tools: Option<Select<BTreeSet<String>>>,
+    pub build_script_tools: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env) attribute.
@@ -297,7 +298,7 @@ pub struct CrateAnnotations {
 
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
-    pub build_script_toolchains: Option<BTreeSet<String>>,
+    pub build_script_toolchains: Option<BTreeSet<Label>>,
 
     /// Directory to run the crate's build script in. If not set, will run in the manifest directory, otherwise a directory relative to the exec root.
     pub build_script_rundir: Option<Select<String>>,
@@ -429,10 +430,10 @@ impl Sum for CrateAnnotations {
 #[derive(Debug, Deserialize)]
 pub struct AnnotationsProvidedByPackage {
     pub gen_build_script: Option<bool>,
-    pub data: Option<Select<BTreeSet<String>>>,
+    pub data: Option<Select<BTreeSet<Label>>>,
     pub data_glob: Option<BTreeSet<String>>,
-    pub deps: Option<Select<BTreeSet<String>>>,
-    pub compile_data: Option<Select<BTreeSet<String>>>,
+    pub deps: Option<Select<BTreeSet<Label>>>,
+    pub compile_data: Option<Select<BTreeSet<Label>>>,
     pub compile_data_glob: Option<BTreeSet<String>>,
     pub rustc_env: Option<Select<BTreeMap<String, String>>>,
     pub rustc_env_files: Option<Select<BTreeSet<String>>>,

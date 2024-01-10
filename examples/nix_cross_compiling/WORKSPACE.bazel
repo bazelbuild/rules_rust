@@ -3,9 +3,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Nix
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    sha256 = "54946958c311f48c17c9b2e70683b621fec135258b75173f3900f901d52d8115",
-    strip_prefix = "rules_nixpkgs-2b4702c8a0d1d7ea474ea0913344e8add2759f9c",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/2b4702c8a0d1d7ea474ea0913344e8add2759f9c.tar.gz"],
+    sha256 = "532634d78c35a42745bc1ceb02193c1505e676ed55746947061c2b6bb37b85fb",
+    strip_prefix = "rules_nixpkgs-c871abcedf5734513f7ab731ea6ba541636f4df6",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/c871abcedf5734513f7ab731ea6ba541636f4df6.tar.gz"],
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")

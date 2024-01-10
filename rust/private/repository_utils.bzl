@@ -11,7 +11,7 @@ load(
 load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
-DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
 DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
 

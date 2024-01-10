@@ -202,6 +202,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "parking_lot_core_build_script",
+    actual = ":parking_lot_core_build_script",
     tags = ["manual"],
 )

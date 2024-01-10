@@ -126,6 +126,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "memoffset_build_script",
+    actual = ":memoffset_build_script",
     tags = ["manual"],
 )

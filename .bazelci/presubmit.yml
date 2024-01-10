@@ -53,6 +53,8 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
   rbe_ubuntu2004:
     shell_commands:
       - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
@@ -618,8 +620,6 @@ tasks:
     setup:
       - curl -L https://nixos.org/nix/install | bash
       - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
-      - sudo mkdir /etc/nix
-      - echo "experimental-features = nix-command flakes" | sudo tee --append /etc/nix/nix.conf
     build_targets:
       # Root `build_test` target is called directly to catch missing platforms
       # that would otherwise be quietly skipped due to `target_compatible_with`.

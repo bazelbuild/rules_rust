@@ -126,6 +126,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "camino_build_script",
+    actual = ":camino_build_script",
     tags = ["manual"],
 )

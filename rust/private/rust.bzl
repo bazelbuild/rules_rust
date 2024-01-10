@@ -901,6 +901,7 @@ rust_static_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    provides = [CcInfo],
     doc = dedent("""\
         Builds a Rust static library.
 
@@ -948,6 +949,7 @@ rust_shared_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
+    provides = [CcInfo],
     doc = dedent("""\
         Builds a Rust shared library.
 

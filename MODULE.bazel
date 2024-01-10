@@ -44,6 +44,7 @@ use_repo(
     "com_google_googleapis",
     "cui",
     "cui__anyhow-1.0.75",
+    "cui__camino-1.1.6",
     "cui__cargo-lock-9.0.0",
     "cui__cargo-platform-0.1.4",
     "cui__cargo_metadata-0.18.1",

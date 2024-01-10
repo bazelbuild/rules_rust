@@ -176,7 +176,8 @@ def generate_config_file(
         repository_name,
         output_pkg,
         workspace_name,
-        render_config):
+        render_config,
+        repository_ctx = None):
     """Writes the rendering config to cargo-bazel-config.json.
 
     Args:
@@ -192,6 +193,8 @@ def generate_config_file(
         output_pkg: The path to the package containing the build files.
         workspace_name (str): The name of the workspace.
         render_config: The render config to use.
+        repository_ctx (repository_ctx, optional): A repository context object
+            used for enabling certain functionality.
 
     Returns:
         file: The cargo-bazel-config.json written.
@@ -244,6 +247,7 @@ def generate_config_file(
         render_config = render_config,
         supported_platform_triples = supported_platform_triples,
         repository_name = repository_name or ctx.label.name,
+        repository_ctx = repository_ctx,
     )
 
     return json.encode_indent(

@@ -120,6 +120,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "iana-time-zone-haiku_build_script",
+    actual = ":iana-time-zone-haiku_build_script",
     tags = ["manual"],
 )
