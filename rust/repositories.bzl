@@ -265,7 +265,7 @@ def rust_register_toolchains(
         toolchain_names.append(rustfmt_repo_name)
         toolchain_labels[rustfmt_repo_name] = "@{}_tools//:rustfmt_toolchain".format(rustfmt_repo_name)
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
-        target_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
+        target_compatible_with_by_toolchain[rustfmt_repo_name] = []
         toolchain_types[rustfmt_repo_name] = "@rules_rust//rust/rustfmt:toolchain_type"
 
     toolchain_repository_hub(
