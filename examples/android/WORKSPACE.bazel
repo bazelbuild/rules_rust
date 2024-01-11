@@ -45,6 +45,24 @@ rbe_preconfig(
     toolchain = "ubuntu1804-bazel-java11",
 )
 
-android_sdk_repository(name = "androidsdk")
+android_sdk_repository(
+    name = "androidsdk",
+)
 
-android_ndk_repository(name = "androidndk")
+# Or a later commit
+RULES_ANDROID_NDK_COMMIT = "877c68ef34c9f3353028bf490d269230c1990483"
+
+RULES_ANDROID_NDK_SHA = "b1a5ddd784e6ed915c2035c0db536a278b5f50c64412128c06877115991391ef"
+
+http_archive(
+    name = "rules_android_ndk",
+    sha256 = RULES_ANDROID_NDK_SHA,
+    strip_prefix = "rules_android_ndk-%s" % RULES_ANDROID_NDK_COMMIT,
+    url = "https://github.com/bazelbuild/rules_android_ndk/archive/%s.zip" % RULES_ANDROID_NDK_COMMIT,
+)
+
+load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")
+
+android_ndk_repository(
+    name = "androidndk",
+)
