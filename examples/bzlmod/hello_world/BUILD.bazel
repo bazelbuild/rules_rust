@@ -61,5 +61,5 @@ build_test(
     name = "rust_fmt",
     targets = [
         "@rules_rust//:rustfmt",
-    ]
+    ],
 )
