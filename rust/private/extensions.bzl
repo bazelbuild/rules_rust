@@ -7,7 +7,6 @@ load("//proto/prost:repositories.bzl", "rust_prost_dependencies")
 load("//rust/private:repository_utils.bzl", "TINYJSON_KWARGS")
 load("//test:deps.bzl", "rules_rust_test_deps")
 load("//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-load("//util/import:deps.bzl", "import_deps")
 load("//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies")
 
 def _internal_deps_impl(module_ctx):
@@ -23,7 +22,6 @@ def _internal_deps_impl(module_ctx):
     direct_deps.extend(rust_prost_dependencies(bzlmod = True))
     direct_deps.extend(rust_bindgen_dependencies())
     direct_deps.extend(rust_analyzer_dependencies())
-    direct_deps.extend(import_deps())
     direct_deps.extend(rust_wasm_bindgen_dependencies())
     direct_deps.extend(rules_rust_test_deps())
 
