@@ -1,0 +1,33 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "hello_world_aarch64",
+    srcs = ["src/main.rs"],
+    platform = ":linux-aarch64",
+    deps = [],
+)
+
+rust_binary(
+    name = "hello_world_x86_64",
+    srcs = ["src/main.rs"],
+    platform = ":linux-x86_64",
+    deps = [],
+)
+
+platform(
+    name = "linux-aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "linux-x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
