@@ -110,17 +110,21 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         The `BuildInfo` provider.
     """
     compile_data = []
+
+    # rustc_flags are passed directly to rustc while linker_flags are passed
+    # the linker invoked by either rustc or cc_common.link
+    rustc_flags = []
     linker_flags = []
     linker_search_paths = []
 
     for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
         for lib in linker_input.libraries:
             if lib.static_library:
-                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.static_library)))
+                rustc_flags.append("-lstatic={}".format(get_lib_name_default(lib.static_library)))
                 linker_search_paths.append(lib.static_library.dirname)
                 compile_data.append(lib.static_library)
             elif lib.pic_static_library:
-                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
+                rustc_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
 
@@ -131,9 +135,15 @@ def _generate_cc_link_build_info(ctx, cc_lib):
             cc_lib.label,
         ))
 
-    link_flags = ctx.actions.declare_file("{}.link_flags".format(ctx.label.name))
+    rustc_flags_file = ctx.actions.declare_file("{}.rustc_flags".format(ctx.label.name))
     ctx.actions.write(
-        output = link_flags,
+        output = rustc_flags_file,
+        content = "\n".join(rustc_flags),
+    )
+
+    linker_flags_file = ctx.actions.declare_file("{}.linker_flags".format(ctx.label.name))
+    ctx.actions.write(
+        output = linker_flags_file,
         content = "\n".join(linker_flags),
     )
 
@@ -149,8 +159,8 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     return BuildInfo(
         compile_data = depset(compile_data),
         dep_env = None,
-        flags = None,
-        link_flags = link_flags,
+        flags = rustc_flags_file,
+        linker_flags = linker_flags_file,
         link_search_paths = link_search_paths,
         out_dir = None,
         rustc_env = None,

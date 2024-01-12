@@ -11,5 +11,6 @@ cc_library(
     name = "simple",
     srcs = ["simple.cc"],
     hdrs = ["simple.h"],
+    linkopts = ["-framework"],
     visibility = ["//bindgen:__pkg__"],
 )

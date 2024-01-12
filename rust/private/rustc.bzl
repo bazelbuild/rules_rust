@@ -478,9 +478,9 @@ def _process_build_scripts(
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
-    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info, dep_info)
+    extra_inputs, out_dir, build_env_file, flags_files, linker_flags_files = _create_extra_input_args(build_info, dep_info)
     compile_inputs = depset(transitive = [extra_inputs, compile_inputs])
-    return compile_inputs, out_dir, build_env_file, build_flags_files
+    return compile_inputs, out_dir, build_env_file, flags_files, linker_flags_files
 
 def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -764,12 +764,11 @@ def collect_inputs(
     # For backwards compatibility, we also check the value of the `rustc_env_files` attribute when
     # `crate_info.rustc_env_files` is not populated.
     build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
-    compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(build_info, dep_info, compile_inputs)
+    compile_inputs, out_dir, build_env_file, flags_files, link_flag_files = _process_build_scripts(build_info, dep_info, compile_inputs)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
-
-    return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
+    return compile_inputs, out_dir, build_env_files, flags_files, link_flag_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
         ctx,
@@ -787,7 +786,8 @@ def construct_arguments(
         rust_flags,
         out_dir,
         build_env_files,
-        build_flags_files,
+        flags_files,
+        linker_flags_files,
         emit = ["dep-info", "link"],
         force_all_deps_direct = False,
         rustdoc = False,
@@ -852,7 +852,7 @@ def construct_arguments(
     for build_env_file in build_env_files:
         process_wrapper_flags.add("--env-file", build_env_file)
 
-    process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
+    process_wrapper_flags.add_all(flags_files, before_each = "--arg-file")
 
     # Certain rust build processes expect to find files from the environment
     # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
@@ -1011,6 +1011,8 @@ def construct_arguments(
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
             rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+            # TODO pass linkopts (now in linker_flags_files) from cc deps to linker
+            # This can be done by propagating linkopts from cc deps to downstream via CcInfo
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
@@ -1156,7 +1158,7 @@ def rustc_compile_action(
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
-    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
+    compile_inputs, out_dir, build_env_files, flags_files, flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
@@ -1202,7 +1204,8 @@ def rustc_compile_action(
         rust_flags = rust_flags,
         out_dir = out_dir,
         build_env_files = build_env_files,
-        build_flags_files = build_flags_files,
+        flags_files = flags_files,
+        linker_flags_files = linker_flags_files,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
@@ -1227,8 +1230,8 @@ def rustc_compile_action(
             output_hash = output_hash,
             rust_flags = rust_flags,
             out_dir = out_dir,
-            build_env_files = build_env_files,
-            build_flags_files = build_flags_files,
+            flags_files = flags_files,
+            link_flag_files = linker_flags_files,
             force_all_deps_direct = force_all_deps_direct,
             stamp = stamp,
             use_json_output = True,
@@ -1318,8 +1321,8 @@ def rustc_compile_action(
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
-        if build_env_files or build_flags_files or stamp or build_metadata:
-            fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
+        if build_env_files or flags_files or linker_flags_files or stamp or build_metadata:
+            fail("build_env_files, flags_files, linker_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
         ctx.actions.run(
             executable = ctx.executable._bootstrap_process_wrapper,
             inputs = compile_inputs,
@@ -1650,7 +1653,8 @@ def _create_extra_input_args(build_info, dep_info):
             - (depset[File]): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional generated environment file from a `cargo_build_script` target
-            - (depset[File]): All direct and transitive build flag files from the current build info.
+            - (depset[File]): All direct and transitive build flag files for compiling from the current build info.
+            - (depset[File]): All direct and transitive build flag files for linking from the current build info.
     """
     input_files = []
     input_depsets = []
@@ -1659,7 +1663,13 @@ def _create_extra_input_args(build_info, dep_info):
     # to create the final command line
     out_dir = None
     build_env_file = None
-    build_flags_files = []
+
+    # We need to make a distinction for flags files here to decide whether to
+    # pass them to rustc based on the output crate type
+    # linker_flags_files are not needed for bin, dylib, and cdylib crate types
+    # because a linker is not invoked to produce such crates
+    flags_files = []
+    link_flag_files = []
 
     if build_info:
         if build_info.out_dir:
@@ -1667,17 +1677,19 @@ def _create_extra_input_args(build_info, dep_info):
             input_files.append(build_info.out_dir)
         build_env_file = build_info.rustc_env
         if build_info.flags:
-            build_flags_files.append(build_info.flags)
-        if build_info.link_flags:
-            build_flags_files.append(build_info.link_flags)
-            input_files.append(build_info.link_flags)
+            flags_files.append(build_info.flags)
+        if build_info.linker_flags:
+            link_flag_files.append(build_info.linker_flags)
+            input_files.append(build_info.linker_flags)
         input_depsets.append(build_info.compile_data)
 
     return (
+        # TODO: Split input_files into compile_input_files and link_input_files
         depset(input_files, transitive = [dep_info.link_search_path_files] + input_depsets),
         out_dir,
         build_env_file,
-        depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
+        depset(flags_files, transitive = [dep_info.link_search_path_files]),
+        depset(link_flag_files, transitive = [dep_info.link_search_path_files]),
     )
 
 def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):

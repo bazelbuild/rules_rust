@@ -299,7 +299,7 @@ def _cargo_build_script_impl(ctx):
             rustc_env = env_out,
             dep_env = dep_env_out,
             flags = flags_out,
-            link_flags = link_flags,
+            linker_flags = link_flags,
             link_search_paths = link_search_paths,
             compile_data = depset([]),
         ),
